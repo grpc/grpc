@@ -14,16 +14,18 @@
 
 #include "src/core/client_channel/client_channel.h"
 
+#include <grpc/grpc.h>
+
 #include <atomic>
 #include <memory>
 
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/service_config/service_config_impl.h"
 #include "test/core/call/yodel/yodel_test.h"
 
 namespace grpc_core {
@@ -54,7 +56,8 @@ class ClientChannelTest : public YodelTest {
   ClientChannel& channel() { return *channel_; }
 
   ClientMetadataHandle MakeClientInitialMetadata() {
-    auto client_initial_metadata = Arena::MakePooled<ClientMetadata>();
+    auto client_initial_metadata =
+        Arena::MakePooledForOverwrite<ClientMetadata>();
     client_initial_metadata->Set(HttpPathMetadata(),
                                  Slice::FromCopiedString(kTestPath));
     return client_initial_metadata;
@@ -77,11 +80,21 @@ class ClientChannelTest : public YodelTest {
   }
 
   Resolver::Result MakeSuccessfulResolutionResult(
-      absl::string_view endpoint_address) {
+      absl::string_view endpoint_address,
+      absl::StatusOr<RefCountedPtr<ServiceConfig>> service_config = nullptr,
+      RefCountedPtr<ConfigSelector> config_selector = nullptr) {
     Resolver::Result result;
     grpc_resolved_address address;
     CHECK(grpc_parse_uri(URI::Parse(endpoint_address).value(), &address));
     result.addresses = EndpointAddressesList({EndpointAddresses{address, {}}});
+    result.service_config = std::move(service_config);
+    if (config_selector != nullptr) {
+      CHECK(result.service_config.ok())
+          << "channel does not use ConfigSelector without service config";
+      CHECK(*result.service_config != nullptr)
+          << "channel does not use ConfigSelector without service config";
+      result.args = ChannelArgs().SetObject(std::move(config_selector));
+    }
     return result;
   }
 
@@ -106,7 +119,7 @@ class ClientChannelTest : public YodelTest {
     RefCountedPtr<Subchannel> CreateSubchannel(
         const grpc_resolved_address& address,
         const ChannelArgs& args) override {
-      gpr_log(GPR_INFO, "CreateSubchannel: args=%s", args.ToString().c_str());
+      LOG(INFO) << "CreateSubchannel: args=" << args.ToString();
       return Subchannel::Create(MakeOrphanable<TestConnector>(), address, args);
     }
   };
@@ -114,7 +127,7 @@ class ClientChannelTest : public YodelTest {
   class TestCallDestination final : public UnstartedCallDestination {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override {
-      handlers_.push(unstarted_call_handler.StartWithEmptyFilterStack());
+      handlers_.push(unstarted_call_handler.StartCall());
     }
 
     absl::optional<CallHandler> PopHandler() {
@@ -254,12 +267,102 @@ CLIENT_CHANNEL_TEST(NoOp) { InitChannel(ChannelArgs()); }
 
 CLIENT_CHANNEL_TEST(StartCall) {
   auto& channel = InitChannel(ChannelArgs());
-  auto call = MakeCallPair(MakeClientInitialMetadata(), channel.event_engine(),
-                           channel.call_arena_allocator()->MakeArena());
+  auto arena = channel.call_arena_allocator()->MakeArena();
+  arena->SetContext<EventEngine>(channel.event_engine());
+  auto call = MakeCallPair(MakeClientInitialMetadata(), std::move(arena));
   channel.StartCall(std::move(call.handler));
   QueueNameResolutionResult(
       MakeSuccessfulResolutionResult("ipv4:127.0.0.1:1234"));
   auto call_handler = TickUntilCallStarted();
+  SpawnTestSeq(call.initiator, "cancel",
+               [call_initiator = call.initiator]() mutable {
+                 call_initiator.Cancel();
+                 return Empty{};
+               });
+  WaitForAllPendingWork();
+}
+
+// A filter that adds metadata foo=bar.
+class TestFilter {
+ public:
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata& md) {
+      md.Append("foo", Slice::FromStaticString("bar"),
+                [](absl::string_view error, const Slice&) {
+                  FAIL() << "error encoding metadata: " << error;
+                });
+    }
+
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnFinalize;
+  };
+
+  static absl::StatusOr<std::unique_ptr<TestFilter>> Create(
+      const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/) {
+    return std::make_unique<TestFilter>();
+  }
+};
+
+const NoInterceptor TestFilter::Call::OnClientToServerMessage;
+const NoInterceptor TestFilter::Call::OnClientToServerHalfClose;
+const NoInterceptor TestFilter::Call::OnServerInitialMetadata;
+const NoInterceptor TestFilter::Call::OnServerToClientMessage;
+const NoInterceptor TestFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor TestFilter::Call::OnFinalize;
+
+// A config selector that adds TestFilter as a dynamic filter.
+class TestConfigSelector : public ConfigSelector {
+ public:
+  UniqueTypeName name() const override {
+    static UniqueTypeName::Factory kFactory("test");
+    return kFactory.Create();
+  }
+
+  void AddFilters(InterceptionChainBuilder& builder) override {
+    builder.Add<TestFilter>();
+  }
+
+  absl::Status GetCallConfig(GetCallConfigArgs /*args*/) override {
+    return absl::OkStatus();
+  }
+
+  // Any instance of this class will behave the same, so all comparisons
+  // are true.
+  bool Equals(const ConfigSelector* /*other*/) const override { return true; }
+};
+
+CLIENT_CHANNEL_TEST(ConfigSelectorWithDynamicFilters) {
+  auto& channel = InitChannel(ChannelArgs());
+  auto arena = channel.call_arena_allocator()->MakeArena();
+  arena->SetContext<EventEngine>(channel.event_engine());
+  auto call = MakeCallPair(MakeClientInitialMetadata(), std::move(arena));
+  channel.StartCall(std::move(call.handler));
+  auto service_config = ServiceConfigImpl::Create(ChannelArgs(), "{}");
+  ASSERT_TRUE(service_config.ok());
+  QueueNameResolutionResult(MakeSuccessfulResolutionResult(
+      "ipv4:127.0.0.1:1234", std::move(service_config),
+      MakeRefCounted<TestConfigSelector>()));
+  auto call_handler = TickUntilCallStarted();
+  SpawnTestSeq(
+      call_handler, "check_initial_metadata",
+      [call_handler]() mutable {
+        return call_handler.PullClientInitialMetadata();
+      },
+      [](ValueOrFailure<ClientMetadataHandle> md) {
+        EXPECT_TRUE(md.ok());
+        if (md.ok()) {
+          std::string buffer;
+          auto value = (*md)->GetStringValue("foo", &buffer);
+          EXPECT_TRUE(value.has_value());
+          if (value.has_value()) EXPECT_EQ(*value, "bar");
+        }
+        return Empty{};
+      });
   SpawnTestSeq(call.initiator, "cancel",
                [call_initiator = call.initiator]() mutable {
                  call_initiator.Cancel();

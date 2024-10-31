@@ -19,20 +19,17 @@
 #include "src/core/handshaker/security/secure_endpoint.h"
 
 #include <fcntl.h>
-#include <sys/types.h>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <gtest/gtest.h>
+#include <sys/types.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/fake_transport_security.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/test_util/test_config.h"
@@ -161,9 +158,11 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   }
 
   if (leftover_nslices == 0) {
-    f.client_ep = grpc_secure_endpoint_create(fake_read_protector,
-                                              fake_read_zero_copy_protector,
-                                              tcp.client, nullptr, &args, 0);
+    f.client_ep = grpc_secure_endpoint_create(
+                      fake_read_protector, fake_read_zero_copy_protector,
+                      grpc_core::OrphanablePtr<grpc_endpoint>(tcp.client),
+                      nullptr, &args, 0)
+                      .release();
   } else {
     unsigned i;
     tsi_result result;
@@ -206,15 +205,19 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
         reinterpret_cast<const char*>(encrypted_buffer),
         total_buffer_size - buffer_size);
     f.client_ep = grpc_secure_endpoint_create(
-        fake_read_protector, fake_read_zero_copy_protector, tcp.client,
-        &encrypted_leftover, &args, 1);
+                      fake_read_protector, fake_read_zero_copy_protector,
+                      grpc_core::OrphanablePtr<grpc_endpoint>(tcp.client),
+                      &encrypted_leftover, &args, 1)
+                      .release();
     grpc_slice_unref(encrypted_leftover);
     gpr_free(encrypted_buffer);
   }
 
-  f.server_ep = grpc_secure_endpoint_create(fake_write_protector,
-                                            fake_write_zero_copy_protector,
-                                            tcp.server, nullptr, &args, 0);
+  f.server_ep = grpc_secure_endpoint_create(
+                    fake_write_protector, fake_write_zero_copy_protector,
+                    grpc_core::OrphanablePtr<grpc_endpoint>(tcp.server),
+                    nullptr, &args, 0)
+                    .release();
   grpc_resource_quota_unref(
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
   return f;

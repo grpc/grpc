@@ -16,6 +16,9 @@
 //
 //
 
+#include <grpc++/grpc++.h>
+#include <grpcpp/opencensus.h>
+
 #include <string>
 #include <thread>  // NOLINT
 #include <vector>
@@ -29,10 +32,6 @@
 #include "opencensus/stats/testing/test_utils.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/tags/with_tag_map.h"
-
-#include <grpc++/grpc++.h>
-#include <grpcpp/opencensus.h>
-
 #include "src/core/lib/experiments/experiments.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
@@ -828,8 +827,11 @@ TEST_F(StatsPluginEnd2EndTest, TestMetadataSizeAnnotations) {
   traces_recorder_->StopRecording();
   auto recorded_spans = traces_recorder_->GetAndClearSpans();
   // Check presence of metadata size annotations in client span.
-  auto sent_span_data =
-      GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
+  auto sent_span_data = GetSpanByName(
+      recorded_spans,
+      absl::StrCat(
+          grpc_core::IsCallTracerInTransportEnabled() ? "Attempt." : "Sent.",
+          client_method_name_));
   ASSERT_NE(sent_span_data, recorded_spans.end());
   EXPECT_TRUE(IsAnnotationPresent(
       sent_span_data,
@@ -871,8 +873,11 @@ TEST_F(StatsPluginEnd2EndTest, TestHttpAnnotations) {
   ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   traces_recorder_->StopRecording();
   auto recorded_spans = traces_recorder_->GetAndClearSpans();
-  auto client_span_data =
-      GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
+  auto client_span_data = GetSpanByName(
+      recorded_spans,
+      absl::StrCat(
+          grpc_core::IsCallTracerInTransportEnabled() ? "Attempt." : "Sent.",
+          client_method_name_));
   ASSERT_NE(client_span_data, recorded_spans.end());
   EXPECT_TRUE(IsAnnotationPresent(client_span_data,
                                   "HttpAnnotation type: Start time: .* "

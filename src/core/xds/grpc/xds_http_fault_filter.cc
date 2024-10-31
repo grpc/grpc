@@ -16,6 +16,9 @@
 
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
 
+#include <grpc/status.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <string>
@@ -30,22 +33,18 @@
 #include "envoy/extensions/filters/http/fault/v3/fault.upbdefs.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-
-#include <grpc/status.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/time.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
-#include "src/core/xds/grpc/xds_http_filters.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
 
 namespace grpc_core {
 
@@ -86,6 +85,7 @@ void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfig(
+    absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
@@ -194,12 +194,12 @@ XdsHttpFaultFilter::GenerateFilterConfig(
     }
   }
   // Section 3: Parse the maximum active faults
-  const auto* max_fault_wrapper =
+  auto max_fault_wrapper = ParseUInt32Value(
       envoy_extensions_filters_http_fault_v3_HTTPFault_max_active_faults(
-          http_fault);
-  if (max_fault_wrapper != nullptr) {
+          http_fault));
+  if (max_fault_wrapper.has_value()) {
     fault_injection_policy_json["maxFaults"] =
-        Json::FromNumber(google_protobuf_UInt32Value_value(max_fault_wrapper));
+        Json::FromNumber(*max_fault_wrapper);
   }
   return FilterConfig{ConfigProtoName(),
                       Json::FromObject(std::move(fault_injection_policy_json))};
@@ -207,11 +207,17 @@ XdsHttpFaultFilter::GenerateFilterConfig(
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfigOverride(
+    absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   // HTTPFault filter has the same message type in HTTP connection manager's
   // filter config and in overriding filter config field.
-  return GenerateFilterConfig(context, std::move(extension), errors);
+  return GenerateFilterConfig(instance_name, context, std::move(extension),
+                              errors);
+}
+
+void XdsHttpFaultFilter::AddFilter(InterceptionChainBuilder& builder) const {
+  builder.Add<FaultInjectionFilter>();
 }
 
 const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
@@ -224,7 +230,7 @@ ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpFaultFilter::GenerateServiceConfig(
+XdsHttpFaultFilter::GenerateMethodConfig(
     const FilterConfig& hcm_filter_config,
     const FilterConfig* filter_config_override) const {
   Json policy_json = filter_config_override != nullptr
@@ -232,6 +238,12 @@ XdsHttpFaultFilter::GenerateServiceConfig(
                          : hcm_filter_config.config;
   // The policy JSON may be empty, that's allowed.
   return ServiceConfigJsonEntry{"faultInjectionPolicy", JsonDump(policy_json)};
+}
+
+absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
+XdsHttpFaultFilter::GenerateServiceConfig(
+    const FilterConfig& /*hcm_filter_config*/) const {
+  return ServiceConfigJsonEntry{"", ""};
 }
 
 }  // namespace grpc_core

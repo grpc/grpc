@@ -16,10 +16,10 @@
 
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
-#include <algorithm>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -32,32 +32,14 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 
 namespace grpc_core {
-
-namespace {
-bool IsFallbackExperimentEnabled() {
-  auto fallback_enabled = GetEnv("GRPC_EXPERIMENTAL_XDS_FALLBACK");
-  bool enabled = false;
-  return gpr_parse_bool_value(fallback_enabled.value_or("0").c_str(),
-                              &enabled) &&
-         enabled;
-}
-
-}  // namespace
 
 //
 // GrpcXdsBootstrap::GrpcNode::Locality
@@ -91,131 +73,6 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcNode::JsonLoader(
 }
 
 //
-// GrpcXdsBootstrap::GrpcXdsServer
-//
-
-namespace {
-
-constexpr absl::string_view kServerFeatureIgnoreResourceDeletion =
-    "ignore_resource_deletion";
-
-}  // namespace
-
-bool GrpcXdsBootstrap::GrpcXdsServer::IgnoreResourceDeletion() const {
-  return server_features_.find(std::string(
-             kServerFeatureIgnoreResourceDeletion)) != server_features_.end();
-}
-
-bool GrpcXdsBootstrap::GrpcXdsServer::Equals(const XdsServer& other) const {
-  const auto& o = static_cast<const GrpcXdsServer&>(other);
-  return (server_uri_ == o.server_uri_ &&
-          channel_creds_config_->type() == o.channel_creds_config_->type() &&
-          channel_creds_config_->Equals(*o.channel_creds_config_) &&
-          server_features_ == o.server_features_);
-}
-
-std::string GrpcXdsBootstrap::GrpcXdsServer::Key() const {
-  return JsonDump(ToJson());
-}
-
-const JsonLoaderInterface* GrpcXdsBootstrap::GrpcXdsServer::JsonLoader(
-    const JsonArgs&) {
-  static const auto* loader =
-      JsonObjectLoader<GrpcXdsServer>()
-          .Field("server_uri", &GrpcXdsServer::server_uri_)
-          .Finish();
-  return loader;
-}
-
-namespace {
-
-struct ChannelCreds {
-  std::string type;
-  Json::Object config;
-
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* loader =
-        JsonObjectLoader<ChannelCreds>()
-            .Field("type", &ChannelCreds::type)
-            .OptionalField("config", &ChannelCreds::config)
-            .Finish();
-    return loader;
-  }
-};
-
-}  // namespace
-
-void GrpcXdsBootstrap::GrpcXdsServer::JsonPostLoad(const Json& json,
-                                                   const JsonArgs& args,
-                                                   ValidationErrors* errors) {
-  // Parse "channel_creds".
-  auto channel_creds_list = LoadJsonObjectField<std::vector<ChannelCreds>>(
-      json.object(), args, "channel_creds", errors);
-  if (channel_creds_list.has_value()) {
-    ValidationErrors::ScopedField field(errors, ".channel_creds");
-    for (size_t i = 0; i < channel_creds_list->size(); ++i) {
-      ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
-      auto& creds = (*channel_creds_list)[i];
-      // Select the first channel creds type that we support, but
-      // validate all entries.
-      if (CoreConfiguration::Get().channel_creds_registry().IsSupported(
-              creds.type)) {
-        ValidationErrors::ScopedField field(errors, ".config");
-        auto config =
-            CoreConfiguration::Get().channel_creds_registry().ParseConfig(
-                creds.type, Json::FromObject(creds.config), args, errors);
-        if (channel_creds_config_ == nullptr) {
-          channel_creds_config_ = std::move(config);
-        }
-      }
-    }
-    if (channel_creds_config_ == nullptr) {
-      errors->AddError("no known creds type found");
-    }
-  }
-  // Parse "server_features".
-  {
-    ValidationErrors::ScopedField field(errors, ".server_features");
-    auto it = json.object().find("server_features");
-    if (it != json.object().end()) {
-      if (it->second.type() != Json::Type::kArray) {
-        errors->AddError("is not an array");
-      } else {
-        const Json::Array& array = it->second.array();
-        for (const Json& feature_json : array) {
-          if (feature_json.type() == Json::Type::kString &&
-              (feature_json.string() == kServerFeatureIgnoreResourceDeletion)) {
-            server_features_.insert(feature_json.string());
-          }
-        }
-      }
-    }
-  }
-}
-
-Json GrpcXdsBootstrap::GrpcXdsServer::ToJson() const {
-  Json::Object channel_creds_json{
-      {"type", Json::FromString(std::string(channel_creds_config_->type()))},
-  };
-  if (channel_creds_config_ != nullptr) {
-    channel_creds_json["config"] = channel_creds_config_->ToJson();
-  }
-  Json::Object json{
-      {"server_uri", Json::FromString(server_uri_)},
-      {"channel_creds",
-       Json::FromArray({Json::FromObject(std::move(channel_creds_json))})},
-  };
-  if (!server_features_.empty()) {
-    Json::Array server_features_json;
-    for (auto& feature : server_features_) {
-      server_features_json.emplace_back(Json::FromString(feature));
-    }
-    json["server_features"] = Json::FromArray(std::move(server_features_json));
-  }
-  return Json::FromObject(std::move(json));
-}
-
-//
 // GrpcXdsBootstrap::GrpcAuthority
 //
 
@@ -229,16 +86,6 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcAuthority::JsonLoader(
           .OptionalField("xds_servers", &GrpcAuthority::servers_)
           .Finish();
   return loader;
-}
-
-void GrpcXdsBootstrap::GrpcAuthority::JsonPostLoad(
-    const Json& /*json*/, const JsonArgs& /*args*/,
-    ValidationErrors* /*errors*/) {
-  if (!IsFallbackExperimentEnabled()) {
-    if (servers_.size() > 1) {
-      servers_.resize(1);
-    }
-  }
 }
 
 //
@@ -313,11 +160,6 @@ void GrpcXdsBootstrap::JsonPostLoad(const Json& /*json*/,
         errors->AddError(
             absl::StrCat("field must begin with \"", expected_prefix, "\""));
       }
-    }
-  }
-  if (!IsFallbackExperimentEnabled()) {
-    if (servers_.size() > 1) {
-      servers_.resize(1);
     }
   }
 }

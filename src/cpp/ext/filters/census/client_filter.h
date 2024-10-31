@@ -19,12 +19,11 @@
 #ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CLIENT_FILTER_H
 #define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CLIENT_FILTER_H
 
-#include "absl/status/statusor.h"
-
 #include <grpc/support/port_platform.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/interceptor.h>
 
+#include "absl/status/statusor.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -37,6 +36,8 @@ namespace internal {
 class OpenCensusClientFilter : public grpc_core::ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() { return "opencensus_client"; }
 
   static absl::StatusOr<std::unique_ptr<OpenCensusClientFilter>> Create(
       const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/);

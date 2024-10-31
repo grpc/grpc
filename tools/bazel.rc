@@ -133,7 +133,6 @@ build:thready_tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:thready_tsan --copt=-DGRPC_TSAN
 build:thready_tsan --copt=-DGRPC_MAXIMIZE_THREADYNESS
 build:thready_tsan --linkopt=-fsanitize=thread
-build:thready_tsan --test_tag_filters=thready_tsan
 build:thready_tsan --action_env=TSAN_OPTIONS=suppressions=test/core/test_util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
 
 build:tsan_macos --strip=never

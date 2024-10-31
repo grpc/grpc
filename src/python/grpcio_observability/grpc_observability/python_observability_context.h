@@ -15,6 +15,7 @@
 #ifndef GRPC_PYTHON_OBSERVABILITY_H
 #define GRPC_PYTHON_OBSERVABILITY_H
 
+#include <grpc/slice.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -29,9 +30,6 @@
 #include "absl/time/time.h"
 #include "constants.h"
 #include "sampler.h"
-
-#include <grpc/slice.h>
-
 #include "src/core/lib/channel/channel_stack.h"
 
 namespace grpc_observability {
@@ -272,17 +270,15 @@ void GenerateClientContext(absl::string_view method, absl::string_view trace_id,
 void GenerateServerContext(absl::string_view header, absl::string_view method,
                            PythonCensusContext* context);
 
-inline absl::string_view GetMethod(const char* method) {
+inline std::string GetMethod(const char* method) {
   if (std::string(method).empty()) {
     return "";
   }
   // Check for leading '/' and trim it if present.
-  return absl::StripPrefix(absl::string_view(method), "/");
+  return std::string(absl::StripPrefix(method, "/"));
 }
 
-inline absl::string_view GetTarget(const char* target) {
-  return absl::string_view(target);
-}
+inline std::string GetTarget(const char* target) { return std::string(target); }
 
 // Fills a pre-allocated buffer with the value for the grpc-trace-bin header.
 // The buffer must be at least kGrpcTraceBinHeaderLen bytes long.

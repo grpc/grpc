@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -22,20 +23,17 @@
 #include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/promise/test_context.h"
 #include "test/core/transport/chaotic_good/frame_fuzzer.pb.h"
@@ -55,7 +53,8 @@ FrameLimits FuzzerFrameLimits() { return FrameLimits{1024 * 1024 * 1024, 63}; }
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
-  auto serialized = input.Serialize(&hpack_compressor);
+  bool saw_encoding_errors = false;
+  auto serialized = input.Serialize(&hpack_compressor, saw_encoding_errors);
   CHECK(serialized.control.Length() >=
         24);  // Initial output buffer size is 64 byte.
   uint8_t header_bytes[24];
@@ -67,7 +66,7 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
     }
     Crash("Failed to parse header");
   }
-  CHECK(header->type == expected_frame_type);
+  CHECK_EQ(header->type, expected_frame_type);
   T output;
   HPackParser hpack_parser;
   DeterministicBitGen bitgen;
@@ -75,7 +74,7 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
                                   absl::BitGenRef(bitgen), GetContext<Arena>(),
                                   std::move(serialized), FuzzerFrameLimits());
   CHECK_OK(deser);
-  CHECK(output == input);
+  if (!saw_encoding_errors) CHECK_EQ(input, output);
 }
 
 template <typename T>

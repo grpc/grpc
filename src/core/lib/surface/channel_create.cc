@@ -16,19 +16,19 @@
 
 #include "src/core/lib/surface/channel_create.h"
 
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel.h"
+#include "src/core/client_channel/direct_channel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/legacy_channel.h"
 #include "src/core/telemetry/stats.h"
@@ -86,8 +86,15 @@ absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
     return LegacyChannel::Create(std::move(target), std::move(args),
                                  channel_stack_type);
   }
-  CHECK_EQ(channel_stack_type, GRPC_CLIENT_CHANNEL);
-  return ClientChannel::Create(std::move(target), std::move(args));
+  switch (channel_stack_type) {
+    case GRPC_CLIENT_CHANNEL:
+      return ClientChannel::Create(std::move(target), std::move(args));
+    case GRPC_CLIENT_DIRECT_CHANNEL:
+      return DirectChannel::Create(std::move(target), args);
+    default:
+      Crash(absl::StrCat("Invalid channel stack type for ChannelCreate: ",
+                         grpc_channel_stack_type_string(channel_stack_type)));
+  }
 }
 
 }  // namespace grpc_core
@@ -96,10 +103,10 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
                                               grpc_status_code error_code,
                                               const char* error_message) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE(
-      "grpc_lame_client_channel_create(target=%s, error_code=%d, "
-      "error_message=%s)",
-      3, (target, (int)error_code, error_message));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_lame_client_channel_create(target=" << target
+      << ", error_code=" << (int)error_code
+      << ", error_message=" << error_message << ")";
   if (error_code == GRPC_STATUS_OK) error_code = GRPC_STATUS_UNKNOWN;
   grpc_core::ChannelArgs args =
       grpc_core::CoreConfiguration::Get()

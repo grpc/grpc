@@ -19,19 +19,18 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_CHTTP2_CONNECTOR_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_CHTTP2_CONNECTOR_H
 
-#include "absl/base/thread_annotations.h"
-#include "absl/types/optional.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/types/optional.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/handshaker/handshaker.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
@@ -41,7 +40,7 @@ class Chttp2Connector : public SubchannelConnector {
   void Shutdown(grpc_error_handle error) override;
 
  private:
-  static void OnHandshakeDone(void* arg, grpc_error_handle error);
+  void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
   static void OnReceiveSettings(void* arg, grpc_error_handle error);
   void OnTimeout() ABSL_LOCKS_EXCLUDED(mu_);
 

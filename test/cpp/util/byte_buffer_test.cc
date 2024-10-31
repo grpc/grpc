@@ -16,16 +16,15 @@
 //
 //
 
-#include <cstring>
-#include <vector>
-
-#include <gtest/gtest.h>
-
 #include <grpc++/support/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/slice.h>
+#include <gtest/gtest.h>
+
+#include <cstring>
+#include <vector>
 
 #include "test/core/test_util/test_config.h"
 

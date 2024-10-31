@@ -169,5 +169,6 @@ grpc_proto_fuzzer(
         "//src/core:memory_quota",
         "//src/core:useful",
         "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

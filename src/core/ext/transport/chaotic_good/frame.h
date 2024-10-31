@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -22,17 +24,14 @@
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/types/variant.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/match.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -55,8 +54,14 @@ class FrameInterface {
                                    const FrameHeader& header,
                                    absl::BitGenRef bitsrc, Arena* arena,
                                    BufferPair buffers, FrameLimits limits) = 0;
-  virtual BufferPair Serialize(HPackCompressor* encoder) const = 0;
+  virtual BufferPair Serialize(HPackCompressor* encoder,
+                               bool& saw_encoding_errors) const = 0;
   virtual std::string ToString() const = 0;
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const FrameInterface& frame) {
+    sink.Append(frame.ToString());
+  }
 
  protected:
   static bool EqVal(const grpc_metadata_batch& a,
@@ -72,11 +77,16 @@ class FrameInterface {
   ~FrameInterface() = default;
 };
 
+inline std::ostream& operator<<(std::ostream& os, const FrameInterface& frame) {
+  return os << frame.ToString();
+}
+
 struct SettingsFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
                            absl::BitGenRef bitsrc, Arena* arena,
                            BufferPair buffers, FrameLimits limits) override;
-  BufferPair Serialize(HPackCompressor* encoder) const override;
+  BufferPair Serialize(HPackCompressor* encoder,
+                       bool& saw_encoding_errors) const override;
   ClientMetadataHandle headers;
   std::string ToString() const override;
 
@@ -110,7 +120,8 @@ struct ClientFragmentFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
                            absl::BitGenRef bitsrc, Arena* arena,
                            BufferPair buffers, FrameLimits limits) override;
-  BufferPair Serialize(HPackCompressor* encoder) const override;
+  BufferPair Serialize(HPackCompressor* encoder,
+                       bool& saw_encoding_errors) const override;
   std::string ToString() const override;
 
   uint32_t stream_id;
@@ -128,7 +139,8 @@ struct ServerFragmentFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
                            absl::BitGenRef bitsrc, Arena* arena,
                            BufferPair buffers, FrameLimits limits) override;
-  BufferPair Serialize(HPackCompressor* encoder) const override;
+  BufferPair Serialize(HPackCompressor* encoder,
+                       bool& saw_encoding_errors) const override;
   std::string ToString() const override;
 
   uint32_t stream_id;
@@ -143,10 +155,14 @@ struct ServerFragmentFrame final : public FrameInterface {
 };
 
 struct CancelFrame final : public FrameInterface {
+  CancelFrame() = default;
+  explicit CancelFrame(uint32_t stream_id) : stream_id(stream_id) {}
+
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
                            absl::BitGenRef bitsrc, Arena* arena,
                            BufferPair buffers, FrameLimits limits) override;
-  BufferPair Serialize(HPackCompressor* encoder) const override;
+  BufferPair Serialize(HPackCompressor* encoder,
+                       bool& saw_encoding_errors) const override;
   std::string ToString() const override;
 
   uint32_t stream_id;

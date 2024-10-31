@@ -155,15 +155,6 @@ def create_server_call_tracer_factory_capsule(dict exchange_labels, str identifi
   return capsule
 
 
-def delete_client_call_tracer(object client_call_tracer) -> None:
-  client_call_tracer: grpc._observability.ClientCallTracerCapsule
-
-  if cpython.PyCapsule_IsValid(client_call_tracer, CLIENT_CALL_TRACER):
-    capsule_ptr = cpython.PyCapsule_GetPointer(client_call_tracer, CLIENT_CALL_TRACER)
-    call_tracer_ptr = <ClientCallTracer*>capsule_ptr
-    del call_tracer_ptr
-
-
 def _c_label_to_labels(vector[Label] c_labels) -> Dict[str, AnyStr]:
   py_labels = {}
   for label in c_labels:

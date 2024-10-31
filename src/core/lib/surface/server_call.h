@@ -15,21 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_SERVER_CALL_H
 #define GRPC_SRC_CORE_LIB_SURFACE_SERVER_CALL_H
 
-#include <inttypes.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <cstdint>
-#include <memory>
-#include <string>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
@@ -41,13 +26,23 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include <atomic>
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/call.h"
@@ -57,6 +52,9 @@
 #include "src/core/server/server_interface.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 
@@ -68,7 +66,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
       : Call(false,
              client_initial_metadata->get(GrpcTimeoutMetadata())
                  .value_or(Timestamp::InfFuture()),
-             call_handler.arena()->Ref(), call_handler.event_engine()),
+             call_handler.arena()->Ref()),
         call_handler_(std::move(call_handler)),
         client_initial_metadata_stored_(std::move(client_initial_metadata)),
         cq_(cq),
@@ -80,9 +78,8 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
     call_handler_.SpawnInfallible(
         "CancelWithError",
         [self = WeakRefAsSubclass<ServerCall>(), error = std::move(error)] {
-          auto status = ServerMetadataFromStatus(error);
-          status->Set(GrpcCallWasCancelled(), true);
-          self->call_handler_.PushServerTrailingMetadata(std::move(status));
+          self->call_handler_.PushServerTrailingMetadata(
+              CancelledServerMetadataFromStatus(error));
           return Empty{};
         });
   }
@@ -101,8 +98,9 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   void InternalUnref(const char*) override { WeakUnref(); }
 
   void Orphaned() override {
-    // TODO(ctiller): only when we're not already finished
-    CancelWithError(absl::CancelledError());
+    if (!saw_was_cancelled_.load(std::memory_order_relaxed)) {
+      CancelWithError(absl::CancelledError());
+    }
   }
 
   void SetCompletionQueue(grpc_completion_queue*) override {
@@ -129,7 +127,9 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   }
 
   bool Completed() final { Crash("unimplemented"); }
-  bool failed_before_recv_message() const final { Crash("unimplemented"); }
+  bool failed_before_recv_message() const final {
+    return call_handler_.WasCancelledPushed();
+  }
 
   uint32_t test_only_message_flags() override {
     return message_receiver_.last_message_flags();
@@ -155,6 +155,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   ClientMetadataHandle client_initial_metadata_stored_;
   grpc_completion_queue* const cq_;
   ServerInterface* const server_;
+  std::atomic<bool> saw_was_cancelled_{false};
 };
 
 grpc_call* MakeServerCall(CallHandler call_handler,

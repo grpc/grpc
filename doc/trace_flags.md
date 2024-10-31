@@ -73,6 +73,7 @@ processing requests via debug logs. Available tracers include:
   - tcp - Bytes in and out of a channel.
   - timer - Timers (alarms) in the grpc internals.
   - timer_check - more detailed trace of timer logic in grpc internals.
+  - token_fetcher_credentials - Token fetcher call credentials framework, used for (e.g.) oauth2 token fetcher credentials.
   - tsi - TSI transport security.
   - weighted_round_robin_lb - Weighted round robin load balancing policy.
   - weighted_target_lb - Weighted target LB policy.
@@ -90,6 +91,7 @@ accomplished by invoking `bazel build --config=dbg <target>`
   - auth_context_refcount - Auth context refcounting.
   - call_combiner - Call combiner state.
   - call_refcount - Refcount on call.
+  - call_state - Traces transitions through the call spine state machine.
   - closure - Legacy closure creation, scheduling, and completion.
   - combiner - Combiner lock state.
   - cq_refcount - Completion queue refcounting.

@@ -17,14 +17,6 @@
 //
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
 
-#include <memory>
-#include <sstream>
-#include <string>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/grpc.h>
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/security/server_credentials.h>
@@ -33,7 +25,14 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/async_stream.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include <memory>
+#include <sstream>
+#include <string>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
+#include "src/core/util/crash.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.grpc.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/transport_security_common.pb.h"

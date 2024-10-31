@@ -17,19 +17,18 @@
 #ifndef GRPC_SRC_CORE_SERVER_SERVER_CONFIG_SELECTOR_H
 #define GRPC_SRC_CORE_SERVER_SERVER_CONFIG_SELECTOR_H
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_parser.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {

@@ -18,16 +18,15 @@
 
 #include "src/core/xds/grpc/xds_certificate_provider.h"
 
+#include <grpc/grpc.h>
+
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"

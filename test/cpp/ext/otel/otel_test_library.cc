@@ -18,7 +18,10 @@
 
 #include "test/cpp/ext/otel/otel_test_library.h"
 
+#include <grpcpp/grpcpp.h>
+
 #include <atomic>
+#include <memory>
 
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
@@ -27,13 +30,10 @@
 #include "opentelemetry/sdk/metrics/export/metric_producer.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
-
-#include <grpcpp/grpcpp.h>
-
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/notification.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -49,6 +49,8 @@ namespace testing {
 class AddLabelsFilter : public grpc_core::ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() { return "add_service_labels_filter"; }
 
   explicit AddLabelsFilter(
       std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
@@ -85,8 +87,7 @@ class AddLabelsFilter : public grpc_core::ChannelFilter {
 
 const grpc_channel_filter AddLabelsFilter::kFilter =
     grpc_core::MakePromiseBasedFilter<AddLabelsFilter,
-                                      grpc_core::FilterEndpoint::kClient>(
-        "add_service_labels_filter");
+                                      grpc_core::FilterEndpoint::kClient>();
 
 OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::MetricsCollectorThread(
     OpenTelemetryPluginEnd2EndTest* test, grpc_core::Duration interval,
@@ -149,7 +150,6 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   if (!config.service_config.empty()) {
     channel_args.SetString(GRPC_ARG_SERVICE_CONFIG, config.service_config);
   }
-  reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
   grpc_init();
   grpc::ServerBuilder builder;
   int port;
@@ -157,11 +157,18 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   builder.AddListeningPort("0.0.0.0:0", grpc::InsecureServerCredentials(),
                            &port);
   builder.RegisterService(&service_);
+  for (auto& per_server_stats_plugin : config.per_server_stats_plugins) {
+    per_server_stats_plugin->AddToServerBuilder(&builder);
+  }
   server_ = builder.BuildAndStart();
   ASSERT_NE(nullptr, server_);
   ASSERT_NE(0, port);
   server_address_ = absl::StrCat("localhost:", port);
   canonical_server_address_ = absl::StrCat("dns:///", server_address_);
+  for (auto& per_channel_stats_plugin : config.per_channel_stats_plugins) {
+    per_channel_stats_plugin->AddToChannelArguments(&channel_args);
+  }
+  reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
 
   auto channel = grpc::CreateCustomChannel(
       server_address_, grpc::InsecureChannelCredentials(), channel_args);
@@ -238,10 +245,35 @@ OpenTelemetryPluginEnd2EndTest::ReadCurrentMetricsData(
   return data;
 }
 
+std::pair<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>,
+          std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>>
+OpenTelemetryPluginEnd2EndTest::BuildOpenTelemetryPlugin(
+    OpenTelemetryPluginEnd2EndTest::Options options) {
+  grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
+  auto reader = ConfigureOTBuilder(std::move(options), &ot_builder);
+  auto plugin = ot_builder.Build();
+  EXPECT_TRUE(plugin.ok());
+  return {*plugin, reader};
+}
+
 std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>
 OpenTelemetryPluginEnd2EndTest::BuildAndRegisterOpenTelemetryPlugin(
     OpenTelemetryPluginEnd2EndTest::Options options) {
   grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
+  absl::Status expected_status;
+  if (!options.use_meter_provider) {
+    expected_status =
+        absl::InvalidArgumentError("Need to configure a valid meter provider.");
+  }
+  auto reader = ConfigureOTBuilder(std::move(options), &ot_builder);
+  EXPECT_EQ(ot_builder.BuildAndRegisterGlobal(), expected_status);
+  return reader;
+}
+
+std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>
+OpenTelemetryPluginEnd2EndTest::ConfigureOTBuilder(
+    OpenTelemetryPluginEnd2EndTest::Options options,
+    grpc::internal::OpenTelemetryPluginBuilderImpl* ot_builder) {
   // We are resetting the MeterProvider and OpenTelemetry plugin at the start
   // of each test to avoid test results from one test carrying over to another
   // test. (Some measurements can get arbitrarily delayed.)
@@ -252,28 +284,27 @@ OpenTelemetryPluginEnd2EndTest::BuildAndRegisterOpenTelemetryPlugin(
   std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader =
       std::make_shared<grpc::testing::MockMetricReader>();
   meter_provider->AddMetricReader(reader);
-  ot_builder.DisableAllMetrics();
-  ot_builder.EnableMetrics(options.metric_names);
+  ot_builder->DisableAllMetrics();
+  ot_builder->EnableMetrics(options.metric_names);
   if (options.use_meter_provider) {
     auto meter_provider =
         std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
-    reader.reset(new grpc::testing::MockMetricReader);
+    reader = std::make_shared<grpc::testing::MockMetricReader>();
     meter_provider->AddMetricReader(reader);
-    ot_builder.SetMeterProvider(std::move(meter_provider));
+    ot_builder->SetMeterProvider(std::move(meter_provider));
   }
-  ot_builder.SetChannelScopeFilter(std::move(options.channel_scope_filter));
-  ot_builder.SetServerSelector(std::move(options.server_selector));
-  ot_builder.SetTargetAttributeFilter(
+  ot_builder->SetChannelScopeFilter(std::move(options.channel_scope_filter));
+  ot_builder->SetServerSelector(std::move(options.server_selector));
+  ot_builder->SetTargetAttributeFilter(
       std::move(options.target_attribute_filter));
-  ot_builder.SetGenericMethodAttributeFilter(
+  ot_builder->SetGenericMethodAttributeFilter(
       std::move(options.generic_method_attribute_filter));
   for (auto& option : options.plugin_options) {
-    ot_builder.AddPluginOption(std::move(option));
+    ot_builder->AddPluginOption(std::move(option));
   }
   for (auto& optional_label_key : options.optional_label_keys) {
-    ot_builder.AddOptionalLabel(optional_label_key);
+    ot_builder->AddOptionalLabel(optional_label_key);
   }
-  EXPECT_EQ(ot_builder.BuildAndRegisterGlobal(), absl::OkStatus());
   return reader;
 }
 

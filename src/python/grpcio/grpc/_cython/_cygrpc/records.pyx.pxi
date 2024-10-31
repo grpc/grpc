@@ -18,12 +18,12 @@ cdef bytes _slice_bytes(grpc_slice slice):
   cdef size_t length = grpc_slice_length(slice)
   return (<const char *>start)[:length]
 
-cdef grpc_slice _copy_slice(grpc_slice slice) nogil:
+cdef grpc_slice _copy_slice(grpc_slice slice) noexcept nogil:
   cdef void *start = grpc_slice_start_ptr(slice)
   cdef size_t length = grpc_slice_length(slice)
   return grpc_slice_from_copied_buffer(<const char *>start, length)
 
-cdef grpc_slice _slice_from_bytes(bytes value) nogil:
+cdef grpc_slice _slice_from_bytes(bytes value) noexcept nogil:
   cdef const char *value_ptr
   cdef size_t length
   with gil:

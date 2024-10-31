@@ -32,6 +32,13 @@
   doc: Number of server channels created
 - counter: insecure_connections_created
   doc: Number of insecure connections created
+# resource quota
+- counter: rq_connections_dropped
+  doc: Number of connections dropped due to resource quota exceeded
+- counter: rq_calls_dropped
+  doc: Number of calls dropped due to resource quota exceeded
+- counter: rq_calls_rejected
+  doc: Number of calls rejected (never started) due to resource quota exceeded
 # tcp
 - counter: syscall_write
   doc: Number of write syscalls (or equivalent - eg sendmsg) made by this process
@@ -80,6 +87,14 @@
   max: 65536
   buckets: 26
   doc: Number of bytes consumed by metadata, according to HPACK accounting rules
+- counter: http2_hpack_hits
+  doc: Number of HPACK cache hits
+- counter: http2_hpack_misses
+  doc: Number of HPACK cache misses (entries added but never used)
+- histogram: http2_hpack_entry_lifetime
+  doc: Lifetime of HPACK entries in the cache (in milliseconds)
+  max: 1800000
+  buckets: 40
 # completion queues
 - counter: cq_pluck_creates
   doc: Number of completion queues created for cq_pluck (indicates sync api usage)

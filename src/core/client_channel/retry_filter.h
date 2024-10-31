@@ -17,8 +17,10 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_FILTER_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_FILTER_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
-
 #include <limits.h>
 #include <stddef.h>
 
@@ -26,21 +28,15 @@
 
 #include "absl/log/check.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
-
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_service_config.h"
 #include "src/core/client_channel/retry_throttle.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {

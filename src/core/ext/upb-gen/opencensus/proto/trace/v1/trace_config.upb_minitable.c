@@ -3,7 +3,8 @@
  *     opencensus/proto/trace/v1/trace_config.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -12,10 +13,11 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub opencensus_proto_trace_v1_TraceConfig_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &opencensus__proto__trace__v1__ProbabilitySampler_msg_init},
-  {.UPB_PRIVATE(submsg) = &opencensus__proto__trace__v1__ConstantSampler_msg_init},
-  {.UPB_PRIVATE(submsg) = &opencensus__proto__trace__v1__RateLimitingSampler_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal opencensus_proto_trace_v1_TraceConfig_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &opencensus__proto__trace__v1__ProbabilitySampler_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &opencensus__proto__trace__v1__ConstantSampler_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &opencensus__proto__trace__v1__RateLimitingSampler_msg_init_ptr},
 };
 
 static const upb_MiniTableField opencensus_proto_trace_v1_TraceConfig__fields[7] = {
@@ -32,6 +34,9 @@ const upb_MiniTable opencensus__proto__trace__v1__TraceConfig_msg_init = {
   &opencensus_proto_trace_v1_TraceConfig_submsgs[0],
   &opencensus_proto_trace_v1_TraceConfig__fields[0],
   UPB_SIZE(48, 56), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "opencensus.proto.trace.v1.TraceConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x003000080100000a, &upb_pom_1bt_max64b},
@@ -44,6 +49,7 @@ const upb_MiniTable opencensus__proto__trace__v1__TraceConfig_msg_init = {
   })
 };
 
+const upb_MiniTable* opencensus__proto__trace__v1__TraceConfig_msg_init_ptr = &opencensus__proto__trace__v1__TraceConfig_msg_init;
 static const upb_MiniTableField opencensus_proto_trace_v1_ProbabilitySampler__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
 };
@@ -52,12 +58,16 @@ const upb_MiniTable opencensus__proto__trace__v1__ProbabilitySampler_msg_init = 
   NULL,
   &opencensus_proto_trace_v1_ProbabilitySampler__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "opencensus.proto.trace.v1.ProbabilitySampler",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000009, &upb_psf8_1bt},
   })
 };
 
+const upb_MiniTable* opencensus__proto__trace__v1__ProbabilitySampler_msg_init_ptr = &opencensus__proto__trace__v1__ProbabilitySampler_msg_init;
 static const upb_MiniTableField opencensus_proto_trace_v1_ConstantSampler__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
@@ -66,12 +76,16 @@ const upb_MiniTable opencensus__proto__trace__v1__ConstantSampler_msg_init = {
   NULL,
   &opencensus_proto_trace_v1_ConstantSampler__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "opencensus.proto.trace.v1.ConstantSampler",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv4_1bt},
   })
 };
 
+const upb_MiniTable* opencensus__proto__trace__v1__ConstantSampler_msg_init_ptr = &opencensus__proto__trace__v1__ConstantSampler_msg_init;
 static const upb_MiniTableField opencensus_proto_trace_v1_RateLimitingSampler__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
 };
@@ -80,12 +94,16 @@ const upb_MiniTable opencensus__proto__trace__v1__RateLimitingSampler_msg_init =
   NULL,
   &opencensus_proto_trace_v1_RateLimitingSampler__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "opencensus.proto.trace.v1.RateLimitingSampler",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv8_1bt},
   })
 };
 
+const upb_MiniTable* opencensus__proto__trace__v1__RateLimitingSampler_msg_init_ptr = &opencensus__proto__trace__v1__RateLimitingSampler_msg_init;
 static const upb_MiniTable *messages_layout[4] = {
   &opencensus__proto__trace__v1__TraceConfig_msg_init,
   &opencensus__proto__trace__v1__ProbabilitySampler_msg_init,

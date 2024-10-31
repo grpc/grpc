@@ -18,15 +18,13 @@
 
 #include "src/core/xds/grpc/xds_certificate_provider.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "absl/functional/bind_front.h"
 #include "absl/log/check.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -108,13 +106,14 @@ class IdentityCertificatesWatcher final
 
 XdsCertificateProvider::XdsCertificateProvider(
     RefCountedPtr<grpc_tls_certificate_provider> root_cert_provider,
-    absl::string_view root_cert_name,
+    absl::string_view root_cert_name, bool use_system_root_certs,
     RefCountedPtr<grpc_tls_certificate_provider> identity_cert_provider,
     absl::string_view identity_cert_name,
     std::vector<StringMatcher> san_matchers)
     : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
       root_cert_provider_(std::move(root_cert_provider)),
       root_cert_name_(root_cert_name),
+      use_system_root_certs_(use_system_root_certs),
       identity_cert_provider_(std::move(identity_cert_provider)),
       identity_cert_name_(identity_cert_name),
       san_matchers_(std::move(san_matchers)),

@@ -18,17 +18,14 @@
 
 #include "src/core/lib/iomgr/timer_heap.h"
 
+#include <grpc/support/alloc.h>
+#include <gtest/gtest.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
-
 #include "absl/log/log.h"
-
-#include <grpc/support/alloc.h>
-
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 

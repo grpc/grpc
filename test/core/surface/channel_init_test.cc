@@ -20,7 +20,6 @@
 
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -37,10 +36,15 @@ const grpc_channel_filter* FilterNamed(const char* name) {
       new std::map<absl::string_view, const grpc_channel_filter*>;
   auto it = filters->find(name);
   if (it != filters->end()) return it->second;
+  static auto* name_factories =
+      new std::vector<std::unique_ptr<UniqueTypeName::Factory>>();
+  name_factories->emplace_back(std::make_unique<UniqueTypeName::Factory>(name));
+  auto unique_type_name = name_factories->back()->Create();
   return filters
-      ->emplace(name, new grpc_channel_filter{nullptr, nullptr, 0, nullptr,
-                                              nullptr, nullptr, 0, nullptr,
-                                              nullptr, nullptr, nullptr, name})
+      ->emplace(name,
+                new grpc_channel_filter{nullptr, nullptr, 0, nullptr, nullptr,
+                                        nullptr, 0, nullptr, nullptr, nullptr,
+                                        nullptr, unique_type_name})
       .first->second;
 }
 
@@ -51,7 +55,7 @@ std::vector<std::string> GetFilterNames(const ChannelInit& init,
   if (!init.CreateStack(&b)) return {};
   std::vector<std::string> names;
   for (auto f : b.stack()) {
-    names.push_back(f->name);
+    names.push_back(std::string(f->name.name()));
   }
   EXPECT_NE(names, std::vector<std::string>());
   return names;
@@ -94,7 +98,7 @@ TEST(ChannelInitTest, AfterConstraintsApply) {
   ChannelInit::Builder b;
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo"));
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("bar"))
-      .After({FilterNamed("foo")});
+      .After({FilterNamed("foo")->name});
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("baz"));
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("aaa")).Terminal();
   auto init = b.Build();
@@ -105,7 +109,7 @@ TEST(ChannelInitTest, AfterConstraintsApply) {
 TEST(ChannelInitTest, BeforeConstraintsApply) {
   ChannelInit::Builder b;
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo"))
-      .Before({FilterNamed("bar")});
+      .Before({FilterNamed("bar")->name});
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("bar"));
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("baz"));
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("aaa")).Terminal();
@@ -205,9 +209,70 @@ TEST(ChannelInitTest, CanPostProcessFilters) {
             std::vector<std::string>({"foo", "aaa", "bar"}));
 }
 
+TEST(ChannelInitTest, OrderingConstraintsAreSatisfied) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).FloatToTop();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("a")).SinkToBottom();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"c", "b", "a", "terminator"}));
+}
+
+TEST(ChannelInitTest, AmbiguousTopCrashes) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).FloatToTop();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b")).FloatToTop();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_DEATH_IF_SUPPORTED(b.Build(), "Ambiguous");
+}
+
+TEST(ChannelInitTest, ExplicitOrderingBetweenTopResolvesAmbiguity) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).FloatToTop();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b"))
+      .FloatToTop()
+      .After({FilterNamed("c")->name});
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"c", "b", "terminator"}));
+}
+
+TEST(ChannelInitTest, AmbiguousBottomCrashes) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).SinkToBottom();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b")).SinkToBottom();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_DEATH_IF_SUPPORTED(b.Build(), "Ambiguous");
+}
+
+TEST(ChannelInitTest, ExplicitOrderingBetweenBottomResolvesAmbiguity) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).SinkToBottom();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b"))
+      .SinkToBottom()
+      .After({FilterNamed("c")->name});
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"c", "b", "terminator"}));
+}
+
+TEST(ChannelInitTest, BottomCanComeBeforeTopWithExplicitOrdering) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).FloatToTop();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b"))
+      .SinkToBottom()
+      .Before({FilterNamed("c")->name});
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"b", "c", "terminator"}));
+}
+
 class TestFilter1 {
  public:
   explicit TestFilter1(int* p) : p_(p) {}
+
+  static absl::string_view TypeName() { return "TestFilter1"; }
 
   static absl::StatusOr<std::unique_ptr<TestFilter1>> Create(
       const ChannelArgs& args, ChannelFilter::Args) {
@@ -239,8 +304,9 @@ class TestFilter1 {
 };
 
 const grpc_channel_filter TestFilter1::kFilter = {
-    nullptr, nullptr, 0,       nullptr, nullptr, nullptr,
-    0,       nullptr, nullptr, nullptr, nullptr, "test_filter1"};
+    nullptr, nullptr, 0,       nullptr,
+    nullptr, nullptr, 0,       nullptr,
+    nullptr, nullptr, nullptr, GRPC_UNIQUE_TYPE_NAME_HERE("test_filter1")};
 const NoInterceptor TestFilter1::Call::OnClientInitialMetadata;
 const NoInterceptor TestFilter1::Call::OnServerInitialMetadata;
 const NoInterceptor TestFilter1::Call::OnServerTrailingMetadata;
@@ -250,6 +316,7 @@ const NoInterceptor TestFilter1::Call::OnServerToClientMessage;
 const NoInterceptor TestFilter1::Call::OnFinalize;
 
 TEST(ChannelInitTest, CanCreateFilterWithCall) {
+  grpc::testing::TestGrpcScope g;
   ChannelInit::Builder b;
   b.RegisterFilter<TestFilter1>(GRPC_CLIENT_CHANNEL);
   auto init = b.Build();
@@ -266,8 +333,12 @@ TEST(ChannelInitTest, CanCreateFilterWithCall) {
           ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
               "test"),
           1024);
-  auto call = MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr,
-                           allocator->MakeArena());
+  auto event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  auto arena = allocator->MakeArena();
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      event_engine.get());
+  auto call = MakeCallPair(Arena::MakePooledForOverwrite<ClientMetadata>(),
+                           std::move(arena));
   (*stack)->StartCall(std::move(call.handler));
   EXPECT_EQ(p, 1);
   EXPECT_EQ(handled, 1);
@@ -279,6 +350,5 @@ TEST(ChannelInitTest, CanCreateFilterWithCall) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestGrpcScope grpc_scope;
   return RUN_ALL_TESTS();
 }

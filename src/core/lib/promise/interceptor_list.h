@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
 #define GRPC_SRC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -23,19 +24,16 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/construct_destruct.h"
+#include "src/core/util/debug_location.h"
 
 namespace grpc_core {
 
@@ -87,10 +85,8 @@ class InterceptorList {
    public:
     RunPromise(size_t memory_required, Map** factory, absl::optional<T> value) {
       if (!value.has_value() || *factory == nullptr) {
-        if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-          gpr_log(GPR_DEBUG,
-                  "InterceptorList::RunPromise[%p]: create immediate", this);
-        }
+        GRPC_TRACE_VLOG(promise_primitives, 2)
+            << "InterceptorList::RunPromise[" << this << "]: create immediate";
         is_immediately_resolved_ = true;
         Construct(&result_, std::move(value));
       } else {
@@ -100,18 +96,15 @@ class InterceptorList {
                                 async_resolution_.space.get());
         async_resolution_.current_factory = *factory;
         async_resolution_.first_factory = factory;
-        if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-          gpr_log(GPR_DEBUG,
-                  "InterceptorList::RunPromise[%p]: create async; mem=%p", this,
-                  async_resolution_.space.get());
-        }
+        GRPC_TRACE_VLOG(promise_primitives, 2)
+            << "InterceptorList::RunPromise[" << this
+            << "]: create async; mem=" << async_resolution_.space.get();
       }
     }
 
     ~RunPromise() {
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-        gpr_log(GPR_DEBUG, "InterceptorList::RunPromise[%p]: destroy", this);
-      }
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "InterceptorList::RunPromise[" << this << "]: destroy";
       if (is_immediately_resolved_) {
         Destruct(&result_);
       } else {
@@ -128,10 +121,9 @@ class InterceptorList {
 
     RunPromise(RunPromise&& other) noexcept
         : is_immediately_resolved_(other.is_immediately_resolved_) {
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-        gpr_log(GPR_DEBUG, "InterceptorList::RunPromise[%p]: move from %p",
-                this, &other);
-      }
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "InterceptorList::RunPromise[" << this << "]: move from "
+          << &other;
       if (is_immediately_resolved_) {
         Construct(&result_, std::move(other.result_));
       } else {
@@ -142,10 +134,8 @@ class InterceptorList {
     RunPromise& operator=(RunPromise&& other) noexcept = delete;
 
     Poll<absl::optional<T>> operator()() {
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-        gpr_log(GPR_DEBUG, "InterceptorList::RunPromise[%p]: %s", this,
-                DebugString().c_str());
-      }
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "InterceptorList::RunPromise[" << this << "]: " << DebugString();
       if (is_immediately_resolved_) return std::move(result_);
       while (true) {
         if (*async_resolution_.first_factory == nullptr) {
@@ -160,10 +150,9 @@ class InterceptorList {
           async_resolution_.current_factory =
               async_resolution_.current_factory->next();
           if (!p->has_value()) async_resolution_.current_factory = nullptr;
-          if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-            gpr_log(GPR_DEBUG, "InterceptorList::RunPromise[%p]: %s", this,
-                    DebugString().c_str());
-          }
+          GRPC_TRACE_VLOG(promise_primitives, 2)
+              << "InterceptorList::RunPromise[" << this
+              << "]: " << DebugString();
           if (async_resolution_.current_factory == nullptr) {
             return std::move(*p);
           }
@@ -226,15 +215,13 @@ class InterceptorList {
   // Append a new map to the end of the chain.
   template <typename Fn>
   void AppendMap(Fn fn, DebugLocation from) {
-    Append(MakeMapToAdd(
-        std::move(fn), [] {}, from));
+    Append(MakeMapToAdd(std::move(fn), [] {}, from));
   }
 
   // Prepend a new map to the beginning of the chain.
   template <typename Fn>
   void PrependMap(Fn fn, DebugLocation from) {
-    Prepend(MakeMapToAdd(
-        std::move(fn), [] {}, from));
+    Prepend(MakeMapToAdd(std::move(fn), [] {}, from));
   }
 
   // Append a new map to the end of the chain, with a cleanup function to be

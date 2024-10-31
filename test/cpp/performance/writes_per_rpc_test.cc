@@ -16,13 +16,6 @@
 //
 //
 
-#include <chrono>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -30,14 +23,19 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
+#include <gtest/gtest.h>
 
+#include <chrono>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -45,6 +43,7 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/server/server.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/util/notification.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
@@ -118,14 +117,14 @@ class InProcessCHTTP2 {
     {
       grpc_core::Server* core_server =
           grpc_core::Server::FromC(server_->c_server());
-      grpc_endpoint* iomgr_server_endpoint =
-          grpc_event_engine_endpoint_create(std::move(listener_endpoint));
-      grpc_core::Transport* transport = grpc_create_chttp2_transport(
-          core_server->channel_args(), iomgr_server_endpoint,
-          /*is_client=*/false);
+      grpc_core::OrphanablePtr<grpc_endpoint> iomgr_server_endpoint(
+          grpc_event_engine_endpoint_create(std::move(listener_endpoint)));
       for (grpc_pollset* pollset : core_server->pollsets()) {
-        grpc_endpoint_add_to_pollset(iomgr_server_endpoint, pollset);
+        grpc_endpoint_add_to_pollset(iomgr_server_endpoint.get(), pollset);
       }
+      grpc_core::Transport* transport = grpc_create_chttp2_transport(
+          core_server->channel_args(), std::move(iomgr_server_endpoint),
+          /*is_client=*/false);
       CHECK(GRPC_LOG_IF_ERROR(
           "SetupTransport",
           core_server->SetupTransport(transport, nullptr,
@@ -143,9 +142,10 @@ class InProcessCHTTP2 {
       args = args.Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX)
                  .Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX)
                  .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0);
+      grpc_core::OrphanablePtr<grpc_endpoint> endpoint(
+          grpc_event_engine_endpoint_create(std::move(client_endpoint)));
       grpc_core::Transport* transport = grpc_create_chttp2_transport(
-          args, grpc_event_engine_endpoint_create(std::move(client_endpoint)),
-          /*is_client=*/true);
+          args, std::move(endpoint), /*is_client=*/true);
       CHECK(transport);
       grpc_channel* channel =
           grpc_core::ChannelCreate("target", args, GRPC_CLIENT_DIRECT_CHANNEL,

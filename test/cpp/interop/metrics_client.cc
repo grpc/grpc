@@ -16,24 +16,23 @@
 // is % allowed in string
 //
 
+#include <grpcpp/grpcpp.h>
+
 #include <memory>
 #include <string>
 
 #include "absl/flags/flag.h"
-
-#include <grpc/support/log.h>
-#include <grpcpp/grpcpp.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
 
 int kDeadlineSecs = 10;
 
 ABSL_FLAG(std::string, metrics_server_address, "localhost:8081",
-          "The metrics server addresses in the fomrat <hostname>:<port>");
+          "The metrics server addresses in the format <hostname>:<port>");
 // TODO(Capstan): Consider using absl::Duration
 ABSL_FLAG(int32_t, deadline_secs, kDeadlineSecs,
           "The deadline (in seconds) for RCP call");
@@ -90,7 +89,7 @@ int main(int argc, char** argv) {
   // The output of metrics client is in some cases programmatically parsed (for
   // example by the stress test framework). So, we do not want any of the log
   // from the grpc library appearing on stdout.
-  gpr_disable_all_logs();
+  grpc_disable_all_absl_logs();
 
   std::shared_ptr<grpc::Channel> channel(
       grpc::CreateChannel(absl::GetFlag(FLAGS_metrics_server_address),

@@ -25,6 +25,8 @@
 #ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
 #define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <atomic>
@@ -32,13 +34,10 @@
 #include <memory>
 #include <utility>
 
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
 
@@ -87,15 +86,20 @@ class BaseArenaContextTraits {
 template <typename T>
 class ArenaContextTraits : public BaseArenaContextTraits {
  public:
-  static uint16_t id() { return id_; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static uint16_t id() { return id_; }
 
  private:
   static const uint16_t id_;
 };
 
 template <typename T>
-const uint16_t ArenaContextTraits<T>::id_ = BaseArenaContextTraits::MakeId(
-    [](void* ptr) { ArenaContextType<T>::Destroy(static_cast<T*>(ptr)); });
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void DestroyArenaContext(void* p) {
+  ArenaContextType<T>::Destroy(static_cast<T*>(p));
+}
+
+template <typename T>
+const uint16_t ArenaContextTraits<T>::id_ =
+    BaseArenaContextTraits::MakeId(DestroyArenaContext<T>);
 
 template <typename T, typename A, typename B>
 struct IfArray {
@@ -128,7 +132,11 @@ class ArenaFactory : public RefCounted<ArenaFactory> {
   MemoryAllocator allocator_;
 };
 
-RefCountedPtr<ArenaFactory> SimpleArenaAllocator(size_t initial_size = 1024);
+MemoryAllocator DefaultMemoryAllocatorForSimpleArenaAllocator();
+RefCountedPtr<ArenaFactory> SimpleArenaAllocator(
+    size_t initial_size = 1024,
+    MemoryAllocator allocator =
+        DefaultMemoryAllocatorForSimpleArenaAllocator());
 
 class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
                                       arena_detail::UnrefDestroy> {
@@ -151,12 +159,10 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
 
   // Allocate \a size bytes from the arena.
   void* Alloc(size_t size) {
-    static constexpr size_t base_size =
-        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
     size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(size);
     size_t begin = total_used_.fetch_add(size, std::memory_order_relaxed);
     if (begin + size <= initial_zone_size_) {
-      return reinterpret_cast<char*>(this) + base_size + begin;
+      return reinterpret_cast<char*>(this) + begin;
     } else {
       return AllocZone(size);
     }
@@ -240,6 +246,11 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
     return PoolPtr<T>(new T(std::forward<Args>(args)...), PooledDeleter());
   }
 
+  template <typename T>
+  static PoolPtr<T> MakePooledForOverwrite() {
+    return PoolPtr<T>(new T, PooledDeleter());
+  }
+
   // Make a unique_ptr to an array of T that is allocated from the arena.
   // When the pointer is released, the memory may be reused for other
   // MakePooled(.*) calls.
@@ -271,7 +282,7 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
   // for modern promise-based code -- however legacy filter stack based code
   // often needs to access these directly.
   template <typename T>
-  T* GetContext() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* GetContext() {
     return static_cast<T*>(
         contexts()[arena_detail::ArenaContextTraits<T>::id()]);
   }
@@ -283,6 +294,14 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
       ArenaContextType<T>::Destroy(static_cast<T*>(slot));
     }
     slot = context;
+    DCHECK_EQ(GetContext<T>(), context);
+  }
+
+  static size_t ArenaOverhead() {
+    return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
+  }
+  static size_t ArenaZoneOverhead() {
+    return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Zone));
   }
 
  private:
@@ -324,7 +343,9 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
 
   void* AllocZone(size_t size);
   void Destroy() const;
-  void** contexts() { return reinterpret_cast<void**>(this + 1); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void** contexts() {
+    return reinterpret_cast<void**>(this + 1);
+  }
 
   // Keep track of the total used size. We use this in our call sizing
   // hysteresis.
@@ -356,8 +377,12 @@ namespace promise_detail {
 template <typename T>
 class Context<T, absl::void_t<decltype(ArenaContextType<T>::Destroy)>> {
  public:
-  static T* get() { return GetContext<Arena>()->GetContext<T>(); }
-  static void set(T* value) { GetContext<Arena>()->SetContext(value); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static T* get() {
+    return GetContext<Arena>()->GetContext<T>();
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static void set(T* value) {
+    GetContext<Arena>()->SetContext(value);
+  }
 };
 
 }  // namespace promise_detail

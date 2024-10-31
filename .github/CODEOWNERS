@@ -1,5 +1,6 @@
 /bazel/** @veblush @gnossen
 /bazel/experiments.yaml
+/bazel/rollouts.yaml
 /cmake/** @veblush @apolcyn
 /src/core/client_channel/** @markdroth
 /src/core/ext/transport/chttp2/transport/** @ctiller

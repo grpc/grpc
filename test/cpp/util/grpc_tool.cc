@@ -18,6 +18,14 @@
 
 #include "test/cpp/util/grpc_tool.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/string_ref.h>
+
 #include <cstdio>
 #include <fstream>
 #include <iostream>
@@ -31,15 +39,6 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/string_ref.h>
-
 #include "test/cpp/util/cli_call.h"
 #include "test/cpp/util/proto_file_parser.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
@@ -653,7 +652,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
           fprintf(stderr, "Request sent.\n");
         }
       } else {
-        if (line.length() == 0) {
+        if (line.empty()) {
           request_text = request_ss.str();
           request_ss.str(std::string());
           request_ss.clear();
@@ -786,7 +785,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
             }
           }
         } else {
-          if (line.length() == 0) {
+          if (line.empty()) {
             request_text = request_ss.str();
             request_ss.str(std::string());
             request_ss.clear();

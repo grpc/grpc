@@ -19,6 +19,10 @@
 #ifndef GRPCPP_EXT_OTEL_PLUGIN_H
 #define GRPCPP_EXT_OTEL_PLUGIN_H
 
+#include <grpc/support/metrics.h>
+#include <grpc/support/port_platform.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -26,23 +30,34 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "opentelemetry/metrics/meter_provider.h"
 
-#include <grpc/support/metrics.h>
-#include <grpc/support/port_platform.h>
-
 namespace grpc {
-
 namespace internal {
 class OpenTelemetryPluginBuilderImpl;
-class OpenTelemetryPlugin;
 }  // namespace internal
 
 class OpenTelemetryPluginOption {
  public:
   virtual ~OpenTelemetryPluginOption() = default;
 };
+
+namespace experimental {
+/// EXPERIMENTAL API
+class OpenTelemetryPlugin {
+ public:
+  virtual ~OpenTelemetryPlugin() = default;
+  /// EXPERIMENTAL API
+  /// Adds this OpenTelemetryPlugin to the channel args \a args.
+  virtual void AddToChannelArguments(grpc::ChannelArguments* args) = 0;
+  /// EXPERIMENTAL API
+  /// Adds this OpenTelemetryPlugin to the channel arguments that will be used
+  /// to create the server through \a builder.
+  virtual void AddToServerBuilder(grpc::ServerBuilder* builder) = 0;
+};
+}  // namespace experimental
 
 /// The most common way to use this API is -
 ///
@@ -113,8 +128,8 @@ class OpenTelemetryPluginBuilder {
   /// If set, \a generic_method_attribute_filter is called per call with a
   /// generic method type to decide whether to record the method name or to
   /// replace it with "other". Non-generic or pre-registered methods remain
-  /// unaffected. If not set, by default, generic method names are replaced with
-  /// "other" when recording metrics.
+  /// unaffected. If not set, by default, generic method names are replaced
+  /// with "other" when recording metrics.
   OpenTelemetryPluginBuilder& SetGenericMethodAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
           generic_method_attribute_filter);
@@ -139,9 +154,16 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& SetChannelScopeFilter(
       absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
           channel_scope_filter);
-  /// Registers a global plugin that acts on all channels and servers running on
-  /// the process.
+  /// Builds and registers a global plugin that acts on all channels and servers
+  /// running on the process. Must be called no more than once and must not be
+  /// called if Build() is called.
   absl::Status BuildAndRegisterGlobal();
+  /// EXPERIMENTAL API
+  /// Builds an open telemetry plugin, returns the plugin object when succeeded
+  /// or an error status when failed. Must be called no more than once and must
+  /// not be called if BuildAndRegisterGlobal() is called.
+  GRPC_MUST_USE_RESULT
+  absl::StatusOr<std::shared_ptr<experimental::OpenTelemetryPlugin>> Build();
 
  private:
   std::unique_ptr<internal::OpenTelemetryPluginBuilderImpl> impl_;

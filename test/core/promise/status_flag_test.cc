@@ -38,6 +38,11 @@ TEST(StatusFlagTest, Basics) {
   EXPECT_FALSE(IsStatusOk(Failure{}));
 }
 
+TEST(StatusFlagTest, StringifyValueOrFailure) {
+  EXPECT_EQ(absl::StrCat(ValueOrFailure<int>(42)), "Success(42)");
+  EXPECT_EQ(absl::StrCat(ValueOrFailure<int>(Failure{})), "Failure");
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

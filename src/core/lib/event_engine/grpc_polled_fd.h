@@ -15,10 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_GRPC_POLLED_FD_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_GRPC_POLLED_FD_H
 
-#include <memory>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
+
+#include <memory>
 
 #if GRPC_ARES == 1
 
@@ -26,8 +26,7 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
-
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {

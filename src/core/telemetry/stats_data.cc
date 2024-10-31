@@ -16,9 +16,8 @@
 
 #include "src/core/telemetry/stats_data.h"
 
-#include <stdint.h>
-
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
 
 namespace grpc_core {
 namespace {
@@ -106,6 +105,20 @@ Histogram_10000_20 operator-(const Histogram_10000_20& left,
   }
   return result;
 }
+void HistogramCollector_1800000_40::Collect(
+    Histogram_1800000_40* result) const {
+  for (int i = 0; i < 40; i++) {
+    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
+  }
+}
+Histogram_1800000_40 operator-(const Histogram_1800000_40& left,
+                               const Histogram_1800000_40& right) {
+  Histogram_1800000_40 result;
+  for (int i = 0; i < 40; i++) {
+    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
+  }
+  return result;
+}
 const absl::string_view
     GlobalStats::counter_name[static_cast<int>(Counter::COUNT)] = {
         "client_calls_created",
@@ -114,6 +127,9 @@ const absl::string_view
         "client_subchannels_created",
         "server_channels_created",
         "insecure_connections_created",
+        "rq_connections_dropped",
+        "rq_calls_dropped",
+        "rq_calls_rejected",
         "syscall_write",
         "syscall_read",
         "tcp_read_alloc_8k",
@@ -123,6 +139,8 @@ const absl::string_view
         "http2_writes_begun",
         "http2_transport_stalls",
         "http2_stream_stalls",
+        "http2_hpack_hits",
+        "http2_hpack_misses",
         "cq_pluck_creates",
         "cq_next_creates",
         "cq_callback_creates",
@@ -149,6 +167,9 @@ const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     "Number of client subchannels created",
     "Number of server channels created",
     "Number of insecure connections created",
+    "Number of connections dropped due to resource quota exceeded",
+    "Number of calls dropped due to resource quota exceeded",
+    "Number of calls rejected (never started) due to resource quota exceeded",
     "Number of write syscalls (or equivalent - eg sendmsg) made by this "
     "process",
     "Number of read syscalls (or equivalent - eg recvmsg) made by this process",
@@ -161,6 +182,8 @@ const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     "control window",
     "Number of times sending was completely stalled by the stream flow control "
     "window",
+    "Number of HPACK cache hits",
+    "Number of HPACK cache misses (entries added but never used)",
     "Number of completion queues created for cq_pluck (indicates sync api "
     "usage)",
     "Number of completion queues created for cq_next (indicates cq async api "
@@ -192,6 +215,7 @@ const absl::string_view
         "tcp_read_offer_iov_size",
         "http2_send_message_size",
         "http2_metadata_size",
+        "http2_hpack_entry_lifetime",
         "wrr_subchannel_list_size",
         "wrr_subchannel_ready_size",
         "work_serializer_run_time_ms",
@@ -223,6 +247,7 @@ const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
     "Number of byte segments offered to each syscall_read",
     "Size of messages received by HTTP2 transport",
     "Number of bytes consumed by metadata, according to HPACK accounting rules",
+    "Lifetime of HPACK entries in the cache (in milliseconds)",
     "Number of subchannels in a subchannel list at picker creation time",
     "Number of READY subchannels in a subchannel list at picker creation time",
     "Number of milliseconds work serializers run for",
@@ -278,6 +303,15 @@ const int kStatsTable10[21] = {0,   1,    2,    4,    7,    12,   19,
 const uint8_t kStatsTable11[23] = {3,  3,  4,  5,  5,  6,  7,  8,
                                    9,  9,  10, 11, 12, 12, 13, 14,
                                    15, 15, 16, 17, 18, 18, 19};
+const int kStatsTable12[41] = {
+    0,      1,      2,      3,       5,      8,      12,     18,     26,
+    37,     53,     76,     108,     153,    217,    308,    436,    617,
+    873,    1235,   1748,   2473,    3499,   4950,   7003,   9907,   14015,
+    19825,  28044,  39670,  56116,   79379,  112286, 158835, 224680, 317821,
+    449574, 635945, 899575, 1272492, 1800000};
+const uint8_t kStatsTable13[37] = {
+    4,  5,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+    22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39};
 }  // namespace
 int Histogram_100000_20::BucketFor(int value) {
   if (value < 3) {
@@ -405,6 +439,29 @@ int Histogram_10000_20::BucketFor(int value) {
     }
   }
 }
+int Histogram_1800000_40::BucketFor(int value) {
+  if (value < 4) {
+    if (value < 0) {
+      return 0;
+    } else {
+      return value;
+    }
+  } else {
+    if (value < 1048577) {
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          kStatsTable13[((val.uint - 4616189618054758400ull) >> 51)];
+      return bucket - (value < kStatsTable12[bucket]);
+    } else {
+      if (value < 1272492) {
+        return 38;
+      } else {
+        return 39;
+      }
+    }
+  }
+}
 GlobalStats::GlobalStats()
     : client_calls_created{0},
       server_calls_created{0},
@@ -412,6 +469,9 @@ GlobalStats::GlobalStats()
       client_subchannels_created{0},
       server_channels_created{0},
       insecure_connections_created{0},
+      rq_connections_dropped{0},
+      rq_calls_dropped{0},
+      rq_calls_rejected{0},
       syscall_write{0},
       syscall_read{0},
       tcp_read_alloc_8k{0},
@@ -421,6 +481,8 @@ GlobalStats::GlobalStats()
       http2_writes_begun{0},
       http2_transport_stalls{0},
       http2_stream_stalls{0},
+      http2_hpack_hits{0},
+      http2_hpack_misses{0},
       cq_pluck_creates{0},
       cq_next_creates{0},
       cq_callback_creates{0},
@@ -466,6 +528,9 @@ HistogramView GlobalStats::histogram(Histogram which) const {
     case Histogram::kHttp2MetadataSize:
       return HistogramView{&Histogram_65536_26::BucketFor, kStatsTable2, 26,
                            http2_metadata_size.buckets()};
+    case Histogram::kHttp2HpackEntryLifetime:
+      return HistogramView{&Histogram_1800000_40::BucketFor, kStatsTable12, 40,
+                           http2_hpack_entry_lifetime.buckets()};
     case Histogram::kWrrSubchannelListSize:
       return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable10, 20,
                            wrr_subchannel_list_size.buckets()};
@@ -544,6 +609,12 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
         data.server_channels_created.load(std::memory_order_relaxed);
     result->insecure_connections_created +=
         data.insecure_connections_created.load(std::memory_order_relaxed);
+    result->rq_connections_dropped +=
+        data.rq_connections_dropped.load(std::memory_order_relaxed);
+    result->rq_calls_dropped +=
+        data.rq_calls_dropped.load(std::memory_order_relaxed);
+    result->rq_calls_rejected +=
+        data.rq_calls_rejected.load(std::memory_order_relaxed);
     result->syscall_write += data.syscall_write.load(std::memory_order_relaxed);
     result->syscall_read += data.syscall_read.load(std::memory_order_relaxed);
     result->tcp_read_alloc_8k +=
@@ -560,6 +631,10 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
         data.http2_transport_stalls.load(std::memory_order_relaxed);
     result->http2_stream_stalls +=
         data.http2_stream_stalls.load(std::memory_order_relaxed);
+    result->http2_hpack_hits +=
+        data.http2_hpack_hits.load(std::memory_order_relaxed);
+    result->http2_hpack_misses +=
+        data.http2_hpack_misses.load(std::memory_order_relaxed);
     result->cq_pluck_creates +=
         data.cq_pluck_creates.load(std::memory_order_relaxed);
     result->cq_next_creates +=
@@ -598,6 +673,8 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
     data.tcp_read_offer_iov_size.Collect(&result->tcp_read_offer_iov_size);
     data.http2_send_message_size.Collect(&result->http2_send_message_size);
     data.http2_metadata_size.Collect(&result->http2_metadata_size);
+    data.http2_hpack_entry_lifetime.Collect(
+        &result->http2_hpack_entry_lifetime);
     data.wrr_subchannel_list_size.Collect(&result->wrr_subchannel_list_size);
     data.wrr_subchannel_ready_size.Collect(&result->wrr_subchannel_ready_size);
     data.work_serializer_run_time_ms.Collect(
@@ -653,6 +730,10 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
       server_channels_created - other.server_channels_created;
   result->insecure_connections_created =
       insecure_connections_created - other.insecure_connections_created;
+  result->rq_connections_dropped =
+      rq_connections_dropped - other.rq_connections_dropped;
+  result->rq_calls_dropped = rq_calls_dropped - other.rq_calls_dropped;
+  result->rq_calls_rejected = rq_calls_rejected - other.rq_calls_rejected;
   result->syscall_write = syscall_write - other.syscall_write;
   result->syscall_read = syscall_read - other.syscall_read;
   result->tcp_read_alloc_8k = tcp_read_alloc_8k - other.tcp_read_alloc_8k;
@@ -664,6 +745,8 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
   result->http2_transport_stalls =
       http2_transport_stalls - other.http2_transport_stalls;
   result->http2_stream_stalls = http2_stream_stalls - other.http2_stream_stalls;
+  result->http2_hpack_hits = http2_hpack_hits - other.http2_hpack_hits;
+  result->http2_hpack_misses = http2_hpack_misses - other.http2_hpack_misses;
   result->cq_pluck_creates = cq_pluck_creates - other.cq_pluck_creates;
   result->cq_next_creates = cq_next_creates - other.cq_next_creates;
   result->cq_callback_creates = cq_callback_creates - other.cq_callback_creates;
@@ -695,6 +778,8 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
   result->http2_send_message_size =
       http2_send_message_size - other.http2_send_message_size;
   result->http2_metadata_size = http2_metadata_size - other.http2_metadata_size;
+  result->http2_hpack_entry_lifetime =
+      http2_hpack_entry_lifetime - other.http2_hpack_entry_lifetime;
   result->wrr_subchannel_list_size =
       wrr_subchannel_list_size - other.wrr_subchannel_list_size;
   result->wrr_subchannel_ready_size =

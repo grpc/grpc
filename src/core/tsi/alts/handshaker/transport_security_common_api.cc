@@ -18,18 +18,17 @@
 
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/log/log.h"
 #include "upb/mem/arena.hpp"
-
-#include <grpc/support/port_platform.h>
 
 bool grpc_gcp_rpc_protocol_versions_set_max(
     grpc_gcp_rpc_protocol_versions* versions, uint32_t max_major,
     uint32_t max_minor) {
   if (versions == nullptr) {
-    gpr_log(GPR_ERROR,
-            "versions is nullptr in "
-            "grpc_gcp_rpc_protocol_versions_set_max().");
+    LOG(ERROR)
+        << "versions is nullptr in grpc_gcp_rpc_protocol_versions_set_max().";
     return false;
   }
   versions->max_rpc_version.major = max_major;
@@ -41,9 +40,8 @@ bool grpc_gcp_rpc_protocol_versions_set_min(
     grpc_gcp_rpc_protocol_versions* versions, uint32_t min_major,
     uint32_t min_minor) {
   if (versions == nullptr) {
-    gpr_log(GPR_ERROR,
-            "versions is nullptr in "
-            "grpc_gcp_rpc_protocol_versions_set_min().");
+    LOG(ERROR)
+        << "versions is nullptr in grpc_gcp_rpc_protocol_versions_set_min().";
     return false;
   }
   versions->min_rpc_version.major = min_major;
@@ -54,9 +52,8 @@ bool grpc_gcp_rpc_protocol_versions_set_min(
 bool grpc_gcp_rpc_protocol_versions_encode(
     const grpc_gcp_rpc_protocol_versions* versions, grpc_slice* slice) {
   if (versions == nullptr || slice == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to "
-            "grpc_gcp_rpc_protocol_versions_encode().");
+    LOG(ERROR) << "Invalid nullptr arguments to "
+                  "grpc_gcp_rpc_protocol_versions_encode().";
     return false;
   }
   upb::Arena arena;
@@ -72,9 +69,8 @@ bool grpc_gcp_rpc_protocol_versions_encode(
     const grpc_gcp_RpcProtocolVersions* versions, upb_Arena* arena,
     grpc_slice* slice) {
   if (versions == nullptr || arena == nullptr || slice == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to "
-            "grpc_gcp_rpc_protocol_versions_encode().");
+    LOG(ERROR) << "Invalid nullptr arguments to "
+                  "grpc_gcp_rpc_protocol_versions_encode().";
     return false;
   }
   size_t buf_length;
@@ -90,9 +86,8 @@ bool grpc_gcp_rpc_protocol_versions_encode(
 bool grpc_gcp_rpc_protocol_versions_decode(
     const grpc_slice& slice, grpc_gcp_rpc_protocol_versions* versions) {
   if (versions == nullptr) {
-    gpr_log(GPR_ERROR,
-            "version is nullptr in "
-            "grpc_gcp_rpc_protocol_versions_decode().");
+    LOG(ERROR)
+        << "version is nullptr in grpc_gcp_rpc_protocol_versions_decode().";
     return false;
   }
   upb::Arena arena;
@@ -157,9 +152,7 @@ bool grpc_gcp_rpc_protocol_versions_copy(
     grpc_gcp_rpc_protocol_versions* dst) {
   if ((src == nullptr && dst != nullptr) ||
       (src != nullptr && dst == nullptr)) {
-    gpr_log(GPR_ERROR,
-            "Invalid arguments to "
-            "grpc_gcp_rpc_protocol_versions_copy().");
+    LOG(ERROR) << "Invalid arguments to grpc_gcp_rpc_protocol_versions_copy().";
     return false;
   }
   if (src == nullptr) {
@@ -197,9 +190,8 @@ bool grpc_gcp_rpc_protocol_versions_check(
     const grpc_gcp_rpc_protocol_versions* peer_versions,
     grpc_gcp_rpc_protocol_versions_version* highest_common_version) {
   if (local_versions == nullptr || peer_versions == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid arguments to "
-            "grpc_gcp_rpc_protocol_versions_check().");
+    LOG(ERROR)
+        << "Invalid arguments to grpc_gcp_rpc_protocol_versions_check().";
     return false;
   }
   // max_common_version is MIN(local.max, peer.max)

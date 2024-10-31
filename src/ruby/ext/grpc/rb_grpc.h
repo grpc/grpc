@@ -22,6 +22,7 @@
 #include <ruby/ruby.h>
 
 #include <grpc/support/time.h>
+#include <stdlib.h>
 
 /* grpc_rb_mGrpcCore is the module containing the ruby wrapper GRPC classes. */
 extern VALUE grpc_rb_mGrpcCore;
@@ -77,5 +78,11 @@ void grpc_rb_fork_unsafe_begin();
 void grpc_rb_fork_unsafe_end();
 
 void grpc_ruby_init();
+
+#define GRPC_RUBY_ASSERT(x)                                       \
+  if (!(x)) {                                                     \
+    fprintf(stderr, "%s:%d assert failed\n", __FILE__, __LINE__); \
+    abort();                                                      \
+  }
 
 #endif /* GRPC_RB_H_ */

@@ -19,6 +19,8 @@
 #ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_CALL_TRACER_H
 #define GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_CALL_TRACER_H
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 
 #include <memory>
@@ -28,11 +30,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -41,18 +38,19 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
 namespace internal {
 
-class OpenTelemetryPlugin::ClientCallTracer
+class OpenTelemetryPluginImpl::ClientCallTracer
     : public grpc_core::ClientCallTracer {
  public:
   class CallAttemptTracer
       : public grpc_core::ClientCallTracer::CallAttemptTracer {
    public:
-    CallAttemptTracer(const OpenTelemetryPlugin::ClientCallTracer* parent,
+    CallAttemptTracer(const OpenTelemetryPluginImpl::ClientCallTracer* parent,
                       bool arena_allocated);
 
     std::string TraceId() override {
@@ -84,8 +82,12 @@ class OpenTelemetryPlugin::ClientCallTracer
     void RecordReceivedDecompressedMessage(
         const grpc_core::SliceBuffer& recv_decompressed_message) override;
     void RecordReceivedTrailingMetadata(
-        absl::Status status, grpc_metadata_batch* /*recv_trailing_metadata*/,
+        absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) override;
+    void RecordIncomingBytes(
+        const TransportByteSize& transport_byte_size) override;
+    void RecordOutgoingBytes(
+        const TransportByteSize& transport_byte_size) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd(const gpr_timespec& /*latency*/) override;
     void RecordAnnotation(absl::string_view /*annotation*/) override;
@@ -109,12 +111,18 @@ class OpenTelemetryPlugin::ClientCallTracer
     std::vector<std::unique_ptr<LabelsIterable>>
         injected_labels_from_plugin_options_;
     bool is_trailers_only_ = false;
+    // TODO(roth, ctiller): Won't need atomic here once chttp2 is migrated
+    // to promises, after which we can ensure that the transport invokes
+    // the RecordIncomingBytes() and RecordOutgoingBytes() methods inside
+    // the call's party.
+    std::atomic<uint64_t> incoming_bytes_{0};
+    std::atomic<uint64_t> outgoing_bytes_{0};
   };
 
   ClientCallTracer(
       const grpc_core::Slice& path, grpc_core::Arena* arena,
-      bool registered_method, OpenTelemetryPlugin* otel_plugin,
-      std::shared_ptr<OpenTelemetryPlugin::ClientScopeConfig> scope_config);
+      bool registered_method, OpenTelemetryPluginImpl* otel_plugin,
+      std::shared_ptr<OpenTelemetryPluginImpl::ClientScopeConfig> scope_config);
   ~ClientCallTracer() override;
 
   std::string TraceId() override {
@@ -143,8 +151,8 @@ class OpenTelemetryPlugin::ClientCallTracer
   grpc_core::Slice path_;
   grpc_core::Arena* arena_;
   const bool registered_method_;
-  OpenTelemetryPlugin* otel_plugin_;
-  std::shared_ptr<OpenTelemetryPlugin::ClientScopeConfig> scope_config_;
+  OpenTelemetryPluginImpl* otel_plugin_;
+  std::shared_ptr<OpenTelemetryPluginImpl::ClientScopeConfig> scope_config_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;

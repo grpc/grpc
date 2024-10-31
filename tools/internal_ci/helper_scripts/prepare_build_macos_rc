@@ -176,6 +176,14 @@ then
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.12.0rc2-macos11.pkg -target /
   fi
+
+  # Install Python 3.13 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.13" ]; then
+    time curl -O https://www.python.org/ftp/python/3.13.0/python-3.13.0rc2-macos11.pkg
+    echo "75579065f9ee5c25207353fbe0f79275123ff556  python-3.13.0rc2-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.13.0rc2-macos11.pkg -target /
+  fi
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]

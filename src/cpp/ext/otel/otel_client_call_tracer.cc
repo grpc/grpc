@@ -18,6 +18,9 @@
 
 #include "src/cpp/ext/otel/otel_client_call_tracer.h"
 
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 
 #include <array>
@@ -38,22 +41,17 @@
 #include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
-
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
@@ -61,11 +59,12 @@ namespace grpc {
 namespace internal {
 
 //
-// OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer
+// OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer
 //
 
-OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::CallAttemptTracer(
-    const OpenTelemetryPlugin::ClientCallTracer* parent, bool arena_allocated)
+OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::CallAttemptTracer(
+    const OpenTelemetryPluginImpl::ClientCallTracer* parent,
+    bool arena_allocated)
     : parent_(parent),
       arena_allocated_(arena_allocated),
       start_time_(absl::Now()) {
@@ -86,7 +85,7 @@ OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::CallAttemptTracer(
   }
 }
 
-void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     RecordReceivedInitialMetadata(grpc_metadata_batch* recv_initial_metadata) {
   if (recv_initial_metadata != nullptr &&
       recv_initial_metadata->get(grpc_core::GrpcTrailersOnly())
@@ -97,7 +96,7 @@ void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
   PopulateLabelInjectors(recv_initial_metadata);
 }
 
-void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
   parent_->scope_config_->active_plugin_options_view().ForEach(
       [&](const InternalOpenTelemetryPluginOption& plugin_option,
@@ -111,33 +110,33 @@ void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
       parent_->otel_plugin_);
 }
 
-void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     RecordSendMessage(const grpc_core::SliceBuffer& send_message) {
   RecordAnnotation(
       absl::StrFormat("Send message: %ld bytes", send_message.Length()));
 }
 
-void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     RecordSendCompressedMessage(
         const grpc_core::SliceBuffer& send_compressed_message) {
   RecordAnnotation(absl::StrFormat("Send compressed message: %ld bytes",
                                    send_compressed_message.Length()));
 }
 
-void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     RecordReceivedMessage(const grpc_core::SliceBuffer& recv_message) {
   RecordAnnotation(
       absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
 }
 
-void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     RecordReceivedDecompressedMessage(
         const grpc_core::SliceBuffer& recv_decompressed_message) {
   RecordAnnotation(absl::StrFormat("Received decompressed message: %ld bytes",
                                    recv_decompressed_message.Length()));
 }
 
-void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) {
@@ -161,28 +160,41 @@ void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
         absl::ToDoubleSeconds(absl::Now() - start_time_), labels,
         opentelemetry::context::Context{});
   }
+  uint64_t outgoing_bytes = 0;
+  uint64_t incoming_bytes = 0;
+  if (grpc_core::IsCallTracerInTransportEnabled()) {
+    outgoing_bytes = outgoing_bytes_.load();
+    incoming_bytes = incoming_bytes_.load();
+  } else if (transport_stream_stats != nullptr) {
+    outgoing_bytes = transport_stream_stats->outgoing.data_bytes;
+    incoming_bytes = transport_stream_stats->incoming.data_bytes;
+  }
   if (parent_->otel_plugin_->client_.attempt
           .sent_total_compressed_message_size != nullptr) {
     parent_->otel_plugin_->client_.attempt.sent_total_compressed_message_size
-        ->Record(transport_stream_stats != nullptr
-                     ? transport_stream_stats->outgoing.data_bytes
-                     : 0,
-                 labels, opentelemetry::context::Context{});
+        ->Record(outgoing_bytes, labels, opentelemetry::context::Context{});
   }
   if (parent_->otel_plugin_->client_.attempt
           .rcvd_total_compressed_message_size != nullptr) {
     parent_->otel_plugin_->client_.attempt.rcvd_total_compressed_message_size
-        ->Record(transport_stream_stats != nullptr
-                     ? transport_stream_stats->incoming.data_bytes
-                     : 0,
-                 labels, opentelemetry::context::Context{});
+        ->Record(incoming_bytes, labels, opentelemetry::context::Context{});
   }
 }
 
-void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::RecordCancel(
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
+    RecordIncomingBytes(const TransportByteSize& transport_byte_size) {
+  incoming_bytes_.fetch_add(transport_byte_size.data_bytes);
+}
+
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
+    RecordOutgoingBytes(const TransportByteSize& transport_byte_size) {
+  outgoing_bytes_.fetch_add(transport_byte_size.data_bytes);
+}
+
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::RecordCancel(
     absl::Status /*cancel_error*/) {}
 
-void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::RecordEnd(
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::RecordEnd(
     const gpr_timespec& /*latency*/) {
   if (arena_allocated_) {
     this->~CallAttemptTracer();
@@ -191,29 +203,30 @@ void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::RecordEnd(
   }
 }
 
-void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::RecordAnnotation(
-    absl::string_view /*annotation*/) {
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
+    RecordAnnotation(absl::string_view /*annotation*/) {
   // Not implemented
 }
 
-void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::RecordAnnotation(
-    const Annotation& /*annotation*/) {
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
+    RecordAnnotation(const Annotation& /*annotation*/) {
   // Not implemented
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface>
-OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::StartNewTcpTrace() {
+std::shared_ptr<grpc_core::TcpTracerInterface> OpenTelemetryPluginImpl::
+    ClientCallTracer::CallAttemptTracer::StartNewTcpTrace() {
   // No TCP trace.
   return nullptr;
 }
 
-void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::SetOptionalLabel(
-    OptionalLabelKey key, grpc_core::RefCountedStringValue value) {
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
+    SetOptionalLabel(OptionalLabelKey key,
+                     grpc_core::RefCountedStringValue value) {
   CHECK(key < OptionalLabelKey::kSize);
   optional_labels_[static_cast<size_t>(key)] = std::move(value);
 }
 
-void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     PopulateLabelInjectors(grpc_metadata_batch* metadata) {
   parent_->scope_config_->active_plugin_options_view().ForEach(
       [&](const InternalOpenTelemetryPluginOption& plugin_option,
@@ -229,23 +242,23 @@ void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
 }
 
 //
-// OpenTelemetryPlugin::ClientCallTracer
+// OpenTelemetryPluginImpl::ClientCallTracer
 //
 
-OpenTelemetryPlugin::ClientCallTracer::ClientCallTracer(
+OpenTelemetryPluginImpl::ClientCallTracer::ClientCallTracer(
     const grpc_core::Slice& path, grpc_core::Arena* arena,
-    bool registered_method, OpenTelemetryPlugin* otel_plugin,
-    std::shared_ptr<OpenTelemetryPlugin::ClientScopeConfig> scope_config)
+    bool registered_method, OpenTelemetryPluginImpl* otel_plugin,
+    std::shared_ptr<OpenTelemetryPluginImpl::ClientScopeConfig> scope_config)
     : path_(path.Ref()),
       arena_(arena),
       registered_method_(registered_method),
       otel_plugin_(otel_plugin),
       scope_config_(std::move(scope_config)) {}
 
-OpenTelemetryPlugin::ClientCallTracer::~ClientCallTracer() {}
+OpenTelemetryPluginImpl::ClientCallTracer::~ClientCallTracer() {}
 
-OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer*
-OpenTelemetryPlugin::ClientCallTracer::StartNewAttempt(
+OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer*
+OpenTelemetryPluginImpl::ClientCallTracer::StartNewAttempt(
     bool is_transparent_retry) {
   // We allocate the first attempt on the arena and all subsequent attempts
   // on the heap, so that in the common case we don't require a heap
@@ -268,7 +281,7 @@ OpenTelemetryPlugin::ClientCallTracer::StartNewAttempt(
   return new CallAttemptTracer(this, /*arena_allocated=*/false);
 }
 
-absl::string_view OpenTelemetryPlugin::ClientCallTracer::MethodForStats()
+absl::string_view OpenTelemetryPluginImpl::ClientCallTracer::MethodForStats()
     const {
   absl::string_view method = absl::StripPrefix(path_.as_string_view(), "/");
   if (registered_method_ ||
@@ -279,12 +292,12 @@ absl::string_view OpenTelemetryPlugin::ClientCallTracer::MethodForStats()
   return "other";
 }
 
-void OpenTelemetryPlugin::ClientCallTracer::RecordAnnotation(
+void OpenTelemetryPluginImpl::ClientCallTracer::RecordAnnotation(
     absl::string_view /*annotation*/) {
   // Not implemented
 }
 
-void OpenTelemetryPlugin::ClientCallTracer::RecordAnnotation(
+void OpenTelemetryPluginImpl::ClientCallTracer::RecordAnnotation(
     const Annotation& /*annotation*/) {
   // Not implemented
 }

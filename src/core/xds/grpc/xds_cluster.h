@@ -17,35 +17,41 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_CLUSTER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_CLUSTER_H
 
-#include <stdint.h>
-
-#include <set>
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "envoy/config/cluster/v3/cluster.upbdefs.h"
-#include "envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h"
-#include "envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h"
-#include "envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.h"
-#include "upb/reflection/def.h"
-
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
 #include "src/core/util/json/json.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_health_status.h"
-#include "src/core/xds/xds_client/xds_bootstrap.h"
-#include "src/core/xds/xds_client/xds_client.h"
+#include "src/core/xds/grpc/xds_metadata.h"
+#include "src/core/xds/grpc/xds_server_grpc.h"
+#include "src/core/xds/xds_client/xds_backend_metric_propagation.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
 
 namespace grpc_core {
+
+inline bool LrsServersEqual(
+    const std::shared_ptr<const GrpcXdsServer>& lrs_server1,
+    const std::shared_ptr<const GrpcXdsServer>& lrs_server2) {
+  if (lrs_server1 == nullptr) return lrs_server2 == nullptr;
+  if (lrs_server2 == nullptr) return false;
+  // Neither one is null, so compare them.
+  return *lrs_server1 == *lrs_server2;
+}
+
+inline bool LrsBackendMetricPropagationEqual(
+    const RefCountedPtr<const BackendMetricPropagation>& p1,
+    const RefCountedPtr<const BackendMetricPropagation>& p2) {
+  if (p1 == nullptr) return p2 == nullptr;
+  if (p2 == nullptr) return false;
+  // Neither one is null, so compare them.
+  return *p1 == *p2;
+}
 
 struct XdsClusterResource : public XdsResourceType::ResourceData {
   struct Eds {
@@ -83,8 +89,12 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
   // Note: Remaining fields are not used for aggregate clusters.
 
   // The LRS server to use for load reporting.
-  // If not set, load reporting will be disabled.
-  absl::optional<GrpcXdsBootstrap::GrpcXdsServer> lrs_load_reporting_server;
+  // If null, load reporting will be disabled.
+  std::shared_ptr<const GrpcXdsServer> lrs_load_reporting_server;
+  // The set of metrics to propagate from ORCA to LRS.
+  RefCountedPtr<const BackendMetricPropagation> lrs_backend_metric_propagation;
+
+  bool use_http_connect = false;
 
   // Tls Context used by clients
   CommonTlsContext common_tls_context;
@@ -100,43 +110,24 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   XdsHealthStatusSet override_host_statuses;
 
-  RefCountedStringValue service_telemetry_label;
-  RefCountedStringValue namespace_telemetry_label;
+  XdsMetadataMap metadata;
 
   bool operator==(const XdsClusterResource& other) const {
     return type == other.type && lb_policy_config == other.lb_policy_config &&
-           lrs_load_reporting_server == other.lrs_load_reporting_server &&
+           LrsServersEqual(lrs_load_reporting_server,
+                           other.lrs_load_reporting_server) &&
+           LrsBackendMetricPropagationEqual(
+               lrs_backend_metric_propagation,
+               other.lrs_backend_metric_propagation) &&
            common_tls_context == other.common_tls_context &&
            connection_idle_timeout == other.connection_idle_timeout &&
            max_concurrent_requests == other.max_concurrent_requests &&
            outlier_detection == other.outlier_detection &&
            override_host_statuses == other.override_host_statuses &&
-           service_telemetry_label == other.service_telemetry_label &&
-           namespace_telemetry_label == other.namespace_telemetry_label;
+           metadata == other.metadata;
   }
 
   std::string ToString() const;
-};
-
-class XdsClusterResourceType
-    : public XdsResourceTypeImpl<XdsClusterResourceType, XdsClusterResource> {
- public:
-  absl::string_view type_url() const override {
-    return "envoy.config.cluster.v3.Cluster";
-  }
-
-  DecodeResult Decode(const XdsResourceType::DecodeContext& context,
-                      absl::string_view serialized_resource) const override;
-
-  bool AllResourcesRequiredInSotW() const override { return true; }
-
-  void InitUpbSymtab(XdsClient*, upb_DefPool* symtab) const override {
-    envoy_config_cluster_v3_Cluster_getmsgdef(symtab);
-    envoy_extensions_clusters_aggregate_v3_ClusterConfig_getmsgdef(symtab);
-    envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_getmsgdef(
-        symtab);
-    envoy_extensions_upstreams_http_v3_HttpProtocolOptions_getmsgdef(symtab);
-  }
 };
 
 }  // namespace grpc_core

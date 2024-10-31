@@ -16,14 +16,13 @@
 //
 //
 
+#include <grpc/status.h>
+
 #include <memory>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 
@@ -67,12 +66,10 @@ void CancelAfterClientDone(
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelAfterClientDone) {
-  SKIP_IF_CHAOTIC_GOOD();
   CancelAfterClientDone(*this, std::make_unique<CancelCancellationMode>());
 }
 
 CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterClientDone) {
-  SKIP_IF_CHAOTIC_GOOD();
   CancelAfterClientDone(*this, std::make_unique<DeadlineCancellationMode>());
 }
 

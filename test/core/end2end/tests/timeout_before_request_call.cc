@@ -12,27 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
 #include <string.h>
 
 #include <memory>
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(CoreDeadlineTest, TimeoutBeforeRequestCall) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(1)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
@@ -75,7 +73,7 @@ CORE_END2END_TEST(CoreDeadlineTest, TimeoutBeforeRequestCall) {
 
 CORE_END2END_TEST(CoreDeadlineTest,
                   TimeoutBeforeRequestCallWithRegisteredMethod) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   auto method = RegisterServerMethod("/foo", GRPC_SRM_PAYLOAD_NONE);
 
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(1)).Create();
@@ -120,7 +118,7 @@ CORE_END2END_TEST(CoreDeadlineTest,
 
 CORE_END2END_TEST(CoreDeadlineSingleHopTest,
                   TimeoutBeforeRequestCallWithRegisteredMethodWithPayload) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   auto method =
       RegisterServerMethod("/foo", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER);
 

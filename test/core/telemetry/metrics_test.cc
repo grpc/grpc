@@ -19,7 +19,7 @@
 #include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 
@@ -29,11 +29,15 @@ namespace {
 using experimental::StatsPluginChannelScope;
 
 class MetricsTest : public ::testing::Test {
- public:
+ protected:
+  MetricsTest() : endpoint_config_(ChannelArgs()) {}
+
   void TearDown() override {
     GlobalInstrumentsRegistryTestPeer::ResetGlobalInstrumentsRegistry();
     GlobalStatsPluginRegistryTestPeer::ResetGlobalStatsPluginRegistry();
   }
+
+  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config_;
 };
 
 TEST_F(MetricsTest, UInt64Counter) {
@@ -54,15 +58,15 @@ TEST_F(MetricsTest, UInt64Counter) {
   auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain1To4, ""))
+      StatsPluginChannelScope(kDomain1To4, "", endpoint_config_))
       .AddCounter(uint64_counter_handle, uint64_t(1), kLabelValues,
                   kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain2To4, ""))
+      StatsPluginChannelScope(kDomain2To4, "", endpoint_config_))
       .AddCounter(uint64_counter_handle, uint64_t(2), kLabelValues,
                   kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain3To4, ""))
+      StatsPluginChannelScope(kDomain3To4, "", endpoint_config_))
       .AddCounter(uint64_counter_handle, uint64_t(3), kLabelValues,
                   kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetUInt64CounterValue(
@@ -94,15 +98,15 @@ TEST_F(MetricsTest, DoubleCounter) {
   auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain1To4, ""))
+      StatsPluginChannelScope(kDomain1To4, "", endpoint_config_))
       .AddCounter(double_counter_handle, 1.23, kLabelValues,
                   kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain2To4, ""))
+      StatsPluginChannelScope(kDomain2To4, "", endpoint_config_))
       .AddCounter(double_counter_handle, 2.34, kLabelValues,
                   kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain3To4, ""))
+      StatsPluginChannelScope(kDomain3To4, "", endpoint_config_))
       .AddCounter(double_counter_handle, 3.45, kLabelValues,
                   kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetDoubleCounterValue(
@@ -134,15 +138,15 @@ TEST_F(MetricsTest, UInt64Histogram) {
   auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain1To4, ""))
+      StatsPluginChannelScope(kDomain1To4, "", endpoint_config_))
       .RecordHistogram(uint64_histogram_handle, uint64_t(1), kLabelValues,
                        kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain2To4, ""))
+      StatsPluginChannelScope(kDomain2To4, "", endpoint_config_))
       .RecordHistogram(uint64_histogram_handle, uint64_t(2), kLabelValues,
                        kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain3To4, ""))
+      StatsPluginChannelScope(kDomain3To4, "", endpoint_config_))
       .RecordHistogram(uint64_histogram_handle, uint64_t(3), kLabelValues,
                        kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetUInt64HistogramValue(
@@ -174,15 +178,15 @@ TEST_F(MetricsTest, DoubleHistogram) {
   auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain1To4, ""))
+      StatsPluginChannelScope(kDomain1To4, "", endpoint_config_))
       .RecordHistogram(double_histogram_handle, 1.23, kLabelValues,
                        kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain2To4, ""))
+      StatsPluginChannelScope(kDomain2To4, "", endpoint_config_))
       .RecordHistogram(double_histogram_handle, 2.34, kLabelValues,
                        kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain3To4, ""))
+      StatsPluginChannelScope(kDomain3To4, "", endpoint_config_))
       .RecordHistogram(double_histogram_handle, 3.45, kLabelValues,
                        kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetDoubleHistogramValue(
@@ -220,7 +224,7 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   // label values.  The callbacks get used only by plugin1.
   LOG(INFO) << "testing callbacks for: plugin1";
   auto group1 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain3To4, ""));
+      StatsPluginChannelScope(kDomain3To4, "", endpoint_config_));
   auto callback1 = group1.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(1), kLabelValues,
@@ -281,7 +285,7 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   // Now register callbacks that hit both plugin1 and plugin2.
   LOG(INFO) << "testing callbacks for: plugin1, plugin2";
   auto group2 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain2To4, ""));
+      StatsPluginChannelScope(kDomain2To4, "", endpoint_config_));
   callback1 = group2.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(3), kLabelValues,
@@ -342,7 +346,7 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   // Now register callbacks that hit all three plugins.
   LOG(INFO) << "testing callbacks for: plugin1, plugin2, plugin3";
   auto group3 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain1To4, ""));
+      StatsPluginChannelScope(kDomain1To4, "", endpoint_config_));
   callback1 = group3.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(5), kLabelValues,
@@ -425,7 +429,7 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   // label values.  The callbacks get used only by plugin1.
   LOG(INFO) << "testing callbacks for: plugin1";
   auto group1 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain3To4, ""));
+      StatsPluginChannelScope(kDomain3To4, "", endpoint_config_));
   auto callback1 = group1.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 1.23, kLabelValues,
@@ -486,7 +490,7 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   // Now register callbacks that hit both plugin1 and plugin2.
   LOG(INFO) << "testing callbacks for: plugin1, plugin2";
   auto group2 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain2To4, ""));
+      StatsPluginChannelScope(kDomain2To4, "", endpoint_config_));
   callback1 = group2.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 3.45, kLabelValues,
@@ -547,7 +551,7 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   // Now register callbacks that hit all three plugins.
   LOG(INFO) << "testing callbacks for: plugin1, plugin2, plugin3";
   auto group3 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain1To4, ""));
+      StatsPluginChannelScope(kDomain1To4, "", endpoint_config_));
   callback1 = group3.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 5.67, kLabelValues,
@@ -621,12 +625,27 @@ TEST_F(MetricsTest, DisableByDefaultMetricIsNotRecordedByFakeStatsPlugin) {
   constexpr absl::string_view kDomain1To4 = "domain1.domain2.domain3.domain4";
   auto plugin = MakeStatsPluginForTarget(kDomain1To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPluginChannelScope(kDomain1To4, ""))
+      StatsPluginChannelScope(kDomain1To4, "", endpoint_config_))
       .RecordHistogram(double_histogram_handle, 1.23, kLabelValues,
                        kOptionalLabelValues);
   EXPECT_EQ(plugin->GetDoubleHistogramValue(double_histogram_handle,
                                             kLabelValues, kOptionalLabelValues),
             absl::nullopt);
+}
+
+TEST_F(MetricsTest, FindInstrumentByName) {
+  auto uint64_counter_handle =
+      GlobalInstrumentsRegistry::RegisterUInt64Counter(
+          "uint64_counter", "A simple uint64 counter.", "unit", true)
+          .Labels("label_key_1", "label_key_2")
+          .OptionalLabels("optional_label_key_1", "optional_label_key_2")
+          .Build();
+  auto instrument =
+      GlobalInstrumentsRegistry::FindInstrumentByName("uint64_counter");
+  EXPECT_THAT(instrument,
+              ::testing::Optional(::testing::Field(
+                  &GlobalInstrumentsRegistry::GlobalInstrumentHandle::index,
+                  ::testing::Eq(uint64_counter_handle.index))));
 }
 
 using MetricsDeathTest = MetricsTest;

@@ -15,12 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_MAP_H
 #define GRPC_SRC_CORE_LIB_PROMISE_MAP_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <tuple>
 #include <utility>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
@@ -35,7 +34,7 @@ namespace promise_detail {
 template <typename Promise, typename Fn>
 class Map {
  public:
-  Map(Promise promise, Fn fn)
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Promise promise, Fn fn)
       : promise_(std::move(promise)), fn_(std::move(fn)) {}
 
   Map(const Map&) = delete;
@@ -49,7 +48,7 @@ class Map {
   using Result =
       RemoveCVRef<decltype(std::declval<Fn>()(std::declval<PromiseResult>()))>;
 
-  Poll<Result> operator()() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     Poll<PromiseResult> r = promise_();
     if (auto* p = r.value_if_ready()) {
       return fn_(std::move(*p));
@@ -68,7 +67,8 @@ class Map {
 // Takes a promise, and a synchronous function to mutate its result, and
 // returns a promise.
 template <typename Promise, typename Fn>
-promise_detail::Map<Promise, Fn> Map(Promise promise, Fn fn) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Map<Promise, Fn>
+Map(Promise promise, Fn fn) {
   return promise_detail::Map<Promise, Fn>(std::move(promise), std::move(fn));
 }
 
@@ -76,7 +76,7 @@ promise_detail::Map<Promise, Fn> Map(Promise promise, Fn fn) {
 // and a bool indicating whether there was ever a Pending{} value observed from
 // polling.
 template <typename Promise>
-auto CheckDelayed(Promise promise) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto CheckDelayed(Promise promise) {
   using P = promise_detail::PromiseLike<Promise>;
   return [delayed = false, promise = P(std::move(promise))]() mutable
          -> Poll<std::tuple<typename P::Result, bool>> {
@@ -85,7 +85,7 @@ auto CheckDelayed(Promise promise) {
       delayed = true;
       return Pending{};
     }
-    return std::make_tuple(r.value(), delayed);
+    return std::make_tuple(std::move(r.value()), delayed);
   };
 }
 
@@ -93,13 +93,13 @@ auto CheckDelayed(Promise promise) {
 template <size_t kElem>
 struct JustElem {
   template <typename... A>
-  auto operator()(std::tuple<A...>&& t) const
-      -> decltype(std::get<kElem>(std::forward<std::tuple<A...>>(t))) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()(std::tuple<A...>&& t)
+      const -> decltype(std::get<kElem>(std::forward<std::tuple<A...>>(t))) {
     return std::get<kElem>(std::forward<std::tuple<A...>>(t));
   }
   template <typename... A>
-  auto operator()(const std::tuple<A...>& t) const
-      -> decltype(std::get<kElem>(t)) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()(
+      const std::tuple<A...>& t) const -> decltype(std::get<kElem>(t)) {
     return std::get<kElem>(t);
   }
 };

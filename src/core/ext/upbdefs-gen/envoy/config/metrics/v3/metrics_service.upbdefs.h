@@ -3,7 +3,8 @@
  *     envoy/config/metrics/v3/metrics_service.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_METRICS_V3_METRICS_SERVICE_PROTO_UPBDEFS_H_
 #define ENVOY_CONFIG_METRICS_V3_METRICS_SERVICE_PROTO_UPBDEFS_H_

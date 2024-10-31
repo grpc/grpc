@@ -19,6 +19,11 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_CREDENTIALS_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_CREDENTIALS_H
 
+#include <grpc/credentials.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 
 #include <string>
@@ -28,20 +33,13 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 
 class grpc_service_account_jwt_access_credentials
@@ -50,6 +48,8 @@ class grpc_service_account_jwt_access_credentials
   grpc_service_account_jwt_access_credentials(grpc_auth_json_key key,
                                               gpr_timespec token_lifetime);
   ~grpc_service_account_jwt_access_credentials() override;
+
+  void Orphaned() override {}
 
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
   GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,

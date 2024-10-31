@@ -14,26 +14,24 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
-#include <thread>
-
 #include <gmock/gmock.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log_windows.h>
 #include <gtest/gtest.h>
+
+#include <thread>
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/time/time.h"
 #include "absl/types/variant.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log_windows.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/notification.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
 
 namespace {
@@ -249,16 +247,6 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
                      [&cb_invoked]() { cb_invoked = true; });
   ASSERT_TRUE(result == Poller::WorkResult::kDeadlineExceeded);
   ASSERT_FALSE(cb_invoked);
-  thread_pool->Quiesce();
-}
-
-TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
-  auto thread_pool = grpc_event_engine::experimental::MakeThreadPool(8);
-  IOCP iocp(thread_pool.get());
-  SOCKET sockpair[2];
-  CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
-  closesocket(sockpair[0]);
-  ASSERT_DEATH({ auto wrapped_client_socket = iocp.Watch(sockpair[0]); }, "");
   thread_pool->Quiesce();
 }
 

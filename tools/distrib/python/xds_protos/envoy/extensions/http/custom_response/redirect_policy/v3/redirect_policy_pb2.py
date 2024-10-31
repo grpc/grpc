@@ -20,7 +20,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nNenvoy/extensions/http/custom_response/redirect_policy/v3/redirect_policy.proto\x12\x38\x65nvoy.extensions.http.custom_response.redirect_policy.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a$envoy/config/core/v3/extension.proto\x1a,envoy/config/route/v3/route_components.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xc7\x03\n\x0eRedirectPolicy\x12\x16\n\x03uri\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01H\x00\x12@\n\x0fredirect_action\x18\x02 \x01(\x0b\x32%.envoy.config.route.v3.RedirectActionH\x00\x12=\n\x0bstatus_code\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.UInt32ValueB\n\xfa\x42\x07*\x05\x18\xe7\x07(d\x12S\n\x17response_headers_to_add\x18\x04 \x03(\x0b\x32\'.envoy.config.core.v3.HeaderValueOptionB\t\xfa\x42\x06\x92\x01\x03\x10\xe8\x07\x12R\n\x16request_headers_to_add\x18\x05 \x03(\x0b\x32\'.envoy.config.core.v3.HeaderValueOptionB\t\xfa\x42\x06\x92\x01\x03\x10\xe8\x07\x12Q\n\x1dmodify_request_headers_action\x18\x06 \x01(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfigB \n\x19redirect_action_specifier\x12\x03\xf8\x42\x01\x42\xe2\x01\nFio.envoyproxy.envoy.extensions.http.custom_response.redirect_policy.v3B\x13RedirectPolicyProtoP\x01Zqgithub.com/envoyproxy/go-control-plane/envoy/extensions/http/custom_response/redirect_policy/v3;redirect_policyv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nNenvoy/extensions/http/custom_response/redirect_policy/v3/redirect_policy.proto\x12\x38\x65nvoy.extensions.http.custom_response.redirect_policy.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a$envoy/config/core/v3/extension.proto\x1a,envoy/config/route/v3/route_components.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xc8\x03\n\x0eRedirectPolicy\x12\x16\n\x03uri\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01H\x00\x12@\n\x0fredirect_action\x18\x02 \x01(\x0b\x32%.envoy.config.route.v3.RedirectActionH\x00\x12>\n\x0bstatus_code\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.UInt32ValueB\x0b\xfa\x42\x08*\x06\x18\xe7\x07(\xc8\x01\x12S\n\x17response_headers_to_add\x18\x04 \x03(\x0b\x32\'.envoy.config.core.v3.HeaderValueOptionB\t\xfa\x42\x06\x92\x01\x03\x10\xe8\x07\x12R\n\x16request_headers_to_add\x18\x05 \x03(\x0b\x32\'.envoy.config.core.v3.HeaderValueOptionB\t\xfa\x42\x06\x92\x01\x03\x10\xe8\x07\x12Q\n\x1dmodify_request_headers_action\x18\x06 \x01(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfigB \n\x19redirect_action_specifier\x12\x03\xf8\x42\x01\x42\xe2\x01\nFio.envoyproxy.envoy.extensions.http.custom_response.redirect_policy.v3B\x13RedirectPolicyProtoP\x01Zqgithub.com/envoyproxy/go-control-plane/envoy/extensions/http/custom_response/redirect_policy/v3;redirect_policyv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,11 +33,11 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _REDIRECTPOLICY.fields_by_name['uri']._options = None
   _REDIRECTPOLICY.fields_by_name['uri']._serialized_options = b'\372B\004r\002\020\001'
   _REDIRECTPOLICY.fields_by_name['status_code']._options = None
-  _REDIRECTPOLICY.fields_by_name['status_code']._serialized_options = b'\372B\007*\005\030\347\007(d'
+  _REDIRECTPOLICY.fields_by_name['status_code']._serialized_options = b'\372B\010*\006\030\347\007(\310\001'
   _REDIRECTPOLICY.fields_by_name['response_headers_to_add']._options = None
   _REDIRECTPOLICY.fields_by_name['response_headers_to_add']._serialized_options = b'\372B\006\222\001\003\020\350\007'
   _REDIRECTPOLICY.fields_by_name['request_headers_to_add']._options = None
   _REDIRECTPOLICY.fields_by_name['request_headers_to_add']._serialized_options = b'\372B\006\222\001\003\020\350\007'
   _globals['_REDIRECTPOLICY']._serialized_start=379
-  _globals['_REDIRECTPOLICY']._serialized_end=834
+  _globals['_REDIRECTPOLICY']._serialized_end=835
 # @@protoc_insertion_point(module_scope)

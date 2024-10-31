@@ -18,24 +18,26 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/stream_lists.h"
 
 grpc_slice grpc_chttp2_window_update_create(
-    uint32_t id, uint32_t window_delta, grpc_transport_one_way_stats* stats) {
+    uint32_t id, uint32_t window_delta,
+    grpc_core::CallTracerInterface* call_tracer) {
   static const size_t frame_size = 13;
   grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
-  stats->framing_bytes += frame_size;
+  if (call_tracer != nullptr) {
+    call_tracer->RecordOutgoingBytes({frame_size, 0, 0});
+  }
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
   CHECK(window_delta);
@@ -84,7 +86,8 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
   }
 
   if (s != nullptr) {
-    s->stats.incoming.framing_bytes += static_cast<uint32_t>(end - cur);
+    uint64_t framing_bytes = static_cast<uint32_t>(end - cur);
+    s->call_tracer_wrapper.RecordIncomingBytes({framing_bytes, 0, 0});
   }
 
   if (p->byte == 4) {

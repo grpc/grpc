@@ -17,12 +17,12 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_XDS_XDS_RESOLVER_ATTRIBUTES_H
 #define GRPC_SRC_CORE_RESOLVER_XDS_XDS_RESOLVER_ATTRIBUTES_H
 
-#include "absl/strings/string_view.h"
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/unique_type_name.h"
+#include "absl/strings/string_view.h"
 #include "src/core/service_config/service_config_call_data.h"
+#include "src/core/util/unique_type_name.h"
+#include "src/core/xds/grpc/xds_route_config.h"
 
 namespace grpc_core {
 
@@ -53,8 +53,11 @@ class XdsRouteStateAttribute
     return factory.Create();
   }
 
-  virtual bool HasClusterForRoute(absl::string_view cluster_name) const = 0;
   UniqueTypeName type() const override { return TypeName(); }
+
+  virtual bool HasClusterForRoute(absl::string_view cluster_name) const = 0;
+
+  virtual const XdsRouteConfigResource::Route& route() const = 0;
 };
 
 }  // namespace grpc_core

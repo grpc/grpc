@@ -16,22 +16,20 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/http/server/http_server_filter.h"
+
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 
 #include <functional>
 #include <memory>
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -45,6 +43,7 @@
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
 
@@ -55,7 +54,7 @@ const NoInterceptor HttpServerFilter::Call::OnFinalize;
 
 const grpc_channel_filter HttpServerFilter::kFilter =
     MakePromiseBasedFilter<HttpServerFilter, FilterEndpoint::kServer,
-                           kFilterExaminesServerInitialMetadata>("http-server");
+                           kFilterExaminesServerInitialMetadata>();
 
 namespace {
 void FilterOutgoingMetadata(ServerMetadata* md) {
@@ -77,6 +76,8 @@ ServerMetadataHandle MalformedRequest(absl::string_view explanation) {
 
 ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, HttpServerFilter* filter) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "HttpServerFilter::Call::OnClientInitialMetadata");
   auto method = md.get(HttpMethodMetadata());
   if (method.has_value()) {
     switch (*method) {
@@ -139,16 +140,18 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
 }
 
 void HttpServerFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
-  if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    gpr_log(GPR_INFO, "%s[http-server] Write metadata",
-            GetContext<Activity>()->DebugTag().c_str());
-  }
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "HttpServerFilter::Call::OnServerInitialMetadata");
+  GRPC_TRACE_LOG(call, INFO)
+      << GetContext<Activity>()->DebugTag() << "[http-server] Write metadata";
   FilterOutgoingMetadata(&md);
   md.Set(HttpStatusMetadata(), 200);
   md.Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
 }
 
 void HttpServerFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "HttpServerFilter::Call::OnServerTrailingMetadata");
   FilterOutgoingMetadata(&md);
 }
 

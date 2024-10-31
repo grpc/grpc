@@ -15,18 +15,17 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 

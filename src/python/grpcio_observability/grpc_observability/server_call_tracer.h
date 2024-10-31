@@ -15,14 +15,15 @@
 #ifndef GRPC_PYTHON_OPENCENSUS_SERVER_CALL_TRACER_H
 #define GRPC_PYTHON_OPENCENSUS_SERVER_CALL_TRACER_H
 
+#include <grpc/support/port_platform.h>
+
+#include <atomic>
+
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "constants.h"
 #include "metadata_exchange.h"
 #include "python_observability_context.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/call_tracer.h"
@@ -102,6 +103,12 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
 
   void RecordEnd(const grpc_call_final_info* final_info) override;
 
+  void RecordIncomingBytes(
+      const TransportByteSize& transport_byte_size) override;
+
+  void RecordOutgoingBytes(
+      const TransportByteSize& transport_byte_size) override;
+
   void RecordAnnotation(absl::string_view annotation) override;
 
   void RecordAnnotation(const Annotation& annotation) override;
@@ -124,6 +131,12 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   std::vector<Label> labels_from_peer_;
   std::string identifier_;
   bool registered_method_ = false;
+  // TODO(roth, ctiller): Won't need atomic here once chttp2 is migrated
+  // to promises, after which we can ensure that the transport invokes
+  // the RecordIncomingBytes() and RecordOutgoingBytes() methods inside
+  // the call's party.
+  std::atomic<uint64_t> incoming_bytes_{0};
+  std::atomic<uint64_t> outgoing_bytes_{0};
 };
 
 }  // namespace grpc_observability

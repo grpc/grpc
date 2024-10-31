@@ -13,26 +13,24 @@
 // limitations under the License.
 //
 
-#include <vector>
-
 #include <gmock/gmock.h>
+#include <grpc/event_engine/endpoint_config.h>
 #include <gtest/gtest.h>
+
+#include <vector>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/event_engine/endpoint_config.h>
-
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
-#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
+#include "src/core/util/env.h"
+#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
@@ -47,19 +45,27 @@ using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 
 class ClusterTypeTest : public XdsEnd2endTest {
  protected:
-  void SetUp() override {
-    logical_dns_cluster_resolver_response_generator_ =
-        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-    InitClient();
+  ClusterTypeTest()
+      : logical_dns_cluster_resolver_response_generator_(
+            grpc_core::MakeRefCounted<
+                grpc_core::FakeResolverResponseGenerator>()) {}
+
+  // Subclasses must call this to initialize.
+  void LogicalDnsInitClient(
+      absl::optional<XdsBootstrapBuilder> builder = absl::nullopt,
+      std::shared_ptr<ChannelCredentials> credentials = nullptr) {
     ChannelArguments args;
     args.SetPointerWithVtable(
         GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR,
         logical_dns_cluster_resolver_response_generator_.get(),
         &grpc_core::FakeResolverResponseGenerator::kChannelArgPointerVtable);
-    ResetStub(/*failover_timeout_ms=*/0, &args);
+    InitClient(builder, /*lb_expected_authority=*/"",
+               /*xds_resource_does_not_exist_timeout_ms=*/0,
+               /*balancer_authority_override=*/"", /*args=*/&args,
+               std::move(credentials));
   }
 
-  grpc_core::EndpointAddressesList CreateAddressListFromPortList(
+  static grpc_core::EndpointAddressesList CreateAddressListFromPortList(
       const std::vector<int>& ports) {
     grpc_core::EndpointAddressesList addresses;
     for (int port : ports) {
@@ -81,12 +87,16 @@ class ClusterTypeTest : public XdsEnd2endTest {
 // LOGICAL_DNS cluster tests
 //
 
-using LogicalDNSClusterTest = ClusterTypeTest;
+class LogicalDNSClusterTest : public ClusterTypeTest {
+ protected:
+  void SetUp() override {}  // Individual tests call LogicalDnsInitClient().
+};
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, LogicalDNSClusterTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(LogicalDNSClusterTest, Basic) {
+  LogicalDnsInitClient();
   CreateAndStartBackends(1);
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -112,6 +122,226 @@ TEST_P(LogicalDNSClusterTest, Basic) {
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
+TEST_P(LogicalDNSClusterTest, FailedBackendConnectionCausesReresolution) {
+  LogicalDnsInitClient();
+  CreateAndStartBackends(2);
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  auto* address = cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
+  address->set_address(kServerName);
+  address->set_port_value(443);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Set Logical DNS result to backend 0.
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts(0, 1));
+    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
+        std::move(result));
+  }
+  // RPCs should succeed.
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Now shut down backend 0.
+  ShutdownBackend(0);
+  // Wait for logical DNS resolver to see a re-resolution request.
+  // Then return a DNS result pointing to backend 1.
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_TRUE(logical_dns_cluster_resolver_response_generator_
+                    ->WaitForReresolutionRequest(absl::Seconds(10) *
+                                                 grpc_test_slowdown_factor()));
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts(1, 2));
+    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
+        std::move(result));
+  }
+  // Wait for traffic to switch to backend 1.
+  // RPCs may fail until the client sees the resolver result.
+  WaitForBackend(DEBUG_LOCATION, 1, [](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
+      EXPECT_THAT(result.status.error_message(),
+                  MakeConnectionFailureRegex(
+                      "connections to all backends failing; last error: "));
+    }
+  });
+}
+
+TEST_P(LogicalDNSClusterTest, AutoHostRewrite) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
+  constexpr char kDnsName[] = "dns.example.com";
+  // Set auto_host_rewrite in the RouteConfig.
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_auto_host_rewrite()
+      ->set_value(true);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  auto* address = cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
+  address->set_address(kDnsName);
+  address->set_port_value(443);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Create client and server.
+  // Note: We use InsecureCreds, since FakeCreds are too picky about
+  // what authority gets sent.
+  LogicalDnsInitClient(MakeBootstrapBuilder().SetTrustedXdsServer(),
+                       InsecureChannelCredentials());
+  CreateAndStartBackends(1, /*xds_enabled=*/false, InsecureServerCredentials());
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts());
+    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
+        std::move(result));
+  }
+  // Send RPC and verify the authority seen by the server.
+  EchoResponse response;
+  Status status = SendRpc(
+      RpcOptions().set_echo_host_from_authority_header(true), &response);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  EXPECT_EQ(response.param().host(), absl::StrCat(kDnsName, ":443"));
+}
+
+TEST_P(LogicalDNSClusterTest, NoAuthorityRewriteWithoutEnvVar) {
+  constexpr char kDnsName[] = "dns.example.com";
+  // Set auto_host_rewrite in the RouteConfig.
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_auto_host_rewrite()
+      ->set_value(true);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  auto* address = cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
+  address->set_address(kDnsName);
+  address->set_port_value(443);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Create client and server.
+  LogicalDnsInitClient(MakeBootstrapBuilder().SetTrustedXdsServer());
+  CreateAndStartBackends(1);
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts());
+    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
+        std::move(result));
+  }
+  // Send RPC and verify the authority seen by the server.
+  EchoResponse response;
+  Status status = SendRpc(
+      RpcOptions().set_echo_host_from_authority_header(true), &response);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  EXPECT_EQ(response.param().host(), kServerName);
+}
+
+TEST_P(LogicalDNSClusterTest, NoAuthorityRewriteIfServerNotTrustedInBootstrap) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
+  constexpr char kDnsName[] = "dns.example.com";
+  // Set auto_host_rewrite in the RouteConfig.
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_auto_host_rewrite()
+      ->set_value(true);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  auto* address = cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
+  address->set_address(kDnsName);
+  address->set_port_value(443);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Create client and server.
+  LogicalDnsInitClient();
+  CreateAndStartBackends(1);
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts());
+    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
+        std::move(result));
+  }
+  // Send RPC and verify the authority seen by the server.
+  EchoResponse response;
+  Status status = SendRpc(
+      RpcOptions().set_echo_host_from_authority_header(true), &response);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  EXPECT_EQ(response.param().host(), kServerName);
+}
+
+TEST_P(LogicalDNSClusterTest, NoAuthorityRewriteIfNotEnabledInRoute) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
+  constexpr char kDnsName[] = "dns.example.com";
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  auto* address = cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
+  address->set_address(kDnsName);
+  address->set_port_value(443);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Create client and server.
+  LogicalDnsInitClient(MakeBootstrapBuilder().SetTrustedXdsServer());
+  CreateAndStartBackends(1);
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts());
+    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
+        std::move(result));
+  }
+  // Send RPC and verify the authority seen by the server.
+  EchoResponse response;
+  Status status = SendRpc(
+      RpcOptions().set_echo_host_from_authority_header(true), &response);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  EXPECT_EQ(response.param().host(), kServerName);
+}
+
 //
 // aggregate cluster tests
 //
@@ -119,7 +349,10 @@ TEST_P(LogicalDNSClusterTest, Basic) {
 // TODO(roth): Add tests showing that load reporting is enabled on a
 // per-underlying-cluster basis.
 
-using AggregateClusterTest = ClusterTypeTest;
+class AggregateClusterTest : public ClusterTypeTest {
+ protected:
+  void SetUp() override { LogicalDnsInitClient(); }
+};
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, AggregateClusterTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
@@ -522,9 +755,9 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   // - Priority 0: locality0
   // - Priority 1: locality1, locality2
   EdsResourceArgs args1({
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
-      {"locality1", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
-      {"locality2", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
+      {"locality0", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 0},
+      {"locality1", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 1},
+      {"locality2", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
@@ -594,7 +827,7 @@ TEST_P(AggregateClusterTest, MultipleClustersWithSameLocalities) {
   const char* kNewClusterName2 = "new_cluster_2";
   const char* kNewEdsServiceName2 = "new_eds_service_name_2";
   // Populate EDS resource for cluster 1 with unreachable endpoint.
-  EdsResourceArgs args1({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args1({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsServiceName1));
   // Populate CDS resource for cluster 1.

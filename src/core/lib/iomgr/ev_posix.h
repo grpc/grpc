@@ -23,20 +23,14 @@
 
 #ifdef GRPC_POSIX_SOCKET_EV
 
-#include <poll.h>
-
 #include <grpc/support/port_platform.h>
+#include <poll.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
-
-#define GRPC_FD_TRACE(format, ...)                        \
-  if (GRPC_TRACE_FLAG_ENABLED(fd_trace)) {                \
-    gpr_log(GPR_INFO, "(fd-trace) " format, __VA_ARGS__); \
-  }
 
 typedef struct grpc_fd grpc_fd;
 

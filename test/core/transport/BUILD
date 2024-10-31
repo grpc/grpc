@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
@@ -21,6 +23,23 @@ grpc_package(name = "test/core/transport")
 grpc_cc_test(
     name = "bdp_estimator_test",
     srcs = ["bdp_estimator_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    tags = ["no_windows"],  # TODO(jtattermusch): investigate the timeout on windows
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "call_arena_allocator_test",
+    srcs = ["call_arena_allocator_test.cc"],
     external_deps = [
         "gtest",
     ],
@@ -46,7 +65,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:grpc_base",
+        "//:grpc",
         "//src/core:interception_chain",
         "//src/core:resource_quota",
         "//test/core/promise:poll_matcher",
@@ -64,6 +83,21 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:call_filters",
+        "//test/core/promise:poll_matcher",
+    ],
+)
+
+grpc_cc_test(
+    name = "call_state_test",
+    srcs = ["call_state_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:call_state",
         "//test/core/promise:poll_matcher",
     ],
 )
@@ -174,5 +208,57 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_yodel_simple_test(
+    name = "call_spine",
+    srcs = ["call_spine_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//src/core:call_spine",
+        "//test/core/call/yodel:yodel_test",
+    ],
+)
+
+grpc_cc_library(
+    name = "call_spine_benchmarks",
+    testonly = 1,
+    hdrs = ["call_spine_benchmarks.h"],
+    external_deps = ["benchmark"],
+    visibility = ["//test/core:__subpackages__"],
+    deps = [
+        "//:exec_ctx",
+        "//src/core:all_ok",
+        "//src/core:call_spine",
+        "//src/core:default_event_engine",
+        "//src/core:map",
+        "//src/core:notification",
+        "//src/core:resource_quota",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_call_spine",
+    srcs = ["bm_call_spine.cc"],
+    monitoring = HISTORY,
+    deps = [
+        ":call_spine_benchmarks",
+        "//:grpc",
+        "//src/core:default_event_engine",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_metadata",
+    srcs = ["bm_metadata.cc"],
+    monitoring = HISTORY,
+    deps = [
+        ":call_spine_benchmarks",
+        "//:grpc",
+        "//src/core:default_event_engine",
     ],
 )

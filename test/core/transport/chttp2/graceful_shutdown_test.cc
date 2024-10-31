@@ -16,6 +16,12 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -35,23 +41,11 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
@@ -61,6 +55,10 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/server/server.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/test_config.h"
@@ -94,8 +92,9 @@ class GracefulShutdownTest : public ::testing::Test {
     grpc_server_register_completion_queue(server_, cq_, nullptr);
     grpc_server_start(server_);
     fds_ = grpc_iomgr_create_endpoint_pair("fixture", nullptr);
-    auto* transport = grpc_create_chttp2_transport(core_server->channel_args(),
-                                                   fds_.server, false);
+    auto* transport = grpc_create_chttp2_transport(
+        core_server->channel_args(), OrphanablePtr<grpc_endpoint>(fds_.server),
+        false);
     grpc_endpoint_add_to_pollset(fds_.server, grpc_cq_pollset(cq_));
     CHECK(core_server->SetupTransport(transport, nullptr,
                                       core_server->channel_args(),

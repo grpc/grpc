@@ -18,14 +18,13 @@
 
 #include "src/core/util/useful.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <limits>
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -35,11 +34,6 @@ TEST(UsefulTest, ClampWorks) {
   EXPECT_EQ(Clamp(2, 0, 2), 2);
   EXPECT_EQ(Clamp(-1, 0, 2), 0);
   EXPECT_EQ(Clamp(3, 0, 2), 2);
-}
-
-TEST(UsefulTest, Rotate) {
-  EXPECT_EQ(RotateLeft(0x80000001u, 1u), 3);
-  EXPECT_EQ(RotateRight(0x80000001u, 1u), 0xc0000000);
 }
 
 TEST(UsefulTest, ArraySize) {
@@ -53,18 +47,11 @@ TEST(UsefulTest, ArraySize) {
 TEST(UsefulTest, BitOps) {
   uint32_t bitset = 0;
 
-  EXPECT_EQ(BitCount((1u << 31) - 1), 31);
-  EXPECT_EQ(BitCount(1u << 3), 1);
-  EXPECT_EQ(BitCount(0), 0);
   EXPECT_EQ(SetBit(&bitset, 3), 8);
-  EXPECT_EQ(BitCount(bitset), 1);
   EXPECT_EQ(GetBit(bitset, 3), 1);
   EXPECT_EQ(SetBit(&bitset, 1), 10);
-  EXPECT_EQ(BitCount(bitset), 2);
   EXPECT_EQ(ClearBit(&bitset, 3), 2);
-  EXPECT_EQ(BitCount(bitset), 1);
   EXPECT_EQ(GetBit(bitset, 3), 0);
-  EXPECT_EQ(BitCount(std::numeric_limits<uint64_t>::max()), 64);
 }
 
 TEST(UsefulTest, SaturatingAdd) {
@@ -91,6 +78,95 @@ TEST(UsefulTest, RoundUpToPowerOf2) {
   EXPECT_EQ(RoundUpToPowerOf2(6), 8);
   EXPECT_EQ(RoundUpToPowerOf2(7), 8);
   EXPECT_EQ(RoundUpToPowerOf2(8), 8);
+}
+
+TEST(UsefulTest, LowestOneBit8) {
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(0)), 0);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(1)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(2)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(3)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(4)), 4);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(5)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(6)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(7)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(8)), 8);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(9)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(10)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(11)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(12)), 4);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(13)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(14)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(15)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(16)), 16);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(127)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(128)), 128);
+}
+
+TEST(UsefulTest, LowestOneBit16) {
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(0)), 0);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(1)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(2)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(3)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(4)), 4);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(5)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(6)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(7)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(8)), 8);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(9)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(10)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(11)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(12)), 4);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(13)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(14)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(15)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(16)), 16);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(32767)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint16_t>(32768)), 32768);
+}
+
+TEST(UsefulTest, LowestOneBit32) {
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(0)), 0);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(1)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(2)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(3)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(4)), 4);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(5)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(6)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(7)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(8)), 8);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(9)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(10)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(11)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(12)), 4);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(13)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(14)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(15)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(16)), 16);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(2147483647)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint32_t>(2147483648)), 2147483648);
+}
+
+TEST(UsefulTest, LowestOneBit64) {
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(0)), 0);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(1)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(2)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(3)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(4)), 4);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(5)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(6)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(7)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(8)), 8);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(9)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(10)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(11)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(12)), 4);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(13)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(14)), 2);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(15)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(16)), 16);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(9223372036854775807)), 1);
+  EXPECT_EQ(LowestOneBit(static_cast<uint64_t>(9223372036854775808U)),
+            9223372036854775808U);
 }
 
 }  // namespace grpc_core

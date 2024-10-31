@@ -14,6 +14,18 @@
 // limitations under the License.
 //
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpcpp/ext/orca_service.h>
+#include <grpcpp/ext/server_metric_recorder.h>
+#include <grpcpp/impl/rpc_method.h>
+#include <grpcpp/impl/rpc_service_method.h>
+#include <grpcpp/impl/server_callback_handlers.h>
+#include <grpcpp/impl/sync.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/support/byte_buffer.h>
+#include <grpcpp/support/server_callback.h>
+#include <grpcpp/support/slice.h>
+#include <grpcpp/support/status.h>
 #include <stddef.h>
 
 #include <map>
@@ -26,33 +38,18 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "google/protobuf/duration.upb.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/load_balancing/backend_metric_data.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
+#include "src/cpp/server/backend_metric_recorder.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 #include "xds/service/orca/v3/orca.upb.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
-#include <grpcpp/ext/orca_service.h>
-#include <grpcpp/ext/server_metric_recorder.h>
-#include <grpcpp/impl/rpc_method.h>
-#include <grpcpp/impl/rpc_service_method.h>
-#include <grpcpp/impl/server_callback_handlers.h>
-#include <grpcpp/impl/sync.h>
-#include <grpcpp/server_context.h>
-#include <grpcpp/support/byte_buffer.h>
-#include <grpcpp/support/server_callback.h>
-#include <grpcpp/support/slice.h>
-#include <grpcpp/support/status.h>
-
-#include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/load_balancing/backend_metric_data.h"
-#include "src/cpp/server/backend_metric_recorder.h"
 
 namespace grpc {
 namespace experimental {

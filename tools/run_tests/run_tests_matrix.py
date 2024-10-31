@@ -31,10 +31,10 @@ os.chdir(_ROOT)
 _DEFAULT_RUNTESTS_TIMEOUT = 1 * 60 * 60
 
 # C/C++ tests can take long time
-_CPP_RUNTESTS_TIMEOUT = 4 * 60 * 60
+_CPP_RUNTESTS_TIMEOUT = 6 * 60 * 60
 
 # Set timeout high for ObjC for Cocoapods to install pods
-_OBJC_RUNTESTS_TIMEOUT = 2 * 60 * 60
+_OBJC_RUNTESTS_TIMEOUT = 4 * 60 * 60
 
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2
@@ -302,7 +302,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     )
 
     test_jobs += _generate_jobs(
-        languages=["ruby", "php7"],
+        languages=["ruby", "php8"],
         configs=["dbg", "opt"],
         platforms=["linux", "macos"],
         labels=["basictests", "multilang"],
@@ -312,7 +312,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
 
     # ARM64 Linux Ruby and PHP tests
     test_jobs += _generate_jobs(
-        languages=["ruby", "php7"],
+        languages=["ruby", "php8"],
         configs=["dbg", "opt"],
         platforms=["linux"],
         arch="arm64",
@@ -358,11 +358,11 @@ def _create_portability_test_jobs(
         # TODO(b/283304471): Tests using OpenSSL's engine APIs were broken and removed
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
-        "gcc12",
         "gcc12_openssl309",
+        "gcc14",
         "gcc_musl",
-        "clang6",
-        "clang17",
+        "clang7",
+        "clang18",
     ]:
         test_jobs += _generate_jobs(
             languages=["c", "c++"],
@@ -383,7 +383,7 @@ def _create_portability_test_jobs(
         configs=["dbg"],
         platforms=["windows"],
         arch="default",
-        compiler="cmake_ninja_vs2019",
+        compiler="cmake_ninja_vs2022",
         labels=["portability", "corelang"],
         extra_args=extra_args,
         inner_jobs=inner_jobs,
@@ -530,16 +530,6 @@ if __name__ == "__main__":
         type=int,
         help="Maximum amount of time to run tests for"
         + "(other tests will be skipped)",
-    )
-    argp.add_argument(
-        "--internal_ci",
-        default=False,
-        action="store_const",
-        const=True,
-        help=(
-            "(Deprecated, has no effect) Put reports into subdirectories to"
-            " improve presentation of results by Kokoro."
-        ),
     )
     argp.add_argument(
         "--bq_result_table",

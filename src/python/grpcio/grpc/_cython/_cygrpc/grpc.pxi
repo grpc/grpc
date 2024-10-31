@@ -76,7 +76,7 @@ cdef extern from "src/core/telemetry/call_tracer.h" namespace "grpc_core":
         void RegisterGlobal(ServerCallTracerFactory* factory) nogil
 
 cdef extern from "src/core/lib/surface/call.h":
-  void grpc_call_tracer_set(grpc_call* call, void* value) nogil
+  void grpc_call_tracer_set_and_manage(grpc_call* call, void* value) nogil
 
   void* grpc_call_tracer_get(grpc_call* call) nogil
 

@@ -15,13 +15,12 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H
 
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/meta/type_traits.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/poll.h"
 
 // A Promise is a callable object that returns Poll<T> for some T.
@@ -51,16 +50,21 @@ namespace promise_detail {
 
 template <typename T>
 struct PollWrapper {
-  static Poll<T> Wrap(T&& x) { return Poll<T>(std::forward<T>(x)); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<T> Wrap(T&& x) {
+    return Poll<T>(std::forward<T>(x));
+  }
 };
 
 template <typename T>
 struct PollWrapper<Poll<T>> {
-  static Poll<T> Wrap(Poll<T>&& x) { return std::forward<Poll<T>>(x); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<T> Wrap(Poll<T>&& x) {
+    return std::forward<Poll<T>>(x);
+  }
 };
 
 template <typename T>
-auto WrapInPoll(T&& x) -> decltype(PollWrapper<T>::Wrap(std::forward<T>(x))) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto WrapInPoll(T&& x)
+    -> decltype(PollWrapper<T>::Wrap(std::forward<T>(x))) {
   return PollWrapper<T>::Wrap(std::forward<T>(x));
 }
 
@@ -88,8 +92,12 @@ class PromiseLike<F, absl::enable_if_t<!std::is_void<
 
  public:
   // NOLINTNEXTLINE - internal detail that drastically simplifies calling code.
-  PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
-  auto operator()() -> decltype(WrapInPoll(f_())) { return WrapInPoll(f_()); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION PromiseLike(F&& f)
+      : f_(std::forward<F>(f)) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()()
+      -> decltype(WrapInPoll(f_())) {
+    return WrapInPoll(f_());
+  }
   using Result = typename PollTraits<decltype(WrapInPoll(f_()))>::Type;
 };
 

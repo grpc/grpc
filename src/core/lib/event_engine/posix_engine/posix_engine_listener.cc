@@ -20,7 +20,9 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include <errno.h>       // IWYU pragma: keep
+#include <errno.h>  // IWYU pragma: keep
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <sys/socket.h>  // IWYU pragma: keep
 #include <unistd.h>      // IWYU pragma: keep
 
@@ -36,20 +38,16 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/event_engine/trace.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/strerror.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/strerror.h"
+#include "src/core/util/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -127,8 +125,8 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::Start() {
 
 void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     absl::Status status) {
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Acceptor[%p]: NotifyOnAccept: %s", this,
-                                   status.ToString().c_str());
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "Acceptor[" << this << "]: NotifyOnAccept: " << status;
   if (!status.ok()) {
     // Shutting down the acceptor. Unref the ref grabbed in
     // AsyncConnectionAcceptor::Start().

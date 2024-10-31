@@ -22,9 +22,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/resolver/endpoint_addresses.h"
 
 // Channel arg key for xDS health status.

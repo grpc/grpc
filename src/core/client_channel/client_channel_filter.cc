@@ -14,10 +14,16 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_filter.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <limits.h>
 
@@ -31,6 +37,7 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
@@ -40,16 +47,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/json.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -57,24 +54,19 @@
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/dynamic_filters.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
+#include "src/core/client_channel/lb_metadata.h"
 #include "src/core/client_channel/local_subchannel_pool.h"
 #include "src/core/client_channel/retry_filter.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/handshaker/proxy_mapper_registry.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -102,8 +94,15 @@
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/manual_constructor.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
+#include "src/core/util/work_serializer.h"
 
 //
 // Client channel filter
@@ -316,7 +315,7 @@ const grpc_channel_filter ClientChannelFilter::kFilter = {
     grpc_channel_stack_no_post_init,
     ClientChannelFilter::Destroy,
     ClientChannelFilter::GetChannelInfo,
-    "client-channel",
+    GRPC_UNIQUE_TYPE_NAME_HERE("client-channel"),
 };
 
 //
@@ -443,7 +442,7 @@ const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
     grpc_channel_stack_no_post_init,
     DynamicTerminationFilter::Destroy,
     DynamicTerminationFilter::GetChannelInfo,
-    "dynamic_filter_termination",
+    GRPC_UNIQUE_TYPE_NAME_HERE("dynamic_filter_termination"),
 };
 
 }  // namespace
@@ -615,6 +614,8 @@ class ClientChannelFilter::SubchannelWrapper final
     subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
   }
 
+  std::string address() const override { return subchannel_->address(); }
+
  private:
   // This wrapper provides a bridge between the internal Subchannel API
   // and the SubchannelInterface API that we expose to LB policies.
@@ -705,9 +706,9 @@ class ClientChannelFilter::SubchannelWrapper final
             }
           }
         } else {
-          gpr_log(GPR_ERROR, "chand=%p: Illegal keepalive throttling value %s",
-                  parent_->chand_,
-                  std::string(keepalive_throttling.value()).c_str());
+          LOG(ERROR) << "chand=" << parent_->chand_
+                     << ": Illegal keepalive throttling value "
+                     << std::string(keepalive_throttling.value());
         }
       }
       // Propagate status only in state TF.
@@ -1210,15 +1211,13 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
               .LoadBalancingPolicyExists(*policy_name, &requires_config) ||
          requires_config)) {
       if (requires_config) {
-        gpr_log(GPR_ERROR,
-                "LB policy: %s passed through channel_args must not "
-                "require a config. Using pick_first instead.",
-                std::string(*policy_name).c_str());
+        LOG(ERROR) << "LB policy: " << *policy_name
+                   << " passed through channel_args must not "
+                      "require a config. Using pick_first instead.";
       } else {
-        gpr_log(GPR_ERROR,
-                "LB policy: %s passed through channel_args does not exist. "
-                "Using pick_first instead.",
-                std::string(*policy_name).c_str());
+        LOG(ERROR) << "LB policy: " << *policy_name
+                   << " passed through channel_args does not exist. "
+                      "Using pick_first instead.";
       }
       policy_name = "pick_first";
     }
@@ -1320,6 +1319,10 @@ void ClientChannelFilter::OnResolverResultChangedLocked(
     service_config = std::move(*result.service_config);
     config_selector = result.args.GetObjectRef<ConfigSelector>();
   }
+  // Remove the config selector from channel args so that we're not holding
+  // unnecessary refs that cause it to be destroyed somewhere other than in the
+  // WorkSerializer.
+  result.args = result.args.Remove(GRPC_ARG_CONFIG_SELECTOR);
   // Note: The only case in which service_config is null here is if the resolver
   // returned a service config error and we don't have a previous service
   // config to fall back to.
@@ -1350,6 +1353,7 @@ void ClientChannelFilter::OnResolverResultChangedLocked(
           << "chand=" << this << ": service config not changed";
     }
     // Create or update LB policy, as needed.
+    ChannelArgs new_args = result.args;
     resolver_result_status = CreateOrUpdateLbPolicyLocked(
         std::move(lb_policy_config),
         parsed_service_config->health_check_service_name(), std::move(result));
@@ -1358,7 +1362,7 @@ void ClientChannelFilter::OnResolverResultChangedLocked(
       // This needs to happen after the LB policy has been updated, since
       // the ConfigSelector may need the LB policy to know about new
       // destinations before it can send RPCs to those destinations.
-      UpdateServiceConfigInDataPlaneLocked();
+      UpdateServiceConfigInDataPlaneLocked(new_args);
       // TODO(ncteisen): might be worth somehow including a snippet of the
       // config in the trace, at the risk of bloating the trace logs.
       trace_strings.push_back("Service config changed");
@@ -1414,10 +1418,7 @@ absl::Status ClientChannelFilter::CreateOrUpdateLbPolicyLocked(
   }
   update_args.config = std::move(lb_policy_config);
   update_args.resolution_note = std::move(result.resolution_note);
-  // Remove the config selector from channel args so that we're not holding
-  // unnecessary refs that cause it to be destroyed somewhere other than in the
-  // WorkSerializer.
-  update_args.args = result.args.Remove(GRPC_ARG_CONFIG_SELECTOR);
+  update_args.args = std::move(result.args);
   // Add health check service name to channel args.
   if (health_check_service_name.has_value()) {
     update_args.args = update_args.args.Set(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME,
@@ -1481,7 +1482,8 @@ void ClientChannelFilter::UpdateServiceConfigInControlPlaneLocked(
       << saved_config_selector_.get();
 }
 
-void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked() {
+void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
+    const ChannelArgs& args) {
   // Grab ref to service config.
   RefCountedPtr<ServiceConfig> service_config = saved_service_config_;
   // Grab ref to config selector.  Use default if resolver didn't supply one.
@@ -1493,8 +1495,8 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked() {
     config_selector =
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);
   }
-  ChannelArgs new_args =
-      channel_args_.SetObject(this).SetObject(service_config);
+  // Modify channel args.
+  ChannelArgs new_args = args.SetObject(this).SetObject(service_config);
   bool enable_retries =
       !new_args.WantMinimalStack() &&
       new_args.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
@@ -1506,9 +1508,11 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked() {
   } else {
     filters.push_back(&DynamicTerminationFilter::kFilterVtable);
   }
-  RefCountedPtr<DynamicFilters> dynamic_filters =
-      DynamicFilters::Create(new_args, std::move(filters));
+  auto new_blackboard = MakeRefCounted<Blackboard>();
+  RefCountedPtr<DynamicFilters> dynamic_filters = DynamicFilters::Create(
+      new_args, std::move(filters), blackboard_.get(), new_blackboard.get());
   CHECK(dynamic_filters != nullptr);
+  blackboard_ = std::move(new_blackboard);
   // Grab data plane lock to update service config.
   //
   // We defer unreffing the old values (and deallocating memory) until
@@ -1617,7 +1621,7 @@ void ClientChannelFilter::UpdateStateAndPickerLocked(
 
 namespace {
 
-// TODO(roth): Remove this in favor of the gprpp Match() function once
+// TODO(roth): Remove this in favor of src/core/util/match.h once
 // we can do that without breaking lock annotations.
 template <typename T>
 T HandlePickResult(
@@ -2016,8 +2020,9 @@ void ClientChannelFilter::FilterBasedCallData::StartTransportStreamOpBatch(
   auto* chand = static_cast<ClientChannelFilter*>(elem->channel_data);
   if (GRPC_TRACE_FLAG_ENABLED(client_channel_call) &&
       !GRPC_TRACE_FLAG_ENABLED(channel)) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p: batch started from above: %s", chand,
-            calld, grpc_transport_stream_op_batch_string(batch, false).c_str());
+    LOG(INFO) << "chand=" << chand << " calld=" << calld
+              << ": batch started from above: "
+              << grpc_transport_stream_op_batch_string(batch, false);
   }
   // Intercept recv_trailing_metadata to commit the call, in case we wind up
   // failing the call before we get down to the retry or LB call layer.
@@ -2159,9 +2164,8 @@ void ClientChannelFilter::FilterBasedCallData::PendingBatchesFail(
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i] != nullptr) ++num_batches;
     }
-    gpr_log(GPR_INFO,
-            "chand=%p calld=%p: failing %" PRIuPTR " pending batches: %s",
-            chand(), this, num_batches, StatusToString(error).c_str());
+    LOG(INFO) << "chand=" << chand() << " calld=" << this << ": failing "
+              << num_batches << " pending batches: " << StatusToString(error);
   }
   CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2202,10 +2206,9 @@ void ClientChannelFilter::FilterBasedCallData::PendingBatchesResume() {
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i] != nullptr) ++num_batches;
     }
-    gpr_log(GPR_INFO,
-            "chand=%p calld=%p: starting %" PRIuPTR
-            " pending batches on dynamic_call=%p",
-            chand(), this, num_batches, dynamic_call_.get());
+    LOG(INFO) << "chand=" << chand() << " calld=" << this << ": starting "
+              << num_batches
+              << " pending batches on dynamic_call=" << dynamic_call_.get();
   }
   CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2357,81 +2360,6 @@ class ClientChannelFilter::LoadBalancedCall::LbCallState final
 };
 
 //
-// ClientChannelFilter::LoadBalancedCall::Metadata
-//
-
-class ClientChannelFilter::LoadBalancedCall::Metadata final
-    : public LoadBalancingPolicy::MetadataInterface {
- public:
-  explicit Metadata(grpc_metadata_batch* batch) : batch_(batch) {}
-
-  void Add(absl::string_view key, absl::string_view value) override {
-    if (batch_ == nullptr) return;
-    // Gross, egregious hack to support legacy grpclb behavior.
-    // TODO(ctiller): Use a promise context for this once that plumbing is done.
-    if (key == GrpcLbClientStatsMetadata::key()) {
-      batch_->Set(
-          GrpcLbClientStatsMetadata(),
-          const_cast<GrpcLbClientStats*>(
-              reinterpret_cast<const GrpcLbClientStats*>(value.data())));
-      return;
-    }
-    batch_->Append(key, Slice::FromStaticString(value),
-                   [key](absl::string_view error, const Slice& value) {
-                     gpr_log(GPR_ERROR, "%s",
-                             absl::StrCat(error, " key:", key,
-                                          " value:", value.as_string_view())
-                                 .c_str());
-                   });
-  }
-
-  std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
-      override {
-    if (batch_ == nullptr) return {};
-    Encoder encoder;
-    batch_->Encode(&encoder);
-    return encoder.Take();
-  }
-
-  absl::optional<absl::string_view> Lookup(absl::string_view key,
-                                           std::string* buffer) const override {
-    if (batch_ == nullptr) return absl::nullopt;
-    return batch_->GetStringValue(key, buffer);
-  }
-
- private:
-  class Encoder final {
-   public:
-    void Encode(const Slice& key, const Slice& value) {
-      out_.emplace_back(std::string(key.as_string_view()),
-                        std::string(value.as_string_view()));
-    }
-
-    template <class Which>
-    void Encode(Which, const typename Which::ValueType& value) {
-      auto value_slice = Which::Encode(value);
-      out_.emplace_back(std::string(Which::key()),
-                        std::string(value_slice.as_string_view()));
-    }
-
-    void Encode(GrpcTimeoutMetadata,
-                const typename GrpcTimeoutMetadata::ValueType&) {}
-    void Encode(HttpPathMetadata, const Slice&) {}
-    void Encode(HttpMethodMetadata,
-                const typename HttpMethodMetadata::ValueType&) {}
-
-    std::vector<std::pair<std::string, std::string>> Take() {
-      return std::move(out_);
-    }
-
-   private:
-    std::vector<std::pair<std::string, std::string>> out_;
-  };
-
-  grpc_metadata_batch* batch_;
-};
-
-//
 // ClientChannelFilter::LoadBalancedCall::LbCallState
 //
 
@@ -2541,7 +2469,7 @@ void ClientChannelFilter::LoadBalancedCall::RecordCallCompletion(
   // If the LB policy requested a callback for trailing metadata, invoke
   // the callback.
   if (lb_subchannel_call_tracker_ != nullptr) {
-    Metadata trailing_metadata(recv_trailing_metadata);
+    LbMetadata trailing_metadata(recv_trailing_metadata);
     BackendMetricAccessor backend_metric_accessor(this, recv_trailing_metadata);
     LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
         peer_address, status, &trailing_metadata, &backend_metric_accessor};
@@ -2593,16 +2521,17 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
   // updated before we queue it.
   // We need to unref pickers in the WorkSerializer.
   std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> pickers;
-  auto cleanup = absl::MakeCleanup([&]() {
-    if (IsWorkSerializerDispatchEnabled()) return;
-    chand_->work_serializer_->Run(
-        [pickers = std::move(pickers)]() mutable {
-          for (auto& picker : pickers) {
-            picker.reset(DEBUG_LOCATION, "PickSubchannel");
-          }
-        },
-        DEBUG_LOCATION);
-  });
+  auto cleanup = absl::MakeCleanup(
+      [work_serializer = chand_->work_serializer_, &pickers]() {
+        if (IsWorkSerializerDispatchEnabled()) return;
+        work_serializer->Run(
+            [pickers = std::move(pickers)]() mutable {
+              for (auto& picker : pickers) {
+                picker.reset(DEBUG_LOCATION, "PickSubchannel");
+              }
+            },
+            DEBUG_LOCATION);
+      });
   absl::AnyInvocable<void(RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>)>
       set_picker;
   if (!IsWorkSerializerDispatchEnabled()) {
@@ -2688,7 +2617,7 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
   pick_args.path = path->as_string_view();
   LbCallState lb_call_state(this);
   pick_args.call_state = &lb_call_state;
-  Metadata initial_metadata(send_initial_metadata());
+  LbMetadata initial_metadata(send_initial_metadata());
   pick_args.initial_metadata = &initial_metadata;
   auto result = picker->Pick(pick_args);
   return HandlePickResult<bool>(
@@ -2721,6 +2650,11 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         if (lb_subchannel_call_tracker_ != nullptr) {
           lb_subchannel_call_tracker_->Start();
         }
+        // Handle metadata mutations.
+        MetadataMutationHandler::Apply(complete_pick->metadata_mutations,
+                                       send_initial_metadata());
+        MaybeOverrideAuthority(std::move(complete_pick->authority_override),
+                               send_initial_metadata());
         return true;
       },
       // QueuePick
@@ -2847,9 +2781,8 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::PendingBatchesFail(
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i] != nullptr) ++num_batches;
     }
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: failing %" PRIuPTR " pending batches: %s",
-            chand(), this, num_batches, StatusToString(error).c_str());
+    LOG(INFO) << "chand=" << chand() << " lb_call=" << this << ": failing "
+              << num_batches << " pending batches: " << StatusToString(error);
   }
   CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2889,10 +2822,9 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::PendingBatchesResume() {
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i] != nullptr) ++num_batches;
     }
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: starting %" PRIuPTR
-            " pending batches on subchannel_call=%p",
-            chand(), this, num_batches, subchannel_call_.get());
+    LOG(INFO) << "chand=" << chand() << " lb_call=" << this << ": starting "
+              << num_batches << " pending batches on subchannel_call="
+              << subchannel_call_.get();
   }
   CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2915,12 +2847,10 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::
     StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch) {
   if (GRPC_TRACE_FLAG_ENABLED(client_channel_lb_call) ||
       GRPC_TRACE_FLAG_ENABLED(channel)) {
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: batch started from above: %s, "
-            "call_attempt_tracer()=%p",
-            chand(), this,
-            grpc_transport_stream_op_batch_string(batch, false).c_str(),
-            call_attempt_tracer());
+    LOG(INFO) << "chand=" << chand() << " lb_call=" << this
+              << ": batch started from above: "
+              << grpc_transport_stream_op_batch_string(batch, false)
+              << ", call_attempt_tracer()=" << call_attempt_tracer();
   }
   // Handle call tracing.
   if (call_attempt_tracer() != nullptr) {

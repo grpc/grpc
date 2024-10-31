@@ -16,23 +16,21 @@
 //
 //
 
-#include <string.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <string.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
+#include "absl/log/check.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
 #include "test/core/test_util/fuzzer_util.h"
+#include "test/core/test_util/test_config.h"
 
 using grpc_core::testing::grpc_fuzzer_get_next_byte;
 using grpc_core::testing::grpc_fuzzer_get_next_string;
@@ -63,7 +61,7 @@ static void read_target_service_accounts(
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_disable_all_logs();
+    grpc_disable_all_absl_logs();
   }
   input_stream inp = {data, data + size};
   grpc_init();

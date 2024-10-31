@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/socket_option.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -15,6 +16,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 static const upb_MiniTableField envoy_config_core_v3_SocketOption__fields[6] = {
   {1, UPB_SIZE(16, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(24, 48), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -28,6 +30,9 @@ const upb_MiniTable envoy__config__core__v3__SocketOption_msg_init = {
   NULL,
   &envoy_config_core_v3_SocketOption__fields[0],
   UPB_SIZE(48, 64), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.SocketOption",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x002000003f00000a, &upb_pss_1bt},
@@ -40,8 +45,9 @@ const upb_MiniTable envoy__config__core__v3__SocketOption_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_SocketOptionsOverride_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SocketOption_msg_init},
+const upb_MiniTable* envoy__config__core__v3__SocketOption_msg_init_ptr = &envoy__config__core__v3__SocketOption_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_SocketOptionsOverride_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SocketOption_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_SocketOptionsOverride__fields[1] = {
@@ -52,12 +58,16 @@ const upb_MiniTable envoy__config__core__v3__SocketOptionsOverride_msg_init = {
   &envoy_config_core_v3_SocketOptionsOverride_submsgs[0],
   &envoy_config_core_v3_SocketOptionsOverride__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.SocketOptionsOverride",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max128b},
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__SocketOptionsOverride_msg_init_ptr = &envoy__config__core__v3__SocketOptionsOverride_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &envoy__config__core__v3__SocketOption_msg_init,
   &envoy__config__core__v3__SocketOptionsOverride_msg_init,

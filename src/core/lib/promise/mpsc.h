@@ -15,24 +15,23 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_MPSC_H
 #define GRPC_SRC_CORE_LIB_PROMISE_MPSC_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <algorithm>
+#include <cstdint>
+#include <limits>
 #include <utility>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/wait_set.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 
 // Multi producer single consumer inter-activity comms.
 
@@ -47,6 +46,9 @@ class Center : public RefCounted<Center<T>> {
  public:
   // Construct the center with a maximum queue size.
   explicit Center(size_t max_queued) : max_queued_(max_queued) {}
+
+  static constexpr const uint64_t kClosedBatch =
+      std::numeric_limits<uint64_t>::max();
 
   // Poll for new items.
   // - Returns true if new items were obtained, in which case they are contained
@@ -67,45 +69,44 @@ class Center : public RefCounted<Center<T>> {
     }
     dest.swap(queue_);
     queue_.clear();
+    if (batch_ != kClosedBatch) ++batch_;
     auto wakeups = send_wakers_.TakeWakeupSet();
     lock.Release();
     wakeups.Wakeup();
     return true;
   }
 
-  // Poll to send one item.
-  // Returns pending if no send slot was available.
-  // Returns true if the item was sent.
-  // Returns false if the receiver has been closed.
-  Poll<bool> PollSend(T& t) {
+  // Return value:
+  //  - if the pipe is closed, returns kClosedBatch
+  //  - if await_receipt is false, returns the batch number the item was sent
+  //  in.
+  //  - if await_receipt is true, returns the first sending batch number that
+  //  guarantees the item has been received.
+  uint64_t Send(T t, bool await_receipt) {
     ReleasableMutexLock lock(&mu_);
-    if (receiver_closed_) return Poll<bool>(false);
-    if (queue_.size() < max_queued_) {
-      queue_.push_back(std::move(t));
-      auto receive_waker = std::move(receive_waker_);
-      lock.Release();
-      receive_waker.Wakeup();
-      return Poll<bool>(true);
-    }
-    send_wakers_.AddPending(GetContext<Activity>()->MakeNonOwningWaker());
-    return Pending{};
-  }
-
-  bool ImmediateSend(T t) {
-    ReleasableMutexLock lock(&mu_);
-    if (receiver_closed_) return false;
+    if (batch_ == kClosedBatch) return kClosedBatch;
     queue_.push_back(std::move(t));
     auto receive_waker = std::move(receive_waker_);
+    const uint64_t batch =
+        (!await_receipt && queue_.size() <= max_queued_) ? batch_ : batch_ + 1;
     lock.Release();
     receive_waker.Wakeup();
-    return true;
+    return batch;
+  }
+
+  // Poll until a particular batch number is received.
+  Poll<Empty> PollReceiveBatch(uint64_t batch) {
+    ReleasableMutexLock lock(&mu_);
+    if (batch_ >= batch) return Empty{};
+    send_wakers_.AddPending(GetContext<Activity>()->MakeNonOwningWaker());
+    return Pending{};
   }
 
   // Mark that the receiver is closed.
   void ReceiverClosed() {
     ReleasableMutexLock lock(&mu_);
-    if (receiver_closed_) return;
-    receiver_closed_ = true;
+    if (batch_ == kClosedBatch) return;
+    batch_ = kClosedBatch;
     auto wakeups = send_wakers_.TakeWakeupSet();
     lock.Release();
     wakeups.Wakeup();
@@ -115,7 +116,9 @@ class Center : public RefCounted<Center<T>> {
   Mutex mu_;
   const size_t max_queued_;
   std::vector<T> queue_ ABSL_GUARDED_BY(mu_);
-  bool receiver_closed_ ABSL_GUARDED_BY(mu_) = false;
+  // Every time we give queue_ to the receiver, we increment batch_.
+  // When the receiver is closed we set batch_ to kClosedBatch.
+  uint64_t batch_ ABSL_GUARDED_BY(mu_) = 1;
   Waker receive_waker_ ABSL_GUARDED_BY(mu_);
   WaitSet send_wakers_ ABSL_GUARDED_BY(mu_);
 };
@@ -137,18 +140,34 @@ class MpscSender {
   // Return a promise that will send one item.
   // Resolves to true if sent, false if the receiver was closed (and the value
   // will never be successfully sent).
-  auto Send(T t) {
-    return [center = center_, t = std::move(t)]() mutable -> Poll<bool> {
-      if (center == nullptr) return false;
-      return center->PollSend(t);
-    };
-  }
+  auto Send(T t) { return SendGeneric<false>(std::move(t)); }
+
+  // Per send, but do not resolve until the item has been received by the
+  // receiver.
+  auto SendAcked(T t) { return SendGeneric<true>(std::move(t)); }
 
   bool UnbufferedImmediateSend(T t) {
-    return center_->ImmediateSend(std::move(t));
+    return center_->Send(std::move(t), false) !=
+           mpscpipe_detail::Center<T>::kClosedBatch;
   }
 
  private:
+  template <bool kAwaitReceipt>
+  auto SendGeneric(T t) {
+    return [center = center_, t = std::move(t),
+            batch = uint64_t(0)]() mutable -> Poll<bool> {
+      if (center == nullptr) return false;
+      if (batch == 0) {
+        batch = center->Send(std::move(t), kAwaitReceipt);
+        CHECK_NE(batch, 0u);
+        if (batch == mpscpipe_detail::Center<T>::kClosedBatch) return false;
+      }
+      auto p = center->PollReceiveBatch(batch);
+      if (p.pending()) return Pending{};
+      return true;
+    };
+  }
+
   friend class MpscReceiver<T>;
   explicit MpscSender(RefCountedPtr<mpscpipe_detail::Center<T>> center)
       : center_(std::move(center)) {}

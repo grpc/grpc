@@ -15,15 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_CONTEXT_H
 #define GRPC_SRC_CORE_LIB_PROMISE_CONTEXT_H
 
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/down_cast.h"
+#include "src/core/util/down_cast.h"
 
 namespace grpc_core {
 
@@ -62,7 +60,7 @@ class ThreadLocalContext : public ContextType<T> {
   ThreadLocalContext(const ThreadLocalContext&) = delete;
   ThreadLocalContext& operator=(const ThreadLocalContext&) = delete;
 
-  static T* get() { return current_; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static T* get() { return current_; }
 
  private:
   T* const old_;
@@ -83,7 +81,7 @@ class Context<T, absl::void_t<typename ContextSubclass<T>::Base>>
     : public Context<typename ContextSubclass<T>::Base> {
  public:
   using Context<typename ContextSubclass<T>::Base>::Context;
-  static T* get() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static T* get() {
     return DownCast<T*>(Context<typename ContextSubclass<T>::Base>::get());
   }
 };
@@ -107,26 +105,26 @@ class WithContext {
 
 // Return true if a context of type T is currently active.
 template <typename T>
-bool HasContext() {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool HasContext() {
   return promise_detail::Context<T>::get() != nullptr;
 }
 
 // Retrieve the current value of a context, or abort if the value is unset.
 template <typename T>
-T* GetContext() {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T* GetContext() {
   auto* p = promise_detail::Context<T>::get();
-  CHECK_NE(p, nullptr);
+  DCHECK_NE(p, nullptr);
   return p;
 }
 
 // Retrieve the current value of a context, or nullptr if the value is unset.
 template <typename T>
-T* MaybeGetContext() {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T* MaybeGetContext() {
   return promise_detail::Context<T>::get();
 }
 
 template <typename T>
-void SetContext(T* p) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void SetContext(T* p) {
   promise_detail::Context<T>::set(p);
 }
 

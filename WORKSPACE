@@ -57,16 +57,6 @@ android_ndk_repository(name = "androidndk")
 # Use `--extra_toolchains=@androidndk//:all` to manually register it when building for Android.
 
 # Prevents bazel's '...' expansion from including the following folder.
-# This is required because the BUILD file in the following folder
-# will trigger bazel failure when Android SDK is not configured.
-# The targets in the following folder need to be included in APK and will
-# be invoked by binder transport implementation through JNI.
-local_repository(
-    name = "binder_transport_android_helper",
-    path = "src/core/ext/transport/binder/java",
-)
-
-# Prevents bazel's '...' expansion from including the following folder.
 # This is required to avoid triggering "Unable to find package for @rules_fuzzing//fuzzing:cc_defs.bzl"
 # error.
 local_repository(
@@ -85,11 +75,11 @@ load("@grpc_python_dependencies//:requirements.bzl", "install_deps")
 
 install_deps()
 
-load("@com_google_protobuf//bazel:system_python.bzl", "system_python")
+load("@com_google_protobuf//python/dist:system_python.bzl", "system_python")
 
 system_python(
     name = "system_python",
-    minimum_python_version = "3.7",
+    minimum_python_version = "3.8",
 )
 
 load("@system_python//:pip.bzl", system_pip_parse = "pip_parse")
@@ -128,6 +118,12 @@ load("@com_github_google_benchmark//:bazel/benchmark_deps.bzl", "benchmark_deps"
 
 benchmark_deps()
 
+# This is a transitive dependency from google_cloud_cpp
+bind(
+    name = "cares",
+    actual = "@com_github_cares_cares//:ares",
+)
+
 load("@io_opentelemetry_cpp//bazel:repository.bzl", "opentelemetry_cpp_deps")
 
 opentelemetry_cpp_deps()
@@ -135,6 +131,12 @@ opentelemetry_cpp_deps()
 load("@io_opentelemetry_cpp//bazel:extra_deps.bzl", "opentelemetry_extra_deps")
 
 opentelemetry_extra_deps()
+
+# Transitive dependency of opentelemetry_extra_deps()
+bind(
+    name = "madler_zlib",
+    actual = "@zlib//:zlib",
+)
 
 # TODO: Enable below once https://github.com/bazel-xcode/PodToBUILD/issues/232 is resolved
 #

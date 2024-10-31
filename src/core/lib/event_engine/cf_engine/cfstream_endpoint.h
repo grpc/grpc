@@ -20,19 +20,17 @@
 #ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
 #include <CoreFoundation/CoreFoundation.h>
-
-#include "absl/strings/str_format.h"
-
 #include <grpc/event_engine/event_engine.h>
 
+#include "absl/strings/str_format.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "src/core/lib/event_engine/cf_engine/cftype_unique_ref.h"
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_event_engine {
 namespace experimental {

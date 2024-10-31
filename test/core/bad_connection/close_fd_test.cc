@@ -21,22 +21,19 @@
 // an RPC call is in progress.
 //
 //
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/time.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -44,23 +41,24 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include <string.h>
-#include <unistd.h>
-
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/server/server.h"
+#include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
@@ -121,8 +119,9 @@ static void client_setup_transport(grpc_core::Transport* transport) {
 static void init_client() {
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Transport* transport;
-  transport = grpc_create_chttp2_transport(grpc_core::ChannelArgs(),
-                                           g_ctx.ep->client, true);
+  transport = grpc_create_chttp2_transport(
+      grpc_core::ChannelArgs(),
+      grpc_core::OrphanablePtr<grpc_endpoint>(g_ctx.ep->client), true);
   client_setup_transport(transport);
   CHECK(g_ctx.client);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
@@ -136,8 +135,9 @@ static void init_server() {
   g_ctx.server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(g_ctx.server, g_ctx.cq, nullptr);
   grpc_server_start(g_ctx.server);
-  transport = grpc_create_chttp2_transport(grpc_core::ChannelArgs(),
-                                           g_ctx.ep->server, false);
+  transport = grpc_create_chttp2_transport(
+      grpc_core::ChannelArgs(),
+      grpc_core::OrphanablePtr<grpc_endpoint>(g_ctx.ep->server), false);
   server_setup_transport(transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
                                       nullptr);

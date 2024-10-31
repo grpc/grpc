@@ -15,26 +15,27 @@
 // limitations under the License.
 //
 //
-#include "absl/log/check.h"
 
 #include <grpc/credentials.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
 
+#include "absl/log/check.h"
+#include "absl/synchronization/notification.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/util/notification.h"
 #include "test/core/test_util/mock_endpoint.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
+using grpc_core::HandshakerArgs;
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 
@@ -43,34 +44,21 @@ bool squelch = true;
 // Turning this on will fail the leak check.
 bool leak_check = false;
 
-struct handshake_state {
-  grpc_core::Notification done_signal;
-};
-
-static void on_handshake_done(void* arg, grpc_error_handle error) {
-  grpc_core::HandshakerArgs* args =
-      static_cast<grpc_core::HandshakerArgs*>(arg);
-  struct handshake_state* state =
-      static_cast<struct handshake_state*>(args->user_data);
-  // The fuzzer should not pass the handshake.
-  CHECK(!error.ok());
-  state->done_signal.Notify();
-}
-
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (squelch) {
-    gpr_disable_all_logs();
+    grpc_disable_all_absl_logs();
   }
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
 
     auto engine = GetDefaultEventEngine();
-    grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(engine);
-
-    grpc_mock_endpoint_put_read(
-        mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
-    grpc_mock_endpoint_finish_put_reads(mock_endpoint);
+    auto mock_endpoint_controller =
+        grpc_event_engine::experimental::MockEndpointController::Create(engine);
+    mock_endpoint_controller->TriggerReadEvent(
+        grpc_event_engine::experimental::Slice::FromCopiedBuffer(
+            reinterpret_cast<const char*>(data), size));
+    mock_endpoint_controller->NoMoreReads();
 
     // Load key pair and establish server SSL credentials.
     std::string ca_cert = grpc_core::testing::GetFileContents(CA_CERT_PATH);
@@ -90,21 +78,26 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_core::Timestamp deadline =
         grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now();
 
-    struct handshake_state state;
     auto handshake_mgr =
         grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
     auto channel_args =
         grpc_core::ChannelArgs().SetObject<EventEngine>(std::move(engine));
     sc->add_handshakers(channel_args, nullptr, handshake_mgr.get());
-    handshake_mgr->DoHandshake(mock_endpoint, channel_args, deadline,
-                               nullptr /* acceptor */, on_handshake_done,
-                               &state);
+    absl::Notification handshake_completed;
+    handshake_mgr->DoHandshake(grpc_core::OrphanablePtr<grpc_endpoint>(
+                                   mock_endpoint_controller->TakeCEndpoint()),
+                               channel_args, deadline, nullptr /* acceptor */,
+                               [&](absl::StatusOr<HandshakerArgs*> result) {
+                                 // The fuzzer should not pass the handshake.
+                                 CHECK(!result.ok());
+                                 handshake_completed.Notify();
+                               });
     grpc_core::ExecCtx::Get()->Flush();
 
     // If the given string happens to be part of the correct client hello, the
     // server will wait for more data. Explicitly fail the server by shutting
     // down the handshake manager.
-    if (!state.done_signal.WaitForNotificationWithTimeout(absl::Seconds(3))) {
+    if (!handshake_completed.WaitForNotificationWithTimeout(absl::Seconds(3))) {
       handshake_mgr->Shutdown(
           absl::DeadlineExceededError("handshake did not fail as expected"));
     }

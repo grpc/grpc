@@ -14,6 +14,8 @@
 
 #include "src/core/client_channel/load_balanced_call_destination.h"
 
+#include <grpc/grpc.h>
+
 #include <atomic>
 #include <memory>
 #include <queue>
@@ -21,9 +23,6 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "test/core/call/yodel/yodel_test.h"
 
 using testing::StrictMock;
@@ -41,7 +40,8 @@ class LoadBalancedCallDestinationTest : public YodelTest {
   using YodelTest::YodelTest;
 
   ClientMetadataHandle MakeClientInitialMetadata() {
-    auto client_initial_metadata = Arena::MakePooled<ClientMetadata>();
+    auto client_initial_metadata =
+        Arena::MakePooledForOverwrite<ClientMetadata>();
     client_initial_metadata->Set(HttpPathMetadata(),
                                  Slice::FromCopiedString(kTestPath));
     return client_initial_metadata;
@@ -49,9 +49,9 @@ class LoadBalancedCallDestinationTest : public YodelTest {
 
   CallInitiatorAndHandler MakeCall(
       ClientMetadataHandle client_initial_metadata) {
-    return MakeCallPair(std::move(client_initial_metadata),
-                        event_engine().get(),
-                        call_arena_allocator_->MakeArena());
+    auto arena = call_arena_allocator_->MakeArena();
+    arena->SetContext<EventEngine>(event_engine().get());
+    return MakeCallPair(std::move(client_initial_metadata), std::move(arena));
   }
 
   CallHandler TickUntilCallStarted() {
@@ -75,7 +75,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
   class TestCallDestination final : public UnstartedCallDestination {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override {
-      handlers_.push(unstarted_call_handler.StartWithEmptyFilterStack());
+      handlers_.push(unstarted_call_handler.StartCall());
     }
 
     absl::optional<CallHandler> PopHandler() {
@@ -116,6 +116,8 @@ class LoadBalancedCallDestinationTest : public YodelTest {
     RefCountedPtr<UnstartedCallDestination> call_destination() override {
       return call_destination_;
     }
+
+    std::string address() const override { return "test"; }
 
    private:
     const RefCountedPtr<UnstartedCallDestination> call_destination_;

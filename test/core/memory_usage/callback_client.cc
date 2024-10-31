@@ -16,6 +16,11 @@
 //
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/status.h>
 #include <limits.h>
 #include <stdio.h>
 
@@ -31,14 +36,8 @@
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/channel_arguments.h>
-#include <grpcpp/support/status.h>
-
-#include "src/core/lib/gprpp/notification.h"
+#include "src/core/util/notification.h"
+#include "src/cpp/ext/chaotic_good.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/memory_usage/memstats.h"
@@ -48,12 +47,15 @@ ABSL_FLAG(std::string, target, "", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 ABSL_FLAG(int, server_pid, 0, "Server's pid");
 ABSL_FLAG(int, size, 50, "Number of channels");
+ABSL_FLAG(bool, chaotic_good, false, "Use chaotic good");
 
 std::shared_ptr<grpc::Channel> CreateChannelForTest(int index) {
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ChannelCredentials> creds =
       grpc::InsecureChannelCredentials();
-  if (absl::GetFlag(FLAGS_secure)) {
+  if (absl::GetFlag(FLAGS_chaotic_good)) {
+    creds = grpc::ChaoticGoodInsecureChannelCredentials();
+  } else if (absl::GetFlag(FLAGS_secure)) {
     // TODO (chennancy) Add in secure credentials
     LOG(INFO) << "Supposed to be secure, is not yet";
   }

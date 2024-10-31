@@ -261,16 +261,17 @@ class ExperimentDefinition(object):
             )
             self._error = True
             return False
-        is_dict = isinstance(rollout_attributes["default"], dict)
         for platform in allowed_platforms:
-            if is_dict:
+            if isinstance(rollout_attributes["default"], dict):
                 value = rollout_attributes["default"].get(platform, False)
+                if isinstance(value, dict):
+                    # debug is assumed for all rollouts with additional constraints
+                    self._default[platform] = "debug"
+                    self._additional_constraints[platform] = value
+                    continue
             else:
                 value = rollout_attributes["default"]
-            if isinstance(value, dict):
-                self._default[platform] = "debug"
-                self._additional_constraints[platform] = value
-            elif value not in allowed_defaults:
+            if value not in allowed_defaults:
                 print(
                     "ERROR: default for experiment %s on platform %s "
                     "is of incorrect format"
@@ -278,9 +279,8 @@ class ExperimentDefinition(object):
                 )
                 self._error = True
                 return False
-            else:
-                self._default[platform] = value
-                self._additional_constraints[platform] = {}
+            self._default[platform] = value
+            self._additional_constraints[platform] = {}
         return True
 
     @property
@@ -456,7 +456,7 @@ class ExperimentsCompiler(object):
                 )
                 print(
                     "inline bool Is%sEnabled() { return"
-                    " Is%sExperimentEnabled(kExperimentId%s); }"
+                    " Is%sExperimentEnabled<kExperimentId%s>(); }"
                     % (
                         SnakeToPascal(exp.name),
                         "Test" if mode == "test" else "",
@@ -636,6 +636,14 @@ class ExperimentsCompiler(object):
             for req in self._ExperimentEnableSet(exp):
                 s.add(req)
         return s
+
+    def EnsureNoDebugExperiments(self):
+        for name, exp in self._experiment_definitions.items():
+            for platform, default in exp._default.items():
+                if default == "debug":
+                    raise ValueError(
+                        f"Debug experiments are prohibited. '{name}' is configured with {exp._default}"
+                    )
 
     def GenExperimentsBzl(self, mode, output_file):
         assert self._FinalizeExperiments()

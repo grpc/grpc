@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpcpp/grpcpp.h>
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -25,9 +27,6 @@
 #include "absl/flags/parse.h"
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/log.h>
-#include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -77,7 +76,7 @@ class ServerImpl final {
   }
 
  private:
-  // Class encompasing the state and logic needed to serve a request.
+  // Class encompassing the state and logic needed to serve a request.
   class CallData {
    public:
     // Take in the "service" instance (in this case representing an asynchronous

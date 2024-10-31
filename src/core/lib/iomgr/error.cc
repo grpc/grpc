@@ -17,28 +17,26 @@
 //
 #include "src/core/lib/iomgr/error.h"
 
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <inttypes.h>
 #include <string.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 #ifdef GPR_WINDOWS
 #include <grpc/support/log_windows.h>
 #endif
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/strerror.h"
 #include "src/core/util/useful.h"
 
 absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
@@ -221,7 +219,7 @@ grpc_error_handle grpc_error_add_child(grpc_error_handle src,
 bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
                     int line) {
   DCHECK(!error.ok());
-  gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "%s: %s", what,
-          grpc_core::StatusToString(error).c_str());
+  LOG(ERROR).AtLocation(file, line)
+      << what << ": " << grpc_core::StatusToString(error);
   return false;
 }

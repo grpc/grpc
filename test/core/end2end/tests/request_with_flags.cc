@@ -16,6 +16,10 @@
 //
 //
 
+#include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -24,14 +28,8 @@
 
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 
@@ -144,20 +142,20 @@ CORE_END2END_TEST(CoreEnd2endTest, BadFlagsOnRecvStatusOnClient) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, WriteBufferIntAcceptedOnSendMessage) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   InvokeRequestWithFlags(
       *this, {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_BUFFER_HINT}}, GRPC_CALL_OK);
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, WriteNoCompressAcceptedOnSendMessage) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   InvokeRequestWithFlags(
       *this, {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_NO_COMPRESS}}, GRPC_CALL_OK);
 }
 
 CORE_END2END_TEST(CoreEnd2endTest,
                   WriteBufferHintAndNoCompressAcceptedOnSendMessage) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   InvokeRequestWithFlags(
       *this,
       {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS}},
@@ -165,7 +163,7 @@ CORE_END2END_TEST(CoreEnd2endTest,
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, WriteInternalCompressAcceptedOnSendMessage) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   InvokeRequestWithFlags(*this,
                          {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_INTERNAL_COMPRESS}},
                          GRPC_CALL_OK);

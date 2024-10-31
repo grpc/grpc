@@ -23,7 +23,7 @@ thresholds. To enable this feature, the memory allocation of read/write buffers
 within an EventEngine must be acquired in the form of Slices from
 SliceAllocators. This is covered more fully in the gRFC and code.
 
-### Documentating expectations around callback execution
+### Documenting expectations around callback execution
 Some callbacks may be expensive to run. EventEngines should decide on and
 document whether callback execution might block polling operations. This way,
 application developers can plan accordingly (e.g., run their expensive callbacks

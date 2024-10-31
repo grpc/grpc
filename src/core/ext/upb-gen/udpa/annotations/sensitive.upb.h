@@ -3,7 +3,8 @@
  *     udpa/annotations/sensitive.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H_
 #define UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H_
@@ -45,7 +46,7 @@ UPB_INLINE void udpa_annotations_set_sensitive(struct google_protobuf_FieldOptio
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_1Byte);
-  bool ok = _upb_Message_SetExtensionField((upb_Message*)msg, ext, &val, arena);
+  bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
 }
 #ifdef __cplusplus

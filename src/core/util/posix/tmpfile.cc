@@ -21,18 +21,16 @@
 #ifdef GPR_POSIX_TMPFILE
 
 #include <errno.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "absl/log/log.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/strerror.h"
 #include "src/core/util/string.h"
 #include "src/core/util/tmpfile.h"
 
@@ -48,14 +46,14 @@ FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
 
   fd = mkstemp(filename_template);
   if (fd == -1) {
-    gpr_log(GPR_ERROR, "mkstemp failed for filename_template %s with error %s.",
-            filename_template, grpc_core::StrError(errno).c_str());
+    LOG(ERROR) << "mkstemp failed for filename_template " << filename_template
+               << " with error " << grpc_core::StrError(errno);
     goto end;
   }
   result = fdopen(fd, "w+");
   if (result == nullptr) {
-    gpr_log(GPR_ERROR, "Could not open file %s from fd %d (error = %s).",
-            filename_template, fd, grpc_core::StrError(errno).c_str());
+    LOG(ERROR) << "Could not open file " << filename_template << " from fd "
+               << fd << " (error = " << grpc_core::StrError(errno) << ").";
     unlink(filename_template);
     close(fd);
     goto end;

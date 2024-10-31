@@ -20,7 +20,6 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-
 #include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h"
@@ -37,6 +36,10 @@ class XdsBootstrapBuilder {
   XdsBootstrapBuilder() {}
   XdsBootstrapBuilder& SetIgnoreResourceDeletion() {
     ignore_resource_deletion_ = true;
+    return *this;
+  }
+  XdsBootstrapBuilder& SetTrustedXdsServer() {
+    trusted_xds_server_ = true;
     return *this;
   }
   XdsBootstrapBuilder& SetServers(absl::Span<const absl::string_view> servers) {
@@ -100,6 +103,7 @@ class XdsBootstrapBuilder {
   std::string MakeAuthorityText();
 
   bool ignore_resource_deletion_ = false;
+  bool trusted_xds_server_ = false;
   std::vector<std::string> servers_;
   std::string xds_channel_creds_type_ = "fake";
   std::string xds_channel_creds_config_;
@@ -214,16 +218,19 @@ class XdsResourceUtils {
                         ::envoy::config::core::v3::HealthStatus health_status =
                             ::envoy::config::core::v3::HealthStatus::UNKNOWN,
                         int lb_weight = 1,
-                        std::vector<int> additional_ports = {})
+                        std::vector<int> additional_ports = {},
+                        absl::string_view hostname = "")
           : port(port),
             health_status(health_status),
             lb_weight(lb_weight),
-            additional_ports(std::move(additional_ports)) {}
+            additional_ports(std::move(additional_ports)),
+            hostname(hostname) {}
 
       int port;
       ::envoy::config::core::v3::HealthStatus health_status;
       int lb_weight;
       std::vector<int> additional_ports;
+      std::string hostname;
     };
 
     // A locality.

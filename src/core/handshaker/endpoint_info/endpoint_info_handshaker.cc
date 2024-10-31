@@ -16,21 +16,22 @@
 
 #include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 
-#include <memory>
-
-#include "absl/status/status.h"
-
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <utility>
+
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 
@@ -38,17 +39,17 @@ namespace {
 
 class EndpointInfoHandshaker : public Handshaker {
  public:
-  const char* name() const override { return "endpoint_info"; }
+  absl::string_view name() const override { return "endpoint_info"; }
 
-  void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
-                   grpc_closure* on_handshake_done,
-                   HandshakerArgs* args) override {
+  void DoHandshake(
+      HandshakerArgs* args,
+      absl::AnyInvocable<void(absl::Status)> on_handshake_done) override {
     args->args = args->args
                      .Set(GRPC_ARG_ENDPOINT_LOCAL_ADDRESS,
-                          grpc_endpoint_get_local_address(args->endpoint))
+                          grpc_endpoint_get_local_address(args->endpoint.get()))
                      .Set(GRPC_ARG_ENDPOINT_PEER_ADDRESS,
-                          grpc_endpoint_get_peer(args->endpoint));
-    ExecCtx::Run(DEBUG_LOCATION, on_handshake_done, absl::OkStatus());
+                          grpc_endpoint_get_peer(args->endpoint.get()));
+    InvokeOnHandshakeDone(args, std::move(on_handshake_done), absl::OkStatus());
   }
 
   void Shutdown(grpc_error_handle /*why*/) override {}

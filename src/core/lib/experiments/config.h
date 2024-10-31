@@ -15,13 +15,14 @@
 #ifndef GRPC_SRC_CORE_LIB_EXPERIMENTS_CONFIG_H
 #define GRPC_SRC_CORE_LIB_EXPERIMENTS_CONFIG_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
+#include <atomic>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
 
 // #define GRPC_EXPERIMENTS_ARE_FINAL
 
@@ -38,15 +39,67 @@ struct ExperimentMetadata {
 };
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
+class ExperimentFlags {
+ public:
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsExperimentEnabled(
+      size_t experiment_id) {
+    auto bit = experiment_id % kFlagsPerWord;
+    auto word = experiment_id / kFlagsPerWord;
+    auto cur = experiment_flags_[word].load(std::memory_order_relaxed);
+    if (cur & (1ull << bit)) return true;
+    if (cur & kLoadedFlag) return false;
+    return LoadFlagsAndCheck(experiment_id);
+  }
+
+  template <size_t kExperimentId>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsExperimentEnabled() {
+    auto bit = kExperimentId % kFlagsPerWord;
+    auto word = kExperimentId / kFlagsPerWord;
+    auto cur = experiment_flags_[word].load(std::memory_order_relaxed);
+    if (cur & (1ull << bit)) return true;
+    if (cur & kLoadedFlag) return false;
+    return LoadFlagsAndCheck(kExperimentId);
+  }
+
+  static void TestOnlyClear();
+
+ private:
+  static bool LoadFlagsAndCheck(size_t experiment_id);
+
+  // We layout experiment flags in groups of 63... each 64 bit word contains
+  // 63 enablement flags (one per experiment), and the high bit which indicates
+  // whether the flags have been loaded from the configuration.
+  // Consequently, with one load, we can tell if the experiment is definitely
+  // enabled (the bit is set), or definitely disabled (the bit is clear, and the
+  // loaded flag is set), or if we need to load the flags and re-check.
+
+  static constexpr size_t kNumExperimentFlagsWords = 8;
+  static constexpr size_t kFlagsPerWord = 63;
+  static constexpr uint64_t kLoadedFlag = 0x8000000000000000ull;
+  static std::atomic<uint64_t> experiment_flags_[kNumExperimentFlagsWords];
+};
+
 // Return true if experiment \a experiment_id is enabled.
 // Experiments are numbered by their order in the g_experiment_metadata array
 // declared in experiments.h.
-bool IsExperimentEnabled(size_t experiment_id);
+inline bool IsExperimentEnabled(size_t experiment_id) {
+  return ExperimentFlags::IsExperimentEnabled(experiment_id);
+}
+
+template <size_t kExperimentId>
+inline bool IsExperimentEnabled() {
+  return ExperimentFlags::IsExperimentEnabled<kExperimentId>();
+}
 
 // Given a test experiment id, returns true if the test experiment is enabled.
 // Test experiments can be loaded using the LoadTestOnlyExperimentsFromMetadata
 // method.
 bool IsTestExperimentEnabled(size_t experiment_id);
+
+template <size_t kExperimentId>
+inline bool IsTestExperimentEnabled() {
+  return IsTestExperimentEnabled(kExperimentId);
+}
 
 // Slow check for if a named experiment is enabled.
 // Parses the configuration and looks up the experiment in that, so it does not

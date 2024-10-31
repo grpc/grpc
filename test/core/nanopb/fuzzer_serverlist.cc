@@ -16,11 +16,11 @@
 //
 //
 
+#include <grpc/grpc.h>
 #include <stdint.h>
 #include <string.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
+#include "test/core/test_util/test_config.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -29,7 +29,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* /*data*/,
                                       size_t /*size*/) {
   grpc_init();
   if (squelch) {
-    gpr_disable_all_logs();
+    grpc_disable_all_absl_logs();
   }
 
   // TODO(veblush): Convert this to upb.

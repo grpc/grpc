@@ -18,15 +18,14 @@
 
 #include "src/core/lib/config/config_vars.h"
 
-#include "absl/flags/flag.h"
-#include "absl/strings/escaping.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/flags/flag.h"
+#include "absl/strings/escaping.h"
 #include "src/core/lib/config/load_config.h"
 
 #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
-#define GPR_DEFAULT_LOG_VERBOSITY_STRING "ERROR"
+#define GPR_DEFAULT_LOG_VERBOSITY_STRING ""
 #endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
 
 #ifdef GRPC_ENABLE_FORK_SUPPORT
@@ -55,9 +54,6 @@ ABSL_FLAG(std::vector<std::string>, grpc_trace, {},
           "into how gRPC C core is processing requests via debug logs.");
 ABSL_FLAG(absl::optional<std::string>, grpc_verbosity, {},
           "Logging verbosity.");
-ABSL_FLAG(absl::optional<std::string>, grpc_stacktrace_minloglevel, {},
-          "Messages logged at the same or higher level than this will print "
-          "stacktrace");
 ABSL_FLAG(absl::optional<bool>, grpc_enable_fork_support, {},
           "Enable fork support");
 ABSL_FLAG(absl::optional<std::string>, grpc_poll_strategy, {},
@@ -75,6 +71,10 @@ ABSL_FLAG(absl::optional<bool>, grpc_not_use_system_ssl_roots, {},
           "Disable loading system root certificates.");
 ABSL_FLAG(absl::optional<std::string>, grpc_ssl_cipher_suites, {},
           "A colon separated list of cipher suites to use with OpenSSL");
+ABSL_FLAG(absl::optional<bool>, grpc_cpp_experimental_disable_reflection, {},
+          "EXPERIMENTAL. Only respected when there is a dependency on "
+          ":grpc++_reflection. If true, no reflection server will be "
+          "automatically added.");
 
 namespace grpc_core {
 
@@ -92,14 +92,15 @@ ConfigVars::ConfigVars(const Overrides& overrides)
       not_use_system_ssl_roots_(LoadConfig(
           FLAGS_grpc_not_use_system_ssl_roots, "GRPC_NOT_USE_SYSTEM_SSL_ROOTS",
           overrides.not_use_system_ssl_roots, false)),
+      cpp_experimental_disable_reflection_(
+          LoadConfig(FLAGS_grpc_cpp_experimental_disable_reflection,
+                     "GRPC_CPP_EXPERIMENTAL_DISABLE_REFLECTION",
+                     overrides.cpp_experimental_disable_reflection, false)),
       dns_resolver_(LoadConfig(FLAGS_grpc_dns_resolver, "GRPC_DNS_RESOLVER",
                                overrides.dns_resolver, "")),
       verbosity_(LoadConfig(FLAGS_grpc_verbosity, "GRPC_VERBOSITY",
                             overrides.verbosity,
                             GPR_DEFAULT_LOG_VERBOSITY_STRING)),
-      stacktrace_minloglevel_(LoadConfig(FLAGS_grpc_stacktrace_minloglevel,
-                                         "GRPC_STACKTRACE_MINLOGLEVEL",
-                                         overrides.stacktrace_minloglevel, "")),
       poll_strategy_(LoadConfig(FLAGS_grpc_poll_strategy, "GRPC_POLL_STRATEGY",
                                 overrides.poll_strategy, "all")),
       ssl_cipher_suites_(LoadConfig(
@@ -134,8 +135,7 @@ std::string ConfigVars::ToString() const {
       ClientChannelBackupPollIntervalMs(), ", dns_resolver: ", "\"",
       absl::CEscape(DnsResolver()), "\"", ", trace: ", "\"",
       absl::CEscape(Trace()), "\"", ", verbosity: ", "\"",
-      absl::CEscape(Verbosity()), "\"", ", stacktrace_minloglevel: ", "\"",
-      absl::CEscape(StacktraceMinloglevel()), "\"",
+      absl::CEscape(Verbosity()), "\"",
       ", enable_fork_support: ", EnableForkSupport() ? "true" : "false",
       ", poll_strategy: ", "\"", absl::CEscape(PollStrategy()), "\"",
       ", abort_on_leaks: ", AbortOnLeaks() ? "true" : "false",
@@ -143,7 +143,9 @@ std::string ConfigVars::ToString() const {
       "\"", ", default_ssl_roots_file_path: ", "\"",
       absl::CEscape(DefaultSslRootsFilePath()), "\"",
       ", not_use_system_ssl_roots: ", NotUseSystemSslRoots() ? "true" : "false",
-      ", ssl_cipher_suites: ", "\"", absl::CEscape(SslCipherSuites()), "\"");
+      ", ssl_cipher_suites: ", "\"", absl::CEscape(SslCipherSuites()), "\"",
+      ", cpp_experimental_disable_reflection: ",
+      CppExperimentalDisableReflection() ? "true" : "false");
 }
 
 }  // namespace grpc_core

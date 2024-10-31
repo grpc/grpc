@@ -29,6 +29,9 @@
 // configurations and assess whether such a change is correct and desirable.
 //
 
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -38,11 +41,6 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
@@ -101,9 +99,7 @@ std::vector<std::string> MakeStack(const char* transport_name,
 
   std::vector<std::string> parts;
   for (const auto& entry : *builder.mutable_stack()) {
-    const char* name = entry->name;
-    if (name == nullptr) continue;
-    parts.push_back(name);
+    parts.push_back(std::string(entry->name.name()));
   }
 
   return parts;

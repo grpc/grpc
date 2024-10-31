@@ -14,14 +14,13 @@
 
 #include "src/core/lib/surface/client_call.h"
 
-#include "absl/status/status.h"
-
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gprpp/debug_location.h"
+#include "absl/status/status.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/debug_location.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/call/yodel/yodel_test.h"
 
@@ -67,11 +66,13 @@ class ClientCallTest : public YodelTest {
 
   grpc_call* InitCall(const CallOptions& options) {
     CHECK_EQ(call_, nullptr);
-    call_ = MakeClientCall(nullptr, 0, cq_, options.path(), options.authority(),
-                           options.registered_method(),
-                           options.timeout() + Timestamp::Now(),
-                           options.compression_options(), event_engine().get(),
-                           SimpleArenaAllocator()->MakeArena(), destination_);
+    auto arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine().get());
+    call_ = MakeClientCall(
+        nullptr, 0, cq_, options.path(), options.authority(),
+        options.registered_method(), options.timeout() + Timestamp::Now(),
+        options.compression_options(), std::move(arena), destination_);
     return call_;
   }
 
@@ -117,7 +118,7 @@ class ClientCallTest : public YodelTest {
     void Orphaned() override {}
     void StartCall(UnstartedCallHandler handler) override {
       CHECK(!test_->handler_.has_value());
-      test_->handler_.emplace(handler.StartWithEmptyFilterStack());
+      test_->handler_.emplace(handler.StartCall());
     }
 
    private:
@@ -194,7 +195,7 @@ CLIENT_CALL_TEST(SendInitialMetadataAndReceiveStatusAfterCancellation) {
         EXPECT_EQ((*md)->get_pointer(HttpPathMetadata())->as_string_view(),
                   kDefaultPath);
         handler().PushServerTrailingMetadata(
-            ServerMetadataFromStatus(absl::InternalError("test error")));
+            ServerMetadataFromStatus(GRPC_STATUS_INTERNAL, "test error"));
         return Immediate(Empty{});
       });
   Expect(1, true);
@@ -215,7 +216,9 @@ CLIENT_CALL_TEST(SendInitialMetadataAndReceiveStatusAfterTimeout) {
   ExecCtx::Get()->InvalidateNow();
   auto now = Timestamp::Now();
   EXPECT_GE(now - start, Duration::Seconds(1)) << GRPC_DUMP_ARGS(now, start);
-  EXPECT_LE(now - start, Duration::Seconds(5)) << GRPC_DUMP_ARGS(now, start);
+  EXPECT_LE(now - start,
+            g_yodel_fuzzing ? Duration::Minutes(10) : Duration::Seconds(5))
+      << GRPC_DUMP_ARGS(now, start);
   WaitForAllPendingWork();
 }
 

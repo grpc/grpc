@@ -31,7 +31,7 @@ class TestServiceStub {
      * One empty request followed by one empty response.
      * @param \Grpc\Testing\EmptyMessage $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occured
+     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function EmptyCall(
@@ -46,7 +46,7 @@ class TestServiceStub {
      * One request followed by one response.
      * @param \Grpc\Testing\SimpleRequest $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\SimpleResponse for response data, null if if error occured
+     * @return \Grpc\Testing\SimpleResponse for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function UnaryCall(
@@ -63,7 +63,7 @@ class TestServiceStub {
      * satisfy subsequent requests.
      * @param \Grpc\Testing\SimpleRequest $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\SimpleResponse for response data, null if if error occured
+     * @return \Grpc\Testing\SimpleResponse for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function CacheableUnaryCall(
@@ -96,7 +96,7 @@ class TestServiceStub {
      * The server returns the aggregated size of client payload as the result.
      * @param \Grpc\ServerCallReader $reader read client request data of \Grpc\Testing\StreamingInputCallRequest
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\StreamingInputCallResponse for response data, null if if error occured
+     * @return \Grpc\Testing\StreamingInputCallResponse for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function StreamingInputCall(
@@ -149,7 +149,7 @@ class TestServiceStub {
      * to test the behavior when clients call unimplemented methods.
      * @param \Grpc\Testing\EmptyMessage $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occured
+     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function UnimplementedCall(

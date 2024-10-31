@@ -36,7 +36,6 @@ echo "This suite tests whether gRPC HEAD builds with HEAD of submodule '${SUBMOD
 echo "If a test breaks, either"
 echo "1) some change in the grpc repository has caused the failure"
 echo "2) some change that was just merged in the submodule head has caused the failure."
-
 echo ""
 echo "submodule '${SUBMODULE_NAME}' is at commit: $(cd third_party/${SUBMODULE_NAME}; git rev-parse --verify HEAD)"
 echo ""
@@ -88,4 +87,4 @@ tools/buildgen/generate_projects.sh
 git add -A
 git -c user.name='foo' -c user.email='foo@google.com' commit -m 'Update submodule' --allow-empty
 
-tools/run_tests/run_tests_matrix.py -f linux --exclude c sanity basictests_arm64 openssl dbg --inner_jobs 16 -j 2 --internal_ci --build_only
+tools/run_tests/run_tests_matrix.py -f linux --exclude c sanity basictests_arm64 openssl dbg --inner_jobs 16 -j 2 --build_only

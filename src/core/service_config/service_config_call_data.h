@@ -17,26 +17,25 @@
 #ifndef GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_CALL_DATA_H
 #define GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_CALL_DATA_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <memory>
 #include <utility>
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/chunked_vector.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_parser.h"
+#include "src/core/util/chunked_vector.h"
+#include "src/core/util/down_cast.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/unique_type_name.h"
 
 namespace grpc_core {
 
 /// Stores the service config data associated with an individual call.
-/// A pointer to this object is stored in the call_context
-/// GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA element, so that filters can
-/// easily access method and global parameters for the call.
+/// A pointer to this object is stored in the call context, so that
+/// filters can easily access method and global parameters for the call.
 ///
 /// Must be accessed when holding the call combiner (legacy filter) or from
 /// inside the activity (promise-based filter).
@@ -85,7 +84,7 @@ class ServiceConfigCallData {
 
   template <typename A>
   A* GetCallAttribute() const {
-    return static_cast<A*>(GetCallAttribute(A::TypeName()));
+    return DownCast<A*>(GetCallAttribute(A::TypeName()));
   }
 
   CallAttributeInterface* GetCallAttribute(UniqueTypeName type) const {

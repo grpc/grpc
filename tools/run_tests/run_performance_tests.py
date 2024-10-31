@@ -447,7 +447,7 @@ def create_scenarios(
                     if custom_server_lang and custom_client_lang:
                         raise Exception(
                             "Cannot set both custom CLIENT_LANGUAGE and"
-                            " SERVER_LANGUAGEin the same scenario"
+                            " SERVER_LANGUAGE in the same scenario"
                         )
                     if custom_server_lang:
                         if not workers_by_lang.get(custom_server_lang, []):
@@ -528,7 +528,7 @@ profile_output_files = []
 # Note the base names of perf text reports are used when creating and processing
 # perf data. The scenario name uniqifies the output name in the final
 # perf reports directory.
-# Alos, the perf profiles need to be fetched and processed after each scenario
+# Also, the perf profiles need to be fetched and processed after each scenario
 # in order to avoid clobbering the output files.
 def run_collect_perf_profile_jobs(
     hosts_and_base_names, scenario_name, flame_graph_reports

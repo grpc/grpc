@@ -18,6 +18,9 @@
 
 #include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 #include <memory>
 
@@ -26,17 +29,11 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -123,12 +120,9 @@ void grpc_plugin_credentials::PendingRequest::RequestMetadataReady(
                               GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP);
   grpc_core::RefCountedPtr<grpc_plugin_credentials::PendingRequest> r(
       static_cast<grpc_plugin_credentials::PendingRequest*>(request));
-  if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
-    gpr_log(GPR_INFO,
-            "plugin_credentials[%p]: request %p: plugin returned "
-            "asynchronously",
-            r->creds(), r.get());
-  }
+  GRPC_TRACE_LOG(plugin_credentials, INFO)
+      << "plugin_credentials[" << r->creds() << "]: request " << r.get()
+      << ": plugin returned asynchronously";
   for (size_t i = 0; i < num_md; ++i) {
     grpc_metadata p;
     p.key = grpc_core::CSliceRef(md[i].key);
@@ -154,10 +148,9 @@ grpc_plugin_credentials::GetRequestMetadata(
       RefAsSubclass<grpc_plugin_credentials>(), std::move(initial_metadata),
       args);
   // Invoke the plugin.  The callback holds a ref to us.
-  if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
-    gpr_log(GPR_INFO, "plugin_credentials[%p]: request %p: invoking plugin",
-            this, request.get());
-  }
+  GRPC_TRACE_LOG(plugin_credentials, INFO)
+      << "plugin_credentials[" << this << "]: request " << request.get()
+      << ": invoking plugin";
   grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX];
   size_t num_creds_md = 0;
   grpc_status_code status = GRPC_STATUS_OK;
@@ -172,21 +165,15 @@ grpc_plugin_credentials::GetRequestMetadata(
                             child_request.get(), creds_md, &num_creds_md,
                             &status, &error_details)) {
     child_request.release();
-    if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
-      gpr_log(GPR_INFO,
-              "plugin_credentials[%p]: request %p: plugin will return "
-              "asynchronously",
-              this, request.get());
-    }
+    GRPC_TRACE_LOG(plugin_credentials, INFO)
+        << "plugin_credentials[" << this << "]: request " << request.get()
+        << ": plugin will return asynchronously";
     return [request] { return request->PollAsyncResult(); };
   }
   // Synchronous return.
-  if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
-    gpr_log(GPR_INFO,
-            "plugin_credentials[%p]: request %p: plugin returned "
-            "synchronously",
-            this, request.get());
-  }
+  GRPC_TRACE_LOG(plugin_credentials, INFO)
+      << "plugin_credentials[" << this << "]: request " << request.get()
+      << ": plugin returned synchronously";
   auto result = request->ProcessPluginResult(creds_md, num_creds_md, status,
                                              error_details);
   // Clean up.
@@ -207,8 +194,9 @@ grpc_plugin_credentials::grpc_plugin_credentials(
 grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin,
     grpc_security_level min_security_level, void* reserved) {
-  GRPC_API_TRACE("grpc_metadata_credentials_create_from_plugin(reserved=%p)", 1,
-                 (reserved));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_metadata_credentials_create_from_plugin(reserved=" << reserved
+      << ")";
   CHECK_EQ(reserved, nullptr);
   return new grpc_plugin_credentials(plugin, min_security_level);
 }

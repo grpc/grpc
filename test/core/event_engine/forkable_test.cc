@@ -28,9 +28,8 @@
 #include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/util/no_destruct.h"
 
 namespace {
 using ::grpc_event_engine::experimental::Forkable;

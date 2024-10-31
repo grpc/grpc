@@ -19,23 +19,22 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_LAME_CLIENT_H
 #define GRPC_SRC_CORE_LIB_SURFACE_LAME_CLIENT_H
 
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/sync.h"
 
 #define GRPC_ARG_LAME_FILTER_ERROR "grpc.lame_filter_error"
 
@@ -46,6 +45,8 @@ namespace grpc_core {
 class LameClientFilter : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() { return "lame-client"; }
 
   explicit LameClientFilter(absl::Status error);
 

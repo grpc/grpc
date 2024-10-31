@@ -19,6 +19,7 @@
 #ifndef GRPC_SRC_CORE_LIB_CONFIG_CONFIG_VARS_H
 #define GRPC_SRC_CORE_LIB_CONFIG_CONFIG_VARS_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <atomic>
@@ -26,8 +27,6 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -38,9 +37,9 @@ class GPR_DLL ConfigVars {
     absl::optional<bool> enable_fork_support;
     absl::optional<bool> abort_on_leaks;
     absl::optional<bool> not_use_system_ssl_roots;
+    absl::optional<bool> cpp_experimental_disable_reflection;
     absl::optional<std::string> dns_resolver;
     absl::optional<std::string> verbosity;
-    absl::optional<std::string> stacktrace_minloglevel;
     absl::optional<std::string> poll_strategy;
     absl::optional<std::string> system_ssl_roots_dir;
     absl::optional<std::string> default_ssl_roots_file_path;
@@ -81,10 +80,6 @@ class GPR_DLL ConfigVars {
   absl::string_view Trace() const { return trace_; }
   // Logging verbosity.
   absl::string_view Verbosity() const { return verbosity_; }
-  // Messages logged at the same or higher level than this will print stacktrace
-  absl::string_view StacktraceMinloglevel() const {
-    return stacktrace_minloglevel_;
-  }
   // Enable fork support
   bool EnableForkSupport() const { return enable_fork_support_; }
   // Declares which polling engines to try when starting gRPC. This is a
@@ -102,6 +97,12 @@ class GPR_DLL ConfigVars {
   bool NotUseSystemSslRoots() const { return not_use_system_ssl_roots_; }
   // A colon separated list of cipher suites to use with OpenSSL
   absl::string_view SslCipherSuites() const { return ssl_cipher_suites_; }
+  // EXPERIMENTAL. Only respected when there is a dependency on
+  // :grpc++_reflection. If true, no reflection server will be automatically
+  // added.
+  bool CppExperimentalDisableReflection() const {
+    return cpp_experimental_disable_reflection_;
+  }
 
  private:
   explicit ConfigVars(const Overrides& overrides);
@@ -111,9 +112,9 @@ class GPR_DLL ConfigVars {
   bool enable_fork_support_;
   bool abort_on_leaks_;
   bool not_use_system_ssl_roots_;
+  bool cpp_experimental_disable_reflection_;
   std::string dns_resolver_;
   std::string verbosity_;
-  std::string stacktrace_minloglevel_;
   std::string poll_strategy_;
   std::string ssl_cipher_suites_;
   std::string experiments_;

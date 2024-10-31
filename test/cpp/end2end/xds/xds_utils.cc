@@ -15,6 +15,8 @@
 
 #include "test/cpp/end2end/xds/xds_utils.h"
 
+#include <grpcpp/security/tls_certificate_provider.h>
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -30,17 +32,14 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpcpp/security/tls_certificate_provider.h>
-
 #include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/server/server.h"
+#include "src/core/util/env.h"
 #include "src/core/util/tmpfile.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_channel_args.h"
 #include "src/cpp/client/secure_credentials.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/router.pb.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 
 namespace grpc {
@@ -92,6 +91,9 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
   std::vector<std::string> server_features;
   if (ignore_resource_deletion_) {
     server_features.push_back("\"ignore_resource_deletion\"");
+  }
+  if (trusted_xds_server_) {
+    server_features.push_back("\"trusted_xds_server\"");
   }
   std::vector<std::string> servers;
   for (absl::string_view server_uri : server_uris) {
@@ -364,6 +366,9 @@ ClusterLoadAssignment XdsResourceUtils::BuildEdsResource(
                              ->mutable_socket_address();
         socket_address->set_address(grpc_core::LocalIp());
         socket_address->set_port_value(port);
+      }
+      if (!endpoint.hostname.empty()) {
+        endpoint_proto->set_hostname(endpoint.hostname);
       }
     }
   }

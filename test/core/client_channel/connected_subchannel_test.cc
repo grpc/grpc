@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/grpc.h>
+
 #include <atomic>
 #include <memory>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/local_subchannel_pool.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -59,7 +58,8 @@ class ConnectedSubchannelTest : public YodelTest {
   }
 
   ClientMetadataHandle MakeClientInitialMetadata() {
-    auto client_initial_metadata = Arena::MakePooled<ClientMetadata>();
+    auto client_initial_metadata =
+        Arena::MakePooledForOverwrite<ClientMetadata>();
     client_initial_metadata->Set(HttpPathMetadata(),
                                  Slice::FromCopiedString(kTestPath));
     return client_initial_metadata;
@@ -67,9 +67,10 @@ class ConnectedSubchannelTest : public YodelTest {
 
   CallInitiatorAndHandler MakeCall(
       ClientMetadataHandle client_initial_metadata) {
-    return MakeCallPair(std::move(client_initial_metadata),
-                        event_engine().get(),
-                        SimpleArenaAllocator()->MakeArena());
+    auto arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine().get());
+    return MakeCallPair(std::move(client_initial_metadata), std::move(arena));
   }
 
   CallHandler TickUntilCallStarted() {

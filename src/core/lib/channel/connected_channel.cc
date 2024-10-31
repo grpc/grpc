@@ -18,6 +18,10 @@
 
 #include "src/core/lib/channel/connected_channel.h"
 
+#include <grpc/grpc.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <functional>
@@ -30,13 +34,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -44,10 +41,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -77,6 +70,10 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 
 typedef struct connected_channel_channel_data {
   grpc_core::Transport* transport;
@@ -267,7 +264,7 @@ const grpc_channel_filter kConnectedFilter{
     },
     connected_channel_destroy_channel_elem,
     connected_channel_get_channel_info,
-    "connected",
+    GRPC_UNIQUE_TYPE_NAME_HERE("connected"),
 };
 
 // noop filter for the v3 stack: placeholder for now because other code requires
@@ -288,7 +285,7 @@ const grpc_channel_filter kPromiseBasedTransportFilter = {
     +[](grpc_channel_stack*, grpc_channel_element*) {},
     connected_channel_destroy_channel_elem,
     connected_channel_get_channel_info,
-    "connected",
+    GRPC_UNIQUE_TYPE_NAME_HERE("connected"),
 };
 
 bool TransportSupportsClientPromiseBasedCalls(const ChannelArgs& args) {

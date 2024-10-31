@@ -27,6 +27,10 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <stdio.h>
@@ -38,17 +42,11 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/strerror.h"
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
@@ -164,8 +162,7 @@ static void session_read_cb(void* arg,  // session
       // before notify_on_read is called.
       grpc_fd_notify_on_read(se->em_fd, &se->session_read_closure);
     } else {
-      grpc_core::Crash(absl::StrFormat("Unhandled read error %s",
-                                       grpc_core::StrError(errno).c_str()));
+      LOG(FATAL) << "Unhandled read error " << grpc_core::StrError(errno);
     }
   }
 }
@@ -330,8 +327,7 @@ static void client_session_write(void* arg,  // client
     }
     gpr_mu_unlock(g_mu);
   } else {
-    grpc_core::Crash(absl::StrFormat("unknown errno %s",
-                                     grpc_core::StrError(errno).c_str()));
+    LOG(FATAL) << "unknown errno " << grpc_core::StrError(errno).c_str();
   }
 }
 
@@ -348,12 +344,10 @@ static void client_start(client* cl, int port) {
       pfd.events = POLLOUT;
       pfd.revents = 0;
       if (poll(&pfd, 1, -1) == -1) {
-        gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d", errno);
-        abort();
+        LOG(FATAL) << "poll() failed during connect; errno=" << errno;
       }
     } else {
-      grpc_core::Crash(
-          absl::StrFormat("Failed to connect to the server (errno=%d)", errno));
+      LOG(FATAL) << "Failed to connect to the server (errno=" << errno << ")";
     }
   }
 

@@ -20,16 +20,16 @@
 
 #include "rb_call.h"
 
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "rb_byte_buffer.h"
 #include "rb_call_credentials.h"
 #include "rb_completion_queue.h"
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 /* grpc_rb_cCall is the Call class whose instances proxy grpc_call. */
 static VALUE grpc_rb_cCall;
@@ -437,7 +437,7 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
                  tmp_str);
         return ST_STOP;
       }
-      GPR_ASSERT(md_ary->count < md_ary->capacity);
+      GRPC_RUBY_ASSERT(md_ary->count < md_ary->capacity);
       md_ary->metadata[md_ary->count].key = key_slice;
       md_ary->metadata[md_ary->count].value = value_slice;
       md_ary->count += 1;
@@ -453,7 +453,7 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
                tmp_str);
       return ST_STOP;
     }
-    GPR_ASSERT(md_ary->count < md_ary->capacity);
+    GRPC_RUBY_ASSERT(md_ary->count < md_ary->capacity);
     md_ary->metadata[md_ary->count].key = key_slice;
     md_ary->metadata[md_ary->count].value = value_slice;
     md_ary->count += 1;
@@ -808,6 +808,12 @@ struct call_run_batch_args {
   run_batch_stack* st;
 };
 
+static void cancel_call_unblock_func(void* arg) {
+  grpc_absl_log(GPR_DEBUG, "GRPC_RUBY: cancel_call_unblock_func");
+  grpc_call* call = (grpc_call*)arg;
+  grpc_call_cancel(call, NULL);
+}
+
 static VALUE grpc_rb_call_run_batch_try(VALUE value_args) {
   grpc_rb_fork_unsafe_begin();
   struct call_run_batch_args* args = (struct call_run_batch_args*)value_args;
@@ -830,7 +836,8 @@ static VALUE grpc_rb_call_run_batch_try(VALUE value_args) {
              grpc_call_error_detail_of(err), err);
   }
   ev = rb_completion_queue_pluck(args->call->queue, tag,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+                                 gpr_inf_future(GPR_CLOCK_REALTIME),
+                                 cancel_call_unblock_func, args->call->wrapped);
   if (!ev.success) {
     rb_raise(grpc_rb_eCallError, "call#run_batch failed somehow");
   }

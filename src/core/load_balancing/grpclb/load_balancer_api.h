@@ -18,18 +18,16 @@
 
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_GRPCLB_LOAD_BALANCER_API_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_GRPCLB_LOAD_BALANCER_API_H
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "upb/mem/arena.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/load_balancing/grpclb/grpclb_client_stats.h"
+#include "src/core/util/time.h"
+#include "upb/mem/arena.h"
 
 #define GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH 128
 #define GRPC_GRPCLB_SERVER_IP_ADDRESS_MAX_SIZE 16

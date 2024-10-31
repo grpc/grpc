@@ -12,25 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/event_engine.h>
+#include <gtest/gtest.h>
 #include <stdio.h>
 
-#include <gtest/gtest.h>
-
 #include "absl/log/check.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/util/env.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/call/yodel/fuzzer.pb.h"
 #include "test/core/call/yodel/yodel_test.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/proto_bit_gen.h"
+#include "test/core/test_util/test_config.h"
 
 bool squelch = true;
 
@@ -43,7 +40,7 @@ DEFINE_PROTO_FUZZER(const transport_test_suite::Msg& msg) {
   const int test_id = msg.test_id() % tests->size();
 
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_disable_all_logs();
+    grpc_disable_all_absl_logs();
   }
 
   grpc_core::ConfigVars::Overrides overrides =

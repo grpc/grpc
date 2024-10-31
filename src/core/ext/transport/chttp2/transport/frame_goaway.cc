@@ -18,6 +18,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include "absl/base/attributes.h"
@@ -25,12 +28,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
 void grpc_chttp2_goaway_parser_init(grpc_chttp2_goaway_parser* p) {

@@ -15,19 +15,20 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_INTERCEPTION_CHAIN_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_INTERCEPTION_CHAIN_H
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <vector>
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/ref_counted.h"
 
 namespace grpc_core {
 
+class Blackboard;
 class InterceptionChainBuilder;
 
 // One hijacked call. Using this we can get access to the CallHandler for the
@@ -64,56 +65,64 @@ class HijackedCall final {
   CallHandler call_handler_;
 };
 
-namespace interception_chain_detail {
-
-inline auto HijackCall(UnstartedCallHandler unstarted_call_handler,
-                       RefCountedPtr<UnstartedCallDestination> destination,
-                       RefCountedPtr<CallFilters::Stack> stack) {
-  auto call_handler = unstarted_call_handler.StartCall(stack);
-  return Map(
-      call_handler.PullClientInitialMetadata(),
-      [call_handler,
-       destination](ValueOrFailure<ClientMetadataHandle> metadata) mutable
-      -> ValueOrFailure<HijackedCall> {
-        if (!metadata.ok()) return Failure{};
-        return HijackedCall(std::move(metadata.value()), std::move(destination),
-                            std::move(call_handler));
-      });
-}
-
-}  // namespace interception_chain_detail
-
 // A delegating UnstartedCallDestination for use as a hijacking filter.
+//
+// This class provides the final StartCall method, and delegates to the
+// InterceptCall() method for the actual interception. It has the same semantics
+// as StartCall, but affords the implementation the ability to prepare the
+// UnstartedCallHandler appropriately.
+//
 // Implementations may look at the unprocessed initial metadata
-// and decide to do one of two things:
+// and decide to do one of three things:
 //
 // 1. It can hijack the call. Returns a HijackedCall object that can
 //    be used to start new calls with the same metadata.
 //
 // 2. It can consume the call by calling `Consume`.
 //
+// 3. It can pass the call through to the next interceptor by calling
+//    `PassThrough`.
+//
 // Upon the StartCall call the UnstartedCallHandler will be from the last
 // *Interceptor* in the call chain (without having been processed by any
 // intervening filters) -- note that this is commonly not useful (not enough
 // guarantees), and so it's usually better to Hijack and examine the metadata.
+
 class Interceptor : public UnstartedCallDestination {
+ public:
+  void StartCall(UnstartedCallHandler unstarted_call_handler) final {
+    unstarted_call_handler.AddCallStack(filter_stack_);
+    InterceptCall(std::move(unstarted_call_handler));
+  }
+
  protected:
+  virtual void InterceptCall(UnstartedCallHandler unstarted_call_handler) = 0;
+
   // Returns a promise that resolves to a HijackedCall instance.
   // Hijacking is the process of taking over a call and starting one or more new
   // ones.
   auto Hijack(UnstartedCallHandler unstarted_call_handler) {
-    return interception_chain_detail::HijackCall(
-        std::move(unstarted_call_handler), wrapped_destination_, filter_stack_);
+    auto call_handler = unstarted_call_handler.StartCall();
+    return Map(call_handler.PullClientInitialMetadata(),
+               [call_handler, destination = wrapped_destination_](
+                   ValueOrFailure<ClientMetadataHandle> metadata) mutable
+               -> ValueOrFailure<HijackedCall> {
+                 if (!metadata.ok()) return Failure{};
+                 return HijackedCall(std::move(metadata.value()),
+                                     std::move(destination),
+                                     std::move(call_handler));
+               });
   }
 
   // Consume this call - it will not be passed on to any further filters.
   CallHandler Consume(UnstartedCallHandler unstarted_call_handler) {
-    return unstarted_call_handler.StartCall(filter_stack_);
+    return unstarted_call_handler.StartCall();
   }
 
-  // TODO(ctiller): Consider a Passthrough() method that allows the call to be
-  // passed on to the next filter in the chain without any interception by the
-  // current filter.
+  // Pass through this call to the next filter.
+  void PassThrough(UnstartedCallHandler unstarted_call_handler) {
+    wrapped_destination_->StartCall(std::move(unstarted_call_handler));
+  }
 
  private:
   friend class InterceptionChainBuilder;
@@ -145,8 +154,12 @@ class InterceptionChainBuilder final {
       absl::variant<RefCountedPtr<UnstartedCallDestination>,
                     RefCountedPtr<CallDestination>>;
 
-  explicit InterceptionChainBuilder(ChannelArgs args)
-      : args_(std::move(args)) {}
+  explicit InterceptionChainBuilder(ChannelArgs args,
+                                    const Blackboard* old_blackboard = nullptr,
+                                    Blackboard* new_blackboard = nullptr)
+      : args_(std::move(args)),
+        old_blackboard_(old_blackboard),
+        new_blackboard_(new_blackboard) {}
 
   // Add a filter with a `Call` class as an inner member.
   // Call class must be one compatible with the filters described in
@@ -155,7 +168,8 @@ class InterceptionChainBuilder final {
   absl::enable_if_t<sizeof(typename T::Call) != 0, InterceptionChainBuilder&>
   Add() {
     if (!status_.ok()) return *this;
-    auto filter = T::Create(args_, {FilterInstanceId(FilterTypeId<T>())});
+    auto filter = T::Create(args_, {FilterInstanceId(FilterTypeId<T>()),
+                                    old_blackboard_, new_blackboard_});
     if (!filter.ok()) {
       status_ = filter.status();
       return *this;
@@ -171,7 +185,8 @@ class InterceptionChainBuilder final {
   absl::enable_if_t<std::is_base_of<Interceptor, T>::value,
                     InterceptionChainBuilder&>
   Add() {
-    AddInterceptor(T::Create(args_, {FilterInstanceId(FilterTypeId<T>())}));
+    AddInterceptor(T::Create(args_, {FilterInstanceId(FilterTypeId<T>()),
+                                     old_blackboard_, new_blackboard_}));
     return *this;
   };
 
@@ -229,6 +244,8 @@ class InterceptionChainBuilder final {
   absl::Status status_;
   std::map<size_t, size_t> filter_type_counts_;
   static std::atomic<size_t> next_filter_id_;
+  const Blackboard* old_blackboard_ = nullptr;
+  Blackboard* new_blackboard_ = nullptr;
 };
 
 }  // namespace grpc_core

@@ -18,16 +18,7 @@
 
 #include "test/cpp/util/grpc_tool.h"
 
-#include <chrono>
-#include <sstream>
-
 #include <gmock/gmock-matchers.h>
-#include <gtest/gtest.h>
-
-#include "absl/flags/declare.h"
-#include "absl/flags/flag.h"
-#include "absl/strings/str_split.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/channel.h>
@@ -37,8 +28,15 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
 
-#include "src/core/lib/gprpp/env.h"
+#include <chrono>
+#include <sstream>
+
+#include "absl/flags/declare.h"
+#include "absl/flags/flag.h"
+#include "absl/strings/str_split.h"
+#include "src/core/util/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.pb.h"
 #include "test/core/test_util/port.h"

@@ -16,14 +16,13 @@
 
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_RESOURCE_TYPE_IMPL_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_RESOURCE_TYPE_IMPL_H
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <utility>
 
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 

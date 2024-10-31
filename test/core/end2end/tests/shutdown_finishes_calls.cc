@@ -16,14 +16,13 @@
 //
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/status.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include <memory>
+
+#include "gtest/gtest.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/test_config.h"
 
@@ -31,7 +30,7 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(CoreEnd2endTest, EarlyServerShutdownFinishesInflightCalls) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   SKIP_IF_FUZZING();
 
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();

@@ -19,17 +19,15 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/event_engine/windows/windows_listener.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -52,10 +50,9 @@ void WindowsEventEngineListener::SinglePortSocketListener::
   CHECK_NE(io_state_, nullptr);
   grpc_core::ReleasableMutexLock lock(&io_state_->mu);
   if (io_state_->listener_socket->IsShutdown()) {
-    GRPC_EVENT_ENGINE_TRACE(
-        "SinglePortSocketListener::%p listener socket is shut down. Shutting "
-        "down listener.",
-        io_state_->port_listener);
+    GRPC_TRACE_LOG(event_engine, INFO)
+        << "SinglePortSocketListener::" << io_state_->port_listener
+        << " listener socket is shut down. Shutting down listener.";
     lock.Release();
     io_state_.reset();
     return;
@@ -103,7 +100,7 @@ WindowsEventEngineListener::SinglePortSocketListener::
   io_state_->listener_socket->Shutdown(DEBUG_LOCATION,
                                        "~SinglePortSocketListener");
   UnlinkIfUnixDomainSocket(listener_sockname());
-  GRPC_EVENT_ENGINE_TRACE("~SinglePortSocketListener::%p", this);
+  GRPC_TRACE_LOG(event_engine, INFO) << "~SinglePortSocketListener::" << this;
 }
 
 absl::StatusOr<
@@ -179,9 +176,9 @@ WindowsEventEngineListener::SinglePortSocketListener::StartLocked() {
     }
   }
   io_state_->accept_socket = accept_socket;
-  GRPC_EVENT_ENGINE_TRACE(
-      "SinglePortSocketListener::%p listening. listener_socket::%p", this,
-      io_state_->listener_socket.get());
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "SinglePortSocketListener::" << this
+      << " listening. listener_socket::" << io_state_->listener_socket.get();
   return absl::OkStatus();
 }
 
@@ -311,8 +308,7 @@ WindowsEventEngineListener::WindowsEventEngineListener(
       on_shutdown_(std::move(on_shutdown)) {}
 
 WindowsEventEngineListener::~WindowsEventEngineListener() {
-  GRPC_EVENT_ENGINE_TRACE(
-      "%s", absl::StrFormat("~WindowsEventEngineListener::%p", this).c_str());
+  GRPC_TRACE_LOG(event_engine, INFO) << "~WindowsEventEngineListener::" << this;
   ShutdownListeners();
   on_shutdown_(absl::OkStatus());
 }

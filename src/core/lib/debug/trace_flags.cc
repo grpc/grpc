@@ -17,15 +17,15 @@
 //
 
 #include "absl/container/flat_hash_map.h"
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/util/no_destruct.h"
 
 namespace grpc_core {
 
 DebugOnlyTraceFlag auth_context_refcount_trace(false, "auth_context_refcount");
 DebugOnlyTraceFlag call_combiner_trace(false, "call_combiner");
 DebugOnlyTraceFlag call_refcount_trace(false, "call_refcount");
+DebugOnlyTraceFlag call_state_trace(false, "call_state");
 DebugOnlyTraceFlag closure_trace(false, "closure");
 DebugOnlyTraceFlag combiner_trace(false, "combiner");
 DebugOnlyTraceFlag cq_refcount_trace(false, "cq_refcount");
@@ -113,6 +113,7 @@ TraceFlag subchannel_pool_trace(false, "subchannel_pool");
 TraceFlag tcp_trace(false, "tcp");
 TraceFlag timer_trace(false, "timer");
 TraceFlag timer_check_trace(false, "timer_check");
+TraceFlag token_fetcher_credentials_trace(false, "token_fetcher_credentials");
 TraceFlag tsi_trace(false, "tsi");
 TraceFlag weighted_round_robin_lb_trace(false, "weighted_round_robin_lb");
 TraceFlag weighted_target_lb_trace(false, "weighted_target_lb");
@@ -120,18 +121,10 @@ TraceFlag xds_client_trace(false, "xds_client");
 TraceFlag xds_client_refcount_trace(false, "xds_client_refcount");
 TraceFlag xds_cluster_impl_lb_trace(false, "xds_cluster_impl_lb");
 TraceFlag xds_cluster_manager_lb_trace(false, "xds_cluster_manager_lb");
-TraceFlag xds_cluster_resource_type_test_trace(
-    true, "xds_cluster_resource_type_test");
-TraceFlag xds_common_types_test_trace(true, "xds_common_types_test");
-TraceFlag xds_endpoint_resource_type_test_trace(
-    true, "xds_endpoint_resource_type_test");
-TraceFlag xds_listener_resource_type_test_trace(
-    true, "xds_listener_resource_type_test");
 TraceFlag xds_override_host_lb_trace(false, "xds_override_host_lb");
 TraceFlag xds_resolver_trace(false, "xds_resolver");
-TraceFlag xds_route_config_resource_type_test_trace(
-    true, "xds_route_config_resource_type_test");
 TraceFlag xds_server_config_fetcher_trace(false, "xds_server_config_fetcher");
+TraceFlag xds_unittest_trace(true, "xds_unittest");
 TraceFlag xds_wrr_locality_lb_trace(false, "xds_wrr_locality_lb");
 
 const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
@@ -205,6 +198,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"tcp", &tcp_trace},
           {"timer", &timer_trace},
           {"timer_check", &timer_check_trace},
+          {"token_fetcher_credentials", &token_fetcher_credentials_trace},
           {"tsi", &tsi_trace},
           {"weighted_round_robin_lb", &weighted_round_robin_lb_trace},
           {"weighted_target_lb", &weighted_target_lb_trace},
@@ -212,23 +206,16 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"xds_client_refcount", &xds_client_refcount_trace},
           {"xds_cluster_impl_lb", &xds_cluster_impl_lb_trace},
           {"xds_cluster_manager_lb", &xds_cluster_manager_lb_trace},
-          {"xds_cluster_resource_type_test",
-           &xds_cluster_resource_type_test_trace},
-          {"xds_common_types_test", &xds_common_types_test_trace},
-          {"xds_endpoint_resource_type_test",
-           &xds_endpoint_resource_type_test_trace},
-          {"xds_listener_resource_type_test",
-           &xds_listener_resource_type_test_trace},
           {"xds_override_host_lb", &xds_override_host_lb_trace},
           {"xds_resolver", &xds_resolver_trace},
-          {"xds_route_config_resource_type_test",
-           &xds_route_config_resource_type_test_trace},
           {"xds_server_config_fetcher", &xds_server_config_fetcher_trace},
+          {"xds_unittest", &xds_unittest_trace},
           {"xds_wrr_locality_lb", &xds_wrr_locality_lb_trace},
 #ifndef NDEBUG
           {"auth_context_refcount", &auth_context_refcount_trace},
           {"call_combiner", &call_combiner_trace},
           {"call_refcount", &call_refcount_trace},
+          {"call_state", &call_state_trace},
           {"closure", &closure_trace},
           {"combiner", &combiner_trace},
           {"cq_refcount", &cq_refcount_trace},

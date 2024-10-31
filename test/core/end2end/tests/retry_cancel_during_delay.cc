@@ -14,17 +14,16 @@
 // limitations under the License.
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+
 #include <memory>
 
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 #include "test/core/test_util/test_config.h"
@@ -56,7 +55,7 @@ void TestRetryCancelDuringDelay(
           35 * grpc_test_slowdown_factor())));
   auto expect_finish_before = test.TimestampAfterDuration(Duration::Minutes(2));
   auto c = test.NewClientCall("/service/method")
-               .Timeout(Duration::Seconds(30))
+               .Timeout(Duration::Seconds(20))
                .Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   // Client starts a batch with all 6 ops.

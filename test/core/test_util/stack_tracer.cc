@@ -18,15 +18,14 @@
 
 #include "test/core/test_util/stack_tracer.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdio>
 #include <string>
 
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/examine_stack.h"
+#include "src/core/util/examine_stack.h"
 
 namespace {
 

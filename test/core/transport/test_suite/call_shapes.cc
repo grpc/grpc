@@ -18,7 +18,7 @@ namespace grpc_core {
 
 TRANSPORT_TEST(MetadataOnlyRequest) {
   SetServerCallDestination();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
   SpawnTestSeq(
@@ -49,16 +49,16 @@ TRANSPORT_TEST(MetadataOnlyRequest) {
                   "/foo/bar");
         return handler.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ClientToServerNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_value());
-        auto md = Arena::MakePooled<ServerMetadata>();
+        EXPECT_FALSE(msg.has_value());
+        auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
         return handler.PushServerInitialMetadata(std::move(md));
       },
       [&](StatusFlag result) mutable {
         EXPECT_TRUE(result.ok());
-        auto md = Arena::MakePooled<ServerMetadata>();
+        auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
         return Empty{};
@@ -73,7 +73,7 @@ TRANSPORT_TEST(MetadataOnlyRequestServerAbortsAfterInitialMetadata) {
                   "rolling out soon, so leaving this disabled.";
 
   SetServerCallDestination();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
   SpawnTestSeq(
@@ -105,13 +105,13 @@ TRANSPORT_TEST(MetadataOnlyRequestServerAbortsAfterInitialMetadata) {
             "/foo/bar");
         // Don't wait for end of stream for client->server messages, just
         // publish initial then trailing metadata.
-        auto md = Arena::MakePooled<ServerMetadata>();
+        auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
         return handler.PushServerInitialMetadata(std::move(md));
       },
       [&](StatusFlag result) mutable {
         EXPECT_TRUE(result.ok());
-        auto md = Arena::MakePooled<ServerMetadata>();
+        auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
         return Empty{};
@@ -126,7 +126,7 @@ TRANSPORT_TEST(MetadataOnlyRequestServerAbortsImmediately) {
                   "rolling out soon, so leaving this disabled.";
 
   SetServerCallDestination();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
   SpawnTestSeq(
@@ -156,7 +156,7 @@ TRANSPORT_TEST(MetadataOnlyRequestServerAbortsImmediately) {
             "/foo/bar");
         // Don't wait for end of stream for client->server messages, just
         // and don't send initial metadata - just trailing metadata.
-        auto md = Arena::MakePooled<ServerMetadata>();
+        auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
         return Empty{};
@@ -166,7 +166,7 @@ TRANSPORT_TEST(MetadataOnlyRequestServerAbortsImmediately) {
 
 TRANSPORT_TEST(CanCreateCallThenAbandonIt) {
   SetServerCallDestination();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
   auto handler = TickUntilServerCall();
@@ -179,7 +179,7 @@ TRANSPORT_TEST(CanCreateCallThenAbandonIt) {
 
 TRANSPORT_TEST(UnaryRequest) {
   SetServerCallDestination();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
   SpawnTestSeq(
@@ -200,16 +200,16 @@ TRANSPORT_TEST(UnaryRequest) {
                   ContentTypeMetadata::kApplicationGrpc);
         return initiator.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ServerToClientNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(),
                   "why hello neighbor");
         return initiator.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ServerToClientNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_value());
+        EXPECT_FALSE(msg.has_value());
         return initiator.PullServerTrailingMetadata();
       },
       [&](ValueOrFailure<ServerMetadataHandle> md) {
@@ -227,17 +227,16 @@ TRANSPORT_TEST(UnaryRequest) {
                   "/foo/bar");
         return handler.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ClientToServerNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                  "hello world");
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(), "hello world");
         return handler.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ClientToServerNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_value());
-        auto md = Arena::MakePooled<ServerMetadata>();
+        EXPECT_FALSE(msg.has_value());
+        auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
         return handler.PushServerInitialMetadata(std::move(md));
       },
@@ -248,7 +247,7 @@ TRANSPORT_TEST(UnaryRequest) {
       },
       [&](StatusFlag result) mutable {
         EXPECT_TRUE(result.ok());
-        auto md = Arena::MakePooled<ServerMetadata>();
+        auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
         return Empty{};
@@ -258,7 +257,7 @@ TRANSPORT_TEST(UnaryRequest) {
 
 TRANSPORT_TEST(UnaryRequestOmitCheckEndOfStream) {
   SetServerCallDestination();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
   SpawnTestSeq(
@@ -279,10 +278,10 @@ TRANSPORT_TEST(UnaryRequestOmitCheckEndOfStream) {
                   ContentTypeMetadata::kApplicationGrpc);
         return initiator.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ServerToClientNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(),
                   "why hello neighbor");
         return initiator.PullServerTrailingMetadata();
       },
@@ -301,12 +300,11 @@ TRANSPORT_TEST(UnaryRequestOmitCheckEndOfStream) {
                   "/foo/bar");
         return handler.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ClientToServerNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                  "hello world");
-        auto md = Arena::MakePooled<ServerMetadata>();
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(), "hello world");
+        auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
         return handler.PushServerInitialMetadata(std::move(md));
       },
@@ -317,7 +315,7 @@ TRANSPORT_TEST(UnaryRequestOmitCheckEndOfStream) {
       },
       [&](StatusFlag result) mutable {
         EXPECT_TRUE(result.ok());
-        auto md = Arena::MakePooled<ServerMetadata>();
+        auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
         return Empty{};
@@ -327,7 +325,7 @@ TRANSPORT_TEST(UnaryRequestOmitCheckEndOfStream) {
 
 TRANSPORT_TEST(UnaryRequestWaitForServerInitialMetadataBeforeSendingPayload) {
   SetServerCallDestination();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
   SpawnTestSeq(
@@ -346,16 +344,16 @@ TRANSPORT_TEST(UnaryRequestWaitForServerInitialMetadataBeforeSendingPayload) {
         initiator.FinishSends();
         return initiator.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ServerToClientNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(),
                   "why hello neighbor");
         return initiator.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ServerToClientNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_value());
+        EXPECT_FALSE(msg.has_value());
         return initiator.PullServerTrailingMetadata();
       },
       [&](ValueOrFailure<ServerMetadataHandle> md) {
@@ -371,7 +369,7 @@ TRANSPORT_TEST(UnaryRequestWaitForServerInitialMetadataBeforeSendingPayload) {
         EXPECT_TRUE(md.ok());
         EXPECT_EQ(md.value()->get_pointer(HttpPathMetadata())->as_string_view(),
                   "/foo/bar");
-        auto md_out = Arena::MakePooled<ServerMetadata>();
+        auto md_out = Arena::MakePooledForOverwrite<ServerMetadata>();
         md_out->Set(ContentTypeMetadata(),
                     ContentTypeMetadata::kApplicationGrpc);
         return handler.PushServerInitialMetadata(std::move(md_out));
@@ -380,22 +378,21 @@ TRANSPORT_TEST(UnaryRequestWaitForServerInitialMetadataBeforeSendingPayload) {
         EXPECT_TRUE(result.ok());
         return handler.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ClientToServerNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                  "hello world");
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(), "hello world");
         return handler.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ClientToServerNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_value());
+        EXPECT_FALSE(msg.has_value());
         return handler.PushMessage(Arena::MakePooled<Message>(
             SliceBuffer(Slice::FromCopiedString("why hello neighbor")), 0));
       },
       [&](StatusFlag result) mutable {
         EXPECT_TRUE(result.ok());
-        auto md = Arena::MakePooled<ServerMetadata>();
+        auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
         return Empty{};
@@ -405,7 +402,7 @@ TRANSPORT_TEST(UnaryRequestWaitForServerInitialMetadataBeforeSendingPayload) {
 
 TRANSPORT_TEST(ClientStreamingRequest) {
   SetServerCallDestination();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
   SpawnTestSeq(
@@ -444,9 +441,9 @@ TRANSPORT_TEST(ClientStreamingRequest) {
         initiator.FinishSends();
         return initiator.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ServerToClientNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_value());
+        EXPECT_FALSE(msg.has_value());
         return initiator.PullServerTrailingMetadata();
       },
       [&](ValueOrFailure<ServerMetadataHandle> md) {
@@ -462,7 +459,7 @@ TRANSPORT_TEST(ClientStreamingRequest) {
         EXPECT_TRUE(md.ok());
         EXPECT_EQ(md.value()->get_pointer(HttpPathMetadata())->as_string_view(),
                   "/foo/bar");
-        auto md_out = Arena::MakePooled<ServerMetadata>();
+        auto md_out = Arena::MakePooledForOverwrite<ServerMetadata>();
         md_out->Set(ContentTypeMetadata(),
                     ContentTypeMetadata::kApplicationGrpc);
         return handler.PushServerInitialMetadata(std::move(md_out));
@@ -471,45 +468,40 @@ TRANSPORT_TEST(ClientStreamingRequest) {
         EXPECT_TRUE(result.ok());
         return handler.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ClientToServerNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                  "hello world");
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(), "hello world");
         return handler.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ClientToServerNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                  "hello world (2)");
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(), "hello world (2)");
         return handler.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ClientToServerNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                  "hello world (3)");
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(), "hello world (3)");
         return handler.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ClientToServerNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                  "hello world (4)");
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(), "hello world (4)");
         return handler.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ClientToServerNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                  "hello world (5)");
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(), "hello world (5)");
         return handler.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ClientToServerNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_value());
-        auto md = Arena::MakePooled<ServerMetadata>();
+        EXPECT_FALSE(msg.has_value());
+        auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
         return Empty{};
@@ -519,7 +511,7 @@ TRANSPORT_TEST(ClientStreamingRequest) {
 
 TRANSPORT_TEST(ServerStreamingRequest) {
   SetServerCallDestination();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
   SpawnTestSeq(
@@ -533,51 +525,51 @@ TRANSPORT_TEST(ServerStreamingRequest) {
         initiator.FinishSends();
         return initiator.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ServerToClientNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(),
                   "why hello neighbor");
         return initiator.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ServerToClientNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(),
                   "why hello neighbor (2)");
         return initiator.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ServerToClientNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(),
                   "why hello neighbor (3)");
         return initiator.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ServerToClientNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(),
                   "why hello neighbor (4)");
         return initiator.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ServerToClientNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(),
                   "why hello neighbor (5)");
         return initiator.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ServerToClientNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(),
                   "why hello neighbor (6)");
         return initiator.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ServerToClientNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_value());
+        EXPECT_FALSE(msg.has_value());
         return initiator.PullServerTrailingMetadata();
       },
       [&](ValueOrFailure<ServerMetadataHandle> md) {
@@ -593,7 +585,7 @@ TRANSPORT_TEST(ServerStreamingRequest) {
         EXPECT_TRUE(md.ok());
         EXPECT_EQ(md.value()->get_pointer(HttpPathMetadata())->as_string_view(),
                   "/foo/bar");
-        auto md_out = Arena::MakePooled<ServerMetadata>();
+        auto md_out = Arena::MakePooledForOverwrite<ServerMetadata>();
         md_out->Set(ContentTypeMetadata(),
                     ContentTypeMetadata::kApplicationGrpc);
         return handler.PushServerInitialMetadata(std::move(md_out));
@@ -602,9 +594,9 @@ TRANSPORT_TEST(ServerStreamingRequest) {
         EXPECT_TRUE(result.ok());
         return handler.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ClientToServerNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_value());
+        EXPECT_FALSE(msg.has_value());
         return handler.PushMessage(Arena::MakePooled<Message>(
             SliceBuffer(Slice::FromCopiedString("why hello neighbor")), 0));
       },
@@ -635,7 +627,7 @@ TRANSPORT_TEST(ServerStreamingRequest) {
       },
       [&](StatusFlag result) mutable {
         EXPECT_TRUE(result.ok());
-        auto md = Arena::MakePooled<ServerMetadata>();
+        auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
         return Empty{};

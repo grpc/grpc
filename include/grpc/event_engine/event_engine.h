@@ -14,18 +14,18 @@
 #ifndef GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 #define GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 
-#include <vector>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/extensible.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/port.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/port_platform.h>
+
+#include <vector>
+
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 // TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {
@@ -194,9 +194,12 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     /// on_read callback is not executed. Otherwise it returns false and the \a
     /// on_read callback executes asynchronously when the read completes. The
     /// caller must ensure that the callback has access to the buffer when it
-    /// executes. Ownership of the buffer is not transferred. Valid slices *may*
-    /// be placed into the buffer even if the callback is invoked with a non-OK
-    /// Status.
+    /// executes. Ownership of the buffer is not transferred. Either an error is
+    /// passed to the callback (like socket closed), or valid data is available
+    /// in the buffer, but never both at the same time. Implementations that
+    /// receive valid data must not throw that data away - that is, if valid
+    /// data is received on the underlying endpoint, a callback will be made
+    /// with that data available and an ok status.
     ///
     /// There can be at most one outstanding read per Endpoint at any given
     /// time. An outstanding read is one in which the \a on_read callback has
@@ -502,6 +505,20 @@ bool operator!=(const EventEngine::ConnectionHandle& lhs,
                 const EventEngine::ConnectionHandle& rhs);
 std::ostream& operator<<(std::ostream& out,
                          const EventEngine::ConnectionHandle& handle);
+
+namespace detail {
+std::string FormatHandleString(uint64_t key1, uint64_t key2);
+}
+
+template <typename Sink>
+void AbslStringify(Sink& out, const EventEngine::ConnectionHandle& handle) {
+  out.Append(detail::FormatHandleString(handle.keys[0], handle.keys[1]));
+}
+
+template <typename Sink>
+void AbslStringify(Sink& out, const EventEngine::TaskHandle& handle) {
+  out.Append(detail::FormatHandleString(handle.keys[0], handle.keys[1]));
+}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

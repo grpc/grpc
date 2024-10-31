@@ -17,13 +17,13 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_OOB_BACKEND_METRIC_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_OOB_BACKEND_METRIC_H
 
-#include <memory>
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include <memory>
+
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/subchannel_interface.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 

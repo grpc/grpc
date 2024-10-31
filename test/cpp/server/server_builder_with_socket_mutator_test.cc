@@ -16,14 +16,13 @@
 //
 //
 
-#include <memory>
-
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/config.h>
+#include <gtest/gtest.h>
+
+#include <memory>
 
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -84,7 +83,7 @@ class MockSocketMutatorServerBuilderOption : public grpc::ServerBuilderOption {
   }
 
   void UpdatePlugins(
-      std::vector<std::unique_ptr<ServerBuilderPlugin>>*) override{};
+      std::vector<std::unique_ptr<ServerBuilderPlugin>>*) override {};
 
   MockSocketMutator* mock_socket_mutator_;
 };

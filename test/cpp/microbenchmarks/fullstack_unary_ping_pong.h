@@ -21,12 +21,11 @@
 #ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_UNARY_PING_PONG_H
 #define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_UNARY_PING_PONG_H
 
-#include <sstream>
-
 #include <benchmark/benchmark.h>
 
-#include "absl/log/check.h"
+#include <sstream>
 
+#include "absl/log/check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
@@ -104,6 +103,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer,
                         fixture->cq(), fixture->cq(), tag(slot));
   }
+  stub.reset();
   fixture.reset();
   server_env[0]->~ServerEnv();
   server_env[1]->~ServerEnv();

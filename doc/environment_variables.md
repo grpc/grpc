@@ -46,14 +46,13 @@ some configuration as environment variables that can be set.
   Available tracers and their usage can be found in
   [gRPC Trace Flags](trace_flags.md)
 
-* GRPC_VERBOSITY
-<!-- BEGIN_GOOGLE_INTERNAL_DOCUMENTATION"
-GRPC_VERBOSITY has been disabled for internal usage and will not work anymore.
-If anyone wants to debug, we need to set verbose logs using absl.
-END_GOOGLE_INTERNAL_DOCUMENTATION -->
+* GRPC_VERBOSITY (DEPRECATED)
 
 <!-- BEGIN_OPEN_SOURCE_DOCUMENTATION -->
-`GRPC_VERBOSITY` is used to set the minimum level of log messages printed by gRPC (supported values are `DEBUG`, `INFO` and `ERROR`). If this environment variable is unset, only `ERROR` logs will be printed.
+  `GRPC_VERBOSITY` is used to set the minimum level of log messages printed. Supported values are `DEBUG`, `INFO`, `ERROR` and `NONE`.
+
+  We only support this flag for legacy reasons. If this environment variable is set, then gRPC will set absl MinLogValue and absl SetVLogLevel. This will alter the log settings of the entire application, not just gRPC code. For that reason, it is not recommended. Our recommendation is to avoid using this flag and [set log verbosity using absl](https://abseil.io/docs/cpp/guides/logging).
+
   gRPC logging verbosity - one of:
   - DEBUG - log INFO, WARNING, ERROR and FATAL messages. Also sets absl VLOG(2) logs enabled. This is not recommended for production systems. This will be expensive for staging environments too, so it can be used when you want to debug a specific issue. 
   - INFO - log INFO, WARNING, ERROR and FATAL messages. This is not recommended for production systems. This may be slightly expensive for staging environments too. We recommend that you use your discretion for staging environments.
@@ -61,13 +60,12 @@ END_GOOGLE_INTERNAL_DOCUMENTATION -->
   - NONE - won't log any.
   GRPC_VERBOSITY will set verbosity of absl logging. 
   - If the external application sets some other verbosity, then whatever is set later will be honoured. 
-  - If nothing is set as GRPC_VERBOSITY, then the setting of the exernal application will be honoured.
+  - If nothing is set as GRPC_VERBOSITY, then the setting of the external application will be honoured.
   - If nothing is set by the external application also, the default set by absl will be honoured.
 <!-- END_OPEN_SOURCE_DOCUMENTATION -->
 
-* GRPC_STACKTRACE_MINLOGLEVEL
-  Minimum loglevel to print the stack-trace - one of DEBUG, INFO, ERROR, and NONE.
-  NONE is a default value.
+* GRPC_STACKTRACE_MINLOGLEVEL (DEPRECATED)
+  This will not work anymore.
 
 * GRPC_TRACE_FUZZER
   if set, the fuzzers will output trace (it is usually suppressed).

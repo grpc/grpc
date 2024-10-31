@@ -16,18 +16,17 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+
 #include <memory>
 
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -90,7 +89,9 @@ CORE_END2END_TEST(RetryHttp2Test, MaxConnectionIdle) {
           .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
                Duration::Seconds(1).millis())
           .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, Duration::Seconds(1).millis())
-          .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, Duration::Seconds(5).millis())
+          .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS,
+               g_is_fuzzing_core_e2e_tests ? Duration::Minutes(5).millis()
+                                           : Duration::Seconds(5).millis())
           // Avoid transparent retries for this test.
           .Set(GRPC_ARG_ENABLE_RETRIES, false));
   InitServer(

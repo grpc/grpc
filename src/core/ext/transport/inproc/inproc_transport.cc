@@ -14,24 +14,28 @@
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 
-#include <atomic>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+#include <memory>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel_create.h"
+#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
 
 namespace grpc_core {
 
@@ -56,12 +60,14 @@ class InprocServerTransport final : public ServerTransport {
     state_.compare_exchange_strong(expect, ConnectionState::kReady,
                                    std::memory_order_acq_rel,
                                    std::memory_order_acquire);
-    MutexLock lock(&state_tracker_mu_);
-    state_tracker_.SetState(GRPC_CHANNEL_READY, absl::OkStatus(),
-                            "accept function set");
+    connected_state()->SetReady();
   }
 
-  void Orphan() override { Unref(); }
+  void Orphan() override {
+    GRPC_TRACE_LOG(inproc, INFO) << "InprocServerTransport::Orphan(): " << this;
+    Disconnect(absl::UnavailableError("Server transport closed"));
+    Unref();
+  }
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }
@@ -70,29 +76,30 @@ class InprocServerTransport final : public ServerTransport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op* op) override {
-    gpr_log(GPR_INFO, "inproc server op: %s",
-            grpc_transport_op_string(op).c_str());
+    GRPC_TRACE_LOG(inproc, INFO)
+        << "inproc server op: " << grpc_transport_op_string(op);
     if (op->start_connectivity_watch != nullptr) {
-      MutexLock lock(&state_tracker_mu_);
-      state_tracker_.AddWatcher(op->start_connectivity_watch_state,
-                                std::move(op->start_connectivity_watch));
+      connected_state()->AddWatcher(op->start_connectivity_watch_state,
+                                    std::move(op->start_connectivity_watch));
     }
     if (op->stop_connectivity_watch != nullptr) {
-      MutexLock lock(&state_tracker_mu_);
-      state_tracker_.RemoveWatcher(op->stop_connectivity_watch);
+      connected_state()->RemoveWatcher(op->stop_connectivity_watch);
     }
     if (op->set_accept_stream) {
       Crash("set_accept_stream not supported on inproc transport");
     }
+    ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
   }
 
   void Disconnect(absl::Status error) {
-    if (disconnecting_.exchange(true, std::memory_order_relaxed)) return;
-    disconnect_error_ = std::move(error);
+    RefCountedPtr<ConnectedState> connected_state;
+    {
+      MutexLock lock(&connected_state_mu_);
+      connected_state = std::move(connected_state_);
+    }
+    if (connected_state == nullptr) return;
+    connected_state->Disconnect(std::move(error));
     state_.store(ConnectionState::kDisconnected, std::memory_order_relaxed);
-    MutexLock lock(&state_tracker_mu_);
-    state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN, disconnect_error_,
-                            "inproc transport disconnected");
   }
 
   absl::StatusOr<CallInitiator> AcceptCall(ClientMetadataHandle md) {
@@ -105,24 +112,64 @@ class InprocServerTransport final : public ServerTransport {
       case ConnectionState::kReady:
         break;
     }
-    auto server_call = MakeCallPair(std::move(md), event_engine_.get(),
-                                    call_arena_allocator_->MakeArena());
+    auto arena = call_arena_allocator_->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    auto server_call = MakeCallPair(std::move(md), std::move(arena));
     unstarted_call_handler_->StartCall(std::move(server_call.handler));
     return std::move(server_call.initiator);
   }
 
   OrphanablePtr<InprocClientTransport> MakeClientTransport();
 
+  class ConnectedState : public RefCounted<ConnectedState> {
+   public:
+    ~ConnectedState() override {
+      state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN, disconnect_error_,
+                              "inproc transport disconnected");
+    }
+
+    void SetReady() {
+      MutexLock lock(&state_tracker_mu_);
+      state_tracker_.SetState(GRPC_CHANNEL_READY, absl::OkStatus(),
+                              "accept function set");
+    }
+
+    void Disconnect(absl::Status error) {
+      disconnect_error_ = std::move(error);
+    }
+
+    void AddWatcher(grpc_connectivity_state initial_state,
+                    OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
+      MutexLock lock(&state_tracker_mu_);
+      state_tracker_.AddWatcher(initial_state, std::move(watcher));
+    }
+
+    void RemoveWatcher(ConnectivityStateWatcherInterface* watcher) {
+      MutexLock lock(&state_tracker_mu_);
+      state_tracker_.RemoveWatcher(watcher);
+    }
+
+   private:
+    absl::Status disconnect_error_;
+    Mutex state_tracker_mu_;
+    ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(state_tracker_mu_){
+        "inproc_server_transport", GRPC_CHANNEL_CONNECTING};
+  };
+
+  RefCountedPtr<ConnectedState> connected_state() {
+    MutexLock lock(&connected_state_mu_);
+    return connected_state_;
+  }
+
  private:
   enum class ConnectionState : uint8_t { kInitial, kReady, kDisconnected };
 
   std::atomic<ConnectionState> state_{ConnectionState::kInitial};
-  std::atomic<bool> disconnecting_{false};
   RefCountedPtr<UnstartedCallDestination> unstarted_call_handler_;
-  absl::Status disconnect_error_;
-  Mutex state_tracker_mu_;
-  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(state_tracker_mu_){
-      "inproc_server_transport", GRPC_CHANNEL_CONNECTING};
+  Mutex connected_state_mu_;
+  RefCountedPtr<ConnectedState> connected_state_
+      ABSL_GUARDED_BY(connected_state_mu_) = MakeRefCounted<ConnectedState>();
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
@@ -139,19 +186,27 @@ class InprocClientTransport final : public ClientTransport {
         "pull_initial_metadata",
         TrySeq(child_call_handler.PullClientInitialMetadata(),
                [server_transport = server_transport_,
-                child_call_handler](ClientMetadataHandle md) {
+                connected_state = server_transport_->connected_state(),
+                child_call_handler](ClientMetadataHandle md) mutable {
                  auto server_call_initiator =
                      server_transport->AcceptCall(std::move(md));
                  if (!server_call_initiator.ok()) {
                    return server_call_initiator.status();
                  }
-                 ForwardCall(child_call_handler,
-                             std::move(*server_call_initiator));
+                 ForwardCall(
+                     child_call_handler, std::move(*server_call_initiator),
+                     [connected_state =
+                          std::move(connected_state)](ServerMetadata& md) {
+                       md.Set(GrpcStatusFromWire(), true);
+                     });
                  return absl::OkStatus();
                }));
   }
 
-  void Orphan() override { delete this; }
+  void Orphan() override {
+    GRPC_TRACE_LOG(inproc, INFO) << "InprocClientTransport::Orphan(): " << this;
+    Unref();
+  }
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return this; }
@@ -170,8 +225,10 @@ class InprocClientTransport final : public ClientTransport {
   const RefCountedPtr<InprocServerTransport> server_transport_;
 };
 
-bool UsePromiseBasedTransport() {
-  return IsPromiseBasedInprocTransportEnabled();
+bool UsePromiseBasedTransport(const ChannelArgs& channel_args) {
+  return channel_args
+      .GetBool("grpc.experimental.promise_based_inproc_transport")
+      .value_or(IsPromiseBasedInprocTransportEnabled());
 }
 
 OrphanablePtr<InprocClientTransport>
@@ -182,8 +239,7 @@ InprocServerTransport::MakeClientTransport() {
 
 RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
                                        absl::Status error) {
-  gpr_log(GPR_ERROR, "%s: %s", std::string(why).c_str(),
-          std::string(error.message()).c_str());
+  LOG(ERROR) << why << ": " << error.message();
   intptr_t integer;
   grpc_status_code status = GRPC_STATUS_INTERNAL;
   if (grpc_error_get_int(error, StatusIntProperty::kRpcStatus, &integer)) {
@@ -210,7 +266,8 @@ RefCountedPtr<Channel> MakeInprocChannel(Server* server,
   std::ignore = server_transport.release();  // consumed by SetupTransport
   auto channel = ChannelCreate(
       "inproc",
-      client_channel_args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "inproc.authority"),
+      client_channel_args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "inproc.authority")
+          .Set(GRPC_ARG_USE_V3_STACK, true),
       GRPC_CLIENT_DIRECT_CHANNEL, client_transport.release());
   if (!channel.ok()) {
     return MakeLameChannel("Failed to create client channel", channel.status());
@@ -235,13 +292,14 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
                                          void* reserved) {
   grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  if (!grpc_core::UsePromiseBasedTransport()) {
+  const auto channel_args = grpc_core::CoreConfiguration::Get()
+                                .channel_args_preconditioning()
+                                .PreconditionChannelArgs(args);
+  if (!grpc_core::UsePromiseBasedTransport(channel_args)) {
     return grpc_legacy_inproc_channel_create(server, args, reserved);
   }
   return grpc_core::MakeInprocChannel(grpc_core::Server::FromC(server),
-                                      grpc_core::CoreConfiguration::Get()
-                                          .channel_args_preconditioning()
-                                          .PreconditionChannelArgs(args))
+                                      channel_args)
       .release()
       ->c_ptr();
 }

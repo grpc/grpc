@@ -18,20 +18,20 @@
 
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
 
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+
 #include <memory>
+#include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"
@@ -39,9 +39,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -52,7 +49,10 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/uri.h"
 
 namespace grpc_core {
 
@@ -61,24 +61,23 @@ namespace {
 class TCPConnectHandshaker : public Handshaker {
  public:
   explicit TCPConnectHandshaker(grpc_pollset_set* pollset_set);
-  void Shutdown(grpc_error_handle why) override;
-  void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
-                   grpc_closure* on_handshake_done,
-                   HandshakerArgs* args) override;
-  const char* name() const override { return "tcp_connect"; }
+  absl::string_view name() const override { return "tcp_connect"; }
+  void DoHandshake(
+      HandshakerArgs* args,
+      absl::AnyInvocable<void(absl::Status)> on_handshake_done) override;
+  void Shutdown(absl::Status error) override;
 
  private:
   ~TCPConnectHandshaker() override;
-  void CleanupArgsForFailureLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void FinishLocked(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void FinishLocked(absl::Status error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void Connected(void* arg, grpc_error_handle error);
 
   Mutex mu_;
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
-  // Endpoint and read buffer to destroy after a shutdown.
+  // Endpoint to destroy after a shutdown.
   grpc_endpoint* endpoint_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
-  grpc_slice_buffer* read_buffer_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
-  grpc_closure* on_handshake_done_ ABSL_GUARDED_BY(mu_) = nullptr;
+  absl::AnyInvocable<void(absl::Status)> on_handshake_done_
+      ABSL_GUARDED_BY(mu_);
   grpc_pollset_set* interested_parties_ = nullptr;
   grpc_polling_entity pollent_;
   HandshakerArgs* args_ = nullptr;
@@ -99,33 +98,32 @@ TCPConnectHandshaker::TCPConnectHandshaker(grpc_pollset_set* pollset_set)
   GRPC_CLOSURE_INIT(&connected_, Connected, this, grpc_schedule_on_exec_ctx);
 }
 
-void TCPConnectHandshaker::Shutdown(grpc_error_handle /*why*/) {
+void TCPConnectHandshaker::Shutdown(absl::Status /*error*/) {
   // TODO(anramach): After migration to EventEngine, cancel the in-progress
   // TCP connection attempt.
-  {
-    MutexLock lock(&mu_);
-    if (!shutdown_) {
-      shutdown_ = true;
-      // If we are shutting down while connecting, respond back with
-      // handshake done.
-      // The callback from grpc_tcp_client_connect will perform
-      // the necessary clean up.
-      if (on_handshake_done_ != nullptr) {
-        CleanupArgsForFailureLocked();
-        FinishLocked(GRPC_ERROR_CREATE("tcp handshaker shutdown"));
-      }
+  MutexLock lock(&mu_);
+  if (!shutdown_) {
+    shutdown_ = true;
+    // If we are shutting down while connecting, respond back with
+    // handshake done.
+    // The callback from grpc_tcp_client_connect will perform
+    // the necessary clean up.
+    if (on_handshake_done_ != nullptr) {
+      // TODO(roth): When we remove the legacy grpc_error APIs, propagate the
+      // status passed to shutdown as part of the message here.
+      FinishLocked(GRPC_ERROR_CREATE("tcp handshaker shutdown"));
     }
   }
 }
 
-void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
-                                       grpc_closure* on_handshake_done,
-                                       HandshakerArgs* args) {
+void TCPConnectHandshaker::DoHandshake(
+    HandshakerArgs* args,
+    absl::AnyInvocable<void(absl::Status)> on_handshake_done) {
   {
     MutexLock lock(&mu_);
-    on_handshake_done_ = on_handshake_done;
+    on_handshake_done_ = std::move(on_handshake_done);
   }
-  CHECK_EQ(args->endpoint, nullptr);
+  CHECK_EQ(args->endpoint.get(), nullptr);
   args_ = args;
   absl::StatusOr<URI> uri = URI::Parse(
       args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value());
@@ -149,7 +147,7 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   Ref().release();  // Ref held by callback.
   // As we fake the TCP client connection failure when shutdown is called
   // we don't want to pass args->endpoint directly.
-  // Instead pass endpoint_ and swap this endpoint to
+  // Instead pass endpoint_to_destroy_ and swap this endpoint to
   // args endpoint on success.
   grpc_tcp_client_connect(
       &connected_, &endpoint_to_destroy_, interested_parties_,
@@ -171,21 +169,19 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
         self->endpoint_to_destroy_ = nullptr;
       }
       if (!self->shutdown_) {
-        self->CleanupArgsForFailureLocked();
         self->shutdown_ = true;
-        self->FinishLocked(error);
+        self->FinishLocked(std::move(error));
       } else {
-        // The on_handshake_done_ is already as part of shutdown when
-        // connecting So nothing to be done here other than unrefing the
-        // error.
+        // The on_handshake_done_ callback was already invoked as part of
+        // shutdown when connecting, so nothing to be done here.
       }
       return;
     }
     CHECK_NE(self->endpoint_to_destroy_, nullptr);
-    self->args_->endpoint = self->endpoint_to_destroy_;
+    self->args_->endpoint.reset(self->endpoint_to_destroy_);
     self->endpoint_to_destroy_ = nullptr;
     if (self->bind_endpoint_to_pollset_) {
-      grpc_endpoint_add_to_pollset_set(self->args_->endpoint,
+      grpc_endpoint_add_to_pollset_set(self->args_->endpoint.get(),
                                        self->interested_parties_);
     }
     self->FinishLocked(absl::OkStatus());
@@ -196,25 +192,14 @@ TCPConnectHandshaker::~TCPConnectHandshaker() {
   if (endpoint_to_destroy_ != nullptr) {
     grpc_endpoint_destroy(endpoint_to_destroy_);
   }
-  if (read_buffer_to_destroy_ != nullptr) {
-    grpc_slice_buffer_destroy(read_buffer_to_destroy_);
-    gpr_free(read_buffer_to_destroy_);
-  }
   grpc_pollset_set_destroy(interested_parties_);
 }
 
-void TCPConnectHandshaker::CleanupArgsForFailureLocked() {
-  read_buffer_to_destroy_ = args_->read_buffer;
-  args_->read_buffer = nullptr;
-  args_->args = ChannelArgs();
-}
-
-void TCPConnectHandshaker::FinishLocked(grpc_error_handle error) {
+void TCPConnectHandshaker::FinishLocked(absl::Status error) {
   if (interested_parties_ != nullptr) {
     grpc_polling_entity_del_from_pollset_set(&pollent_, interested_parties_);
   }
-  ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, error);
-  on_handshake_done_ = nullptr;
+  InvokeOnHandshakeDone(args_, std::move(on_handshake_done_), std::move(error));
 }
 
 //

@@ -26,17 +26,6 @@
 #include <unistd.h>
 #endif
 
-#include <algorithm>
-#include <string>
-#include <vector>
-
-#include "absl/base/attributes.h"
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
@@ -47,8 +36,19 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
 
+#include <algorithm>
+#include <string>
+#include <vector>
+
+#include "absl/base/attributes.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/util/host_port.h"
 #include "src/core/xds/grpc/xds_enabled_server.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/memory_usage/memstats.h"
@@ -59,6 +59,7 @@ ABSL_FLAG(std::string, bind, "", "Bind host:port");
 ABSL_FLAG(bool, secure, false, "Use security");
 ABSL_FLAG(bool, minstack, false, "Use minimal stack");
 ABSL_FLAG(bool, use_xds, false, "Use xDS");
+ABSL_FLAG(bool, chaotic_good, false, "Use chaotic good");
 
 static grpc_completion_queue* cq;
 static grpc_server* server;
@@ -220,7 +221,9 @@ int main(int argc, char** argv) {
   }
 
   MemStats before_server_create = MemStats::Snapshot();
-  if (absl::GetFlag(FLAGS_secure)) {
+  if (absl::GetFlag(FLAGS_chaotic_good)) {
+    grpc_server_add_chaotic_good_port(server, addr.c_str());
+  } else if (absl::GetFlag(FLAGS_secure)) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(

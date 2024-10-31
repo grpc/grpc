@@ -16,6 +16,8 @@
 
 #include "test/core/test_util/test_lb_policies.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <stdint.h>
 
 #include <memory>
@@ -26,29 +28,27 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-
+#include "src/core/client_channel/lb_metadata.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/oob_backend_metric.h"
 #include "src/core/load_balancing/subchannel_interface.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_util.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uri.h"
 
 namespace grpc_core {
 
@@ -129,7 +129,8 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
       // Report args seen.
       PickArgsSeen args_seen;
       args_seen.path = std::string(args.path);
-      args_seen.metadata = args.initial_metadata->TestOnlyCopyToVector();
+      args_seen.metadata =
+          DownCast<LbMetadata*>(args.initial_metadata)->TestOnlyCopyToVector();
       cb_(args_seen);
       // Do pick.
       return delegate_picker_->Pick(args);
@@ -269,7 +270,8 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       args_seen.status = args.status;
       args_seen.backend_metric_data =
           args.backend_metric_accessor->GetBackendMetricData();
-      args_seen.metadata = args.trailing_metadata->TestOnlyCopyToVector();
+      args_seen.metadata =
+          DownCast<LbMetadata*>(args.trailing_metadata)->TestOnlyCopyToVector();
       cb_(args_seen);
     }
 
@@ -715,6 +717,102 @@ class QueueOnceLoadBalancingPolicyFactory : public LoadBalancingPolicyFactory {
   }
 };
 
+//
+// AuthorityOverrideLbPolicy: A load balancing policy that delegates to
+// pick_first but adds an authority override on completed picks.
+//
+
+constexpr char kAuthorityOverridePolicyName[] = "authority_override_lb";
+
+class AuthorityOverrideLoadBalancingPolicy
+    : public ForwardingLoadBalancingPolicy {
+ public:
+  explicit AuthorityOverrideLoadBalancingPolicy(Args args)
+      : ForwardingLoadBalancingPolicy(
+            std::make_unique<Helper>(
+                RefCountedPtr<AuthorityOverrideLoadBalancingPolicy>(this)),
+            std::move(args), "pick_first",
+            /*initial_refcount=*/2) {}
+
+  absl::string_view name() const override {
+    return kAuthorityOverridePolicyName;
+  }
+
+  absl::Status UpdateLocked(UpdateArgs args) override {
+    authority_override_ =
+        grpc_event_engine::experimental::Slice::FromCopiedString(
+            args.args.GetString(GRPC_ARG_TEST_LB_AUTHORITY_OVERRIDE)
+                .value_or(""));
+    return ForwardingLoadBalancingPolicy::UpdateLocked(std::move(args));
+  }
+
+ private:
+  class Picker : public SubchannelPicker {
+   public:
+    Picker(RefCountedPtr<SubchannelPicker> picker,
+           grpc_event_engine::experimental::Slice authority_override)
+        : picker_(std::move(picker)),
+          authority_override_(std::move(authority_override)) {}
+
+    PickResult Pick(PickArgs args) override {
+      auto pick_result = picker_->Pick(args);
+      auto* complete_pick =
+          absl::get_if<PickResult::Complete>(&pick_result.result);
+      if (complete_pick != nullptr) {
+        complete_pick->authority_override = authority_override_.Ref();
+      }
+      return pick_result;
+    }
+
+   private:
+    RefCountedPtr<SubchannelPicker> picker_;
+    grpc_event_engine::experimental::Slice authority_override_;
+  };
+
+  class Helper : public ParentOwningDelegatingChannelControlHelper<
+                     AuthorityOverrideLoadBalancingPolicy> {
+   public:
+    explicit Helper(RefCountedPtr<AuthorityOverrideLoadBalancingPolicy> parent)
+        : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
+
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
+                     RefCountedPtr<SubchannelPicker> picker) override {
+      parent_helper()->UpdateState(
+          state, status,
+          MakeRefCounted<Picker>(std::move(picker),
+                                 parent()->authority_override_.Ref()));
+    }
+  };
+
+  grpc_event_engine::experimental::Slice authority_override_;
+};
+
+class AuthorityOverrideLbConfig : public LoadBalancingPolicy::Config {
+ public:
+  absl::string_view name() const override {
+    return kAuthorityOverridePolicyName;
+  }
+};
+
+class AuthorityOverrideLoadBalancingPolicyFactory
+    : public LoadBalancingPolicyFactory {
+ public:
+  OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      LoadBalancingPolicy::Args args) const override {
+    return MakeOrphanable<AuthorityOverrideLoadBalancingPolicy>(
+        std::move(args));
+  }
+
+  absl::string_view name() const override {
+    return kAuthorityOverridePolicyName;
+  }
+
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
+    return MakeRefCounted<AuthorityOverrideLbConfig>();
+  }
+};
+
 }  // namespace
 
 void RegisterTestPickArgsLoadBalancingPolicy(
@@ -760,6 +858,12 @@ void RegisterFailLoadBalancingPolicy(CoreConfiguration::Builder* builder,
 void RegisterQueueOnceLoadBalancingPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       std::make_unique<QueueOnceLoadBalancingPolicyFactory>());
+}
+
+void RegisterAuthorityOverrideLoadBalancingPolicy(
+    CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      std::make_unique<AuthorityOverrideLoadBalancingPolicyFactory>());
 }
 
 }  // namespace grpc_core

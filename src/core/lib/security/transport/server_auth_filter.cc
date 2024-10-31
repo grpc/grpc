@@ -16,6 +16,13 @@
 //
 //
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
@@ -24,25 +31,14 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
@@ -58,12 +54,14 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
 
 namespace grpc_core {
 
 const grpc_channel_filter ServerAuthFilter::kFilter =
-    MakePromiseBasedFilter<ServerAuthFilter, FilterEndpoint::kServer>(
-        "server-auth");
+    MakePromiseBasedFilter<ServerAuthFilter, FilterEndpoint::kServer>();
 
 const NoInterceptor ServerAuthFilter::Call::OnClientToServerMessage;
 const NoInterceptor ServerAuthFilter::Call::OnClientToServerHalfClose;
@@ -132,13 +130,10 @@ struct ServerAuthFilter::RunApplicationCode::State {
 ServerAuthFilter::RunApplicationCode::RunApplicationCode(
     ServerAuthFilter* filter, ClientMetadata& metadata)
     : state_(GetContext<Arena>()->ManagedNew<State>(metadata)) {
-  if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    gpr_log(GPR_ERROR,
-            "%s[server-auth]: Delegate to application: filter=%p this=%p "
-            "auth_ctx=%p",
-            GetContext<Activity>()->DebugTag().c_str(), filter, this,
-            filter->auth_context_.get());
-  }
+  GRPC_TRACE_LOG(call, ERROR)
+      << GetContext<Activity>()->DebugTag()
+      << "[server-auth]: Delegate to application: filter=" << filter
+      << " this=" << this << " auth_ctx=" << filter->auth_context_.get();
   filter->server_credentials_->auth_metadata_processor().process(
       filter->server_credentials_->auth_metadata_processor().state,
       filter->auth_context_.get(), state_->md.metadata, state_->md.count,
@@ -163,9 +158,8 @@ void ServerAuthFilter::RunApplicationCode::OnMdProcessingDone(
 
   // TODO(ZhenLian): Implement support for response_md.
   if (response_md != nullptr && num_response_md > 0) {
-    gpr_log(GPR_ERROR,
-            "response_md in auth metadata processing not supported for now. "
-            "Ignoring...");
+    LOG(ERROR) << "response_md in auth metadata processing not supported for "
+                  "now. Ignoring...";
   }
 
   if (status == GRPC_STATUS_OK) {

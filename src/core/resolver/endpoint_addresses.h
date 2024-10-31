@@ -19,15 +19,14 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_ENDPOINT_ADDRESSES_H
 #define GRPC_SRC_CORE_RESOLVER_ENDPOINT_ADDRESSES_H
 
+#include <grpc/support/port_platform.h>
+
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/functional/function_ref.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 
@@ -39,6 +38,9 @@
 
 // A channel arg indicating the weight of an address.
 #define GRPC_ARG_ADDRESS_WEIGHT GRPC_ARG_NO_SUBCHANNEL_PREFIX "address.weight"
+
+// Name associated with individual address, if available (e.g., DNS name).
+#define GRPC_ARG_ADDRESS_NAME "grpc.address_name"
 
 namespace grpc_core {
 

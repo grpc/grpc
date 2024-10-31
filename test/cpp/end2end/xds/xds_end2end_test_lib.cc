@@ -15,6 +15,10 @@
 
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
+#include <gmock/gmock.h>
+#include <grpcpp/security/tls_certificate_provider.h>
+#include <gtest/gtest.h>
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -22,9 +26,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -34,16 +35,13 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpcpp/security/tls_certificate_provider.h>
-
 #include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/server/server.h"
+#include "src/core/util/env.h"
 #include "src/core/util/tmpfile.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_channel_args.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/router.pb.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/credentials.h"
@@ -72,15 +70,26 @@ void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
   cond_.Signal();
 }
 
-void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
-    WaitOnServingStatusChange(std::string uri,
-                              grpc::StatusCode expected_status) {
+bool XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
+    WaitOnServingStatusChange(const std::string& uri,
+                              grpc::StatusCode expected_status,
+                              absl::Duration timeout) {
   grpc_core::MutexLock lock(&mu_);
+  absl::Time deadline = absl::Now() + timeout * grpc_test_slowdown_factor();
   std::map<std::string, grpc::Status>::iterator it;
   while ((it = status_map.find(uri)) == status_map.end() ||
          it->second.error_code() != expected_status) {
-    cond_.Wait(&mu_);
+    if (cond_.WaitWithDeadline(&mu_, deadline)) {
+      LOG(ERROR) << "\nTimeout Elapsed waiting on serving status "
+                    "change\nExpected status: "
+                 << expected_status << "\nActual:"
+                 << (it == status_map.end()
+                         ? "Entry not found in map"
+                         : absl::StrCat(it->second.error_code()));
+      return false;
+    }
   }
+  return true;
 }
 
 //
@@ -134,6 +143,15 @@ class XdsEnd2endTest::ServerThread::XdsChannelArgsServerBuilderOption
 //
 // XdsEnd2endTest::ServerThread
 //
+
+XdsEnd2endTest::ServerThread::ServerThread(
+    XdsEnd2endTest* test_obj, bool use_xds_enabled_server,
+    std::shared_ptr<ServerCredentials> credentials)
+    : test_obj_(test_obj),
+      use_xds_enabled_server_(use_xds_enabled_server),
+      credentials_(credentials == nullptr ? CreateFakeServerCredentials()
+                                          : std::move(credentials)),
+      port_(grpc_pick_unused_port_or_die()) {}
 
 void XdsEnd2endTest::ServerThread::Start() {
   LOG(INFO) << "starting " << Type() << " server on port " << port_;
@@ -198,7 +216,7 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
     builder.set_status_notifier(&notifier_);
     builder.experimental().set_drain_grace_time(
         test_obj_->xds_drain_grace_time_ms_);
-    builder.AddListeningPort(server_address, Credentials());
+    builder.AddListeningPort(server_address, credentials_);
     // Allow gRPC Core's HTTP server to accept PUT requests for testing
     // purposes.
     if (allow_put_requests_) {
@@ -210,7 +228,7 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
     server_ = builder.BuildAndStart();
   } else {
     ServerBuilder builder;
-    builder.AddListeningPort(server_address, Credentials());
+    builder.AddListeningPort(server_address, credentials_);
     RegisterAllServices(&builder);
     server_ = builder.BuildAndStart();
   }
@@ -222,43 +240,14 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
 //
 
 XdsEnd2endTest::BackendServerThread::BackendServerThread(
-    XdsEnd2endTest* test_obj, bool use_xds_enabled_server)
-    : ServerThread(test_obj, use_xds_enabled_server) {
+    XdsEnd2endTest* test_obj, bool use_xds_enabled_server,
+    std::shared_ptr<ServerCredentials> credentials)
+    : ServerThread(test_obj, use_xds_enabled_server, std::move(credentials)) {
   if (use_xds_enabled_server) {
     test_obj->SetServerListenerNameAndRouteConfiguration(
         test_obj->balancer_.get(), test_obj->default_server_listener_, port(),
         test_obj->default_server_route_config_);
   }
-}
-
-std::shared_ptr<ServerCredentials>
-XdsEnd2endTest::BackendServerThread::Credentials() {
-  if (GetParam().use_xds_credentials()) {
-    if (use_xds_enabled_server()) {
-      // We are testing server's use of XdsServerCredentials
-      return XdsServerCredentials(InsecureServerCredentials());
-    } else {
-      // We are testing client's use of XdsCredentials
-      std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
-      std::string identity_cert =
-          grpc_core::testing::GetFileContents(kServerCertPath);
-      std::string private_key =
-          grpc_core::testing::GetFileContents(kServerKeyPath);
-      std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
-          {private_key, identity_cert}};
-      auto certificate_provider =
-          std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-              root_cert, identity_key_cert_pairs);
-      grpc::experimental::TlsServerCredentialsOptions options(
-          certificate_provider);
-      options.watch_root_certs();
-      options.watch_identity_key_cert_pairs();
-      options.set_cert_request_type(
-          GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
-      return grpc::experimental::TlsServerCredentials(options);
-    }
-  }
-  return ServerThread::Credentials();
 }
 
 void XdsEnd2endTest::BackendServerThread::RegisterAllServices(
@@ -288,8 +277,10 @@ void XdsEnd2endTest::BackendServerThread::ShutdownAllServices() {
 //
 
 XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
-    XdsEnd2endTest* test_obj, absl::string_view debug_label)
-    : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
+    XdsEnd2endTest* test_obj, absl::string_view debug_label,
+    std::shared_ptr<ServerCredentials> credentials)
+    : ServerThread(test_obj, /*use_xds_enabled_server=*/false,
+                   std::move(credentials)),
       ads_service_(new AdsServiceImpl(
           // First request must have node set with the right client
           // features.
@@ -317,26 +308,6 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
                 ::testing::Contains("envoy.lrs.supports_send_all_clusters"));
           },
           debug_label)) {}
-
-std::shared_ptr<ServerCredentials>
-XdsEnd2endTest::BalancerServerThread::Credentials() {
-  if (GetParam().xds_server_uses_tls_creds()) {
-    std::string identity_cert =
-        grpc_core::testing::GetFileContents(kServerCertPath);
-    std::string private_key =
-        grpc_core::testing::GetFileContents(kServerKeyPath);
-    std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
-        {private_key, identity_cert}};
-    auto certificate_provider =
-        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-            identity_key_cert_pairs);
-    grpc::experimental::TlsServerCredentialsOptions options(
-        certificate_provider);
-    options.watch_identity_key_cert_pairs();
-    return grpc::experimental::TlsServerCredentials(options);
-  }
-  return ServerThread::Credentials();
-}
 
 void XdsEnd2endTest::BalancerServerThread::RegisterAllServices(
     ServerBuilder* builder) {
@@ -388,6 +359,12 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
   if (server_notify_client_when_started) {
     request->mutable_param()->set_server_notify_client_when_started(true);
   }
+  if (echo_host_from_authority_header) {
+    request->mutable_param()->set_echo_host_from_authority_header(true);
+  }
+  if (echo_metadata_initially) {
+    request->mutable_param()->set_echo_metadata_initially(true);
+  }
 }
 
 //
@@ -402,8 +379,10 @@ const char XdsEnd2endTest::kServerKeyPath[] =
 
 const char XdsEnd2endTest::kRequestMessage[] = "Live long and prosper.";
 
-XdsEnd2endTest::XdsEnd2endTest()
-    : balancer_(CreateAndStartBalancer("Default Balancer")) {
+XdsEnd2endTest::XdsEnd2endTest(
+    std::shared_ptr<ServerCredentials> balancer_credentials)
+    : balancer_(CreateAndStartBalancer("Default Balancer",
+                                       std::move(balancer_credentials))) {
   // Initialize default client-side xDS resources.
   default_listener_ = XdsResourceUtils::DefaultListener();
   default_route_config_ = XdsResourceUtils::DefaultRouteConfig();
@@ -435,9 +414,12 @@ void XdsEnd2endTest::TearDown() {
 }
 
 std::unique_ptr<XdsEnd2endTest::BalancerServerThread>
-XdsEnd2endTest::CreateAndStartBalancer(absl::string_view debug_label) {
+XdsEnd2endTest::CreateAndStartBalancer(
+    absl::string_view debug_label,
+    std::shared_ptr<ServerCredentials> credentials) {
   std::unique_ptr<BalancerServerThread> balancer =
-      std::make_unique<BalancerServerThread>(this, debug_label);
+      std::make_unique<BalancerServerThread>(this, debug_label,
+                                             std::move(credentials));
   balancer->Start();
   return balancer;
 }
@@ -508,10 +490,12 @@ std::vector<int> XdsEnd2endTest::GetBackendPorts(size_t start_index,
   return backend_ports;
 }
 
-void XdsEnd2endTest::InitClient(absl::optional<XdsBootstrapBuilder> builder,
-                                std::string lb_expected_authority,
-                                int xds_resource_does_not_exist_timeout_ms,
-                                std::string balancer_authority_override) {
+void XdsEnd2endTest::InitClient(
+    absl::optional<XdsBootstrapBuilder> builder,
+    std::string lb_expected_authority,
+    int xds_resource_does_not_exist_timeout_ms,
+    std::string balancer_authority_override, ChannelArguments* args,
+    std::shared_ptr<ChannelCredentials> credentials) {
   if (!builder.has_value()) {
     builder = MakeBootstrapBuilder();
   }
@@ -560,12 +544,14 @@ void XdsEnd2endTest::InitClient(absl::optional<XdsBootstrapBuilder> builder,
     grpc_core::internal::UnsetGlobalXdsClientsForTest();
   }
   // Create channel and stub.
-  ResetStub();
+  ResetStub(/*failover_timeout_ms=*/0, args, std::move(credentials));
 }
 
-void XdsEnd2endTest::ResetStub(int failover_timeout_ms,
-                               ChannelArguments* args) {
-  channel_ = CreateChannel(failover_timeout_ms, kServerName, "", args);
+void XdsEnd2endTest::ResetStub(
+    int failover_timeout_ms, ChannelArguments* args,
+    std::shared_ptr<ChannelCredentials> credentials) {
+  channel_ = CreateChannel(failover_timeout_ms, kServerName, "", args,
+                           std::move(credentials));
   stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   stub1_ = grpc::testing::EchoTest1Service::NewStub(channel_);
   stub2_ = grpc::testing::EchoTest2Service::NewStub(channel_);
@@ -573,7 +559,7 @@ void XdsEnd2endTest::ResetStub(int failover_timeout_ms,
 
 std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
     int failover_timeout_ms, const char* server_name, const char* xds_authority,
-    ChannelArguments* args) {
+    ChannelArguments* args, std::shared_ptr<ChannelCredentials> credentials) {
   ChannelArguments local_args;
   if (args == nullptr) args = &local_args;
   // TODO(roth): Remove this once we enable retries by default internally.
@@ -592,6 +578,7 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
         &xds_channel_args_, &kChannelArgsArgVtable);
   }
+  // Construct target URI.
   std::vector<absl::string_view> parts = {"xds:"};
   if (xds_authority != nullptr && xds_authority[0] != '\0') {
     parts.emplace_back("//");
@@ -600,11 +587,11 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
   }
   parts.emplace_back(server_name);
   std::string uri = absl::StrJoin(parts, "");
-  std::shared_ptr<ChannelCredentials> channel_creds =
-      GetParam().use_xds_credentials()
-          ? XdsCredentials(CreateTlsFallbackCredentials())
-          : std::make_shared<FakeTransportSecurityChannelCredentials>();
-  return grpc::CreateCustomChannel(uri, channel_creds, *args);
+  // Credentials defaults to fake credentials.
+  if (credentials == nullptr) {
+    credentials = std::make_shared<FakeTransportSecurityChannelCredentials>();
+  }
+  return grpc::CreateCustomChannel(uri, credentials, *args);
 }
 
 Status XdsEnd2endTest::SendRpc(
@@ -736,33 +723,37 @@ Status XdsEnd2endTest::LongRunningRpc::GetStatus() {
   return status_;
 }
 
-std::vector<XdsEnd2endTest::ConcurrentRpc> XdsEnd2endTest::SendConcurrentRpcs(
+std::vector<std::unique_ptr<XdsEnd2endTest::ConcurrentRpc>>
+XdsEnd2endTest::SendConcurrentRpcs(
     const grpc_core::DebugLocation& debug_location,
     grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
     const RpcOptions& rpc_options) {
   // Variables for RPCs.
-  std::vector<ConcurrentRpc> rpcs(num_rpcs);
+  std::vector<std::unique_ptr<ConcurrentRpc>> rpcs;
+  rpcs.reserve(num_rpcs);
   EchoRequest request;
   // Variables for synchronization
   grpc_core::Mutex mu;
   grpc_core::CondVar cv;
   size_t completed = 0;
   // Set-off callback RPCs
-  for (size_t i = 0; i < num_rpcs; i++) {
-    ConcurrentRpc* rpc = &rpcs[i];
+  for (size_t i = 0; i < num_rpcs; ++i) {
+    auto rpc = std::make_unique<ConcurrentRpc>();
     rpc_options.SetupRpc(&rpc->context, &request);
     grpc_core::Timestamp t0 = NowFromCycleCounter();
-    stub->async()->Echo(&rpc->context, &request, &rpc->response,
-                        [rpc, &mu, &completed, &cv, num_rpcs, t0](Status s) {
-                          rpc->status = s;
-                          rpc->elapsed_time = NowFromCycleCounter() - t0;
-                          bool done;
-                          {
-                            grpc_core::MutexLock lock(&mu);
-                            done = (++completed) == num_rpcs;
-                          }
-                          if (done) cv.Signal();
-                        });
+    stub->async()->Echo(
+        &rpc->context, &request, &rpc->response,
+        [rpc = rpc.get(), &mu, &completed, &cv, num_rpcs, t0](Status s) {
+          rpc->status = s;
+          rpc->elapsed_time = NowFromCycleCounter() - t0;
+          bool done;
+          {
+            grpc_core::MutexLock lock(&mu);
+            done = (++completed) == num_rpcs;
+          }
+          if (done) cv.Signal();
+        });
+    rpcs.push_back(std::move(rpc));
   }
   {
     grpc_core::MutexLock lock(&mu);
@@ -836,22 +827,40 @@ void XdsEnd2endTest::SetProtoDuration(
 
 std::string XdsEnd2endTest::MakeConnectionFailureRegex(
     absl::string_view prefix) {
-  return absl::StrCat(prefix,
-                      "(UNKNOWN|UNAVAILABLE): "
-                      // IP address
-                      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      // Prefixes added for context
-                      "(Failed to connect to remote host: )?"
-                      "(Timeout occurred: )?"
-                      // Syscall
-                      "((connect|recvmsg|getsockopt\\(SO\\_ERROR\\)): )?"
-                      // strerror() output or other message
-                      "(Connection refused"
-                      "|Connection reset by peer"
-                      "|Socket closed"
-                      "|FD shutdown)"
-                      // errno value
-                      "( \\([0-9]+\\))?");
+  return absl::StrCat(
+      prefix,
+      "(UNKNOWN|UNAVAILABLE): "
+      // IP address
+      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      // Prefixes added for context
+      "(Failed to connect to remote host: )?"
+      "(Timeout occurred: )?"
+      // Syscall
+      "((connect|sendmsg|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
+      // strerror() output or other message
+      "(Connection refused"
+      "|Connection reset by peer"
+      "|Socket closed"
+      "|Broken pipe"
+      "|FD shutdown)"
+      // errno value
+      "( \\([0-9]+\\))?");
+}
+
+std::string XdsEnd2endTest::MakeTlsHandshakeFailureRegex(
+    absl::string_view prefix) {
+  return absl::StrCat(
+      prefix,
+      "(UNKNOWN|UNAVAILABLE): "
+      // IP address
+      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      // Prefixes added for context
+      "(Failed to connect to remote host: )?"
+      // Tls handshake failure
+      "Tls handshake failed \\(TSI_PROTOCOL_FAILURE\\): SSL_ERROR_SSL: "
+      "error:1000007d:SSL routines:OPENSSL_internal:CERTIFICATE_VERIFY_FAILED"
+      // Detailed reason for certificate verify failure
+      "(: .*)?");
 }
 
 grpc_core::PemKeyCertPairList XdsEnd2endTest::ReadTlsIdentityPair(
@@ -861,18 +870,24 @@ grpc_core::PemKeyCertPairList XdsEnd2endTest::ReadTlsIdentityPair(
       grpc_core::testing::GetFileContents(cert_path))};
 }
 
-std::shared_ptr<ChannelCredentials>
-XdsEnd2endTest::CreateTlsFallbackCredentials() {
-  IdentityKeyCertPair key_cert_pair;
-  key_cert_pair.private_key =
-      grpc_core::testing::GetFileContents(kServerKeyPath);
-  key_cert_pair.certificate_chain =
+std::vector<experimental::IdentityKeyCertPair>
+XdsEnd2endTest::MakeIdentityKeyCertPairForTlsCreds() {
+  std::string identity_cert =
       grpc_core::testing::GetFileContents(kServerCertPath);
-  std::vector<IdentityKeyCertPair> identity_key_cert_pairs;
-  identity_key_cert_pairs.emplace_back(key_cert_pair);
+  std::string private_key = grpc_core::testing::GetFileContents(kServerKeyPath);
+  return {{std::move(private_key), std::move(identity_cert)}};
+}
+
+std::shared_ptr<ChannelCredentials>
+XdsEnd2endTest::CreateXdsChannelCredentials() {
+  return XdsCredentials(CreateTlsChannelCredentials());
+}
+
+std::shared_ptr<ChannelCredentials>
+XdsEnd2endTest::CreateTlsChannelCredentials() {
   auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
       grpc_core::testing::GetFileContents(kCaCertPath),
-      identity_key_cert_pairs);
+      MakeIdentityKeyCertPairForTlsCreds());
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(std::move(certificate_provider));
   options.watch_root_certs();
@@ -882,9 +897,38 @@ XdsEnd2endTest::CreateTlsFallbackCredentials() {
   options.set_certificate_verifier(std::move(verifier));
   options.set_verify_server_certs(true);
   options.set_check_call_host(false);
-  auto channel_creds = grpc::experimental::TlsCredentials(options);
-  CHECK_NE(channel_creds.get(), nullptr);
-  return channel_creds;
+  return grpc::experimental::TlsCredentials(options);
+}
+
+std::shared_ptr<ServerCredentials>
+XdsEnd2endTest::CreateFakeServerCredentials() {
+  return std::make_shared<SecureServerCredentials>(
+      grpc_fake_transport_security_server_credentials_create());
+}
+
+std::shared_ptr<ServerCredentials>
+XdsEnd2endTest::CreateMtlsServerCredentials() {
+  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  auto certificate_provider =
+      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+          std::move(root_cert), MakeIdentityKeyCertPairForTlsCreds());
+  grpc::experimental::TlsServerCredentialsOptions options(
+      std::move(certificate_provider));
+  options.watch_root_certs();
+  options.watch_identity_key_cert_pairs();
+  options.set_cert_request_type(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
+  return grpc::experimental::TlsServerCredentials(options);
+}
+
+std::shared_ptr<ServerCredentials>
+XdsEnd2endTest::CreateTlsServerCredentials() {
+  auto certificate_provider =
+      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+          MakeIdentityKeyCertPairForTlsCreds());
+  grpc::experimental::TlsServerCredentialsOptions options(
+      std::move(certificate_provider));
+  options.watch_identity_key_cert_pairs();
+  return grpc::experimental::TlsServerCredentials(options);
 }
 
 }  // namespace testing

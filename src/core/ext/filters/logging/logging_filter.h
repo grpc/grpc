@@ -25,7 +25,6 @@
 #include <utility>
 
 #include "absl/status/statusor.h"
-
 #include "src/core/ext/filters/logging/logging_sink.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -78,6 +77,8 @@ class ClientLoggingFilter final
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "logging"; }
+
   static absl::StatusOr<std::unique_ptr<ClientLoggingFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args /*filter_args*/);
 
@@ -107,6 +108,8 @@ class ServerLoggingFilter final
     : public ImplementChannelFilter<ServerLoggingFilter> {
  public:
   static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() { return "logging"; }
 
   static absl::StatusOr<std::unique_ptr<ServerLoggingFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args /*filter_args*/);

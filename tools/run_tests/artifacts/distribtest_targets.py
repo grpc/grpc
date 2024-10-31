@@ -220,6 +220,7 @@ class RubyDistribTest(object):
         ruby_version=None,
         source=False,
         presubmit=False,
+        protobuf_version="",
     ):
         self.package_type = "binary"
         if source:
@@ -231,10 +232,13 @@ class RubyDistribTest(object):
             ruby_version or "unspecified",
             self.package_type,
         )
+        if not protobuf_version == "":
+            self.name += "_protobuf_%s" % protobuf_version
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
         self.ruby_version = ruby_version
+        self.protobuf_version = protobuf_version
         self.labels = ["distribtest", "ruby", platform, arch, docker_suffix]
         if presubmit:
             self.labels.append("presubmit")
@@ -261,8 +265,13 @@ class RubyDistribTest(object):
         return create_docker_jobspec(
             self.name,
             dockerfile_name,
-            "test/distrib/ruby/run_distrib_test.sh %s %s %s"
-            % (arch_to_gem_arch[self.arch], self.platform, self.package_type),
+            "test/distrib/ruby/run_distrib_test.sh %s %s %s %s"
+            % (
+                arch_to_gem_arch[self.arch],
+                self.platform,
+                self.package_type,
+                self.protobuf_version,
+            ),
             copy_rel_path="test/distrib",
         )
 
@@ -270,15 +279,15 @@ class RubyDistribTest(object):
         return self.name
 
 
-class PHP7DistribTest(object):
-    """Tests PHP7 package"""
+class PHP8DistribTest(object):
+    """Tests PHP8 package"""
 
     def __init__(self, platform, arch, docker_suffix=None, presubmit=False):
-        self.name = "php7_%s_%s_%s" % (platform, arch, docker_suffix)
+        self.name = "php8_%s_%s_%s" % (platform, arch, docker_suffix)
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
-        self.labels = ["distribtest", "php", "php7", platform, arch]
+        self.labels = ["distribtest", "php", "php8", platform, arch]
         if presubmit:
             self.labels.append("presubmit")
         if docker_suffix:
@@ -293,7 +302,7 @@ class PHP7DistribTest(object):
         if self.platform == "linux":
             return create_docker_jobspec(
                 self.name,
-                "tools/dockerfile/distribtest/php7_%s_%s"
+                "tools/dockerfile/distribtest/php8_%s_%s"
                 % (self.docker_suffix, self.arch),
                 "test/distrib/php/run_distrib_test.sh",
                 copy_rel_path="test/distrib",
@@ -384,31 +393,31 @@ def targets():
         # C++
         # The "dummy" C++ distribtest so that the set of tasks to run isn't empty
         # when grpc_distribtest_standalone runs on PRs.
-        CppDistribTest("linux", "x64", "debian10", "dummy", presubmit=True),
-        CppDistribTest("linux", "x64", "debian10", "cmake", presubmit=False),
+        CppDistribTest("linux", "x64", "debian11", "dummy", presubmit=True),
+        CppDistribTest("linux", "x64", "debian11", "cmake", presubmit=False),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_as_submodule", presubmit=False
+            "linux", "x64", "debian11", "cmake_as_submodule", presubmit=False
         ),
         CppDistribTest(
             "linux",
             "x64",
-            "debian10",
+            "debian11",
             "cmake_as_externalproject",
             presubmit=False,
         ),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_fetchcontent", presubmit=False
+            "linux", "x64", "debian11", "cmake_fetchcontent", presubmit=False
         ),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_module_install", presubmit=False
+            "linux", "x64", "debian11", "cmake_module_install", presubmit=False
         ),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_pkgconfig", presubmit=False
+            "linux", "x64", "debian11", "cmake_pkgconfig", presubmit=False
         ),
         CppDistribTest(
             "linux",
             "x64",
-            "debian10_aarch64_cross",
+            "debian11_aarch64_cross",
             "cmake_aarch64_cross",
             presubmit=False,
         ),
@@ -427,7 +436,7 @@ def targets():
         ),
         # C#
         CSharpDistribTest(
-            "linux", "x64", "debian10", use_dotnet_cli=True, presubmit=True
+            "linux", "x64", "debian11", use_dotnet_cli=True, presubmit=True
         ),
         CSharpDistribTest("linux", "x64", "ubuntu2204", use_dotnet_cli=True),
         CSharpDistribTest(
@@ -445,7 +454,7 @@ def targets():
         # Python
         PythonDistribTest("linux", "x64", "bullseye", presubmit=True),
         PythonDistribTest("linux", "x86", "bullseye", presubmit=True),
-        PythonDistribTest("linux", "x64", "fedora38"),
+        PythonDistribTest("linux", "x64", "fedora39"),
         PythonDistribTest("linux", "x64", "arch"),
         PythonDistribTest("linux", "x64", "alpine"),
         PythonDistribTest("linux", "x64", "ubuntu2204"),
@@ -461,7 +470,7 @@ def targets():
         PythonDistribTest(
             "linux", "x86", "bullseye", source=True, presubmit=True
         ),
-        PythonDistribTest("linux", "x64", "fedora38", source=True),
+        PythonDistribTest("linux", "x64", "fedora39", source=True),
         PythonDistribTest("linux", "x64", "arch", source=True),
         PythonDistribTest("linux", "x64", "ubuntu2204", source=True),
         # Ruby
@@ -485,10 +494,17 @@ def targets():
         RubyDistribTest(
             "linux", "x64", "debian11", ruby_version="ruby_3_3", presubmit=True
         ),
-        RubyDistribTest("linux", "x64", "centos7"),
+        RubyDistribTest(
+            "linux",
+            "x64",
+            "debian11",
+            ruby_version="ruby_3_3",
+            protobuf_version="3.25",
+            presubmit=True,
+        ),
         RubyDistribTest("linux", "x64", "ubuntu2004"),
         RubyDistribTest("linux", "x64", "ubuntu2204", presubmit=True),
-        # PHP7
-        PHP7DistribTest("linux", "x64", "debian10", presubmit=True),
-        PHP7DistribTest("macos", "x64", presubmit=True),
+        # PHP8
+        PHP8DistribTest("linux", "x64", "debian12", presubmit=True),
+        PHP8DistribTest("macos", "x64", presubmit=True),
     ]

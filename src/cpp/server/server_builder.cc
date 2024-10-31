@@ -16,18 +16,6 @@
 //
 //
 
-#include <limits.h>
-#include <string.h>
-
-#include <algorithm>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
@@ -47,7 +35,17 @@
 #include <grpcpp/server_interface.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/server_interceptor.h>
+#include <limits.h>
+#include <string.h>
 
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
 #include "src/core/server/server.h"
 #include "src/core/util/string.h"
@@ -389,16 +387,14 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
 
   if (has_sync_methods) {
     // This is a Sync server
-    LOG(INFO) << "Synchronous server. Num CQs: "
-              << sync_server_settings_.num_cqs
-              << ", Min pollers: " << sync_server_settings_.min_pollers
-              << ", Max Pollers: " << sync_server_settings_.max_pollers
-              << ", CQ timeout (msec): "
-              << sync_server_settings_.cq_timeout_msec;
+    VLOG(2) << "Synchronous server. Num CQs: " << sync_server_settings_.num_cqs
+            << ", Min pollers: " << sync_server_settings_.min_pollers
+            << ", Max Pollers: " << sync_server_settings_.max_pollers
+            << ", CQ timeout (msec): " << sync_server_settings_.cq_timeout_msec;
   }
 
   if (has_callback_methods) {
-    LOG(INFO) << "Callback server.";
+    VLOG(2) << "Callback server.";
   }
 
   std::unique_ptr<grpc::Server> server(new grpc::Server(

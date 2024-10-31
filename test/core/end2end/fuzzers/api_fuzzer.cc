@@ -16,6 +16,12 @@
 //
 //
 
+#include <grpc/credentials.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 #include <string.h>
 
 #include <algorithm>
@@ -36,24 +42,11 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
-
-#include <grpc/credentials.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -61,6 +54,10 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/env.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
@@ -69,6 +66,7 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
+#include "test/core/test_util/test_config.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
@@ -211,7 +209,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
 
 }  // namespace
 
-grpc_ares_request* my_dns_lookup_ares(
+grpc_ares_request* my_dns_lookup_hostname_ares(
     const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::EndpointAddressesList>* addresses,
@@ -228,8 +226,25 @@ grpc_ares_request* my_dns_lookup_ares(
   return nullptr;
 }
 
+grpc_ares_request* my_dns_lookup_srv_ares(
+    const char* /*dns_server*/, const char* name,
+    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
+    std::unique_ptr<grpc_core::EndpointAddressesList>* balancer_addresses,
+    int /*query_timeout*/) {
+  addr_req r;
+  r.addr = gpr_strdup(name);
+  r.on_done = on_done;
+  r.addresses = balancer_addresses;
+  GetDefaultEventEngine()->RunAfter(grpc_core::Duration::Seconds(1), [r] {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    finish_resolve(r);
+  });
+  return nullptr;
+}
+
 static void my_cancel_ares_request(grpc_ares_request* request) {
-  CHECK_EQ(request, nullptr);
+  CHECK_NE(request, nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -399,7 +414,8 @@ namespace testing {
 ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
     : BasicFuzzer(actions) {
   ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine().get()));
-  grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
+  grpc_dns_lookup_hostname_ares = my_dns_lookup_hostname_ares;
+  grpc_dns_lookup_srv_ares = my_dns_lookup_srv_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
   CHECK_EQ(channel_, nullptr);
@@ -504,7 +520,7 @@ using grpc_core::testing::ApiFuzzer;
 
 DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_disable_all_logs();
+    grpc_disable_all_absl_logs();
   }
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();

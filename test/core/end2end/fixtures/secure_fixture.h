@@ -15,19 +15,17 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_SECURE_FIXTURE_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_SECURE_FIXTURE_H
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+
 #include <string>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/util/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/port.h"
 

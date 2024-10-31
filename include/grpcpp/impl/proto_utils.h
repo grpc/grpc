@@ -19,14 +19,9 @@
 #ifndef GRPCPP_IMPL_PROTO_UTILS_H
 #define GRPCPP_IMPL_PROTO_UTILS_H
 
-#include <type_traits>
-
-#include "absl/log/absl_check.h"
-
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/byte_buffer.h>
@@ -34,6 +29,10 @@
 #include <grpcpp/support/proto_buffer_writer.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
+
+#include <type_traits>
+
+#include "absl/log/absl_check.h"
 
 /// This header provides serialization and deserialization between gRPC
 /// messages serialized using protobuf and the C++ objects they represent.
@@ -61,7 +60,9 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
     return grpc::Status::OK;
   }
   ProtoBufferWriter writer(bb, kProtoBufferWriterMaxBufferLength, byte_size);
-  return msg.SerializeToZeroCopyStream(&writer)
+  protobuf::io::CodedOutputStream cs(&writer);
+  msg.SerializeWithCachedSizes(&cs);
+  return !cs.HadError()
              ? grpc::Status::OK
              : Status(StatusCode::INTERNAL, "Failed to serialize message");
 }

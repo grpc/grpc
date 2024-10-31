@@ -15,41 +15,96 @@
 //
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
 
+#include <grpc/slice.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
+#include "src/core/util/load_file.h"
 
 namespace grpc_core {
 
-RefCountedPtr<FileExternalAccountCredentials>
-FileExternalAccountCredentials::Create(Options options,
-                                       std::vector<std::string> scopes,
-                                       grpc_error_handle* error) {
-  auto creds = MakeRefCounted<FileExternalAccountCredentials>(
-      std::move(options), std::move(scopes), error);
-  if (error->ok()) {
-    return creds;
-  } else {
-    return nullptr;
+//
+// FileExternalAccountCredentials::FileFetchBody
+//
+
+FileExternalAccountCredentials::FileFetchBody::FileFetchBody(
+    absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done,
+    FileExternalAccountCredentials* creds)
+    : FetchBody(std::move(on_done)), creds_(creds) {
+  // Start work asynchronously, since we can't invoke the callback
+  // synchronously without causing a deadlock.
+  creds->event_engine().Run([self = RefAsSubclass<FileFetchBody>()]() mutable {
+    ApplicationCallbackExecCtx application_exec_ctx;
+    ExecCtx exec_ctx;
+    self->ReadFile();
+    self.reset();
+  });
+}
+
+void FileExternalAccountCredentials::FileFetchBody::ReadFile() {
+  // To retrieve the subject token, we read the file every time we make a
+  // request because it may have changed since the last request.
+  auto content_slice = LoadFile(creds_->file_, /*add_null_terminator=*/false);
+  if (!content_slice.ok()) {
+    Finish(content_slice.status());
+    return;
   }
+  absl::string_view content = content_slice->as_string_view();
+  if (creds_->format_type_ == "json") {
+    auto content_json = JsonParse(content);
+    if (!content_json.ok() || content_json->type() != Json::Type::kObject) {
+      Finish(GRPC_ERROR_CREATE(
+          "The content of the file is not a valid json object."));
+      return;
+    }
+    auto content_it =
+        content_json->object().find(creds_->format_subject_token_field_name_);
+    if (content_it == content_json->object().end()) {
+      Finish(GRPC_ERROR_CREATE("Subject token field not present."));
+      return;
+    }
+    if (content_it->second.type() != Json::Type::kString) {
+      Finish(GRPC_ERROR_CREATE("Subject token field must be a string."));
+      return;
+    }
+    Finish(content_it->second.string());
+    return;
+  }
+  Finish(std::string(content));
+}
+
+//
+// FileExternalAccountCredentials
+//
+
+absl::StatusOr<RefCountedPtr<FileExternalAccountCredentials>>
+FileExternalAccountCredentials::Create(
+    Options options, std::vector<std::string> scopes,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine) {
+  grpc_error_handle error;
+  auto creds = MakeRefCounted<FileExternalAccountCredentials>(
+      std::move(options), std::move(scopes), std::move(event_engine), &error);
+  if (!error.ok()) return error;
+  return creds;
 }
 
 FileExternalAccountCredentials::FileExternalAccountCredentials(
-    Options options, std::vector<std::string> scopes, grpc_error_handle* error)
-    : ExternalAccountCredentials(options, std::move(scopes)) {
+    Options options, std::vector<std::string> scopes,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
+    grpc_error_handle* error)
+    : ExternalAccountCredentials(options, std::move(scopes),
+                                 std::move(event_engine)) {
   auto it = options.credential_source.object().find("file");
   if (it == options.credential_source.object().end()) {
     *error = GRPC_ERROR_CREATE("file field not present.");
@@ -96,38 +151,21 @@ FileExternalAccountCredentials::FileExternalAccountCredentials(
   }
 }
 
-void FileExternalAccountCredentials::RetrieveSubjectToken(
-    HTTPRequestContext* /*ctx*/, const Options& /*options*/,
-    std::function<void(std::string, grpc_error_handle)> cb) {
-  // To retrieve the subject token, we read the file every time we make a
-  // request because it may have changed since the last request.
-  auto content_slice = LoadFile(file_, /*add_null_terminator=*/false);
-  if (!content_slice.ok()) {
-    cb("", content_slice.status());
-    return;
-  }
-  absl::string_view content = content_slice->as_string_view();
-  if (format_type_ == "json") {
-    auto content_json = JsonParse(content);
-    if (!content_json.ok() || content_json->type() != Json::Type::kObject) {
-      cb("", GRPC_ERROR_CREATE(
-                 "The content of the file is not a valid json object."));
-      return;
-    }
-    auto content_it =
-        content_json->object().find(format_subject_token_field_name_);
-    if (content_it == content_json->object().end()) {
-      cb("", GRPC_ERROR_CREATE("Subject token field not present."));
-      return;
-    }
-    if (content_it->second.type() != Json::Type::kString) {
-      cb("", GRPC_ERROR_CREATE("Subject token field must be a string."));
-      return;
-    }
-    cb(content_it->second.string(), absl::OkStatus());
-    return;
-  }
-  cb(std::string(content), absl::OkStatus());
+std::string FileExternalAccountCredentials::debug_string() {
+  return absl::StrCat("FileExternalAccountCredentials{Audience:", audience(),
+                      ")");
+}
+
+UniqueTypeName FileExternalAccountCredentials::Type() {
+  static UniqueTypeName::Factory kFactory("FileExternalAccountCredentials");
+  return kFactory.Create();
+}
+
+OrphanablePtr<ExternalAccountCredentials::FetchBody>
+FileExternalAccountCredentials::RetrieveSubjectToken(
+    Timestamp /*deadline*/,
+    absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) {
+  return MakeOrphanable<FileFetchBody>(std::move(on_done), this);
 }
 
 absl::string_view FileExternalAccountCredentials::CredentialSourceType() {

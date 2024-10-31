@@ -18,17 +18,16 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
+#include <grpc/support/alloc.h>
+
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/alloc.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/status_helper.h"
 #include "test/core/test_util/test_config.h"
 
 static grpc_error_handle channel_init_func(grpc_channel_element* elem,
@@ -92,7 +91,7 @@ TEST(ChannelStackTest, CreateChannelStack) {
       grpc_channel_stack_no_post_init,
       channel_destroy_func,
       grpc_channel_next_get_info,
-      "some_test_filter"};
+      GRPC_UNIQUE_TYPE_NAME_HERE("some_test_filter")};
   const grpc_channel_filter* filters = &filter;
   grpc_channel_stack* channel_stack;
   grpc_call_stack* call_stack;

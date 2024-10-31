@@ -27,22 +27,13 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "envoy/config/listener/v3/listener.upbdefs.h"
-#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
-#include "upb/reflection/def.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_common_types.h"
-#include "src/core/xds/grpc/xds_http_filters.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_route_config.h"
-#include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
 
@@ -205,30 +196,6 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
   }
 
   std::string ToString() const;
-};
-
-class XdsListenerResourceType final
-    : public XdsResourceTypeImpl<XdsListenerResourceType, XdsListenerResource> {
- public:
-  absl::string_view type_url() const override {
-    return "envoy.config.listener.v3.Listener";
-  }
-
-  DecodeResult Decode(const XdsResourceType::DecodeContext& context,
-                      absl::string_view serialized_resource) const override;
-
-  bool AllResourcesRequiredInSotW() const override { return true; }
-
-  void InitUpbSymtab(XdsClient* xds_client,
-                     upb_DefPool* symtab) const override {
-    envoy_config_listener_v3_Listener_getmsgdef(symtab);
-    envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
-        symtab);
-    const auto& http_filter_registry =
-        static_cast<const GrpcXdsBootstrap&>(xds_client->bootstrap())
-            .http_filter_registry();
-    http_filter_registry.PopulateSymtab(symtab);
-  }
 };
 
 }  // namespace grpc_core

@@ -744,8 +744,6 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
       var["ToolsVersion"] = config.grpc_tools_version;
       out->Print(var, "\nGRPC_GENERATED_VERSION = '$ToolsVersion$'\n");
       out->Print("GRPC_VERSION = grpc.__version__\n");
-      out->Print("EXPECTED_ERROR_RELEASE = '1.65.0'\n");
-      out->Print("SCHEDULED_RELEASE_DATE = 'June 25, 2024'\n");
       out->Print("_version_not_supported = False\n\n");
       out->Print("try:\n");
       {
@@ -763,7 +761,7 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
       out->Print("\nif _version_not_supported:\n");
       {
         IndentScope raii_warning_indent(out);
-        out->Print("warnings.warn(\n");
+        out->Print("raise RuntimeError(\n");
         {
           IndentScope raii_warning_string_indent(out);
           std::string filename_without_ext = file->filename_without_ext();
@@ -779,11 +777,7 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
               "+ f' Please upgrade your grpc module to "
               "grpcio>={GRPC_GENERATED_VERSION}'\n"
               "+ f' or downgrade your generated code using "
-              "grpcio-tools<={GRPC_VERSION}.'\n"
-              "+ f' This warning will become an error in "
-              "{EXPECTED_ERROR_RELEASE},'\n"
-              "+ f' scheduled for release on {SCHEDULED_RELEASE_DATE}.',\n"
-              "RuntimeWarning\n");
+              "grpcio-tools<={GRPC_VERSION}.'\n");
         }
         out->Print(")\n");
       }

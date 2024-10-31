@@ -15,9 +15,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/http/client/http_client_filter.h"
+
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 
 #include <algorithm>
 #include <functional>
@@ -33,11 +36,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/promise/context.h"
@@ -49,6 +47,7 @@
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
 
@@ -59,7 +58,7 @@ const NoInterceptor HttpClientFilter::Call::OnFinalize;
 
 const grpc_channel_filter HttpClientFilter::kFilter =
     MakePromiseBasedFilter<HttpClientFilter, FilterEndpoint::kClient,
-                           kFilterExaminesServerInitialMetadata>("http-client");
+                           kFilterExaminesServerInitialMetadata>();
 
 namespace {
 absl::Status CheckServerMetadata(ServerMetadata* b) {
@@ -113,6 +112,8 @@ Slice UserAgentFromArgs(const ChannelArgs& args,
 
 void HttpClientFilter::Call::OnClientInitialMetadata(ClientMetadata& md,
                                                      HttpClientFilter* filter) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "HttpClientFilter::Call::OnClientInitialMetadata");
   if (filter->test_only_use_put_requests_) {
     md.Set(HttpMethodMetadata(), HttpMethodMetadata::kPut);
   } else {
@@ -126,11 +127,15 @@ void HttpClientFilter::Call::OnClientInitialMetadata(ClientMetadata& md,
 
 absl::Status HttpClientFilter::Call::OnServerInitialMetadata(
     ServerMetadata& md) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "HttpClientFilter::Call::OnServerInitialMetadata");
   return CheckServerMetadata(&md);
 }
 
 absl::Status HttpClientFilter::Call::OnServerTrailingMetadata(
     ServerMetadata& md) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "HttpClientFilter::Call::OnServerTrailingMetadata");
   return CheckServerMetadata(&md);
 }
 

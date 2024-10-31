@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_proto//proto:defs.bzl", "proto_library")
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_grpc_library", "grpc_cc_proto_library", "grpc_internal_proto_library", "grpc_package")
 
 licenses(["notice"])
 
@@ -22,26 +21,43 @@ grpc_package(
     visibility = "public",
 )
 
-grpc_proto_library(
+grpc_internal_proto_library(
     name = "load_balancer_proto",
-    srcs = [
-        "load_balancer.proto",
-    ],
-    well_known_protos = True,
-)
-
-proto_library(
-    name = "load_balancer_proto_descriptor",
     srcs = ["load_balancer.proto"],
+    has_services = True,
     deps = [
         "@com_google_protobuf//:duration_proto",
         "@com_google_protobuf//:timestamp_proto",
     ],
 )
 
-grpc_proto_library(
+grpc_cc_proto_library(
+    name = "load_balancer_cc_proto",
+    deps = ["load_balancer_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "load_balancer_cc_grpc",
+    srcs = ["load_balancer_proto"],
+    deps = ["load_balancer_cc_proto"],
+)
+
+grpc_internal_proto_library(
     name = "load_reporter_proto",
     srcs = ["load_reporter.proto"],
     has_services = True,
-    well_known_protos = True,
+    deps = [
+        "@com_google_protobuf//:duration_proto",
+    ],
+)
+
+grpc_cc_proto_library(
+    name = "load_reporter_cc_proto",
+    deps = ["load_reporter_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "load_reporter_cc_grpc",
+    srcs = ["load_reporter_proto"],
+    deps = ["load_reporter_cc_proto"],
 )

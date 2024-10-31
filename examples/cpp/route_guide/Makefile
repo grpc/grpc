@@ -30,6 +30,7 @@ CXXFLAGS += -std=c++14
 ifeq ($(SYSTEM),Darwin)
 LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ $(PROTOBUF_ABSL_DEPS)`\
            $(PROTOBUF_UTF8_RANGE_LINK_LIBS) \
+		   -labsl_flags_parse -labsl_absl_log -labsl_log_globals -labsl_log_initialize
            -pthread\
            -lgrpc++_reflection\
            -ldl

@@ -18,18 +18,18 @@
 
 #include "src/core/lib/surface/init.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+
 #include <chrono>
 #include <memory>
 
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/thd.h"
 #include "test/core/test_util/test_config.h"
 
 static void test(int rounds) {
@@ -113,6 +113,40 @@ TEST(Init, Repeatedly) {
   }
   grpc_maybe_wait_for_async_shutdown();
   EXPECT_FALSE(grpc_is_initialized());
+}
+
+TEST(Init, WaitForShutdownBeforeInit) {
+  EXPECT_TRUE(grpc_wait_for_shutdown_with_timeout(absl::ZeroDuration()));
+}
+
+TEST(Init, WaitForShutdownAfterShutdown) {
+  grpc_init();
+  grpc_shutdown();
+  EXPECT_TRUE(grpc_wait_for_shutdown_with_timeout(absl::ZeroDuration()));
+}
+
+TEST(Init, WaitForShutdownWithTimeout) {
+  grpc_init();
+  grpc_init();
+  grpc_shutdown();
+  grpc_core::Thread t0(
+      "init_test",
+      [](void*) {
+        EXPECT_FALSE(grpc_wait_for_shutdown_with_timeout(absl::Seconds(0.5)));
+      },
+      nullptr);
+  grpc_core::Thread t1(
+      "init_test",
+      [](void*) {
+        EXPECT_TRUE(grpc_wait_for_shutdown_with_timeout(absl::Seconds(1.5)));
+      },
+      nullptr);
+  t0.Start();
+  t1.Start();
+  absl::SleepFor(absl::Seconds(1));
+  grpc_shutdown();
+  t0.Join();
+  t1.Join();
 }
 
 TEST(Init, RepeatedlyBlocking) {

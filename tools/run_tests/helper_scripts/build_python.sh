@@ -86,6 +86,19 @@ function toolchain() {
   fi
 }
 
+# When we mount and reuse the existing repo from host machine inside docker
+# container, the `tools/bazel.rc` file is shared to the docker container and 
+# the Bazel override written to `bazel.rc` from tools/.../grpc_build_submodule_at_head.sh 
+# (outside docker container) forces bazel to look for the same host location
+# inside the docker container, which doesn't exist.
+# Hence overriding it again with the working directory inside the container 
+# should solve this issue
+BAZEL_DEP_PATH="$(pwd)/third_party/protobuf"
+BAZEL_DEP_NAME="com_google_protobuf"
+echo "bazel override_repository is set for ${BAZEL_DEP_NAME} to ${BAZEL_DEP_PATH}"
+echo "build --override_repository=${BAZEL_DEP_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
+echo "query --override_repository=${BAZEL_DEP_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
+
 ####################
 # Script Arguments #
 ####################
@@ -136,7 +149,7 @@ pip_install() {
 
 pip_install --upgrade pip
 pip_install --upgrade wheel
-pip_install --upgrade setuptools==66.1.0
+pip_install --upgrade setuptools==70.1.1
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
@@ -158,8 +171,8 @@ pip_install_dir_and_deps() {
 
 pip_install -U gevent
 
-pip_install --upgrade 'cython<3.0.0rc1'
-pip_install --upgrade six 'protobuf>=4.21.3rc1,!=4.22.0.*'
+pip_install --upgrade 'cython>=3.0.0'
+pip_install --upgrade six 'protobuf>=5.26.1,<6.0dev'
 
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then
@@ -219,7 +232,7 @@ pip_install_dir "$ROOT/src/python/grpcio_testing"
 # shellcheck disable=SC2261
 pip_install coverage==7.2.0 oauth2client==4.1.0 \
             google-auth>=1.35.0 requests==2.31.0 \
-            googleapis-common-protos>=1.5.5 rsa==4.0 absl-py==1.4.0 \
+            rsa==4.0 absl-py==1.4.0 \
             opentelemetry-sdk==1.21.0
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos

@@ -18,6 +18,9 @@
 
 #include "src/cpp/ext/otel/otel_plugin.h"
 
+#include <grpcpp/ext/otel_plugin.h>
+#include <grpcpp/grpcpp.h>
+
 #include <atomic>
 #include <chrono>
 #include <ratio>
@@ -30,14 +33,12 @@
 #include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/nostd/variant.h"
 #include "opentelemetry/sdk/common/attribute_utils.h"
+#include "opentelemetry/sdk/metrics/data/metric_data.h"
 #include "opentelemetry/sdk/metrics/data/point_data.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
-
-#include <grpcpp/ext/otel_plugin.h>
-#include <grpcpp/grpcpp.h>
-
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
@@ -1285,6 +1286,9 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
 class OpenTelemetryPluginNPCMetricsTest
     : public OpenTelemetryPluginEnd2EndTest {
  protected:
+  OpenTelemetryPluginNPCMetricsTest()
+      : endpoint_config_(grpc_core::ChannelArgs()) {}
+
   void TearDown() override {
     // We are tearing down OpenTelemetryPluginEnd2EndTest first to ensure that
     // gRPC has shutdown before we reset the instruments registry.
@@ -1292,6 +1296,8 @@ class OpenTelemetryPluginNPCMetricsTest
     grpc_core::GlobalInstrumentsRegistryTestPeer::
         ResetGlobalInstrumentsRegistry();
   }
+
+  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config_;
 };
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
@@ -1326,7 +1332,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
           grpc_core::experimental::StatsPluginChannelScope(
-              "dns:///localhost:8080", ""));
+              "dns:///localhost:8080", "", endpoint_config_));
   for (auto v : kCounterValues) {
     stats_plugins.AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
   }
@@ -1376,7 +1382,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
           grpc_core::experimental::StatsPluginChannelScope(
-              "dns:///localhost:8080", ""));
+              "dns:///localhost:8080", "", endpoint_config_));
   for (auto v : kCounterValues) {
     stats_plugins.AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
   }
@@ -1524,7 +1530,6 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
           .Build();
   // Build and register a separate OpenTelemetryPlugin and verify its histogram
   // recording.
-  grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
   auto reader = BuildAndRegisterOpenTelemetryPlugin(std::move(
       Options()
           .set_metric_names({kMetricName})
@@ -1534,7 +1539,6 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
           })
           .add_optional_label(kOptionalLabelKeys[0])
           .add_optional_label(kOptionalLabelKeys[1])));
-  EXPECT_EQ(ot_builder.BuildAndRegisterGlobal(), absl::OkStatus());
   grpc_core::ChannelArgs args;
   args = args.Set(GRPC_ARG_SERVER_SELECTOR_KEY, GRPC_ARG_SERVER_SELECTOR_VALUE);
   {
@@ -1710,7 +1714,8 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, InstrumentsEnabledTest) {
   EXPECT_FALSE(stats_plugins.IsInstrumentEnabled(counter_handle));
 }
 
-using OpenTelemetryPluginCallbackMetricsTest = OpenTelemetryPluginEnd2EndTest;
+using OpenTelemetryPluginCallbackMetricsTest =
+    OpenTelemetryPluginNPCMetricsTest;
 
 // The callback minimal interval is longer than the OT reporting interval, so we
 // expect to collect duplicated (cached) values.
@@ -1754,7 +1759,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
           grpc_core::experimental::StatsPluginChannelScope(
-              "dns:///localhost:8080", ""));
+              "dns:///localhost:8080", "", endpoint_config_));
   // Multiple callbacks for the same metrics, each reporting different
   // label values.
   int report_count_1 = 0;
@@ -1763,14 +1768,11 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto registered_metric_callback_1 = stats_plugins.RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
         ++report_count_1;
-        reporter.Report(integer_gauge_handle, int_value_1, kLabelValuesSet1,
+        reporter.Report(integer_gauge_handle, int_value_1++, kLabelValuesSet1,
                         kOptionalLabelValuesSet1);
-        reporter.Report(integer_gauge_handle, int_value_1++, kLabelValuesSet2,
-                        kOptionalLabelValuesSet2);
-        reporter.Report(double_gauge_handle, double_value_1, kLabelValuesSet1,
+        reporter.Report(double_gauge_handle, double_value_1++, kLabelValuesSet1,
                         kOptionalLabelValuesSet1);
-        reporter.Report(double_gauge_handle, double_value_1++, kLabelValuesSet2,
-                        kOptionalLabelValuesSet2);
+        ;
       },
       grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
       integer_gauge_handle, double_gauge_handle);
@@ -1780,12 +1782,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto registered_metric_callback_2 = stats_plugins.RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
         ++report_count_2;
-        reporter.Report(integer_gauge_handle, int_value_2, kLabelValuesSet1,
-                        kOptionalLabelValuesSet1);
         reporter.Report(integer_gauge_handle, int_value_2++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
-        reporter.Report(double_gauge_handle, double_value_2, kLabelValuesSet1,
-                        kOptionalLabelValuesSet1);
         reporter.Report(double_gauge_handle, double_value_2++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
       },
@@ -1889,7 +1887,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
           grpc_core::experimental::StatsPluginChannelScope(
-              "dns:///localhost:8080", ""));
+              "dns:///localhost:8080", "", endpoint_config_));
   // Multiple callbacks for the same metrics, each reporting different
   // label values.
   int report_count_1 = 0;
@@ -1898,16 +1896,12 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto registered_metric_callback_1 = stats_plugins.RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
         ++report_count_1;
-        reporter.Report(integer_gauge_handle, int_value_1, kLabelValuesSet1,
+        reporter.Report(integer_gauge_handle, int_value_1++, kLabelValuesSet1,
                         kOptionalLabelValuesSet1);
-        reporter.Report(integer_gauge_handle, int_value_1++, kLabelValuesSet2,
-                        kOptionalLabelValuesSet2);
-        reporter.Report(double_gauge_handle, double_value_1, kLabelValuesSet1,
+        reporter.Report(double_gauge_handle, double_value_1++, kLabelValuesSet1,
                         kOptionalLabelValuesSet1);
-        reporter.Report(double_gauge_handle, double_value_1++, kLabelValuesSet2,
-                        kOptionalLabelValuesSet2);
       },
-      grpc_core::Duration::Milliseconds(10) * grpc_test_slowdown_factor(),
+      grpc_core::Duration::Milliseconds(50) * grpc_test_slowdown_factor(),
       integer_gauge_handle, double_gauge_handle);
   int report_count_2 = 0;
   int64_t int_value_2 = 1;
@@ -1915,18 +1909,14 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto registered_metric_callback_2 = stats_plugins.RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
         ++report_count_2;
-        reporter.Report(integer_gauge_handle, int_value_2, kLabelValuesSet1,
-                        kOptionalLabelValuesSet1);
         reporter.Report(integer_gauge_handle, int_value_2++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
-        reporter.Report(double_gauge_handle, double_value_2, kLabelValuesSet1,
-                        kOptionalLabelValuesSet1);
         reporter.Report(double_gauge_handle, double_value_2++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
       },
-      grpc_core::Duration::Milliseconds(10) * grpc_test_slowdown_factor(),
+      grpc_core::Duration::Milliseconds(50) * grpc_test_slowdown_factor(),
       integer_gauge_handle, double_gauge_handle);
-  constexpr int kIterations = 100;
+  constexpr int kIterations = 50;
   MetricsCollectorThread collector{
       this,
       grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
@@ -1984,6 +1974,163 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
                   kOptionalLabelKeys, kOptionalLabelValuesSet2, 0.0, true));
 }
 
+// Verifies that callbacks are cleaned up when the OpenTelemetry plugin is
+// destroyed.
+TEST_F(OpenTelemetryPluginCallbackMetricsTest, VerifyCallbacksAreCleanedUp) {
+  constexpr absl::string_view kInt64CallbackGaugeMetric =
+      "yet_another_int64_callback_gauge";
+  constexpr absl::string_view kDoubleCallbackGaugeMetric =
+      "yet_another_double_callback_gauge";
+  auto integer_gauge_handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
+          kInt64CallbackGaugeMetric, "An int64 callback gauge.", "unit",
+          /*enable_by_default=*/true)
+          .Build();
+  auto double_gauge_handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
+          kDoubleCallbackGaugeMetric, "A double callback gauge.", "unit",
+          /*enable_by_default=*/true)
+          .Build();
+  Init(std::move(Options().set_metric_names(
+      {kInt64CallbackGaugeMetric, kDoubleCallbackGaugeMetric})));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", "", endpoint_config_));
+  // Multiple callbacks for the same metrics, each reporting different
+  // label values.
+  int report_count_1 = 0;
+  int64_t int_value_1 = 1;
+  double double_value_1 = 0.5;
+  auto registered_metric_callback_1 = stats_plugins.RegisterCallback(
+      [&](grpc_core::CallbackMetricReporter& reporter) {
+        ++report_count_1;
+        reporter.Report(integer_gauge_handle, int_value_1++, {}, {});
+        reporter.Report(double_gauge_handle, double_value_1++, {}, {});
+      },
+      grpc_core::Duration::Milliseconds(50) * grpc_test_slowdown_factor(),
+      integer_gauge_handle, double_gauge_handle);
+  int report_count_2 = 0;
+  int64_t int_value_2 = 1;
+  double double_value_2 = 0.5;
+  auto registered_metric_callback_2 = stats_plugins.RegisterCallback(
+      [&](grpc_core::CallbackMetricReporter& reporter) {
+        ++report_count_2;
+        reporter.Report(integer_gauge_handle, int_value_2++, {}, {});
+        reporter.Report(double_gauge_handle, double_value_2++, {}, {});
+      },
+      grpc_core::Duration::Milliseconds(50) * grpc_test_slowdown_factor(),
+      integer_gauge_handle, double_gauge_handle);
+  constexpr int kIterations = 50;
+  {
+    MetricsCollectorThread collector{
+        this,
+        grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
+        kIterations,
+        [&](const absl::flat_hash_map<
+            std::string,
+            std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+                data) {
+          return !data.contains(kInt64CallbackGaugeMetric) ||
+                 !data.contains(kDoubleCallbackGaugeMetric);
+        }};
+  }
+  // Verify that callbacks are invoked
+  EXPECT_EQ(report_count_1, kIterations);
+  EXPECT_EQ(report_count_2, kIterations);
+  // Remove one of the callbacks
+  registered_metric_callback_1.reset();
+  {
+    MetricsCollectorThread new_collector{
+        this,
+        grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
+        kIterations,
+        [&](const absl::flat_hash_map<
+            std::string,
+            std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+                data) { return false; }};
+  }
+  EXPECT_EQ(report_count_1, kIterations);      // No change since previous
+  EXPECT_EQ(report_count_2, 2 * kIterations);  // Gets another kIterations
+  // Remove the other callback as well
+  registered_metric_callback_2.reset();
+  MetricsCollectorThread new_new_collector{
+      this,
+      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
+      kIterations,
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return false; }};
+  // We shouldn't get any new callbacks
+  EXPECT_THAT(new_new_collector.Stop(), ::testing::IsEmpty());
+  EXPECT_EQ(report_count_1, kIterations);
+  EXPECT_EQ(report_count_2, 2 * kIterations);
+  // Reset stats plugins as well
+  grpc_core::GlobalStatsPluginRegistryTestPeer::
+      ResetGlobalStatsPluginRegistry();
+  registered_metric_callback_2.reset();
+  MetricsCollectorThread new_new_new_collector{
+      this,
+      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
+      kIterations,
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return false; }};
+  // Still no new callbacks
+  EXPECT_THAT(new_new_new_collector.Stop(), ::testing::IsEmpty());
+  EXPECT_EQ(report_count_1, kIterations);
+  EXPECT_EQ(report_count_2, 2 * kIterations);
+}
+
+TEST_F(OpenTelemetryPluginCallbackMetricsTest,
+       ReportDifferentGaugeThanRegisteredWontCrash) {
+  constexpr absl::string_view kInt64CallbackGaugeMetric =
+      "yet_another_int64_callback_gauge";
+  constexpr absl::string_view kDoubleCallbackGaugeMetric =
+      "yet_another_double_callback_gauge";
+  auto integer_gauge_handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
+          kInt64CallbackGaugeMetric, "An int64 callback gauge.", "unit",
+          /*enable_by_default=*/true)
+          .Build();
+  auto double_gauge_handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
+          kDoubleCallbackGaugeMetric, "A double callback gauge.", "unit",
+          /*enable_by_default=*/true)
+          .Build();
+  Init(std::move(Options().set_metric_names(
+      {kInt64CallbackGaugeMetric, kDoubleCallbackGaugeMetric})));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", "", endpoint_config_));
+  // Registers integer_gauge_handle but reports double_gauge_handle.
+  int report_count_1 = 0;
+  double double_value_1 = 0.5;
+  auto registered_metric_callback_1 = stats_plugins.RegisterCallback(
+      [&](grpc_core::CallbackMetricReporter& reporter) {
+        ++report_count_1;
+        reporter.Report(double_gauge_handle, double_value_1++, {}, {});
+      },
+      grpc_core::Duration::Milliseconds(50) * grpc_test_slowdown_factor(),
+      integer_gauge_handle);
+  constexpr int kIterations = 50;
+  {
+    MetricsCollectorThread collector{
+        this,
+        grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
+        kIterations,
+        [&](const absl::flat_hash_map<
+            std::string,
+            std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+                data) { return false; }};
+  }
+  // Verify that callbacks are invoked
+  EXPECT_EQ(report_count_1, kIterations);
+}
+
 TEST(OpenTelemetryPluginMetricsEnablingDisablingTest, TestEnableDisableAPIs) {
   grpc::internal::OpenTelemetryPluginBuilderImpl builder;
   // First disable all metrics
@@ -2000,6 +2147,258 @@ TEST(OpenTelemetryPluginMetricsEnablingDisablingTest, TestEnableDisableAPIs) {
   builder.DisableMetrics({"grpc.test.metric_1", "grpc.test.metric_2"});
   EXPECT_THAT(builder.TestOnlyEnabledMetrics(),
               ::testing::UnorderedElementsAre("grpc.test.metric_3"));
+}
+
+TEST_F(OpenTelemetryPluginEnd2EndTest, RegisterMultipleStatsPluginsPerChannel) {
+  std::shared_ptr<grpc::experimental::OpenTelemetryPlugin> plugin1;
+  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader1;
+  std::tie(plugin1, reader1) = BuildOpenTelemetryPlugin(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptDurationInstrumentName})));
+  std::shared_ptr<grpc::experimental::OpenTelemetryPlugin> plugin2;
+  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader2;
+  std::tie(plugin2, reader2) = BuildOpenTelemetryPlugin(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptDurationInstrumentName})));
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptDurationInstrumentName})
+          .add_per_channel_stats_plugin(std::move(plugin1))
+          .add_per_channel_stats_plugin(std::move(plugin2))));
+  const std::vector<absl::string_view> kLabelKeys = {
+      "grpc.method", "grpc.target", "grpc.status"};
+  const std::vector<absl::string_view> kLabelValues = {
+      kMethodName, canonical_server_address_, "OK"};
+  const std::vector<absl::string_view> kOptionalLabelKeys = {};
+  const std::vector<absl::string_view> kOptionalLabelValues = {};
+  SendRPC();
+  const char* kMetricName = "grpc.client.attempt.duration";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          kMetricName,
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                           kOptionalLabelValues),
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::PointDataAttributes::point_data,
+                  ::testing::VariantWith<
+                      opentelemetry::sdk::metrics::HistogramPointData>(
+                      ::testing::Field(&opentelemetry::sdk::metrics::
+                                           HistogramPointData::count_,
+                                       ::testing::Eq(1)))))))));
+  data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); },
+      reader1.get());
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          kMetricName,
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                           kOptionalLabelValues),
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::PointDataAttributes::point_data,
+                  ::testing::VariantWith<
+                      opentelemetry::sdk::metrics::HistogramPointData>(
+                      ::testing::Field(&opentelemetry::sdk::metrics::
+                                           HistogramPointData::count_,
+                                       ::testing::Eq(1)))))))));
+  data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); },
+      reader2.get());
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          kMetricName,
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                           kOptionalLabelValues),
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::PointDataAttributes::point_data,
+                  ::testing::VariantWith<
+                      opentelemetry::sdk::metrics::HistogramPointData>(
+                      ::testing::Field(&opentelemetry::sdk::metrics::
+                                           HistogramPointData::count_,
+                                       ::testing::Eq(1)))))))));
+}
+
+TEST_F(OpenTelemetryPluginEnd2EndTest,
+       RegisterSameStatsPluginForMultipleChannels) {
+  // channel1                         channel2
+  //    |                                |
+  //    | (global plugin, plugin1)       | (global plugin, plugin1, plugin2)
+  //    |                                |
+  std::shared_ptr<grpc::experimental::OpenTelemetryPlugin> plugin1;
+  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader1;
+  std::tie(plugin1, reader1) = BuildOpenTelemetryPlugin(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptDurationInstrumentName})));
+  std::shared_ptr<grpc::experimental::OpenTelemetryPlugin> plugin2;
+  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader2;
+  std::tie(plugin2, reader2) = BuildOpenTelemetryPlugin(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptDurationInstrumentName})));
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptDurationInstrumentName})
+          .add_per_channel_stats_plugin(plugin1)));
+  // Adds the same plugin to another channel.
+  ChannelArguments channel_args;
+  plugin1->AddToChannelArguments(&channel_args);
+  plugin2->AddToChannelArguments(&channel_args);
+  auto channel2 = grpc::CreateCustomChannel(
+      server_address_, grpc::InsecureChannelCredentials(), channel_args);
+  std::unique_ptr<EchoTestService::Stub> stub =
+      EchoTestService::NewStub(std::move(channel2));
+  // Sends 2 RPCs, one from each channel.
+  EchoRequest request;
+  request.set_message("foo");
+  EchoResponse response;
+  grpc::ClientContext context;
+  stub->Echo(&context, request, &response);
+  SendRPC();
+  const std::vector<absl::string_view> kLabelKeys = {
+      "grpc.method", "grpc.target", "grpc.status"};
+  const std::vector<absl::string_view> kLabelValues = {
+      kMethodName, canonical_server_address_, "OK"};
+  const std::vector<absl::string_view> kOptionalLabelKeys = {};
+  const std::vector<absl::string_view> kOptionalLabelValues = {};
+  const char* kMetricName = "grpc.client.attempt.duration";
+  // Verifies that we got 2 histogram points in global plugin.
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          kMetricName,
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                           kOptionalLabelValues),
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::PointDataAttributes::point_data,
+                  ::testing::VariantWith<
+                      opentelemetry::sdk::metrics::HistogramPointData>(
+                      ::testing::Field(&opentelemetry::sdk::metrics::
+                                           HistogramPointData::count_,
+                                       ::testing::Eq(2)))))))));
+  // Verifies that we got 2 histogram points in plugin1.
+  data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); },
+      reader1.get());
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          kMetricName,
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                           kOptionalLabelValues),
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::PointDataAttributes::point_data,
+                  ::testing::VariantWith<
+                      opentelemetry::sdk::metrics::HistogramPointData>(
+                      ::testing::Field(&opentelemetry::sdk::metrics::
+                                           HistogramPointData::count_,
+                                       ::testing::Eq(2)))))))));
+  // Verifies that we got 1 histogram point in plugin2.
+  data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); },
+      reader2.get());
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          kMetricName,
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                           kOptionalLabelValues),
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::PointDataAttributes::point_data,
+                  ::testing::VariantWith<
+                      opentelemetry::sdk::metrics::HistogramPointData>(
+                      ::testing::Field(&opentelemetry::sdk::metrics::
+                                           HistogramPointData::count_,
+                                       ::testing::Eq(1)))))))));
+}
+
+TEST_F(OpenTelemetryPluginEnd2EndTest, RegisterMultipleStatsPluginsPerServer) {
+  std::shared_ptr<grpc::experimental::OpenTelemetryPlugin> plugin;
+  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader;
+  std::tie(plugin, reader) = BuildOpenTelemetryPlugin(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kServerCallDurationInstrumentName})));
+  Init(std::move(Options()
+                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                            kServerCallDurationInstrumentName})
+                     .add_per_server_stats_plugin(std::move(plugin))));
+  const std::vector<absl::string_view> kLabelKeys = {"grpc.method",
+                                                     "grpc.status"};
+  const std::vector<absl::string_view> kLabelValues = {kMethodName, "OK"};
+  const std::vector<absl::string_view> kOptionalLabelKeys = {};
+  const std::vector<absl::string_view> kOptionalLabelValues = {};
+  SendRPC();
+  const char* kMetricName = "grpc.server.call.duration";
+  // Verifies that both plugins have the server-side metrics recorded.
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          kMetricName,
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                           kOptionalLabelValues),
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::PointDataAttributes::point_data,
+                  ::testing::VariantWith<
+                      opentelemetry::sdk::metrics::HistogramPointData>(
+                      ::testing::Field(&opentelemetry::sdk::metrics::
+                                           HistogramPointData::count_,
+                                       ::testing::Eq(1)))))))));
+  data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); },
+      reader.get());
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          kMetricName,
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                           kOptionalLabelValues),
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::PointDataAttributes::point_data,
+                  ::testing::VariantWith<
+                      opentelemetry::sdk::metrics::HistogramPointData>(
+                      ::testing::Field(&opentelemetry::sdk::metrics::
+                                           HistogramPointData::count_,
+                                       ::testing::Eq(1)))))))));
 }
 
 }  // namespace

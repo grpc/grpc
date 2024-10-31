@@ -16,6 +16,10 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
+#include <grpc/credentials.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 #include <time.h>
 
@@ -24,25 +28,59 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
-
-#include <grpc/credentials.h>
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
+#include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/load_file.h"
-#include "src/core/lib/gprpp/stat.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/api_trace.h"
+#include "src/core/tsi/ssl_transport_security_utils.h"
+#include "src/core/util/load_file.h"
+#include "src/core/util/stat.h"
+#include "src/core/util/status_helper.h"
 
 namespace grpc_core {
+namespace {
+
+absl::Status ValidateRootCertificates(absl::string_view root_certificates) {
+  if (root_certificates.empty()) return absl::OkStatus();
+  absl::StatusOr<std::vector<X509*>> parsed_roots =
+      ParsePemCertificateChain(root_certificates);
+  if (!parsed_roots.ok()) {
+    return parsed_roots.status();
+  }
+  for (X509* x509 : *parsed_roots) {
+    X509_free(x509);
+  }
+  return absl::OkStatus();
+}
+
+absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
+                                    absl::string_view private_key) {
+  if (cert_chain.empty() && private_key.empty()) return absl::OkStatus();
+  // Check that the cert chain consists of valid PEM blocks.
+  absl::StatusOr<std::vector<X509*>> parsed_certs =
+      ParsePemCertificateChain(cert_chain);
+  if (!parsed_certs.ok()) {
+    return parsed_certs.status();
+  }
+  for (X509* x509 : *parsed_certs) {
+    X509_free(x509);
+  }
+  // Check that the private key consists of valid PEM blocks.
+  absl::StatusOr<EVP_PKEY*> parsed_private_key =
+      ParsePemPrivateKey(private_key);
+  if (!parsed_private_key.ok()) {
+    return parsed_private_key.status();
+  }
+  EVP_PKEY_free(*parsed_private_key);
+  return absl::OkStatus();
+}
+
+}  // namespace
 
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs)
@@ -103,6 +141,21 @@ UniqueTypeName StaticDataCertificateProvider::type() const {
   return kFactory.Create();
 }
 
+absl::Status StaticDataCertificateProvider::ValidateCredentials() const {
+  absl::Status status = ValidateRootCertificates(root_certificate_);
+  if (!status.ok()) {
+    return status;
+  }
+  for (const PemKeyCertPair& pair : pem_key_cert_pairs_) {
+    absl::Status status =
+        ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+    if (!status.ok()) {
+      return status;
+    }
+  }
+  return absl::OkStatus();
+}
+
 namespace {
 
 gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
@@ -123,9 +176,9 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       refresh_interval_sec_(refresh_interval_sec),
       distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   if (refresh_interval_sec_ < kMinimumFileWatcherRefreshIntervalSeconds) {
-    gpr_log(GPR_INFO,
-            "FileWatcherCertificateProvider refresh_interval_sec_ set to value "
-            "less than minimum. Overriding configured value to minimum.");
+    VLOG(2) << "FileWatcherCertificateProvider refresh_interval_sec_ set to "
+               "value less than minimum. Overriding configured value to "
+               "minimum.";
     refresh_interval_sec_ = kMinimumFileWatcherRefreshIntervalSeconds;
   }
   // Private key and identity cert files must be both set or both unset.
@@ -207,6 +260,22 @@ UniqueTypeName FileWatcherCertificateProvider::type() const {
   return kFactory.Create();
 }
 
+absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
+  MutexLock lock(&mu_);
+  absl::Status status = ValidateRootCertificates(root_certificate_);
+  if (!status.ok()) {
+    return status;
+  }
+  for (const PemKeyCertPair& pair : pem_key_cert_pairs_) {
+    absl::Status status =
+        ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+    if (!status.ok()) {
+      return status;
+    }
+  }
+  return absl::OkStatus();
+}
+
 void FileWatcherCertificateProvider::ForceUpdate() {
   absl::optional<std::string> root_certificate;
   absl::optional<PemKeyCertPairList> pem_key_cert_pairs;
@@ -284,9 +353,8 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
   auto root_slice =
       LoadFile(root_cert_full_path, /*add_null_terminator=*/false);
   if (!root_slice.ok()) {
-    gpr_log(GPR_ERROR, "Reading file %s failed: %s",
-            root_cert_full_path.c_str(),
-            root_slice.status().ToString().c_str());
+    LOG(ERROR) << "Reading file " << root_cert_full_path
+               << " failed: " << root_slice.status();
     return absl::nullopt;
   }
   return std::string(root_slice->as_string_view());
@@ -316,34 +384,29 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     time_t identity_key_ts_before =
         GetModificationTime(private_key_path.c_str());
     if (identity_key_ts_before == 0) {
-      gpr_log(
-          GPR_ERROR,
-          "Failed to get the file's modification time of %s. Start retrying...",
-          private_key_path.c_str());
+      LOG(ERROR) << "Failed to get the file's modification time of "
+                 << private_key_path << ". Start retrying...";
       continue;
     }
     time_t identity_cert_ts_before =
         GetModificationTime(identity_certificate_path.c_str());
     if (identity_cert_ts_before == 0) {
-      gpr_log(
-          GPR_ERROR,
-          "Failed to get the file's modification time of %s. Start retrying...",
-          identity_certificate_path.c_str());
+      LOG(ERROR) << "Failed to get the file's modification time of "
+                 << identity_certificate_path << ". Start retrying...";
       continue;
     }
     // Read the identity files.
     auto key_slice = LoadFile(private_key_path, /*add_null_terminator=*/false);
     if (!key_slice.ok()) {
-      gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
-              private_key_path.c_str(), key_slice.status().ToString().c_str());
+      LOG(ERROR) << "Reading file " << private_key_path
+                 << " failed: " << key_slice.status() << ". Start retrying...";
       continue;
     }
     auto cert_slice =
         LoadFile(identity_certificate_path, /*add_null_terminator=*/false);
     if (!cert_slice.ok()) {
-      gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
-              identity_certificate_path.c_str(),
-              cert_slice.status().ToString().c_str());
+      LOG(ERROR) << "Reading file " << identity_certificate_path
+                 << " failed: " << cert_slice.status() << ". Start retrying...";
       continue;
     }
     std::string private_key(key_slice->as_string_view());
@@ -354,25 +417,22 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     time_t identity_key_ts_after =
         GetModificationTime(private_key_path.c_str());
     if (identity_key_ts_before != identity_key_ts_after) {
-      gpr_log(GPR_ERROR,
-              "Last modified time before and after reading %s is not the same. "
-              "Start retrying...",
-              private_key_path.c_str());
+      LOG(ERROR) << "Last modified time before and after reading "
+                 << private_key_path << " is not the same. Start retrying...";
       continue;
     }
     time_t identity_cert_ts_after =
         GetModificationTime(identity_certificate_path.c_str());
     if (identity_cert_ts_before != identity_cert_ts_after) {
-      gpr_log(GPR_ERROR,
-              "Last modified time before and after reading %s is not the same. "
-              "Start retrying...",
-              identity_certificate_path.c_str());
+      LOG(ERROR) << "Last modified time before and after reading "
+                 << identity_certificate_path
+                 << " is not the same. Start retrying...";
       continue;
     }
     return identity_pairs;
   }
-  gpr_log(GPR_ERROR,
-          "All retry attempts failed. Will try again after the next interval.");
+  LOG(ERROR) << "All retry attempts failed. Will try again after the next "
+                "interval.";
   return absl::nullopt;
 }
 
@@ -415,8 +475,8 @@ grpc_tls_certificate_provider_file_watcher_create(
 
 void grpc_tls_certificate_provider_release(
     grpc_tls_certificate_provider* provider) {
-  GRPC_API_TRACE("grpc_tls_certificate_provider_release(provider=%p)", 1,
-                 (provider));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_tls_certificate_provider_release(provider=" << provider << ")";
   grpc_core::ExecCtx exec_ctx;
   if (provider != nullptr) provider->Unref();
 }

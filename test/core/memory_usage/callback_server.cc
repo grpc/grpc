@@ -16,6 +16,11 @@
 //
 //
 
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/support/server_callback.h>
+#include <grpcpp/support/status.h>
+#include <grpcpp/xds_server_builder.h>
 #include <signal.h>
 #include <unistd.h>
 
@@ -26,13 +31,7 @@
 #include "absl/flags/parse.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/server_credentials.h>
-#include <grpcpp/support/server_callback.h>
-#include <grpcpp/support/status.h>
-#include <grpcpp/xds_server_builder.h>
-
+#include "src/cpp/ext/chaotic_good.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/memory_usage/memstats.h"
@@ -41,6 +40,7 @@
 ABSL_FLAG(std::string, bind, "", "Bind host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 ABSL_FLAG(bool, use_xds, false, "Use xDS");
+ABSL_FLAG(bool, chaotic_good, false, "Use chaotic good");
 
 class ServerCallbackImpl final
     : public grpc::testing::BenchmarkService::CallbackService {
@@ -102,7 +102,9 @@ int main(int argc, char** argv) {
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ServerCredentials> creds =
       grpc::InsecureServerCredentials();
-  if (absl::GetFlag(FLAGS_secure)) {
+  if (absl::GetFlag(FLAGS_chaotic_good)) {
+    creds = grpc::ChaoticGoodInsecureServerCredentials();
+  } else if (absl::GetFlag(FLAGS_secure)) {
     LOG(INFO) << "Supposed to be secure, is not yet";
     // TODO (chennancy) Add in secure credentials
   }

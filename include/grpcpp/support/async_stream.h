@@ -19,15 +19,14 @@
 #ifndef GRPCPP_SUPPORT_ASYNC_STREAM_H
 #define GRPCPP_SUPPORT_ASYNC_STREAM_H
 
-#include "absl/log/absl_check.h"
-
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/channel_interface.h>
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/status.h>
+
+#include "absl/log/absl_check.h"
 
 namespace grpc {
 
@@ -39,7 +38,11 @@ class ClientAsyncStreamingInterface {
 
   /// Start the call that was set up by the constructor, but only if the
   /// constructor was invoked through the "Prepare" API which doesn't actually
-  /// start the call
+  /// start the call.
+  ///
+  /// It is illegal to start a write-type operation (eg. Write(), WriteLast(),
+  /// WritesDone()) while the `StartCall()` operation has not finished
+  /// (determined by the returning of \a tag).
   virtual void StartCall(void* tag) = 0;
 
   /// Request notification of the reading of the initial metadata. Completion

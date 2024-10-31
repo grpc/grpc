@@ -3,7 +3,8 @@
  *     envoy/config/cluster/v3/cluster.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_CLUSTER_V3_CLUSTER_PROTO_UPBDEFS_H_
 #define ENVOY_CONFIG_CLUSTER_V3_CLUSTER_PROTO_UPBDEFS_H_
@@ -131,6 +132,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_LoadBalancingPolicy_Pol
 UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_UpstreamConnectionOptions_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.UpstreamConnectionOptions");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.UpstreamConnectionOptions.HappyEyeballsConfig");
 }
 
 UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_TrackClusterStats_getmsgdef(upb_DefPool *s) {

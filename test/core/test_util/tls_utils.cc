@@ -15,20 +15,17 @@
 //
 #include "test/core/test_util/tls_utils.h"
 
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <stdio.h>
 
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/load_file.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
 

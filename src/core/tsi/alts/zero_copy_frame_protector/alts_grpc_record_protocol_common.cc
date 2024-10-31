@@ -18,17 +18,15 @@
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 
 const size_t kInitialIovecBufferSize = 8;
@@ -96,8 +94,8 @@ tsi_result alts_grpc_record_protocol_init(alts_grpc_record_protocol* rp,
                                           bool is_integrity_only,
                                           bool is_protect) {
   if (rp == nullptr || crypter == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to alts_grpc_record_protocol init.");
+    LOG(ERROR)
+        << "Invalid nullptr arguments to alts_grpc_record_protocol init.";
     return TSI_INVALID_ARGUMENT;
   }
   // Creates alts_iovec_record_protocol.
@@ -106,8 +104,8 @@ tsi_result alts_grpc_record_protocol_init(alts_grpc_record_protocol* rp,
       crypter, overflow_size, is_client, is_integrity_only, is_protect,
       &rp->iovec_rp, &error_details);
   if (status != GRPC_STATUS_OK) {
-    gpr_log(GPR_ERROR, "Failed to create alts_iovec_record_protocol, %s.",
-            error_details);
+    LOG(ERROR) << "Failed to create alts_iovec_record_protocol, "
+               << error_details;
     gpr_free(error_details);
     return TSI_INTERNAL_ERROR;
   }

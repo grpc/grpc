@@ -14,6 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/call")
 
@@ -75,5 +76,28 @@ grpc_cc_library(
         "//:grpc",
         "//src/core:slice",
         "//test/core/end2end:cq_verifier",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_client_call",
+    srcs = ["bm_client_call.cc"],
+    monitoring = HISTORY,
+    deps = [
+        "//:grpc",
+        "//src/core:default_event_engine",
+    ],
+)
+
+grpc_cc_test(
+    name = "request_buffer_test",
+    srcs = [
+        "request_buffer_test.cc",
+    ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//src/core:request_buffer",
+        "//test/core/promise:poll_matcher",
     ],
 )

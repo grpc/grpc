@@ -20,13 +20,11 @@
 #define GRPC_SRC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_FILTER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <string>
 
 #include "absl/status/statusor.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/arena_promise.h"
@@ -38,6 +36,8 @@ class ServerLoadReportingFilter
     : public ImplementChannelFilter<ServerLoadReportingFilter> {
  public:
   static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() { return "server_load_reporting"; }
 
   static absl::StatusOr<std::unique_ptr<ServerLoadReportingFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args);

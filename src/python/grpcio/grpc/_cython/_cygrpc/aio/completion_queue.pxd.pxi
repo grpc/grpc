@@ -23,7 +23,7 @@ IF UNAME_SYSNAME == "Windows":
         int win_socket_send "send" (WIN_SOCKET s, const char *buf, int len, int flags)
 
 
-cdef void _unified_socket_write(int fd) nogil
+cdef void _unified_socket_write(int fd) noexcept nogil
 
 
 cdef class BaseCompletionQueue:

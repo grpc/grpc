@@ -66,17 +66,11 @@
   type: string
   prelude: |
     #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
-    #define GPR_DEFAULT_LOG_VERBOSITY_STRING "ERROR"
+    #define GPR_DEFAULT_LOG_VERBOSITY_STRING ""
     #endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
   default: $GPR_DEFAULT_LOG_VERBOSITY_STRING
   description:
     Logging verbosity.
-  fuzz: true
-- name: stacktrace_minloglevel
-  type: string
-  default:
-  description:
-    Messages logged at the same or higher level than this will print stacktrace
   fuzz: true
 - name: enable_fork_support
   type: bool
@@ -126,3 +120,7 @@
     ECDHE-ECDSA-AES256-GCM-SHA384:\
     ECDHE-RSA-AES128-GCM-SHA256:\
     ECDHE-RSA-AES256-GCM-SHA384"
+- name: cpp_experimental_disable_reflection
+  type: bool
+  description: "EXPERIMENTAL. Only respected when there is a dependency on :grpc++_reflection. If true, no reflection server will be automatically added."
+  default: false

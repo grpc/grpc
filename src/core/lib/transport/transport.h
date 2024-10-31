@@ -19,6 +19,11 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_H
 
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -28,20 +33,11 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -62,6 +58,8 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
 
 // Minimum and maximum protocol accepted versions.
 #define GRPC_PROTOCOL_VERSION_MAX_MAJOR 2
@@ -190,10 +188,9 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
 #ifndef NDEBUG
 inline void grpc_stream_ref(grpc_stream_refcount* refcount,
                             const char* reason) {
-  if (GRPC_TRACE_FLAG_ENABLED(stream_refcount)) {
-    gpr_log(GPR_DEBUG, "%s %p:%p REF %s", refcount->object_type, refcount,
-            refcount->destroy.cb_arg, reason);
-  }
+  GRPC_TRACE_VLOG(stream_refcount, 2)
+      << refcount->object_type << " " << refcount << ":"
+      << refcount->destroy.cb_arg << " REF " << reason;
   refcount->refs.RefNonZero(DEBUG_LOCATION, reason);
 }
 #else
@@ -207,10 +204,9 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount);
 #ifndef NDEBUG
 inline void grpc_stream_unref(grpc_stream_refcount* refcount,
                               const char* reason) {
-  if (GRPC_TRACE_FLAG_ENABLED(stream_refcount)) {
-    gpr_log(GPR_DEBUG, "%s %p:%p UNREF %s", refcount->object_type, refcount,
-            refcount->destroy.cb_arg, reason);
-  }
+  GRPC_TRACE_VLOG(stream_refcount, 2)
+      << refcount->object_type << " " << refcount << ":"
+      << refcount->destroy.cb_arg << " UNREF " << reason;
   if (GPR_UNLIKELY(refcount->refs.Unref(DEBUG_LOCATION, reason))) {
     grpc_stream_destroy(refcount);
   }
@@ -508,6 +504,8 @@ class Transport : public InternallyRefCounted<Transport> {
   struct RawPointerChannelArgTag {};
   static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
 
+  using InternallyRefCounted<Transport>::InternallyRefCounted;
+
   // Though internally ref counted transports expose their "Ref" method to
   // create a RefCountedPtr to themselves. The OrphanablePtr owner is the
   // singleton decision maker on whether the transport should be destroyed or
@@ -601,6 +599,7 @@ class FilterStackTransport : public Transport {
 
 class ClientTransport : public Transport {
  public:
+  using Transport::Transport;
   virtual void StartCall(CallHandler call_handler) = 0;
 
  protected:
@@ -609,6 +608,7 @@ class ClientTransport : public Transport {
 
 class ServerTransport : public Transport {
  public:
+  using Transport::Transport;
   // Called once slightly after transport setup to register the accept function.
   virtual void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> unstarted_call_handler) = 0;

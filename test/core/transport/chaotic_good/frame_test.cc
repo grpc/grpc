@@ -21,7 +21,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 
@@ -34,7 +33,8 @@ FrameLimits TestFrameLimits() { return FrameLimits{1024 * 1024 * 1024, 63}; }
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
-  auto serialized = input.Serialize(&hpack_compressor);
+  bool saw_encoding_errors = false;
+  auto serialized = input.Serialize(&hpack_compressor, saw_encoding_errors);
   CHECK_GE(serialized.control.Length(),
            24);  // Initial output buffer size is 64 byte.
   uint8_t header_bytes[24];
@@ -43,7 +43,7 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   if (!header.ok()) {
     Crash("Failed to parse header");
   }
-  CHECK(header->type == expected_frame_type);
+  CHECK_EQ(header->type, expected_frame_type);
   T output;
   HPackParser hpack_parser;
   absl::BitGen bitgen;
@@ -55,7 +55,7 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
       output.Deserialize(&hpack_parser, header.value(), absl::BitGenRef(bitgen),
                          arena.get(), std::move(serialized), TestFrameLimits());
   CHECK_OK(deser);
-  CHECK(output == input);
+  if (!saw_encoding_errors) CHECK_EQ(output, input);
 }
 
 TEST(FrameTest, SettingsFrameRoundTrips) {

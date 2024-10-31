@@ -8,9 +8,6 @@ Package for gRPC Python.
 .. |compat_check_pypi| image:: https://python-compatibility-tools.appspot.com/one_badge_image?package=grpcio
    :target: https://python-compatibility-tools.appspot.com/one_badge_target?package=grpcio
 
-Supported Python Versions
--------------------------
-Python >= 3.8
 
 Installation
 ------------
@@ -90,4 +87,17 @@ Help, I ...
   ::
 
     sudo apt-get install python-dev
+
+
+Versioning
+~~~~~~~~~~
+
+gRPC Python is developed in a monorepo shared with implementations of gRPC in
+other programming languages. While the minor versions are released in
+lock-step with other languages in the repo (e.g. 1.63.0 is guaranteed to exist
+for all languages), patch versions may be specific to only a single
+language. For example, if 1.63.1 is a C++-specific patch, 1.63.1 may not be
+uploaded to PyPi. As a result, it is __not__ a good assumption that the latest
+patch for a given minor version on Github is also the latest patch for that
+same minor version on PyPi.
 

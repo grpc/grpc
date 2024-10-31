@@ -14,6 +14,7 @@
 
 #include "server_call_tracer.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -32,10 +33,8 @@
 #include "constants.h"
 #include "observability_util.h"
 #include "python_observability_context.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -175,8 +174,15 @@ void PythonOpenCensusServerCallTracer::RecordCancel(
 void PythonOpenCensusServerCallTracer::RecordEnd(
     const grpc_call_final_info* final_info) {
   if (PythonCensusStatsEnabled()) {
-    const uint64_t request_size = GetIncomingDataSize(final_info);
-    const uint64_t response_size = GetOutgoingDataSize(final_info);
+    uint64_t outgoing_bytes;
+    uint64_t incoming_bytes;
+    if (grpc_core::IsCallTracerInTransportEnabled()) {
+      outgoing_bytes = outgoing_bytes_.load();
+      incoming_bytes = incoming_bytes_.load();
+    } else {
+      outgoing_bytes = GetOutgoingDataSize(final_info);
+      incoming_bytes = GetIncomingDataSize(final_info);
+    }
     double elapsed_time_s = absl::ToDoubleSeconds(elapsed_time_);
     context_.Labels().emplace_back(kServerMethod, std::string(method_));
     context_.Labels().emplace_back(
@@ -186,11 +192,11 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
       context_.Labels().emplace_back(label);
     }
     RecordDoubleMetric(kRpcServerSentBytesPerRpcMeasureName,
-                       static_cast<double>(response_size), context_.Labels(),
+                       static_cast<double>(outgoing_bytes), context_.Labels(),
                        identifier_, registered_method_,
                        /*include_exchange_labels=*/true);
     RecordDoubleMetric(kRpcServerReceivedBytesPerRpcMeasureName,
-                       static_cast<double>(request_size), context_.Labels(),
+                       static_cast<double>(incoming_bytes), context_.Labels(),
                        identifier_, registered_method_,
                        /*include_exchange_labels=*/true);
     RecordDoubleMetric(kRpcServerServerLatencyMeasureName, elapsed_time_s,
@@ -216,6 +222,16 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
   // After RecordEnd, Core will make no further usage of this ServerCallTracer,
   // so we are free it here.
   delete this;
+}
+
+void PythonOpenCensusServerCallTracer::RecordIncomingBytes(
+    const TransportByteSize& transport_byte_size) {
+  incoming_bytes_.fetch_add(transport_byte_size.data_bytes);
+}
+
+void PythonOpenCensusServerCallTracer::RecordOutgoingBytes(
+    const TransportByteSize& transport_byte_size) {
+  outgoing_bytes_.fetch_add(transport_byte_size.data_bytes);
 }
 
 void PythonOpenCensusServerCallTracer::RecordAnnotation(

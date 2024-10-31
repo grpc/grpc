@@ -15,9 +15,9 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_RACE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_RACE_H
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
+
+#include <utility>
 
 namespace grpc_core {
 
@@ -32,10 +32,11 @@ class Race<Promise, Promises...> {
  public:
   using Result = decltype(std::declval<Promise>()());
 
-  explicit Race(Promise promise, Promises... promises)
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Race(Promise promise,
+                                                     Promises... promises)
       : promise_(std::move(promise)), next_(std::move(promises)...) {}
 
-  Result operator()() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Result operator()() {
     // Check our own promise.
     auto r = promise_();
     if (r.pending()) {
@@ -57,8 +58,11 @@ template <typename Promise>
 class Race<Promise> {
  public:
   using Result = decltype(std::declval<Promise>()());
-  explicit Race(Promise promise) : promise_(std::move(promise)) {}
-  Result operator()() { return promise_(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Race(Promise promise)
+      : promise_(std::move(promise)) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Result operator()() {
+    return promise_();
+  }
 
  private:
   Promise promise_;
@@ -70,7 +74,8 @@ class Race<Promise> {
 /// If two results are simultaneously available, bias towards the first result
 /// listed.
 template <typename... Promises>
-promise_detail::Race<Promises...> Race(Promises... promises) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Race<Promises...>
+Race(Promises... promises) {
   return promise_detail::Race<Promises...>(std::move(promises)...);
 }
 

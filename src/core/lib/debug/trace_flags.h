@@ -26,6 +26,7 @@ namespace grpc_core {
 extern DebugOnlyTraceFlag auth_context_refcount_trace;
 extern DebugOnlyTraceFlag call_combiner_trace;
 extern DebugOnlyTraceFlag call_refcount_trace;
+extern DebugOnlyTraceFlag call_state_trace;
 extern DebugOnlyTraceFlag closure_trace;
 extern DebugOnlyTraceFlag combiner_trace;
 extern DebugOnlyTraceFlag cq_refcount_trace;
@@ -111,6 +112,7 @@ extern TraceFlag subchannel_pool_trace;
 extern TraceFlag tcp_trace;
 extern TraceFlag timer_trace;
 extern TraceFlag timer_check_trace;
+extern TraceFlag token_fetcher_credentials_trace;
 extern TraceFlag tsi_trace;
 extern TraceFlag weighted_round_robin_lb_trace;
 extern TraceFlag weighted_target_lb_trace;
@@ -118,14 +120,10 @@ extern TraceFlag xds_client_trace;
 extern TraceFlag xds_client_refcount_trace;
 extern TraceFlag xds_cluster_impl_lb_trace;
 extern TraceFlag xds_cluster_manager_lb_trace;
-extern TraceFlag xds_cluster_resource_type_test_trace;
-extern TraceFlag xds_common_types_test_trace;
-extern TraceFlag xds_endpoint_resource_type_test_trace;
-extern TraceFlag xds_listener_resource_type_test_trace;
 extern TraceFlag xds_override_host_lb_trace;
 extern TraceFlag xds_resolver_trace;
-extern TraceFlag xds_route_config_resource_type_test_trace;
 extern TraceFlag xds_server_config_fetcher_trace;
+extern TraceFlag xds_unittest_trace;
 extern TraceFlag xds_wrr_locality_lb_trace;
 
 }  // namespace grpc_core

@@ -14,18 +14,17 @@
 // limitations under the License.
 //
 
-#include <memory>
-
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -110,7 +109,10 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   // Server should get the second call.
   auto s2 = RequestCall(201);
   Expect(201, true);
-  Step();
+  // Give enough time for the handshake to timeout, and a new handshake to start
+  // if needed. (b/333896115)
+  // TODO(yashykt): Remove the extra duration on fixing b/362326480.
+  Step(Duration::Seconds(30));
   EXPECT_EQ(s2.method(), "/service/method");
   // Make sure the "grpc-previous-rpc-attempts" header was NOT sent, since
   // we don't do that for transparent retries.

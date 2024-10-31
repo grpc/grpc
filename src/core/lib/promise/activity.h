@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
 #define GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -28,19 +29,17 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/construct_destruct.h"
+#include "src/core/util/dump_args.h"
+#include "src/core/util/latent_see.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
@@ -367,8 +366,8 @@ class FreestandingActivity : public Activity, private Wakeable {
   // If more than one action is received during a run, we use max() to resolve
   // which one to report (so Cancel overrides Wakeup).
   enum class ActionDuringRun : uint8_t {
-    kNone,    // No action occured during run.
-    kWakeup,  // A wakeup occured during run.
+    kNone,    // No action occurred during run.
+    kWakeup,  // A wakeup occurred during run.
     kCancel,  // Cancel was called during run.
   };
 
@@ -388,7 +387,7 @@ class FreestandingActivity : public Activity, private Wakeable {
   // completed.
   void WakeupComplete() { Unref(); }
 
-  // Set the action that occured during this run.
+  // Set the action that occurred during this run.
   // We use max to combine actions so that cancellation overrides wakeups.
   void SetActionDuringRun(ActionDuringRun action)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
@@ -544,6 +543,8 @@ class PromiseActivity final
   }
 
   void WakeupAsync(WakeupMask) final {
+    GRPC_LATENT_SEE_INNER_SCOPE("PromiseActivity::WakeupAsync");
+    wakeup_flow_.Begin(GRPC_LATENT_SEE_METADATA("Activity::Wakeup"));
     if (!wakeup_scheduled_.exchange(true, std::memory_order_acq_rel)) {
       // Can't safely run, so ask to run later.
       this->ScheduleWakeup();
@@ -567,6 +568,8 @@ class PromiseActivity final
   // In response to Wakeup, run the Promise state machine again until it
   // settles. Then check for completion, and if we have completed, call on_done.
   void Step() ABSL_LOCKS_EXCLUDED(mu()) {
+    GRPC_LATENT_SEE_PARENT_SCOPE("PromiseActivity::Step");
+    wakeup_flow_.End();
     // Poll the promise until things settle out under a lock.
     mu()->Lock();
     if (done_) {
@@ -643,6 +646,7 @@ class PromiseActivity final
     GPR_NO_UNIQUE_ADDRESS Promise promise;
   };
   GPR_NO_UNIQUE_ADDRESS PromiseHolder promise_holder_ ABSL_GUARDED_BY(mu());
+  GPR_NO_UNIQUE_ADDRESS latent_see::Flow wakeup_flow_;
 };
 
 }  // namespace promise_detail
@@ -662,7 +666,11 @@ ActivityPtr MakeActivity(Factory promise_factory,
 }
 
 inline Pending IntraActivityWaiter::pending() {
-  wakeups_ |= GetContext<Activity>()->CurrentParticipant();
+  const auto new_wakeups = GetContext<Activity>()->CurrentParticipant();
+  GRPC_TRACE_LOG(promise_primitives, INFO)
+      << "IntraActivityWaiter::pending: "
+      << GRPC_DUMP_ARGS(this, new_wakeups, wakeups_);
+  wakeups_ |= new_wakeups;
   return Pending();
 }
 

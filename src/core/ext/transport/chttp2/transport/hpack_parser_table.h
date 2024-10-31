@@ -19,21 +19,22 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
+#include <cstdint>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/functional/function_ref.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
-#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/parsed_metadata.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/unique_ptr_with_bitset.h"
 
 namespace grpc_core {
 
@@ -54,11 +55,14 @@ class HPackTable {
 
   struct Memento {
     ParsedMetadata<grpc_metadata_batch> md;
-    std::unique_ptr<HpackParseResult> parse_status;
+    // Alongside parse_status we store one bit indicating whether this memento
+    // has been looked up (and therefore consumed) or not.
+    UniquePtrWithBitset<HpackParseResult, 1> parse_status;
+    static const int kUsedBit = 0;
   };
 
   // Lookup, but don't ref.
-  const Memento* Lookup(uint32_t index) const {
+  const Memento* Lookup(uint32_t index) {
     // Static table comes first, just return an entry from it.
     // NB: This imposes the constraint that the first
     // GRPC_CHTTP2_LAST_STATIC_ENTRY entries in the core static metadata table
@@ -97,6 +101,14 @@ class HPackTable {
 
   class MementoRingBuffer {
    public:
+    MementoRingBuffer() {}
+    ~MementoRingBuffer();
+
+    MementoRingBuffer(const MementoRingBuffer&) = delete;
+    MementoRingBuffer& operator=(const MementoRingBuffer&) = delete;
+    MementoRingBuffer(MementoRingBuffer&&) = default;
+    MementoRingBuffer& operator=(MementoRingBuffer&&) = default;
+
     // Rebuild this buffer with a new max_entries_ size.
     void Rebuild(uint32_t max_entries);
 
@@ -109,10 +121,11 @@ class HPackTable {
     Memento PopOne();
 
     // Lookup the entry at index, or return nullptr if none exists.
-    const Memento* Lookup(uint32_t index) const;
+    const Memento* Lookup(uint32_t index);
+    const Memento* Peek(uint32_t index) const;
 
-    void ForEach(absl::FunctionRef<void(uint32_t dynamic_index, const Memento&)>
-                     f) const;
+    template <typename F>
+    void ForEach(F f) const;
 
     uint32_t max_entries() const { return max_entries_; }
     uint32_t num_entries() const { return num_entries_; }
@@ -126,11 +139,17 @@ class HPackTable {
     // Maximum number of entries we could possibly fit in the table, given
     // defined overheads.
     uint32_t max_entries_ = hpack_constants::kInitialTableEntries;
+    // Which index holds a timestamp (or kNoTimestamp if none do).
+    static constexpr uint32_t kNoTimestamp =
+        std::numeric_limits<uint32_t>::max();
+    uint32_t timestamp_index_ = kNoTimestamp;
+    // The timestamp associated with timestamp_entry_.
+    Timestamp timestamp_;
 
     std::vector<Memento> entries_;
   };
 
-  const Memento* LookupDynamic(uint32_t index) const {
+  const Memento* LookupDynamic(uint32_t index) {
     // Not static - find the value in the list of valid entries
     const uint32_t tbl_index = index - (hpack_constants::kLastStaticEntry + 1);
     return entries_.Lookup(tbl_index);

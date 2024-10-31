@@ -20,14 +20,13 @@
 
 #include "rb_completion_queue.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <ruby/thread.h>
 
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 /* Used to allow grpc_completion_queue_next call to release the GIL */
 typedef struct next_call_stack {
@@ -35,23 +34,15 @@ typedef struct next_call_stack {
   grpc_event event;
   gpr_timespec timeout;
   void* tag;
-  volatile int interrupted;
+  void (*unblock_func)(void*);
+  void* unblock_func_arg;
 } next_call_stack;
 
 /* Calls grpc_completion_queue_pluck without holding the ruby GIL */
 static void* grpc_rb_completion_queue_pluck_no_gil(void* param) {
   next_call_stack* const next_call = (next_call_stack*)param;
-  gpr_timespec increment = gpr_time_from_millis(20, GPR_TIMESPAN);
-  gpr_timespec deadline;
-  do {
-    deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), increment);
-    next_call->event = grpc_completion_queue_pluck(
-        next_call->cq, next_call->tag, deadline, NULL);
-    if (next_call->event.type != GRPC_QUEUE_TIMEOUT ||
-        gpr_time_cmp(deadline, next_call->timeout) > 0) {
-      break;
-    }
-  } while (!next_call->interrupted);
+  next_call->event = grpc_completion_queue_pluck(next_call->cq, next_call->tag,
+                                                 next_call->timeout, NULL);
   return NULL;
 }
 
@@ -65,37 +56,28 @@ void grpc_rb_completion_queue_destroy(grpc_completion_queue* cq) {
   grpc_completion_queue_destroy(cq);
 }
 
-static void unblock_func(void* param) {
+static void outer_unblock_func(void* param) {
   next_call_stack* const next_call = (next_call_stack*)param;
-  next_call->interrupted = 1;
+  if (next_call->unblock_func == NULL) return;
+  next_call->unblock_func(next_call->unblock_func_arg);
 }
 
 /* Does the same thing as grpc_completion_queue_pluck, while properly releasing
    the GVL and handling interrupts */
 grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
-                                     gpr_timespec deadline, void* reserved) {
+                                     gpr_timespec deadline,
+                                     void (*unblock_func)(void* param),
+                                     void* unblock_func_arg) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
   next_call.cq = queue;
   next_call.timeout = deadline;
   next_call.tag = tag;
   next_call.event.type = GRPC_QUEUE_TIMEOUT;
-  (void)reserved;
-  /* Loop until we finish a pluck without an interruption. The internal
-     pluck function runs either until it is interrupted or it gets an
-     event, or time runs out.
-
-     The basic reason we need this relatively complicated construction is that
-     we need to re-acquire the GVL when an interrupt comes in, so that the ruby
-     interpreter can do what it needs to do with the interrupt. But we also need
-     to get back to plucking when the interrupt has been handled. */
-  do {
-    next_call.interrupted = 0;
-    rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
-                               (void*)&next_call, unblock_func,
-                               (void*)&next_call);
-    /* If an interrupt prevented pluck from returning useful information, then
-       any plucks that did complete must have timed out */
-  } while (next_call.interrupted && next_call.event.type == GRPC_QUEUE_TIMEOUT);
+  next_call.unblock_func = unblock_func;
+  next_call.unblock_func_arg = unblock_func_arg;
+  rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
+                             (void*)&next_call, outer_unblock_func,
+                             (void*)&next_call);
   return next_call.event;
 }

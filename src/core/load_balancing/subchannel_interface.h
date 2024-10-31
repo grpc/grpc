@@ -17,17 +17,17 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H
 
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <utility>
 
 #include "absl/status/status.h"
-
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "absl/strings/string_view.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 
@@ -76,6 +76,8 @@ class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
+  // TODO(roth): This interface has an ABA issue.  Fix this before we
+  // make this API public.
   virtual void CancelConnectivityStateWatch(
       ConnectivityStateWatcherInterface* watcher) = 0;
 
@@ -96,7 +98,12 @@ class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
       std::unique_ptr<DataWatcherInterface> watcher) = 0;
 
   // Cancels a data watch.
+  // TODO(roth): This interface has an ABA issue.  Fix this before we
+  // make this API public.
   virtual void CancelDataWatcher(DataWatcherInterface* watcher) = 0;
+
+  // Return the address in URI format.
+  virtual std::string address() const = 0;
 
  protected:
   void Orphaned() override {}
@@ -130,6 +137,10 @@ class DelegatingSubchannel : public SubchannelInterface {
   }
   void CancelDataWatcher(DataWatcherInterface* watcher) override {
     wrapped_subchannel_->CancelDataWatcher(watcher);
+  }
+
+  std::string address() const override {
+    return wrapped_subchannel_->address();
   }
 
  private:

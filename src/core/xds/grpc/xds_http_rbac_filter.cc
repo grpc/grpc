@@ -16,6 +16,8 @@
 
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
 
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -38,22 +40,19 @@
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/message/map.h"
-
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/string.h"
-#include "src/core/xds/grpc/upb_utils.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/xds_client/xds_client.h"
+#include "upb/message/map.h"
 
 namespace grpc_core {
 
@@ -190,11 +189,10 @@ Json ParseCidrRangeToJson(const envoy_config_core_v3_CidrRange* range) {
   json.emplace("addressPrefix",
                Json::FromString(UpbStringToStdString(
                    envoy_config_core_v3_CidrRange_address_prefix(range))));
-  const auto* prefix_len = envoy_config_core_v3_CidrRange_prefix_len(range);
-  if (prefix_len != nullptr) {
-    json.emplace(
-        "prefixLen",
-        Json::FromNumber(google_protobuf_UInt32Value_value(prefix_len)));
+  auto prefix_len =
+      ParseUInt32Value(envoy_config_core_v3_CidrRange_prefix_len(range));
+  if (prefix_len.has_value()) {
+    json.emplace("prefixLen", Json::FromNumber(*prefix_len));
   }
   return Json::FromObject(std::move(json));
 }
@@ -515,6 +513,7 @@ void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfig(
+    absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
@@ -536,6 +535,7 @@ XdsHttpRbacFilter::GenerateFilterConfig(
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfigOverride(
+    absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
@@ -564,6 +564,10 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
   return FilterConfig{OverrideConfigProtoName(), std::move(rbac_json)};
 }
 
+void XdsHttpRbacFilter::AddFilter(InterceptionChainBuilder& builder) const {
+  builder.Add<RbacFilter>();
+}
+
 const grpc_channel_filter* XdsHttpRbacFilter::channel_filter() const {
   return &RbacFilter::kFilterVtable;
 }
@@ -574,7 +578,7 @@ ChannelArgs XdsHttpRbacFilter::ModifyChannelArgs(
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpRbacFilter::GenerateServiceConfig(
+XdsHttpRbacFilter::GenerateMethodConfig(
     const FilterConfig& hcm_filter_config,
     const FilterConfig* filter_config_override) const {
   const Json& policy_json = filter_config_override != nullptr
@@ -582,6 +586,12 @@ XdsHttpRbacFilter::GenerateServiceConfig(
                                 : hcm_filter_config.config;
   // The policy JSON may be empty and that's allowed.
   return ServiceConfigJsonEntry{"rbacPolicy", JsonDump(policy_json)};
+}
+
+absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
+XdsHttpRbacFilter::GenerateServiceConfig(
+    const FilterConfig& /*hcm_filter_config*/) const {
+  return ServiceConfigJsonEntry{"", ""};
 }
 
 }  // namespace grpc_core

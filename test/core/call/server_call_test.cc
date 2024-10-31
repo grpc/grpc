@@ -14,13 +14,12 @@
 
 #include "src/core/lib/surface/server_call.h"
 
-#include <atomic>
-
-#include "absl/status/status.h"
-
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 
+#include <atomic>
+
+#include "absl/status/status.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -38,16 +37,20 @@ class ServerCallTest : public YodelTest {
  protected:
   using YodelTest::YodelTest;
 
-  ~ServerCallTest() { grpc_metadata_array_destroy(&publish_initial_metadata_); }
+  ~ServerCallTest() override {
+    grpc_metadata_array_destroy(&publish_initial_metadata_);
+  }
 
   grpc_call* InitCall(ClientMetadataHandle client_initial_metadata) {
     CHECK_EQ(call_, nullptr);
+    auto arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine().get());
     auto call =
-        MakeCallPair(std::move(client_initial_metadata), event_engine().get(),
-                     SimpleArenaAllocator()->MakeArena());
+        MakeCallPair(std::move(client_initial_metadata), std::move(arena));
     call.initiator.SpawnGuarded(
         "initial_metadata",
-        [this, handler = call.handler.StartWithEmptyFilterStack()]() mutable {
+        [this, handler = call.handler.StartCall()]() mutable {
           return TrySeq(
               handler.PullClientInitialMetadata(),
               [this,
@@ -69,7 +72,8 @@ class ServerCallTest : public YodelTest {
   ClientMetadataHandle MakeClientInitialMetadata(
       std::initializer_list<std::pair<absl::string_view, absl::string_view>>
           md) {
-    auto client_initial_metadata = Arena::MakePooled<ClientMetadata>();
+    auto client_initial_metadata =
+        Arena::MakePooledForOverwrite<ClientMetadata>();
     client_initial_metadata->Set(HttpPathMetadata(),
                                  Slice::FromCopiedString(kDefaultPath));
     for (const auto& pair : md) {

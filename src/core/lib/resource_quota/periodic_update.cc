@@ -14,9 +14,9 @@
 
 #include "src/core/lib/resource_quota/periodic_update.h"
 
-#include <atomic>
-
 #include <grpc/support/port_platform.h>
+
+#include <atomic>
 
 #include "src/core/util/useful.h"
 
@@ -68,8 +68,8 @@ bool PeriodicUpdate::MaybeEndPeriod(absl::FunctionRef<void(Duration)> f) {
   expected_updates_per_period_ =
       period_.seconds() * expected_updates_per_period_ / time_so_far.seconds();
   if (expected_updates_per_period_ < 1) expected_updates_per_period_ = 1;
-  period_start_ = now;
   f(time_so_far);
+  period_start_ = Timestamp::Now();
   updates_remaining_.store(expected_updates_per_period_,
                            std::memory_order_release);
   return true;

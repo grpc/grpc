@@ -16,13 +16,12 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+
+#include "absl/log/check.h"
+#include "absl/status/status.h"
 
 void grpc_tls_certificate_distributor::SetKeyMaterials(
     const std::string& cert_name, absl::optional<std::string> pem_root_certs,

@@ -18,20 +18,18 @@
 
 #include "test/cpp/util/cli_call.h"
 
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/support/byte_buffer.h>
+
 #include <cmath>
 #include <iostream>
 #include <utility>
 
 #include "absl/log/check.h"
-
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/support/byte_buffer.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 namespace grpc {
 namespace testing {

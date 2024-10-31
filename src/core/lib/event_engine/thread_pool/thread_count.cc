@@ -13,19 +13,17 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/thread_pool/thread_count.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <cstddef>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -52,8 +50,8 @@ absl::Status LivingThreadCount::BlockUntilThreadCount(
       prev_thread_count = curr_threads;
       timeout_baseline = grpc_core::Timestamp::Now();
     }
-    GRPC_LOG_EVERY_N_SEC_DELAYED(
-        log_rate.seconds(), GPR_DEBUG,
+    GRPC_LOG_EVERY_N_SEC_DELAYED_DEBUG(
+        log_rate.seconds(),
         "Waiting for thread pool to idle before %s. (%" PRIdPTR " to %" PRIdPTR
         "). Timing out in %0.f seconds.",
         why, curr_threads, desired_threads,

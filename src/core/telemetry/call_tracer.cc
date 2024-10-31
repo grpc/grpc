@@ -18,19 +18,26 @@
 
 #include "src/core/telemetry/call_tracer.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/context.h"
 #include "src/core/telemetry/tcp_tracer.h"
 
 namespace grpc_core {
+
+CallTracerInterface::TransportByteSize&
+CallTracerInterface::TransportByteSize::operator+=(
+    const CallTracerInterface::TransportByteSize& other) {
+  framing_bytes += other.framing_bytes;
+  data_bytes += other.data_bytes;
+  header_bytes += other.header_bytes;
+  return *this;
+}
 
 //
 // ServerCallTracerFactory
@@ -42,6 +49,7 @@ ServerCallTracerFactory* g_server_call_tracer_factory_ = nullptr;
 
 const char* kServerCallTracerFactoryChannelArgName =
     "grpc.experimental.server_call_tracer_factory";
+
 }  // namespace
 
 ServerCallTracerFactory* ServerCallTracerFactory::Get(
@@ -137,6 +145,18 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     void RecordEnd(const gpr_timespec& latency) override {
       for (auto* tracer : tracers_) {
         tracer->RecordEnd(latency);
+      }
+    }
+    void RecordIncomingBytes(
+        const TransportByteSize& transport_byte_size) override {
+      for (auto* tracer : tracers_) {
+        tracer->RecordIncomingBytes(transport_byte_size);
+      }
+    }
+    void RecordOutgoingBytes(
+        const TransportByteSize& transport_byte_size) override {
+      for (auto* tracer : tracers_) {
+        tracer->RecordOutgoingBytes(transport_byte_size);
       }
     }
     void RecordAnnotation(absl::string_view annotation) override {
@@ -269,6 +289,18 @@ class DelegatingServerCallTracer : public ServerCallTracer {
   void RecordEnd(const grpc_call_final_info* final_info) override {
     for (auto* tracer : tracers_) {
       tracer->RecordEnd(final_info);
+    }
+  }
+  void RecordIncomingBytes(
+      const TransportByteSize& transport_byte_size) override {
+    for (auto* tracer : tracers_) {
+      tracer->RecordIncomingBytes(transport_byte_size);
+    }
+  }
+  void RecordOutgoingBytes(
+      const TransportByteSize& transport_byte_size) override {
+    for (auto* tracer : tracers_) {
+      tracer->RecordOutgoingBytes(transport_byte_size);
     }
   }
   void RecordAnnotation(absl::string_view annotation) override {

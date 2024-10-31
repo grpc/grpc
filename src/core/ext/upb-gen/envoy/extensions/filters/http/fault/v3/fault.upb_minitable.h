@@ -3,7 +3,8 @@
  *     envoy/extensions/filters/http/fault/v3/fault.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_EXTENSIONS_FILTERS_HTTP_FAULT_V3_FAULT_PROTO_UPB_MINITABLE_H_
 #define ENVOY_EXTENSIONS_FILTERS_HTTP_FAULT_V3_FAULT_PROTO_UPB_MINITABLE_H_
@@ -18,8 +19,11 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init;
+extern const upb_MiniTable* envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init_ptr;
 extern const upb_MiniTable envoy__extensions__filters__http__fault__v3__FaultAbort__HeaderAbort_msg_init;
+extern const upb_MiniTable* envoy__extensions__filters__http__fault__v3__FaultAbort__HeaderAbort_msg_init_ptr;
 extern const upb_MiniTable envoy__extensions__filters__http__fault__v3__HTTPFault_msg_init;
+extern const upb_MiniTable* envoy__extensions__filters__http__fault__v3__HTTPFault_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_extensions_filters_http_fault_v3_fault_proto_upb_file_layout;
 

@@ -18,7 +18,6 @@
 #include <memory>
 
 #include "absl/strings/string_view.h"
-
 #include "src/core/telemetry/tcp_tracer.h"
 
 namespace grpc_event_engine {

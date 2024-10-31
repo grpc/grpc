@@ -21,15 +21,14 @@
 #if defined(GPR_CPU_POSIX)
 
 #include <errno.h>
+#include <grpc/support/cpu.h>
+#include <grpc/support/sync.h>
 #include <pthread.h>
 #include <string.h>
 #include <unistd.h>
 
-#include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "absl/log/log.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 
 static long ncpus = 0;
@@ -39,7 +38,7 @@ static pthread_key_t thread_id_key;
 static void init_ncpus() {
   ncpus = sysconf(_SC_NPROCESSORS_CONF);
   if (ncpus < 1 || ncpus > INT32_MAX) {
-    gpr_log(GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
+    LOG(ERROR) << "Cannot determine number of CPUs: assuming 1";
     ncpus = 1;
   }
 }

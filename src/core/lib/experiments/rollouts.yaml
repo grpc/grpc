@@ -40,7 +40,7 @@
 #
 # Supported platforms: ios, windows, posix
 
-- name: call_status_override_on_cancellation
+- name: call_tracer_in_transport
   default: true
 - name: call_v3
   default: false
@@ -53,12 +53,16 @@
     windows: broken
 - name: client_privacy
   default: false
+- name: event_engine_application_callbacks
+  default: true
+- name: event_engine_callback_cq
+  default: true
 - name: event_engine_client
   default:
     # not tested on iOS at all
     ios: broken
-    posix: false
-    windows: false
+    posix: true
+    windows: true
 - name: event_engine_dns
   default:
     # not tested on iOS at all
@@ -73,18 +77,12 @@
     windows: true
 - name: free_large_allocator
   default: false
-- name: http2_stats_fix
-  default: true
-- name: keepalive_fix
-  default: false
-- name: keepalive_server_fix
+- name: local_connector_secure
   default: false
 - name: max_pings_wo_data_throttle
   default: false
 - name: monitoring_experiment
   default: true
-- name: peer_state_based_framing
-  default: false
 - name: pending_queue_cap
   default: true
 - name: pick_first_new
@@ -104,6 +102,8 @@
   default: false
 - name: tcp_rcv_lowat
   default: false
+- name: time_caching_in_party
+  default: true
 - name: trace_record_callops
   default: true
 - name: unconstrained_max_quota_buffer_size
@@ -111,7 +111,6 @@
 - name: work_serializer_clears_time_cache
   default: true
 - name: work_serializer_dispatch
-  requires: ["event_engine_client"]
   default:
     # TODO(ysseung): Not fully tested.
     ios: broken

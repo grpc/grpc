@@ -34,15 +34,8 @@
 #ifndef GRPCPP_CLIENT_CONTEXT_H
 #define GRPCPP_CLIENT_CONTEXT_H
 
-#include <map>
-#include <memory>
-#include <string>
-
-#include "absl/log/absl_check.h"
-
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/propagation_bits.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/create_auth_context.h>
 #include <grpcpp/impl/metadata_map.h>
 #include <grpcpp/impl/rpc_method.h>
@@ -54,6 +47,12 @@
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 #include <grpcpp/support/time.h>
+
+#include <map>
+#include <memory>
+#include <string>
+
+#include "absl/log/absl_check.h"
 
 struct census_context;
 struct grpc_call;

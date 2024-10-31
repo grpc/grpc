@@ -3,7 +3,8 @@
  *     envoy/type/matcher/v3/path.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_TYPE_MATCHER_V3_PATH_PROTO_UPB_MINITABLE_H_
 #define ENVOY_TYPE_MATCHER_V3_PATH_PROTO_UPB_MINITABLE_H_
@@ -18,6 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__type__matcher__v3__PathMatcher_msg_init;
+extern const upb_MiniTable* envoy__type__matcher__v3__PathMatcher_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_type_matcher_v3_path_proto_upb_file_layout;
 

@@ -14,6 +14,9 @@
 
 #include "src/core/lib/slice/slice_buffer.h"
 
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <memory>
@@ -21,12 +24,6 @@
 
 #include "absl/log/check.h"
 #include "gtest/gtest.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice.h"
 
 using ::grpc_core::Slice;

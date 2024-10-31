@@ -20,19 +20,17 @@
 #define GRPC_SRC_CORE_LIB_IOMGR_CLOSURE_H
 
 #include <assert.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <stdbool.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/mpscq.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/manual_constructor.h"
+#include "src/core/util/mpscq.h"
 
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
@@ -292,18 +290,15 @@ class Closure {
       return;
     }
 #ifndef NDEBUG
-    if (GRPC_TRACE_FLAG_ENABLED(closure)) {
-      gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: run [%s:%d]",
-              closure, closure->file_created, closure->line_created,
-              location.file(), location.line());
-    }
+    GRPC_TRACE_VLOG(closure, 2)
+        << "running closure " << closure << ": created ["
+        << closure->file_created << ":" << closure->line_created << "]: run ["
+        << location.file() << ":" << location.line() << "]";
     CHECK_NE(closure->cb, nullptr);
 #endif
     closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG
-    if (GRPC_TRACE_FLAG_ENABLED(closure)) {
-      gpr_log(GPR_DEBUG, "closure %p finished", closure);
-    }
+    GRPC_TRACE_VLOG(closure, 2) << "closure " << closure << " finished";
 #endif
   }
 };

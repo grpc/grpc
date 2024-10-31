@@ -14,6 +14,7 @@
 
 #include "test/core/end2end/fuzzers/network_input.h"
 
+#include <grpc/slice.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -26,9 +27,6 @@
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-
-#include <grpc/slice.h>
-
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
@@ -267,6 +265,13 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
   return out;
 }
 
+void store32_little_endian(uint32_t value, unsigned char* buf) {
+  buf[3] = static_cast<unsigned char>((value >> 24) & 0xFF);
+  buf[2] = static_cast<unsigned char>((value >> 16) & 0xFF);
+  buf[1] = static_cast<unsigned char>((value >> 8) & 0xFF);
+  buf[0] = static_cast<unsigned char>((value) & 0xFF);
+}
+
 grpc_slice SliceFromSegment(const fuzzer_input::InputSegment& segment) {
   switch (segment.payload_case()) {
     case fuzzer_input::InputSegment::kRawBytes:
@@ -333,6 +338,38 @@ grpc_slice SliceFromSegment(const fuzzer_input::InputSegment& segment) {
           .JoinIntoSlice()
           .TakeCSlice();
     } break;
+    case fuzzer_input::InputSegment::kFakeTransportFrame: {
+      auto generate = [](absl::string_view payload) {
+        uint32_t length = payload.length();
+        std::vector<unsigned char> bytes;
+        bytes.resize(4);
+        store32_little_endian(length + 4, bytes.data());
+        for (auto c : payload) {
+          bytes.push_back(static_cast<unsigned char>(c));
+        }
+        return grpc_slice_from_copied_buffer(
+            reinterpret_cast<const char*>(bytes.data()), bytes.size());
+      };
+      switch (segment.fake_transport_frame().payload_case()) {
+        case fuzzer_input::FakeTransportFrame::kRawBytes:
+          return generate(segment.fake_transport_frame().raw_bytes());
+        case fuzzer_input::FakeTransportFrame::kMessageString:
+          switch (segment.fake_transport_frame().message_string()) {
+            default:
+              return generate("UNKNOWN");
+            case fuzzer_input::FakeTransportFrame::CLIENT_INIT:
+              return generate("CLIENT_INIT");
+            case fuzzer_input::FakeTransportFrame::SERVER_INIT:
+              return generate("SERVER_INIT");
+            case fuzzer_input::FakeTransportFrame::CLIENT_FINISHED:
+              return generate("CLIENT_FINISHED");
+            case fuzzer_input::FakeTransportFrame::SERVER_FINISHED:
+              return generate("SERVER_FINISHED");
+          }
+        case fuzzer_input::FakeTransportFrame::PAYLOAD_NOT_SET:
+          return generate("");
+      }
+    }
     case fuzzer_input::InputSegment::PAYLOAD_NOT_SET:
       break;
   }
@@ -384,23 +421,27 @@ std::vector<QueuedRead> MakeSchedule(
 
 Duration ScheduleReads(
     const fuzzer_input::NetworkInput& network_input,
-    grpc_endpoint* mock_endpoint,
+    std::shared_ptr<grpc_event_engine::experimental::MockEndpointController>
+        mock_endpoint_controller,
     grpc_event_engine::experimental::FuzzingEventEngine* event_engine) {
   int delay = 0;
   for (const auto& q : MakeSchedule(network_input)) {
     event_engine->RunAfterExactly(
         std::chrono::milliseconds(q.delay_ms),
-        [mock_endpoint, slices = q.slices.JoinIntoSlice()]() mutable {
+        [mock_endpoint_controller,
+         slices = q.slices.JoinIntoSlice()]() mutable {
           ExecCtx exec_ctx;
-          grpc_mock_endpoint_put_read(mock_endpoint, slices.TakeCSlice());
+          mock_endpoint_controller->TriggerReadEvent(
+              std::move(grpc_event_engine::experimental::internal::SliceCast<
+                        grpc_event_engine::experimental::Slice>(slices)));
         });
     delay = std::max(delay, q.delay_ms);
   }
-  event_engine->RunAfterExactly(
-      std::chrono::milliseconds(delay + 1), [mock_endpoint] {
-        ExecCtx exec_ctx;
-        grpc_mock_endpoint_finish_put_reads(mock_endpoint);
-      });
+  event_engine->RunAfterExactly(std::chrono::milliseconds(delay + 1),
+                                [mock_endpoint_controller] {
+                                  ExecCtx exec_ctx;
+                                  mock_endpoint_controller->NoMoreReads();
+                                });
   return Duration::Milliseconds(delay + 2);
 }
 
@@ -539,6 +580,17 @@ Duration ScheduleConnection(
             Duration::Milliseconds(connect_timeout_ms));
       });
   return delay;
+}
+
+void ScheduleWrites(
+    const fuzzer_input::NetworkInput& network_input,
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        endpoint,
+    grpc_event_engine::experimental::FuzzingEventEngine* event_engine) {
+  auto schedule = MakeSchedule(network_input);
+  auto ep = std::shared_ptr<EventEngine::Endpoint>(std::move(endpoint));
+  ReadForever(ep);
+  ScheduleWritesForReads(ep, event_engine, std::move(schedule));
 }
 
 }  // namespace grpc_core

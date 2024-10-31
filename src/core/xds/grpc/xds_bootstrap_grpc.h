@@ -17,29 +17,27 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_BOOTSTRAP_GRPC_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_BOOTSTRAP_GRPC_H
 
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <memory>
-#include <set>
 #include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
-#include "src/core/xds/grpc/xds_http_filters.h"
+#include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
+#include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {
@@ -76,32 +74,6 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
     Json::Object metadata_;
   };
 
-  class GrpcXdsServer final : public XdsServer {
-   public:
-    const std::string& server_uri() const override { return server_uri_; }
-
-    bool IgnoreResourceDeletion() const override;
-
-    bool Equals(const XdsServer& other) const override;
-
-    std::string Key() const override;
-
-    RefCountedPtr<ChannelCredsConfig> channel_creds_config() const {
-      return channel_creds_config_;
-    }
-
-    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    void JsonPostLoad(const Json& json, const JsonArgs& args,
-                      ValidationErrors* errors);
-
-    Json ToJson() const;
-
-   private:
-    std::string server_uri_;
-    RefCountedPtr<ChannelCredsConfig> channel_creds_config_;
-    std::set<std::string> server_features_;
-  };
-
   class GrpcAuthority final : public Authority {
    public:
     std::vector<const XdsServer*> servers() const override {
@@ -118,8 +90,6 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
     }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    void JsonPostLoad(const Json& json, const JsonArgs& args,
-                      ValidationErrors* errors);
 
    private:
     std::vector<GrpcXdsServer> servers_;

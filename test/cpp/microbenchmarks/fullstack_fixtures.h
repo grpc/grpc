@@ -19,11 +19,8 @@
 #ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 #define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
@@ -31,10 +28,10 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "absl/log/check.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -43,6 +40,7 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/server/server.h"
+#include "src/core/util/crash.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -77,7 +75,7 @@ class FullstackFixture : public BaseFixture {
   FullstackFixture(Service* service, const FixtureConfiguration& config,
                    const std::string& address) {
     ServerBuilder b;
-    if (address.length() > 0) {
+    if (!address.empty()) {
       b.AddListeningPort(address, InsecureServerCredentials());
     }
     cq_ = b.AddCompletionQueue(true);
@@ -86,7 +84,7 @@ class FullstackFixture : public BaseFixture {
     server_ = b.BuildAndStart();
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
-    if (address.length() > 0) {
+    if (!address.empty()) {
       channel_ = grpc::CreateCustomChannel(address,
                                            InsecureChannelCredentials(), args);
     } else {
@@ -95,6 +93,7 @@ class FullstackFixture : public BaseFixture {
   }
 
   ~FullstackFixture() override {
+    channel_.reset();
     server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
     cq_->Shutdown();
     void* tag;
@@ -180,7 +179,9 @@ class EndpointPairFixture : public BaseFixture {
           grpc_core::Server::FromC(server_->c_server());
       grpc_core::ChannelArgs server_args = core_server->channel_args();
       server_transport_ = grpc_create_chttp2_transport(
-          server_args, endpoints.server, false /* is_client */);
+          server_args,
+          grpc_core::OrphanablePtr<grpc_endpoint>(endpoints.server),
+          /*is_client=*/false);
       for (grpc_pollset* pollset : core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
@@ -206,8 +207,9 @@ class EndpointPairFixture : public BaseFixture {
                      .channel_args_preconditioning()
                      .PreconditionChannelArgs(&tmp_args);
       }
-      client_transport_ =
-          grpc_create_chttp2_transport(c_args, endpoints.client, true);
+      client_transport_ = grpc_create_chttp2_transport(
+          c_args, grpc_core::OrphanablePtr<grpc_endpoint>(endpoints.client),
+          /*is_client=*/true);
       CHECK(client_transport_);
       grpc_channel* channel =
           grpc_core::ChannelCreate("target", c_args, GRPC_CLIENT_DIRECT_CHANNEL,

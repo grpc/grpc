@@ -18,11 +18,10 @@
 
 #include "test/cpp/interop/rpc_behavior_lb_policy.h"
 
-#include "absl/log/check.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
+#include "absl/strings/str_format.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/util/json/json_args.h"
@@ -111,12 +110,17 @@ class RpcBehaviorLbPolicy : public LoadBalancingPolicy {
           rpc_behavior_(rpc_behavior) {}
 
     PickResult Pick(PickArgs args) override {
-      char* rpc_behavior_copy = static_cast<char*>(
-          args.call_state->Alloc(rpc_behavior_.length() + 1));
-      strcpy(rpc_behavior_copy, rpc_behavior_.c_str());
-      args.initial_metadata->Add(kRpcBehaviorMetadataKey, rpc_behavior_copy);
       // Do pick.
-      return delegate_picker_->Pick(args);
+      auto pick_result = delegate_picker_->Pick(args);
+      // Add metadata.
+      auto* complete_pick =
+          absl::get_if<PickResult::Complete>(&pick_result.result);
+      if (complete_pick != nullptr) {
+        complete_pick->metadata_mutations.Set(kRpcBehaviorMetadataKey,
+                                              rpc_behavior_);
+      }
+      // Return result.
+      return pick_result;
     }
 
    private:

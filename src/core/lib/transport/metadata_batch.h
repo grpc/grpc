@@ -19,6 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
 
+#include <grpc/impl/compression_types.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <cstdint>
@@ -33,25 +36,19 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/compression_types.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/chunked_vector.h"
-#include "src/core/lib/gprpp/if_list.h"
-#include "src/core/lib/gprpp/packed_table.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/type_list.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/custom_metadata.h"
 #include "src/core/lib/transport/metadata_compression_traits.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 #include "src/core/lib/transport/simple_slice_based_metadata.h"
+#include "src/core/util/chunked_vector.h"
+#include "src/core/util/if_list.h"
+#include "src/core/util/packed_table.h"
+#include "src/core/util/time.h"
+#include "src/core/util/type_list.h"
 
 namespace grpc_core {
 
@@ -1052,6 +1049,26 @@ struct LogWrapper {
   }
 };
 
+// Callable for the table FilterIn -- for each value, call the
+// appropriate filter method to determine of the value should be kept or
+// removed.
+template <typename Filterer>
+struct FilterWrapper {
+  Filterer filter_fn;
+
+  template <typename Which,
+            absl::enable_if_t<IsEncodableTrait<Which>::value, bool> = true>
+  bool operator()(const Value<Which>& /*which*/) {
+    return filter_fn(Which());
+  }
+
+  template <typename Which,
+            absl::enable_if_t<!IsEncodableTrait<Which>::value, bool> = true>
+  bool operator()(const Value<Which>& /*which*/) {
+    return true;
+  }
+};
+
 // Encoder to compute TransportSize
 class TransportSizeEncoder {
  public:
@@ -1093,6 +1110,16 @@ class UnknownMap {
 
   BackingType::const_iterator begin() const { return unknown_.cbegin(); }
   BackingType::const_iterator end() const { return unknown_.cend(); }
+
+  template <typename Filterer>
+  void Filter(Filterer* filter_fn) {
+    unknown_.erase(
+        std::remove_if(unknown_.begin(), unknown_.end(),
+                       [&](auto& pair) {
+                         return !(*filter_fn)(pair.first.as_string_view());
+                       }),
+        unknown_.end());
+  }
 
   bool empty() const { return unknown_.empty(); }
   size_t size() const { return unknown_.size(); }
@@ -1314,12 +1341,28 @@ class MetadataMap {
     }
   }
 
+  // Filter the metadata map.
+  // Iterates over all encodable and unknown headers and calls the filter_fn
+  // for each of them. If the function returns true, the header is kept.
+  template <typename Filterer>
+  void Filter(Filterer filter_fn) {
+    table_.template FilterIn<metadata_detail::FilterWrapper<Filterer>,
+                             Value<Traits>...>(
+        metadata_detail::FilterWrapper<Filterer>{filter_fn});
+    unknown_.Filter<Filterer>(&filter_fn);
+  }
+
   std::string DebugString() const {
     metadata_detail::DebugStringBuilder builder;
     Log([&builder](absl::string_view key, absl::string_view value) {
       builder.AddAfterRedaction(key, value);
     });
     return builder.TakeOutput();
+  }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const MetadataMap& map) {
+    sink.Append(map.DebugString());
   }
 
   // Get the pointer to the value of some known metadata.

@@ -14,13 +14,13 @@
 
 #include "src/core/telemetry/metrics.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "absl/types/optional.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_core {
 
@@ -159,6 +159,19 @@ GlobalStatsPluginRegistry::GetStatsPluginsForServer(const ChannelArgs& args) {
     }
   }
   return group;
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+GlobalInstrumentsRegistry::FindInstrumentByName(absl::string_view name) {
+  const auto& instruments = GetInstrumentList();
+  for (const auto& descriptor : instruments) {
+    if (descriptor.name == name) {
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle;
+      handle.index = descriptor.index;
+      return handle;
+    }
+  }
+  return absl::nullopt;
 }
 
 }  // namespace grpc_core

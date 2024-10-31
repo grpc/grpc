@@ -18,6 +18,7 @@ load(
     "grpc_cc_test",
     "grpc_package",
 )
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/load_balancing")
 
@@ -157,6 +158,7 @@ grpc_cc_test(
     deps = [
         ":lb_policy_test_lib",
         "//src/core:grpc_lb_policy_xds_override_host",
+        "//src/core:xds_health_status",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -194,21 +196,15 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "static_stride_scheduler_benchmark",
     srcs = ["static_stride_scheduler_benchmark.cc"],
     external_deps = [
         "absl/algorithm:container",
         "absl/log:check",
-        "benchmark",
     ],
-    language = "C++",
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
+    monitoring = HISTORY,
     uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "//src/core:no_destruct",
         "//src/core:static_stride_scheduler",
@@ -269,5 +265,20 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_ring_hash",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_picker",
+    srcs = ["bm_picker.cc"],
+    external_deps = [
+        "absl/strings",
+    ],
+    monitoring = HISTORY,
+    deps = [
+        "//:config",
+        "//:grpc",
+        "//src/core:lb_policy",
+        "//test/core/test_util:build",
     ],
 )

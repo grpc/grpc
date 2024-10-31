@@ -3,7 +3,8 @@
  *     envoy/type/v3/http_status.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_TYPE_V3_HTTP_STATUS_PROTO_UPB_H_
 #define ENVOY_TYPE_V3_HTTP_STATUS_PROTO_UPB_H_
@@ -138,7 +139,7 @@ UPB_INLINE int32_t envoy_type_v3_HttpStatus_code(const envoy_type_v3_HttpStatus*
 
 UPB_INLINE void envoy_type_v3_HttpStatus_set_code(envoy_type_v3_HttpStatus *msg, int32_t value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 #ifdef __cplusplus

@@ -11,10 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "absl/strings/str_cat.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
+
+#include "absl/strings/str_cat.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -23,6 +23,13 @@ const EventEngine::TaskHandle EventEngine::TaskHandle::kInvalid = {-1, -1};
 const EventEngine::ConnectionHandle EventEngine::ConnectionHandle::kInvalid = {
     -1, -1};
 
+namespace detail {
+std::string FormatHandleString(uint64_t key1, uint64_t key2) {
+  return absl::StrCat("{", absl::Hex(key1, absl::kZeroPad16), ",",
+                      absl::Hex(key2, absl::kZeroPad16), "}");
+}
+}  // namespace detail
+
 namespace {
 template <typename T>
 bool eq(const T& lhs, const T& rhs) {
@@ -30,8 +37,7 @@ bool eq(const T& lhs, const T& rhs) {
 }
 template <typename T>
 std::ostream& printout(std::ostream& out, const T& handle) {
-  out << absl::StrCat("{", absl::Hex(handle.keys[0], absl::kZeroPad16), ",",
-                      absl::Hex(handle.keys[1], absl::kZeroPad16), "}");
+  out << detail::FormatHandleString(handle.keys[0], handle.keys[1]);
   return out;
 }
 }  // namespace

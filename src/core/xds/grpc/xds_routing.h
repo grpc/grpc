@@ -19,6 +19,7 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTING_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTING_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <map>
@@ -28,12 +29,9 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/xds/grpc/xds_http_filters.h"
+#include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_route_config.h"
 
@@ -88,9 +86,9 @@ class XdsRouting final {
     ChannelArgs args;
   };
 
-  // Generates a map of per_filter_configs. \a args is consumed.
+  // Generates per-HTTP filter configs for a method config.
   static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
-  GeneratePerHTTPFilterConfigs(
+  GeneratePerHTTPFilterConfigsForMethodConfig(
       const XdsHttpFilterRegistry& http_filter_registry,
       const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
           http_filters,
@@ -98,6 +96,14 @@ class XdsRouting final {
       const XdsRouteConfigResource::Route& route,
       const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
           cluster_weight,
+      const ChannelArgs& args);
+
+  // Generates per-HTTP filter configs for the top-level service config.
+  static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
+  GeneratePerHTTPFilterConfigsForServiceConfig(
+      const XdsHttpFilterRegistry& http_filter_registry,
+      const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
+          http_filters,
       const ChannelArgs& args);
 };
 

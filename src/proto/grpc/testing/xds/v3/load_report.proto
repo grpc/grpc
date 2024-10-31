@@ -51,7 +51,20 @@ message UpstreamLocalityStats {
   // upstream endpoints in the locality.
   uint64 total_issued_requests = 8;
 
-  // Stats for multi-dimensional load balancing.
+  // CPU utilization stats for multi-dimensional load balancing.
+  // This typically comes from endpoint metrics reported via ORCA.
+  UnnamedEndpointLoadMetricStats cpu_utilization = 12;
+
+  // Memory utilization for multi-dimensional load balancing.
+  // This typically comes from endpoint metrics reported via ORCA.
+  UnnamedEndpointLoadMetricStats mem_utilization = 13;
+
+  // Blended application-defined utilization for multi-dimensional load balancing.
+  // This typically comes from endpoint metrics reported via ORCA.
+  UnnamedEndpointLoadMetricStats application_utilization = 14;
+
+  // Named stats for multi-dimensional load balancing.
+  // These typically come from endpoint metrics reported via ORCA.
   repeated EndpointLoadMetricStats load_metric_stats = 5;
 
   // Endpoint granularity stats information for this locality. This information
@@ -115,6 +128,16 @@ message EndpointLoadMetricStats {
   // Sum of metric values across all calls that finished with this metric for
   // load_reporting_interval.
   double total_metric_value = 3;
+}
+
+// Same as EndpointLoadMetricStats, except without the metric_name field.
+message UnnamedEndpointLoadMetricStats {
+  // Number of calls that finished and included this metric.
+  uint64 num_requests_finished_with_metric = 1;
+
+  // Sum of metric values across all calls that finished with this metric for
+  // load_reporting_interval.
+  double total_metric_value = 2;
 }
 
 // Per cluster load stats. Envoy reports these stats a management server in a

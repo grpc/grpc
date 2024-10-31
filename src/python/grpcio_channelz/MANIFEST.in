@@ -1,4 +1,5 @@
 include grpc_version.py
+include python_version.py
 recursive-include grpc_channelz *.py *.pyi
 global-exclude *.pyc
 include LICENSE

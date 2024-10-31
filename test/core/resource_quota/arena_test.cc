@@ -18,6 +18,8 @@
 
 #include "src/core/lib/resource_quota/arena.h"
 
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -31,16 +33,14 @@
 #include "absl/strings/str_join.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/thd.h"
 #include "test/core/test_util/test_config.h"
 
+using testing::Mock;
+using testing::Return;
 using testing::StrictMock;
 
 namespace grpc_core {
@@ -83,6 +83,48 @@ INSTANTIATE_TEST_SUITE_P(
                       AllocShape{1, {2}}, AllocShape{1, {3}},
                       AllocShape{1, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}},
                       AllocShape{6, {1, 2, 3}}));
+
+class MockMemoryAllocatorImpl
+    : public grpc_event_engine::experimental::internal::MemoryAllocatorImpl {
+ public:
+  MOCK_METHOD(size_t, Reserve, (MemoryRequest));
+  MOCK_METHOD(grpc_slice, MakeSlice, (MemoryRequest));
+  MOCK_METHOD(void, Release, (size_t));
+  MOCK_METHOD(void, Shutdown, ());
+};
+
+TEST(ArenaTest, InitialReservationCorrect) {
+  auto allocator_impl = std::make_shared<StrictMock<MockMemoryAllocatorImpl>>();
+  auto allocator = SimpleArenaAllocator(1024, MemoryAllocator(allocator_impl));
+  EXPECT_CALL(*allocator_impl, Reserve(MemoryRequest(1024, 1024)))
+      .WillOnce(Return(1024));
+  auto arena = allocator->MakeArena();
+  Mock::VerifyAndClearExpectations(allocator_impl.get());
+  EXPECT_CALL(*allocator_impl, Release(1024));
+  arena.reset();
+  Mock::VerifyAndClearExpectations(allocator_impl.get());
+  EXPECT_CALL(*allocator_impl, Shutdown());
+}
+
+TEST(ArenaTest, SubsequentReservationCorrect) {
+  auto allocator_impl = std::make_shared<StrictMock<MockMemoryAllocatorImpl>>();
+  auto allocator = SimpleArenaAllocator(1024, MemoryAllocator(allocator_impl));
+  EXPECT_CALL(*allocator_impl, Reserve(MemoryRequest(1024, 1024)))
+      .WillOnce(Return(1024));
+  auto arena = allocator->MakeArena();
+  Mock::VerifyAndClearExpectations(allocator_impl.get());
+  EXPECT_CALL(*allocator_impl,
+              Reserve(MemoryRequest(4096 + Arena::ArenaZoneOverhead(),
+                                    4096 + Arena::ArenaZoneOverhead())))
+      .WillOnce(Return(4096 + Arena::ArenaZoneOverhead()));
+  arena->Alloc(4096);
+  Mock::VerifyAndClearExpectations(allocator_impl.get());
+  EXPECT_CALL(*allocator_impl,
+              Release(1024 + 4096 + Arena::ArenaZoneOverhead()));
+  arena.reset();
+  Mock::VerifyAndClearExpectations(allocator_impl.get());
+  EXPECT_CALL(*allocator_impl, Shutdown());
+}
 
 #define CONCURRENT_TEST_THREADS 10
 
@@ -310,6 +352,32 @@ TEST(ArenaTest, FinalizeArenaIsCalled) {
   auto factory = MakeRefCounted<StrictMock<MockArenaFactory>>();
   auto arena = Arena::Create(1, factory);
   EXPECT_CALL(*factory, FinalizeArena(arena.get()));
+  arena.reset();
+}
+
+TEST(ArenaTest, AccurateBaseByteCount) {
+  auto factory = MakeRefCounted<StrictMock<MockArenaFactory>>();
+  auto arena = Arena::Create(1, factory);
+  EXPECT_CALL(*factory, FinalizeArena(arena.get())).WillOnce([](Arena* a) {
+    EXPECT_EQ(a->TotalUsedBytes(),
+              Arena::ArenaOverhead() +
+                  GPR_ROUND_UP_TO_ALIGNMENT_SIZE(
+                      arena_detail::BaseArenaContextTraits::ContextSize()));
+  });
+  arena.reset();
+}
+
+TEST(ArenaTest, AccurateByteCountWithAllocation) {
+  auto factory = MakeRefCounted<StrictMock<MockArenaFactory>>();
+  auto arena = Arena::Create(1, factory);
+  arena->Alloc(1000);
+  EXPECT_CALL(*factory, FinalizeArena(arena.get())).WillOnce([](Arena* a) {
+    EXPECT_EQ(a->TotalUsedBytes(),
+              Arena::ArenaOverhead() +
+                  GPR_ROUND_UP_TO_ALIGNMENT_SIZE(
+                      arena_detail::BaseArenaContextTraits::ContextSize()) +
+                  GPR_ROUND_UP_TO_ALIGNMENT_SIZE(1000));
+  });
   arena.reset();
 }
 

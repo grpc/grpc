@@ -20,11 +20,9 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/resolver/resolver.h"
+#include "src/core/resolver/xds/xds_config.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_endpoint.h"
@@ -38,73 +36,6 @@ namespace grpc_core {
 class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
                                    public Orphanable {
  public:
-  struct XdsConfig : public RefCounted<XdsConfig> {
-    // Listener resource.  Always non-null.
-    std::shared_ptr<const XdsListenerResource> listener;
-    // RouteConfig resource.  Will be populated even if RouteConfig is
-    // inlined into the Listener resource.
-    std::shared_ptr<const XdsRouteConfigResource> route_config;
-    // Virtual host.  Points into route_config.  Will always be non-null.
-    const XdsRouteConfigResource::VirtualHost* virtual_host;
-
-    struct ClusterConfig {
-      // Cluster resource.  Always non-null.
-      std::shared_ptr<const XdsClusterResource> cluster;
-      // Endpoint info for EDS and LOGICAL_DNS clusters.  If there was an
-      // error, endpoints will be null and resolution_note will be set.
-      struct EndpointConfig {
-        std::shared_ptr<const XdsEndpointResource> endpoints;
-        std::string resolution_note;
-
-        EndpointConfig(std::shared_ptr<const XdsEndpointResource> endpoints,
-                       std::string resolution_note)
-            : endpoints(std::move(endpoints)),
-              resolution_note(std::move(resolution_note)) {}
-        bool operator==(const EndpointConfig& other) const {
-          return endpoints == other.endpoints &&
-                 resolution_note == other.resolution_note;
-        }
-      };
-      // The list of leaf clusters for an aggregate cluster.
-      struct AggregateConfig {
-        std::vector<absl::string_view> leaf_clusters;
-
-        explicit AggregateConfig(std::vector<absl::string_view> leaf_clusters)
-            : leaf_clusters(std::move(leaf_clusters)) {}
-        bool operator==(const AggregateConfig& other) const {
-          return leaf_clusters == other.leaf_clusters;
-        }
-      };
-      absl::variant<EndpointConfig, AggregateConfig> children;
-
-      // Ctor for leaf clusters.
-      ClusterConfig(std::shared_ptr<const XdsClusterResource> cluster,
-                    std::shared_ptr<const XdsEndpointResource> endpoints,
-                    std::string resolution_note);
-      // Ctor for aggregate clusters.
-      ClusterConfig(std::shared_ptr<const XdsClusterResource> cluster,
-                    std::vector<absl::string_view> leaf_clusters);
-
-      bool operator==(const ClusterConfig& other) const {
-        return cluster == other.cluster && children == other.children;
-      }
-    };
-    // Cluster map.  A cluster will have a non-OK status if either
-    // (a) there was an error and we did not already have a valid
-    // resource or (b) the resource does not exist.
-    absl::flat_hash_map<std::string, absl::StatusOr<ClusterConfig>> clusters;
-
-    std::string ToString() const;
-
-    static absl::string_view ChannelArgName() {
-      return GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_config";
-    }
-    static int ChannelArgsCompare(const XdsConfig* a, const XdsConfig* b) {
-      return QsortCompare(a, b);
-    }
-    static constexpr bool ChannelArgUseConstPtr() { return true; }
-  };
-
   class Watcher {
    public:
     virtual ~Watcher() = default;
@@ -148,6 +79,10 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
   // config as long as the returned object is still referenced.
   RefCountedPtr<ClusterSubscription> GetClusterSubscription(
       absl::string_view cluster_name);
+
+  void RequestReresolution();
+
+  void ResetBackoff();
 
   static absl::string_view ChannelArgName() {
     return GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_dependency_manager";

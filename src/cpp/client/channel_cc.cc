@@ -16,20 +16,10 @@
 //
 //
 
-#include <atomic>
-#include <cstring>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -42,6 +32,14 @@
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/slice.h>
 
+#include <atomic>
+#include <cstring>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/log/check.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
 namespace grpc {

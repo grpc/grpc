@@ -15,9 +15,9 @@
 #ifndef GRPC_EVENT_ENGINE_EXTENSIBLE_H
 #define GRPC_EVENT_ENGINE_EXTENSIBLE_H
 
-#include "absl/strings/string_view.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -60,6 +60,9 @@ class Extensible {
   /// if (endpoint != nullptr) endpoint->Process();
   ///
   virtual void* QueryExtension(absl::string_view /*id*/) { return nullptr; }
+
+ protected:
+  ~Extensible() = default;
 };
 
 }  // namespace experimental

@@ -25,24 +25,23 @@
 #ifdef GPR_CPU_LINUX
 
 #include <errno.h>
+#include <grpc/support/cpu.h>
+#include <grpc/support/sync.h>
 #include <sched.h>
 #include <string.h>
 #include <unistd.h>
 
-#include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "absl/log/log.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/strerror.h"
 
 static int ncpus = 0;
 
 static void init_num_cpus() {
 #ifndef GPR_MUSL_LIBC_COMPAT
   if (sched_getcpu() < 0) {
-    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n",
-            grpc_core::StrError(errno).c_str());
+    LOG(ERROR) << "Error determining current CPU: "
+               << grpc_core::StrError(errno) << "\n";
     ncpus = 1;
     return;
   }
@@ -51,7 +50,7 @@ static void init_num_cpus() {
   // determined
   ncpus = static_cast<int>(sysconf(_SC_NPROCESSORS_CONF));
   if (ncpus < 1) {
-    gpr_log(GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
+    LOG(ERROR) << "Cannot determine number of CPUs: assuming 1";
     ncpus = 1;
   }
 }
@@ -72,12 +71,12 @@ unsigned gpr_cpu_current_cpu(void) {
   }
   int cpu = sched_getcpu();
   if (cpu < 0) {
-    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n",
-            grpc_core::StrError(errno).c_str());
+    LOG(ERROR) << "Error determining current CPU: "
+               << grpc_core::StrError(errno) << "\n";
     return 0;
   }
   if (static_cast<unsigned>(cpu) >= gpr_cpu_num_cores()) {
-    gpr_log(GPR_DEBUG, "Cannot handle hot-plugged CPUs");
+    VLOG(2) << "Cannot handle hot-plugged CPUs";
     return 0;
   }
   return static_cast<unsigned>(cpu);

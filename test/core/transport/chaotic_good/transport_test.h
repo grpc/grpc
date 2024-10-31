@@ -17,8 +17,8 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
 #include "src/core/ext/transport/chaotic_good/frame.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -37,7 +37,10 @@ class TransportTest : public ::testing::Test {
   }
 
   RefCountedPtr<Arena> MakeArena() {
-    return call_arena_allocator_->MakeArena();
+    auto arena = call_arena_allocator_->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    return arena;
   }
 
   RefCountedPtr<CallArenaAllocator> call_arena_allocator() {
@@ -45,8 +48,7 @@ class TransportTest : public ::testing::Test {
   }
 
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
-    return MakeCallPair(std::move(client_initial_metadata), event_engine_.get(),
-                        MakeArena());
+    return MakeCallPair(std::move(client_initial_metadata), MakeArena());
   }
 
  private:

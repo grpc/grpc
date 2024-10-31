@@ -14,20 +14,17 @@
 
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
 
+#include <grpc/support/atm.h>
+#include <grpc/support/time.h>
 #include <time.h>
 
 #include <memory>
 
 #include "absl/log/check.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE

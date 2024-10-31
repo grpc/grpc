@@ -14,28 +14,14 @@
 
 #include "src/core/lib/transport/call_arena_allocator.h"
 
-#include <algorithm>
-
 #include <grpc/support/port_platform.h>
+
+#include <algorithm>
 
 namespace grpc_core {
 
-void CallSizeEstimator::UpdateCallSizeEstimate(size_t size) {
-  size_t cur = call_size_estimate_.load(std::memory_order_relaxed);
-  if (cur < size) {
-    // size grew: update estimate
-    call_size_estimate_.compare_exchange_weak(
-        cur, size, std::memory_order_relaxed, std::memory_order_relaxed);
-    // if we lose: never mind, something else will likely update soon enough
-  } else if (cur == size) {
-    // no change: holding pattern
-  } else if (cur > 0) {
-    // size shrank: decrease estimate
-    call_size_estimate_.compare_exchange_weak(
-        cur, std::min(cur - 1, (255 * cur + size) / 256),
-        std::memory_order_relaxed, std::memory_order_relaxed);
-    // if we lose: never mind, something else will likely update soon enough
-  }
+void CallArenaAllocator::FinalizeArena(Arena* arena) {
+  call_size_estimator_.UpdateCallSizeEstimate(arena->TotalUsedBytes());
 }
 
 }  // namespace grpc_core

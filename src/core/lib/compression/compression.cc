@@ -16,20 +16,17 @@
 //
 //
 
-#include <stdint.h>
-#include <string.h>
-
-#include "absl/types/optional.h"
-
 #include <grpc/compression.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
+#include <string.h>
 
+#include "absl/types/optional.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/util/useful.h"
 
 int grpc_compression_algorithm_is_message(grpc_compression_algorithm) {
@@ -54,8 +51,9 @@ int grpc_compression_algorithm_parse(grpc_slice name,
 
 int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
                                     const char** name) {
-  GRPC_API_TRACE("grpc_compression_algorithm_name(algorithm=%d, name=%p)", 2,
-                 ((int)algorithm, name));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_compression_algorithm_name(algorithm=" << (int)algorithm
+      << ", name=" << name << ")";
   const char* result = grpc_core::CompressionAlgorithmAsString(algorithm);
   if (result != nullptr) {
     *name = result;

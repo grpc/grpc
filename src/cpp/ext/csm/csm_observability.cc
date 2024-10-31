@@ -18,6 +18,9 @@
 
 #include "src/cpp/ext/csm/csm_observability.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpcpp/ext/csm_observability.h>
+
 #include <memory>
 #include <string>
 #include <utility>
@@ -30,12 +33,8 @@
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/resource/resource.h"
 #include "opentelemetry/sdk/resource/resource_detector.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpcpp/ext/csm_observability.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 #include "src/core/xds/grpc/xds_enabled_server.h"
 #include "src/cpp/ext/csm/metadata_exchange.h"
 #include "src/cpp/ext/otel/otel_plugin.h"

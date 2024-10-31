@@ -3,7 +3,8 @@
  *     envoy/type/v3/ratelimit_strategy.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -17,9 +18,10 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_type_v3_RateLimitStrategy_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__TokenBucket_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_type_v3_RateLimitStrategy_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__TokenBucket_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_type_v3_RateLimitStrategy__fields[3] = {
@@ -32,6 +34,9 @@ const upb_MiniTable envoy__type__v3__RateLimitStrategy_msg_init = {
   &envoy_type_v3_RateLimitStrategy_submsgs[0],
   &envoy_type_v3_RateLimitStrategy__fields[0],
   UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.v3.RateLimitStrategy",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0010000801000008, &upb_pov4_1bt},
@@ -40,6 +45,7 @@ const upb_MiniTable envoy__type__v3__RateLimitStrategy_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__type__v3__RateLimitStrategy_msg_init_ptr = &envoy__type__v3__RateLimitStrategy_msg_init;
 static const upb_MiniTableField envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit__fields[2] = {
   {1, 16, 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -49,6 +55,9 @@ const upb_MiniTable envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_
   NULL,
   &envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit__fields[0],
   24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.v3.RateLimitStrategy.RequestsPerTimeUnit",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f000008, &upb_psv8_1bt},
@@ -57,6 +66,7 @@ const upb_MiniTable envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_
   })
 };
 
+const upb_MiniTable* envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_init_ptr = &envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &envoy__type__v3__RateLimitStrategy_msg_init,
   &envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_init,

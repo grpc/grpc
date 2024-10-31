@@ -17,9 +17,6 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_ENDPOINT_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_ENDPOINT_H
 
-#include <stdint.h>
-
-#include <algorithm>
 #include <map>
 #include <string>
 #include <utility>
@@ -27,20 +24,16 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/random/random.h"
-#include "absl/strings/string_view.h"
-#include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
-#include "upb/reflection/def.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/xds/xds_client/xds_client.h"
-#include "src/core/xds/xds_client/xds_client_stats.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/xds/xds_client/xds_locality.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
+
+// Per-endpoint channel arg key for xDS-configured HTTP CONNECT proxy.
+#define GRPC_ARG_XDS_HTTP_PROXY "grpc.internal.xds_http_proxy"
 
 namespace grpc_core {
 
@@ -128,21 +121,6 @@ struct XdsEndpointResource : public XdsResourceType::ResourceData {
     return *drop_config == *other.drop_config;
   }
   std::string ToString() const;
-};
-
-class XdsEndpointResourceType final
-    : public XdsResourceTypeImpl<XdsEndpointResourceType, XdsEndpointResource> {
- public:
-  absl::string_view type_url() const override {
-    return "envoy.config.endpoint.v3.ClusterLoadAssignment";
-  }
-
-  DecodeResult Decode(const XdsResourceType::DecodeContext& context,
-                      absl::string_view serialized_resource) const override;
-
-  void InitUpbSymtab(XdsClient*, upb_DefPool* symtab) const override {
-    envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab);
-  }
 };
 
 }  // namespace grpc_core

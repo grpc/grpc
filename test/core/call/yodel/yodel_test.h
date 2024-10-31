@@ -15,21 +15,21 @@
 #ifndef GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
 #define GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/call_arena_allocator.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/debug_location.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/test_config.h"
 
@@ -363,9 +363,10 @@ class YodelTest : public ::testing::Test {
   }
 
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
-    return MakeCallPair(std::move(client_initial_metadata),
-                        state_->event_engine.get(),
-                        state_->call_arena_allocator->MakeArena());
+    auto arena = state_->call_arena_allocator->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        state_->event_engine.get());
+    return MakeCallPair(std::move(client_initial_metadata), std::move(arena));
   }
 
   void WaitForAllPendingWork();

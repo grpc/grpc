@@ -25,24 +25,13 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "envoy/config/route/v3/route.upb.h"
-#include "envoy/config/route/v3/route.upbdefs.h"
 #include "re2/re2.h"
-#include "upb/reflection/def.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/matchers/matchers.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
-#include "src/core/xds/grpc/xds_http_filters.h"
-#include "src/core/xds/xds_client/xds_client.h"
+#include "src/core/util/matchers.h"
+#include "src/core/util/time.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
 
@@ -170,16 +159,20 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
       absl::variant<ClusterName, std::vector<ClusterWeight>,
                     ClusterSpecifierPluginName>
           action;
+
       // Storing the timeout duration from route action:
       // RouteAction.max_stream_duration.grpc_timeout_header_max or
       // RouteAction.max_stream_duration.max_stream_duration if the former is
       // not set.
       absl::optional<Duration> max_stream_duration;
 
+      bool auto_host_rewrite = false;
+
       bool operator==(const RouteAction& other) const {
         return hash_policies == other.hash_policies &&
                retry_policy == other.retry_policy && action == other.action &&
-               max_stream_duration == other.max_stream_duration;
+               max_stream_duration == other.max_stream_duration &&
+               auto_host_rewrite == other.auto_host_rewrite;
       }
       std::string ToString() const;
     };
@@ -220,32 +213,6 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
            cluster_specifier_plugin_map == other.cluster_specifier_plugin_map;
   }
   std::string ToString() const;
-
-  static std::shared_ptr<const XdsRouteConfigResource> Parse(
-      const XdsResourceType::DecodeContext& context,
-      const envoy_config_route_v3_RouteConfiguration* route_config,
-      ValidationErrors* errors);
-};
-
-class XdsRouteConfigResourceType final
-    : public XdsResourceTypeImpl<XdsRouteConfigResourceType,
-                                 XdsRouteConfigResource> {
- public:
-  absl::string_view type_url() const override {
-    return "envoy.config.route.v3.RouteConfiguration";
-  }
-
-  DecodeResult Decode(const XdsResourceType::DecodeContext& context,
-                      absl::string_view serialized_resource) const override;
-
-  void InitUpbSymtab(XdsClient* xds_client,
-                     upb_DefPool* symtab) const override {
-    envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);
-    const auto& cluster_specifier_plugin_registry =
-        static_cast<const GrpcXdsBootstrap&>(xds_client->bootstrap())
-            .cluster_specifier_plugin_registry();
-    cluster_specifier_plugin_registry.PopulateSymtab(symtab);
-  }
 };
 
 }  // namespace grpc_core

@@ -17,6 +17,8 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_TEST_LB_POLICIES_H
 #define GRPC_TEST_CORE_TEST_UTIL_TEST_LB_POLICIES_H
 
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 #include <functional>
 #include <string>
@@ -25,9 +27,6 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/resolver/endpoint_addresses.h"
@@ -94,6 +93,13 @@ void RegisterFailLoadBalancingPolicy(CoreConfiguration::Builder* builder,
 // Registers an LB policy called "queue_once" that queues at least one pick, and
 // then delegates to PickFirst.
 void RegisterQueueOnceLoadBalancingPolicy(CoreConfiguration::Builder* builder);
+
+// Registers an LB policy called "authority_override_lb" that, if the following
+// channel arg is set, adds an authority override to complete picks.
+#define GRPC_ARG_TEST_LB_AUTHORITY_OVERRIDE "grpc.test.lb_authority_override"
+void RegisterAuthorityOverrideLoadBalancingPolicy(
+    CoreConfiguration::Builder* builder);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_TEST_CORE_TEST_UTIL_TEST_LB_POLICIES_H

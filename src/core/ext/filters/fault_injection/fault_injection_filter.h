@@ -18,7 +18,6 @@
 #define GRPC_SRC_CORE_EXT_FILTERS_FAULT_INJECTION_FAULT_INJECTION_FILTER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <memory>
@@ -26,13 +25,12 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/random/random.h"
 #include "absl/status/statusor.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
@@ -44,6 +42,8 @@ class FaultInjectionFilter
     : public ImplementChannelFilter<FaultInjectionFilter> {
  public:
   static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() { return "fault_injection_filter"; }
 
   static absl::StatusOr<std::unique_ptr<FaultInjectionFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);

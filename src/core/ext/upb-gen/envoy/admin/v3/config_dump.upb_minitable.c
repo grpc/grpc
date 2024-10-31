@@ -3,7 +3,8 @@
  *     envoy/admin/v3/config_dump.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -18,8 +19,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_admin_v3_ConfigDump_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_admin_v3_ConfigDump_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_admin_v3_ConfigDump__fields[1] = {
@@ -30,15 +32,19 @@ const upb_MiniTable envoy__admin__v3__ConfigDump_msg_init = {
   &envoy_admin_v3_ConfigDump_submsgs[0],
   &envoy_admin_v3_ConfigDump__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.ConfigDump",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_maxmaxb},
   })
 };
 
-static const upb_MiniTableSub envoy_admin_v3_BootstrapConfigDump_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init},
+const upb_MiniTable* envoy__admin__v3__ConfigDump_msg_init_ptr = &envoy__admin__v3__ConfigDump_msg_init;
+static const upb_MiniTableSubInternal envoy_admin_v3_BootstrapConfigDump_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_admin_v3_BootstrapConfigDump__fields[2] = {
@@ -50,12 +56,16 @@ const upb_MiniTable envoy__admin__v3__BootstrapConfigDump_msg_init = {
   &envoy_admin_v3_BootstrapConfigDump_submsgs[0],
   &envoy_admin_v3_BootstrapConfigDump__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.BootstrapConfigDump",
+#endif
 };
 
-static const upb_MiniTableSub envoy_admin_v3_SecretsConfigDump_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__SecretsConfigDump__StaticSecret_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__SecretsConfigDump__DynamicSecret_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__SecretsConfigDump__DynamicSecret_msg_init},
+const upb_MiniTable* envoy__admin__v3__BootstrapConfigDump_msg_init_ptr = &envoy__admin__v3__BootstrapConfigDump_msg_init;
+static const upb_MiniTableSubInternal envoy_admin_v3_SecretsConfigDump_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__SecretsConfigDump__StaticSecret_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__SecretsConfigDump__DynamicSecret_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__SecretsConfigDump__DynamicSecret_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_admin_v3_SecretsConfigDump__fields[3] = {
@@ -68,6 +78,9 @@ const upb_MiniTable envoy__admin__v3__SecretsConfigDump_msg_init = {
   &envoy_admin_v3_SecretsConfigDump_submsgs[0],
   &envoy_admin_v3_SecretsConfigDump__fields[0],
   UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.SecretsConfigDump",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max64b},
@@ -76,10 +89,11 @@ const upb_MiniTable envoy__admin__v3__SecretsConfigDump_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_admin_v3_SecretsConfigDump_DynamicSecret_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__UpdateFailureState_msg_init},
+const upb_MiniTable* envoy__admin__v3__SecretsConfigDump_msg_init_ptr = &envoy__admin__v3__SecretsConfigDump_msg_init;
+static const upb_MiniTableSubInternal envoy_admin_v3_SecretsConfigDump_DynamicSecret_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__UpdateFailureState_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_admin_v3_SecretsConfigDump_DynamicSecret__fields[6] = {
@@ -95,6 +109,9 @@ const upb_MiniTable envoy__admin__v3__SecretsConfigDump__DynamicSecret_msg_init 
   &envoy_admin_v3_SecretsConfigDump_DynamicSecret_submsgs[0],
   &envoy_admin_v3_SecretsConfigDump_DynamicSecret__fields[0],
   UPB_SIZE(48, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.SecretsConfigDump.DynamicSecret",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -107,9 +124,10 @@ const upb_MiniTable envoy__admin__v3__SecretsConfigDump__DynamicSecret_msg_init 
   })
 };
 
-static const upb_MiniTableSub envoy_admin_v3_SecretsConfigDump_StaticSecret_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
+const upb_MiniTable* envoy__admin__v3__SecretsConfigDump__DynamicSecret_msg_init_ptr = &envoy__admin__v3__SecretsConfigDump__DynamicSecret_msg_init;
+static const upb_MiniTableSubInternal envoy_admin_v3_SecretsConfigDump_StaticSecret_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_admin_v3_SecretsConfigDump_StaticSecret__fields[3] = {
@@ -122,12 +140,16 @@ const upb_MiniTable envoy__admin__v3__SecretsConfigDump__StaticSecret_msg_init =
   &envoy_admin_v3_SecretsConfigDump_StaticSecret_submsgs[0],
   &envoy_admin_v3_SecretsConfigDump_StaticSecret__fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.SecretsConfigDump.StaticSecret",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
   })
 };
 
+const upb_MiniTable* envoy__admin__v3__SecretsConfigDump__StaticSecret_msg_init_ptr = &envoy__admin__v3__SecretsConfigDump__StaticSecret_msg_init;
 static const upb_MiniTable *messages_layout[5] = {
   &envoy__admin__v3__ConfigDump_msg_init,
   &envoy__admin__v3__BootstrapConfigDump_msg_init,

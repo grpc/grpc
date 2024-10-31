@@ -347,16 +347,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "max_concurrent_streams_policy_test",
-    srcs = ["max_concurrent_streams_policy_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    deps = [
-        "//src/core:max_concurrent_streams_policy",
-    ],
-)
-
-grpc_cc_test(
     name = "streams_not_seen_test",
     srcs = ["streams_not_seen_test.cc"],
     external_deps = [

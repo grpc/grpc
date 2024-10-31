@@ -14,6 +14,8 @@
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <cstdint>
@@ -23,19 +25,14 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/bitset.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/status_helper.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -154,7 +151,7 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
   CHECK_NE(arena, nullptr);
-  Arena::PoolPtr<Metadata> metadata = Arena::MakePooled<Metadata>();
+  Arena::PoolPtr<Metadata> metadata = Arena::MakePooledForOverwrite<Metadata>();
   parser->BeginFrame(
       metadata.get(), std::numeric_limits<uint32_t>::max(),
       std::numeric_limits<uint32_t>::max(),
@@ -218,10 +215,12 @@ absl::Status SettingsFrame::Deserialize(HPackParser* parser,
   return deserializer.Finish();
 }
 
-BufferPair SettingsFrame::Serialize(HPackCompressor* encoder) const {
+BufferPair SettingsFrame::Serialize(HPackCompressor* encoder,
+                                    bool& saw_encoding_errors) const {
   FrameSerializer serializer(FrameType::kSettings, 0);
   if (headers.get() != nullptr) {
-    encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
+    saw_encoding_errors |=
+        !encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
   }
   return serializer.Finish();
 }
@@ -275,11 +274,13 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
   return deserializer.Finish();
 }
 
-BufferPair ClientFragmentFrame::Serialize(HPackCompressor* encoder) const {
+BufferPair ClientFragmentFrame::Serialize(HPackCompressor* encoder,
+                                          bool& saw_encoding_errors) const {
   CHECK_NE(stream_id, 0u);
   FrameSerializer serializer(FrameType::kFragment, stream_id);
   if (headers.get() != nullptr) {
-    encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
+    saw_encoding_errors |=
+        !encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
   }
   if (message.has_value()) {
     serializer.AddMessage(message.value());
@@ -354,17 +355,20 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
   return deserializer.Finish();
 }
 
-BufferPair ServerFragmentFrame::Serialize(HPackCompressor* encoder) const {
+BufferPair ServerFragmentFrame::Serialize(HPackCompressor* encoder,
+                                          bool& saw_encoding_errors) const {
   CHECK_NE(stream_id, 0u);
   FrameSerializer serializer(FrameType::kFragment, stream_id);
   if (headers.get() != nullptr) {
-    encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
+    saw_encoding_errors |=
+        !encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
   }
   if (message.has_value()) {
     serializer.AddMessage(message.value());
   }
   if (trailers.get() != nullptr) {
-    encoder->EncodeRawHeaders(*trailers.get(), serializer.AddTrailers());
+    saw_encoding_errors |=
+        !encoder->EncodeRawHeaders(*trailers.get(), serializer.AddTrailers());
   }
   return serializer.Finish();
 }
@@ -399,7 +403,7 @@ absl::Status CancelFrame::Deserialize(HPackParser*, const FrameHeader& header,
   return deserializer.Finish();
 }
 
-BufferPair CancelFrame::Serialize(HPackCompressor*) const {
+BufferPair CancelFrame::Serialize(HPackCompressor*, bool&) const {
   CHECK_NE(stream_id, 0u);
   FrameSerializer serializer(FrameType::kCancel, stream_id);
   return serializer.Finish();

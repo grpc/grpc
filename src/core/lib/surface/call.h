@@ -19,6 +19,10 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CALL_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CALL_H
 
+#include <grpc/grpc.h>
+#include <grpc/impl/compression_types.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -27,18 +31,9 @@
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/compression_types.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -46,10 +41,11 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_interface.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
@@ -86,7 +82,7 @@ class Call : public CppImplOf<Call, grpc_call>,
              public grpc_event_engine::experimental::EventEngine::
                  Closure /* for deadlines */ {
  public:
-  Arena* arena() { return arena_.get(); }
+  Arena* arena() const { return arena_.get(); }
   bool is_client() const { return is_client_; }
 
   virtual bool Completed() = 0;
@@ -120,11 +116,6 @@ class Call : public CppImplOf<Call, grpc_call>,
   // This should return nullptr for the promise stack (and alternative means
   // for that functionality be invented)
   virtual grpc_call_stack* call_stack() = 0;
-
-  // Return the EventEngine used for this call's async execution.
-  grpc_event_engine::experimental::EventEngine* event_engine() const {
-    return event_engine_;
-  }
 
   // Implementation of EventEngine::Closure, called when deadline expires
   void Run() final;
@@ -163,8 +154,7 @@ class Call : public CppImplOf<Call, grpc_call>,
     Call* sibling_prev = nullptr;
   };
 
-  Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena,
-       grpc_event_engine::experimental::EventEngine* event_engine);
+  Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena);
   ~Call() override = default;
 
   ParentCall* GetOrCreateParentCall();
@@ -234,7 +224,6 @@ class Call : public CppImplOf<Call, grpc_call>,
   Timestamp deadline_ ABSL_GUARDED_BY(deadline_mu_) = Timestamp::InfFuture();
   grpc_event_engine::experimental::EventEngine::TaskHandle ABSL_GUARDED_BY(
       deadline_mu_) deadline_task_;
-  grpc_event_engine::experimental::EventEngine* const event_engine_;
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 };
 
@@ -269,21 +258,40 @@ void grpc_call_cancel_internal(grpc_call* call);
 // Given the top call_element, get the call object.
 grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element);
 
-void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity,
-                         const grpc_op* ops, size_t nops);
+void grpc_call_log_batch(const char* file, int line, const grpc_op* ops,
+                         size_t nops);
 
 void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer);
 
+// Sets call tracer on the call and manages its life by using the call's arena.
+// When using this API, the tracer will be destroyed by grpc_call arena when
+// grpc_call is about to be destroyed. The caller of this API SHOULD NOT
+// manually destroy the tracer. This API is used by Python as a way of using
+// Arena to manage the lifetime of the call tracer. Python needs this API
+// because the tracer was created within a separate shared object library which
+// doesn't have access to core functions like arena->ManagedNew<>.
+void grpc_call_tracer_set_and_manage(grpc_call* call,
+                                     grpc_core::ClientCallTracer* tracer);
+
 void* grpc_call_tracer_get(grpc_call* call);
 
-#define GRPC_CALL_LOG_BATCH(sev, ops, nops) \
-  do {                                      \
-    if (GRPC_TRACE_FLAG_ENABLED(api)) {     \
-      grpc_call_log_batch(sev, ops, nops);  \
-    }                                       \
+#define GRPC_CALL_LOG_BATCH(ops, nops)                    \
+  do {                                                    \
+    if (GRPC_TRACE_FLAG_ENABLED(api)) {                   \
+      grpc_call_log_batch(__FILE__, __LINE__, ops, nops); \
+    }                                                     \
   } while (0)
 
 uint8_t grpc_call_is_client(grpc_call* call);
+
+class ClientCallTracerWrapper {
+ public:
+  explicit ClientCallTracerWrapper(grpc_core::ClientCallTracer* tracer)
+      : tracer_(tracer) {}
+
+ private:
+  std::unique_ptr<grpc_core::ClientCallTracer> tracer_;
+};
 
 // Return an appropriate compression algorithm for the requested compression \a
 // level in the context of \a call.

@@ -45,11 +45,20 @@ message CertificateProviderPluginInstance {
 }
 
 message CertificateValidationContext {
+  message SystemRootCerts {
+  }
+
   // Certificate provider instance for fetching TLS certificates.
   //
   // Only one of *trusted_ca* and *ca_certificate_provider_instance* may be specified.
   // [#not-implemented-hide:]
   CertificateProviderPluginInstance ca_certificate_provider_instance = 13;
+
+  // Use system root certs for validation.
+  // If present, system root certs are used only if neither of the ``trusted_ca``
+  // or ``ca_certificate_provider_instance`` fields are set.
+  // [#not-implemented-hide:]
+  SystemRootCerts system_root_certs = 17;
 
   // An optional list of base64-encoded SHA-256 hashes. If specified, Envoy will verify that the
   // SHA-256 of the DER-encoded Subject Public Key Information (SPKI) of the presented certificate

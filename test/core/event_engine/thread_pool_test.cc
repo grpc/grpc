@@ -13,6 +13,9 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/thd_id.h>
+
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -26,15 +29,11 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/thd_id.h>
-
 #include "src/core/lib/event_engine/thread_pool/thread_count.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/thd.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_event_engine {

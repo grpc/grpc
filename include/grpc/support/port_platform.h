@@ -172,7 +172,6 @@
 #if __ANDROID_API__ < 21
 #error "Requires Android API v21 and above"
 #endif
-#define GPR_SUPPORT_BINDER_TRANSPORT 1
 // TODO(apolcyn): re-evaluate support for c-ares
 // on android after upgrading our c-ares dependency.
 // See https://github.com/grpc/grpc/issues/18038.
@@ -195,6 +194,12 @@
 #define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
+#if defined(__has_include)
+#if __has_include(<android/ndk-version.h>)
+#include <android/ndk-version.h>
+#endif /* __has_include(<android/ndk-version.h>) */
+#endif /* defined(__has_include) */
+#include <linux/version.h>
 #elif defined(__linux__)
 #define GPR_PLATFORM_STRING "linux"
 #ifndef _BSD_SOURCE
@@ -746,6 +751,22 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 #endif
 #endif /* GPR_ATTRIBUTE_NOINLINE */
 
+#ifndef GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+#ifdef __cplusplus
+#if GPR_HAS_CPP_ATTRIBUTE(clang::always_inline)
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION [[clang::always_inline]]
+#elif GPR_HAS_ATTRIBUTE(always_inline)
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION __attribute__((always_inline))
+#else
+// TODO(ctiller): add __forceinline for MSVC
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+#endif
+#else
+// Disable for C code
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+#endif
+#endif /* GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION */
+
 #ifndef GPR_NO_UNIQUE_ADDRESS
 #if GPR_HAS_CPP_ATTRIBUTE(no_unique_address)
 #define GPR_NO_UNIQUE_ADDRESS [[no_unique_address]]
@@ -819,6 +840,12 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 #endif /* __EXCEPTIONS */
 #endif /* __GPR_WINDOWS */
 #endif /* GRPC_ALLOW_EXCEPTIONS */
+
+#ifdef __has_builtin
+#define GRPC_HAS_BUILTIN(a) __has_builtin(a)
+#else
+#define GRPC_HAS_BUILTIN(a) 0
+#endif
 
 /* Use GPR_LIKELY only in cases where you are sure that a certain outcome is the
  * most likely. Ideally, also collect performance numbers to justify the claim.

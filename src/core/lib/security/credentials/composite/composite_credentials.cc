@@ -18,6 +18,8 @@
 
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <cstring>
 #include <memory>
 #include <vector>
@@ -25,15 +27,10 @@
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 //
 // grpc_composite_channel_credentials
@@ -127,10 +124,9 @@ composite_call_credentials_create(
 grpc_call_credentials* grpc_composite_call_credentials_create(
     grpc_call_credentials* creds1, grpc_call_credentials* creds2,
     void* reserved) {
-  GRPC_API_TRACE(
-      "grpc_composite_call_credentials_create(creds1=%p, creds2=%p, "
-      "reserved=%p)",
-      3, (creds1, creds2, reserved));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_composite_call_credentials_create(creds1=" << creds1
+      << ", creds2=" << creds2 << ", reserved=" << reserved << ")";
   CHECK_EQ(reserved, nullptr);
   CHECK_NE(creds1, nullptr);
   CHECK_NE(creds2, nullptr);
@@ -163,10 +159,10 @@ grpc_channel_credentials* grpc_composite_channel_credentials_create(
     void* reserved) {
   CHECK(channel_creds != nullptr && call_creds != nullptr &&
         reserved == nullptr);
-  GRPC_API_TRACE(
-      "grpc_composite_channel_credentials_create(channel_creds=%p, "
-      "call_creds=%p, reserved=%p)",
-      3, (channel_creds, call_creds, reserved));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_composite_channel_credentials_create(channel_creds="
+      << channel_creds << ", call_creds=" << call_creds
+      << ", reserved=" << reserved << ")";
   return new grpc_composite_channel_credentials(channel_creds->Ref(),
                                                 call_creds->Ref());
 }

@@ -16,15 +16,16 @@
 //
 //
 
+#include <grpc/support/alloc.h>
 #include <inttypes.h>
 #include <net/if.h>
 #include <netdb.h>
 #include <string.h>
-
-#include <grpc/support/alloc.h>
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
+
+#include <grpc/grpc.h>
 
 #include <string>
 
@@ -33,16 +34,13 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/uri.h"
 #include "test/core/test_util/test_config.h"
 
 static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
@@ -51,7 +49,7 @@ static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(target);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
+    LOG(ERROR) << uri.status();
     ASSERT_TRUE(uri.ok());
   }
   grpc_resolved_address addr;
@@ -75,7 +73,7 @@ static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
 struct sockaddr_in6 resolve_with_gettaddrinfo(const char* uri_text) {
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
+    LOG(ERROR) << uri.status();
     EXPECT_TRUE(uri.ok());
   }
   std::string host;

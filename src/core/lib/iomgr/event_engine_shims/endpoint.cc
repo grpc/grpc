@@ -13,6 +13,13 @@
 // limitations under the License.
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/codegen/slice.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
+
 #include <atomic>
 #include <memory>
 #include <utility>
@@ -23,24 +30,11 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/slice.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/extensions/can_track_errors.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/query_extensions.h"
-#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/event_engine/trace.h"
-#include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -49,7 +43,10 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/construct_destruct.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/string.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -121,9 +118,8 @@ class EventEngineEndpointWrapper {
     read_buffer->~SliceBuffer();
     if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       size_t i;
-      gpr_log(GPR_INFO, "TCP: %p READ error=%s", eeep_->wrapper,
-              status.ToString().c_str());
-      if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+      LOG(INFO) << "TCP: " << eeep_->wrapper << " READ error=" << status;
+      if (ABSL_VLOG_IS_ON(2)) {
         for (i = 0; i < pending_read_buffer_->count; i++) {
           char* dump = grpc_dump_slice(pending_read_buffer_->slices[i],
                                        GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -152,9 +148,8 @@ class EventEngineEndpointWrapper {
     Ref();
     if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       size_t i;
-      gpr_log(GPR_INFO, "TCP: %p WRITE (peer=%s)", this,
-              std::string(PeerAddress()).c_str());
-      if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+      LOG(INFO) << "TCP: " << this << " WRITE (peer=" << PeerAddress() << ")";
+      if (ABSL_VLOG_IS_ON(2)) {
         for (i = 0; i < slices->count; i++) {
           char* dump =
               grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -177,10 +172,9 @@ class EventEngineEndpointWrapper {
   void FinishPendingWrite(absl::Status status) {
     auto* write_buffer = reinterpret_cast<SliceBuffer*>(&eeep_->write_buffer);
     write_buffer->~SliceBuffer();
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      gpr_log(GPR_INFO, "TCP: %p WRITE (peer=%s) error=%s", this,
-              std::string(PeerAddress()).c_str(), status.ToString().c_str());
-    }
+    GRPC_TRACE_LOG(tcp, INFO)
+        << "TCP: " << this << " WRITE (peer=" << PeerAddress()
+        << ") error=" << status;
     grpc_closure* cb = pending_write_cb_;
     pending_write_cb_ = nullptr;
     if (grpc_core::ExecCtx::Get() == nullptr) {
@@ -353,7 +347,8 @@ void EndpointDestroy(grpc_endpoint* ep) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Destroy", eeep->wrapper);
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "EventEngine::Endpoint::" << eeep->wrapper << " EndpointDestroy";
   eeep->wrapper->TriggerShutdown(nullptr);
   eeep->wrapper->Unref();
 }
@@ -411,7 +406,8 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
   } else {
     fd_ = -1;
   }
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Create", eeep_->wrapper);
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "EventEngine::Endpoint " << eeep_->wrapper << " Create";
 }
 
 }  // namespace

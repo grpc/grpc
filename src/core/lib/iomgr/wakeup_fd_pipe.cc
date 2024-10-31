@@ -27,12 +27,11 @@
 #include <unistd.h>
 
 #include "absl/log/log.h"
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/wakeup_fd_pipe.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/strerror.h"
 
 static grpc_error_handle pipe_init(grpc_wakeup_fd* fd_info) {
   int pipefd[2];

@@ -15,6 +15,10 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_SOCKPAIR_FIXTURE_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_SOCKPAIR_FIXTURE_H
 
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
@@ -22,18 +26,11 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/error.h"
@@ -44,6 +41,7 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -79,11 +77,12 @@ class SockpairFixture : public CoreTestFixture {
     auto server_channel_args = CoreConfiguration::Get()
                                    .channel_args_preconditioning()
                                    .PreconditionChannelArgs(args.ToC().get());
-    auto* server_endpoint = std::exchange(ep_.server, nullptr);
+    OrphanablePtr<grpc_endpoint> server_endpoint(
+        std::exchange(ep_.server, nullptr));
     EXPECT_NE(server_endpoint, nullptr);
+    grpc_endpoint_add_to_pollset(server_endpoint.get(), grpc_cq_pollset(cq));
     transport = grpc_create_chttp2_transport(server_channel_args,
-                                             server_endpoint, false);
-    grpc_endpoint_add_to_pollset(server_endpoint, grpc_cq_pollset(cq));
+                                             std::move(server_endpoint), false);
     Server* core_server = Server::FromC(server);
     grpc_error_handle error = core_server->SetupTransport(
         transport, nullptr, core_server->channel_args(), nullptr);
@@ -106,9 +105,11 @@ class SockpairFixture : public CoreTestFixture {
                             .ToC()
                             .get());
     Transport* transport;
-    auto* client_endpoint = std::exchange(ep_.client, nullptr);
+    OrphanablePtr<grpc_endpoint> client_endpoint(
+        std::exchange(ep_.client, nullptr));
     EXPECT_NE(client_endpoint, nullptr);
-    transport = grpc_create_chttp2_transport(args, client_endpoint, true);
+    transport =
+        grpc_create_chttp2_transport(args, std::move(client_endpoint), true);
     auto channel = ChannelCreate("socketpair-target", args,
                                  GRPC_CLIENT_DIRECT_CHANNEL, transport);
     grpc_channel* client;

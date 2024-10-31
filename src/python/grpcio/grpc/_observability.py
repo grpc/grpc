@@ -101,23 +101,6 @@ class ObservabilityPlugin(
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def delete_client_call_tracer(
-        self, client_call_tracer: ClientCallTracerCapsule
-    ) -> None:
-        """Deletes the ClientCallTracer stored in ClientCallTracerCapsule.
-
-        After register the plugin, if tracing or stats is enabled, this method
-        will be called at the end of the call to destroy the ClientCallTracer.
-
-        The ClientCallTracer is an object which implements `grpc_core::ClientCallTracer`
-        interface and wrapped in a PyCapsule using `client_call_tracer` as name.
-
-        Args:
-          client_call_tracer: A PyCapsule which stores a ClientCallTracer object.
-        """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
     def save_trace_context(
         self, trace_id: str, span_id: str, is_sampled: bool
     ) -> None:
@@ -274,22 +257,6 @@ def observability_deinit() -> None:
     """
     set_plugin(None)
     _cygrpc.clear_server_call_tracer_factory()
-
-
-def delete_call_tracer(client_call_tracer_capsule: Any) -> None:
-    """Deletes the ClientCallTracer stored in ClientCallTracerCapsule.
-
-    This method will be called at the end of the call to destroy the ClientCallTracer.
-
-    The ClientCallTracer is an object which implements `grpc_core::ClientCallTracer`
-    interface and wrapped in a PyCapsule using `client_call_tracer` as the name.
-
-    Args:
-      client_call_tracer_capsule: A PyCapsule which stores a ClientCallTracer object.
-    """
-    with get_plugin() as plugin:
-        if plugin and plugin.observability_enabled:
-            plugin.delete_client_call_tracer(client_call_tracer_capsule)
 
 
 def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:

@@ -18,43 +18,56 @@
 
 #include "src/core/handshaker/handshaker.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <string>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-
-namespace grpc_core {
-
-namespace {
+#include "src/core/util/debug_location.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
 
 using ::grpc_event_engine::experimental::EventEngine;
 
+namespace grpc_core {
+
+void Handshaker::InvokeOnHandshakeDone(
+    HandshakerArgs* args,
+    absl::AnyInvocable<void(absl::Status)> on_handshake_done,
+    absl::Status status) {
+  args->event_engine->Run([on_handshake_done = std::move(on_handshake_done),
+                           status = std::move(status)]() mutable {
+    ApplicationCallbackExecCtx callback_exec_ctx;
+    ExecCtx exec_ctx;
+    on_handshake_done(std::move(status));
+    // Destroy callback while ExecCtx is still in scope.
+    on_handshake_done = nullptr;
+  });
+}
+
+namespace {
+
 std::string HandshakerArgsString(HandshakerArgs* args) {
-  size_t read_buffer_length =
-      args->read_buffer != nullptr ? args->read_buffer->length : 0;
-  return absl::StrFormat(
-      "{endpoint=%p, args=%s, read_buffer=%p (length=%" PRIuPTR
-      "), exit_early=%d}",
-      args->endpoint, args->args.ToString(), args->read_buffer,
-      read_buffer_length, args->exit_early);
+  return absl::StrFormat("{endpoint=%p, args=%s, read_buffer.Length()=%" PRIuPTR
+                         ", exit_early=%d}",
+                         args->endpoint.get(), args->args.ToString(),
+                         args->read_buffer.Length(), args->exit_early);
 }
 
 }  // namespace
@@ -65,159 +78,122 @@ HandshakeManager::HandshakeManager()
 
 void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
   MutexLock lock(&mu_);
-  if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-    gpr_log(
-        GPR_INFO,
-        "handshake_manager %p: adding handshaker %s [%p] at index %" PRIuPTR,
-        this, handshaker->name(), handshaker.get(), handshakers_.size());
-  }
+  GRPC_TRACE_LOG(handshaker, INFO)
+      << "handshake_manager " << this << ": adding handshaker "
+      << std::string(handshaker->name()) << " [" << handshaker.get()
+      << "] at index " << handshakers_.size();
   handshakers_.push_back(std::move(handshaker));
 }
 
-HandshakeManager::~HandshakeManager() { handshakers_.clear(); }
+void HandshakeManager::DoHandshake(
+    OrphanablePtr<grpc_endpoint> endpoint, const ChannelArgs& channel_args,
+    Timestamp deadline, grpc_tcp_server_acceptor* acceptor,
+    absl::AnyInvocable<void(absl::StatusOr<HandshakerArgs*>)>
+        on_handshake_done) {
+  // We hold a ref until after the mutex is released, because we might
+  // wind up invoking on_handshake_done in another thread before we
+  // return from this function, and on_handshake_done might release the
+  // last ref to this object.
+  auto self = Ref();
+  MutexLock lock(&mu_);
+  CHECK_EQ(index_, 0u);
+  on_handshake_done_ = std::move(on_handshake_done);
+  // Construct handshaker args.  These will be passed through all
+  // handshakers and eventually be freed by the on_handshake_done callback.
+  args_.endpoint = std::move(endpoint);
+  args_.deadline = deadline;
+  args_.args = channel_args;
+  args_.event_engine = args_.args.GetObject<EventEngine>();
+  args_.acceptor = acceptor;
+  if (acceptor != nullptr && acceptor->external_connection &&
+      acceptor->pending_data != nullptr) {
+    grpc_slice_buffer_swap(args_.read_buffer.c_slice_buffer(),
+                           &(acceptor->pending_data->data.raw.slice_buffer));
+    // TODO(vigneshbabu): For connections accepted through event engine
+    // listeners, the ownership of the byte buffer received is transferred to
+    // this callback and it is thus this callback's duty to delete it.
+    // Make this hack default once event engine is rolled out.
+    if (grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
+            args_.endpoint.get())) {
+      grpc_byte_buffer_destroy(acceptor->pending_data);
+    }
+  }
+  // Start deadline timer, which owns a ref.
+  const Duration time_to_deadline = deadline - Timestamp::Now();
+  deadline_timer_handle_ =
+      args_.event_engine->RunAfter(time_to_deadline, [self = Ref()]() mutable {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        self->Shutdown(GRPC_ERROR_CREATE("Handshake timed out"));
+        // HandshakeManager deletion might require an active ExecCtx.
+        self.reset();
+      });
+  // Start first handshaker.
+  CallNextHandshakerLocked(absl::OkStatus());
+}
 
-void HandshakeManager::Shutdown(grpc_error_handle why) {
-  {
-    MutexLock lock(&mu_);
+void HandshakeManager::Shutdown(absl::Status error) {
+  MutexLock lock(&mu_);
+  if (!is_shutdown_) {
+    GRPC_TRACE_LOG(handshaker, INFO)
+        << "handshake_manager " << this << ": Shutdown() called: " << error;
+    is_shutdown_ = true;
     // Shutdown the handshaker that's currently in progress, if any.
-    if (!is_shutdown_ && index_ > 0) {
-      is_shutdown_ = true;
-      handshakers_[index_ - 1]->Shutdown(why);
+    if (index_ > 0) {
+      GRPC_TRACE_LOG(handshaker, INFO)
+          << "handshake_manager " << this
+          << ": shutting down handshaker at index " << index_ - 1;
+      handshakers_[index_ - 1]->Shutdown(std::move(error));
     }
   }
 }
 
-// Helper function to call either the next handshaker or the
-// on_handshake_done callback.
-// Returns true if we've scheduled the on_handshake_done callback.
-bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-    gpr_log(GPR_INFO,
-            "handshake_manager %p: error=%s shutdown=%d index=%" PRIuPTR
-            ", args=%s",
-            this, StatusToString(error).c_str(), is_shutdown_, index_,
-            HandshakerArgsString(&args_).c_str());
-  }
+void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
+  GRPC_TRACE_LOG(handshaker, INFO)
+      << "handshake_manager " << this << ": error=" << error
+      << " shutdown=" << is_shutdown_ << " index=" << index_
+      << ", args=" << HandshakerArgsString(&args_);
   CHECK(index_ <= handshakers_.size());
   // If we got an error or we've been shut down or we're exiting early or
   // we've finished the last handshaker, invoke the on_handshake_done
-  // callback.  Otherwise, call the next handshaker.
+  // callback.
   if (!error.ok() || is_shutdown_ || args_.exit_early ||
       index_ == handshakers_.size()) {
     if (error.ok() && is_shutdown_) {
       error = GRPC_ERROR_CREATE("handshaker shutdown");
-      // It is possible that the endpoint has already been destroyed by
-      // a shutdown call while this callback was sitting on the ExecCtx
-      // with no error.
-      if (args_.endpoint != nullptr) {
-        grpc_endpoint_destroy(args_.endpoint);
-        args_.endpoint = nullptr;
-      }
-      if (args_.read_buffer != nullptr) {
-        grpc_slice_buffer_destroy(args_.read_buffer);
-        gpr_free(args_.read_buffer);
-        args_.read_buffer = nullptr;
-      }
-      args_.args = ChannelArgs();
+      args_.endpoint.reset();
     }
-    if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-      gpr_log(GPR_INFO,
-              "handshake_manager %p: handshaking complete -- scheduling "
-              "on_handshake_done with error=%s",
-              this, StatusToString(error).c_str());
-    }
+    GRPC_TRACE_LOG(handshaker, INFO) << "handshake_manager " << this
+                                     << ": handshaking complete -- scheduling "
+                                        "on_handshake_done with error="
+                                     << error;
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
-    event_engine_->Cancel(deadline_timer_handle_);
-    ExecCtx::Run(DEBUG_LOCATION, &on_handshake_done_, error);
+    args_.event_engine->Cancel(deadline_timer_handle_);
     is_shutdown_ = true;
-  } else {
-    auto handshaker = handshakers_[index_];
-    if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-      gpr_log(
-          GPR_INFO,
-          "handshake_manager %p: calling handshaker %s [%p] at index %" PRIuPTR,
-          this, handshaker->name(), handshaker.get(), index_);
-    }
-    handshaker->DoHandshake(acceptor_, &call_next_handshaker_, &args_);
+    absl::StatusOr<HandshakerArgs*> result(&args_);
+    if (!error.ok()) result = std::move(error);
+    args_.event_engine->Run([on_handshake_done = std::move(on_handshake_done_),
+                             result = std::move(result)]() mutable {
+      ApplicationCallbackExecCtx callback_exec_ctx;
+      ExecCtx exec_ctx;
+      on_handshake_done(std::move(result));
+      // Destroy callback while ExecCtx is still in scope.
+      on_handshake_done = nullptr;
+    });
+    return;
   }
+  // Call the next handshaker.
+  auto handshaker = handshakers_[index_];
+  GRPC_TRACE_LOG(handshaker, INFO)
+      << "handshake_manager " << this << ": calling handshaker "
+      << handshaker->name() << " [" << handshaker.get() << "] at index "
+      << index_;
   ++index_;
-  return is_shutdown_;
-}
-
-void HandshakeManager::CallNextHandshakerFn(void* arg,
-                                            grpc_error_handle error) {
-  auto* mgr = static_cast<HandshakeManager*>(arg);
-  bool done;
-  {
-    MutexLock lock(&mgr->mu_);
-    done = mgr->CallNextHandshakerLocked(error);
-  }
-  // If we're invoked the final callback, we won't be coming back
-  // to this function, so we can release our reference to the
-  // handshake manager.
-  if (done) {
-    mgr->Unref();
-  }
-}
-
-void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
-                                   const ChannelArgs& channel_args,
-                                   Timestamp deadline,
-                                   grpc_tcp_server_acceptor* acceptor,
-                                   grpc_iomgr_cb_func on_handshake_done,
-                                   void* user_data) {
-  bool done;
-  {
-    MutexLock lock(&mu_);
-    CHECK_EQ(index_, 0u);
-    // Construct handshaker args.  These will be passed through all
-    // handshakers and eventually be freed by the on_handshake_done callback.
-    args_.endpoint = endpoint;
-    args_.deadline = deadline;
-    args_.args = channel_args;
-    args_.user_data = user_data;
-    args_.read_buffer =
-        static_cast<grpc_slice_buffer*>(gpr_malloc(sizeof(*args_.read_buffer)));
-    grpc_slice_buffer_init(args_.read_buffer);
-    if (acceptor != nullptr && acceptor->external_connection &&
-        acceptor->pending_data != nullptr) {
-      grpc_slice_buffer_swap(args_.read_buffer,
-                             &(acceptor->pending_data->data.raw.slice_buffer));
-      // TODO(vigneshbabu): For connections accepted through event engine
-      // listeners, the ownership of the byte buffer received is transferred to
-      // this callback and it is thus this callback's duty to delete it.
-      // Make this hack default once event engine is rolled out.
-      if (grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
-              endpoint)) {
-        grpc_byte_buffer_destroy(acceptor->pending_data);
-      }
-    }
-    // Initialize state needed for calling handshakers.
-    acceptor_ = acceptor;
-    GRPC_CLOSURE_INIT(&call_next_handshaker_,
-                      &HandshakeManager::CallNextHandshakerFn, this,
-                      grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_INIT(&on_handshake_done_, on_handshake_done, &args_,
-                      grpc_schedule_on_exec_ctx);
-    // Start deadline timer, which owns a ref.
-    const Duration time_to_deadline = deadline - Timestamp::Now();
-    event_engine_ = args_.args.GetObjectRef<EventEngine>();
-    deadline_timer_handle_ =
-        event_engine_->RunAfter(time_to_deadline, [self = Ref()]() mutable {
-          ApplicationCallbackExecCtx callback_exec_ctx;
-          ExecCtx exec_ctx;
-          self->Shutdown(GRPC_ERROR_CREATE("Handshake timed out"));
-          // HandshakeManager deletion might require an active ExecCtx.
-          self.reset();
-        });
-    // Start first handshaker, which also owns a ref.
-    Ref().release();
-    done = CallNextHandshakerLocked(absl::OkStatus());
-  }
-  if (done) {
-    Unref();
-  }
+  handshaker->DoHandshake(&args_, [self = Ref()](absl::Status error) mutable {
+    MutexLock lock(&self->mu_);
+    self->CallNextHandshakerLocked(std::move(error));
+  });
 }
 
 }  // namespace grpc_core

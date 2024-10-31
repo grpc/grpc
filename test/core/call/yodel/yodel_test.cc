@@ -17,7 +17,6 @@
 #include <memory>
 
 #include "absl/random/random.h"
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -130,8 +129,11 @@ class YodelTest::WatchDog {
  private:
   YodelTest* const test_;
   grpc_event_engine::experimental::EventEngine::TaskHandle const timer_{
+      // For fuzzing, we'll wait for a year since the fuzzing EE allows delays
+      // capped to one year for each RunAfter() call. This will prevent
+      // pre-mature timeouts of some legitimate fuzzed inputs.
       test_->state_->event_engine->RunAfter(
-          g_yodel_fuzzing ? Duration::Hours(24) : Duration::Minutes(5),
+          g_yodel_fuzzing ? Duration::Hours(24 * 365) : Duration::Minutes(5),
           [this]() { test_->Timeout(); })};
 };
 

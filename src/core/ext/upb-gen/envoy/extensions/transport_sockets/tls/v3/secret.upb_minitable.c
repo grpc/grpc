@@ -3,7 +3,8 @@
  *     envoy/extensions/transport_sockets/tls/v3/secret.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -19,8 +20,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_extensions_transport_sockets_tls_v3_GenericSecret_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_tls_v3_GenericSecret_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_GenericSecret__fields[1] = {
@@ -31,10 +33,14 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__GenericSecre
   &envoy_extensions_transport_sockets_tls_v3_GenericSecret_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_GenericSecret__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.transport_sockets.tls.v3.GenericSecret",
+#endif
 };
 
-static const upb_MiniTableSub envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init},
+const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__GenericSecret_msg_init_ptr = &envoy__extensions__transport_0sockets__tls__v3__GenericSecret_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig__fields[2] = {
@@ -46,17 +52,21 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__SdsSecretCon
   &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.transport_sockets.tls.v3.SdsSecretConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_transport_sockets_tls_v3_Secret_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__TlsCertificate_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__TlsSessionTicketKeys_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__GenericSecret_msg_init},
+const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__SdsSecretConfig_msg_init_ptr = &envoy__extensions__transport_0sockets__tls__v3__SdsSecretConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_tls_v3_Secret_submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__TlsCertificate_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__TlsSessionTicketKeys_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__GenericSecret_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_Secret__fields[5] = {
@@ -71,6 +81,9 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__Secret_msg_i
   &envoy_extensions_transport_sockets_tls_v3_Secret_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_Secret__fields[0],
   UPB_SIZE(24, 40), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.transport_sockets.tls.v3.Secret",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -83,6 +96,7 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__Secret_msg_i
   })
 };
 
+const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__Secret_msg_init_ptr = &envoy__extensions__transport_0sockets__tls__v3__Secret_msg_init;
 static const upb_MiniTable *messages_layout[3] = {
   &envoy__extensions__transport_0sockets__tls__v3__GenericSecret_msg_init,
   &envoy__extensions__transport_0sockets__tls__v3__SdsSecretConfig_msg_init,

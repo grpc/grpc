@@ -16,21 +16,6 @@
 //
 //
 
-#include <string.h>
-
-#include <algorithm>
-#include <functional>
-#include <memory>
-#include <string>
-#include <thread>
-#include <vector>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/types/optional.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
@@ -41,12 +26,24 @@
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <gtest/gtest.h>
+#include <string.h>
 
+#include <algorithm>
+#include <functional>
+#include <memory>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/types/optional.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/sync.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 
