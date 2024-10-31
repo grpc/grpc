@@ -106,7 +106,6 @@ Poll<absl::StatusOr<SliceBuffer>> InputQueues::PollRead(uint64_t ticket) {
 Poll<std::vector<InputQueues::ReadRequest>> InputQueues::PollNext(
     uint32_t connection_id) {
   MutexLock lock(&mu_);
-  LOG(INFO) << "pollnext conn_id = " << connection_id;
   auto& q = read_requests_[connection_id];
   if (q.empty()) {
     read_request_waker_[connection_id] =
@@ -183,7 +182,6 @@ DataEndpoints::DataEndpoints(
                           data_endpoints_detail::InputQueues::ReadRequest
                               read_request,
                           Empty) {
-                        LOG(INFO) << "[" << i << "] perform " << read_request;
                         return Seq(
                             endpoints->endpoints[i].Read(read_request.length),
                             [ticket = read_request.ticket,

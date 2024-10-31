@@ -214,6 +214,8 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
       });
   // Wait until ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
+  transport.reset();
+  event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
 
@@ -257,6 +259,8 @@ TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
             });
       });
   // Wait until ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  transport.reset();
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
@@ -334,6 +338,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
       });
   // Wait until ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
+  transport.reset();
+  event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
 
@@ -401,6 +407,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
             });
       });
   // Wait until ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  transport.reset();
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
