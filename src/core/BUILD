@@ -907,6 +907,7 @@ grpc_cc_library(
     deps = [
         "join_state",
         "map",
+        "promise_factory",
         "//:gpr_platform",
     ],
 )
@@ -947,6 +948,7 @@ grpc_cc_library(
         "join_state",
         "map",
         "poll",
+        "promise_factory",
         "status_flag",
         "//:gpr_platform",
     ],

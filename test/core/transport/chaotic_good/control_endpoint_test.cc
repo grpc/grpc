@@ -31,8 +31,8 @@ class ControlEndpointTest : public YodelTest {
 
 CONTROL_ENDPOINT_TEST(CanWrite) {
   chaotic_good::testing::MockPromiseEndpoint ep(1234);
-  chaotic_good::ControlEndpoint control_endpoint(
-      std::move(ep.promise_endpoint));
+  chaotic_good::ControlEndpoint control_endpoint(std::move(ep.promise_endpoint),
+                                                 event_engine().get());
   ep.ExpectWrite(
       {grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
       nullptr);

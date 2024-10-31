@@ -21,8 +21,8 @@
 #include <tuple>
 
 #include "absl/meta/type_traits.h"
-#include "detail/promise_factory.h"
 #include "src/core/lib/promise/detail/join_state.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/map.h"
 
 namespace grpc_core {
