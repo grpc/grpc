@@ -237,7 +237,8 @@ void ExternalAccountCredentials::ExternalFetchRequest::ExchangeToken(
         Json additional_options_json =
             Json::FromObject(std::move(additional_options_json_object));
         body_parts.push_back(absl::StrFormat(
-            "options=%s", UrlEncode(JsonDump(additional_options_json)).c_str()));
+            "options=%s",
+            UrlEncode(JsonDump(additional_options_json)).c_str()));
         std::string body = absl::StrJoin(body_parts, "&");
         request.body = const_cast<char*>(body.c_str());
         request.body_length = body.size();

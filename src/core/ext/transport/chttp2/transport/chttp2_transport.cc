@@ -1041,8 +1041,8 @@ static void write_action(grpc_chttp2_transport* t) {
     // to nullptr.
     cl = nullptr;
   }
-  // Choose max_frame_size as the preferred rx crypto frame size indicated by the
-  // peer.
+  // Choose max_frame_size as the preferred rx crypto frame size indicated by
+  // the peer.
   int max_frame_size =
       t->settings.peer().preferred_receive_crypto_message_size();
   // Note: max frame size is 0 if the remote peer does not support adjusting the
