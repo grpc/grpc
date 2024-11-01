@@ -670,7 +670,6 @@ class Server : public ServerInterface,
   std::list<ChannelData*> channels_;
   absl::flat_hash_set<OrphanablePtr<ServerTransport>> connections_
       ABSL_GUARDED_BY(mu_global_);
-  bool is_serving_ ABSL_GUARDED_BY(mu_global_);
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
       connection_manager_ ABSL_GUARDED_BY(mu_global_);
   size_t connections_open_ ABSL_GUARDED_BY(mu_global_) = 0;
