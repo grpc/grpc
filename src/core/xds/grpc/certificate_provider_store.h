@@ -56,7 +56,7 @@ class CertificateProviderStore final
                       ValidationErrors* errors);
   };
 
-  // Maps plugin instance (opaque) name to plugin defition.
+  // Maps plugin instance (opaque) name to plugin definition.
   typedef std::map<std::string, PluginDefinition> PluginDefinitionMap;
 
   explicit CertificateProviderStore(PluginDefinitionMap plugin_config_map)

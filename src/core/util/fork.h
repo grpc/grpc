@@ -37,7 +37,7 @@ class GPR_DLL Fork {
 
   static void GlobalInit();
 
-  // Returns true if fork suppport is enabled, false otherwise
+  // Returns true if fork support is enabled, false otherwise
   static bool Enabled();
 
   // Increment the count of active ExecCtxs.
@@ -66,7 +66,7 @@ class GPR_DLL Fork {
   // Check if there is a single active ExecCtx
   // (the one used to invoke this function).  If there are more,
   // return false.  Otherwise, return true and block creation of
-  // more ExecCtx s until AlloWExecCtx() is called
+  // more ExecCtx s until AllowExecCtx() is called
   //
   static bool BlockExecCtx();
   static void AllowExecCtx();

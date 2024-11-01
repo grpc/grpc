@@ -193,7 +193,7 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
                 return Empty{};
               }),
           call_initiator.PullServerTrailingMetadata(),
-          // Capture the call_initator to ensure the underlying call_spine
+          // Capture the call_initiator to ensure the underlying call_spine
           // is alive until the SendFragment promise completes.
           [this, stream_id, outgoing_frames,
            call_initiator](ServerMetadataHandle md) mutable {

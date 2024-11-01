@@ -17,6 +17,7 @@
 
 package(default_visibility = ["//visibility:public"])
 
+
 toolchain(
     name = "cc-toolchain",
     exec_compatible_with = [
@@ -27,19 +28,19 @@ toolchain(
         "@platforms//os:windows",
         "@platforms//cpu:x86_64",
     ],
-    toolchain = "//third_party/toolchains/rbe_windows_bazel_6.3.2_vs2019/cc:cc-compiler-x64_windows",
+    toolchain = "//third_party/toolchains/rbe_windows_bazel_7.3.1_vs2019/cc:cc-compiler-x64_windows",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
 
 platform(
     name = "platform",
+    parents = ["@local_config_platform//:host"],
     constraint_values = [
         "@platforms//os:windows",
         "@platforms//cpu:x86_64",
     ],
     exec_properties = {
-        "container-image": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_windows2019@sha256:63aed074a2ca1bf5af45bb43b255d21d51882d7169ec57be7f0f5454ea5d2c98",
+        "container-image": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_windows2019@sha256:1700f2ad0e7f5bdcafa56dce649720e6b12cf397e27990433871f11c75f68cb4",
         "OSFamily": "Windows",
     },
-    parents = ["@local_config_platform//:host"],
 )
