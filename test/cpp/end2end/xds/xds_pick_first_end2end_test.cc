@@ -32,7 +32,7 @@
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/util/env.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/pick_first.pb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
