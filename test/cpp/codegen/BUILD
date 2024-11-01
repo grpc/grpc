@@ -78,14 +78,14 @@ grpc_cc_binary(
 
 genrule(
     name = "copy_compiler_test_grpc_pb_h",
-    srcs = ["//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen"],
+    srcs = ["//src/proto/grpc/testing:_compiler_test_cc_grpc_grpc_codegen"],
     outs = ["compiler_test.grpc.pb.h"],
     cmd = "cat $(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.h > $@",
 )
 
 genrule(
     name = "copy_compiler_test_mock_grpc_pb_h",
-    srcs = ["//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen"],
+    srcs = ["//src/proto/grpc/testing:_compiler_test_cc_grpc_grpc_codegen"],
     outs = ["compiler_test_mock.grpc.pb.h"],
     cmd = "cat $(GENDIR)/src/proto/grpc/testing/compiler_test_mock.grpc.pb.h > $@",
 )
