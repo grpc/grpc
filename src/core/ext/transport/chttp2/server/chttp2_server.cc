@@ -1033,10 +1033,6 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
 
       void ShutdownLocked(absl::Status status);
 
-      // Needed to be able to grab an external weak ref in
-      // ActiveConnection::Start()
-      using InternallyRefCounted<HandshakingState>::Ref;
-
      private:
       void OnTimeoutLocked();
       static void OnReceiveSettings(void* arg, grpc_error_handle /* error */);
@@ -1555,6 +1551,7 @@ void NewChttp2ServerListener::OnAccept(
     // since the acceptor needs it.
     MutexLock lock(&self->mu_);
     if (self->shutdown_) {
+      self->listener_state_->connection_quota()->ReleaseConnections(1);
       return;
     }
     if (self->tcp_server_ != nullptr) {
@@ -1574,6 +1571,8 @@ void NewChttp2ServerListener::OnAccept(
                                                   self->args_, tcp);
   if (new_args.has_value()) {
     connection_ref->Start(*new_args);
+  } else {
+    self->listener_state_->connection_quota()->ReleaseConnections(1);
   }
 }
 
@@ -1742,7 +1741,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     RefCountedPtr<Chttp2ServerListener> listener;
     {
       MutexLock lock(&mu_);
-      auto* listener_ptr = absl::get_if<NewChttp2ServerListener*>(&listener_);
+      auto* listener_ptr = absl::get_if<Chttp2ServerListener*>(&listener_);
       if (listener_ptr != nullptr && *listener_ptr != nullptr) {
         listener = (*listener_ptr)
                        ->RefIfNonZero()

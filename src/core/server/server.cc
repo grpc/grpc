@@ -297,7 +297,7 @@ void Server::ListenerState::DrainConnectionsLocked() {
   auto& connections_to_be_drained = connections_to_be_drained_list_.back();
   connections_to_be_drained.connections = std::move(connections_);
   connections_to_be_drained.timestamp =
-      grpc_core::Timestamp::Now() +
+      Timestamp::Now() +
       std::max(Duration::Zero(),
                server_->channel_args()
                    .GetDurationFromIntMillis(
@@ -329,8 +329,7 @@ void Server::ListenerState::MaybeStartNewGraceTimerLocked() {
     return;
   }
   drain_grace_timer_handle_ = event_engine()->RunAfter(
-      connections_to_be_drained_list_.front().timestamp -
-          grpc_core::Timestamp::Now(),
+      connections_to_be_drained_list_.front().timestamp - Timestamp::Now(),
       [self = Ref()]() mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
@@ -1183,7 +1182,7 @@ void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
   }
   ListenerInterface* ptr = listener.get();
   listener_states_.emplace_back(
-      grpc_core::MakeRefCounted<ListenerState>(Ref(), std::move(listener)));
+      MakeRefCounted<ListenerState>(Ref(), std::move(listener)));
   ptr->SetServerListenerState(listener_states_.back());
 }
 
