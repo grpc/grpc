@@ -136,7 +136,8 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       }
     }
 
-    std::string file_name = grpc_generator::StripProto(file->name());
+    std::string file_name =
+        grpc_generator::StripProto(std::string(file->name()));
 
     std::string header_code =
         grpc_cpp_generator::GetHeaderPrologue(&pbfile, generator_parameters) +
