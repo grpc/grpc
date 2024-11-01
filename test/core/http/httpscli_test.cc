@@ -276,7 +276,7 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
       // Start a request. It will establish a TCP connection to the
       // server and then begin an SSL handshake. The server won't send
       // anything back though, so it will be stuck in its SSL handshake,
-      // waiting for the firt response from the server.
+      // waiting for the first response from the server.
       http_request->Start();
       exec_ctx.Flush();
       std::thread cancel_thread([&http_request]() {

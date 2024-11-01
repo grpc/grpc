@@ -143,7 +143,7 @@ grpc_google_default_channel_credentials::create_security_connector(
           ? alts_creds_->create_security_connector(call_creds, target, args)
           : ssl_creds_->create_security_connector(call_creds, target, args);
   // grpclb-specific channel args are removed from the channel args set
-  // to ensure backends and fallback adresses will have the same set of channel
+  // to ensure backends and fallback addresses will have the same set of channel
   // args. By doing that, it guarantees the connections to backends will not be
   // torn down and re-connected when switching in and out of fallback mode.
   //

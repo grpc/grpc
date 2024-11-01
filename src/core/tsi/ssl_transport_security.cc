@@ -1717,7 +1717,7 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
     if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
-  // Atempt to read all of the bytes in SSL's read BIO. These bytes should
+  // Attempt to read all of the bytes in SSL's read BIO. These bytes should
   // contain application data records that were appended to a handshake record
   // containing the ClientFinished or ServerFinished message.
   size_t bytes_in_ssl = BIO_pending(SSL_get_rbio(impl->ssl));

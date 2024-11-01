@@ -695,7 +695,7 @@ INSTANTIATE_TEST_SUITE_P(
                  "makes "
                  "it text.\nUseful for storing files.\n",
                  0},
-                // Third entry should be unprobable (it's no longer in the
+                // Third entry should be improbable (it's no longer in the
                 // table!)
                 {"c0", absl::InternalError("Invalid HPACK index received"),
                  kFailureIsConnectionError},
@@ -753,7 +753,7 @@ INSTANTIATE_TEST_SUITE_P(
                  "makes "
                  "it text.\nUseful for storing files.\n",
                  0},
-                // Third entry should be unprobable (it's no longer in the
+                // Third entry should be improbable (it's no longer in the
                 // table!)
                 {"c0", absl::InternalError("Invalid HPACK index received"),
                  kFailureIsConnectionError},

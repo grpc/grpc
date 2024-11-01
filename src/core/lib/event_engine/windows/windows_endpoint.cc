@@ -121,7 +121,7 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
     // The async read attempt returned an error immediately.
     socket->UnregisterReadCallback();
     socket->read_info()->SetResult(
-        wsa_error, 0, absl::StrFormat("WindowsEndpont::%p Read failed", this));
+        wsa_error, 0, absl::StrFormat("WindowsEndpoint::%p Read failed", this));
     thread_pool->Run(&handle_read_event);
   }
 }
