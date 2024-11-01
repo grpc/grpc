@@ -110,7 +110,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
         },
         [this](SliceBuffer payload)
             -> absl::StatusOr<std::tuple<FrameHeader, SliceBuffer>> {
-          payload.RemoveLastNBytes(
+          payload.RemoveLastNBytesNoInline(
               current_frame_header_.Padding(decode_alignment_));
           return std::tuple<FrameHeader, SliceBuffer>(current_frame_header_,
                                                       std::move(payload));
