@@ -1508,6 +1508,7 @@ void Server::Orphan() {
     CHECK(ShutdownCalled() || listener_states_.empty());
     CHECK(listeners_destroyed_ == listener_states_.size());
   }
+  listener_states_.clear();
   Unref();
 }
 
