@@ -101,21 +101,25 @@ absl::StatusOr<uint64_t> InputQueues::CreateTicket(uint32_t connection_id,
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: New read ticket on #" << connection_id << " " << r;
   read_requests_[connection_id].push_back(r);
+  outstanding_reads_.emplace(ticket, Waker{});
   waker = std::move(read_request_waker_[connection_id]);
   return ticket;
 }
 
 Poll<absl::StatusOr<SliceBuffer>> InputQueues::PollRead(uint64_t ticket) {
   MutexLock lock(&mu_);
-  auto ex_rd = completed_reads_.extract(ticket);
-  if (!ex_rd.empty()) {
-    GRPC_TRACE_LOG(chaotic_good, INFO)
-        << "CHAOTIC_GOOD: Poll for ticket #" << ticket
-        << " completes: " << ex_rd.mapped().status();
-    return std::move(ex_rd.mapped());
+  auto it = outstanding_reads_.find(ticket);
+  CHECK(it != outstanding_reads_.end()) << " ticket=" << ticket;
+  if (auto* waker = absl::get_if<Waker>(&it->second)) {
+    *waker = GetContext<Activity>()->MakeNonOwningWaker();
+    return Pending{};
   }
-  completed_read_wakers_[ticket] = GetContext<Activity>()->MakeNonOwningWaker();
-  return Pending{};
+  auto result = std::move(absl::get<absl::StatusOr<SliceBuffer>>(it->second));
+  outstanding_reads_.erase(it);
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD: Poll for ticket #" << ticket
+      << " completes: " << result.status();
+  return result;
 }
 
 Poll<std::vector<InputQueues::ReadRequest>> InputQueues::PollNext(
@@ -139,9 +143,15 @@ void InputQueues::CompleteRead(uint64_t ticket,
   MutexLock lock(&mu_);
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: Complete ticket #" << ticket << ": " << buffer.status();
-  completed_reads_.emplace(ticket, std::move(buffer));
-  auto x = completed_read_wakers_.extract(ticket);
-  if (x) waker = std::move(x.mapped());
+  auto it = outstanding_reads_.find(ticket);
+  if (it == outstanding_reads_.end()) return;  // cancelled
+  waker = std::move(absl::get<Waker>(it->second));
+  it->second.emplace<absl::StatusOr<SliceBuffer>>(std::move(buffer));
+}
+
+void InputQueues::CancelTicket(uint64_t ticket) {
+  MutexLock lock(&mu_);
+  outstanding_reads_.erase(ticket);
 }
 
 }  // namespace data_endpoints_detail

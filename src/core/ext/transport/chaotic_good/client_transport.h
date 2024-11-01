@@ -91,8 +91,8 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
   auto OnTransportActivityDone(absl::string_view what);
   template <typename T>
-  auto DispatchFrame(ChaoticGoodTransport* transport, const FrameHeader& header,
-                     SliceBuffer payload);
+  auto DispatchFrame(RefCountedPtr<ChaoticGoodTransport> transport,
+                     IncomingFrame incoming_frame);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   // Push one frame into a call
   auto PushFrameIntoCall(ServerInitialMetadataFrame frame,

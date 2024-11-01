@@ -66,29 +66,31 @@ auto ChaoticGoodServerTransport::PushFrameIntoCall(CallInitiator call_initiator,
 }
 
 template <typename T>
-auto ChaoticGoodServerTransport::DispatchFrame(ChaoticGoodTransport& transport,
-                                               const FrameHeader& header,
-                                               SliceBuffer payload) {
-  return TrySeq(
-      [&transport, header, payload = std::move(payload)]() mutable {
-        return transport.DeserializeFrame<T>(header, std::move(payload));
+auto ChaoticGoodServerTransport::DispatchFrame(
+    RefCountedPtr<ChaoticGoodTransport> transport, IncomingFrame frame) {
+  absl::optional<CallInitiator> call_initiator =
+      LookupStream(frame.header().stream_id);
+  return If(
+      call_initiator.has_value(),
+      [this, &call_initiator, &frame, &transport]() {
+        return call_initiator->SpawnWaitable(
+            "push-frame",
+            [this, call_initiator = *call_initiator, frame = std::move(frame),
+             transport = std::move(transport)]() mutable {
+              return call_initiator.CancelIfFails(TrySeq(
+                  frame.Payload(),
+                  [transport = std::move(transport),
+                   header = frame.header()](SliceBuffer payload) {
+                    return transport->DeserializeFrame<T>(header,
+                                                          std::move(payload));
+                  },
+                  [call_initiator, this](T frame) {
+                    return PushFrameIntoCall(call_initiator, std::move(frame));
+                  },
+                  ImmediateOkStatus()));
+            });
       },
-      [this](T frame) {
-        absl::optional<CallInitiator> call_initiator =
-            LookupStream(frame.stream_id);
-        return If(
-            call_initiator.has_value(),
-            [this, &call_initiator, &frame]() {
-              return call_initiator->SpawnWaitable(
-                  "push-frame", [this, call_initiator = *call_initiator,
-                                 frame = std::move(frame)]() mutable {
-                    return Map(call_initiator.CancelIfFails(PushFrameIntoCall(
-                                   call_initiator, std::move(frame))),
-                               [](StatusFlag) { return absl::OkStatus(); });
-                  });
-            },
-            []() { return absl::OkStatus(); });
-      });
+      []() { return absl::OkStatus(); });
 }
 
 namespace {
@@ -220,35 +222,40 @@ absl::Status ChaoticGoodServerTransport::NewStream(
   return absl::OkStatus();
 }
 
-auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
+auto ChaoticGoodServerTransport::ReadOneFrame(
+    RefCountedPtr<ChaoticGoodTransport> transport) {
   return GRPC_LATENT_SEE_PROMISE(
       "ReadOneFrame",
       TrySeq(
-          transport.ReadFrameBytes(),
-          [this, transport = &transport](
-              std::tuple<FrameHeader, SliceBuffer> frame_bytes) {
-            const auto& header = std::get<0>(frame_bytes);
-            SliceBuffer& payload = std::get<1>(frame_bytes);
-            CHECK_EQ(header.payload_length, payload.Length());
+          transport->ReadFrameBytes(),
+          [this,
+           transport = std::move(transport)](IncomingFrame incoming_frame) {
+            // CHECK_EQ(header.payload_length, payload.Length());
             return Switch(
-                header.type,
+                incoming_frame.header().type,
                 Case<FrameType, FrameType::kClientInitialMetadata>([&, this]() {
-                  return Immediate(
-                      NewStream(*transport, header, std::move(payload)));
+                  return TrySeq(incoming_frame.Payload(),
+                                [this, transport = std::move(transport),
+                                 header = incoming_frame.header()](
+                                    SliceBuffer payload) mutable {
+                                  return NewStream(*transport, header,
+                                                   std::move(payload));
+                                });
                 }),
-                Case<FrameType, FrameType::kMessage>([&, this]() {
-                  return DispatchFrame<MessageFrame>(*transport, header,
-                                                     std::move(payload));
+                Case<FrameType, FrameType::kMessage>([&, this]() mutable {
+                  return DispatchFrame<MessageFrame>(std::move(transport),
+                                                     std::move(incoming_frame));
                 }),
-                Case<FrameType, FrameType::kClientEndOfStream>([&, this]() {
-                  return DispatchFrame<ClientEndOfStream>(*transport, header,
-                                                          std::move(payload));
-                }),
+                Case<FrameType, FrameType::kClientEndOfStream>(
+                    [&, this]() mutable {
+                      return DispatchFrame<ClientEndOfStream>(
+                          std::move(transport), std::move(incoming_frame));
+                    }),
                 Case<FrameType, FrameType::kCancel>([&, this]() {
                   absl::optional<CallInitiator> call_initiator =
-                      ExtractStream(header.stream_id);
+                      ExtractStream(incoming_frame.header().stream_id);
                   GRPC_TRACE_LOG(chaotic_good, INFO)
-                      << "Cancel stream " << header.stream_id
+                      << "Cancel stream " << incoming_frame.header().stream_id
                       << (call_initiator.has_value() ? " (active)"
                                                      : " (not found)");
                   return If(
@@ -263,9 +270,8 @@ auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
                       []() -> absl::Status { return absl::OkStatus(); });
                 }),
                 Default([&]() {
-                  return absl::InternalError(
-                      absl::StrCat("Unexpected frame type: ",
-                                   static_cast<uint8_t>(header.type)));
+                  return absl::InternalError(absl::StrCat(
+                      "Unexpected frame type: ", incoming_frame.header().type));
                 }));
           },
           []() -> LoopCtl<absl::Status> { return Continue{}; }));
@@ -274,8 +280,8 @@ auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
 auto ChaoticGoodServerTransport::TransportReadLoop(
     RefCountedPtr<ChaoticGoodTransport> transport) {
   return Seq(got_acceptor_.Wait(),
-             Loop([this, transport = std::move(transport)] {
-               return ReadOneFrame(*transport);
+             Loop([this, transport = std::move(transport)]() mutable {
+               return ReadOneFrame(transport);
              }));
 }
 

@@ -100,29 +100,32 @@ auto ChaoticGoodClientTransport::PushFrameIntoCall(
 }
 
 template <typename T>
-auto ChaoticGoodClientTransport::DispatchFrame(ChaoticGoodTransport* transport,
-                                               const FrameHeader& header,
-                                               SliceBuffer payload) {
-  return TrySeq(
-      [transport, header, payload = std::move(payload)]() mutable {
-        return transport->DeserializeFrame<T>(header, std::move(payload));
+auto ChaoticGoodClientTransport::DispatchFrame(
+    RefCountedPtr<ChaoticGoodTransport> transport,
+    IncomingFrame incoming_frame) {
+  absl::optional<CallHandler> call_handler =
+      LookupStream(incoming_frame.header().stream_id);
+  return If(
+      call_handler.has_value(),
+      [this, &call_handler, &incoming_frame, &transport]() {
+        return call_handler->SpawnWaitable(
+            "push-frame", [this, call_handler = *call_handler,
+                           incoming_frame = std::move(incoming_frame),
+                           transport = std::move(transport)]() mutable {
+              return call_handler.CancelIfFails(TrySeq(
+                  incoming_frame.Payload(),
+                  [transport = std::move(transport),
+                   header = incoming_frame.header()](SliceBuffer payload) {
+                    return transport->DeserializeFrame<T>(header,
+                                                          std::move(payload));
+                  },
+                  [call_handler, this](T frame) {
+                    return PushFrameIntoCall(std::move(frame), call_handler);
+                  },
+                  ImmediateOkStatus()));
+            });
       },
-      [this](T frame) {
-        absl::optional<CallHandler> call_handler =
-            LookupStream(frame.stream_id);
-        return If(
-            call_handler.has_value(),
-            [this, &call_handler, &frame]() {
-              return call_handler->SpawnWaitable(
-                  "push-frame", [this, call_handler = *call_handler,
-                                 frame = std::move(frame)]() mutable {
-                    return Map(call_handler.CancelIfFails(PushFrameIntoCall(
-                                   std::move(frame), call_handler)),
-                               [](StatusFlag) { return absl::OkStatus(); });
-                  });
-            },
-            []() { return absl::OkStatus(); });
-      });
+      []() { return absl::OkStatus(); });
 }
 
 auto ChaoticGoodClientTransport::TransportReadLoop(
@@ -130,27 +133,24 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
   return Loop([this, transport = std::move(transport)] {
     return TrySeq(
         transport->ReadFrameBytes(),
-        [this, transport = transport.get()](
-            std::tuple<FrameHeader, SliceBuffer> frame_bytes) {
-          const auto& header = std::get<0>(frame_bytes);
-          SliceBuffer& payload = std::get<1>(frame_bytes);
+        [this, transport](IncomingFrame incoming_frame) {
           return Switch(
-              header.type,
+              incoming_frame.header().type,
               Case<FrameType, FrameType::kServerInitialMetadata>([&, this]() {
                 return DispatchFrame<ServerInitialMetadataFrame>(
-                    transport, header, std::move(payload));
+                    transport, std::move(incoming_frame));
               }),
               Case<FrameType, FrameType::kServerTrailingMetadata>([&, this]() {
                 return DispatchFrame<ServerTrailingMetadataFrame>(
-                    transport, header, std::move(payload));
+                    transport, std::move(incoming_frame));
               }),
               Case<FrameType, FrameType::kMessage>([&, this]() {
-                return DispatchFrame<MessageFrame>(transport, header,
-                                                   std::move(payload));
+                return DispatchFrame<MessageFrame>(transport,
+                                                   std::move(incoming_frame));
               }),
               Default([&]() {
                 LOG_EVERY_N_SEC(INFO, 10)
-                    << "Bad frame type: " << header.ToString();
+                    << "Bad frame type: " << incoming_frame.header().ToString();
                 return absl::OkStatus();
               }));
         },

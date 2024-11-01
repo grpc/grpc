@@ -29,6 +29,7 @@
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/match_promise.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_join.h"
@@ -43,6 +44,36 @@ inline std::vector<PromiseEndpoint> OneDataEndpoint(PromiseEndpoint endpoint) {
   ep.emplace_back(std::move(endpoint));
   return ep;
 }
+
+class IncomingFrame {
+ public:
+  template <typename T>
+  IncomingFrame(FrameHeader header, T payload, size_t remove_padding)
+      : header_(header),
+        payload_(std::move(payload)),
+        remove_padding_(remove_padding) {}
+
+  const FrameHeader& header() { return header_; }
+
+  auto Payload() {
+    return Map(
+        MatchPromise(
+            std::move(payload_),
+            [](absl::StatusOr<SliceBuffer> status) { return status; },
+            [](DataEndpoints::ReadTicket ticket) { return ticket.Await(); }),
+        [remove_padding =
+             remove_padding_](absl::StatusOr<SliceBuffer> payload) {
+          if (payload.ok()) payload->RemoveLastNBytes(remove_padding);
+          return payload;
+        });
+  }
+
+ private:
+  FrameHeader header_;
+  absl::variant<absl::StatusOr<SliceBuffer>, DataEndpoints::ReadTicket>
+      payload_;
+  size_t remove_padding_;
+};
 
 class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
  public:
@@ -122,7 +153,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   }
 
   // Read frame header and payloads for control and data portions of one frame.
-  // Resolves to StatusOr<tuple<FrameHeader, SliceBuffer>>.
+  // Resolves to StatusOr<IncomingFrame>.
   auto ReadFrameBytes() {
     return TrySeq(
         control_endpoint_.ReadSlice(FrameHeader::kFrameHeaderSize),
@@ -140,26 +171,25 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           return frame_header;
         },
         [this](FrameHeader frame_header) {
-          current_frame_header_ = frame_header;
           return If(
               frame_header.payload_connection_id == 0,
-              [this]() {
-                return control_endpoint_.Read(
-                    current_frame_header_.payload_length);
+              [this, frame_header]() {
+                return Map(control_endpoint_.Read(frame_header.payload_length),
+                           [frame_header](absl::StatusOr<SliceBuffer> payload)
+                               -> absl::StatusOr<IncomingFrame> {
+                             if (!payload.ok()) return payload.status();
+                             return IncomingFrame(frame_header,
+                                                  std::move(payload), 0);
+                           });
               },
-              [this]() {
-                return data_endpoints_.Read(
-                    current_frame_header_.payload_connection_id - 1,
-                    current_frame_header_.payload_length +
-                        current_frame_header_.Padding(decode_alignment_));
+              [this, frame_header]() -> absl::StatusOr<IncomingFrame> {
+                const auto padding = frame_header.Padding(decode_alignment_);
+                return IncomingFrame(
+                    frame_header,
+                    data_endpoints_.Read(frame_header.payload_connection_id - 1,
+                                         frame_header.payload_length + padding),
+                    padding);
               });
-        },
-        [this](SliceBuffer payload)
-            -> absl::StatusOr<std::tuple<FrameHeader, SliceBuffer>> {
-          payload.RemoveLastNBytes(
-              current_frame_header_.Padding(decode_alignment_));
-          return std::tuple<FrameHeader, SliceBuffer>(current_frame_header_,
-                                                      std::move(payload));
         });
   }
 
@@ -183,7 +213,6 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   ControlEndpoint control_endpoint_;
   DataEndpoints data_endpoints_;
-  FrameHeader current_frame_header_;
   const uint32_t encode_alignment_;
   const uint32_t decode_alignment_;
 };

@@ -15,6 +15,7 @@
 #include <cstdint>
 
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 
@@ -67,6 +68,42 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
 
 class InputQueues : public RefCounted<InputQueues> {
  public:
+  class ReadTicket {
+   public:
+    ReadTicket(absl::StatusOr<uint64_t> ticket,
+               RefCountedPtr<InputQueues> input_queues)
+        : ticket_(std::move(ticket)), input_queues_(std::move(input_queues)) {}
+
+    ReadTicket(const ReadTicket&) = delete;
+    ReadTicket& operator=(const ReadTicket&) = delete;
+    ReadTicket(ReadTicket&&) noexcept = default;
+    ReadTicket& operator=(ReadTicket&&) noexcept = default;
+
+    ~ReadTicket() {
+      if (input_queues_ != nullptr && ticket_.ok()) {
+        input_queues_->CancelTicket(*ticket_);
+      }
+    }
+
+    auto Await() {
+      return If(
+          ticket_.ok(),
+          [&]() {
+            return
+                [ticket = *ticket_, input_queues = std::move(input_queues_)]() {
+                  return input_queues->PollRead(ticket);
+                };
+          },
+          [&]() {
+            return Immediate(absl::StatusOr<SliceBuffer>(ticket_.status()));
+          });
+    }
+
+   private:
+    absl::StatusOr<uint64_t> ticket_;
+    RefCountedPtr<InputQueues> input_queues_;
+  };
+
   struct ReadRequest {
     size_t length;
     uint64_t ticket;
@@ -79,12 +116,8 @@ class InputQueues : public RefCounted<InputQueues> {
 
   explicit InputQueues(uint32_t num_connections);
 
-  auto Read(uint32_t connection_id, size_t length) {
-    auto ticket = CreateTicket(connection_id, length);
-    return [ticket, this]() -> Poll<absl::StatusOr<SliceBuffer>> {
-      if (!ticket.ok()) return ticket.status();
-      return PollRead(*ticket);
-    };
+  ReadTicket Read(uint32_t connection_id, size_t length) {
+    return ReadTicket(CreateTicket(connection_id, length), Ref());
   }
 
   auto Next(uint32_t connection_id) {
@@ -93,7 +126,11 @@ class InputQueues : public RefCounted<InputQueues> {
 
   void CompleteRead(uint64_t ticket, absl::StatusOr<SliceBuffer> buffer);
 
+  void CancelTicket(uint64_t ticket);
+
  private:
+  using ReadState = absl::variant<absl::StatusOr<SliceBuffer>, Waker>;
+
   absl::StatusOr<uint64_t> CreateTicket(uint32_t connection_id, size_t length);
   Poll<absl::StatusOr<SliceBuffer>> PollRead(uint64_t ticket);
   Poll<std::vector<ReadRequest>> PollNext(uint32_t connection_id);
@@ -102,15 +139,15 @@ class InputQueues : public RefCounted<InputQueues> {
   uint64_t next_ticket_id_ ABSL_GUARDED_BY(mu_) = 0;
   std::vector<std::vector<ReadRequest>> read_requests_ ABSL_GUARDED_BY(mu_);
   std::vector<Waker> read_request_waker_;
-  absl::flat_hash_map<uint64_t, absl::StatusOr<SliceBuffer>> completed_reads_
-      ABSL_GUARDED_BY(mu_);
-  absl::flat_hash_map<uint64_t, Waker> completed_read_wakers_
+  absl::flat_hash_map<uint64_t, ReadState> outstanding_reads_
       ABSL_GUARDED_BY(mu_);
 };
 }  // namespace data_endpoints_detail
 
 class DataEndpoints {
  public:
+  using ReadTicket = data_endpoints_detail::InputQueues::ReadTicket;
+
   explicit DataEndpoints(
       std::vector<PromiseEndpoint> endpoints,
       grpc_event_engine::experimental::EventEngine* event_engine);
@@ -125,7 +162,7 @@ class DataEndpoints {
     return output_buffers_->Write(std::move(output_buffer));
   }
 
-  auto Read(uint32_t connection_id, size_t length) {
+  ReadTicket Read(uint32_t connection_id, uint32_t length) {
     return input_queues_->Read(connection_id, length);
   }
 

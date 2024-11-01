@@ -8035,6 +8035,7 @@ grpc_cc_library(
         "seq",
         "slice_buffer",
         "try_seq",
+        "//:promise",
     ],
 )
 
@@ -8050,9 +8051,11 @@ grpc_cc_library(
         "chaotic_good_data_endpoints",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
+        "event_engine_context",
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
         "loop",
+        "match_promise",
         "mpsc",
         "seq",
         "try_join",
