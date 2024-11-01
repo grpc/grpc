@@ -467,7 +467,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
           .value_or(std::max(t->keepalive_timeout * 2,
                              grpc_core::Duration::Minutes(1)));
 
-  // Only send the prefered rx frame size http2 setting if we are instructed
+  // Only send the preferred rx frame size http2 setting if we are instructed
   // to auto size the buffers allocated at tcp level and we also can adjust
   // sending frame size.
   t->enable_preferred_rx_crypto_frame_advertisement =
@@ -1041,8 +1041,8 @@ static void write_action(grpc_chttp2_transport* t) {
     // to nullptr.
     cl = nullptr;
   }
-  // Choose max_frame_size as the prefered rx crypto frame size indicated by the
-  // peer.
+  // Choose max_frame_size as the preferred rx crypto frame size indicated by
+  // the peer.
   int max_frame_size =
       t->settings.peer().preferred_receive_crypto_message_size();
   // Note: max frame size is 0 if the remote peer does not support adjusting the

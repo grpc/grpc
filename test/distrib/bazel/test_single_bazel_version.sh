@@ -63,7 +63,7 @@ EXCLUDED_TARGETS=(
 
   # Analyzing windows toolchains when running on linux results in an error.
   # Since bazel distribtests are run on linux, we exclude the windows RBE toolchains.
-  "-//third_party/toolchains/rbe_windows_bazel_6.3.2_vs2019/..."
+  "-//third_party/toolchains/rbe_windows_bazel_7.3.1_vs2019/..."
   "-//third_party/toolchains:rbe_windows_default_toolchain_suite"
 
   # Exclude bazelified tests as they contain some bazel hackery

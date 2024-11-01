@@ -84,7 +84,7 @@ namespace grpc_core {
 ///   - A SubchannelPicker, which handles the data plane work of
 ///     determining which subchannel a given call should be sent on.
 
-/// LoadBalacingPolicy API.
+/// LoadBalancingPolicy API.
 ///
 /// Note: All methods with a "Locked" suffix must be called from the
 /// work_serializer passed to the constructor.

@@ -161,7 +161,7 @@ void DestructIfNotNull(T* p) {
 //  do_these_things({(foo<Ts>(), 1)});
 // will execute foo<T>() for each T in Ts.
 // In this example we also leverage the comma operator to make the resultant
-// type of each statement be a consistant int so that C++ type deduction works
+// type of each statement be a consistent int so that C++ type deduction works
 // as we'd like (note that in the expression (a, 1) in C++, the 'result' of the
 // expression is the value after the right-most ',' -- in this case 1, with a
 // executed as a side effect.
