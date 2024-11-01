@@ -70,6 +70,7 @@ class PromiseEndpoint {
   // `Write()` before the previous write finishes. Doing that results in
   // undefined behavior.
   auto Write(SliceBuffer data) {
+    GRPC_LATENT_SEE_PARENT_SCOPE("GRPC:Write");
     // Start write and assert previous write finishes.
     auto prev = write_state_->state.exchange(WriteState::kWriting,
                                              std::memory_order_relaxed);
@@ -132,6 +133,7 @@ class PromiseEndpoint {
   // `Read()` before the previous read finishes. Doing that results in
   // undefined behavior.
   auto Read(size_t num_bytes) {
+    GRPC_LATENT_SEE_PARENT_SCOPE("GRPC:Read");
     // Assert previous read finishes.
     CHECK(!read_state_->complete.load(std::memory_order_relaxed));
     // Should not have pending reads.
