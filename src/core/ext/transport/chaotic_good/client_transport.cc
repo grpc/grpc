@@ -122,26 +122,28 @@ template <typename T>
 auto ChaoticGoodClientTransport::DispatchFrame(ChaoticGoodTransport* transport,
                                                const FrameHeader& header,
                                                SliceBuffer payload) {
-  return TrySeq(
-      [transport, header, payload = std::move(payload)]() mutable {
-        return transport->DeserializeFrame<T>(header, std::move(payload));
-      },
-      [this](T frame) {
-        absl::optional<CallHandler> call_handler =
-            LookupStream(frame.stream_id);
-        return If(
-            call_handler.has_value(),
-            [this, &call_handler, &frame]() {
-              return call_handler->SpawnWaitable(
-                  "push-frame", [this, call_handler = *call_handler,
-                                 frame = std::move(frame)]() mutable {
-                    return Map(call_handler.CancelIfFails(PushFrameIntoCall(
-                                   std::move(frame), call_handler)),
-                               [](StatusFlag) { return absl::OkStatus(); });
-                  });
-            },
-            []() { return absl::OkStatus(); });
-      });
+  return GRPC_LATENT_SEE_PROMISE(
+      "ChaoticGoodClientTransport::DispatchFrame",
+      TrySeq(
+          [transport, header, payload = std::move(payload)]() mutable {
+            return transport->DeserializeFrame<T>(header, std::move(payload));
+          },
+          [this](T frame) {
+            absl::optional<CallHandler> call_handler =
+                LookupStream(frame.stream_id);
+            return If(
+                call_handler.has_value(),
+                [this, &call_handler, &frame]() {
+                  return call_handler->SpawnWaitable(
+                      "push-frame", [this, call_handler = *call_handler,
+                                     frame = std::move(frame)]() mutable {
+                        return Map(call_handler.CancelIfFails(PushFrameIntoCall(
+                                       std::move(frame), call_handler)),
+                                   [](StatusFlag) { return absl::OkStatus(); });
+                      });
+                },
+                []() { return absl::OkStatus(); });
+          }));
 }
 
 auto ChaoticGoodClientTransport::TransportReadLoop(
@@ -205,8 +207,12 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
       epte->InitializeAndReturnTcpTracer();
     }
   }
+  ChaoticGoodTransport::Options options;
+  options.inlined_payload_size_threshold =
+      args.GetInt("grpc.chaotic_good.inlined_payload_size_threshold")
+          .value_or(options.inlined_payload_size_threshold);
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
-      std::move(control_endpoint), std::move(data_endpoint), 64, 64);
+      std::move(control_endpoint), std::move(data_endpoint), options);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());

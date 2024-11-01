@@ -320,8 +320,12 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
           1024)),
       event_engine_(event_engine),
       outgoing_frames_(4) {
+  ChaoticGoodTransport::Options options;
+  options.inlined_payload_size_threshold =
+      args.GetInt("grpc.chaotic_good.inlined_payload_size_threshold")
+          .value_or(options.inlined_payload_size_threshold);
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
-      std::move(control_endpoint), std::move(data_endpoint), 64, 64);
+      std::move(control_endpoint), std::move(data_endpoint), options);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());

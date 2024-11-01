@@ -38,13 +38,17 @@ namespace chaotic_good {
 
 class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
  public:
+  struct Options {
+    uint32_t encode_alignment = 64;
+    uint32_t decode_alignment = 64;
+    uint32_t inlined_payload_size_threshold = 8 * 1024;
+  };
+
   ChaoticGoodTransport(PromiseEndpoint control_endpoint,
-                       PromiseEndpoint data_endpoint, uint32_t encode_alignment,
-                       uint32_t decode_alignment)
+                       PromiseEndpoint data_endpoint, Options options)
       : control_endpoint_(std::move(control_endpoint)),
         data_endpoint_(std::move(data_endpoint)),
-        encode_alignment_(encode_alignment),
-        decode_alignment_(decode_alignment) {
+        options_(options) {
     // Enable RxMemoryAlignment and RPC receive coalescing after the transport
     // setup is complete. At this point all the settings frames should have
     // been read.
@@ -55,15 +59,12 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
     SliceBuffer control;
     SliceBuffer data;
     FrameHeader header = frame.MakeHeader();
-    if (header.payload_length > 128 * 1024) {
+    if (header.payload_length > options_.inlined_payload_size_threshold) {
       header.payload_connection_id = 1;
       header.Serialize(control.AddTiny(FrameHeader::kFrameHeaderSize));
       frame.SerializePayload(data);
-      const size_t padding = header.Padding(encode_alignment_);
-      if (padding == 0) {
-      } else if (padding < GRPC_SLICE_INLINED_SIZE) {
-        memset(data.AddTiny(padding), 0, padding);
-      } else {
+      const size_t padding = header.Padding(options_.encode_alignment);
+      if (padding != 0) {
         auto slice = MutableSlice::CreateUninitialized(padding);
         memset(slice.data(), 0, padding);
         data.AppendIndexed(Slice(std::move(slice)));
@@ -106,12 +107,12 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
                          ? &control_endpoint_
                          : &data_endpoint_;
           return con->Read(frame_header.payload_length +
-                           frame_header.Padding(decode_alignment_));
+                           frame_header.Padding(options_.decode_alignment));
         },
         [this](SliceBuffer payload)
             -> absl::StatusOr<std::tuple<FrameHeader, SliceBuffer>> {
           payload.RemoveLastNBytesNoInline(
-              current_frame_header_.Padding(decode_alignment_));
+              current_frame_header_.Padding(options_.decode_alignment));
           return std::tuple<FrameHeader, SliceBuffer>(current_frame_header_,
                                                       std::move(payload));
         });
@@ -137,8 +138,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   PromiseEndpoint control_endpoint_;
   PromiseEndpoint data_endpoint_;
   FrameHeader current_frame_header_;
-  const uint32_t encode_alignment_;
-  const uint32_t decode_alignment_;
+  Options options_;
 };
 
 }  // namespace chaotic_good
