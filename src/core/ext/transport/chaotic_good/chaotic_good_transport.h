@@ -77,17 +77,22 @@ class IncomingFrame {
 
 class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
  public:
+  struct Options {
+    uint32_t encode_alignment = 64;
+    uint32_t decode_alignment = 64;
+    uint32_t inlined_payload_size_threshold = 8 * 1024;
+  };
+
   ChaoticGoodTransport(
       PromiseEndpoint control_endpoint,
       std::vector<PromiseEndpoint> data_endpoints,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
-      uint32_t encode_alignment, uint32_t decode_alignment)
+      Options options)
       : event_engine_(std::move(event_engine)),
         control_endpoint_(std::move(control_endpoint), event_engine_.get()),
         data_endpoints_(std::move(data_endpoints), event_engine_.get()),
-        encode_alignment_(encode_alignment),
-        decode_alignment_(decode_alignment) {}
+        options_(options) {}
 
   auto WriteFrame(const FrameInterface& frame) {
     FrameHeader header = frame.MakeHeader();
@@ -97,7 +102,8 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
                .value_or("<<unknown peer address>>")
         << " " << frame.ToString();
     return If(
-        data_endpoints_.empty() || header.payload_length < 128 * 1024,
+        data_endpoints_.empty() ||
+            header.payload_length <= options_.inlined_payload_size_threshold,
         [this, &header, &frame]() {
           SliceBuffer output;
           header.Serialize(output.AddTiny(FrameHeader::kFrameHeaderSize));
@@ -108,16 +114,13 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           SliceBuffer payload;
           // Temporarily give a bogus connection id to get padding right
           header.payload_connection_id = 1;
-          const size_t padding = header.Padding(encode_alignment_);
+          const size_t padding = header.Padding(options_.encode_alignment);
           frame.SerializePayload(payload);
           GRPC_TRACE_LOG(chaotic_good, INFO)
               << "CHAOTIC_GOOD: Send " << payload.Length()
               << "b payload on data channel; add " << padding << " bytes for "
-              << encode_alignment_ << " alignment";
-          if (padding == 0) {
-          } else if (padding < GRPC_SLICE_INLINED_SIZE) {
-            memset(payload.AddTiny(padding), 0, padding);
-          } else {
+              << options_.encode_alignment << " alignment";
+          if (padding != 0) {
             auto slice = MutableSlice::CreateUninitialized(padding);
             memset(slice.data(), 0, padding);
             payload.AppendIndexed(Slice(std::move(slice)));
@@ -183,7 +186,8 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
                            });
               },
               [this, frame_header]() -> absl::StatusOr<IncomingFrame> {
-                const auto padding = frame_header.Padding(decode_alignment_);
+                const auto padding =
+                    frame_header.Padding(options_.decode_alignment);
                 return IncomingFrame(
                     frame_header,
                     data_endpoints_.Read(frame_header.payload_connection_id - 1,
@@ -213,8 +217,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   ControlEndpoint control_endpoint_;
   DataEndpoints data_endpoints_;
-  const uint32_t encode_alignment_;
-  const uint32_t decode_alignment_;
+  const Options options_;
 };
 
 }  // namespace chaotic_good

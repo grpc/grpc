@@ -51,13 +51,9 @@ absl::Status ReadProto(SliceBuffer payload,
 
 void WriteProto(const google::protobuf::MessageLite& msg, SliceBuffer& output) {
   auto length = msg.ByteSizeLong();
-  if (length <= GRPC_SLICE_INLINED_SIZE) {
-    CHECK(msg.SerializeToArray(output.AddTiny(length), length));
-  } else {
-    auto slice = MutableSlice::CreateUninitialized(length);
-    CHECK(msg.SerializeToArray(slice.data(), length));
-    output.AppendIndexed(Slice(std::move(slice)));
-  }
+  auto slice = MutableSlice::CreateUninitialized(length);
+  CHECK(msg.SerializeToArray(slice.data(), length));
+  output.AppendIndexed(Slice(std::move(slice)));
 }
 
 uint32_t ProtoPayloadSize(const google::protobuf::MessageLite& msg) {

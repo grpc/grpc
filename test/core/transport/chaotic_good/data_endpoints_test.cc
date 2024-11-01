@@ -107,7 +107,7 @@ DATA_ENDPOINTS_TEST(CanRead) {
   ep.ExpectRead(
       {grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
       event_engine().get());
-  SpawnTestSeqWithoutContext("read", data_endpoints.Read(0, 5),
+  SpawnTestSeqWithoutContext("read", data_endpoints.Read(0, 5).Await(),
                              [](absl::StatusOr<SliceBuffer> result) {
                                EXPECT_TRUE(result.ok());
                                EXPECT_EQ(result->JoinIntoString(), "hello");
