@@ -119,6 +119,7 @@ def grpc_run_tests_harness_test(name, args = [], data = [], size = "medium", tim
         docker_image_version: The docker .current_version file to use for docker containerization.
         use_login_shell: If True, the run_tests.py command will run under a login shell.
         prepare_script: Optional script that will be sourced before run_tests.py runs.
+        arch: Optional a command to change reported architecture (such as linux32 for i686) for the test.
     """
 
     data = [
