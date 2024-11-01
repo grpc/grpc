@@ -5255,6 +5255,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/container:flat_hash_map
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -6646,6 +6647,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/container:flat_hash_map
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -10103,6 +10105,7 @@ targets:
   - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -12375,6 +12378,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/container:flat_hash_map
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -12984,6 +12988,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/container:flat_hash_map
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -13865,6 +13870,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/container:flat_hash_map
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -14224,6 +14230,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/container:flat_hash_map
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -15190,6 +15197,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/container:flat_hash_map
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -21823,6 +21831,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/container:flat_hash_map
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor

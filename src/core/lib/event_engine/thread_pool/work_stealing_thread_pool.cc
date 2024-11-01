@@ -116,7 +116,7 @@ namespace {
 constexpr auto kIdleThreadLimit = std::chrono::seconds(20);
 // Rate at which "Waiting for ..." logs should be printed while quiescing.
 constexpr size_t kBlockingQuiesceLogRateSeconds = 3;
-// Minumum time between thread creations.
+// Minimum time between thread creations.
 constexpr grpc_core::Duration kTimeBetweenThrottledThreadStarts =
     grpc_core::Duration::Seconds(1);
 // Minimum time a worker thread should sleep between checking for new work. Used

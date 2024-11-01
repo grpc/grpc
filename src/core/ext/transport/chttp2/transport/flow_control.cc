@@ -295,7 +295,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
       // Advertise PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to peer. By advertising
       // PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to the peer, we are informing the
       // peer that we have tcp frame size tuning enabled and we inform it of our
-      // prefered rx frame sizes. The prefered rx frame size is determined as:
+      // preferred rx frame sizes. The preferred rx frame size is determined as:
       // Clamp(target_frame_size_ * 2, 16384, 0x7fffffff). In the future, this
       // maybe updated to a different function of the memory pressure.
       UpdateSetting(

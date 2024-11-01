@@ -100,7 +100,7 @@ TEST(FileWatcherConfigTest, OnlyRootCertificatesFileProvided) {
   EXPECT_EQ((*config)->refresh_interval(), Duration::Seconds(600));
 }
 
-TEST(FileWatcherConfigTest, OnlyIdenityCertificatesAndPrivateKeyProvided) {
+TEST(FileWatcherConfigTest, OnlyIdentityCertificatesAndPrivateKeyProvided) {
   std::string json_str = absl::StrFormat(
       "{"
       "  \"certificate_file\": \"%s\","

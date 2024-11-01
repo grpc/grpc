@@ -47,7 +47,7 @@ RUN Invoke-WebRequest "https://aka.ms/vs/16/release/vs_buildtools.exe" \
     [Environment]::SetEnvironmentVariable(\"BAZEL_VC\", \"C:\VS\VC\", \"Machine\")
 # Install msys2 and add to path.
 RUN [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \
-    Invoke-WebRequest "https://repo.msys2.org/distrib/x86_64/msys2-base-x86_64-20220319.sfx.exe" \
+    Invoke-WebRequest "https://repo.msys2.org/distrib/x86_64/msys2-base-x86_64-20240507.sfx.exe" \
         -OutFile msys2_install.exe -UseBasicParsing; \
     .\msys2_install.exe -y -oC:\; \
     Remove-Item msys2_install.exe; \

@@ -814,6 +814,12 @@ class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
 
     async def test_cancel_after_done_writing(self):
         call = self._stub.FullDuplexCall()
+        request_with_delay = messages_pb2.StreamingOutputCallRequest()
+        request_with_delay.response_parameters.append(
+            messages_pb2.ResponseParameters(interval_us=10000)
+        )
+        await call.write(request_with_delay)
+        await call.write(request_with_delay)
         await call.done_writing()
 
         # Cancels the RPC

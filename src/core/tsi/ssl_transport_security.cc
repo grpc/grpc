@@ -1656,11 +1656,18 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
       default: {
         char err_str[256];
         ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
+        long verify_result = SSL_get_verify_result(impl->ssl);
+        std::string verify_result_str;
+        if (verify_result != X509_V_OK) {
+          const char* verify_err = X509_verify_cert_error_string(verify_result);
+          verify_result_str = absl::StrCat(": ", verify_err);
+        }
         LOG(ERROR) << "Handshake failed with fatal error "
-                   << grpc_core::SslErrorString(ssl_result) << ": " << err_str;
+                   << grpc_core::SslErrorString(ssl_result) << ": " << err_str
+                   << verify_result_str;
         if (error != nullptr) {
           *error = absl::StrCat(grpc_core::SslErrorString(ssl_result), ": ",
-                                err_str);
+                                err_str, verify_result_str);
         }
         impl->result = TSI_PROTOCOL_FAILURE;
         return impl->result;
@@ -1710,7 +1717,7 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
     if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
-  // Atempt to read all of the bytes in SSL's read BIO. These bytes should
+  // Attempt to read all of the bytes in SSL's read BIO. These bytes should
   // contain application data records that were appended to a handshake record
   // containing the ClientFinished or ServerFinished message.
   size_t bytes_in_ssl = BIO_pending(SSL_get_rbio(impl->ssl));

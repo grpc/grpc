@@ -372,7 +372,7 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
   // TCP connection setups.
   // Note that because the server is rejecting TCP connections, we
   // don't really need to cancel the HTTP requests in this test case
-  // in order for them proceeed i.e. in order for them to pass. The test
+  // in order for them proceed i.e. in order for them to pass. The test
   // is still beneficial though because it can exercise the same code paths
   // that would get taken if the HTTP request was cancelled while the TCP
   // connect attempt was actually hanging.

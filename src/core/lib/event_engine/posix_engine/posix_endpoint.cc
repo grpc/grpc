@@ -1214,7 +1214,7 @@ bool PosixEndpointImpl::Write(
   // Write succeeded immediately. Return true and don't run the on_writable
   // callback.
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
-      << "Endpoint[" << this << "]: Write succeded immediately";
+      << "Endpoint[" << this << "]: Write succeeded immediately";
   return true;
 }
 

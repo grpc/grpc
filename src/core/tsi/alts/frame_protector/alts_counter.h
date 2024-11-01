@@ -88,7 +88,7 @@ size_t alts_counter_get_size(alts_counter* crypter_counter);
 unsigned char* alts_counter_get_counter(alts_counter* crypter_counter);
 
 ///
-/// This method de-allocates all memory allocated to an alts_coutner instance.
+/// This method de-allocates all memory allocated to an alts_counter instance.
 ///- crypter_counter: an alts_counter instance.
 ///
 void alts_counter_destroy(alts_counter* crypter_counter);

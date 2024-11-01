@@ -36,7 +36,7 @@
 #   flow_control_test:   tests pertaining explicitly to flow control
 #   hpack_test:          hpack encode/decode tests
 #   promise_test:        tests around the promise architecture
-#   resource_quota_test: tests known to exercse resource quota
+#   resource_quota_test: tests known to exercise resource quota
 
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
