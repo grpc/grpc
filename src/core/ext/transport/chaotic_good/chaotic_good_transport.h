@@ -63,7 +63,7 @@ class IncomingFrame {
             [](DataEndpoints::ReadTicket ticket) { return ticket.Await(); }),
         [remove_padding =
              remove_padding_](absl::StatusOr<SliceBuffer> payload) {
-          if (payload.ok()) payload->RemoveLastNBytes(remove_padding);
+          if (payload.ok()) payload->RemoveLastNBytesNoInline(remove_padding);
           return payload;
         });
   }
