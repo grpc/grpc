@@ -828,6 +828,7 @@ grpc_cc_library(
         "if",
         "promise_factory",
         "promise_variant",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
