@@ -101,6 +101,28 @@ struct MessageFrame final : public FrameInterface {
   MessageHandle message;
 };
 
+struct BeginMessageFrame final : public FrameInterface {
+  absl::Status Deserialize(const FrameHeader& header,
+                           SliceBuffer payload) override;
+  FrameHeader MakeHeader() const override;
+  void SerializePayload(SliceBuffer& payload) const override;
+  std::string ToString() const override;
+
+  uint32_t stream_id;
+  chaotic_good_frame::BeginMessage payload;
+};
+
+struct MessageChunkFrame final : public FrameInterface {
+  absl::Status Deserialize(const FrameHeader& header,
+                           SliceBuffer payload) override;
+  FrameHeader MakeHeader() const override;
+  void SerializePayload(SliceBuffer& payload) const override;
+  std::string ToString() const override;
+
+  uint32_t stream_id;
+  SliceBuffer payload;
+};
+
 struct ClientEndOfStream final : public FrameInterface {
   absl::Status Deserialize(const FrameHeader& header,
                            SliceBuffer payload) override;
@@ -146,10 +168,12 @@ struct CancelFrame final : public FrameInterface {
   uint32_t stream_id;
 };
 
-using ClientFrame = absl::variant<ClientInitialMetadataFrame, MessageFrame,
-                                  ClientEndOfStream, CancelFrame>;
-using ServerFrame = absl::variant<ServerInitialMetadataFrame, MessageFrame,
-                                  ServerTrailingMetadataFrame>;
+using ClientFrame =
+    absl::variant<ClientInitialMetadataFrame, MessageFrame, BeginMessageFrame,
+                  MessageChunkFrame, ClientEndOfStream, CancelFrame>;
+using ServerFrame =
+    absl::variant<ServerInitialMetadataFrame, MessageFrame, BeginMessageFrame,
+                  MessageChunkFrame, ServerTrailingMetadataFrame>;
 
 inline FrameInterface& GetFrameInterface(ClientFrame& frame) {
   return MatchMutable(
@@ -158,6 +182,8 @@ inline FrameInterface& GetFrameInterface(ClientFrame& frame) {
         return *frame;
       },
       [](MessageFrame* frame) -> FrameInterface& { return *frame; },
+      [](BeginMessageFrame* frame) -> FrameInterface& { return *frame; },
+      [](MessageChunkFrame* frame) -> FrameInterface& { return *frame; },
       [](ClientEndOfStream* frame) -> FrameInterface& { return *frame; },
       [](CancelFrame* frame) -> FrameInterface& { return *frame; });
 }
@@ -169,6 +195,8 @@ inline FrameInterface& GetFrameInterface(ServerFrame& frame) {
         return *frame;
       },
       [](MessageFrame* frame) -> FrameInterface& { return *frame; },
+      [](BeginMessageFrame* frame) -> FrameInterface& { return *frame; },
+      [](MessageChunkFrame* frame) -> FrameInterface& { return *frame; },
       [](ServerTrailingMetadataFrame* frame) -> FrameInterface& {
         return *frame;
       });

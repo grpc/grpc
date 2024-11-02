@@ -296,6 +296,59 @@ std::string MessageFrame::ToString() const {
   return out;
 }
 
+absl::Status BeginMessageFrame::Deserialize(const FrameHeader& header,
+                                            SliceBuffer payload) {
+  CHECK_EQ(header.type, FrameType::kBeginMessage);
+  if (header.stream_id == 0) {
+    return absl::InternalError("Expected non-zero stream id");
+  }
+  stream_id = header.stream_id;
+  return ReadProto(std::move(payload), this->payload);
+}
+
+FrameHeader BeginMessageFrame::MakeHeader() const {
+  return FrameHeader{FrameType::kBeginMessage, 0, stream_id,
+                     ProtoPayloadSize(payload)};
+}
+
+void BeginMessageFrame::SerializePayload(SliceBuffer& payload) const {
+  CHECK_NE(stream_id, 0u);
+  WriteProto(this->payload, payload);
+}
+
+std::string BeginMessageFrame::ToString() const {
+  return absl::StrCat("BeginMessageFrame{stream_id=", stream_id,
+                      ", payload=", payload.ShortDebugString(), "}");
+}
+
+absl::Status MessageChunkFrame::Deserialize(const FrameHeader& header,
+                                            SliceBuffer payload) {
+  CHECK_EQ(header.type, FrameType::kMessageChunk);
+  if (header.stream_id == 0) {
+    return absl::InternalError("Expected non-zero stream id");
+  }
+  stream_id = header.stream_id;
+  this->payload = std::move(payload);
+  return absl::OkStatus();
+}
+
+FrameHeader MessageChunkFrame::MakeHeader() const {
+  auto length = payload.Length();
+  CHECK_LE(length, std::numeric_limits<uint32_t>::max());
+  return FrameHeader{FrameType::kMessageChunk, 0, stream_id,
+                     static_cast<uint32_t>(length)};
+}
+
+void MessageChunkFrame::SerializePayload(SliceBuffer& payload) const {
+  CHECK_NE(stream_id, 0u);
+  payload.Append(this->payload);
+}
+
+std::string MessageChunkFrame::ToString() const {
+  return absl::StrCat("MessageFrame{stream_id=", stream_id,
+                      ", payload=", payload.Length(), "b}");
+}
+
 absl::Status ServerInitialMetadataFrame::Deserialize(const FrameHeader& header,
                                                      SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kServerInitialMetadata);

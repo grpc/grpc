@@ -79,7 +79,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
       const ChannelArgs& args, PromiseEndpoint control_endpoint,
       std::vector<PromiseEndpoint> data_endpoints,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+          event_engine,
+      Config config);
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }
@@ -148,6 +149,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   RefCountedPtr<Party> party_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
       "chaotic_good_server", GRPC_CHANNEL_READY};
+  MessageChunker message_chunker_;
 };
 
 }  // namespace chaotic_good

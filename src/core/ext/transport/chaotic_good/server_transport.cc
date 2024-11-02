@@ -129,11 +129,10 @@ auto ChaoticGoodServerTransport::SendCallBody(
   return ForEach(OutgoingMessages(call_initiator),
                  [this, stream_id, outgoing_frames = std::move(outgoing_frames),
                   call_initiator](MessageHandle message) mutable {
-                   MessageFrame frame;
-                   frame.message = std::move(message);
-                   frame.stream_id = stream_id;
-                   return SendFrameAcked(std::move(frame), outgoing_frames,
-                                         call_initiator);
+                   return Map(message_chunker_.Send(std::move(message),
+                                                    stream_id, outgoing_frames),
+                              BooleanSuccessToTransportErrorCapturingInitiator(
+                                  std::move(call_initiator)));
                  });
 }
 
@@ -299,21 +298,19 @@ auto ChaoticGoodServerTransport::OnTransportActivityDone(
 ChaoticGoodServerTransport::ChaoticGoodServerTransport(
     const ChannelArgs& args, PromiseEndpoint control_endpoint,
     std::vector<PromiseEndpoint> data_endpoints,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
+    Config config)
     : call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
           args.GetObject<ResourceQuota>()
               ->memory_quota()
               ->CreateMemoryAllocator("chaotic-good"),
           1024)),
       event_engine_(event_engine),
-      outgoing_frames_(4) {
-  ChaoticGoodTransport::Options options;
-  options.inlined_payload_size_threshold =
-      args.GetInt("grpc.chaotic_good.inlined_payload_size_threshold")
-          .value_or(options.inlined_payload_size_threshold);
+      outgoing_frames_(4),
+      message_chunker_(config.MakeMessageChunker()) {
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), std::move(data_endpoints), event_engine,
-      options);
+      config.MakeTransportOptions());
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());

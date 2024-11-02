@@ -34,6 +34,8 @@ enum class FrameType : uint8_t {
   kServerInitialMetadata = 0x91,
   kServerTrailingMetadata = 0x92,
   kMessage = 0xa0,
+  kBeginMessage = 0xa1,
+  kMessageChunk = 0xa2,
   kCancel = 0xff,
 };
 

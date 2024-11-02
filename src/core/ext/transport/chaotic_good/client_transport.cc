@@ -35,7 +35,6 @@
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/event_engine/extensions/tcp_trace.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/loop.h"
@@ -175,14 +174,16 @@ auto ChaoticGoodClientTransport::OnTransportActivityDone(
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
     PromiseEndpoint control_endpoint,
     std::vector<PromiseEndpoint> data_endpoints, const ChannelArgs& args,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
+    const Config& config)
     : allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
-      outgoing_frames_(4) {
+      outgoing_frames_(4),
+      message_chunker_(config.MakeMessageChunker()) {
   CHECK(event_engine != nullptr);
   // Set up TCP tracer if enabled.
-  if (args.GetBool(GRPC_ARG_TCP_TRACING_ENABLED).value_or(false)) {
+  if (config.tracing_enabled()) {
     for (auto& ep : data_endpoints) {
       auto* epte = grpc_event_engine::experimental::QueryExtension<
           grpc_event_engine::experimental::TcpTraceExtension>(
@@ -193,13 +194,9 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
     }
   }
   CHECK(event_engine != nullptr);
-  ChaoticGoodTransport::Options options;
-  options.inlined_payload_size_threshold =
-      args.GetInt("grpc.chaotic_good.inlined_payload_size_threshold")
-          .value_or(options.inlined_payload_size_threshold);
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), std::move(data_endpoints), event_engine,
-      options);
+      config.MakeTransportOptions());
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());
@@ -270,11 +267,11 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
     return Map(outgoing_frames.Send(std::move(frame)),
                BooleanSuccessToTransportError);
   };
-  auto send_fragment_acked =
-      [stream_id,
-       outgoing_frames = outgoing_frames_.MakeSender()](auto frame) mutable {
-        frame.stream_id = stream_id;
-        return Map(outgoing_frames.SendAcked(std::move(frame)),
+  auto send_message =
+      [stream_id, outgoing_frames = outgoing_frames_.MakeSender(),
+       message_chunker = message_chunker_](MessageHandle message) mutable {
+        return Map(message_chunker.Send(std::move(message), stream_id,
+                                        outgoing_frames),
                    BooleanSuccessToTransportError);
       };
   return GRPC_LATENT_SEE_PROMISE(
@@ -291,12 +288,7 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
             return send_fragment(std::move(frame));
           },
           // Continuously send client frame with client to server messages.
-          ForEach(OutgoingMessages(call_handler),
-                  [send_fragment_acked](MessageHandle message) mutable {
-                    MessageFrame frame;
-                    frame.message = std::move(message);
-                    return send_fragment_acked(std::move(frame));
-                  }),
+          ForEach(OutgoingMessages(call_handler), std::move(send_message)),
           [send_fragment]() mutable {
             ClientEndOfStream frame;
             return send_fragment(std::move(frame));
