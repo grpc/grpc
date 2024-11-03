@@ -25,6 +25,7 @@
 #include "absl/random/random.h"
 #include "absl/status/statusor.h"
 #include "src/core/client_channel/connector.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -89,6 +90,7 @@ class ChaoticGoodConnector : public SubchannelConnector {
   std::vector<PromiseEndpoint> data_endpoints_;
   std::vector<std::string> connection_ids_;
   ActivityPtr connect_activity_ ABSL_GUARDED_BY(mu_);
+  chaotic_good::Config config_;
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
   RefCountedPtr<HandshakeManager> handshake_mgr_;
