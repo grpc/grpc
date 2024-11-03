@@ -332,6 +332,11 @@ class Config {
 
   bool tracing_enabled() const { return tracing_enabled_; }
 
+  void TestOnlySetChunkSizes(uint32_t size) {
+    max_send_chunk_size_ = size;
+    max_recv_chunk_size_ = size;
+  }
+
  private:
   bool tracing_enabled_ = false;
   uint32_t encode_alignment_ = 64;

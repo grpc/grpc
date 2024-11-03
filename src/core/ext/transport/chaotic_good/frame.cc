@@ -345,7 +345,7 @@ void MessageChunkFrame::SerializePayload(SliceBuffer& payload) const {
 }
 
 std::string MessageChunkFrame::ToString() const {
-  return absl::StrCat("MessageFrame{stream_id=", stream_id,
+  return absl::StrCat("MessageChunk{stream_id=", stream_id,
                       ", payload=", payload.Length(), "b}");
 }
 
