@@ -146,7 +146,7 @@ absl::Status ChaoticGoodServerListener::StartListening() {
 ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
     RefCountedPtr<ChaoticGoodServerListener> listener,
     std::unique_ptr<EventEngine::Endpoint> endpoint)
-    : listener_(std::move(listener)) {
+    : listener_(std::move(listener)), config_(args()) {
   arena_->SetContext<grpc_event_engine::experimental::EventEngine>(
       listener_->event_engine_.get());
   handshaking_state_ = MakeRefCounted<HandshakingState>(Ref());
@@ -264,6 +264,9 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                           frame.settings.connection_id()[0]);
                       self->connection_->data_alignment_ =
                           frame.settings.alignment();
+                    } else {
+                      self->connection_->config_.ReceiveIncomingSettings(
+                          frame.settings);
                     }
                     return !frame.settings.data_channel();
                   });
@@ -311,7 +314,8 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                 new ChaoticGoodServerTransport(
                     self->connection_->args(),
                     std::move(self->connection_->endpoint_), std::move(ret),
-                    self->connection_->listener_->event_engine_),
+                    self->connection_->listener_->event_engine_,
+                    self->connection_->config_),
                 nullptr, self->connection_->args(), nullptr);
           }),
       // Set timeout for waiting data endpoint connect.
@@ -341,6 +345,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   for (const auto& connection_id : self->connection_->connection_ids_) {
     frame.settings.add_connection_id(connection_id);
   }
+  self->connection_->config_.PrepareOutgoingSettings(frame.settings);
   SliceBuffer write_buffer;
   frame.MakeHeader().Serialize(
       write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));

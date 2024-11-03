@@ -208,6 +208,7 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
                        frame.settings.connection_id()) {
                     self->connection_ids_.push_back(connection_id);
                   }
+                  self->config_->ReceiveIncomingSettings(frame.settings);
                   self->data_endpoints_.resize(self->connection_ids_.size());
                   for (size_t i = 0; i < self->connection_ids_.size(); ++i) {
                     self->data_endpoint_ready_.emplace_back(
@@ -237,6 +238,7 @@ auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
   SettingsFrame frame;
   // frame.header set connectiion_type: control
   frame.settings.set_data_channel(false);
+  self->config_->PrepareOutgoingSettings(frame.settings);
   SliceBuffer write_buffer;
   frame.MakeHeader().Serialize(
       write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
@@ -259,6 +261,7 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
     notify_ = notify;
   }
   args_ = args;
+  config_.reset(new Config(args.channel_args));
   resolved_addr_ = EventEngine::ResolvedAddress(
       reinterpret_cast<const sockaddr*>(args_.address->addr),
       args_.address->len);
@@ -344,7 +347,7 @@ void ChaoticGoodConnector::OnHandshakeDone(
             self->result_->transport = new ChaoticGoodClientTransport(
                 std::move(self->control_endpoint_),
                 std::move(self->data_endpoints_), self->args_.channel_args,
-                self->event_engine_);
+                self->event_engine_, *self->config_);
             self->result_->channel_args = self->args_.channel_args;
             ExecCtx::Run(DEBUG_LOCATION, std::exchange(self->notify_, nullptr),
                          status);

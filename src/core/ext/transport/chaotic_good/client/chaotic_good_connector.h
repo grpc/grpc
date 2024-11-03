@@ -80,6 +80,7 @@ class ChaoticGoodConnector : public SubchannelConnector {
   RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
   Mutex mu_;
   Args args_;
+  std::unique_ptr<chaotic_good::Config> config_;
   Result* result_ ABSL_GUARDED_BY(mu_);
   grpc_closure* notify_ ABSL_GUARDED_BY(mu_) = nullptr;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
@@ -90,7 +91,6 @@ class ChaoticGoodConnector : public SubchannelConnector {
   std::vector<PromiseEndpoint> data_endpoints_;
   std::vector<std::string> connection_ids_;
   ActivityPtr connect_activity_ ABSL_GUARDED_BY(mu_);
-  chaotic_good::Config config_;
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
   RefCountedPtr<HandshakeManager> handshake_mgr_;

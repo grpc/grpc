@@ -8531,6 +8531,7 @@ grpc_cc_library(
         "chaotic_good_frame",
         "chaotic_good_frame_header",
         "chaotic_good_server_transport",
+        "chaotic_good_transport",
         "closure",
         "context",
         "error",

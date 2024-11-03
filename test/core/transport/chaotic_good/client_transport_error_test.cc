@@ -139,6 +139,8 @@ class ClientTransportTest : public ::testing::Test {
         .PreconditionChannelArgs(nullptr);
   }
 
+  Config MakeConfig() { return Config(MakeChannelArgs()); }
+
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
     auto arena = call_arena_allocator_->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
@@ -187,7 +189,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
       OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      MakeChannelArgs(), event_engine());
+      MakeChannelArgs(), event_engine(), MakeConfig());
   auto call = MakeCall(TestInitialMetadata());
   transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
@@ -233,7 +235,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
       OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      MakeChannelArgs(), event_engine());
+      MakeChannelArgs(), event_engine(), MakeConfig());
   auto call = MakeCall(TestInitialMetadata());
   transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
@@ -287,7 +289,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
       OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      MakeChannelArgs(), event_engine());
+      MakeChannelArgs(), event_engine(), MakeConfig());
   auto call1 = MakeCall(TestInitialMetadata());
   transport->StartCall(call1.handler.StartCall());
   auto call2 = MakeCall(TestInitialMetadata());
@@ -357,7 +359,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
       OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      MakeChannelArgs(), event_engine());
+      MakeChannelArgs(), event_engine(), MakeConfig());
   auto call1 = MakeCall(TestInitialMetadata());
   transport->StartCall(call1.handler.StartCall());
   auto call2 = MakeCall(TestInitialMetadata());
