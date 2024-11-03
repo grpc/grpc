@@ -208,7 +208,9 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
                        frame.settings.connection_id()) {
                     self->connection_ids_.push_back(connection_id);
                   }
-                  self->config_->ReceiveIncomingSettings(frame.settings);
+                  auto settings_status =
+                      self->config_->ReceiveIncomingSettings(frame.settings);
+                  if (!settings_status.ok()) return settings_status;
                   self->data_endpoints_.resize(self->connection_ids_.size());
                   for (size_t i = 0; i < self->connection_ids_.size(); ++i) {
                     self->data_endpoint_ready_.emplace_back(

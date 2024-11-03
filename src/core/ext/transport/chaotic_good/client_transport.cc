@@ -61,39 +61,61 @@ void ChaoticGoodClientTransport::Orphan() {
   Unref();
 }
 
-absl::optional<CallHandler> ChaoticGoodClientTransport::LookupStream(
-    uint32_t stream_id) {
+RefCountedPtr<ChaoticGoodClientTransport::Stream>
+ChaoticGoodClientTransport::LookupStream(uint32_t stream_id) {
   MutexLock lock(&mu_);
   auto it = stream_map_.find(stream_id);
   if (it == stream_map_.end()) {
-    return absl::nullopt;
+    return nullptr;
   }
   return it->second;
 }
 
 auto ChaoticGoodClientTransport::PushFrameIntoCall(
-    ServerInitialMetadataFrame frame, CallHandler call_handler) {
+    ServerInitialMetadataFrame frame, RefCountedPtr<Stream> stream) {
+  DCHECK(stream->message_reassembly.in_message_boundary());
   auto headers = ServerMetadataGrpcFromProto(frame.headers);
   if (!headers.ok()) {
     LOG_EVERY_N_SEC(INFO, 10) << "Encode headers failed: " << headers.status();
     return Immediate(StatusFlag(Failure{}));
   }
-  return Immediate(call_handler.PushServerInitialMetadata(std::move(*headers)));
-}
-
-auto ChaoticGoodClientTransport::PushFrameIntoCall(MessageFrame frame,
-                                                   CallHandler call_handler) {
-  return call_handler.PushMessage(std::move(frame.message));
+  return Immediate(stream->call.PushServerInitialMetadata(std::move(*headers)));
 }
 
 auto ChaoticGoodClientTransport::PushFrameIntoCall(
-    ServerTrailingMetadataFrame frame, CallHandler call_handler) {
+    MessageFrame frame, RefCountedPtr<Stream> stream) {
+  return stream->message_reassembly.PushFrameInto(std::move(frame),
+                                                  stream->call);
+}
+
+auto ChaoticGoodClientTransport::PushFrameIntoCall(
+    BeginMessageFrame frame, RefCountedPtr<Stream> stream) {
+  return stream->message_reassembly.PushFrameInto(std::move(frame),
+                                                  stream->call);
+}
+
+auto ChaoticGoodClientTransport::PushFrameIntoCall(
+    MessageChunkFrame frame, RefCountedPtr<Stream> stream) {
+  return stream->message_reassembly.PushFrameInto(std::move(frame),
+                                                  stream->call);
+}
+
+auto ChaoticGoodClientTransport::PushFrameIntoCall(
+    ServerTrailingMetadataFrame frame, RefCountedPtr<Stream> stream) {
   auto trailers = ServerMetadataGrpcFromProto(frame.trailers);
   if (!trailers.ok()) {
-    call_handler.PushServerTrailingMetadata(
+    stream->call.PushServerTrailingMetadata(
         CancelledServerMetadataFromStatus(trailers.status()));
+  } else if (!stream->message_reassembly.in_message_boundary() &&
+             (*trailers)
+                     ->get(GrpcStatusMetadata())
+                     .value_or(GRPC_STATUS_UNKNOWN) == GRPC_STATUS_OK) {
+    stream->call.PushServerTrailingMetadata(CancelledServerMetadataFromStatus(
+        GRPC_STATUS_INTERNAL,
+        "End of call received while still receiving last message - this is a "
+        "protocol error"));
   } else {
-    call_handler.PushServerTrailingMetadata(std::move(*trailers));
+    stream->call.PushServerTrailingMetadata(std::move(*trailers));
   }
   return Immediate(Success{});
 }
@@ -102,27 +124,28 @@ template <typename T>
 auto ChaoticGoodClientTransport::DispatchFrame(
     RefCountedPtr<ChaoticGoodTransport> transport,
     IncomingFrame incoming_frame) {
-  absl::optional<CallHandler> call_handler =
-      LookupStream(incoming_frame.header().stream_id);
+  auto stream = LookupStream(incoming_frame.header().stream_id);
   return GRPC_LATENT_SEE_PROMISE(
       "ChaoticGoodClientTransport::DispatchFrame",
       If(
-          call_handler.has_value(),
-          [this, &call_handler, &incoming_frame, &transport]() {
-            return call_handler->SpawnWaitable(
-                "push-frame", [this, call_handler = *call_handler,
+          stream != nullptr,
+          [this, &stream, &incoming_frame, &transport]() {
+            auto& call = stream->call;
+            return call.SpawnWaitable(
+                "push-frame", [this, stream = std::move(stream),
                                incoming_frame = std::move(incoming_frame),
                                transport = std::move(transport)]() mutable {
-                  return call_handler.CancelIfFails(TrySeq(
+                  auto& call = stream->call;
+                  return call.CancelIfFails(TrySeq(
                       incoming_frame.Payload(),
                       [transport = std::move(transport),
                        header = incoming_frame.header()](SliceBuffer payload) {
                         return transport->DeserializeFrame<T>(
                             header, std::move(payload));
                       },
-                      [call_handler, this](T frame) {
+                      [stream = std::move(stream), this](T frame) mutable {
                         return PushFrameIntoCall(std::move(frame),
-                                                 call_handler);
+                                                 std::move(stream));
                       },
                       ImmediateOkStatus()));
                 });
@@ -224,9 +247,10 @@ void ChaoticGoodClientTransport::AbortWithError() {
   stream_map_.clear();
   lock.Release();
   for (const auto& pair : stream_map) {
-    auto call_handler = pair.second;
-    call_handler.SpawnInfallible("cancel", [call_handler]() mutable {
-      call_handler.PushServerTrailingMetadata(ServerMetadataFromStatus(
+    auto stream = std::move(pair.second);
+    auto& call = stream->call;
+    call.SpawnInfallible("cancel", [stream = std::move(stream)]() mutable {
+      stream->call.PushServerTrailingMetadata(ServerMetadataFromStatus(
           absl::UnavailableError("Transport closed.")));
       return Empty{};
     });
@@ -247,7 +271,8 @@ uint32_t ChaoticGoodClientTransport::MakeStream(CallHandler call_handler) {
         self->stream_map_.erase(stream_id);
       });
   if (!on_done_added) return 0;
-  stream_map_.emplace(stream_id, call_handler);
+  stream_map_.emplace(stream_id,
+                      MakeRefCounted<Stream>(std::move(call_handler)));
   return stream_id;
 }
 

@@ -265,8 +265,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                       self->connection_->data_alignment_ =
                           frame.settings.alignment();
                     } else {
-                      self->connection_->config_.ReceiveIncomingSettings(
-                          frame.settings);
+                      auto settings_status =
+                          self->connection_->config_.ReceiveIncomingSettings(
+                              frame.settings);
+                      if (!settings_status.ok()) return settings_status;
                     }
                     return !frame.settings.data_channel();
                   });

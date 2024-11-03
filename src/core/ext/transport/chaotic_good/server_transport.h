@@ -96,11 +96,16 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   void AbortWithError();
 
  private:
-  using StreamMap = absl::flat_hash_map<uint32_t, CallInitiator>;
+  struct Stream : public RefCounted<Stream> {
+    explicit Stream(CallInitiator call) : call(std::move(call)) {}
+    CallInitiator call;
+    MessageReassembly message_reassembly;
+  };
+  using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>;
 
   absl::Status NewStream(uint32_t stream_id, CallInitiator call_initiator);
-  absl::optional<CallInitiator> LookupStream(uint32_t stream_id);
-  absl::optional<CallInitiator> ExtractStream(uint32_t stream_id);
+  RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
+  RefCountedPtr<Stream> ExtractStream(uint32_t stream_id);
   auto SendCallInitialMetadataAndBody(uint32_t stream_id,
                                       MpscSender<ServerFrame> outgoing_frames,
                                       CallInitiator call_initiator);
@@ -127,8 +132,10 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   template <typename T>
   auto DispatchFrame(RefCountedPtr<ChaoticGoodTransport> transport,
                      IncomingFrame frame);
-  auto PushFrameIntoCall(CallInitiator call_initiator, MessageFrame frame);
-  auto PushFrameIntoCall(CallInitiator call_initiator, ClientEndOfStream frame);
+  auto PushFrameIntoCall(RefCountedPtr<Stream> stream, MessageFrame frame);
+  auto PushFrameIntoCall(RefCountedPtr<Stream> stream, ClientEndOfStream frame);
+  auto PushFrameIntoCall(RefCountedPtr<Stream> stream, BeginMessageFrame frame);
+  auto PushFrameIntoCall(RefCountedPtr<Stream> stream, MessageChunkFrame frame);
   auto SendFrame(ServerFrame frame, MpscSender<ServerFrame> outgoing_frames,
                  CallInitiator call_initiator);
   auto SendFrameAcked(ServerFrame frame,

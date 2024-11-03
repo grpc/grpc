@@ -18,6 +18,8 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstdint>
+#include <limits>
+#include <memory>
 #include <utility>
 
 #include "absl/strings/escaping.h"
@@ -36,6 +38,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 
 namespace grpc_core {
@@ -285,6 +288,82 @@ class MessageChunker {
 
   const uint32_t max_chunk_size_;
   const uint32_t alignment_;
+};
+
+class MessageReassembly {
+ public:
+  void FailCall(CallInitiator& call, absl::string_view) { call.Cancel(); }
+  void FailCall(CallHandler& call, absl::string_view msg) {
+    call.PushServerTrailingMetadata(
+        CancelledServerMetadataFromStatus(GRPC_STATUS_INTERNAL, msg));
+  }
+
+  template <typename Sink>
+  auto PushFrameInto(MessageFrame frame, Sink& sink) {
+    return If(
+        in_message_boundary(),
+        [&]() { return sink.PushMessage(std::move(frame.message)); },
+        [&]() {
+          FailCall(sink,
+                   "Received full message without completing previous chunked "
+                   "message");
+          return Immediate(StatusFlag(Failure{}));
+        });
+  }
+
+  template <typename Sink>
+  auto PushFrameInto(BeginMessageFrame frame, Sink& sink) {
+    bool ok = false;
+    if (!in_message_boundary()) {
+      FailCall(sink,
+               "Received begin message without completing previous chunked "
+               "message");
+    } else if (frame.payload.length() == 0) {
+      FailCall(sink,
+               "Received begin message for an empty message (not allowed)");
+    } else if (frame.payload.length() > std::numeric_limits<size_t>::max()) {
+      FailCall(sink, "Received too large begin message");
+    } else {
+      chunk_receiver_ = std::make_unique<ChunkReceiver>();
+      chunk_receiver_->bytes_remaining = frame.payload.length();
+      ok = true;
+    }
+    return Immediate(StatusFlag(ok));
+  }
+
+  template <typename Sink>
+  auto PushFrameInto(MessageChunkFrame frame, Sink& sink) {
+    bool ok = false;
+    bool done = false;
+    if (in_message_boundary()) {
+      FailCall(sink, "Received message chunk without BeginMessage");
+    } else if (chunk_receiver_->bytes_remaining < frame.payload.Length()) {
+      FailCall(sink, "Message chunks are longer than BeginMessage declared");
+    } else {
+      chunk_receiver_->bytes_remaining -= frame.payload.Length();
+      chunk_receiver_->incoming.Append(frame.payload);
+      ok = true;
+      done = chunk_receiver_->bytes_remaining == 0;
+    }
+    return If(
+        done,
+        [&]() {
+          auto message = Arena::MakePooled<Message>(
+              std::move(chunk_receiver_->incoming), 0);
+          chunk_receiver_.reset();
+          return sink.PushMessage(std::move(message));
+        },
+        [&]() { return StatusFlag(ok); });
+  }
+
+  bool in_message_boundary() { return chunk_receiver_ == nullptr; }
+
+ private:
+  struct ChunkReceiver {
+    size_t bytes_remaining;
+    SliceBuffer incoming;
+  };
+  std::unique_ptr<ChunkReceiver> chunk_receiver_;
 };
 
 class Config {

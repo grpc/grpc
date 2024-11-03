@@ -61,10 +61,33 @@ absl::StatusOr<FrameHeader> FrameHeader::Parse(const uint8_t* data) {
 }
 
 std::string FrameHeader::ToString() const {
-  return absl::StrFormat(
-      "[type=0x%02x, conn=0x%04x, stream_id=%d, payload_length=%d]",
-      static_cast<uint8_t>(type), payload_connection_id, stream_id,
-      payload_length);
+  return absl::StrCat("[type:", type, " conn:", payload_connection_id,
+                      " stream_id:", stream_id,
+                      " payload_length:", payload_length, "]");
+}
+
+std::string FrameTypeString(FrameType type) {
+  switch (type) {
+    case FrameType::kSettings:
+      return "Settings";
+    case FrameType::kClientInitialMetadata:
+      return "ClientInitialMetadata";
+    case FrameType::kClientEndOfStream:
+      return "ClientEndOfStream";
+    case FrameType::kMessage:
+      return "Message";
+    case FrameType::kServerInitialMetadata:
+      return "ServerInitialMetadata";
+    case FrameType::kServerTrailingMetadata:
+      return "ServerTrailingMetadata";
+    case FrameType::kCancel:
+      return "Cancel";
+    case FrameType::kBeginMessage:
+      return "BeginMessage";
+    case FrameType::kMessageChunk:
+      return "MessageChunk";
+  }
+  return absl::StrCat("Unknown[", static_cast<int>(type), "]");
 }
 
 }  // namespace chaotic_good

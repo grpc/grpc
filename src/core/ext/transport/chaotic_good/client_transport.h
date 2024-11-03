@@ -84,10 +84,15 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   void AbortWithError();
 
  private:
-  using StreamMap = absl::flat_hash_map<uint32_t, CallHandler>;
+  struct Stream : public RefCounted<Stream> {
+    explicit Stream(CallHandler call) : call(std::move(call)) {}
+    CallHandler call;
+    MessageReassembly message_reassembly;
+  };
+  using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>;
 
   uint32_t MakeStream(CallHandler call_handler);
-  absl::optional<CallHandler> LookupStream(uint32_t stream_id);
+  RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
   auto OnTransportActivityDone(absl::string_view what);
   template <typename T>
@@ -96,10 +101,12 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   // Push one frame into a call
   auto PushFrameIntoCall(ServerInitialMetadataFrame frame,
-                         CallHandler call_handler);
-  auto PushFrameIntoCall(MessageFrame frame, CallHandler call_handler);
+                         RefCountedPtr<Stream> stream);
+  auto PushFrameIntoCall(MessageFrame frame, RefCountedPtr<Stream> stream);
   auto PushFrameIntoCall(ServerTrailingMetadataFrame frame,
-                         CallHandler call_handler);
+                         RefCountedPtr<Stream> stream);
+  auto PushFrameIntoCall(BeginMessageFrame frame, RefCountedPtr<Stream> stream);
+  auto PushFrameIntoCall(MessageChunkFrame frame, RefCountedPtr<Stream> stream);
 
   grpc_event_engine::experimental::MemoryAllocator allocator_;
   // Max buffer is set to 4, so that for stream writes each time it will queue
