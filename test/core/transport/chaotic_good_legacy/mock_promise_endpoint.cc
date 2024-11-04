@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/transport/chaotic_good/mock_promise_endpoint.h"
+#include "test/core/transport/chaotic_good_legacy/mock_promise_endpoint.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -25,7 +25,7 @@ using grpc_event_engine::experimental::EventEngine;
 using testing::WithArgs;
 
 namespace grpc_core {
-namespace chaotic_good {
+namespace chaotic_good_legacy {
 namespace testing {
 
 void MockPromiseEndpoint::ExpectRead(
@@ -84,30 +84,6 @@ void MockPromiseEndpoint::ExpectWrite(
           }));
 }
 
-void MockPromiseEndpoint::CaptureWrites(SliceBuffer& writes,
-                                        EventEngine* schedule_on_event_engine) {
-  EXPECT_CALL(*endpoint, Write)
-      .Times(::testing::AtLeast(0))
-      .WillRepeatedly(WithArgs<0, 1>(
-          [writes = &writes, schedule_on_event_engine](
-              absl::AnyInvocable<void(absl::Status)> on_writable,
-              grpc_event_engine::experimental::SliceBuffer* buffer) {
-            SliceBuffer temp;
-            grpc_slice_buffer_swap(temp.c_slice_buffer(),
-                                   buffer->c_slice_buffer());
-            writes->Append(temp);
-            if (schedule_on_event_engine != nullptr) {
-              schedule_on_event_engine->Run(
-                  [on_writable = std::move(on_writable)]() mutable {
-                    on_writable(absl::OkStatus());
-                  });
-              return false;
-            } else {
-              return true;
-            }
-          }));
-}
-
 }  // namespace testing
-}  // namespace chaotic_good
+}  // namespace chaotic_good_legacy
 }  // namespace grpc_core
