@@ -111,9 +111,4 @@
 - name: work_serializer_clears_time_cache
   default: true
 - name: work_serializer_dispatch
-  default:
-    # TODO(ysseung): Not fully tested.
-    ios: broken
-    posix: true
-    # TODO(ysseung): Test flakes not fully resolved.
-    windows: broken
+  default: true
