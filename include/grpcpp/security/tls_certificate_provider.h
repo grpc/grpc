@@ -71,11 +71,15 @@ class GRPCXX_DLL StaticDataCertificateProvider
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 
-  // Returns an OK status if the following conditions hold:
+  // Returns an OK status if the both of the following conditions hold:
   // - the root certificates consist of one or more valid PEM blocks, and
   // - every identity key-cert pair has a certificate chain that consists of
   //   valid PEM blocks and has a private key is a valid PEM block.
+  // Separate validation APIs are provided to validate the above conditions
+  // individually.
   absl::Status ValidateCredentials() const;
+  absl::Status ValidateRootCertificates() const;
+  absl::Status ValidateIdentityKeyCertPairs() const;
 
  private:
   grpc_tls_certificate_provider* c_provider_ = nullptr;
@@ -127,13 +131,17 @@ class GRPCXX_DLL FileWatcherCertificateProvider final
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 
-  // Returns an OK status if the following conditions hold:
+  // Returns an OK status if the both of the following conditions hold:
   // - the currently-loaded root certificates, if any, consist of one or more
   //   valid PEM blocks, and
   // - every currently-loaded identity key-cert pair, if any, has a certificate
   //   chain that consists of valid PEM blocks and has a private key is a valid
   //   PEM block.
+  // Separate validation APIs are provided to validate the above conditions
+  // individually.
   absl::Status ValidateCredentials() const;
+  absl::Status ValidateRootCertificates() const;
+  absl::Status ValidateIdentityKeyCertPairs() const;
 
  private:
   grpc_tls_certificate_provider* c_provider_ = nullptr;

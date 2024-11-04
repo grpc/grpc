@@ -107,6 +107,8 @@ class StaticDataCertificateProvider final
   UniqueTypeName type() const override;
 
   absl::Status ValidateCredentials() const;
+  absl::Status ValidatePemKeyCertPairList() const;
+  absl::Status ValidateRootCertificates() const;
 
  private:
   struct WatcherInfo {
@@ -124,7 +126,7 @@ class StaticDataCertificateProvider final
   std::string root_certificate_;
   PemKeyCertPairList pem_key_cert_pairs_;
   // Guards members below.
-  Mutex mu_;
+  mutable Mutex mu_;
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_;
@@ -148,6 +150,8 @@ class FileWatcherCertificateProvider final
   UniqueTypeName type() const override;
 
   absl::Status ValidateCredentials() const;
+  absl::Status ValidatePemKeyCertPairList() const;
+  absl::Status ValidateRootCertificates() const;
 
   int64_t TestOnlyGetRefreshIntervalSecond() const;
 

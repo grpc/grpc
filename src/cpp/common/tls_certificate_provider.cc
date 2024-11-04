@@ -52,6 +52,21 @@ absl::Status StaticDataCertificateProvider::ValidateCredentials() const {
   return provider->ValidateCredentials();
 }
 
+absl::Status StaticDataCertificateProvider::ValidateIdentityKeyCertPairs()
+    const {
+  auto* provider =
+      grpc_core::DownCast<grpc_core::StaticDataCertificateProvider*>(
+          c_provider_);
+  return provider->ValidatePemKeyCertPairList();
+}
+
+absl::Status StaticDataCertificateProvider::ValidateRootCertificates() const {
+  auto* provider =
+      grpc_core::DownCast<grpc_core::StaticDataCertificateProvider*>(
+          c_provider_);
+  return provider->ValidateRootCertificates();
+}
+
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     const std::string& private_key_path,
     const std::string& identity_certificate_path,
@@ -71,6 +86,21 @@ absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
       grpc_core::DownCast<grpc_core::FileWatcherCertificateProvider*>(
           c_provider_);
   return provider->ValidateCredentials();
+}
+
+absl::Status FileWatcherCertificateProvider::ValidateRootCertificates() const {
+  auto* provider =
+      grpc_core::DownCast<grpc_core::FileWatcherCertificateProvider*>(
+          c_provider_);
+  return provider->ValidateRootCertificates();
+}
+
+absl::Status FileWatcherCertificateProvider::ValidateIdentityKeyCertPairs()
+    const {
+  auto* provider =
+      grpc_core::DownCast<grpc_core::FileWatcherCertificateProvider*>(
+          c_provider_);
+  return provider->ValidatePemKeyCertPairList();
 }
 
 }  // namespace experimental

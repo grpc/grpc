@@ -45,7 +45,7 @@
 namespace grpc_core {
 namespace {
 
-absl::Status ValidateRootCertificates(absl::string_view root_certificates) {
+absl::Status ValidateRootCertificateSet(absl::string_view root_certificates) {
   if (root_certificates.empty()) return absl::OkStatus();
   absl::StatusOr<std::vector<X509*>> parsed_roots =
       ParsePemCertificateChain(root_certificates);
@@ -142,7 +142,8 @@ UniqueTypeName StaticDataCertificateProvider::type() const {
 }
 
 absl::Status StaticDataCertificateProvider::ValidateCredentials() const {
-  absl::Status status = ValidateRootCertificates(root_certificate_);
+  MutexLock lock(&mu_);
+  absl::Status status = ValidateRootCertificateSet(root_certificate_);
   if (!status.ok()) {
     return status;
   }
@@ -154,6 +155,23 @@ absl::Status StaticDataCertificateProvider::ValidateCredentials() const {
     }
   }
   return absl::OkStatus();
+}
+
+absl::Status StaticDataCertificateProvider::ValidatePemKeyCertPairList() const {
+  MutexLock lock(&mu_);
+  for (const PemKeyCertPair& pair : pem_key_cert_pairs_) {
+    absl::Status status =
+        ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+    if (!status.ok()) {
+      return status;
+    }
+  }
+  return absl::OkStatus();
+}
+
+absl::Status StaticDataCertificateProvider::ValidateRootCertificates() const {
+  MutexLock lock(&mu_);
+  return ValidateRootCertificateSet(root_certificate_);
 }
 
 namespace {
@@ -262,7 +280,7 @@ UniqueTypeName FileWatcherCertificateProvider::type() const {
 
 absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
   MutexLock lock(&mu_);
-  absl::Status status = ValidateRootCertificates(root_certificate_);
+  absl::Status status = ValidateRootCertificateSet(root_certificate_);
   if (!status.ok()) {
     return status;
   }
@@ -274,6 +292,24 @@ absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
     }
   }
   return absl::OkStatus();
+}
+
+absl::Status FileWatcherCertificateProvider::ValidatePemKeyCertPairList()
+    const {
+  MutexLock lock(&mu_);
+  for (const PemKeyCertPair& pair : pem_key_cert_pairs_) {
+    absl::Status status =
+        ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+    if (!status.ok()) {
+      return status;
+    }
+  }
+  return absl::OkStatus();
+}
+
+absl::Status FileWatcherCertificateProvider::ValidateRootCertificates() const {
+  MutexLock lock(&mu_);
+  return ValidateRootCertificateSet(root_certificate_);
 }
 
 void FileWatcherCertificateProvider::ForceUpdate() {

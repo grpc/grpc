@@ -270,6 +270,38 @@ TEST_F(GrpcTlsCertificateProviderTest,
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
+       StaticDataCertificateProviderWithRootCertificatesValidationSuccess) {
+  StaticDataCertificateProvider provider(
+      root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+  EXPECT_EQ(provider.ValidateRootCertificates(), absl::OkStatus());
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       StaticDataCertificateProviderWithRootCertificatesValidationFailure) {
+  StaticDataCertificateProvider provider(
+      malformed_cert_,
+      MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+  EXPECT_EQ(provider.ValidateRootCertificates(),
+            absl::FailedPreconditionError("Invalid PEM."));
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       StaticDataCertificateProviderWithPemKeyCertPairListValidationSuccess) {
+  StaticDataCertificateProvider provider(
+      root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+  EXPECT_EQ(provider.ValidatePemKeyCertPairList(), absl::OkStatus());
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       StaticDataCertificateProviderWithPemKeyCertPairListValidationFailure) {
+  StaticDataCertificateProvider provider(
+      root_cert_,
+      MakeCertKeyPairs(private_key_.c_str(), malformed_cert_.c_str()));
+  EXPECT_EQ(provider.ValidatePemKeyCertPairList(),
+            absl::FailedPreconditionError("Invalid PEM."));
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodPaths) {
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
                                           CA_CERT_PATH, 1);
@@ -325,6 +357,36 @@ TEST_F(GrpcTlsCertificateProviderTest,
   FileWatcherCertificateProvider provider(
       MALFORMED_KEY_PATH, SERVER_CERT_PATH_2, CA_CERT_PATH_2, 1);
   EXPECT_EQ(provider.ValidateCredentials(),
+            absl::NotFoundError("No private key found."));
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithRootCertificateValidationSuccess) {
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
+                                          CA_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidateRootCertificates(), absl::OkStatus());
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithRootCertificateValidationFailure) {
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH_2, SERVER_CERT_PATH_2,
+                                          MALFORMED_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidateRootCertificates(),
+            absl::FailedPreconditionError("Invalid PEM."));
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithPemKeyCertPairListValidationSuccess) {
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
+                                          CA_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidatePemKeyCertPairList(), absl::OkStatus());
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithPemKeyCertPairListValidationFailure) {
+  FileWatcherCertificateProvider provider(
+      MALFORMED_KEY_PATH, SERVER_CERT_PATH_2, CA_CERT_PATH_2, 1);
+  EXPECT_EQ(provider.ValidatePemKeyCertPairList(),
             absl::NotFoundError("No private key found."));
 }
 
