@@ -18,8 +18,20 @@ load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer"
 licenses(["notice"])
 
 grpc_package(
-    name = "test/core/transport/chaotic_good",
+    name = "test/core/transport/chaotic_good_legacy",
     visibility = "tests",
+)
+
+grpc_cc_library(
+    name = "mock_promise_endpoint",
+    testonly = 1,
+    srcs = ["mock_promise_endpoint.cc"],
+    hdrs = ["mock_promise_endpoint.h"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:grpc",
+        "//src/core:grpc_promise_endpoint",
+    ],
 )
 
 grpc_cc_library(
@@ -30,7 +42,7 @@ grpc_cc_library(
     external_deps = ["gtest"],
     deps = [
         "//:iomgr_timer",
-        "//src/core:chaotic_good_frame",
+        "//src/core:chaotic_good_legacy_frame",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
         "//test/core/event_engine/fuzzing_event_engine",
@@ -45,7 +57,7 @@ grpc_cc_test(
         "absl/status",
         "gtest",
     ],
-    deps = ["//src/core:chaotic_good_frame_header"],
+    deps = ["//src/core:chaotic_good_legacy_frame_header"],
 )
 
 grpc_fuzzer(
@@ -57,7 +69,7 @@ grpc_fuzzer(
     tags = ["no_windows"],
     deps = [
         "//:grpc",
-        "//src/core:chaotic_good_frame_header",
+        "//src/core:chaotic_good_legacy_frame_header",
     ],
 )
 
@@ -73,7 +85,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:channel_create",
-        "//src/core:chaotic_good_frame",
+        "//src/core:chaotic_good_legacy_frame",
     ],
 )
 
@@ -99,8 +111,8 @@ grpc_proto_fuzzer(
         "//:hpack_parser",
         "//:ref_counted_ptr",
         "//src/core:arena",
-        "//src/core:chaotic_good_frame",
-        "//src/core:chaotic_good_frame_header",
+        "//src/core:chaotic_good_legacy_frame",
+        "//src/core:chaotic_good_legacy_frame_header",
         "//src/core:event_engine_memory_allocator",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
@@ -124,16 +136,16 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "mock_promise_endpoint",
         "transport_test",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//src/core:arena",
-        "//src/core:chaotic_good_client_transport",
+        "//src/core:chaotic_good_legacy_client_transport",
         "//src/core:if",
         "//src/core:loop",
         "//src/core:seq",
         "//src/core:slice_buffer",
-        "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
 
@@ -158,7 +170,7 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:arena",
-        "//src/core:chaotic_good_client_transport",
+        "//src/core:chaotic_good_legacy_client_transport",
         "//src/core:event_engine_wakeup_scheduler",
         "//src/core:grpc_promise_endpoint",
         "//src/core:if",
@@ -190,13 +202,14 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "mock_promise_endpoint",
         "transport_test",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//:iomgr_timer",
         "//:ref_counted_ptr",
         "//src/core:arena",
-        "//src/core:chaotic_good_server_transport",
+        "//src/core:chaotic_good_legacy_server_transport",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
         "//src/core:seq",
@@ -204,7 +217,6 @@ grpc_cc_test(
         "//src/core:slice_buffer",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
-        "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
 
@@ -231,8 +243,8 @@ grpc_cc_test(
         "//:parse_address",
         "//:uri",
         "//src/core:channel_args",
-        "//src/core:chaotic_good_connector",
-        "//src/core:chaotic_good_server",
+        "//src/core:chaotic_good_legacy_connector",
+        "//src/core:chaotic_good_legacy_server",
         "//src/core:notification",
         "//src/core:resource_quota",
         "//src/core:time",

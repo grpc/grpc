@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/ext/transport/chaotic_good/server_transport.h"
+#include "src/core/ext/transport/chaotic_good_legacy/server_transport.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -44,8 +44,8 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
-#include "test/core/transport/chaotic_good/transport_test.h"
-#include "test/core/transport/util/mock_promise_endpoint.h"
+#include "test/core/transport/chaotic_good_legacy/mock_promise_endpoint.h"
+#include "test/core/transport/chaotic_good_legacy/transport_test.h"
 
 using testing::_;
 using testing::MockFunction;
@@ -56,12 +56,22 @@ using testing::WithArgs;
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
 
 namespace grpc_core {
-namespace chaotic_good {
+namespace chaotic_good_legacy {
 namespace testing {
+
+// Encoded string of header ":path: /demo.Service/Step".
+const uint8_t kPathDemoServiceStep[] = {
+    0x40, 0x05, 0x3a, 0x70, 0x61, 0x74, 0x68, 0x12, 0x2f,
+    0x64, 0x65, 0x6d, 0x6f, 0x2e, 0x53, 0x65, 0x72, 0x76,
+    0x69, 0x63, 0x65, 0x2f, 0x53, 0x74, 0x65, 0x70};
+
+// Encoded string of trailer "grpc-status: 0".
+const uint8_t kGrpcStatus0[] = {0x40, 0x0b, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x73,
+                                0x74, 0x61, 0x74, 0x75, 0x73, 0x01, 0x30};
 
 ServerMetadataHandle TestInitialMetadata() {
   auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
-  md->Set(GrpcMessageMetadata(), Slice::FromStaticString("hello"));
+  md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step"));
   return md;
 }
 
@@ -89,35 +99,24 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
           .channel_args_preconditioning()
           .PreconditionChannelArgs(nullptr),
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), event_engine());
-  const auto server_initial_metadata =
-      EncodeProto<chaotic_good_frame::ServerMetadata>("message: 'hello'");
-  const auto server_trailing_metadata =
-      EncodeProto<chaotic_good_frame::ServerMetadata>("status: 0");
-  const auto client_initial_metadata =
-      EncodeProto<chaotic_good_frame::ClientMetadata>(
-          "path: '/demo.Service/Step'");
+      std::move(data_endpoint.promise_endpoint), event_engine(), HPackParser(),
+      HPackCompressor());
   // Once we set the acceptor, expect to read some frames.
   // We'll return a new request with a payload of "12345678".
   control_endpoint.ExpectRead(
-      {SerializedFrameHeader(FrameType::kClientInitialMetadata, 0, 1,
-                             client_initial_metadata.length()),
-       client_initial_metadata.Copy(),
-       SerializedFrameHeader(FrameType::kMessage, 0, 1, 8),
-       EventEngineSlice::FromCopiedString("12345678"),
-       SerializedFrameHeader(FrameType::kClientEndOfStream, 0, 1, 0)},
+      {SerializedFrameHeader(FrameType::kFragment, 7, 1, 26, 8, 56, 0),
+       EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
+                                          sizeof(kPathDemoServiceStep))},
       event_engine().get());
+  data_endpoint.ExpectRead(
+      {EventEngineSlice::FromCopiedString("12345678"), Zeros(56)}, nullptr);
   // Once that's read we'll create a new call
   StrictMock<MockFunction<void()>> on_done;
   auto control_address =
       grpc_event_engine::experimental::URIToResolvedAddress("ipv4:1.2.3.4:5678")
           .value();
   EXPECT_CALL(*control_endpoint.endpoint, GetPeerAddress)
-      .WillRepeatedly(
-          [&control_address]() -> const grpc_event_engine::experimental::
-                                   EventEngine::ResolvedAddress& {
-                                     return control_address;
-                                   });
+      .WillRepeatedly([&control_address]() { return control_address; });
   EXPECT_CALL(*call_destination, StartCall(_))
       .WillOnce(WithArgs<0>([&on_done](
                                 UnstartedCallHandler unstarted_call_handler) {
@@ -170,18 +169,20 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
       .InSequence(control_endpoint.read_sequence)
       .WillOnce(Return(false));
   control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kServerInitialMetadata, 0, 1,
-                             server_initial_metadata.length()),
-       server_initial_metadata.Copy()},
+      {SerializedFrameHeader(FrameType::kFragment, 1, 1,
+                             sizeof(kPathDemoServiceStep), 0, 0, 0),
+       EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
+                                          sizeof(kPathDemoServiceStep))},
       nullptr);
   control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kMessage, 0, 1, 8),
-       EventEngineSlice::FromCopiedString("87654321")},
+      {SerializedFrameHeader(FrameType::kFragment, 2, 1, 0, 8, 56, 0)},
       nullptr);
+  data_endpoint.ExpectWrite(
+      {EventEngineSlice::FromCopiedString("87654321"), Zeros(56)}, nullptr);
   control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kServerTrailingMetadata, 0, 1,
-                             server_trailing_metadata.length()),
-       server_trailing_metadata.Copy()},
+      {SerializedFrameHeader(FrameType::kFragment, 4, 1, 0, 0, 0,
+                             sizeof(kGrpcStatus0)),
+       EventEngineSlice::FromCopiedBuffer(kGrpcStatus0, sizeof(kGrpcStatus0))},
       nullptr);
   // Wait until ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
@@ -189,7 +190,7 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
 }
 
 }  // namespace testing
-}  // namespace chaotic_good
+}  // namespace chaotic_good_legacy
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
