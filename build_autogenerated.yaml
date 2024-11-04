@@ -11685,6 +11685,78 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: http2_client_transport_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chttp2/transport/http2_client_transport.h
+  - src/core/lib/transport/promise_endpoint.h
+  - test/core/test_util/cmdline.h
+  - test/core/test_util/evaluate_args_test_util.h
+  - test/core/test_util/fuzzer_util.h
+  - test/core/test_util/grpc_profiler.h
+  - test/core/test_util/histogram.h
+  - test/core/test_util/mock_endpoint.h
+  - test/core/test_util/parse_hexstring.h
+  - test/core/test_util/resolve_localhost_ip46.h
+  - test/core/test_util/slice_splitter.h
+  - test/core/test_util/tracer_util.h
+  - test/core/transport/util/mock_promise_endpoint.h
+  src:
+  - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
+  - src/core/lib/transport/promise_endpoint.cc
+  - test/core/test_util/cmdline.cc
+  - test/core/test_util/fuzzer_util.cc
+  - test/core/test_util/grpc_profiler.cc
+  - test/core/test_util/histogram.cc
+  - test/core/test_util/mock_endpoint.cc
+  - test/core/test_util/parse_hexstring.cc
+  - test/core/test_util/resolve_localhost_ip46.cc
+  - test/core/test_util/slice_splitter.cc
+  - test/core/test_util/tracer_util.cc
+  - test/core/transport/chttp2/http2_client_transport_test.cc
+  - test/core/transport/util/mock_promise_endpoint.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
+- name: http2_server_transport_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chttp2/transport/http2_server_transport.h
+  - src/core/lib/transport/promise_endpoint.h
+  - test/core/test_util/cmdline.h
+  - test/core/test_util/evaluate_args_test_util.h
+  - test/core/test_util/fuzzer_util.h
+  - test/core/test_util/grpc_profiler.h
+  - test/core/test_util/histogram.h
+  - test/core/test_util/mock_endpoint.h
+  - test/core/test_util/parse_hexstring.h
+  - test/core/test_util/resolve_localhost_ip46.h
+  - test/core/test_util/slice_splitter.h
+  - test/core/test_util/tracer_util.h
+  - test/core/transport/util/mock_promise_endpoint.h
+  src:
+  - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
+  - src/core/lib/transport/promise_endpoint.cc
+  - test/core/test_util/cmdline.cc
+  - test/core/test_util/fuzzer_util.cc
+  - test/core/test_util/grpc_profiler.cc
+  - test/core/test_util/histogram.cc
+  - test/core/test_util/mock_endpoint.cc
+  - test/core/test_util/parse_hexstring.cc
+  - test/core/test_util/resolve_localhost_ip46.cc
+  - test/core/test_util/slice_splitter.cc
+  - test/core/test_util/tracer_util.cc
+  - test/core/transport/chttp2/http2_server_transport_test.cc
+  - test/core/transport/util/mock_promise_endpoint.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: http2_settings_test
   gtest: true
   build: test
