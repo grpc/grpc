@@ -126,7 +126,7 @@ class StaticDataCertificateProvider final
   std::string root_certificate_;
   PemKeyCertPairList pem_key_cert_pairs_;
   // Guards members below.
-  mutable Mutex mu_;
+  Mutex mu_;
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_;
