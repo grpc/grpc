@@ -43,7 +43,7 @@ from ._base_server import ServicerContext
 from ._call import AioRpcError
 from ._channel import insecure_channel
 from ._channel import secure_channel
-from ._constants import EOF
+from ._eof import EOF
 from ._interceptor import ClientCallDetails
 from ._interceptor import ClientInterceptor
 from ._interceptor import InterceptedUnaryUnaryCall
@@ -55,7 +55,7 @@ from ._interceptor import UnaryUnaryClientInterceptor
 from ._metadata import Metadata
 from ._server import server
 from ._typing import ChannelArgumentType
-
+EOF = EOF
 ###################################  __all__  #################################
 
 __all__ = (

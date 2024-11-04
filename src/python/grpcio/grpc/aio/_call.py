@@ -33,9 +33,9 @@ from typing import (
 import grpc
 from grpc import _common
 from grpc._cython import cygrpc
+from ._eof import EOF
 
 from . import _base_call
-from ._constants import EOF
 from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType

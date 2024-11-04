@@ -30,6 +30,7 @@ from google.auth import environment_vars as google_auth_environment_vars
 from google.auth.transport import grpc as google_auth_transport_grpc
 from google.auth.transport import requests as google_auth_transport_requests
 import grpc
+from grpc.aio import _constants
 from grpc.experimental import aio
 
 from src.proto.grpc.testing import empty_pb2
@@ -275,7 +276,8 @@ async def _timeout_on_sleeping_server(stub: test_pb2_grpc.TestServiceStub):
 async def _empty_stream(stub: test_pb2_grpc.TestServiceStub):
     call = stub.FullDuplexCall()
     await call.done_writing()
-    assert await call.read() == aio.EOF
+    print(await call.read())
+    assert await call.read() == _constants.EOF
 
 
 async def _status_code_and_message(stub: test_pb2_grpc.TestServiceStub):

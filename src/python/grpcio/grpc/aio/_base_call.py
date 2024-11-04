@@ -24,7 +24,7 @@ from typing import Any, AsyncIterator, Generator, Generic, Optional, Union
 
 import grpc
 
-from ._constants import EOF
+from ._eof import EOF
 from ._metadata import Metadata
 from ._typing import DoneCallbackType
 from ._typing import RequestType

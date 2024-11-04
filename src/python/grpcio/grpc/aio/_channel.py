@@ -128,7 +128,7 @@ class _BaseMultiCallable(Generic[RequestType, ResponseType]):
             metadata = Metadata(
                 *_compression.augment_metadata(metadata, compression)  # type: ignore
             )
-        return metadata  # type: ignore
+        return cast(MetadataType, metadata)
 
 
 class UnaryUnaryMultiCallable(
