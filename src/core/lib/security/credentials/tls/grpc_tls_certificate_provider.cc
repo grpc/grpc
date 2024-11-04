@@ -142,7 +142,6 @@ UniqueTypeName StaticDataCertificateProvider::type() const {
 }
 
 absl::Status StaticDataCertificateProvider::ValidateCredentials() const {
-  MutexLock lock(&mu_);
   absl::Status status = ValidateRootCertificateSet(root_certificate_);
   if (!status.ok()) {
     return status;
@@ -158,7 +157,6 @@ absl::Status StaticDataCertificateProvider::ValidateCredentials() const {
 }
 
 absl::Status StaticDataCertificateProvider::ValidatePemKeyCertPairList() const {
-  MutexLock lock(&mu_);
   for (const PemKeyCertPair& pair : pem_key_cert_pairs_) {
     absl::Status status =
         ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
@@ -170,7 +168,6 @@ absl::Status StaticDataCertificateProvider::ValidatePemKeyCertPairList() const {
 }
 
 absl::Status StaticDataCertificateProvider::ValidateRootCertificates() const {
-  MutexLock lock(&mu_);
   return ValidateRootCertificateSet(root_certificate_);
 }
 
