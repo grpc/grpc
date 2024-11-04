@@ -14,7 +14,7 @@
 
 # Updated: 2024-11-01
 
-FROM dart:stable
+FROM dart:3.5.4-sdk
 
 # Define the default command.
 CMD ["bash"]
