@@ -281,7 +281,6 @@ class MessageChunker {
 
  private:
   bool ShouldChunk(Message& message) {
-    LOG(INFO) << GRPC_DUMP_ARGS(max_chunk_size_, message.payload()->Length());
     return max_chunk_size_ == 0 ||
            message.payload()->Length() > max_chunk_size_;
   }
