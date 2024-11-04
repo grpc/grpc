@@ -235,6 +235,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_ping.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_rst_stream.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_rst_stream.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/frame_security.cc )
+  s.files += %w( src/core/ext/transport/chttp2/transport/frame_security.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_settings.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_settings.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_window_update.cc )

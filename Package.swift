@@ -229,6 +229,8 @@ let package = Package(
         "src/core/ext/transport/chttp2/transport/frame_ping.h",
         "src/core/ext/transport/chttp2/transport/frame_rst_stream.cc",
         "src/core/ext/transport/chttp2/transport/frame_rst_stream.h",
+        "src/core/ext/transport/chttp2/transport/frame_security.cc",
+        "src/core/ext/transport/chttp2/transport/frame_security.h",
         "src/core/ext/transport/chttp2/transport/frame_settings.cc",
         "src/core/ext/transport/chttp2/transport/frame_settings.h",
         "src/core/ext/transport/chttp2/transport/frame_window_update.cc",

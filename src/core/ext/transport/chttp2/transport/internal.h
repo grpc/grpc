@@ -45,6 +45,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
+#include "src/core/ext/transport/chttp2/transport/frame_security.h"
 #include "src/core/ext/transport/chttp2/transport/frame_settings.h"
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
@@ -405,6 +406,8 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   } simple;
   /// parser for goaway frames
   grpc_chttp2_goaway_parser goaway_parser;
+  // parser for secure frames
+  grpc_chttp2_security_frame_parser security_frame_parser;
 
   grpc_core::chttp2::TransportFlowControl flow_control;
   /// initial window change. This is tracked as we parse settings frames from
