@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
+#include "src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
@@ -28,11 +28,10 @@
 #include "absl/status/statusor.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/client_channel_filter.h"
-#include "src/core/ext/transport/chaotic_good/client_transport.h"
-#include "src/core/ext/transport/chaotic_good/frame.h"
-#include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chaotic_good/settings_metadata.h"
-#include "src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h"
+#include "src/core/ext/transport/chaotic_good_legacy/client_transport.h"
+#include "src/core/ext/transport/chaotic_good_legacy/frame.h"
+#include "src/core/ext/transport/chaotic_good_legacy/frame_header.h"
+#include "src/core/ext/transport/chaotic_good_legacy/settings_metadata.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -67,7 +66,7 @@
 #include "src/core/util/time.h"
 
 namespace grpc_core {
-namespace chaotic_good {
+namespace chaotic_good_legacy {
 using grpc_event_engine::experimental::EventEngine;
 namespace {
 const int32_t kDataAlignmentBytes = 64;
@@ -371,14 +370,11 @@ class ChaoticGoodChannelFactory final : public ClientChannelFactory {
 };
 
 }  // namespace
-}  // namespace chaotic_good
+}  // namespace chaotic_good_legacy
 }  // namespace grpc_core
 
-grpc_channel* grpc_chaotic_good_channel_create(const char* target,
-                                               const grpc_channel_args* args) {
-  if (grpc_core::IsChaoticGoodLegacyProtocolEnabled()) {
-    return grpc_chaotic_good_legacy_channel_create(target, args);
-  }
+grpc_channel* grpc_chaotic_good_legacy_channel_create(
+    const char* target, const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_chaotic_good_channel_create(target=" << target
@@ -391,8 +387,10 @@ grpc_channel* grpc_chaotic_good_channel_create(const char* target,
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()
           .PreconditionChannelArgs(args)
-          .SetObject(grpc_core::NoDestructSingleton<
-                     grpc_core::chaotic_good::ChaoticGoodChannelFactory>::Get())
+          .SetObject(
+              grpc_core::NoDestructSingleton<
+                  grpc_core::chaotic_good_legacy::ChaoticGoodChannelFactory>::
+                  Get())
           .Set(GRPC_ARG_USE_V3_STACK, true),
       GRPC_CLIENT_CHANNEL, nullptr);
   if (r.ok()) {
