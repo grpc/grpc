@@ -8722,6 +8722,7 @@ grpc_cc_library(
         "event_engine_extensions",
         "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
+        "event_engine_utils",
         "event_engine_wakeup_scheduler",
         "grpc_promise_endpoint",
         "if",
