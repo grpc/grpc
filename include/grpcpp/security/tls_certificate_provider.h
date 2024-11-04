@@ -71,7 +71,7 @@ class GRPCXX_DLL StaticDataCertificateProvider
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 
-  // Returns an OK status if the both of the following conditions hold:
+  // Returns an OK status if both of the following conditions hold:
   // - the root certificates consist of one or more valid PEM blocks, and
   // - every identity key-cert pair has a certificate chain that consists of
   //   valid PEM blocks and has a private key is a valid PEM block.
@@ -131,7 +131,7 @@ class GRPCXX_DLL FileWatcherCertificateProvider final
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 
-  // Returns an OK status if the both of the following conditions hold:
+  // Returns an OK status if both of the following conditions hold:
   // - the currently-loaded root certificates, if any, consist of one or more
   //   valid PEM blocks, and
   // - every currently-loaded identity key-cert pair, if any, has a certificate
