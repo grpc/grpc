@@ -16,7 +16,7 @@
 
 namespace grpc_core {
 
-TRANSPORT_FIXTURE(ChaoticGood) {
+TRANSPORT_FIXTURE(ChaoticGoodSingleConnection) {
   auto resource_quota = MakeResourceQuota("test");
   EndpointPair control_endpoints =
       CreateEndpointPair(event_engine.get(), resource_quota, 1234);
@@ -30,15 +30,14 @@ TRANSPORT_FIXTURE(ChaoticGood) {
                   grpc_event_engine::experimental::EventEngine>(event_engine));
   auto client_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodClientTransport>(
-          std::move(control_endpoints.client),
-          chaotic_good::OneDataEndpoint(std::move(data_endpoints.client)),
+          std::move(control_endpoints.client), std::vector<PromiseEndpoint>{},
           ChannelArgs().SetObject(resource_quota), event_engine,
           chaotic_good::Config(channel_args));
   auto server_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodServerTransport>(
           channel_args, std::move(control_endpoints.server),
-          chaotic_good::OneDataEndpoint(std::move(data_endpoints.server)),
-          event_engine, chaotic_good::Config(channel_args));
+          std::vector<PromiseEndpoint>{}, event_engine,
+          chaotic_good::Config(channel_args));
   return ClientAndServerTransportPair{std::move(client_transport),
                                       std::move(server_transport)};
 }

@@ -268,6 +268,14 @@ auto ChaoticGoodServerTransport::ReadOneFrame(
                   return DispatchFrame<MessageFrame>(std::move(transport),
                                                      std::move(incoming_frame));
                 }),
+                Case<FrameType, FrameType::kBeginMessage>([&, this]() mutable {
+                  return DispatchFrame<BeginMessageFrame>(
+                      std::move(transport), std::move(incoming_frame));
+                }),
+                Case<FrameType, FrameType::kMessageChunk>([&, this]() mutable {
+                  return DispatchFrame<MessageChunkFrame>(
+                      std::move(transport), std::move(incoming_frame));
+                }),
                 Case<FrameType, FrameType::kClientEndOfStream>(
                     [&, this]() mutable {
                       return DispatchFrame<ClientEndOfStream>(

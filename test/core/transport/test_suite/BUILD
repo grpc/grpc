@@ -33,9 +33,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "chaotic_good_fixture",
-    testonly = 1,
-    srcs = ["chaotic_good_fixture.cc"],
+    name = "chaotic_good_fixture_helpers",
+    testonly=1,
+    srcs = ["chaotic_good_fixture_helpers.h"],
     external_deps = [
         "absl/log:check",
         "gtest",
@@ -49,6 +49,29 @@ grpc_cc_library(
         "//src/core:grpc_promise_endpoint",
         "//src/core:resource_quota",
     ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_fixture",
+    testonly = 1,
+    srcs = ["chaotic_good_fixture.cc"],
+    deps = [":chaotic_good_fixture_helpers"],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "chaotic_good_single_connection_fixture",
+    testonly = 1,
+    srcs = ["chaotic_good_single_connection_fixture.cc"],
+    deps = [":chaotic_good_fixture_helpers"],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "chaotic_good_one_byte_chunk_fixture",
+    testonly = 1,
+    srcs = ["chaotic_good_one_byte_chunk_fixture.cc"],
+    deps = [":chaotic_good_fixture_helpers"],
     alwayslink = 1,
 )
 
@@ -121,5 +144,28 @@ grpc_transport_test(
         ":chaotic_good_fixture",
         ":no_op",
         ":stress",
+    ],
+)
+
+grpc_transport_test(
+    name = "chaotic_good_single_connection",
+    deps = [
+        ":call_content",
+        ":call_shapes",
+        ":chaotic_good_single_connection_fixture",
+        ":no_op",
+        ":stress",
+    ],
+)
+
+
+grpc_transport_test(
+    name = "chaotic_good_one_byte_chunk",
+    deps = [
+        ":call_content",
+        ":call_shapes",
+        ":chaotic_good_one_byte_chunk_fixture",
+        ":no_op",
+        # explicity exclude: ":stress" -- too expensive for this fixture
     ],
 )

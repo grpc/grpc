@@ -163,15 +163,23 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
               incoming_frame.header().type,
               Case<FrameType, FrameType::kServerInitialMetadata>([&, this]() {
                 return DispatchFrame<ServerInitialMetadataFrame>(
-                    transport, std::move(incoming_frame));
+                    std::move(transport), std::move(incoming_frame));
               }),
               Case<FrameType, FrameType::kServerTrailingMetadata>([&, this]() {
                 return DispatchFrame<ServerTrailingMetadataFrame>(
-                    transport, std::move(incoming_frame));
+                    std::move(transport), std::move(incoming_frame));
               }),
               Case<FrameType, FrameType::kMessage>([&, this]() {
-                return DispatchFrame<MessageFrame>(transport,
+                return DispatchFrame<MessageFrame>(std::move(transport),
                                                    std::move(incoming_frame));
+              }),
+              Case<FrameType, FrameType::kBeginMessage>([&, this]() {
+                return DispatchFrame<BeginMessageFrame>(
+                    std::move(transport), std::move(incoming_frame));
+              }),
+              Case<FrameType, FrameType::kMessageChunk>([&, this]() {
+                return DispatchFrame<MessageChunkFrame>(
+                    std::move(transport), std::move(incoming_frame));
               }),
               Default([&]() {
                 LOG_EVERY_N_SEC(INFO, 10)

@@ -292,8 +292,12 @@ class MessageChunker {
 
 class MessageReassembly {
  public:
-  void FailCall(CallInitiator& call, absl::string_view) { call.Cancel(); }
+  void FailCall(CallInitiator& call, absl::string_view msg) {
+    LOG_EVERY_N_SEC(INFO, 10) << "Call failed during reassembly: " << msg;
+    call.Cancel();
+  }
   void FailCall(CallHandler& call, absl::string_view msg) {
+    LOG_EVERY_N_SEC(INFO, 10) << "Call failed during reassembly: " << msg;
     call.PushServerTrailingMetadata(
         CancelledServerMetadataFromStatus(GRPC_STATUS_INTERNAL, msg));
   }
@@ -324,6 +328,8 @@ class MessageReassembly {
     } else if (frame.payload.length() > std::numeric_limits<size_t>::max()) {
       FailCall(sink, "Received too large begin message");
     } else {
+      GRPC_TRACE_LOG(chaotic_good, INFO)
+          << this << " begin message " << frame.payload.ShortDebugString();
       chunk_receiver_ = std::make_unique<ChunkReceiver>();
       chunk_receiver_->bytes_remaining = frame.payload.length();
       ok = true;
@@ -340,10 +346,16 @@ class MessageReassembly {
     } else if (chunk_receiver_->bytes_remaining < frame.payload.Length()) {
       FailCall(sink, "Message chunks are longer than BeginMessage declared");
     } else {
+      GRPC_TRACE_LOG(chaotic_good, INFO)
+          << "CHAOTIC_GOOD: " << this << " got chunk " << frame.payload.Length()
+          << "b in message with " << chunk_receiver_->bytes_remaining
+          << "b left";
       chunk_receiver_->bytes_remaining -= frame.payload.Length();
       chunk_receiver_->incoming.Append(frame.payload);
       ok = true;
       done = chunk_receiver_->bytes_remaining == 0;
+      GRPC_TRACE_LOG(chaotic_good, INFO)
+          << "CHAOTIC_GOOD: " << this << " " << GRPC_DUMP_ARGS(ok, done);
     }
     return If(
         done,
@@ -353,7 +365,7 @@ class MessageReassembly {
           chunk_receiver_.reset();
           return sink.PushMessage(std::move(message));
         },
-        [&]() { return StatusFlag(ok); });
+        [ok]() { return StatusFlag(ok); });
   }
 
   bool in_message_boundary() { return chunk_receiver_ == nullptr; }
