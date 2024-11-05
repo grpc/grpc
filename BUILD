@@ -2174,7 +2174,6 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:closure",
-        "//src/core:connection_context",
         "//src/core:context",
         "//src/core:error",
         "//src/core:event_engine_memory_allocator",

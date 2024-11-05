@@ -1598,8 +1598,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/surface/completion_queue.h )
   s.files += %w( src/core/lib/surface/completion_queue_factory.cc )
   s.files += %w( src/core/lib/surface/completion_queue_factory.h )
-  s.files += %w( src/core/lib/surface/connection_context.cc )
-  s.files += %w( src/core/lib/surface/connection_context.h )
   s.files += %w( src/core/lib/surface/event_string.cc )
   s.files += %w( src/core/lib/surface/event_string.h )
   s.files += %w( src/core/lib/surface/filter_stack_call.cc )
