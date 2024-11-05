@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H_
-#define SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H_
+#ifndef SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H__UPB_H_
+#define SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -926,4 +926,4 @@ UPB_INLINE void grpc_lb_v1_Server_set_drop(grpc_lb_v1_Server *msg, bool value) {
 
 #include "upb/port/undef.inc"
 
-#endif  /* SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H_ */
+#endif  /* SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H__UPB_H_ */

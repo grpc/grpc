@@ -3334,6 +3334,7 @@ libs:
   - third_party/upb/upb/reflection/def.hpp
   - third_party/upb/upb/reflection/def_pool.h
   - third_party/upb/upb/reflection/def_type.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   - third_party/upb/upb/reflection/enum_def.h
   - third_party/upb/upb/reflection/enum_reserved_range.h
   - third_party/upb/upb/reflection/enum_value_def.h
@@ -3538,6 +3539,7 @@ libs:
   - third_party/upb/upb/reflection/def.hpp
   - third_party/upb/upb/reflection/def_pool.h
   - third_party/upb/upb/reflection/def_type.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   - third_party/upb/upb/reflection/enum_def.h
   - third_party/upb/upb/reflection/enum_reserved_range.h
   - third_party/upb/upb/reflection/enum_value_def.h

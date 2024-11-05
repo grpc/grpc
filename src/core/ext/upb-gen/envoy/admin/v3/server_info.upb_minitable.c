@@ -18,7 +18,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_admin_v3_ServerInfo_submsgs[4] = {
+static const upb_MiniTableSubInternal envoy_admin_v3_ServerInfo__submsgs[4] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__admin__v3__CommandLineOptions_msg_init_ptr},
@@ -36,7 +36,7 @@ static const upb_MiniTableField envoy_admin_v3_ServerInfo__fields[7] = {
 };
 
 const upb_MiniTable envoy__admin__v3__ServerInfo_msg_init = {
-  &envoy_admin_v3_ServerInfo_submsgs[0],
+  &envoy_admin_v3_ServerInfo__submsgs[0],
   &envoy_admin_v3_ServerInfo__fields[0],
   UPB_SIZE(48, 80), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -55,7 +55,7 @@ const upb_MiniTable envoy__admin__v3__ServerInfo_msg_init = {
 };
 
 const upb_MiniTable* envoy__admin__v3__ServerInfo_msg_init_ptr = &envoy__admin__v3__ServerInfo_msg_init;
-static const upb_MiniTableSubInternal envoy_admin_v3_CommandLineOptions_submsgs[3] = {
+static const upb_MiniTableSubInternal envoy_admin_v3_CommandLineOptions__submsgs[3] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
@@ -101,7 +101,7 @@ static const upb_MiniTableField envoy_admin_v3_CommandLineOptions__fields[36] = 
 };
 
 const upb_MiniTable envoy__admin__v3__CommandLineOptions_msg_init = {
-  &envoy_admin_v3_CommandLineOptions_submsgs[0],
+  &envoy_admin_v3_CommandLineOptions__submsgs[0],
   &envoy_admin_v3_CommandLineOptions__fields[0],
   UPB_SIZE(192, 304), 36, kUpb_ExtMode_NonExtendable, 11, UPB_FASTTABLE_MASK(248), 0,
 #ifdef UPB_TRACING_ENABLED
