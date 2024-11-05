@@ -107,9 +107,9 @@ void HttpConnectHandshaker::HandshakeFailedLocked(absl::Status error) {
     // own error.
     error = GRPC_ERROR_CREATE("Handshaker shutdown");
   }
-  std::string peer_string = "[unknown]";
+  absl::string_view peer_string = "[unknown]";
   if (args_ != nullptr && args_->endpoint != nullptr) {
-    peer_string = std::string(grpc_endpoint_get_peer(args_->endpoint.get()));
+    peer_string = grpc_endpoint_get_peer(args_->endpoint.get());
   }
   LOG_EVERY_N_SEC(ERROR, 1)
       << "HTTP proxy handshake with " << peer_string << " failed: " << error;
