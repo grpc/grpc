@@ -607,7 +607,7 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
     // Shutdown the fd. This would cause OnWritable to run as soon as
     // possible. We dont need to pass a custom error here because it wont be
     // used since the on_connect_closure is not run if connect cancellation is
-    // successfull.
+    // successful.
     ac->fd_->ShutdownHandle(
         absl::FailedPreconditionError("Connection cancelled"));
   }

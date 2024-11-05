@@ -29,6 +29,10 @@ const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
+const char* const description_chaotic_good_legacy_protocol =
+    "If set, use the first version of the chaotic-good protocol when that "
+    "protocol is enabled.";
+const char* const additional_constraints_chaotic_good_legacy_protocol = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_application_callbacks =
@@ -124,6 +128,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
+    {"chaotic_good_legacy_protocol", description_chaotic_good_legacy_protocol,
+     additional_constraints_chaotic_good_legacy_protocol, nullptr, 0, false,
+     true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_application_callbacks",
@@ -194,6 +201,10 @@ const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
+const char* const description_chaotic_good_legacy_protocol =
+    "If set, use the first version of the chaotic-good protocol when that "
+    "protocol is enabled.";
+const char* const additional_constraints_chaotic_good_legacy_protocol = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_application_callbacks =
@@ -289,6 +300,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
+    {"chaotic_good_legacy_protocol", description_chaotic_good_legacy_protocol,
+     additional_constraints_chaotic_good_legacy_protocol, nullptr, 0, false,
+     true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_application_callbacks",
@@ -359,6 +373,10 @@ const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
+const char* const description_chaotic_good_legacy_protocol =
+    "If set, use the first version of the chaotic-good protocol when that "
+    "protocol is enabled.";
+const char* const additional_constraints_chaotic_good_legacy_protocol = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_application_callbacks =
@@ -454,6 +472,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
+    {"chaotic_good_legacy_protocol", description_chaotic_good_legacy_protocol,
+     additional_constraints_chaotic_good_legacy_protocol, nullptr, 0, false,
+     true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_application_callbacks",

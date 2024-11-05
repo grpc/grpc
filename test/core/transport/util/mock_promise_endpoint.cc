@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/transport/chaotic_good/mock_promise_endpoint.h"
+#include "test/core/transport/util/mock_promise_endpoint.h"
 
 #include <grpc/event_engine/event_engine.h>
 

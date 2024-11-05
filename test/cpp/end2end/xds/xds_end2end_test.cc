@@ -84,21 +84,20 @@
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.pb.h"
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h"
+#include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
+#include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
+#include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
+#include "src/proto/grpc/testing/xds/v3/fault.pb.h"
+#include "src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h"
-#include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/listener.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/route.pb.h"
+#include "src/proto/grpc/testing/xds/v3/router.pb.h"
+#include "src/proto/grpc/testing/xds/v3/tls.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "test/core/test_util/audit_logging_utils.h"
 #include "test/core/test_util/port.h"
@@ -808,7 +807,7 @@ TEST_P(XdsSecurityTest, MtlsWithAggregateCluster) {
   EXPECT_EQ(backends_[0]->backend_service()->last_peer_identity(),
             authenticated_identity_);
   // Now stop backend 0 and wait for backend 1.
-  ShutdownBackend(0);
+  backends_[0]->StopListeningAndSendGoaways();
   WaitForBackend(DEBUG_LOCATION, 1);
   // Make sure the backend saw the right client identity.
   EXPECT_EQ(backends_[1]->backend_service()->last_peer_identity(),

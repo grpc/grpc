@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_MOCK_PROMISE_ENDPOINT_H
-#define GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_MOCK_PROMISE_ENDPOINT_H
+#ifndef GRPC_TEST_CORE_TRANSPORT_UTIL_MOCK_PROMISE_ENDPOINT_H
+#define GRPC_TEST_CORE_TRANSPORT_UTIL_MOCK_PROMISE_ENDPOINT_H
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -87,4 +87,4 @@ struct MockPromiseEndpoint {
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
-#endif  // GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_MOCK_PROMISE_ENDPOINT_H
+#endif  // GRPC_TEST_CORE_TRANSPORT_UTIL_MOCK_PROMISE_ENDPOINT_H

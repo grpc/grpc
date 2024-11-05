@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.68.0-dev
+PROJECT_NUMBER         = 1.69.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1199,6 +1199,8 @@ src/core/ext/transport/chttp2/transport/frame_ping.cc \
 src/core/ext/transport/chttp2/transport/frame_ping.h \
 src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
 src/core/ext/transport/chttp2/transport/frame_rst_stream.h \
+src/core/ext/transport/chttp2/transport/frame_security.cc \
+src/core/ext/transport/chttp2/transport/frame_security.h \
 src/core/ext/transport/chttp2/transport/frame_settings.cc \
 src/core/ext/transport/chttp2/transport/frame_settings.h \
 src/core/ext/transport/chttp2/transport/frame_window_update.cc \
@@ -2617,6 +2619,7 @@ src/core/lib/transport/timeout_encoding.cc \
 src/core/lib/transport/timeout_encoding.h \
 src/core/lib/transport/transport.cc \
 src/core/lib/transport/transport.h \
+src/core/lib/transport/transport_framing_endpoint_extension.h \
 src/core/lib/transport/transport_fwd.h \
 src/core/lib/transport/transport_op_string.cc \
 src/core/load_balancing/address_filtering.cc \

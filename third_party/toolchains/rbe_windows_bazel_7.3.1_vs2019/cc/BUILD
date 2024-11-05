@@ -20,6 +20,24 @@ load(":armeabi_cc_toolchain_config.bzl", "armeabi_cc_toolchain_config")
 
 package(default_visibility = ["//visibility:public"])
 
+cc_library(name = "empty_lib")
+
+# Label flag for extra libraries to be linked into every binary.
+# TODO(bazel-team): Support passing flag multiple times to build a list.
+label_flag(
+    name = "link_extra_libs",
+    build_setting_default = ":empty_lib",
+)
+
+# The final extra library to be linked into every binary target. This collects
+# the above flag, but may also include more libraries depending on config.
+cc_library(
+    name = "link_extra_lib",
+    deps = [
+        ":link_extra_libs",
+    ],
+)
+
 cc_library(
     name = "malloc",
 )
@@ -236,6 +254,7 @@ cc_toolchain_config(
     default_link_flags = ["/MACHINE:X64"],
     dbg_mode_debug_flag = "/DEBUG:FULL",
     fastbuild_mode_debug_flag = "/DEBUG:FASTLINK",
+    supports_parse_showincludes = True,
 )
 
 toolchain(
@@ -307,6 +326,7 @@ cc_toolchain_config(
     default_link_flags = ["/MACHINE:X86"],
     dbg_mode_debug_flag = "/DEBUG:FULL",
     fastbuild_mode_debug_flag = "/DEBUG:FASTLINK",
+    supports_parse_showincludes = True,
 )
 
 toolchain(
@@ -373,6 +393,7 @@ cc_toolchain_config(
     default_link_flags = ["/MACHINE:ARM"],
     dbg_mode_debug_flag = "/DEBUG",
     fastbuild_mode_debug_flag = "/DEBUG",
+    supports_parse_showincludes = False,
 )
 
 toolchain(
@@ -439,6 +460,7 @@ cc_toolchain_config(
     default_link_flags = ["/MACHINE:ARM64"],
     dbg_mode_debug_flag = "/DEBUG",
     fastbuild_mode_debug_flag = "/DEBUG",
+    supports_parse_showincludes = False,
 )
 
 toolchain(
@@ -502,9 +524,10 @@ cc_toolchain_config(
         "strip": "wrapper/bin/msvc_nop.bat",
     },
     archiver_flags = ["/MACHINE:X64"],
-    default_link_flags = ["/MACHINE:X64", "/DEFAULTLIB:clang_rt.builtins-x86_64.lib"],
+    default_link_flags = ["/MACHINE:X64"],
     dbg_mode_debug_flag = "/DEBUG",
     fastbuild_mode_debug_flag = "/DEBUG",
+    supports_parse_showincludes = False,
 )
 
 toolchain(
@@ -572,6 +595,7 @@ cc_toolchain_config(
     default_link_flags = ["/MACHINE:ARM64"],
     dbg_mode_debug_flag = "/DEBUG",
     fastbuild_mode_debug_flag = "/DEBUG",
+    supports_parse_showincludes = False,
 )
 
 toolchain(

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcc:12
+FROM gcc:14
 
 RUN apt-get update && apt-get install -y curl git time wget zip && apt-get clean
 #=================
