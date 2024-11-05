@@ -28,7 +28,7 @@ wget https://github.com/bazelbuild/bazel-toolchains/releases/download/v5.1.2/rbe
 RBE_CONFIGS_GEN_TOOL_PATH="./rbe_configs_gen_windows_amd64.exe"
 
 # Actions on RBE will run under a dedicated docker image.
-WINDOWS_RBE_DOCKER_IMAGE=us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_windows2019@sha256:1700f2ad0e7f5bdcafa56dce649720e6b12cf397e27990433871f11c75f68cb4
+WINDOWS_RBE_DOCKER_IMAGE=us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_windows2019@sha256:5a97eb384a3089ac9180e6086ca89b1fdafa57735057624245b3d4a96b4744fe
 
 # Bazel version used for configuring
 # Needs to be one of the versions from bazel/supported_versions.txt chosen so that the result is compatible
