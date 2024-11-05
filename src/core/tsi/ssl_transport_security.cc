@@ -1663,8 +1663,8 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
           verify_result_str = absl::StrCat(": ", verify_err);
         }
         LOG(INFO) << "Handshake failed with fatal error "
-                   << grpc_core::SslErrorString(ssl_result) << ": " << err_str
-                   << verify_result_str;
+                  << grpc_core::SslErrorString(ssl_result) << ": " << err_str
+                  << verify_result_str;
         if (error != nullptr) {
           *error = absl::StrCat(grpc_core::SslErrorString(ssl_result), ": ",
                                 err_str, verify_result_str);
