@@ -34,4 +34,6 @@ On a kokoro debug windows VM, run the following:
 - To be able to authenticate when pushing the image to GAR, run `gcloud auth configure-docker us-docker.pkg.dev`
 - `docker push us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_windows2019`
 - Update the `generate_windows_rbe_configs.sh` with the newly built & pushed image's SHA256 digest.
+  (If you're using the Kokoro Windows VM, you need to run `sed -i 's/\r$//' third_party/toolchains/generate_windows_rbe_configs.sh`
+   before running the script to remove `\r` characters that bash doesn't understand)
 - Regenerate the Windows RBE toolchain with the instructions above.

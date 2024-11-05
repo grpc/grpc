@@ -48,7 +48,7 @@ docker pull ${WINDOWS_RBE_DOCKER_IMAGE}
 ${RBE_CONFIGS_GEN_TOOL_PATH} \
     --bazel_version="${BAZEL_VERSION}" \
     --toolchain_container="${WINDOWS_RBE_DOCKER_IMAGE}" \
-    --output_src_root="${REPO_ROOT}" \
+    --output_src_root=. \
     --output_config_path="${CONFIG_OUTPUT_PATH}" \
     --exec_os=windows \
     --target_os=windows \
