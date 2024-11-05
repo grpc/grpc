@@ -508,13 +508,15 @@ class GlobalStatsPluginRegistry {
   static StatsPluginGroup GetStatsPluginsForServer(const ChannelArgs& args);
 
  private:
+  struct GlobalStatsPluginNode {
+    std::shared_ptr<StatsPlugin> plugin;
+    GlobalStatsPluginNode* next = nullptr;
+  };
   friend class GlobalStatsPluginRegistryTestPeer;
 
   GlobalStatsPluginRegistry() = default;
 
-  static NoDestruct<Mutex> mutex_;
-  static NoDestruct<std::vector<std::shared_ptr<StatsPlugin>>> plugins_
-      ABSL_GUARDED_BY(mutex_);
+  static std::atomic<GlobalStatsPluginNode*> plugins_;
 };
 
 // A metric callback that is registered with a stats plugin group.
