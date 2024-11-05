@@ -36,7 +36,7 @@ WINDOWS_RBE_DOCKER_IMAGE=us-docker.pkg.dev/grpc-testing/testing-images-public/rb
 BAZEL_VERSION=7.3.1
 
 # Where to store the generated configs (relative to repo root)
-CONFIG_OUTPUT_PATH=third_party/toolchains/rbe_windows_bazel_7.3.1_vs2019
+CONFIG_OUTPUT_PATH=third_party/toolchains/rbe_windows_bazel_7.3.1_vs2022
 
 # Delete old generated configs.
 rm -rf "${REPO_ROOT}/${CONFIG_OUTPUT_PATH}"
