@@ -1348,7 +1348,8 @@ void RetryFilter::LegacyCallData::CallAttempt::BatchData::
       calld->send_messages_[call_attempt_->started_send_message_count_];
   ++call_attempt_->started_send_message_count_;
   batch_.send_message = true;
-  batch_.payload->send_message.send_message = cache.slices;
+  batch_.payload->send_message.send_message =
+      calld->arena_->New<SliceBuffer>(cache.slices->Copy());
   batch_.payload->send_message.flags = cache.flags;
 }
 
