@@ -17,9 +17,8 @@ import contextlib
 import logging
 import os
 import queue
-import sys
+import tempfile
 import threading
-import unittest
 
 import grpc
 
@@ -28,7 +27,7 @@ from tests.unit import test_common
 _SERVICE_NAME = "test"
 _UNARY_UNARY = "UnaryUnary"
 _REQUEST = b"0000"
-_UDS_PATH = "/tmp/grpc_fullstack_test.sock"
+_UDS_PATH = os.path.join(tempfile.mkdtemp(), "grpc_fullstack_test.sock")
 
 
 def _unary_unary_handler(request, context):
