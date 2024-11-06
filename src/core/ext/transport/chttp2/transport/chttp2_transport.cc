@@ -60,6 +60,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
+#include "src/core/ext/transport/chttp2/transport/frame_security.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -98,6 +99,7 @@
 #include "src/core/lib/transport/metadata_info.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
@@ -548,6 +550,9 @@ static void read_channel_args(grpc_chttp2_transport* t,
     t->settings.mutable_local().SetPreferredReceiveCryptoMessageSize(INT_MAX);
   }
 
+  t->settings.mutable_local().SetAllowSecurityFrame(
+      channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false));
+
   t->ping_on_rst_stream_percent = grpc_core::Clamp(
       channel_args.GetInt(GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT)
           .value_or(1),
@@ -575,6 +580,35 @@ static void init_keepalive_pings_if_enabled_locked(
     // inflight keepalive timers
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED;
   }
+}
+
+// TODO(alishananda): add unit testing as part of chttp2 promise conversion work
+void grpc_chttp2_transport::WriteSecurityFrame(grpc_core::SliceBuffer* data) {
+  combiner->Run(grpc_core::NewClosure(
+                    [transport = Ref(), data](grpc_error_handle) mutable {
+                      transport->WriteSecurityFrameLocked(data);
+                    }),
+                absl::OkStatus());
+}
+
+void grpc_chttp2_transport::WriteSecurityFrameLocked(
+    grpc_core::SliceBuffer* data) {
+  if (data == nullptr) {
+    return;
+  }
+  if (!settings.peer().allow_security_frame()) {
+    close_transport_locked(
+        this,
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE("Unexpected SECURITY frame scheduled for write"),
+            grpc_core::StatusIntProperty::kRpcStatus,
+            GRPC_STATUS_FAILED_PRECONDITION));
+  }
+  grpc_core::SliceBuffer security_frame;
+  grpc_chttp2_security_frame_create(data->c_slice_buffer(), data->Length(),
+                                    security_frame.c_slice_buffer());
+  grpc_slice_buffer_move_into(security_frame.c_slice_buffer(), &qbuf);
+  grpc_chttp2_initiate_write(this, GRPC_CHTTP2_INITIATE_WRITE_SEND_MESSAGE);
 }
 
 using grpc_event_engine::experimental::QueryExtension;
@@ -616,6 +650,17 @@ grpc_chttp2_transport::grpc_chttp2_transport(
             ep.get()));
     if (epte != nullptr) {
       epte->InitializeAndReturnTcpTracer();
+    }
+  }
+
+  if (channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false)) {
+    transport_framing_endpoint_extension = QueryExtension<
+        grpc_core::TransportFramingEndpointExtension>(
+        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+            ep.get()));
+    if (transport_framing_endpoint_extension != nullptr) {
+      transport_framing_endpoint_extension->SetSendFrameCallback(
+          [this](grpc_core::SliceBuffer* data) { WriteSecurityFrame(data); });
     }
   }
 

@@ -342,7 +342,7 @@ grpc_cc_test(
         "//:grpc++",
         "//:grpcpp_channelz",
         "//src/core:slice",
-        "//src/proto/grpc/channelz:channelz_cc_grpc",
+        "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/event_engine:event_engine_test_utils",

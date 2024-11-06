@@ -19,12 +19,12 @@ package(default_visibility = ["//visibility:public"])
 py_proto_library(
     name = "reflection_py_pb2",
     imports = ["../../"],
-    deps = ["//src/proto/grpc/reflection/v1alpha:reflection_proto"],
+    deps = ["//src/proto/grpc/reflection/v1alpha:reflection_proto_only"],
 )
 
 py_grpc_library(
     name = "reflection_py_pb2_grpc",
-    srcs = ["//src/proto/grpc/reflection/v1alpha:reflection_proto"],
+    srcs = ["//src/proto/grpc/reflection/v1alpha:reflection_proto_only"],
     strip_prefixes = ["src.python.grpcio_reflection."],
     deps = ["reflection_py_pb2"],
 )
