@@ -2526,8 +2526,8 @@ grpc_cc_library(
         "config_vars",
         "grpc++",
         "grpc++_config_proto",
-        "//src/proto/grpc/reflection/v1:reflection_cc_grpc",
-        "//src/proto/grpc/reflection/v1alpha:reflection_cc_grpc",
+        "//src/proto/grpc/reflection/v1:reflection_proto",
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
     alwayslink = 1,
 )
@@ -2635,7 +2635,7 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_config_proto",
-        "//src/proto/grpc/channelz:channelz_cc_grpc",
+        "//src/proto/grpc/channelz:channelz_proto",
     ],
     alwayslink = 1,
 )
