@@ -95,8 +95,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
     }
     *handler_data = allocator_state;
     request = allocator_state->request();
-    *status =
-        grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
+    *status = grpc::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
       return request;
@@ -495,8 +494,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
     buf.set_buffer(req);
     auto* request =
         new (grpc_call_arena_alloc(call, sizeof(RequestType))) RequestType();
-    *status =
-        grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
+    *status = grpc::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
       return request;
