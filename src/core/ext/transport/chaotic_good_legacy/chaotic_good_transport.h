@@ -108,10 +108,11 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
                     });
               },
               [&frame_header]() {
-                return [status = frame_header.status()]() mutable
-                       -> absl::StatusOr<std::tuple<FrameHeader, BufferPair>> {
-                  return std::move(status);
-                };
+                return
+                    [status = frame_header.status()]() mutable
+                        -> absl::StatusOr<std::tuple<FrameHeader, BufferPair>> {
+                      return std::move(status);
+                    };
               });
         });
   }

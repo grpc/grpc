@@ -290,7 +290,8 @@ static void print_histogram(grpc_histogram* histogram) {
 
 static double now(void) {
   gpr_timespec tv = gpr_now(GPR_CLOCK_REALTIME);
-  return 1e9 * static_cast<double>(tv.tv_sec) + static_cast<double>(tv.tv_nsec);
+  return (1e9 * static_cast<double>(tv.tv_sec)) +
+         static_cast<double>(tv.tv_nsec);
 }
 
 static void client_thread(thread_args* args) {

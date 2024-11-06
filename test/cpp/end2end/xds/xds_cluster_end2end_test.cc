@@ -1007,7 +1007,7 @@ TEST_P(EdsTest, Drops) {
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
   const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
   const double kDropRateForLbAndThrottle =
-      kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
+      kDropRateForLb + ((1 - kDropRateForLb) * kDropRateForThrottle);
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
@@ -1079,7 +1079,7 @@ TEST_P(EdsTest, DropConfigUpdate) {
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
   const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
   const double kDropRateForLbAndThrottle =
-      kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
+      kDropRateForLb + ((1 - kDropRateForLb) * kDropRateForThrottle);
   const size_t kNumRpcsLbOnly =
       ComputeIdealNumRpcs(kDropRateForLb, kErrorTolerance);
   const size_t kNumRpcsBoth =
@@ -2340,7 +2340,7 @@ TEST_P(ClientLoadReportingTest, DropStats) {
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
   const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
   const double kDropRateForLbAndThrottle =
-      kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
+      kDropRateForLb + ((1 - kDropRateForLb) * kDropRateForThrottle);
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
   // The ADS response contains two drop categories.

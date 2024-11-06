@@ -107,8 +107,8 @@ static void BM_UnaryPingPong(benchmark::State& state) {
   fixture.reset();
   server_env[0]->~ServerEnv();
   server_env[1]->~ServerEnv();
-  state.SetBytesProcessed(state.range(0) * state.iterations() +
-                          state.range(1) * state.iterations());
+  state.SetBytesProcessed((state.range(0) * state.iterations()) +
+                          (state.range(1) * state.iterations()));
 }
 }  // namespace testing
 }  // namespace grpc

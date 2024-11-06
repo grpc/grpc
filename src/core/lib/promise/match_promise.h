@@ -50,9 +50,8 @@ struct ConstructPromiseVariantVisitor {
   // the result into a variant type that covers ALL of the possible return types
   // given the input types listed in Ts...
   template <typename T>
-  auto operator()(T x)
-      -> absl::variant<promise_detail::PromiseLike<
-          decltype(CallConstructorThenFactory(std::declval<Ts>()))>...> {
+  auto operator()(T x) -> absl::variant<promise_detail::PromiseLike<
+      decltype(CallConstructorThenFactory(std::declval<Ts>()))>...> {
     return CallConstructorThenFactory(x);
   }
 };

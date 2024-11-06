@@ -227,11 +227,11 @@ class Duration {
   }
 
   static constexpr Duration MicrosecondsRoundUp(int64_t micros) {
-    return Duration(micros / GPR_US_PER_MS + (micros % GPR_US_PER_MS != 0));
+    return Duration((micros / GPR_US_PER_MS) + (micros % GPR_US_PER_MS != 0));
   }
 
   static constexpr Duration NanosecondsRoundUp(int64_t nanos) {
-    return Duration(nanos / GPR_NS_PER_MS + (nanos % GPR_NS_PER_MS != 0));
+    return Duration((nanos / GPR_NS_PER_MS) + (nanos % GPR_NS_PER_MS != 0));
   }
 
   constexpr bool operator==(Duration other) const {

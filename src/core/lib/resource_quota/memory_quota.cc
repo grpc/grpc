@@ -346,7 +346,7 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
     size_t ret = 0;
     if (!IsUnconstrainedMaxQuotaBufferSizeEnabled() &&
         free > kMaxQuotaBufferSize / 2) {
-      ret = std::max(ret, free - kMaxQuotaBufferSize / 2);
+      ret = std::max(ret, free - (kMaxQuotaBufferSize / 2));
     }
     ret = std::max(ret, free > 8192 ? free / 2 : free);
     const size_t new_free = free - ret;
@@ -719,8 +719,8 @@ double PressureController::Update(double error) {
   // (If we want a control value that's higher than the last one we snap
   // immediately because it's likely that memory pressure is growing unchecked).
   if (new_control < last_control_) {
-    new_control =
-        std::max(new_control, last_control_ - max_reduction_per_tick_ / 1000.0);
+    new_control = std::max(new_control,
+                           last_control_ - (max_reduction_per_tick_ / 1000.0));
   }
   last_control_ = new_control;
   return new_control;
