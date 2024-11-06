@@ -268,9 +268,7 @@ set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 if(UNIX)
   if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(_gRPC_PLATFORM_LINUX ON)
-    # Boring SSL needs -msse2 build option on 32-bit x86
-    # See https://github.com/google/boringssl/commit/56d3ad9d23bc130aa9404bfdd1957fe81b3ba498
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "i[3-6]86" AND CMAKE_SIZEOF_VOID_P EQUAL 4)
+    if(NOT CMAKE_CROSSCOMPILING AND CMAKE_SIZEOF_VOID_P EQUAL 4)
       message("+++ Enabling SSE2 for ${CMAKE_SYSTEM_PROCESSOR}")
       set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} -msse2")
     endif()
