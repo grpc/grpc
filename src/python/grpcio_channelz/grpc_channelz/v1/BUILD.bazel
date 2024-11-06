@@ -19,12 +19,12 @@ package(default_visibility = ["//visibility:public"])
 py_proto_library(
     name = "channelz_py_pb2",
     imports = ["../../"],
-    deps = ["//src/proto/grpc/channelz:channelz_proto"],
+    deps = ["//src/proto/grpc/channelz:channelz_proto_only"],
 )
 
 py_grpc_library(
     name = "channelz_py_pb2_grpc",
-    srcs = ["//src/proto/grpc/channelz:channelz_proto"],
+    srcs = ["//src/proto/grpc/channelz:channelz_proto_only"],
     strip_prefixes = ["src.python.grpcio_channelz."],
     deps = [":channelz_py_pb2"],
 )
