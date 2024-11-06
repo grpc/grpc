@@ -104,12 +104,12 @@ class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
   void PostSynchronousRequest(ServerContext* /*context*/) override {}
 };
 
-std::shared_ptr<Server::GlobalCallbacks> g_callbacks = nullptr;
+Server::GlobalCallbacks* g_callbacks = nullptr;
 gpr_once g_once_init_callbacks = GPR_ONCE_INIT;
 
 void InitGlobalCallbacks() {
   if (!g_callbacks) {
-    g_callbacks = std::make_shared<DefaultGlobalCallbacks>();
+    g_callbacks = new DefaultGlobalCallbacks;
   }
 }
 
@@ -909,8 +909,7 @@ Server::Server(
       health_check_service_disabled_(false),
       server_metric_recorder_(server_metric_recorder) {
   gpr_once_init(&grpc::g_once_init_callbacks, grpc::InitGlobalCallbacks);
-  global_callbacks_ = grpc::g_callbacks;
-  global_callbacks_->UpdateArguments(args);
+  grpc::g_callbacks->UpdateArguments(args);
 
   if (sync_server_cqs_ != nullptr) {
     bool default_rq_created = false;
@@ -997,7 +996,7 @@ Server::~Server() {
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
   CHECK(!grpc::g_callbacks);
   CHECK(callbacks);
-  grpc::g_callbacks.reset(callbacks);
+  grpc::g_callbacks = callbacks;
 }
 
 grpc_server* Server::c_server() { return server_; }
