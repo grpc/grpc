@@ -31,6 +31,7 @@ from grpc._cython import cygrpc
 if TYPE_CHECKING:
     from grpc import ServicerContext
     from grpc._server import _RPCState
+    import grpc.aio as aio
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
@@ -93,3 +94,5 @@ ArityAgnosticMethodHandler = Union[
         [Iterator[RequestType], "ServicerContext"], Iterator[ResponseType]
     ],
 ]
+GenericServicerContext = Union["ServicerContext", "aio.ServicerContext"]
+GenericServer = Union["Server", "aio.Server"]

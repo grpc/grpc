@@ -41,6 +41,8 @@ def from_call(call: grpc.Call) -> Optional[status_pb2.Status]:
 
     Returns:
       A google.rpc.status.Status message representing the status of the RPC.
+      If the call doesn't have trailing metadata or
+      GRPC_DETAILS_METADATA_KEY is not found, returns None.
 
     Raises:
       ValueError: If the gRPC call's code or details are inconsistent with the

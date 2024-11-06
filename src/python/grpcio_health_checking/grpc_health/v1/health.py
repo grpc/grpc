@@ -13,7 +13,6 @@
 # limitations under the License.
 """Reference implementation for health checking in gRPC Python."""
 
-import abc
 import collections
 from concurrent import futures
 import sys
@@ -23,6 +22,8 @@ from typing import Callable, Dict, Optional, Set
 import grpc
 from grpc_health.v1 import health_pb2 as _health_pb2
 from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
+from grpc_health.v1.health_pb2 import HealthCheckRequest
+from grpc_health.v1.health_pb2 import HealthCheckResponse
 
 if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
     # Exposes AsyncHealthServicer as public API.
@@ -34,20 +35,17 @@ SERVICE_NAME = _health_pb2.DESCRIPTOR.services_by_name["Health"].full_name
 OVERALL_HEALTH = ""
 
 
-class WatcherProtocol(metaclass=abc.ABCMeta):
+class WatcherProtocol:
     """Interface for watching service health status."""
 
-    @abc.abstractmethod
-    def add(self, response: Optional[_health_pb2.HealthCheckResponse]) -> None:
-        pass
+    def add(self, response: Optional[HealthCheckResponse]) -> None:
+        raise NotImplementedError()
 
-    @abc.abstractmethod
     def close(self) -> None:
-        pass
+        raise NotImplementedError()
 
-    @abc.abstractmethod
     def __iter__(self):
-        pass
+        raise NotImplementedError()
 
 
 class _Watcher(WatcherProtocol):
@@ -63,7 +61,7 @@ class _Watcher(WatcherProtocol):
     def __iter__(self):
         return self
 
-    def _next(self) -> Optional[_health_pb2.HealthCheckResponse]:
+    def _next(self) -> Optional[HealthCheckResponse]:
         with self._condition:
             while not self._responses and self._open:
                 self._condition.wait()
@@ -72,13 +70,13 @@ class _Watcher(WatcherProtocol):
             else:
                 raise StopIteration()
 
-    def next(self) -> Optional[_health_pb2.HealthCheckResponse]:
+    def next(self) -> Optional[HealthCheckResponse]:
         return self._next()
 
-    def __next__(self):
+    def __next__(self) -> Optional[HealthCheckResponse]:
         return self._next()
 
-    def add(self, response: Optional[_health_pb2.HealthCheckResponse]) -> None:
+    def add(self, response: Optional[HealthCheckResponse]) -> None:
         with self._condition:
             self._responses.append(response)
             self._condition.notify()
@@ -91,7 +89,7 @@ class _Watcher(WatcherProtocol):
 
 def _watcher_to_send_response_callback_adapter(
     watcher: WatcherProtocol,
-) -> Callable[[Optional[_health_pb2.HealthCheckResponse]], None]:
+) -> Callable[[Optional[HealthCheckResponse]], None]:
     def send_response_callback(response):
         if response is None:
             watcher.close()
@@ -107,7 +105,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
     _lock: threading.RLock
     _server_status: Dict[str, int]
     _send_response_callbacks: Dict[
-        str, Set[Callable[[_health_pb2.HealthCheckResponse], None]]
+        str, Set[Callable[[HealthCheckResponse], None]]
     ]
     _gracefully_shutting_down: bool
 
@@ -127,9 +125,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
 
     def _on_close_callback(
         self,
-        send_response_callback: Callable[
-            [_health_pb2.HealthCheckResponse], None
-        ],
+        send_response_callback: Callable[[HealthCheckResponse], None],
         service: str,
     ) -> Callable[[], None]:
         def callback():
@@ -143,24 +139,24 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
 
     def Check(
         self,
-        request: _health_pb2.HealthCheckRequest,
+        request: HealthCheckRequest,
         context: grpc.ServicerContext,
-    ) -> _health_pb2.HealthCheckResponse:
+    ) -> HealthCheckResponse:
         with self._lock:
             status = self._server_status.get(request.service)
             if status is None:
                 context.set_code(grpc.StatusCode.NOT_FOUND)
-                return _health_pb2.HealthCheckResponse()
+                return HealthCheckResponse()
             else:
-                return _health_pb2.HealthCheckResponse(status=status)
+                return HealthCheckResponse(status=status)
 
     # pylint: disable=arguments-differ
     def Watch(
         self,
-        request: _health_pb2.HealthCheckRequest,
+        request: HealthCheckRequest,
         context: grpc.ServicerContext,
         send_response_callback: Optional[
-            Callable[[_health_pb2.HealthCheckResponse], None]
+            Callable[[HealthCheckResponse], None]
         ] = None,
     ) -> Optional[WatcherProtocol]:
         blocking_watcher = None
@@ -195,7 +191,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
 
         Args:
           service: string, the name of the service.
-          status: HealthCheckResponse.status enum value indicating the status of
+          status: HealthCheckResponse.status int value indicating the status of
             the service
         """
         with self._lock:

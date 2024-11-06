@@ -65,9 +65,7 @@ if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
 
 else:
 
-    def add_channelz_servicer(
-        server: Union[grpc.Server, grpc.aio.Server]
-    ) -> None:
+    def add_channelz_servicer(server: grpc.GenericServer) -> None:
         _channelz_pb2_grpc.add_ChannelzServicer_to_server(
             ChannelzServicer(), server
         )

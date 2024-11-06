@@ -18,8 +18,10 @@ import collections
 from typing import MutableMapping
 
 import grpc
-from grpc_health.v1 import health_pb2 as _health_pb2  # type :ignore
-from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc  # type :ignore
+from grpc_health.v1 import health_pb2 as _health_pb2
+from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
+from grpc_health.v1.health_pb2 import HealthCheckRequest
+from grpc_health.v1.health_pb2 import HealthCheckResponse
 
 
 class HealthServicer(_health_pb2_grpc.HealthServicer):
@@ -50,7 +52,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
 
     async def Watch(
         self,
-        request: _health_pb2.HealthCheckRequest,
+        request: HealthCheckRequest,
         context: grpc.aio.ServicerContext,
     ) -> None:
         condition = self._server_watchers[request.service]
@@ -84,7 +86,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
     async def _set(
         self,
         service: str,
-        status: _health_pb2.HealthCheckResponse.ServingStatus,
+        status: HealthCheckResponse.ServingStatus,
     ) -> None:
         if service in self._server_watchers:
             condition = self._server_watchers[service]
@@ -97,7 +99,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
     async def set(
         self,
         service: str,
-        status: _health_pb2.HealthCheckResponse.ServingStatus,
+        status: HealthCheckResponse.ServingStatus,
     ) -> None:
         """Sets the status of a service.
 
