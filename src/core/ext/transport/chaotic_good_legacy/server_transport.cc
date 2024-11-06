@@ -176,7 +176,7 @@ auto ChaoticGoodServerTransport::SendCallBody(
         const uint32_t padding =
             message_length % aligned_bytes == 0
                 ? 0
-                : aligned_bytes - message_length % aligned_bytes;
+                : aligned_bytes - (message_length % aligned_bytes);
         CHECK_EQ((message_length + padding) % aligned_bytes, 0u);
         frame.message =
             FragmentMessage(std::move(message), padding, message_length);
