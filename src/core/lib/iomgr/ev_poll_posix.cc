@@ -1405,6 +1405,7 @@ const grpc_event_engine_vtable grpc_ev_poll_posix = {
       }
       if (grpc_core::Fork::Enabled()) {
         if (grpc_core::Fork::RegisterResetChildPollingEngineFunc(
+                reinterpret_cast<void*>(reset_event_manager_on_fork),
                 reset_event_manager_on_fork)) {
           track_fds_for_fork = true;
           gpr_mu_init(&fork_fd_list_mu);

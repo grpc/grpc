@@ -323,6 +323,7 @@ bool InitPollPollerPosix() {
   }
   if (grpc_core::Fork::Enabled()) {
     if (grpc_core::Fork::RegisterResetChildPollingEngineFunc(
+            reinterpret_cast<void*>(ResetEventManagerOnFork),
             ResetEventManagerOnFork)) {
       gpr_mu_init(&fork_fd_list_mu);
     }

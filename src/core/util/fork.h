@@ -22,7 +22,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
-#include <set>
+#include <map>
+
+#include "absl/functional/any_invocable.h"
 
 //
 // NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
@@ -33,7 +35,7 @@ namespace grpc_core {
 
 class GPR_DLL Fork {
  public:
-  typedef void (*child_postfork_func)(void);
+  using child_postfork_func = absl::AnyInvocable<void() const>;
 
   static void GlobalInit();
 
@@ -60,8 +62,9 @@ class GPR_DLL Fork {
   // Returns true if reset_child_polling_engine was not previously registered,
   // otherwise returns false and does nothing.
   static bool RegisterResetChildPollingEngineFunc(
-      child_postfork_func reset_child_polling_engine);
-  static const std::set<child_postfork_func>& GetResetChildPollingEngineFunc();
+      void* key, child_postfork_func reset_child_polling_engine);
+  static const std::map<void*, child_postfork_func>&
+  GetResetChildPollingEngineFunc();
 
   // Check if there is a single active ExecCtx
   // (the one used to invoke this function).  If there are more,
@@ -90,7 +93,7 @@ class GPR_DLL Fork {
 
   static std::atomic<bool> support_enabled_;
   static bool override_enabled_;
-  static std::set<child_postfork_func>* reset_child_polling_engine_;
+  static std::map<void*, child_postfork_func>* reset_child_polling_engine_;
 };
 
 }  // namespace grpc_core

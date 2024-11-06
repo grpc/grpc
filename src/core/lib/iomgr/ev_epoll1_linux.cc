@@ -1283,6 +1283,7 @@ static bool init_epoll1_linux() {
 
   if (grpc_core::Fork::Enabled()) {
     if (grpc_core::Fork::RegisterResetChildPollingEngineFunc(
+            reinterpret_cast<void*>(&reset_event_manager_on_fork),
             reset_event_manager_on_fork)) {
       gpr_mu_init(&fork_fd_list_mu);
     }
