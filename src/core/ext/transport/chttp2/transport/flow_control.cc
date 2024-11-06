@@ -182,7 +182,7 @@ TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
   // and a value t such that t_min <= t <= t_max, return the value on the line
   // segment at t.
   auto lerp = [](double t, double t_min, double t_max, double a, double b) {
-    return a + (b - a) * (t - t_min) / (t_max - t_min);
+    return a + ((b - a) * (t - t_min) / (t_max - t_min));
   };
   // We split memory pressure into three broad regions:
   // 1. Low memory pressure, the "anything goes" case - we assume no memory

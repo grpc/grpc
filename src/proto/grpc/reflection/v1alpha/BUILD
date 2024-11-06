@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_grpc_library", "grpc_cc_proto_library", "grpc_internal_proto_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 
 licenses(["notice"])
 
@@ -21,21 +21,12 @@ grpc_package(
     visibility = "public",
 )
 
-grpc_internal_proto_library(
+# TODO(roth): Migrate this to use separate
+# grpc_internal_proto_library/grpc_cc_proto_library/grpc_cc_grpc_library
+# rules when internal build system limitations are resolved.
+grpc_proto_library(
     name = "reflection_proto",
     srcs = ["reflection.proto"],
-    has_services = True,
-)
-
-grpc_cc_proto_library(
-    name = "reflection_cc_proto",
-    deps = ["reflection_proto"],
-)
-
-grpc_cc_grpc_library(
-    name = "reflection_cc_grpc",
-    srcs = ["reflection_proto"],
-    deps = ["reflection_cc_proto"],
 )
 
 filegroup(

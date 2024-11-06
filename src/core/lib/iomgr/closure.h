@@ -212,7 +212,9 @@ inline grpc_closure* grpc_closure_create(grpc_iomgr_cb_func cb, void* cb_arg) {
 #endif
 
 #define GRPC_CLOSURE_LIST_INIT \
-  { nullptr, nullptr }
+  {                            \
+    nullptr, nullptr           \
+  }
 
 inline void grpc_closure_list_init(grpc_closure_list* closure_list) {
   closure_list->head = closure_list->tail = nullptr;
