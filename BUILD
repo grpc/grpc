@@ -107,6 +107,11 @@ config_setting(
 )
 
 config_setting(
+    name = "windows_os",
+    constraint_values = ["@platforms//os:windows"],
+)
+
+config_setting(
     name = "systemd",
     values = {"define": "use_systemd=true"},
 )
