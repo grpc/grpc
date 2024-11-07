@@ -3692,6 +3692,7 @@ grpc_cc_library(
     srcs = ["lib/surface/connection_context.cc"],
     hdrs = ["lib/surface/connection_context.h"],
     deps = [
+        "no_destruct",
         "//:gpr",
         "//:gpr_platform",
         "//:orphanable",

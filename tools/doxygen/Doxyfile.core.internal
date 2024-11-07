@@ -2373,6 +2373,8 @@ src/core/lib/surface/completion_queue.cc \
 src/core/lib/surface/completion_queue.h \
 src/core/lib/surface/completion_queue_factory.cc \
 src/core/lib/surface/completion_queue_factory.h \
+src/core/lib/surface/connection_context.cc \
+src/core/lib/surface/connection_context.h \
 src/core/lib/surface/event_string.cc \
 src/core/lib/surface/event_string.h \
 src/core/lib/surface/filter_stack_call.cc \

@@ -2830,6 +2830,7 @@ add_library(grpc
   src/core/lib/surface/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
+  src/core/lib/surface/connection_context.cc
   src/core/lib/surface/event_string.cc
   src/core/lib/surface/filter_stack_call.cc
   src/core/lib/surface/init.cc
@@ -3603,6 +3604,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
+  src/core/lib/surface/connection_context.cc
   src/core/lib/surface/event_string.cc
   src/core/lib/surface/filter_stack_call.cc
   src/core/lib/surface/init.cc
@@ -5823,6 +5825,7 @@ add_library(grpc_authorization_provider
   src/core/lib/surface/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
+  src/core/lib/surface/connection_context.cc
   src/core/lib/surface/event_string.cc
   src/core/lib/surface/filter_stack_call.cc
   src/core/lib/surface/init_internally.cc
@@ -12955,7 +12958,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(connection_context_test
-  src/core/lib/surface/connection_context.cc
   test/core/surface/connection_context_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fuzzer_util.cc

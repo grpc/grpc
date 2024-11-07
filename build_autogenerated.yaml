@@ -1055,6 +1055,7 @@ libs:
   - src/core/lib/surface/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
+  - src/core/lib/surface/connection_context.h
   - src/core/lib/surface/event_string.h
   - src/core/lib/surface/filter_stack_call.h
   - src/core/lib/surface/init.h
@@ -1911,6 +1912,7 @@ libs:
   - src/core/lib/surface/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
+  - src/core/lib/surface/connection_context.cc
   - src/core/lib/surface/event_string.cc
   - src/core/lib/surface/filter_stack_call.cc
   - src/core/lib/surface/init.cc
@@ -2609,6 +2611,7 @@ libs:
   - src/core/lib/surface/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
+  - src/core/lib/surface/connection_context.h
   - src/core/lib/surface/event_string.h
   - src/core/lib/surface/filter_stack_call.h
   - src/core/lib/surface/init.h
@@ -3038,6 +3041,7 @@ libs:
   - src/core/lib/surface/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
+  - src/core/lib/surface/connection_context.cc
   - src/core/lib/surface/event_string.cc
   - src/core/lib/surface/filter_stack_call.cc
   - src/core/lib/surface/init.cc
@@ -4680,6 +4684,7 @@ libs:
   - src/core/lib/surface/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
+  - src/core/lib/surface/connection_context.h
   - src/core/lib/surface/event_string.h
   - src/core/lib/surface/filter_stack_call.h
   - src/core/lib/surface/init.h
@@ -4984,6 +4989,7 @@ libs:
   - src/core/lib/surface/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
+  - src/core/lib/surface/connection_context.cc
   - src/core/lib/surface/event_string.cc
   - src/core/lib/surface/filter_stack_call.cc
   - src/core/lib/surface/init_internally.cc
@@ -9301,7 +9307,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/surface/connection_context.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/fuzzer_util.h
@@ -9313,7 +9318,6 @@ targets:
   - test/core/test_util/slice_splitter.h
   - test/core/test_util/tracer_util.h
   src:
-  - src/core/lib/surface/connection_context.cc
   - test/core/surface/connection_context_test.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fuzzer_util.cc
