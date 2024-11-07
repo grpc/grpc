@@ -264,7 +264,7 @@ class RetryFilter::LegacyCallData final {
     // For send_initial_metadata.
     grpc_metadata_batch send_initial_metadata_;
     // For send_message.
-    absl::optional<SliceBuffer> send_message_;
+    SliceBuffer send_message_;
     // For send_trailing_metadata.
     grpc_metadata_batch send_trailing_metadata_;
     // For intercepting recv_initial_metadata.
