@@ -38,19 +38,19 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "envoy/config/rbac/v3/rbac.pb.h"
+#include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h"
-#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
-#include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 #include "test/cpp/end2end/xds/xds_utils.h"
+#include "xds/data/orca/v3/orca_load_report.pb.h"
 
 namespace grpc {
 namespace testing {

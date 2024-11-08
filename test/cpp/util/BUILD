@@ -197,7 +197,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo.proto",
         "//src/proto/grpc/testing:echo_messages.proto",
         "//src/proto/grpc/testing:simple_messages.proto",
-        "//src/proto/grpc/testing/xds/v3:orca_load_report.proto",
     ],
     external_deps = [
         "absl/flags:flag",
@@ -216,7 +215,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing:simple_messages_cc_proto",
-        "//src/proto/grpc/testing/xds/v3:orca_load_report_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
@@ -310,9 +308,9 @@ grpc_cc_test(
     tags = ["no_test_ios"],
     deps = [
         "//:grpc++_error_details",
-        "//src/proto/grpc/status:status_cc_proto",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
+        "@com_google_googleapis//google/rpc:status_cc_proto",
     ],
 )
 
