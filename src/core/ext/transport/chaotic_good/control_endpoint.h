@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef BUFEP_H
-#define BUFEP_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CONTROL_ENDPOINT_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CONTROL_ENDPOINT_H
 
 #include "absl/cleanup/cleanup.h"
 #include "src/core/lib/promise/party.h"
@@ -85,4 +85,4 @@ class ControlEndpoint {
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CONTROL_ENDPOINT_H
