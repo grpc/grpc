@@ -1580,6 +1580,8 @@
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/connection_context.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/connection_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/event_string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/event_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/filter_stack_call.cc" role="src" />

@@ -2812,6 +2812,7 @@ grpc_cc_library(
     select_deps = [
         {
             "//:windows": ["windows_event_engine"],
+            "//:windows_os": ["windows_event_engine"],
             "//:windows_msvc": ["windows_event_engine"],
             "//:windows_clang": ["windows_event_engine"],
             "//:windows_other": ["windows_event_engine"],
@@ -3707,6 +3708,7 @@ grpc_cc_library(
     srcs = ["lib/surface/connection_context.cc"],
     hdrs = ["lib/surface/connection_context.h"],
     deps = [
+        "no_destruct",
         "//:gpr",
         "//:gpr_platform",
         "//:orphanable",
