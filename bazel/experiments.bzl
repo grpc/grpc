@@ -21,6 +21,7 @@ EXPERIMENT_ENABLES = {
     "canary_client_privacy": "canary_client_privacy",
     "chaotic_good_legacy_protocol": "chaotic_good_legacy_protocol",
     "client_privacy": "client_privacy",
+    "disable_buffer_hint_on_high_memory_pressure": "disable_buffer_hint_on_high_memory_pressure",
     "event_engine_application_callbacks": "event_engine_application_callbacks",
     "event_engine_callback_cq": "event_engine_application_callbacks,event_engine_callback_cq",
     "event_engine_client": "event_engine_client",
