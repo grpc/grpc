@@ -35,8 +35,7 @@ import tempfile
 import time
 import traceback
 import uuid
-
-from six.moves import urllib
+import urllib.request
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
