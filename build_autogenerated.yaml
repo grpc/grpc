@@ -5111,6 +5111,7 @@ libs:
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
   deps:
+  - absl/status:status
   - protobuf
   - protoc
 - name: grpcpp_channelz

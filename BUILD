@@ -2472,6 +2472,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc++_codegen_proto",
+    hdrs = ["include/grpcpp/impl/generic_serialize.h"],
     external_deps = [
         "absl/strings:cord",
         "protobuf_headers",
@@ -2497,6 +2498,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_config_proto",
     external_deps = [
+        "absl/status",
         "protobuf_headers",
         "protobuf",
     ],

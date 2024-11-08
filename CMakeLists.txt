@@ -6089,6 +6089,7 @@ target_include_directories(grpc_plugin_support
 )
 target_link_libraries(grpc_plugin_support
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::status
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
 )
