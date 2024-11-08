@@ -64,6 +64,12 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: disable_buffer_hint_on_high_memory_pressure
+  description:
+    Disable buffer hint flag parsing in the transport under high memory pressure.
+  expiry: 2025/03/01
+  owner: vigneshbabu@google.com
+  test_tags: []
 - name: event_engine_application_callbacks
   description: Run application callbacks in EventEngine threads, instead of on the thread-local ApplicationCallbackExecCtx
   expiry: 2025/03/01

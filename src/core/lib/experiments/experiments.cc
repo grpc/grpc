@@ -35,6 +35,11 @@ const char* const description_chaotic_good_legacy_protocol =
 const char* const additional_constraints_chaotic_good_legacy_protocol = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
+const char* const description_disable_buffer_hint_on_high_memory_pressure =
+    "Disable buffer hint flag parsing in the transport under high memory "
+    "pressure.";
+const char* const
+    additional_constraints_disable_buffer_hint_on_high_memory_pressure = "{}";
 const char* const description_event_engine_application_callbacks =
     "Run application callbacks in EventEngine threads, instead of on the "
     "thread-local ApplicationCallbackExecCtx";
@@ -133,6 +138,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
+    {"disable_buffer_hint_on_high_memory_pressure",
+     description_disable_buffer_hint_on_high_memory_pressure,
+     additional_constraints_disable_buffer_hint_on_high_memory_pressure,
+     nullptr, 0, false, true},
     {"event_engine_application_callbacks",
      description_event_engine_application_callbacks,
      additional_constraints_event_engine_application_callbacks, nullptr, 0,
@@ -207,6 +216,11 @@ const char* const description_chaotic_good_legacy_protocol =
 const char* const additional_constraints_chaotic_good_legacy_protocol = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
+const char* const description_disable_buffer_hint_on_high_memory_pressure =
+    "Disable buffer hint flag parsing in the transport under high memory "
+    "pressure.";
+const char* const
+    additional_constraints_disable_buffer_hint_on_high_memory_pressure = "{}";
 const char* const description_event_engine_application_callbacks =
     "Run application callbacks in EventEngine threads, instead of on the "
     "thread-local ApplicationCallbackExecCtx";
@@ -305,6 +319,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
+    {"disable_buffer_hint_on_high_memory_pressure",
+     description_disable_buffer_hint_on_high_memory_pressure,
+     additional_constraints_disable_buffer_hint_on_high_memory_pressure,
+     nullptr, 0, false, true},
     {"event_engine_application_callbacks",
      description_event_engine_application_callbacks,
      additional_constraints_event_engine_application_callbacks, nullptr, 0,
@@ -379,6 +397,11 @@ const char* const description_chaotic_good_legacy_protocol =
 const char* const additional_constraints_chaotic_good_legacy_protocol = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
+const char* const description_disable_buffer_hint_on_high_memory_pressure =
+    "Disable buffer hint flag parsing in the transport under high memory "
+    "pressure.";
+const char* const
+    additional_constraints_disable_buffer_hint_on_high_memory_pressure = "{}";
 const char* const description_event_engine_application_callbacks =
     "Run application callbacks in EventEngine threads, instead of on the "
     "thread-local ApplicationCallbackExecCtx";
@@ -477,6 +500,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
+    {"disable_buffer_hint_on_high_memory_pressure",
+     description_disable_buffer_hint_on_high_memory_pressure,
+     additional_constraints_disable_buffer_hint_on_high_memory_pressure,
+     nullptr, 0, false, true},
     {"event_engine_application_callbacks",
      description_event_engine_application_callbacks,
      additional_constraints_event_engine_application_callbacks, nullptr, 0,

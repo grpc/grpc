@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <memory>
 #include <new>
@@ -1470,7 +1471,7 @@ static void send_message_locked(
       op->payload->send_message.send_message->Length());
   on_complete->next_data.scratch |= t->closure_barrier_may_cover_write;
   s->send_message_finished = add_closure_barrier(op->on_complete);
-  const uint32_t flags = op_payload->send_message.flags;
+  uint32_t flags = 0;
   if (s->write_closed) {
     op->payload->send_message.stream_write_closed = true;
     // We should NOT return an error here, so as to avoid a cancel OP being
@@ -1480,6 +1481,19 @@ static void send_message_locked(
                                       absl::OkStatus(),
                                       "fetching_send_message_finished");
   } else {
+    // Buffer hint is used to buffer the message in the transport until the
+    // write buffer size (specified through GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE) is
+    // reached. This is to batch writes sent down to tcp. However, if the memory
+    // pressure is high, disable the buffer hint to flush data down to tcp as
+    // soon as possible to avoid OOM.
+    if (grpc_core::IsDisableBufferHintOnHighMemoryPressureEnabled() &&
+        t->memory_owner.GetPressureInfo().pressure_control_value >= 0.8) {
+      // Disable write buffer hint if memory pressure is high. The value of 0.8
+      // is chosen to match the threshold used by the tcp endpoint (in
+      // allocating memory for socket reads).
+      op_payload->send_message.flags &= ~GRPC_WRITE_BUFFER_HINT;
+    }
+    flags = op_payload->send_message.flags;
     uint8_t* frame_hdr = grpc_slice_buffer_tiny_add(&s->flow_controlled_buffer,
                                                     GRPC_HEADER_SIZE_IN_BYTES);
     frame_hdr[0] = (flags & GRPC_WRITE_INTERNAL_COMPRESS) != 0;
