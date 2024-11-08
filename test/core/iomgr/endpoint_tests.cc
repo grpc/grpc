@@ -80,7 +80,7 @@ static void end_test(grpc_endpoint_test_config config) { config.clean_up(); }
 
 static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
                                    size_t* num_blocks, uint8_t* current_data) {
-  size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1 : 0);
+  size_t nslices = (num_bytes / slice_size) + (num_bytes % slice_size ? 1 : 0);
   grpc_slice* slices =
       static_cast<grpc_slice*>(gpr_malloc(sizeof(grpc_slice) * nslices));
   size_t num_bytes_left = num_bytes;

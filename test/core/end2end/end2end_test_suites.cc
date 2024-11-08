@@ -566,7 +566,7 @@ class InsecureFixtureWithPipeForWakeupFd : public InsecureFixture {
 // Returns the temp directory to create uds in this test.
 std::string GetTempDir() {
 #ifdef GPR_WINDOWS
-  // Windows temp dir usually exceeds uds max paht length,
+  // Windows temp dir usually exceeds uds max path length,
   // so we create a short dir for this test.
   // TODO: find a better solution.
   std::string temp_dir = "C:/tmp/";
@@ -1021,7 +1021,7 @@ class ConfigQuery {
     enforce_features_ |= features;
     return *this;
   }
-  // Envorce that the returned configurations do not have the given features.
+  // Enforce that the returned configurations do not have the given features.
   ConfigQuery& ExcludeFeatures(uint32_t features) {
     exclude_features_ |= features;
     return *this;

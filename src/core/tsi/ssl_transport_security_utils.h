@@ -97,7 +97,7 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
                                size_t* protected_output_frames_size);
 
 // Builds a TLS frame out of the remaining plaintext bytes that's left in
-// buffer. Populates the size of the remianing TLS frame to
+// buffer. Populates the size of the remaining TLS frame to
 // |still_pending_size|.
 //
 // buffer_size: the size of |buffer|. If |buffer_offset| equals |buffer_size|,

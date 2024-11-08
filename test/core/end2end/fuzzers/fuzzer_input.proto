@@ -121,6 +121,10 @@ message H2WindowUpdateFrame {
     uint32 increment = 2;
 }
 
+message H2SecurityFrame {
+    bytes payload = 1;
+}
+
 message H2ClientPrefix {}
 
 message ChaoticGoodServerFragment {
@@ -202,6 +206,7 @@ message InputSegment {
         uint32 repeated_zeros = 12;
         ChaoticGoodFrame chaotic_good = 13;
         FakeTransportFrame fake_transport_frame = 14;
+        H2SecurityFrame security_frame = 15;
     }
 }
 

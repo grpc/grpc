@@ -60,6 +60,7 @@ namespace grpc_core {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
+inline bool IsChaoticGoodLegacyProtocolEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
 inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
@@ -94,6 +95,7 @@ inline bool IsWorkSerializerDispatchEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
+inline bool IsChaoticGoodLegacyProtocolEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
 inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
@@ -131,6 +133,7 @@ inline bool IsWorkSerializerDispatchEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
+inline bool IsChaoticGoodLegacyProtocolEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
 inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
@@ -170,6 +173,7 @@ inline bool IsWorkSerializerDispatchEnabled() { return true; }
 enum ExperimentIds {
   kExperimentIdCallTracerInTransport,
   kExperimentIdCanaryClientPrivacy,
+  kExperimentIdChaoticGoodLegacyProtocol,
   kExperimentIdClientPrivacy,
   kExperimentIdEventEngineApplicationCallbacks,
   kExperimentIdEventEngineCallbackCq,
@@ -202,6 +206,10 @@ inline bool IsCallTracerInTransportEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CANARY_CLIENT_PRIVACY
 inline bool IsCanaryClientPrivacyEnabled() {
   return IsExperimentEnabled<kExperimentIdCanaryClientPrivacy>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_LEGACY_PROTOCOL
+inline bool IsChaoticGoodLegacyProtocolEnabled() {
+  return IsExperimentEnabled<kExperimentIdChaoticGoodLegacyProtocol>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_PRIVACY
 inline bool IsClientPrivacyEnabled() {

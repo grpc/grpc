@@ -258,12 +258,12 @@ absl::optional<Duration> ParseTimeout(const Slice& text) {
   Duration timeout;
   switch (*p) {
     case 'n':
-      timeout =
-          Duration::Milliseconds(x / GPR_NS_PER_MS + (x % GPR_NS_PER_MS != 0));
+      timeout = Duration::Milliseconds((x / GPR_NS_PER_MS) +
+                                       (x % GPR_NS_PER_MS != 0));
       break;
     case 'u':
-      timeout =
-          Duration::Milliseconds(x / GPR_US_PER_MS + (x % GPR_US_PER_MS != 0));
+      timeout = Duration::Milliseconds((x / GPR_US_PER_MS) +
+                                       (x % GPR_US_PER_MS != 0));
       break;
     case 'm':
       timeout = Duration::Milliseconds(x);

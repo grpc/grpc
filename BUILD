@@ -107,6 +107,11 @@ config_setting(
 )
 
 config_setting(
+    name = "windows_os",
+    constraint_values = ["@platforms//os:windows"],
+)
+
+config_setting(
     name = "systemd",
     values = {"define": "use_systemd=true"},
 )
@@ -552,6 +557,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/log:log",
         "absl/time:time",
+        "address_sorting",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -625,6 +631,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/log:log",
         "absl/time:time",
+        "address_sorting",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -2057,7 +2064,7 @@ grpc_cc_library(
         ":gpr",
         ":grpc++",
         ":lb_load_reporter",
-        "//src/proto/grpc/lb/v1:load_reporter_proto",
+        "//src/proto/grpc/lb/v1:load_reporter_cc_grpc",
     ],
 )
 
@@ -2104,7 +2111,7 @@ grpc_cc_library(
         "gpr",
         "lb_get_cpu_stats",
         "lb_load_data_store",
-        "//src/proto/grpc/lb/v1:load_reporter_proto",
+        "//src/proto/grpc/lb/v1:load_reporter_cc_grpc",
     ],
 )
 
@@ -2172,6 +2179,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:closure",
+        "//src/core:connection_context",
         "//src/core:context",
         "//src/core:error",
         "//src/core:event_engine_memory_allocator",
@@ -2656,7 +2664,7 @@ grpc_cc_library(
         "gpr",
         "grpc",
         "grpc++_base",
-        "//src/proto/grpc/testing/xds/v3:csds_proto",
+        "//src/proto/grpc/testing/xds/v3:csds_cc_grpc",
     ],
     alwayslink = 1,
 )
@@ -4654,6 +4662,42 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_http2_client_transport",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/http2_client_transport.cc",
+    ],
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/http2_client_transport.h",
+    ],
+    external_deps = [],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "hpack_encoder",
+        "hpack_parser",
+        "//src/core:grpc_promise_endpoint",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_http2_server_transport",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/http2_server_transport.cc",
+    ],
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/http2_server_transport.h",
+    ],
+    external_deps = [],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "hpack_encoder",
+        "hpack_parser",
+        "//src/core:grpc_promise_endpoint",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.cc",
@@ -4663,6 +4707,7 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/frame_goaway.cc",
         "//src/core:ext/transport/chttp2/transport/frame_ping.cc",
         "//src/core:ext/transport/chttp2/transport/frame_rst_stream.cc",
+        "//src/core:ext/transport/chttp2/transport/frame_security.cc",
         "//src/core:ext/transport/chttp2/transport/frame_settings.cc",
         "//src/core:ext/transport/chttp2/transport/frame_window_update.cc",
         "//src/core:ext/transport/chttp2/transport/parsing.cc",
@@ -4677,6 +4722,7 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/frame_goaway.h",
         "//src/core:ext/transport/chttp2/transport/frame_ping.h",
         "//src/core:ext/transport/chttp2/transport/frame_rst_stream.h",
+        "//src/core:ext/transport/chttp2/transport/frame_security.h",
         "//src/core:ext/transport/chttp2/transport/frame_settings.h",
         "//src/core:ext/transport/chttp2/transport/frame_window_update.h",
         "//src/core:ext/transport/chttp2/transport/internal.h",
@@ -4685,6 +4731,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
+        "absl/functional:bind_front",
         "absl/hash",
         "absl/log:check",
         "absl/log:log",
@@ -4760,6 +4807,7 @@ grpc_cc_library(
         "//src/core:status_conversion",
         "//src/core:status_helper",
         "//src/core:time",
+        "//src/core:transport_framing_endpoint_extension",
         "//src/core:useful",
         "//src/core:write_size_policy",
     ],
@@ -5105,7 +5153,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_health_upb",
-    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
+    deps = ["//src/proto/grpc/health/v1:health_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5125,7 +5173,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_lb_upb",
-    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"],
+    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5135,17 +5183,17 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "rls_upb",
-    deps = ["//src/proto/grpc/lookup/v1:rls_proto_descriptor"],
+    deps = ["//src/proto/grpc/lookup/v1:rls_proto"],
 )
 
 grpc_upb_proto_library(
     name = "rls_config_upb",
-    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "rls_config_upbdefs",
-    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [
