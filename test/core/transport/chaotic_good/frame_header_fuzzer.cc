@@ -22,7 +22,7 @@
 
 bool squelch = false;
 
-using namespace grpc_core::chaotic_good;
+using grpc_core::chaotic_good::FrameHeader;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (size != FrameHeader::kFrameHeaderSize) return 0;
