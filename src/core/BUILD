@@ -8095,6 +8095,7 @@ grpc_cc_library(
     external_deps = [
         "absl/log:log",
         "absl/random",
+        "absl/strings",
     ],
     language = "c++",
     deps = [
