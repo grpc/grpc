@@ -8137,7 +8137,11 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chaotic_good/chaotic_good_transport.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/log:log",
+        "absl/random",
+        "absl/strings",
+    ],
     language = "c++",
     deps = [
         "chaotic_good_control_endpoint",
