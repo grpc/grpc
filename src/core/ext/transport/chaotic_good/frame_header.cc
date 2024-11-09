@@ -53,6 +53,9 @@ void FrameHeader::Serialize(uint8_t* data) const {
 absl::StatusOr<FrameHeader> FrameHeader::Parse(const uint8_t* data) {
   FrameHeader header;
   const uint32_t type_and_conn_id = ReadLittleEndianUint32(data);
+  if (type_and_conn_id & 0xff000000u) {
+    return absl::InternalError("Non-zero reserved byte received");
+  }
   header.type = static_cast<FrameType>(type_and_conn_id >> 16);
   header.payload_connection_id = type_and_conn_id & 0xffff;
   header.stream_id = ReadLittleEndianUint32(data + 4);
