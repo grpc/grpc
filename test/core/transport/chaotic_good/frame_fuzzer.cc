@@ -66,7 +66,6 @@ void FinishParseAndChecks(const FrameHeader& header, SliceBuffer payload) {
   ExecCtx exec_ctx;  // Initialized to get this_cpu() info in global_stat().
   auto deser = parsed.Deserialize(header, std::move(payload));
   if (!deser.ok()) return;
-  LOG(INFO) << "Read frame: " << parsed.ToString();
   AssertRoundTrips(parsed, header.type);
 }
 
@@ -76,7 +75,6 @@ void Run(const frame_fuzzer::Test& test) {
       reinterpret_cast<const uint8_t*>(test.header().data()));
   if (!r.ok()) return;
   if (test.payload().size() != r->payload_length) return;
-  LOG(INFO) << "Read frame header: " << r->ToString();
   auto arena = SimpleArenaAllocator()->MakeArena();
   TestContext<Arena> ctx(arena.get());
   SliceBuffer payload(
