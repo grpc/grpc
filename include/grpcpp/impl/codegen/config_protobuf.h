@@ -59,22 +59,26 @@
 #ifndef GRPC_CUSTOM_DESCRIPTORDATABASE
 #include <google/protobuf/descriptor_database.h>
 #define GRPC_CUSTOM_DESCRIPTORDATABASE ::google::protobuf::DescriptorDatabase
-#define GRPC_CUSTOM_SIMPLEDESCRIPTORDATABASE ::google::protobuf::SimpleDescriptorDatabase
+#define GRPC_CUSTOM_SIMPLEDESCRIPTORDATABASE \
+  ::google::protobuf::SimpleDescriptorDatabase
 #endif
 
 #ifndef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream.h>
-#define GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM ::google::protobuf::io::ZeroCopyOutputStream
-#define GRPC_CUSTOM_ZEROCOPYINPUTSTREAM ::google::protobuf::io::ZeroCopyInputStream
+#define GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM \
+  ::google::protobuf::io::ZeroCopyOutputStream
+#define GRPC_CUSTOM_ZEROCOPYINPUTSTREAM \
+  ::google::protobuf::io::ZeroCopyInputStream
 #define GRPC_CUSTOM_CODEDINPUTSTREAM ::google::protobuf::io::CodedInputStream
 #define GRPC_CUSTOM_CODEDOUTPUTSTREAM ::google::protobuf::io::CodedOutputStream
 #endif
 
 #ifndef GRPC_CUSTOM_JSONUTIL
-#include "absl/status/status.h"
 #include <google/protobuf/util/json_util.h>
 #include <google/protobuf/util/type_resolver_util.h>
+
+#include "absl/status/status.h"
 #define GRPC_CUSTOM_JSONUTIL ::google::protobuf::util
 #define GRPC_CUSTOM_UTIL_STATUS ::absl::Status
 #endif
