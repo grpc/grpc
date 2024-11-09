@@ -197,7 +197,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core
@@ -378,7 +378,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core
