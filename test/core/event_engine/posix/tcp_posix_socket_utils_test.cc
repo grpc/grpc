@@ -16,8 +16,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <memory>
-
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/port.h"
@@ -31,6 +29,7 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 
+#include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/util/useful.h"
@@ -108,12 +107,13 @@ const grpc_socket_mutator_vtable mutator_vtable2 = {
 
 TEST(TcpPosixSocketUtilsTest, SocketMutatorTest) {
   auto test_with_vtable = [](const grpc_socket_mutator_vtable* vtable) {
-    int sock = socket(PF_INET, SOCK_STREAM, 0);
-    if (sock < 0) {
+    PosixSystemApi system_api;
+    FileDescriptor sock = system_api.Socket(PF_INET, SOCK_STREAM, 0);
+    if (sock.ready()) {
       // Try ipv6
-      sock = socket(AF_INET6, SOCK_STREAM, 0);
+      sock = system_api.Socket(AF_INET6, SOCK_STREAM, 0);
     }
-    EXPECT_GT(sock, 0);
+    EXPECT_TRUE(sock.ready());
     PosixSocketWrapper posix_sock(sock);
     struct test_socket_mutator mutator;
     grpc_socket_mutator_init(&mutator.base, vtable);
@@ -144,29 +144,30 @@ TEST(TcpPosixSocketUtilsTest, SocketMutatorTest) {
             .SetSocketMutator(GRPC_FD_CLIENT_CONNECTION_USAGE,
                               reinterpret_cast<grpc_socket_mutator*>(&mutator))
             .ok());
-    close(sock);
+    system_api.Close(sock);
   };
   test_with_vtable(&mutator_vtable);
   test_with_vtable(&mutator_vtable2);
 }
 
 TEST(TcpPosixSocketUtilsTest, SocketOptionsTest) {
-  int sock = socket(PF_INET, SOCK_STREAM, 0);
-  if (sock < 0) {
+  PosixSystemApi system_api;
+  FileDescriptor sock = system_api.Socket(PF_INET, SOCK_STREAM, 0);
+  if (sock.ready()) {
     // Try ipv6
-    sock = socket(AF_INET6, SOCK_STREAM, 0);
+    sock = system_api.Socket(AF_INET6, SOCK_STREAM, 0);
   }
-  EXPECT_GT(sock, 0);
+  EXPECT_TRUE(sock.ready());
   PosixSocketWrapper posix_sock(sock);
-  EXPECT_TRUE(posix_sock.SetSocketNonBlocking(1).ok());
-  EXPECT_TRUE(posix_sock.SetSocketNonBlocking(0).ok());
-  EXPECT_TRUE(posix_sock.SetSocketCloexec(1).ok());
-  EXPECT_TRUE(posix_sock.SetSocketCloexec(0).ok());
-  EXPECT_TRUE(posix_sock.SetSocketReuseAddr(1).ok());
-  EXPECT_TRUE(posix_sock.SetSocketReuseAddr(0).ok());
-  EXPECT_TRUE(posix_sock.SetSocketLowLatency(1).ok());
-  EXPECT_TRUE(posix_sock.SetSocketLowLatency(0).ok());
-  close(sock);
+  EXPECT_TRUE(posix_sock.SetSocketNonBlocking(system_api, 1).ok());
+  EXPECT_TRUE(posix_sock.SetSocketNonBlocking(system_api, 0).ok());
+  EXPECT_TRUE(posix_sock.SetSocketCloexec(system_api, 1).ok());
+  EXPECT_TRUE(posix_sock.SetSocketCloexec(system_api, 0).ok());
+  EXPECT_TRUE(posix_sock.SetSocketReuseAddr(system_api, 1).ok());
+  EXPECT_TRUE(posix_sock.SetSocketReuseAddr(system_api, 0).ok());
+  EXPECT_TRUE(posix_sock.SetSocketLowLatency(system_api, 1).ok());
+  EXPECT_TRUE(posix_sock.SetSocketLowLatency(system_api, 0).ok());
+  system_api.Close(sock);
 }
 
 }  // namespace experimental

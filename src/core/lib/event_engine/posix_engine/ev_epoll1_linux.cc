@@ -348,8 +348,11 @@ void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
   }
 }
 
-Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
-    : scheduler_(scheduler), was_kicked_(false), closed_(false) {
+Epoll1Poller::Epoll1Poller(Scheduler* scheduler, SystemApi* system_api)
+    : scheduler_(scheduler),
+      was_kicked_(false),
+      closed_(false),
+      system_api_(system_api) {
   g_epoll_set_.epfd = EpollCreateAndCloexec();
   wakeup_fd_ = *CreateWakeupFd();
   CHECK(wakeup_fd_ != nullptr);
@@ -559,10 +562,11 @@ void Epoll1Poller::Kick() {
   CHECK(wakeup_fd_->Wakeup().ok());
 }
 
-std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler) {
+std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler,
+                                               SystemApi* system_api) {
   static bool kEpoll1PollerSupported = InitEpoll1PollerLinux();
   if (kEpoll1PollerSupported) {
-    return std::make_shared<Epoll1Poller>(scheduler);
+    return std::make_shared<Epoll1Poller>(scheduler, system_api);
   }
   return nullptr;
 }

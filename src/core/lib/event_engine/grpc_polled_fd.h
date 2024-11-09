@@ -20,6 +20,8 @@
 
 #include <memory>
 
+#include "src/core/lib/event_engine/extensions/system_api.h"
+
 #if GRPC_ARES == 1
 
 #include <ares.h>

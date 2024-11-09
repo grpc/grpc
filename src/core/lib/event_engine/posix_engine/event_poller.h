@@ -22,6 +22,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "src/core/lib/event_engine/extensions/system_api.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
@@ -102,6 +103,7 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller,
   //    thread to return.
   // 3. Call Shutdown() on the poller.
   virtual void Shutdown() = 0;
+  virtual SystemApi* GetSystemApi() const = 0;
   ~PosixEventPoller() override = default;
 };
 

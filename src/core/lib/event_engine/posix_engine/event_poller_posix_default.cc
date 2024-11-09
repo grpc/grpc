@@ -15,7 +15,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
-#include <string>
 
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -49,22 +48,23 @@ bool PollStrategyMatches(absl::string_view strategy, absl::string_view want) {
 }
 }  // namespace
 
-std::shared_ptr<PosixEventPoller> MakeDefaultPoller(Scheduler* scheduler) {
+std::shared_ptr<PosixEventPoller> MakeDefaultPoller(SystemApi* system_api,
+                                                    Scheduler* scheduler) {
   std::shared_ptr<PosixEventPoller> poller;
   auto strings =
       absl::StrSplit(grpc_core::ConfigVars::Get().PollStrategy(), ',');
   for (auto it = strings.begin(); it != strings.end() && poller == nullptr;
        it++) {
     if (PollStrategyMatches(*it, "epoll1")) {
-      poller = MakeEpoll1Poller(scheduler);
+      poller = MakeEpoll1Poller(scheduler, system_api);
     }
     if (poller == nullptr && PollStrategyMatches(*it, "poll")) {
       // If epoll1 fails and if poll strategy matches "poll", use Poll poller
-      poller = MakePollPoller(scheduler, /*use_phony_poll=*/false);
+      poller = MakePollPoller(scheduler, system_api, /*use_phony_poll=*/false);
     } else if (poller == nullptr && PollStrategyMatches(*it, "none")) {
       // If epoll1 fails and if poll strategy matches "none", use phony poll
       // poller.
-      poller = MakePollPoller(scheduler, /*use_phony_poll=*/true);
+      poller = MakePollPoller(scheduler, system_api, /*use_phony_poll=*/true);
     }
   }
   g_poller_fork_manager->RegisterForkable(
