@@ -199,7 +199,7 @@ class PosixSocketWrapper {
   absl::Status SetSocketDscp(const SystemApi& system_api, int dscp);
 
   // Override default Tcp user timeout values if necessary.
-  void TrySetSocketTcpUserTimeout(const SystemApi& posix_apis,
+  void TrySetSocketTcpUserTimeout(const SystemApi& system_api,
                                   const PosixTcpOptions& options,
                                   bool is_client);
 
