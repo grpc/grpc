@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPCPP_IMPL_PROTO_UTILS_H
-#define GRPCPP_IMPL_PROTO_UTILS_H
+#ifndef GRPCPP_IMPL_GENERIC_SERIALIZE_H
+#define GRPCPP_IMPL_GENERIC_SERIALIZE_H
 
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/impl/grpc_types.h>
@@ -90,4 +90,4 @@ Status GenericDeserialize(ByteBuffer* buffer,
 
 }  // namespace grpc
 
-#endif  // GRPCPP_IMPL_PROTO_UTILS_H
+#endif  // GRPCPP_IMPL_GENERIC_SERIALIZE_H
