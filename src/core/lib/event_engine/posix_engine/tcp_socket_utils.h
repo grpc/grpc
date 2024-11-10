@@ -205,7 +205,7 @@ class PosixSocketWrapper {
 
   // Tries to set SO_NOSIGPIPE if available on this platform.
   // If SO_NO_SIGPIPE is not available, returns not OK status.
-  absl::Status SetSocketNoSigpipeIfPossible();
+  absl::Status SetSocketNoSigpipeIfPossible(const SystemApi& system_api);
 
   // Tries to set IP_PKTINFO if available on this platform. If IP_PKTINFO is not
   // available, returns not OK status.

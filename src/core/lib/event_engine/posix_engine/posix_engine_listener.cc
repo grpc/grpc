@@ -203,7 +203,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     }
     SystemApi* system_api = handle_->Poller()->GetSystemApi();
     PosixSocketWrapper sock(system_api->AdoptExternalFd(fd));
-    (void)sock.SetSocketNoSigpipeIfPossible();
+    (void)sock.SetSocketNoSigpipeIfPossible(*system_api);
     auto result = sock.ApplySocketMutatorInOptions(
         GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
     if (!result.ok()) {
@@ -262,7 +262,7 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
   }
   SystemApi* system_api = poller_->GetSystemApi();
   PosixSocketWrapper sock(system_api->AdoptExternalFd(fd));
-  (void)sock.SetSocketNoSigpipeIfPossible();
+  (void)sock.SetSocketNoSigpipeIfPossible(*system_api);
   auto peer_name = sock.PeerAddressString(*system_api);
   if (!peer_name.ok()) {
     return absl::UnknownError(

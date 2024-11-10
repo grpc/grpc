@@ -144,7 +144,7 @@ absl::Status PrepareTcpClientSocket(const SystemApi& system_api,
     GRPC_RETURN_IF_ERROR(sock.SetSocketDscp(system_api, options.dscp));
     sock.TrySetSocketTcpUserTimeout(system_api, options, true);
   }
-  GRPC_RETURN_IF_ERROR(sock.SetSocketNoSigpipeIfPossible());
+  GRPC_RETURN_IF_ERROR(sock.SetSocketNoSigpipeIfPossible(system_api));
   GRPC_RETURN_IF_ERROR(sock.ApplySocketMutatorInOptions(
       GRPC_FD_CLIENT_CONNECTION_USAGE, options));
   // No errors. Set close_fd to false to ensure the socket is not closed.
@@ -366,7 +366,8 @@ absl::Status PosixSocketWrapper::SetSocketNonBlocking(
   return absl::OkStatus();
 }
 
-absl::Status PosixSocketWrapper::SetSocketNoSigpipeIfPossible() {
+absl::Status PosixSocketWrapper::SetSocketNoSigpipeIfPossible(
+    const SystemApi& system_api) {
 #ifdef GRPC_HAVE_SO_NOSIGPIPE
   int val = 1;
   int newval;

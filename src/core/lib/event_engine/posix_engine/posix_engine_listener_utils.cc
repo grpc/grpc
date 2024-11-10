@@ -169,7 +169,7 @@ absl::Status PrepareSocket(const SystemApi& system_api,
     GRPC_RETURN_IF_ERROR(socket.sock.SetSocketDscp(system_api, options.dscp));
     socket.sock.TrySetSocketTcpUserTimeout(system_api, options, false);
   }
-  GRPC_RETURN_IF_ERROR(socket.sock.SetSocketNoSigpipeIfPossible());
+  GRPC_RETURN_IF_ERROR(socket.sock.SetSocketNoSigpipeIfPossible(system_api));
   GRPC_RETURN_IF_ERROR(socket.sock.ApplySocketMutatorInOptions(
       GRPC_FD_SERVER_LISTENER_USAGE, options));
 

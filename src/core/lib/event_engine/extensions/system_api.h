@@ -15,7 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_SYSTEM_API_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_SYSTEM_API_H
 
-#include <sys/epoll.h>
 #include <sys/socket.h>
 
 namespace grpc_event_engine {
@@ -33,8 +32,6 @@ class FileDescriptor {
  private:
   int fd_;
 };
-
-using EpollEvent = epoll_event;
 
 class SystemApi {
  public:
