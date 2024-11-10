@@ -625,7 +625,7 @@ void Epoll1Poller::Kick() { grpc_core::Crash("unimplemented"); }
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
 std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* /*scheduler*/,
-                                               SystemApi* system_api) {
+                                               SystemApi* /*system_api*/) {
   return nullptr;
 }
 
