@@ -244,6 +244,8 @@ void HttpRequest::AppendError(grpc_error_handle error) {
 
 void HttpRequest::OnReadInternal(grpc_error_handle error) {
   for (size_t i = 0; i < incoming_.count; i++) {
+    GRPC_TRACE_LOG(http1, INFO)
+        << "HTTP response data: " << StringViewFromSlice(incoming_.slices[i]);
     if (GRPC_SLICE_LENGTH(incoming_.slices[i])) {
       have_read_byte_ = 1;
       grpc_error_handle err =
