@@ -39,7 +39,7 @@ int GetSocketTcpInfo(const SystemApi& system_api, struct tcp_info* info,
                      FileDescriptor fd) {
   memset(info, 0, sizeof(*info));
   info->length = offsetof(tcp_info, length);
-  return system_api.getsockopt(fd, IPPROTO_TCP, TCP_INFO, info,
+  return system_api.GetSockOpt(fd, IPPROTO_TCP, TCP_INFO, info,
                                &(info->length));
 }
 #endif

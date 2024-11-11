@@ -2158,9 +2158,9 @@ grpc_cc_library(
     ],
     external_deps = ["absl/status"],
     deps = [
+        "event_engine_extensions",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
-        "event_engine_extensions"
     ],
 )
 

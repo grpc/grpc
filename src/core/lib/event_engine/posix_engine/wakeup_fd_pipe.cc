@@ -42,7 +42,7 @@ namespace {
 
 absl::Status SetSocketNonBlocking(FileDescriptor fd,
                                   const SystemApi& system_api) {
-  int oldflags = system_api.fcntl(fd, F_GETFL, 0);
+  int oldflags = system_api.Fcntl(fd, F_GETFL, 0);
   if (oldflags < 0) {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
@@ -50,7 +50,7 @@ absl::Status SetSocketNonBlocking(FileDescriptor fd,
 
   oldflags |= O_NONBLOCK;
 
-  if (system_api.fcntl(fd, F_SETFL, oldflags) != 0) {
+  if (system_api.Fcntl(fd, F_SETFL, oldflags) != 0) {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
   }
@@ -77,7 +77,7 @@ absl::Status PipeWakeupFd::ConsumeWakeup() {
   ssize_t r;
 
   for (;;) {
-    r = system_api_.read(ReadFd(), buf, sizeof(buf));
+    r = system_api_.Read(ReadFd(), buf, sizeof(buf));
     if (r > 0) continue;
     if (r == 0) return absl::OkStatus();
     switch (errno) {
@@ -94,17 +94,17 @@ absl::Status PipeWakeupFd::ConsumeWakeup() {
 
 absl::Status PipeWakeupFd::Wakeup() {
   char c = 0;
-  while (system_api_.write(WriteFd(), &c, 1) != 1 && errno == EINTR) {
+  while (system_api_.Write(WriteFd(), &c, 1) != 1 && errno == EINTR) {
   }
   return absl::OkStatus();
 }
 
 PipeWakeupFd::~PipeWakeupFd() {
   if (ReadFd().ready()) {
-    system_api_.close(ReadFd());
+    system_api_.Close(ReadFd());
   }
   if (WriteFd().ready()) {
-    system_api_.close(WriteFd());
+    system_api_.Close(WriteFd());
   }
 }
 

@@ -304,8 +304,8 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
     }
     *release_fd = fd_;
   } else {
-    system_api.shutdown(fd_, SHUT_RDWR);
-    system_api.close(fd_);
+    system_api.Shutdown(fd_, SHUT_RDWR);
+    system_api.Close(fd_);
   }
 
   ForkFdListRemoveHandle(this);
@@ -380,7 +380,7 @@ void Epoll1Poller::Close() {
   if (closed_) return;
 
   if (g_epoll_set_.epfd.ready()) {
-    GetSystemApi()->close(g_epoll_set_.epfd);
+    GetSystemApi()->Close(g_epoll_set_.epfd);
     g_epoll_set_.epfd.invalidate();
   }
 
@@ -475,7 +475,7 @@ bool Epoll1Poller::ProcessEpollEvents(int max_epoll_events_to_handle,
 int Epoll1Poller::DoEpollWait(EventEngine::Duration timeout) {
   int r;
   do {
-    r = GetSystemApi()->epoll_wait(
+    r = GetSystemApi()->EpollWait(
         g_epoll_set_.epfd, g_epoll_set_.events, MAX_EPOLL_EVENTS,
         static_cast<int>(
             grpc_event_engine::experimental::Milliseconds(timeout)));

@@ -58,9 +58,9 @@ class SystemApi {
                    socklen_t addrlen) const = 0;
   virtual void Close(FileDescriptor fd) const = 0;
   virtual int EpollWait(FileDescriptor epfd, EpollEvent* events, int maxevents,
-                         int timeout) const = 0;
+                        int timeout) const = 0;
   virtual int EpollCtl(FileDescriptor epfd, int op, FileDescriptor fd,
-                        EpollEvent* event) const = 0;
+                       EpollEvent* event) const = 0;
   virtual int EventfdRead(FileDescriptor fd) const = 0;
   virtual int EventfdWrite(FileDescriptor fd, uint64_t counter) const = 0;
   virtual int Fcntl(FileDescriptor fd, int op, int args) const = 0;

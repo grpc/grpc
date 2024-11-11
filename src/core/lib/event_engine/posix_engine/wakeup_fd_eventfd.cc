@@ -38,7 +38,7 @@ namespace experimental {
 #ifdef GRPC_LINUX_EVENTFD
 
 absl::Status EventFdWakeupFd::Init() {
-  FileDescriptor read_fd = system_api_.eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+  FileDescriptor read_fd = system_api_.EventFd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   FileDescriptor write_fd;
   if (!read_fd.ready()) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -51,7 +51,7 @@ absl::Status EventFdWakeupFd::Init() {
 absl::Status EventFdWakeupFd::ConsumeWakeup() {
   int err;
   do {
-    err = system_api_.eventfd_read(ReadFd());
+    err = system_api_.EventfdRead(ReadFd());
   } while (err < 0 && errno == EINTR);
   if (err < 0 && errno != EAGAIN) {
     return absl::Status(
@@ -64,7 +64,7 @@ absl::Status EventFdWakeupFd::ConsumeWakeup() {
 absl::Status EventFdWakeupFd::Wakeup() {
   int err;
   do {
-    err = system_api_.eventfd_write(ReadFd(), 1);
+    err = system_api_.EventfdWrite(ReadFd(), 1);
   } while (err < 0 && errno == EINTR);
   if (err < 0) {
     return absl::Status(
@@ -76,7 +76,7 @@ absl::Status EventFdWakeupFd::Wakeup() {
 
 EventFdWakeupFd::~EventFdWakeupFd() {
   if (ReadFd().ready()) {
-    system_api_.close(ReadFd());
+    system_api_.Close(ReadFd());
   }
 }
 
