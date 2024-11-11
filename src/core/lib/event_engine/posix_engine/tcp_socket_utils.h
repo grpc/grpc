@@ -151,9 +151,10 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(
     const grpc_event_engine::experimental::EndpointConfig& config);
 
 // a wrapper for accept or accept4
-int Accept4(int sockfd,
-            grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
-            int nonblock, int cloexec);
+EventEngine::FileDescriptor Accept4(
+    EventEngine::FileDescriptor sockfd,
+    grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
+    int nonblock, int cloexec);
 
 // Unlink the path pointed to by the given address if it refers to UDS path.
 void UnlinkIfUnixDomainSocket(

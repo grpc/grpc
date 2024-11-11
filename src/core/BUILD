@@ -2105,6 +2105,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "event_engine_extensions",
         "event_engine_poller",
         "forkable",
         "posix_event_engine_closure",
@@ -2156,7 +2157,11 @@ grpc_cc_library(
         "lib/event_engine/posix_engine/wakeup_fd_posix.h",
     ],
     external_deps = ["absl/status"],
-    deps = ["//:gpr_platform"],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+        "event_engine_extensions"
+    ],
 )
 
 grpc_cc_library(
@@ -2349,8 +2354,10 @@ grpc_cc_library(
         "absl/log:log",
     ],
     deps = [
+        "event_engine_extensions",
         "iomgr_port",
         "strerror",
+        "//:event_engine_base_hdrs",
         "//:gpr",
     ],
 )
@@ -2370,8 +2377,10 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
+        "event_engine_extensions",
         "iomgr_port",
         "posix_event_engine_internal_errqueue",
+        "//:event_engine_base_hdrs",
         "//:gpr",
     ],
 )
@@ -2494,6 +2503,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "event_engine_extensions",
         "event_engine_tcp_socket_utils",
         "iomgr_port",
         "posix_event_engine_tcp_socket_utils",

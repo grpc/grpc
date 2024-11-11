@@ -27,13 +27,16 @@ namespace experimental {
 
 #ifdef GRPC_POSIX_WAKEUP_FD
 
-absl::StatusOr<std::unique_ptr<WakeupFd>> NotSupported() {
+absl::StatusOr<std::unique_ptr<WakeupFd>> NotSupported(
+    const SystemApi& system_api) {
   return absl::NotFoundError("Wakeup-fd is not supported on this system");
 }
 
 namespace {
-absl::StatusOr<std::unique_ptr<WakeupFd>> (*g_wakeup_fd_fn)() =
-    []() -> absl::StatusOr<std::unique_ptr<WakeupFd>> (*)() {
+absl::StatusOr<std::unique_ptr<WakeupFd>> (*g_wakeup_fd_fn)(
+    const SystemApi& system_api) =
+    []() -> absl::StatusOr<std::unique_ptr<WakeupFd>> (*)(
+             const SystemApi& system_api) {
 #ifndef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
   if (EventFdWakeupFd::IsSupported()) {
     return &EventFdWakeupFd::CreateEventFdWakeupFd;
@@ -48,8 +51,9 @@ absl::StatusOr<std::unique_ptr<WakeupFd>> (*g_wakeup_fd_fn)() =
 
 bool SupportsWakeupFd() { return g_wakeup_fd_fn != NotSupported; }
 
-absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd() {
-  return g_wakeup_fd_fn();
+absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd(
+    const SystemApi& system_api) {
+  return g_wakeup_fd_fn(system_api);
 }
 
 #else  // GRPC_POSIX_WAKEUP_FD

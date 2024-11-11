@@ -58,7 +58,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
   ~GrpcPolledFdPosix() override {
     // c-ares library will close the fd. This fd may be picked up immediately by
     // another thread and should not be closed by the following OrphanHandle.
-    int phony_release_fd;
+    EventEngine::FileDescriptor phony_release_fd;
     handle_->OrphanHandle(/*on_done=*/nullptr, &phony_release_fd,
                           "c-ares query finished");
   }
@@ -77,7 +77,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
 
   bool IsFdStillReadableLocked() override {
     size_t bytes_available = 0;
-    return ioctl(handle_->WrappedFd(), FIONREAD, &bytes_available) == 0 &&
+    return handle_->WrappedFd().ioctl(FIONREAD, &bytes_available) == 0 &&
            bytes_available > 0;
   }
 
@@ -114,10 +114,12 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     owned_fds_.insert(as);
     return std::make_unique<GrpcPolledFdPosix>(
         as,
-        poller_->CreateHandle(as, "c-ares socket", poller_->CanTrackErrors()));
+        poller_->CreateHandle(EventEngine::FileDescriptor::FromAresSocket(as),
+                              "c-ares socket", poller_->CanTrackErrors()));
   }
 
-  void ConfigureAresChannelLocked(ares_channel channel) override {
+  void ConfigureAresChannelLocked(const SystemApi& system_api,
+                                  ares_channel channel) override {
     ares_set_socket_functions(channel, &kSockFuncs, this);
     ares_set_socket_configure_callback(
         channel, &GrpcPolledFdFactoryPosix::ConfigureSocket,

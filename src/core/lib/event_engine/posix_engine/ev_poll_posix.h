@@ -41,7 +41,7 @@ class PollPoller : public PosixEventPoller,
  public:
   PollPoller(Scheduler* scheduler, SystemApi* system_api,
              bool use_phony_poll = false);
-  EventHandle* CreateHandle(int fd, absl::string_view name,
+  EventHandle* CreateHandle(FileDescriptor fd, absl::string_view name,
                             bool track_err) override;
   Poller::WorkResult Work(
       grpc_event_engine::experimental::EventEngine::Duration timeout,
@@ -60,6 +60,7 @@ class PollPoller : public PosixEventPoller,
 
   void Close();
 
+  EventEngine::FileDescriptor WrappedFd();
   SystemApi* GetSystemApi() const override { return system_api_; }
 
  private:
@@ -78,6 +79,7 @@ class PollPoller : public PosixEventPoller,
   };
   grpc_core::Mutex mu_;
   Scheduler* scheduler_;
+  SystemApi* system_api_;
   bool use_phony_poll_;
   bool was_kicked_ ABSL_GUARDED_BY(mu_);
   bool was_kicked_ext_ ABSL_GUARDED_BY(mu_);

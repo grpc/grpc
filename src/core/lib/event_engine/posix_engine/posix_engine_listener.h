@@ -66,7 +66,8 @@ class PosixEngineListenerImpl
   // Trigger graceful shutdown of all asynchronous accept operations.
   void TriggerShutdown();
 
-  absl::Status HandleExternalConnection(int listener_fd, int fd,
+  absl::Status HandleExternalConnection(FileDescriptor listener_fd,
+                                        FileDescriptor fd,
                                         SliceBuffer* pending_data);
 
   ~PosixEngineListenerImpl();
@@ -220,7 +221,8 @@ class PosixEngineListener : public PosixListenerWithFdSupport {
       override {
     return impl_->Bind(addr, std::move(on_bind_new_fd));
   }
-  absl::Status HandleExternalConnection(int listener_fd, int fd,
+  absl::Status HandleExternalConnection(FileDescriptor listener_fd,
+                                        FileDescriptor fd,
                                         SliceBuffer* pending_data) override {
     return impl_->HandleExternalConnection(listener_fd, fd, pending_data);
   }

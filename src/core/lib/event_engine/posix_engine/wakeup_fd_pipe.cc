@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <grpc/support/port_platform.h>
+#include <sys/eventfd.h>
 
 #include <memory>
 #include <utility>
@@ -39,8 +40,9 @@ namespace experimental {
 
 namespace {
 
-absl::Status SetSocketNonBlocking(int fd) {
-  int oldflags = fcntl(fd, F_GETFL, 0);
+absl::Status SetSocketNonBlocking(FileDescriptor fd,
+                                  const SystemApi& system_api) {
+  int oldflags = system_api.fcntl(fd, F_GETFL, 0);
   if (oldflags < 0) {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
@@ -48,7 +50,7 @@ absl::Status SetSocketNonBlocking(int fd) {
 
   oldflags |= O_NONBLOCK;
 
-  if (fcntl(fd, F_SETFL, oldflags) != 0) {
+  if (system_api.fcntl(fd, F_SETFL, oldflags) != 0) {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
   }
@@ -57,18 +59,16 @@ absl::Status SetSocketNonBlocking(int fd) {
 }
 }  // namespace
 
-absl::Status PipeWakeupFd::Init() {
-  int pipefd[2];
-  int r = pipe(pipefd);
-  if (0 != r) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("pipe: ", grpc_core::StrError(errno)));
+absl::Status PipeWakeupFd::Init(const SystemApi& system_api) {
+  auto pipefd = system_api.pipe();
+  if (!pipefd.ok()) {
+    return pipefd.status();
   }
-  auto status = SetSocketNonBlocking(pipefd[0]);
+  auto status = SetSocketNonBlocking(pipefd->first, system_api);
   if (!status.ok()) return status;
-  status = SetSocketNonBlocking(pipefd[1]);
+  status = SetSocketNonBlocking(pipefd->second, system_api);
   if (!status.ok()) return status;
-  SetWakeupFds(pipefd[0], pipefd[1]);
+  SetWakeupFds(pipefd->first, pipefd->second);
   return absl::OkStatus();
 }
 
@@ -77,7 +77,7 @@ absl::Status PipeWakeupFd::ConsumeWakeup() {
   ssize_t r;
 
   for (;;) {
-    r = read(ReadFd(), buf, sizeof(buf));
+    r = system_api_.read(ReadFd(), buf, sizeof(buf));
     if (r > 0) continue;
     if (r == 0) return absl::OkStatus();
     switch (errno) {
@@ -94,30 +94,36 @@ absl::Status PipeWakeupFd::ConsumeWakeup() {
 
 absl::Status PipeWakeupFd::Wakeup() {
   char c = 0;
-  while (write(WriteFd(), &c, 1) != 1 && errno == EINTR) {
+  while (system_api_.write(WriteFd(), &c, 1) != 1 && errno == EINTR) {
   }
   return absl::OkStatus();
 }
 
 PipeWakeupFd::~PipeWakeupFd() {
-  if (ReadFd() != 0) {
-    close(ReadFd());
+  if (ReadFd().ready()) {
+    system_api_.close(ReadFd());
   }
-  if (WriteFd() != 0) {
-    close(WriteFd());
+  if (WriteFd().ready()) {
+    system_api_.close(WriteFd());
   }
 }
 
 bool PipeWakeupFd::IsSupported() {
-  PipeWakeupFd pipe_wakeup_fd;
-  return pipe_wakeup_fd.Init().ok();
+  int fds[] = {-1, -1};
+  if (pipe(fds) < 0) {
+    return false;
+  }
+  if (fcntl(fds[0], F_SETFL, O_NONBLOCK) < 0) return false;
+  if (fcntl(fds[1], F_SETFL, O_NONBLOCK) < 0) return false;
+  return true;
 }
 
-absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd() {
+absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd(
+    const SystemApi& system_api) {
   static bool kIsPipeWakeupFdSupported = PipeWakeupFd::IsSupported();
   if (kIsPipeWakeupFdSupported) {
-    auto pipe_wakeup_fd = std::make_unique<PipeWakeupFd>();
-    auto status = pipe_wakeup_fd->Init();
+    auto pipe_wakeup_fd = std::make_unique<PipeWakeupFd>(system_api);
+    auto status = pipe_wakeup_fd->Init(system_api);
     if (status.ok()) {
       return std::unique_ptr<WakeupFd>(std::move(pipe_wakeup_fd));
     }

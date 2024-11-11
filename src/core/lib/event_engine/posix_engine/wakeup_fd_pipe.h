@@ -27,15 +27,18 @@ namespace experimental {
 
 class PipeWakeupFd : public WakeupFd {
  public:
-  PipeWakeupFd() : WakeupFd() {}
+  explicit PipeWakeupFd(const SystemApi& system_api)
+      : WakeupFd(), system_api_(system_api) {}
   ~PipeWakeupFd() override;
   absl::Status ConsumeWakeup() override;
   absl::Status Wakeup() override;
-  static absl::StatusOr<std::unique_ptr<WakeupFd>> CreatePipeWakeupFd();
+  static absl::StatusOr<std::unique_ptr<WakeupFd>> CreatePipeWakeupFd(
+      const SystemApi& system_api);
   static bool IsSupported();
 
  private:
-  absl::Status Init();
+  absl::Status Init(const SystemApi& system_api);
+  const SystemApi& system_api_;
 };
 
 }  // namespace experimental

@@ -123,9 +123,9 @@ static grpc_error_handle CreateEventEngineListener(
           engine);
   if (event_engine_supports_fd != nullptr) {
     PosixEventEngineWithFdSupport::PosixAcceptCallback accept_cb =
-        [s](int listener_fd, std::unique_ptr<EventEngine::Endpoint> ep,
-            bool is_external, MemoryAllocator /*allocator*/,
-            SliceBuffer* pending_data) {
+        [s](EventEngine::FileDescriptor listener_fd,
+            std::unique_ptr<EventEngine::Endpoint> ep, bool is_external,
+            MemoryAllocator /*allocator*/, SliceBuffer* pending_data) {
           grpc_core::ApplicationCallbackExecCtx app_ctx;
           grpc_core::ExecCtx exec_ctx;
           grpc_pollset* read_notifier_pollset;
@@ -145,7 +145,8 @@ static grpc_error_handle CreateEventEngineListener(
             acceptor->port_index = -1;
             acceptor->fd_index = -1;
             if (!is_external) {
-              auto it = s->listen_fd_to_index_map.find(listener_fd);
+              auto it = s->listen_fd_to_index_map.find(
+                  listener_fd.file_descriptor_for_iomgr());
               if (it != s->listen_fd_to_index_map.end()) {
                 acceptor->port_index = std::get<0>(it->second);
                 acceptor->fd_index = std::get<1>(it->second);
@@ -160,7 +161,8 @@ static grpc_error_handle CreateEventEngineListener(
               int fd =
                   reinterpret_cast<
                       grpc_event_engine::experimental::PosixEndpoint*>(ep.get())
-                      ->GetWrappedFd();
+                      ->GetWrappedFd()
+                      .file_descriptor_for_iomgr();
               if (getpeername(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
                               &(addr.len)) < 0) {
                 LOG(ERROR) << "Failed getpeername: "
@@ -185,7 +187,7 @@ static grpc_error_handle CreateEventEngineListener(
                                          &s->next_pollset_to_assign, 1)) %
                                  s->pollsets->size()];
             acceptor->external_connection = is_external;
-            acceptor->listener_fd = listener_fd;
+            acceptor->listener_fd = listener_fd.file_descriptor_for_iomgr();
             grpc_byte_buffer* buf = nullptr;
             if (pending_data != nullptr && pending_data->Length() > 0) {
               buf = grpc_raw_byte_buffer_create(nullptr, 0);
@@ -630,13 +632,15 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
     if (listener_supports_fd != nullptr) {
       port = listener_supports_fd->BindWithFd(
           grpc_event_engine::experimental::CreateResolvedAddress(*addr),
-          [s, &fd_index](absl::StatusOr<int> listen_fd) {
+          [s,
+           &fd_index](absl::StatusOr<EventEngine::FileDescriptor> listen_fd) {
             if (!listen_fd.ok()) {
               return;
             }
-            DCHECK_GT(*listen_fd, 0);
+            DCHECK(listen_fd->ready());
             s->listen_fd_to_index_map.insert_or_assign(
-                *listen_fd, std::make_tuple(s->n_bind_ports, fd_index++));
+                listen_fd->file_descriptor_for_iomgr(),
+                std::make_tuple(s->n_bind_ports, fd_index++));
           });
     } else {
       port = s->ee_listener->Bind(
@@ -889,9 +893,11 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
             grpc_event_engine::experimental::SliceBuffer::TakeCSliceBuffer(
                 buf->data.raw.slice_buffer);
       }
-      CHECK(GRPC_LOG_IF_ERROR("listener_handle_external_connection",
-                              listener_supports_fd->HandleExternalConnection(
-                                  listener_fd, fd, &pending_data)));
+      CHECK(GRPC_LOG_IF_ERROR(
+          "listener_handle_external_connection",
+          listener_supports_fd->HandleExternalConnection(
+              EventEngine::FileDescriptor::FromIomgr(listener_fd),
+              EventEngine::FileDescriptor::FromIomgr(fd), &pending_data)));
       return;
     }
     grpc_pollset* read_notifier_pollset;

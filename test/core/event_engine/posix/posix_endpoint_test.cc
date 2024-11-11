@@ -112,7 +112,8 @@ std::list<Connection> CreateConnectedEndpoints(
 
   // Create client socket and connect to the target address.
   for (int i = 0; i < num_connections; ++i) {
-    int client_fd = ConnectToServerOrDie(*resolved_addr);
+    EventEngine::FileDescriptor client_fd =
+        ConnectToServerOrDie(*resolved_addr);
     EventHandle* handle =
         poller.CreateHandle(client_fd, "test", poller.CanTrackErrors());
     EXPECT_NE(handle, nullptr);
