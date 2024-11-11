@@ -1257,16 +1257,14 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      std::shared_ptr<EventEngine> engine,
                                      MemoryAllocator&& /*allocator*/,
                                      const PosixTcpOptions& options)
-    : sock_(
-          PosixSocketWrapper(handle->Poller()->GetSystemApi()->AdoptExternalFd(
-              handle->WrappedFd()))),
-      on_done_(on_done),
+    : on_done_(on_done),
       traced_buffers_(),
       handle_(handle),
       poller_(handle->Poller()),
       engine_(engine) {
   fd_ =
       handle_->Poller()->GetSystemApi()->AdoptExternalFd(handle_->WrappedFd());
+  sock_ = PosixSocketWrapper(fd_);
   PosixSocketWrapper sock(fd_);
   CHECK(options.resource_quota != nullptr);
   auto peer_addr_string = sock.PeerAddressString(*get_system_api());

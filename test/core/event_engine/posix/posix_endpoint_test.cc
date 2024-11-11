@@ -194,13 +194,12 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
 
 class PosixEndpointTest : public ::testing::TestWithParam<bool> {
   void SetUp() override {
-    PosixSystemApi system_api;
     oracle_ee_ = std::make_shared<PosixOracleEventEngine>();
     scheduler_ =
         std::make_unique<grpc_event_engine::experimental::TestScheduler>(
             posix_ee_.get());
     EXPECT_NE(scheduler_, nullptr);
-    poller_ = MakeDefaultPoller(&system_api, scheduler_.get());
+    poller_ = MakeDefaultPoller(&system_api_, scheduler_.get());
     posix_ee_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(poller_);
     EXPECT_NE(posix_ee_, nullptr);
     scheduler_->ChangeCurrentEventEngine(posix_ee_.get());
@@ -231,6 +230,7 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
   std::unique_ptr<TestScheduler> scheduler_;
   std::shared_ptr<EventEngine> posix_ee_;
   std::shared_ptr<EventEngine> oracle_ee_;
+  PosixSystemApi system_api_;
 };
 
 TEST_P(PosixEndpointTest, ConnectExchangeBidiDataTransferTest) {
