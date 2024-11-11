@@ -1239,13 +1239,13 @@ void PosixEndpointImpl::MaybeShutdown(
 
 PosixEndpointImpl ::~PosixEndpointImpl() {
   int release_fd;
+  SystemApi* system_api = handle_->Poller()->GetSystemApi();
   handle_->OrphanHandle(on_done_,
                         on_release_fd_ == nullptr ? nullptr : &release_fd, "");
   if (on_release_fd_ != nullptr) {
-    engine_->Run(
-        [on_release_fd = std::move(on_release_fd_),
-         release_fd = handle_->Poller()->GetSystemApi()->AdoptExternalFd(
-             release_fd)]() mutable { on_release_fd(release_fd); });
+    engine_->Run([on_release_fd = std::move(on_release_fd_),
+                  release_fd = system_api->AdoptExternalFd(
+                      release_fd)]() mutable { on_release_fd(release_fd); });
   }
   delete on_read_;
   delete on_write_;
