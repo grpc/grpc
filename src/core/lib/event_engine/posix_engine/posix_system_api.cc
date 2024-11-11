@@ -59,13 +59,13 @@ int PosixSystemApi::Listen(FileDescriptor fd, int backlog) const {
   return listen(fd.fd(), backlog);
 }
 
-ssize_t PosixSystemApi::RecvMsg(FileDescriptor fd, struct msghdr* msg,
-                                int flags) const {
+long PosixSystemApi::RecvMsg(FileDescriptor fd, struct msghdr* msg,
+                             int flags) const {
   return recvmsg(fd.fd(), msg, flags);
 }
 
-ssize_t PosixSystemApi::SendMsg(FileDescriptor fd, const struct msghdr* message,
-                                int flags) const {
+long PosixSystemApi::SendMsg(FileDescriptor fd, const struct msghdr* message,
+                             int flags) const {
   return sendmsg(fd.fd(), message, flags);
 }
 

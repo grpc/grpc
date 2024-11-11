@@ -1238,8 +1238,8 @@ void PosixEndpointImpl::MaybeShutdown(
 }
 
 PosixEndpointImpl ::~PosixEndpointImpl() {
-  int release_fd;
   SystemApi* system_api = handle_->Poller()->GetSystemApi();
+  int release_fd;
   handle_->OrphanHandle(on_done_,
                         on_release_fd_ == nullptr ? nullptr : &release_fd, "");
   if (on_release_fd_ != nullptr) {

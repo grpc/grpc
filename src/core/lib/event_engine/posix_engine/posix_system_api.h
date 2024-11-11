@@ -36,10 +36,9 @@ class PosixSystemApi : public SystemApi {
   int GetPeerName(FileDescriptor fd, struct sockaddr* addr,
                   socklen_t* addrlen) const override;
   int Listen(FileDescriptor fd, int backlog) const override;
-  ssize_t RecvMsg(FileDescriptor fd, struct msghdr* msg,
-                  int flags) const override;
-  ssize_t SendMsg(FileDescriptor fd, const struct msghdr* message,
-                  int flags) const override;
+  long RecvMsg(FileDescriptor fd, struct msghdr* msg, int flags) const override;
+  long SendMsg(FileDescriptor fd, const struct msghdr* message,
+               int flags) const override;
   int SetSockOpt(FileDescriptor fd, int level, int optname, const void* optval,
                  socklen_t optlen) const override;
 };

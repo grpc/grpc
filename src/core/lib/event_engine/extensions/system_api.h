@@ -54,10 +54,10 @@ class SystemApi {
   virtual int GetPeerName(FileDescriptor fd, struct sockaddr* addr,
                           socklen_t* addrlen) const = 0;
   virtual int Listen(FileDescriptor fd, int backlog) const = 0;
-  virtual ssize_t RecvMsg(FileDescriptor fd, struct msghdr* msg,
-                          int flags) const = 0;
-  virtual ssize_t SendMsg(FileDescriptor fd, const struct msghdr* message,
-                          int flags) const = 0;
+  virtual long RecvMsg(FileDescriptor fd, struct msghdr* msg,
+                       int flags) const = 0;
+  virtual long SendMsg(FileDescriptor fd, const struct msghdr* message,
+                       int flags) const = 0;
   virtual int SetSockOpt(FileDescriptor fd, int level, int optname,
                          const void* optval, socklen_t optlen) const = 0;
 };
