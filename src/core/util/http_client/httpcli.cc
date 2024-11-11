@@ -130,7 +130,8 @@ OrphanablePtr<HttpRequest> HttpRequest::Put(
   std::string name =
       absl::StrFormat("HTTP:PUT:%s:%s", uri.authority(), uri.path());
   const grpc_slice request_text = grpc_httpcli_format_put_request(
-      request, uri.authority().c_str(), uri.PercentEncodeAuthority().c_str());
+      request, uri.authority().c_str(),
+      uri.EncodedPathAndQueryParams().c_str());
   return MakeOrphanable<HttpRequest>(
       std::move(uri), request_text, response, deadline, channel_args, on_done,
       pollent, name.c_str(), std::move(test_only_generate_response),
