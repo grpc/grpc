@@ -1,0 +1,6 @@
+workspace(name = "openssl")
+
+new_local_repository(
+    name = "openssl",
+    path = "third_party/openssl",
+)
