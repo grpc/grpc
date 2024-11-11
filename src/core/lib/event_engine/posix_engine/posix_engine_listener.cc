@@ -139,7 +139,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     // Note: If we ever decide to return this address to the user, remember to
     // strip off the ::ffff:0.0.0.0/96 prefix first.
     int fd = Accept4(handle_->WrappedFd(), addr, 1, 1);
-    if (fd > 0) {
+    if (fd <= 0) {
       switch (errno) {
         case EINTR:
           continue;
