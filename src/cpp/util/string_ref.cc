@@ -21,6 +21,9 @@
 
 namespace grpc {
 
+#if 1
+#else
 const size_t string_ref::npos = static_cast<size_t>(-1);
+#endif
 
 }  // namespace grpc
