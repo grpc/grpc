@@ -388,6 +388,8 @@ absl::Status PosixSocketWrapper::SetSocketNoSigpipeIfPossible(
     return absl::Status(absl::StatusCode::kInternal,
                         "Failed to set SO_NOSIGPIPE");
   }
+#else
+  (void)system_api;  // Makes the compiler error go away
 #endif
   return absl::OkStatus();
 }
