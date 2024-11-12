@@ -29,14 +29,14 @@ TEST(IfTest, ChooseFalse) {
       Poll<int>(2));
 }
 
-TEST(IfTest, ChooseSuccesfulTrue) {
+TEST(IfTest, ChooseSuccessfulTrue) {
   EXPECT_EQ(If([]() { return absl::StatusOr<bool>(true); },
                []() { return absl::StatusOr<int>(1); },
                []() { return absl::StatusOr<int>(2); })(),
             Poll<absl::StatusOr<int>>(absl::StatusOr<int>(1)));
 }
 
-TEST(IfTest, ChooseSuccesfulFalse) {
+TEST(IfTest, ChooseSuccessfulFalse) {
   EXPECT_EQ(If([]() { return absl::StatusOr<bool>(false); },
                []() { return absl::StatusOr<int>(1); },
                []() { return absl::StatusOr<int>(2); })(),

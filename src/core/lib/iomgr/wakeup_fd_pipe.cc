@@ -98,4 +98,4 @@ const grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable = {
     pipe_init, pipe_consume, pipe_wakeup, pipe_destroy,
     pipe_check_availability};
 
-#endif  // GPR_POSIX_WAKUP_FD
+#endif  // GRPC_POSIX_WAKEUP_FD

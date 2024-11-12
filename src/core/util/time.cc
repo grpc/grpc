@@ -120,9 +120,9 @@ gpr_timespec MillisecondsAsTimespec(int64_t millis, gpr_clock_type clock_type) {
 int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
   CHECK(ts.clock_type == GPR_TIMESPAN);
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
-             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
-             static_cast<double>(GPR_NS_PER_SEC - 1) /
-                 static_cast<double>(GPR_NS_PER_SEC);
+             (static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS) +
+             (static_cast<double>(GPR_NS_PER_SEC - 1) /
+              static_cast<double>(GPR_NS_PER_SEC));
   if (x <= static_cast<double>(std::numeric_limits<int64_t>::min())) {
     return std::numeric_limits<int64_t>::min();
   }
@@ -135,7 +135,7 @@ int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
 int64_t TimespanToMillisRoundDown(gpr_timespec ts) {
   CHECK(ts.clock_type == GPR_TIMESPAN);
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
-             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
+             (static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS);
   if (x <= static_cast<double>(std::numeric_limits<int64_t>::min())) {
     return std::numeric_limits<int64_t>::min();
   }

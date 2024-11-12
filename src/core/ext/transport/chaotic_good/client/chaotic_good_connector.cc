@@ -32,6 +32,7 @@
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/settings_metadata.h"
+#include "src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -375,6 +376,9 @@ class ChaoticGoodChannelFactory final : public ClientChannelFactory {
 
 grpc_channel* grpc_chaotic_good_channel_create(const char* target,
                                                const grpc_channel_args* args) {
+  if (grpc_core::IsChaoticGoodLegacyProtocolEnabled()) {
+    return grpc_chaotic_good_legacy_channel_create(target, args);
+  }
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_chaotic_good_channel_create(target=" << target

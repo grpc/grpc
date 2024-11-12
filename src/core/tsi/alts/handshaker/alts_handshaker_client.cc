@@ -233,7 +233,7 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
     return;
   }
   if (recv_buffer == nullptr) {
-    LOG(ERROR)
+    VLOG(2)
         << "recv_buffer is nullptr in alts_tsi_handshaker_handle_response()";
     handle_response_done(
         client, TSI_INTERNAL_ERROR,
@@ -929,11 +929,11 @@ void alts_handshaker_client_destroy(alts_handshaker_client* c) {
 }
 
 size_t MaxNumberOfConcurrentHandshakes() {
-  size_t max_concurrent_handshakes = 40;
+  size_t max_concurrent_handshakes = 100;
   absl::optional<std::string> env_var_max_concurrent_handshakes =
       grpc_core::GetEnv(kMaxConcurrentStreamsEnvironmentVariable);
   if (env_var_max_concurrent_handshakes.has_value()) {
-    size_t effective_max_concurrent_handshakes = 40;
+    size_t effective_max_concurrent_handshakes = 100;
     if (absl::SimpleAtoi(*env_var_max_concurrent_handshakes,
                          &effective_max_concurrent_handshakes)) {
       max_concurrent_handshakes = effective_max_concurrent_handshakes;

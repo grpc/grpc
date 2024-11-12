@@ -12,22 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_internal_proto_library", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 grpc_package(name = "test/core/end2end/fuzzers")
 
 licenses(["notice"])
 
-grpc_proto_library(
+grpc_internal_proto_library(
     name = "api_fuzzer_proto",
     srcs = ["api_fuzzer.proto"],
-    has_services = False,
     deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
         "//test/core/test_util:fuzz_config_vars_proto",
         "//test/core/test_util:fuzzing_channel_args_proto",
     ],
+)
+
+grpc_cc_proto_library(
+    name = "api_fuzzer_cc_proto",
+    deps = ["api_fuzzer_proto"],
 )
 
 grpc_cc_library(
@@ -40,7 +44,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "api_fuzzer_proto",
+        "api_fuzzer_cc_proto",
         "//:gpr",
         "//:grpc",
         "//test/core/event_engine/fuzzing_event_engine",
@@ -62,7 +66,7 @@ grpc_proto_fuzzer(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "api_fuzzer_proto",
+        "api_fuzzer_cc_proto",
         "fuzzing_common",
         "//:gpr",
         "//:grpc",
@@ -78,10 +82,9 @@ grpc_proto_fuzzer(
     ],
 )
 
-grpc_proto_library(
+grpc_internal_proto_library(
     name = "fuzzer_input_proto",
     srcs = ["fuzzer_input.proto"],
-    has_services = False,
     deps = [
         "api_fuzzer_proto",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
@@ -90,13 +93,18 @@ grpc_proto_library(
     ],
 )
 
+grpc_cc_proto_library(
+    name = "fuzzer_input_cc_proto",
+    deps = ["fuzzer_input_proto"],
+)
+
 grpc_cc_library(
     name = "network_input",
     srcs = ["network_input.cc"],
     hdrs = ["network_input.h"],
     external_deps = ["absl/log:log"],
     deps = [
-        "fuzzer_input_proto",
+        "fuzzer_input_cc_proto",
         "//:chttp2_frame",
         "//src/core:chaotic_good_frame_header",
         "//test/core/event_engine/fuzzing_event_engine",
@@ -117,7 +125,7 @@ grpc_proto_fuzzer(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "fuzzer_input_proto",
+        "fuzzer_input_cc_proto",
         "fuzzing_common",
         "network_input",
         "//:gpr",
@@ -136,7 +144,7 @@ grpc_cc_library(
     hdrs = ["server_fuzzer.h"],
     external_deps = ["absl/log:check"],
     deps = [
-        "fuzzer_input_proto",
+        "fuzzer_input_cc_proto",
         "fuzzing_common",
         "network_input",
         "//:gpr",
@@ -213,7 +221,7 @@ grpc_cc_library(
     hdrs = ["connector_fuzzer.h"],
     external_deps = ["absl/log:check"],
     deps = [
-        "fuzzer_input_proto",
+        "fuzzer_input_cc_proto",
         "fuzzing_common",
         "network_input",
         "//:gpr",

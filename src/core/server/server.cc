@@ -566,6 +566,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       pending_promises_.front()->Finish(absl::InternalError("Server closed"));
       pending_promises_.pop();
     }
+    zombified_ = true;
   }
 
   void KillRequests(grpc_error_handle error) override {
@@ -723,6 +724,9 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
           return Immediate(absl::ResourceExhaustedError(
               "Too many pending requests for this server"));
         }
+        if (zombified_) {
+          return Immediate(absl::InternalError("Server closed"));
+        }
         auto w = std::make_shared<ActivityWaiter>(
             GetContext<Activity>()->MakeOwningWaker());
         pending_promises_.push(w);
@@ -733,7 +737,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
               if (r == nullptr) return Pending{};
               return std::move(*r);
             },
-            [w]() { w->Expire(); });
+            [w]() { w->Finish(absl::CancelledError()); });
       }
     }
     return Immediate(MatchResult(server(), cq_idx, rc));
@@ -753,8 +757,14 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     explicit ActivityWaiter(Waker waker) : waker(std::move(waker)) {}
     ~ActivityWaiter() { delete result.load(std::memory_order_acquire); }
     void Finish(absl::Status status) {
-      delete result.exchange(new ResultType(std::move(status)),
-                             std::memory_order_acq_rel);
+      ResultType* expected = nullptr;
+      ResultType* new_value = new ResultType(std::move(status));
+      if (!result.compare_exchange_strong(expected, new_value,
+                                          std::memory_order_acq_rel,
+                                          std::memory_order_acquire)) {
+        delete new_value;
+        return;
+      }
       waker.WakeupAsync();
     }
     // Returns true if requested_call consumed, false otherwise.
@@ -773,10 +783,6 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       waker.WakeupAsync();
       return true;
     }
-    void Expire() {
-      delete result.exchange(new ResultType(absl::CancelledError()),
-                             std::memory_order_acq_rel);
-    }
     Duration Age() { return Timestamp::Now() - created; }
     Waker waker;
     std::atomic<ResultType*> result{nullptr};
@@ -786,6 +792,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
   std::queue<PendingCallFilterStack> pending_filter_stack_;
   std::queue<PendingCallPromises> pending_promises_;
   std::vector<LockedMultiProducerSingleConsumerQueue> requests_per_cq_;
+  bool zombified_ = false;
 };
 
 // AllocatingRequestMatchers don't allow the application to request an RPC in
@@ -1227,6 +1234,7 @@ grpc_error_handle Server::SetupTransport(
     Transport* transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args,
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
+  GRPC_LATENT_SEE_INNER_SCOPE("Server::SetupTransport");
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
   // Set up channelz node.

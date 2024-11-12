@@ -143,7 +143,7 @@ void DNSServiceResolverImpl::ResolveCallback(
       << ", this: " << context;
 
   // no need to increase refcount here, since ResolveCallback and Shutdown is
-  // called from the serial queue and it is guarenteed that it won't be called
+  // called from the serial queue and it is guaranteed that it won't be called
   // after the sdRef is deallocated
   auto that = static_cast<DNSServiceResolverImpl*>(context);
 
@@ -221,8 +221,12 @@ void DNSServiceResolverImpl::Shutdown() {
   dispatch_async_f(queue_, Ref().release(), [](void* thatPtr) {
     grpc_core::RefCountedPtr<DNSServiceResolverImpl> that{
         static_cast<DNSServiceResolverImpl*>(thatPtr)};
-    grpc_core::MutexLock lock(&that->request_mu_);
-    for (auto& kv : that->requests_) {
+
+    grpc_core::ReleasableMutexLock lock(&that->request_mu_);
+    auto requests = std::exchange(that->requests_, {});
+    lock.Release();
+
+    for (auto& kv : requests) {
       auto& sdRef = kv.first;
       auto& request = kv.second;
       GRPC_TRACE_LOG(event_engine_dns, INFO)
@@ -232,7 +236,6 @@ void DNSServiceResolverImpl::Shutdown() {
           absl::CancelledError("DNSServiceResolverImpl::Shutdown"));
       DNSServiceRefDeallocate(static_cast<DNSServiceRef>(sdRef));
     }
-    that->requests_.clear();
   });
 }
 

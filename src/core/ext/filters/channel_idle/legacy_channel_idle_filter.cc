@@ -220,7 +220,7 @@ ArenaPromise<ServerMetadataHandle> LegacyChannelIdleFilter::MakeCallPromise(
   return ArenaPromise<ServerMetadataHandle>(
       [decrementer = Decrementer(this),
        next = next_promise_factory(std::move(call_args))]() mutable
-      -> Poll<ServerMetadataHandle> { return next(); });
+          -> Poll<ServerMetadataHandle> { return next(); });
 }
 
 bool LegacyChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {

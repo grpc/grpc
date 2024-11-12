@@ -35,13 +35,13 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/server/server.h"
 #include "src/core/util/env.h"
 #include "src/core/util/tmpfile.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_channel_args.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/credentials.h"
@@ -858,7 +858,9 @@ std::string XdsEnd2endTest::MakeTlsHandshakeFailureRegex(
       "(Failed to connect to remote host: )?"
       // Tls handshake failure
       "Tls handshake failed \\(TSI_PROTOCOL_FAILURE\\): SSL_ERROR_SSL: "
-      "error:1000007d:SSL routines:OPENSSL_internal:CERTIFICATE_VERIFY_FAILED");
+      "error:1000007d:SSL routines:OPENSSL_internal:CERTIFICATE_VERIFY_FAILED"
+      // Detailed reason for certificate verify failure
+      "(: .*)?");
 }
 
 grpc_core::PemKeyCertPairList XdsEnd2endTest::ReadTlsIdentityPair(

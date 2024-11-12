@@ -192,7 +192,9 @@ void ClientCall::ScheduleCommittedBatch(Batch batch) {
         auto pending = std::make_unique<UnorderedStart>();
         pending->start_pending_batch = [this,
                                         batch = std::move(batch)]() mutable {
-          started_call_initiator_.SpawnInfallible("batch", std::move(batch));
+          started_call_initiator_.SpawnInfallible(
+              "batch",
+              GRPC_LATENT_SEE_PROMISE("ClientCallBatch", std::move(batch)));
         };
         while (true) {
           pending->next = reinterpret_cast<UnorderedStart*>(cur_state);
@@ -212,7 +214,9 @@ void ClientCall::ScheduleCommittedBatch(Batch batch) {
         }
       }
       case kStarted:
-        started_call_initiator_.SpawnInfallible("batch", std::move(batch));
+        started_call_initiator_.SpawnInfallible(
+            "batch",
+            GRPC_LATENT_SEE_PROMISE("ClientCallBatch", std::move(batch)));
         return;
       case kCancelled:
         return;

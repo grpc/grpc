@@ -35,6 +35,7 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
 #include "src/core/ext/transport/chaotic_good/settings_metadata.h"
+#include "src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -43,6 +44,7 @@
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/promise/activity.h"
@@ -76,6 +78,7 @@ const Duration kConnectionDeadline = Duration::Seconds(120);
 }  // namespace
 
 using grpc_event_engine::experimental::EventEngine;
+
 ChaoticGoodServerListener::ChaoticGoodServerListener(
     Server* server, const ChannelArgs& args,
     absl::AnyInvocable<std::string()> connection_id_generator)
@@ -462,24 +465,53 @@ void ChaoticGoodServerListener::Orphan() {
 }  // namespace grpc_core
 
 int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
+  using grpc_event_engine::experimental::EventEngine;
+  if (grpc_core::IsChaoticGoodLegacyProtocolEnabled()) {
+    return grpc_server_add_chaotic_good_legacy_port(server, addr);
+  }
   grpc_core::ExecCtx exec_ctx;
   auto* const core_server = grpc_core::Server::FromC(server);
   const std::string parsed_addr = grpc_core::URI::PercentDecode(addr);
-  const auto resolved_or = grpc_core::GetDNSResolver()->LookupHostnameBlocking(
-      parsed_addr, absl::StrCat(0xd20));
-  if (!resolved_or.ok()) {
-    LOG(ERROR) << "Failed to resolve " << addr << ": "
-               << resolved_or.status().ToString();
-    return 0;
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> results =
+      std::vector<EventEngine::ResolvedAddress>();
+  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+    absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
+        core_server->channel_args().GetObjectRef<EventEngine>()->GetDNSResolver(
+            EventEngine::DNSResolver::ResolverOptions());
+    if (!ee_resolver.ok()) {
+      LOG(ERROR) << "Failed to resolve " << addr << ": "
+                 << ee_resolver.status().ToString();
+      return 0;
+    }
+    results = grpc_event_engine::experimental::LookupHostnameBlocking(
+        ee_resolver->get(), parsed_addr, absl::StrCat(0xd20));
+    if (!results.ok()) {
+      LOG(ERROR) << "Failed to resolve " << addr << ": "
+                 << results.status().ToString();
+      return 0;
+    }
+  } else {
+    // TODO(yijiem): Remove this after event_engine_dns_non_client_channel
+    // is fully enabled.
+    const auto resolved_or =
+        grpc_core::GetDNSResolver()->LookupHostnameBlocking(
+            parsed_addr, absl::StrCat(0xd20));
+    if (!resolved_or.ok()) {
+      LOG(ERROR) << "Failed to resolve " << addr << ": "
+                 << resolved_or.status().ToString();
+      return 0;
+    }
+    for (const auto& addr : *resolved_or) {
+      results->push_back(
+          grpc_event_engine::experimental::CreateResolvedAddress(addr));
+    }
   }
   int port_num = 0;
   std::vector<std::pair<std::string, absl::Status>> error_list;
-  for (const auto& resolved_addr : resolved_or.value()) {
+  for (const auto& ee_addr : results.value()) {
     auto listener = grpc_core::MakeOrphanable<
         grpc_core::chaotic_good::ChaoticGoodServerListener>(
         core_server, core_server->channel_args());
-    const auto ee_addr =
-        grpc_event_engine::experimental::CreateResolvedAddress(resolved_addr);
     std::string addr_str =
         *grpc_event_engine::experimental::ResolvedAddressToString(ee_addr);
     GRPC_TRACE_LOG(chaotic_good, INFO) << "BIND: " << addr_str;
@@ -496,7 +528,7 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
     }
     core_server->AddListener(std::move(listener));
   }
-  if (error_list.size() == resolved_or->size()) {
+  if (error_list.size() == results->size()) {
     LOG(ERROR) << "Failed to bind any address for " << addr;
     for (const auto& error : error_list) {
       LOG(ERROR) << "  " << error.first << ": " << error.second;

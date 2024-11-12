@@ -329,7 +329,7 @@ static void test_connect(size_t num_connects,
                          const grpc_channel_args* channel_args,
                          test_addrs* dst_addrs, bool test_dst_addrs) {
   grpc_core::ExecCtx exec_ctx;
-  // Use aligned_stroage to allocate grpc_resolved_address objects on stack
+  // Use aligned_storage to allocate grpc_resolved_address objects on stack
   // to meet the alignment requirement of sockaddr_storage type.
   std::aligned_storage<sizeof(grpc_resolved_address),
                        alignof(sockaddr_storage)>::type resolved_addr_buffer;

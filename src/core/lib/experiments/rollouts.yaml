@@ -53,7 +53,11 @@
     windows: broken
 - name: client_privacy
   default: false
+- name: disable_buffer_hint_on_high_memory_pressure
+  default: false
 - name: event_engine_application_callbacks
+  default: true
+- name: event_engine_callback_cq
   default: true
 - name: event_engine_client
   default:
@@ -111,9 +115,4 @@
 - name: work_serializer_clears_time_cache
   default: true
 - name: work_serializer_dispatch
-  default:
-    # TODO(ysseung): Not fully tested.
-    ios: broken
-    posix: true
-    # TODO(ysseung): Test flakes not fully resolved.
-    windows: broken
+  default: true

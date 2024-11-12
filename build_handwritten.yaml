@@ -12,9 +12,9 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 44.0.0
+  core_version: 44.1.0
   csharp_major_version: 2
-  g_stands_for: groovy
+  g_stands_for: gridiron
   protobuf_version: 3.28.1
   supported_python_versions:
   - '3.8'
@@ -23,7 +23,7 @@ settings:
   - '3.11'
   - '3.12'
   - '3.13'
-  version: 1.68.0-dev
+  version: 1.69.0-dev
 configs:
   asan:
     CC: clang

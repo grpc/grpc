@@ -179,7 +179,7 @@ class ChannelFilter {
 
 namespace promise_filter_detail {
 
-// Determine if a list of interceptors has any that need to asyncronously error
+// Determine if a list of interceptors has any that need to asynchronously error
 // the promise. If so, we need to allocate a latch for the generated promise for
 // the original promise stack polyfill code that's generated.
 
@@ -1502,7 +1502,7 @@ class ServerCallData : public BaseCallData {
   //   - return a wrapper around PollTrailingMetadata as the promise.
   ArenaPromise<ServerMetadataHandle> MakeNextPromise(CallArgs call_args);
   // Wrapper to make it look like we're calling the next filter as a promise.
-  // All polls: await sending the trailing metadata, then foward it down the
+  // All polls: await sending the trailing metadata, then forward it down the
   // stack.
   Poll<ServerMetadataHandle> PollTrailingMetadata();
   static void RecvInitialMetadataReadyCallback(void* arg,
