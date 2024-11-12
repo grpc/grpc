@@ -70,7 +70,7 @@ class ClosedLoopClientRunner(ClientRunner):
         super(ClosedLoopClientRunner, self).__init__(client)
         self._is_running = False
         self._request_count = request_count
-        # For server-streaming RPC, don't spawn new RPC after each responses.
+        # For server-streaming RPC, don't spawn new RPC after each response.
         # This yield at most ~17% for single RPC scenarios.
         if not no_ping_pong:
             # Send a new request on each response for closed loop
