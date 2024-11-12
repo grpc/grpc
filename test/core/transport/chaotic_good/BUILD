@@ -52,7 +52,10 @@ grpc_fuzzer(
     name = "frame_header_fuzzer",
     srcs = ["frame_header_fuzzer.cc"],
     corpus = "frame_header_fuzzer_corpus",
-    external_deps = ["absl/status:statusor"],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
     language = "C++",
     tags = ["no_windows"],
     deps = [
