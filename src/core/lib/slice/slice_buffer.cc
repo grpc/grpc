@@ -441,6 +441,7 @@ void grpc_slice_buffer_copy_first_into_buffer(grpc_slice_buffer* src, size_t n,
 template <bool allow_inline>
 void grpc_slice_buffer_trim_end_impl(grpc_slice_buffer* sb, size_t n,
                                      grpc_slice_buffer* garbage) {
+  if (n == 0) return;
   CHECK(n <= sb->length);
   sb->length -= n;
   for (;;) {

@@ -297,42 +297,40 @@ auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
             auto& buffers = std::get<1>(frame_bytes);
             return Switch(
                 frame_header.type,
-                Case(FrameType::kSettings,
-                     []() -> absl::Status {
-                       return absl::InternalError("Unexpected settings frame");
-                     }),
-                Case(FrameType::kFragment,
-                     [this, &frame_header, &buffers, transport]() {
-                       return If(
-                           frame_header.flags.is_set(0),
-                           [this, &frame_header, &buffers, transport]() {
-                             return DeserializeAndPushFragmentToNewCall(
-                                 frame_header, std::move(buffers), *transport);
-                           },
-                           [this, &frame_header, &buffers, transport]() {
-                             return DeserializeAndPushFragmentToExistingCall(
-                                 frame_header, std::move(buffers), *transport);
-                           });
-                     }),
-                Case(FrameType::kCancel,
-                     [this, &frame_header]() {
-                       absl::optional<CallInitiator> call_initiator =
-                           ExtractStream(frame_header.stream_id);
-                       GRPC_TRACE_LOG(chaotic_good, INFO)
-                           << "Cancel stream " << frame_header.stream_id
-                           << (call_initiator.has_value() ? " (active)"
-                                                          : " (not found)");
-                       return If(
-                           call_initiator.has_value(),
-                           [&call_initiator]() {
-                             auto c = std::move(*call_initiator);
-                             return c.SpawnWaitable("cancel", [c]() mutable {
-                               c.Cancel();
-                               return absl::OkStatus();
-                             });
-                           },
-                           []() -> absl::Status { return absl::OkStatus(); });
-                     }),
+                Case<FrameType, FrameType::kSettings>([]() -> absl::Status {
+                  return absl::InternalError("Unexpected settings frame");
+                }),
+                Case<FrameType, FrameType::kFragment>(
+                    [this, &frame_header, &buffers, transport]() {
+                      return If(
+                          frame_header.flags.is_set(0),
+                          [this, &frame_header, &buffers, transport]() {
+                            return DeserializeAndPushFragmentToNewCall(
+                                frame_header, std::move(buffers), *transport);
+                          },
+                          [this, &frame_header, &buffers, transport]() {
+                            return DeserializeAndPushFragmentToExistingCall(
+                                frame_header, std::move(buffers), *transport);
+                          });
+                    }),
+                Case<FrameType, FrameType::kCancel>([this, &frame_header]() {
+                  absl::optional<CallInitiator> call_initiator =
+                      ExtractStream(frame_header.stream_id);
+                  GRPC_TRACE_LOG(chaotic_good, INFO)
+                      << "Cancel stream " << frame_header.stream_id
+                      << (call_initiator.has_value() ? " (active)"
+                                                     : " (not found)");
+                  return If(
+                      call_initiator.has_value(),
+                      [&call_initiator]() {
+                        auto c = std::move(*call_initiator);
+                        return c.SpawnWaitable("cancel", [c]() mutable {
+                          c.Cancel();
+                          return absl::OkStatus();
+                        });
+                      },
+                      []() -> absl::Status { return absl::OkStatus(); });
+                }),
                 Default([frame_header]() {
                   return absl::InternalError(
                       absl::StrCat("Unexpected frame type: ",

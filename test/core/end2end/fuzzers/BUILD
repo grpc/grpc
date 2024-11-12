@@ -87,6 +87,7 @@ grpc_internal_proto_library(
     srcs = ["fuzzer_input.proto"],
     deps = [
         "api_fuzzer_proto",
+        "//src/core:chaotic_good_frame_proto",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
         "//test/core/test_util:fuzz_config_vars_proto",
         "//test/core/test_util:fuzzing_channel_args_proto",

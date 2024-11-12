@@ -34,6 +34,8 @@ EXPERIMENT_ENABLES = {
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "pick_first_new": "pick_first_new",
+    "promise_based_http2_client_transport": "promise_based_http2_client_transport",
+    "promise_based_http2_server_transport": "promise_based_http2_server_transport",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "rq_fast_reject": "rq_fast_reject",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
@@ -84,6 +86,10 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_listener",
+                "work_serializer_dispatch",
+            ],
+            "cpp_end2end_test": [
+                "work_serializer_dispatch",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
@@ -96,12 +102,14 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_new",
+                "work_serializer_dispatch",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
                 "pick_first_new",
+                "work_serializer_dispatch",
             ],
         },
     },
@@ -129,14 +137,22 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "core_end2end_test": [
+                "work_serializer_dispatch",
+            ],
+            "cpp_end2end_test": [
+                "work_serializer_dispatch",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
             ],
             "lb_unit_test": [
                 "pick_first_new",
+                "work_serializer_dispatch",
             ],
             "xds_end2end_test": [
                 "pick_first_new",
+                "work_serializer_dispatch",
             ],
         },
     },
