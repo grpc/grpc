@@ -224,6 +224,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     // c-ares overloads this recv_from virtual socket function to receive
     // data on both UDP and TCP sockets, and from is nullptr for TCP.
     if (from != nullptr) {
+      CHECK(recv_from_source_addr_len_ != 0);
       CHECK(*from_len >= recv_from_source_addr_len_);
       memcpy(from, &recv_from_source_addr_, recv_from_source_addr_len_);
       *from_len = recv_from_source_addr_len_;
@@ -301,7 +302,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     WSABUF buffer;
     buffer.buf = reinterpret_cast<char*>(GRPC_SLICE_START_PTR(read_buf_));
     buffer.len = GRPC_SLICE_LENGTH(read_buf_);
-    recv_from_source_addr_len_ = sizeof(recv_from_source_addr_);
+    recv_from_source_addr_len_ = 0;
     DWORD flags = 0;
     winsocket_->NotifyOnRead(&outer_read_closure_);
     if (WSARecvFrom(winsocket_->raw_socket(), &buffer, 1, nullptr, &flags,
