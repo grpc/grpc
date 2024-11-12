@@ -197,6 +197,14 @@ absl::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
     }
     connection_manager = connection_manager_;
   }
+  // The following section is intentionally outside the critical section. The
+  // operation to update channel args for a connection is heavy and complicated.
+  // For example, if using the xDS config fetcher, an involved matching process
+  // is performed to determine the filter chain to apply for this connection,
+  // prepare the filters, config selector and credentials. Subsequently, the
+  // credentials are used to create a security connector as well. Doing this
+  // outside the critical region allows us to get a larger degree of parallelism
+  // for the handling of incoming connections.
   ChannelArgs new_args = args;
   if (server_->config_fetcher() != nullptr) {
     if (connection_manager == nullptr) {
@@ -223,6 +231,10 @@ absl::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
     new_args = (*args_result).SetObject(security_connector);
   }
   MutexLock lock(&mu_);
+  // Since we let go of the lock earlier, we need to protect ourselves against
+  // time-of-check-to-time-of-use cases. The server may have stopped serving
+  // or the connection manager may have changed before we add the connection
+  // to the list of tracked connections.
   if (!is_serving_ || connection_manager != connection_manager_) {
     // Not serving
     return absl::nullopt;
@@ -245,8 +257,9 @@ void Server::ListenerState::OnHandshakeDone(
     auto connection_handle = connections_.extract(connection);
     if (!connection_handle.empty()) {
       connection_to_remove = std::move(connection_handle.value());
-      return;
     }
+    // We do not need to check connections_to_be_drained_list_ since that only
+    // gets set if there is a config fetcher.
   }
 }
 
