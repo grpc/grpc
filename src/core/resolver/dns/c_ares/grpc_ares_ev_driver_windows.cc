@@ -69,7 +69,7 @@ namespace {
 // instantiated at the top of the virtual socket function callstack.
 class WSAErrorContext final {
  public:
-  explicit WSAErrorContext() {};
+  explicit WSAErrorContext(){};
 
   ~WSAErrorContext() {
     if (error_ != 0) {
@@ -183,7 +183,7 @@ class GrpcPolledFdWindows final : public GrpcPolledFd {
     buffer.buf = (char*)GRPC_SLICE_START_PTR(read_buf_);
     buffer.len = GRPC_SLICE_LENGTH(read_buf_);
     memset(&winsocket_->read_info.overlapped, 0, sizeof(OVERLAPPED));
-    recv_from_source_addr_len_ = 0;
+    recv_from_source_addr_len_ = sizeof(recv_from_source_addr_);
     DWORD flags = 0;
     if (WSARecvFrom(grpc_winsocket_wrapped_socket(winsocket_), &buffer, 1,
                     nullptr, &flags, (sockaddr*)recv_from_source_addr_,
@@ -307,7 +307,6 @@ class GrpcPolledFdWindows final : public GrpcPolledFd {
     // c-ares overloads this recv_from virtual socket function to receive
     // data on both UDP and TCP sockets, and from is nullptr for TCP.
     if (from != nullptr) {
-      CHECK(recv_from_source_addr_len_ != 0);
       CHECK(*from_len >= recv_from_source_addr_len_);
       memcpy(from, &recv_from_source_addr_, recv_from_source_addr_len_);
       *from_len = recv_from_source_addr_len_;
