@@ -905,6 +905,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_slice",
+    hdrs = [
+        "include/grpc/slice.h",
+        "include/grpc/slice_buffer.h",
+    ],
+    visibility = ["@grpc:public"],
+    deps = [
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc++",
     hdrs = [
         "src/cpp/client/secure_credentials.h",
