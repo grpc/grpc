@@ -32,7 +32,7 @@
 
 #include "gtest/gtest.h"
 #include "test/core/call/yodel/yodel_test.h"
-#include "test/core/transport/chaotic_good/mock_promise_endpoint.h"
+#include "test/core/transport/util/mock_promise_endpoint.h"
 
 namespace grpc_core {
 
