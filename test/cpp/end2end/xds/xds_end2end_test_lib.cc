@@ -502,7 +502,7 @@ void XdsEnd2endTest::InitClient(
   if (xds_resource_does_not_exist_timeout_ms > 0) {
     xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
-        xds_resource_does_not_exist_timeout_ms));
+        xds_resource_does_not_exist_timeout_ms * grpc_test_slowdown_factor()));
   }
   if (!lb_expected_authority.empty()) {
     constexpr char authority_const[] = "localhost:%d";
