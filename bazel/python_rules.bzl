@@ -148,10 +148,14 @@ def _generate_py_impl(context):
 
     # Collect output PyInfo provider.
     imports = [context.label.package + "/" + i for i in context.attr.imports]
+    print("[xuan_testing] py_sources:")
+    print(py_sources)
     py_info = PyInfo(transitive_sources = depset(direct = py_sources), imports = depset(direct = imports))
     out_pyinfo = _merge_pyinfos([py_info, context.attr.deps[0][PyProtoInfo].py_info])
 
     runfiles = context.runfiles(files = out_pyinfo.transitive_sources.to_list()).merge(context.attr._protobuf_library[DefaultInfo].data_runfiles)
+    print("[xuan_testing] out_pyinfo:")
+    print(out_pyinfo)
     return [
         DefaultInfo(
             files = out_pyinfo.transitive_sources,
