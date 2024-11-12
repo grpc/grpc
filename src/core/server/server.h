@@ -161,9 +161,10 @@ class Server : public ServerInterface,
     // 1) Invoke AddLogicalConnection() on accepting a new connection. Do not
     // invoke if the connection is going to be closed immediately.
     // 2) Invoke OnHandshakeDone() (irrespective of error) once handshake is
-    // done.
-    // 3) Invoke RemoveLogicalConnection() when the connection is closed.
-    // Do not invoke if the connection was never added.
+    // done. No need to invoke if `RemoveLogicalConnection()` has already been
+    // invoked.
+    // 3) Invoke RemoveLogicalConnection() when the connection is closed. Do not
+    // invoke if the connection was never added.
     // TODO(yashykt): In the case where there is no config fetcher, we remove
     // the connection from our map and instead use `ChannelData` to keep track
     // of the connections. This is much cheaper (8 bytes per connection) as
