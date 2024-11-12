@@ -92,26 +92,25 @@ ChaoticGoodConnector::~ChaoticGoodConnector() {
 
 auto ChaoticGoodConnector::DataEndpointReadSettingsFrame(
     RefCountedPtr<ChaoticGoodConnector> self, uint32_t data_connection_index) {
-  return TrySeq(self->data_endpoints_[data_connection_index].ReadSlice(
-                    FrameHeader::kFrameHeaderSize),
-                [self, data_connection_index](Slice slice) mutable {
-                  // Read setting frame;
-                  // Parse frame header
-                  auto frame_header_ =
-                      FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
-                          GRPC_SLICE_START_PTR(slice.c_slice())));
-                  return If(
-                      frame_header_.ok(),
-                      [data_connection_index, frame_header_ = *frame_header_,
-                       self]() {
-                        auto frame_header_length = frame_header_.payload_length;
-                        return TrySeq(
-                            self->data_endpoints_[data_connection_index].Read(
+  return TrySeq(
+      self->data_endpoints_[data_connection_index].ReadSlice(
+          FrameHeader::kFrameHeaderSize),
+      [self, data_connection_index](Slice slice) mutable {
+        // Read setting frame;
+        // Parse frame header
+        auto frame_header_ =
+            FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
+                GRPC_SLICE_START_PTR(slice.c_slice())));
+        return If(
+            frame_header_.ok(),
+            [data_connection_index, frame_header_ = *frame_header_, self]() {
+              auto frame_header_length = frame_header_.payload_length;
+              return TrySeq(self->data_endpoints_[data_connection_index].Read(
                                 frame_header_length),
                             []() { return absl::OkStatus(); });
-                      },
-                      [status = frame_header_.status()]() { return status; });
-                });
+            },
+            [status = frame_header_.status()]() { return status; });
+      });
 }
 
 auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
