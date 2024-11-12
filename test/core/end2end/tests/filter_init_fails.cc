@@ -82,7 +82,7 @@ const grpc_channel_filter test_filter = {
     // However, we can't add it at the very end, because either the
     // client_channel filter or connected_channel filter must be the
     // last one.
-    // Filter ordering code falls back to lexical ordering in the absense of
+    // Filter ordering code falls back to lexical ordering in the absence of
     // other dependencies, so name this appropriately.
     GRPC_UNIQUE_TYPE_NAME_HERE("zzzzzz_filter_init_fails")};
 

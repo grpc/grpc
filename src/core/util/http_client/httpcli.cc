@@ -79,8 +79,9 @@ OrphanablePtr<HttpRequest> HttpRequest::Get(
   }
   std::string name =
       absl::StrFormat("HTTP:GET:%s:%s", uri.authority(), uri.path());
-  const grpc_slice request_text = grpc_httpcli_format_get_request(
-      request, uri.authority().c_str(), uri.path().c_str());
+  const grpc_slice request_text =
+      grpc_httpcli_format_get_request(request, uri.authority().c_str(),
+                                      uri.EncodedPathAndQueryParams().c_str());
   return MakeOrphanable<HttpRequest>(
       std::move(uri), request_text, response, deadline, channel_args, on_done,
       pollent, name.c_str(), std::move(test_only_generate_response),
@@ -103,8 +104,9 @@ OrphanablePtr<HttpRequest> HttpRequest::Post(
   }
   std::string name =
       absl::StrFormat("HTTP:POST:%s:%s", uri.authority(), uri.path());
-  const grpc_slice request_text = grpc_httpcli_format_post_request(
-      request, uri.authority().c_str(), uri.path().c_str());
+  const grpc_slice request_text =
+      grpc_httpcli_format_post_request(request, uri.authority().c_str(),
+                                       uri.EncodedPathAndQueryParams().c_str());
   return MakeOrphanable<HttpRequest>(
       std::move(uri), request_text, response, deadline, channel_args, on_done,
       pollent, name.c_str(), std::move(test_only_generate_response),
@@ -127,8 +129,9 @@ OrphanablePtr<HttpRequest> HttpRequest::Put(
   }
   std::string name =
       absl::StrFormat("HTTP:PUT:%s:%s", uri.authority(), uri.path());
-  const grpc_slice request_text = grpc_httpcli_format_put_request(
-      request, uri.authority().c_str(), uri.path().c_str());
+  const grpc_slice request_text =
+      grpc_httpcli_format_put_request(request, uri.authority().c_str(),
+                                      uri.EncodedPathAndQueryParams().c_str());
   return MakeOrphanable<HttpRequest>(
       std::move(uri), request_text, response, deadline, channel_args, on_done,
       pollent, name.c_str(), std::move(test_only_generate_response),
@@ -241,6 +244,8 @@ void HttpRequest::AppendError(grpc_error_handle error) {
 
 void HttpRequest::OnReadInternal(grpc_error_handle error) {
   for (size_t i = 0; i < incoming_.count; i++) {
+    GRPC_TRACE_LOG(http1, INFO)
+        << "HTTP response data: " << StringViewFromSlice(incoming_.slices[i]);
     if (GRPC_SLICE_LENGTH(incoming_.slices[i])) {
       have_read_byte_ = 1;
       grpc_error_handle err =
@@ -275,6 +280,8 @@ void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(
 }
 
 void HttpRequest::StartWrite() {
+  GRPC_TRACE_LOG(http1, INFO)
+      << "Sending HTTP1 request: " << StringViewFromSlice(request_text_);
   CSliceRef(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write

@@ -431,7 +431,7 @@ class TestStreamUnaryClientInterceptor(AioTestBase):
         await channel.close()
 
     async def test_cancel_while_writing(self):
-        # Test cancelation before making any write or after doing at least 1
+        # Test cancellation before making any write or after doing at least 1
         for num_writes_before_cancel in (0, 1):
             with self.subTest(
                 name="Num writes before cancel: {}".format(

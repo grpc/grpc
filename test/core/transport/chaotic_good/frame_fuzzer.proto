@@ -17,7 +17,6 @@ syntax = "proto3";
 package frame_fuzzer;
 
 message Test {
-    bool is_server = 1;
-    bytes control = 2;
-    bytes data = 3;
+    bytes header = 1;
+    bytes payload = 2;
 }

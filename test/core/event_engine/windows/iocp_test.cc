@@ -67,16 +67,19 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
   DWORD flags = 0;
   AnyInvocableClosure* on_read;
   AnyInvocableClosure* on_write;
+  WSABUF read_wsabuf;
+  DWORD bytes_rcvd;
+  read_wsabuf.len = 2048;
+  char read_char_buffer[2048];
+  read_wsabuf.buf = read_char_buffer;
   {
     // When the client gets some data, ensure it matches what we expect.
-    WSABUF read_wsabuf;
-    read_wsabuf.len = 2048;
-    char read_char_buffer[2048];
-    read_wsabuf.buf = read_char_buffer;
-    DWORD bytes_rcvd;
     on_read = new AnyInvocableClosure([win_socket = wrapped_client_socket.get(),
                                        &read_called, &read_wsabuf]() {
       VLOG(2) << "Notified on read";
+      EXPECT_TRUE(win_socket->read_info()->result().error_status.ok())
+          << "Error on read: "
+          << win_socket->read_info()->result().error_status;
       EXPECT_GE(win_socket->read_info()->result().bytes_transferred, 10u);
       EXPECT_STREQ(read_wsabuf.buf, "hello!");
       read_called.Notify();
@@ -145,22 +148,25 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
   auto wrapped_client_socket = iocp.Watch(sockpair[0]);
   grpc_core::Notification read_called;
   DWORD flags = 0;
+  WSABUF read_wsabuf;
+  DWORD bytes_rcvd;
+  read_wsabuf.len = 2048;
+  char read_char_buffer[2048];
+  read_wsabuf.buf = read_char_buffer;
   {
     // Set the client to receive asynchronously
     // Prepare a notification callback, but don't register it yet.
-    WSABUF read_wsabuf;
     wrapped_client_socket->NotifyOnRead(
         SelfDeletingClosure::Create([win_socket = wrapped_client_socket.get(),
                                      &read_called, &read_wsabuf]() {
           VLOG(2) << "Notified on read";
+          EXPECT_TRUE(win_socket->read_info()->result().error_status.ok())
+              << "Error on read: "
+              << win_socket->read_info()->result().error_status;
           EXPECT_GE(win_socket->read_info()->result().bytes_transferred, 10u);
           EXPECT_STREQ(read_wsabuf.buf, "hello!");
           read_called.Notify();
         }));
-    read_wsabuf.len = 2048;
-    char read_char_buffer[2048];
-    read_wsabuf.buf = read_char_buffer;
-    DWORD bytes_rcvd;
     int status = WSARecv(
         wrapped_client_socket->raw_socket(), &read_wsabuf, 1, &bytes_rcvd,
         &flags, wrapped_client_socket->read_info()->overlapped(), NULL);

@@ -253,7 +253,7 @@ TEST(DebugStringBuilderTest, TestAllRedacted) {
   int i = 0;
   for (std::string& curr_row : redacted_output) {
     std::string redacted_str = absl::StrCat(
-        allow_list_keys[i++].size(), " bytes redacted by allow listing.");
+        allow_list_keys[i++].size(), " bytes redacted for security reasons.");
     EXPECT_EQ(absl::StrContains(curr_row, redacted_str), true);
   }
 }

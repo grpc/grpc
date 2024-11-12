@@ -95,7 +95,7 @@ TYPED_TEST(ThreadPoolTest, ForkStressTest) {
   // This test exercises a subset of the fork logic, the pieces we can control
   // without an actual OS fork.
   constexpr int expected_runcount = 1000;
-  constexpr absl::Duration fork_freqency{absl::Milliseconds(50)};
+  constexpr absl::Duration fork_frequency{absl::Milliseconds(50)};
   constexpr int num_closures_between_forks{100};
   TypeParam pool(8);
   std::atomic<int> runcount{0};
@@ -121,7 +121,7 @@ TYPED_TEST(ThreadPoolTest, ForkStressTest) {
   // simulate multiple forks at a fixed frequency
   int curr_runcount = 0;
   while (curr_runcount < expected_runcount) {
-    absl::SleepFor(fork_freqency);
+    absl::SleepFor(fork_frequency);
     curr_runcount = runcount.load(std::memory_order_relaxed);
     int curr_forkcount = fork_count.load(std::memory_order_relaxed);
     if (curr_forkcount * num_closures_between_forks > curr_runcount) {

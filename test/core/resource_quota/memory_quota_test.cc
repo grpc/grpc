@@ -130,7 +130,7 @@ TEST(MemoryQuotaTest, MakeSlice) {
   for (int i = 1; i < 1000; i++) {
     ExecCtx exec_ctx;
     int min = i;
-    int max = 10 * i - 9;
+    int max = (10 * i) - 9;
     slices.push_back(memory_allocator.MakeSlice(MemoryRequest(min, max)));
   }
   ExecCtx exec_ctx;

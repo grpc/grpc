@@ -39,7 +39,7 @@ class Chttp2WriteSizePolicy {
     return Duration::Milliseconds(300);
   }
 
-  // What size should be targetted for the next write.
+  // What size should be targeted for the next write.
   size_t WriteTargetSize();
   // Notify the policy that a write of some size has begun.
   // EndWrite must be called when the write completes.

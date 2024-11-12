@@ -21,26 +21,54 @@
 #include <utility>
 
 #include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/lib/promise/detail/promise_variant.h"
 #include "src/core/lib/promise/if.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_core {
 
 namespace promise_detail {
-template <typename D, typename F>
+template <typename D, D discriminator, typename F>
 struct Case {
-  D discriminator;
-  F factory;
+  using Factory = OncePromiseFactory<void, F>;
+  explicit Case(F f) : factory(std::move(f)) {}
+  Factory factory;
+  static bool Matches(D value) { return value == discriminator; }
 };
 
 template <typename F>
 struct Default {
-  F factory;
+  using Factory = OncePromiseFactory<void, F>;
+  explicit Default(F f) : factory(std::move(f)) {}
+  Factory factory;
 };
+
+template <typename Promise, typename D, typename F>
+Promise ConstructSwitchPromise(D, Default<F>& def) {
+  return def.factory.Make();
+}
+
+template <typename Promise, typename D, typename Case, typename... OtherCases>
+Promise ConstructSwitchPromise(D discriminator, Case& c, OtherCases&... cs) {
+  if (Case::Matches(discriminator)) return c.factory.Make();
+  return ConstructSwitchPromise<Promise>(discriminator, cs...);
+}
+
+template <typename D, typename... Cases>
+auto SwitchImpl(D discriminator, Cases&... cases) {
+  using Promise = absl::variant<typename Cases::Factory::Promise...>;
+  return PromiseVariant<Promise>(
+      ConstructSwitchPromise<Promise>(discriminator, cases...));
+}
+
 }  // namespace promise_detail
 
-template <typename D, typename PromiseFactory>
-auto Case(D discriminator, PromiseFactory f) {
-  return promise_detail::Case<D, PromiseFactory>{discriminator, std::move(f)};
+// TODO(ctiller): when we have C++17, make this
+// template <auto D, typename PromiseFactory>.
+// (this way we don't need to list the type on /every/ case)
+template <typename D, D discriminator, typename PromiseFactory>
+auto Case(PromiseFactory f) {
+  return promise_detail::Case<D, discriminator, PromiseFactory>{std::move(f)};
 }
 
 template <typename PromiseFactory>
@@ -55,16 +83,9 @@ auto Default(PromiseFactory f) {
 // resolves to 43.
 // TODO(ctiller): consider writing a code-generator like we do for seq/join
 // so that this lowers into a C switch statement.
-template <typename D, typename F>
-auto Switch(D, promise_detail::Default<F> def) {
-  return promise_detail::OncePromiseFactory<void, F>(std::move(def.factory))
-      .Make();
-}
-
-template <typename D, typename F, typename... Others>
-auto Switch(D discriminator, promise_detail::Case<D, F> c, Others... others) {
-  return If(discriminator == c.discriminator, std::move(c.factory),
-            Switch(discriminator, std::move(others)...));
+template <typename D, typename... C>
+auto Switch(D discriminator, C... cases) {
+  return promise_detail::SwitchImpl(discriminator, cases...);
 }
 
 }  // namespace grpc_core

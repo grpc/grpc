@@ -223,8 +223,8 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
                                           load_key_);
       const auto& load_report_interval = initial_request.load_report_interval();
       load_report_interval_ms_ =
-          static_cast<unsigned long>(load_report_interval.seconds() * 1000 +
-                                     load_report_interval.nanos() / 1000);
+          static_cast<unsigned long>((load_report_interval.seconds() * 1000) +
+                                     (load_report_interval.nanos() / 1000));
       LOG(INFO) << "[LRS " << service_
                 << "] Initial request received. Start load reporting (load "
                    "balanced host: "

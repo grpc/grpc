@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test of propagation of contextvars to AuthMetadataPlugin threads.."""
+"""Test of propagation of contextvars to AuthMetadataPlugin threads."""
 
 import contextlib
 import logging
 import os
 import queue
-import sys
+import tempfile
 import threading
 import unittest
 
@@ -28,7 +28,7 @@ from tests.unit import test_common
 _SERVICE_NAME = "test"
 _UNARY_UNARY = "UnaryUnary"
 _REQUEST = b"0000"
-_UDS_PATH = "/tmp/grpc_fullstack_test.sock"
+_UDS_PATH = os.path.join(tempfile.mkdtemp(), "grpc_fullstack_test.sock")
 
 
 def _unary_unary_handler(request, context):

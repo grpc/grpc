@@ -123,7 +123,7 @@ message StartServerHandshakeReq {
   map<int32, ServerHandshakeParameters> handshake_parameters = 2;
 
   // Bytes in out_frames returned from the peer's HandshakerResp. It is possible
-  // that the peer's out_frames are split into multiple HandshakReq messages.
+  // that the peer's out_frames are split into multiple HandshakeReq messages.
   bytes in_bytes = 3;
 
   // (Optional) Local endpoint information of the connection to the client,

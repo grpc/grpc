@@ -677,7 +677,7 @@ typedef grpc_core::ChannelArgs (
     const char* target, const grpc_core::ChannelArgs& old_args,
     grpc_channel_stack_type type);
 
-// Should be called only once globaly before grpc is init'ed.
+// Should be called only once globally before grpc is init'ed.
 void grpc_channel_args_set_client_channel_creation_mutator(
     grpc_channel_args_client_channel_creation_mutator cb);
 // This will be called at the creation of each channel.

@@ -57,7 +57,7 @@ static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
   test.Step();
   // Please refer https://github.com/grpc/grpc/issues/21221 for additional
   // details.
-  // TODO(yashykt@) - The following line should be removeable after C-Core
+  // TODO(yashykt@) - The following line should be removable after C-Core
   // correctly handles GOAWAY frames. Internal Reference b/135458602. If this
   // test remains flaky even after this, an alternative fix would be to send a
   // request when the server is in the shut down state.

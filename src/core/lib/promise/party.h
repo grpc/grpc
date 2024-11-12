@@ -397,7 +397,7 @@ class Party : public Activity, private Wakeable {
                            new_state);
   }
 
-  // Sentinal value for currently_polling_ when no participant is being polled.
+  // Sentinel value for currently_polling_ when no participant is being polled.
   static constexpr uint8_t kNotPolling = 255;
 
   std::atomic<uint64_t> state_{kOneRef};

@@ -125,7 +125,7 @@ class WindowsEventEngine : public EventEngine,
     // runs once.
     OnConnectCallback TakeCallback() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-    // Create an Endpoint, transfering held object ownership to the endpoint.
+    // Create an Endpoint, transferring held object ownership to the endpoint.
     //
     // This can only be called once, and the connection state is no longer valid
     // after an endpoint has been created. Callers must guarantee that the

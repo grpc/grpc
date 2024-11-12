@@ -1251,15 +1251,10 @@ TEST_F(GrpcToolTest, CallCommandWithMetadata) {
 
 TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
   // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'"
-  const char* argv[] = {"grpc_cli", "call", "localhost:10000",
+  const std::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
                         "grpc.testing.EchoTestService.Echo",
                         "message: 'Hello'"};
-  absl::SetFlag(&FLAGS_protofiles, "src/proto/grpc/testing/echo.proto");
-  auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
-  if (test_srcdir.has_value()) {
-    absl::SetFlag(&FLAGS_proto_path,
-                  *test_srcdir + std::string("/com_github_grpc_grpc"));
-  }
 
   {
     std::stringstream output_stream;
@@ -1284,7 +1279,7 @@ TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
   }
 
   absl::SetFlag(&FLAGS_metadata, "");
-  absl::SetFlag(&FLAGS_protofiles, "");
+  ShutdownServer();
 }
 
 TEST_F(GrpcToolTest, CallMaxRecvMessageSizeSmall) {

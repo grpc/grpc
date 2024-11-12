@@ -41,7 +41,7 @@ namespace grpc_core {
 class StaticStrideScheduler final {
  public:
   // Constructs and returns a new StaticStrideScheduler, or nullopt if all
-  // wieghts are zero or |weights| <= 1. All weights must be >=0.
+  // weights are zero or |weights| <= 1. All weights must be >=0.
   // `next_sequence_func` should return a rate monotonically increasing sequence
   // number, which may wrap. `float_weights` does not need to live beyond the
   // function. Caller is responsible for ensuring `next_sequence_func` remains

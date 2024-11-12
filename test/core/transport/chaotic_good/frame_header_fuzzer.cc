@@ -17,17 +17,28 @@
 #include <string.h>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 
 bool squelch = false;
 
+using grpc_core::chaotic_good::FrameHeader;
+
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  if (size != 24) return 0;
-  auto r = grpc_core::chaotic_good::FrameHeader::Parse(data);
+  if (size != FrameHeader::kFrameHeaderSize) return 0;
+  auto r = FrameHeader::Parse(data);
   if (!r.ok()) return 0;
-  uint8_t reserialized[24];
+  uint8_t reserialized[FrameHeader::kFrameHeaderSize];
   r->Serialize(reserialized);
   // If it parses, we insist that the bytes reserialize to the same thing.
-  if (memcmp(data, reserialized, 24) != 0) abort();
+  if (memcmp(data, reserialized, FrameHeader::kFrameHeaderSize) != 0) {
+    auto esc = [](const void* s) {
+      return absl::CEscape(absl::string_view(static_cast<const char*>(s),
+                                             FrameHeader::kFrameHeaderSize));
+    };
+    fprintf(stderr, "Failed:\nin:  %s\nout: %s\nser: %s\n", esc(data).c_str(),
+            esc(reserialized).c_str(), r->ToString().c_str());
+    abort();
+  }
   return 0;
 }

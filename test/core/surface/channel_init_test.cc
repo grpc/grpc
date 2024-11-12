@@ -82,7 +82,7 @@ TEST(ChannelInitTest, OneClientFilter) {
 }
 
 TEST(ChannelInitTest, DefaultLexicalOrdering) {
-  // ChannelInit defaults to lexical ordering in the absense of other
+  // ChannelInit defaults to lexical ordering in the absence of other
   // constraints, to ensure that a stable ordering is produced between builds.
   ChannelInit::Builder b;
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo"));

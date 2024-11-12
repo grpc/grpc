@@ -121,7 +121,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     // If we reach here means we have log noise. log_noise_absent_ will make the
     // test fail.
     log_noise_absent_ = false;
-    LOG(ERROR) << "Unwanted log at location : " << entry.source_filename()
+    LOG(ERROR) << "🛑 Unwanted log at location : " << entry.source_filename()
                << ":" << entry.source_line() << " " << entry.text_message();
   }
 

@@ -136,8 +136,8 @@ MessageHandle ChannelCompression::CompressMessage(
       const char* algo_name;
       const size_t before_size = payload->Length();
       const size_t after_size = tmp.Length();
-      const float savings_ratio = 1.0f - static_cast<float>(after_size) /
-                                             static_cast<float>(before_size);
+      const float savings_ratio = 1.0f - (static_cast<float>(after_size) /
+                                          static_cast<float>(before_size));
       CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
       LOG(INFO) << absl::StrFormat(
           "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR

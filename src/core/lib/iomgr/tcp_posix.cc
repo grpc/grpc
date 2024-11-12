@@ -325,7 +325,7 @@ class TcpZerocopySendCtx {
   size_t threshold_bytes() const { return threshold_bytes_; }
 
   // Expected to be called by handler reading messages from the err queue.
-  // It is used to indicate that some OMem meory is now available. It returns
+  // It is used to indicate that some OMem memory is now available. It returns
   // true to tell the caller to mark the file descriptor as immediately
   // writable.
   //

@@ -98,7 +98,7 @@ cdef class ServerCredentials:
   cdef grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
   cdef size_t c_ssl_pem_key_cert_pairs_count
   cdef list references
-  # the cert config related state is used only if this credentials is
+  # the cert config related state is used only if these credentials are
   # created with cert config/fetcher
   cdef object initial_cert_config
   cdef object cert_config_fetcher

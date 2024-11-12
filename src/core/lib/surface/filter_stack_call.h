@@ -131,7 +131,7 @@ class FilterStackCall final : public Call {
 
   static size_t InitialSizeEstimate() {
     return sizeof(FilterStackCall) +
-           sizeof(BatchControl) * kMaxConcurrentBatches;
+           (sizeof(BatchControl) * kMaxConcurrentBatches);
   }
 
   char* GetPeer() final;

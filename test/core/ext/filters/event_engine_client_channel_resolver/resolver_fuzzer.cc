@@ -64,7 +64,7 @@ constexpr char g_grpc_config_prefix[] = "grpc_config=";
 absl::Status ErrorToAbslStatus(
     const event_engine_client_channel_resolver::Error& error) {
   // clamp error.code() in (0, 16]
-  return absl::Status(static_cast<absl::StatusCode>(error.code() % 16 + 1),
+  return absl::Status(static_cast<absl::StatusCode>((error.code() % 16) + 1),
                       error.message());
 }
 

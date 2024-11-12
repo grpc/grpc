@@ -42,7 +42,7 @@ struct StableValueCompressor {};
 template <typename T, T value>
 struct KnownValueCompressor {};
 
-// Values are uncompressible, but expect the key to be in most requests and try
+// Values are incompressable, but expect the key to be in most requests and try
 // and compress that.
 struct FrequentKeyWithNoValueCompressionCompressor {};
 
@@ -56,7 +56,7 @@ struct SmallIntegralValuesCompressor {};
 // Specialty compressor for grpc-timeout metadata.
 struct TimeoutCompressor {};
 
-// Specialty compressors for HTTP/2 psuedo headers.
+// Specialty compressors for HTTP/2 pseudo headers.
 struct HttpSchemeCompressor {};
 struct HttpMethodCompressor {};
 struct HttpStatusCompressor {};

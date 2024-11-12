@@ -88,7 +88,7 @@ class StressTest {
       }
     }
 
-    // All threads started, wait for the alloted time.
+    // All threads started, wait for the allotted time.
     std::this_thread::sleep_for(std::chrono::seconds(seconds));
 
     // Toggle the completion bit, and then wait for the threads.

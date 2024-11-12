@@ -472,9 +472,13 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
   ExecCtx exec_ctx;
   ChannelFixture channel_with_uuid1;
-  { ServerFixture channel_with_uuid2; }
+  {
+    ServerFixture channel_with_uuid2;
+  }
   ChannelFixture channel_with_uuid3;
-  { ServerFixture server_with_uuid4; }
+  {
+    ServerFixture server_with_uuid4;
+  }
   ChannelFixture channel_with_uuid5;
   // Current state of list: [1, NULL, 3, NULL, 5]
   std::string json_str = ChannelzRegistry::GetTopChannels(2);

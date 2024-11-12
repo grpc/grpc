@@ -102,7 +102,9 @@ TEST(InterActivityPipe, CanClose) {
                             }));
   EXPECT_FALSE(done);
   // Drop the sender
-  { auto x = std::move(pipe.sender); }
+  {
+    auto x = std::move(pipe.sender);
+  }
   EXPECT_TRUE(done);
 }
 

@@ -100,7 +100,7 @@ class TestTypeMetadata(unittest.TestCase):
 
     def test_init_metadata(self):
         test_cases = {
-            "emtpy": (),
+            "empty": (),
             "with-single-data": self._DEFAULT_DATA,
             "with-multi-data": self._MULTI_ENTRY_DATA,
         }

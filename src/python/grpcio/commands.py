@@ -273,7 +273,7 @@ class BuildExt(build_ext.build_ext):
         #   behavior in gcc and clang. The clang doesn't take --stdc++11
         #   flags but gcc does. Since the setuptools of Python only support
         #   all C or all C++ compilation, the mix of C and C++ will crash.
-        #   *By default*, macOS and FreBSD use clang and Linux use gcc
+        #   *By default*, macOS and FreeBSD use clang and Linux use gcc
         #
         #   If we are not using a permissive compiler that's OK with being
         #   passed wrong std flags, swap out compile function by adding a filter

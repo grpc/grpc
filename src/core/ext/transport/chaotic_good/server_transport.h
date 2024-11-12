@@ -45,8 +45,6 @@
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -81,8 +79,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
       const ChannelArgs& args, PromiseEndpoint control_endpoint,
       PromiseEndpoint data_endpoint,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine,
-      HPackParser hpack_parser, HPackCompressor hpack_encoder);
+          event_engine);
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }
@@ -108,12 +105,6 @@ class ChaoticGoodServerTransport final : public ServerTransport {
                                       CallInitiator call_initiator);
   auto SendCallBody(uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
                     CallInitiator call_initiator);
-  static auto SendFragment(ServerFragmentFrame frame,
-                           MpscSender<ServerFrame> outgoing_frames,
-                           CallInitiator call_initiator);
-  static auto SendFragmentAcked(ServerFragmentFrame frame,
-                                MpscSender<ServerFrame> outgoing_frames,
-                                CallInitiator call_initiator);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
@@ -130,10 +121,19 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto DeserializeAndPushFragmentToExistingCall(
       FrameHeader frame_header, BufferPair buffers,
       ChaoticGoodTransport& transport);
-  auto MaybePushFragmentIntoCall(absl::optional<CallInitiator> call_initiator,
-                                 absl::Status error, ClientFragmentFrame frame);
-  auto PushFragmentIntoCall(CallInitiator call_initiator,
-                            ClientFragmentFrame frame);
+  absl::Status NewStream(ChaoticGoodTransport& transport,
+                         const FrameHeader& header,
+                         SliceBuffer initial_metadata_payload);
+  template <typename T>
+  auto DispatchFrame(ChaoticGoodTransport& transport, const FrameHeader& header,
+                     SliceBuffer payload);
+  auto PushFrameIntoCall(CallInitiator call_initiator, MessageFrame frame);
+  auto PushFrameIntoCall(CallInitiator call_initiator, ClientEndOfStream frame);
+  auto SendFrame(ServerFrame frame, MpscSender<ServerFrame> outgoing_frames,
+                 CallInitiator call_initiator);
+  auto SendFrameAcked(ServerFrame frame,
+                      MpscSender<ServerFrame> outgoing_frames,
+                      CallInitiator call_initiator);
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
@@ -141,8 +141,6 @@ class ChaoticGoodServerTransport final : public ServerTransport {
       event_engine_;
   InterActivityLatch<void> got_acceptor_;
   MpscReceiver<ServerFrame> outgoing_frames_;
-  // Assigned aligned bytes from setting frame.
-  size_t aligned_bytes_ = 64;
   Mutex mu_;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);

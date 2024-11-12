@@ -166,7 +166,7 @@ CORE_END2END_TEST(Http2SingleHopTest,
 // Set hard limit * 0.8 higher than default soft limit and do not set soft
 // limit. Hard limit * 0.8 should be used as soft limit.
 CORE_END2END_TEST(Http2SingleHopTest,
-                  RequestWithLargeMetadataHardLimitOverridsDefaultSoft) {
+                  RequestWithLargeMetadataHardLimitOverridesDefaultSoft) {
   const size_t hard_limit = 45 * 1024;
   const size_t metadata_size_below_soft_limit = hard_limit * 0.5;
   const size_t metadata_size_above_hard_limit = hard_limit * 1.5;

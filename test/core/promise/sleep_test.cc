@@ -179,7 +179,7 @@ TEST(Sleep, StressTest) {
   for (size_t i = 0; i < kNumActivities / 2; i++) {
     notifications[i]->WaitForNotification();
     activities[i].reset();
-    activities[i + kNumActivities / 2].reset();
+    activities[i + (kNumActivities / 2)].reset();
     exec_ctx.Flush();
   }
 }

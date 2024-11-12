@@ -96,12 +96,12 @@ static void on_connect(void* acp, grpc_error_handle error) {
 
   if (error.ok()) {
     if (socket != NULL) {
-      DWORD transfered_bytes = 0;
+      DWORD transferred_bytes = 0;
       DWORD flags;
       BOOL wsa_success =
           WSAGetOverlappedResult(socket->socket, &socket->write_info.overlapped,
-                                 &transfered_bytes, FALSE, &flags);
-      CHECK_EQ(transfered_bytes, 0);
+                                 &transferred_bytes, FALSE, &flags);
+      CHECK_EQ(transferred_bytes, 0);
       if (!wsa_success) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
         closesocket(socket->socket);

@@ -371,7 +371,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
   grpc_winsocket_callback_info* info = &sp->socket->read_info;
   grpc_endpoint* ep = NULL;
   grpc_resolved_address peer_name;
-  DWORD transfered_bytes;
+  DWORD transferred_bytes;
   DWORD flags;
   BOOL wsa_success;
   int err;
@@ -392,9 +392,9 @@ static void on_accept(void* arg, grpc_error_handle error) {
   }
   // The IOCP notified us of a completed operation. Let's grab the results,
   // and act accordingly.
-  transfered_bytes = 0;
+  transferred_bytes = 0;
   wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
-                                       &transfered_bytes, FALSE, &flags);
+                                       &transferred_bytes, FALSE, &flags);
   if (!wsa_success) {
     if (!sp->shutting_down) {
       char* utf8_message = gpr_format_message(WSAGetLastError());

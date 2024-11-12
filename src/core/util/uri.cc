@@ -352,6 +352,16 @@ std::string URI::ToString() const {
     parts.emplace_back("//");
     parts.emplace_back(PercentEncode(authority_, IsAuthorityChar));
   }
+  parts.emplace_back(EncodedPathAndQueryParams());
+  if (!fragment_.empty()) {
+    parts.push_back("#");
+    parts.push_back(PercentEncode(fragment_, IsQueryOrFragmentChar));
+  }
+  return absl::StrJoin(parts, "");
+}
+
+std::string URI::EncodedPathAndQueryParams() const {
+  std::vector<std::string> parts;
   if (!path_.empty()) {
     parts.emplace_back(PercentEncode(path_, IsPathChar));
   }
@@ -359,10 +369,6 @@ std::string URI::ToString() const {
     parts.push_back("?");
     parts.push_back(
         absl::StrJoin(query_parameter_pairs_, "&", QueryParameterFormatter()));
-  }
-  if (!fragment_.empty()) {
-    parts.push_back("#");
-    parts.push_back(PercentEncode(fragment_, IsQueryOrFragmentChar));
   }
   return absl::StrJoin(parts, "");
 }

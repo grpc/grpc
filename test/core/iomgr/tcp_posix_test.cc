@@ -316,7 +316,8 @@ struct write_socket_state {
 
 static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
                                    size_t* num_blocks, uint8_t* current_data) {
-  size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1u : 0u);
+  size_t nslices =
+      (num_bytes / slice_size) + (num_bytes % slice_size ? 1u : 0u);
   grpc_slice* slices =
       static_cast<grpc_slice*>(gpr_malloc(sizeof(grpc_slice) * nslices));
   size_t num_bytes_left = num_bytes;

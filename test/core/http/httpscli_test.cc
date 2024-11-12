@@ -191,8 +191,10 @@ TEST_F(HttpsCliTest, Get) {
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
       const_cast<char*>("foo.test.google.fr"));
   grpc_channel_args args = {1, &ssl_override_arg};
-  auto uri = grpc_core::URI::Create("https", host, "/get",
-                                    {} /* query params */, "" /* fragment */);
+  auto uri = grpc_core::URI::Create(
+      "https", host, "/get",
+      /*query_parameter_pairs=*/{{"foo", "bar"}, {"baz", "quux"}},
+      /*fragment=*/"");
   CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
@@ -219,8 +221,10 @@ TEST_F(HttpsCliTest, Post) {
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
       const_cast<char*>("foo.test.google.fr"));
   grpc_channel_args args = {1, &ssl_override_arg};
-  auto uri = grpc_core::URI::Create("https", host, "/post",
-                                    {} /* query params */, "" /* fragment */);
+  auto uri = grpc_core::URI::Create(
+      "https", host, "/post",
+      /*query_parameter_pairs=*/{{"foo", "bar"}, {"mumble", "frotz"}},
+      /*fragment=*/"");
   CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Post(
@@ -276,7 +280,7 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
       // Start a request. It will establish a TCP connection to the
       // server and then begin an SSL handshake. The server won't send
       // anything back though, so it will be stuck in its SSL handshake,
-      // waiting for the firt response from the server.
+      // waiting for the first response from the server.
       http_request->Start();
       exec_ctx.Flush();
       std::thread cancel_thread([&http_request]() {

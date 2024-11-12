@@ -39,7 +39,7 @@ class GrpcShutdownTest(unittest.TestCase):
             ):
                 connection_failed.set()
 
-        # Connects to an void address, and subscribes state changes
+        # Connects to a void address, and subscribes state changes
         channel = grpc.insecure_channel("0.1.1.1:12345")
         channel.subscribe(on_state_change, True)
 

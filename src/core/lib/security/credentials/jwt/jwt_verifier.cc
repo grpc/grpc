@@ -325,7 +325,7 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims* claims,
     return GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE;
   }
 
-  // This should be probably up to the upper layer to decide but let's harcode
+  // This should be probably up to the upper layer to decide but let's hardcode
   // the 99% use case here for email issuers, where the JWT must be self
   // issued.
   if (grpc_jwt_issuer_email_domain(claims->iss) != nullptr &&

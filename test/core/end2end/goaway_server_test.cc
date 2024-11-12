@@ -265,7 +265,7 @@ int main(int argc, char** argv) {
           .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
           .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000)
           // When this test brings down server1 and then brings up server2,
-          // the targetted server port number changes, and the client channel
+          // the targeted server port number changes, and the client channel
           // needs to re-resolve to pick this up. This test requires that
           // happen within 10 seconds, but gRPC's DNS resolvers rate limit
           // resolution attempts to at most once every 30 seconds by default.

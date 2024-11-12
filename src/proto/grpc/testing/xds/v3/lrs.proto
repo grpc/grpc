@@ -18,8 +18,8 @@ syntax = "proto3";
 
 package envoy.service.load_stats.v3;
 
-import "src/proto/grpc/testing/xds/v3/base.proto";
-import "src/proto/grpc/testing/xds/v3/load_report.proto";
+import "envoy/config/core/v3/base.proto";
+import "envoy/config/endpoint/v3/load_report.proto";
 
 import "google/protobuf/duration.proto";
 

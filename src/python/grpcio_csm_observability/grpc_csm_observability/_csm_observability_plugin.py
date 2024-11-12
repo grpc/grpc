@@ -207,7 +207,7 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
           target: Required. The target for the RPC.
 
         Returns:
-          True if this this plugin option is active on the channel, false otherwise.
+          True if this plugin option is active on the channel, false otherwise.
         """
         # CSM channels should have an "xds" scheme
         if not target.startswith("xds:"):
@@ -237,7 +237,7 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
           xds: Required. if this server is build for xds.
 
         Returns:
-          True if this this plugin option is active on the server, false otherwise.
+          True if this plugin option is active on the server, false otherwise.
         """
         return True
 

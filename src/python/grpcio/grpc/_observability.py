@@ -61,7 +61,7 @@ class ObservabilityPlugin(
      the gRPC team.*
 
     The ClientCallTracerCapsule and ClientCallTracerCapsule created by this
-    plugin should be inject to gRPC core using observability_init at the
+    plugin should be injected to gRPC core using observability_init at the
     start of a program, before any channels/servers are built.
 
     Any future methods added to this interface cannot have the
@@ -93,7 +93,7 @@ class ObservabilityPlugin(
         Args:
           method_name: The method name of the call in byte format.
           target: The channel target of the call in byte format.
-          registered_method: Wether this method is pre-registered.
+          registered_method: Whether this method is pre-registered.
 
         Returns:
           A PyCapsule which stores a ClientCallTracer object.

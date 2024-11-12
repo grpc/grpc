@@ -88,7 +88,7 @@ static grpc_error_handle get_unused_port(int* port) {
   return *port <= 0 ? GRPC_ERROR_CREATE("Bad port") : absl::OkStatus();
 }
 
-static bool grpc_is_ipv4_availabile() {
+static bool grpc_is_ipv4_available() {
   const int fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (fd >= 0) close(fd);
   return fd >= 0;
@@ -116,7 +116,7 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
     VLOG(2) << "Picked unused port " << requested_port;
   }
 
-  static bool v4_available = grpc_is_ipv4_availabile();
+  static bool v4_available = grpc_is_ipv4_available();
 
   if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
     return GRPC_OS_ERROR(errno, "getifaddrs");

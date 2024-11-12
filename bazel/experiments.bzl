@@ -19,7 +19,9 @@
 EXPERIMENT_ENABLES = {
     "call_tracer_in_transport": "call_tracer_in_transport",
     "canary_client_privacy": "canary_client_privacy",
+    "chaotic_good_legacy_protocol": "chaotic_good_legacy_protocol",
     "client_privacy": "client_privacy",
+    "disable_buffer_hint_on_high_memory_pressure": "disable_buffer_hint_on_high_memory_pressure",
     "event_engine_application_callbacks": "event_engine_application_callbacks",
     "event_engine_callback_cq": "event_engine_application_callbacks,event_engine_callback_cq",
     "event_engine_client": "event_engine_client",
@@ -32,6 +34,8 @@ EXPERIMENT_ENABLES = {
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "pick_first_new": "pick_first_new",
+    "promise_based_http2_client_transport": "promise_based_http2_client_transport",
+    "promise_based_http2_server_transport": "promise_based_http2_server_transport",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "rq_fast_reject": "rq_fast_reject",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
@@ -57,6 +61,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "chaotic_good_legacy_protocol",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
             ],
@@ -81,6 +86,10 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_listener",
+                "work_serializer_dispatch",
+            ],
+            "cpp_end2end_test": [
+                "work_serializer_dispatch",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
@@ -93,12 +102,14 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_new",
+                "work_serializer_dispatch",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
                 "pick_first_new",
+                "work_serializer_dispatch",
             ],
         },
     },
@@ -107,6 +118,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "chaotic_good_legacy_protocol",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
             ],
@@ -125,14 +137,22 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "core_end2end_test": [
+                "work_serializer_dispatch",
+            ],
+            "cpp_end2end_test": [
+                "work_serializer_dispatch",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
             ],
             "lb_unit_test": [
                 "pick_first_new",
+                "work_serializer_dispatch",
             ],
             "xds_end2end_test": [
                 "pick_first_new",
+                "work_serializer_dispatch",
             ],
         },
     },
@@ -141,6 +161,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "chaotic_good_legacy_protocol",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
             ],

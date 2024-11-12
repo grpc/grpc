@@ -531,7 +531,6 @@ struct grpc_server_config_fetcher {
   class ConnectionManager
       : public grpc_core::DualRefCounted<ConnectionManager> {
    public:
-    // Ownership of \a args is transfered.
     virtual absl::StatusOr<grpc_core::ChannelArgs>
     UpdateChannelArgsForConnection(const grpc_core::ChannelArgs& args,
                                    grpc_endpoint* tcp) = 0;

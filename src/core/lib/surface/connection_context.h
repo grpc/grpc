@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "src/core/util/no_destruct.h"
 #include "src/core/util/orphanable.h"
 
 namespace grpc_core {
@@ -68,8 +69,8 @@ class BaseConnectionContextPropertiesTraits {
   // Allocate a new context id and register the destruction function.
 
   static std::vector<void (*)(void*)>& RegisteredTraits() {
-    static std::vector<void (*)(void*)> registered_traits;
-    return registered_traits;
+    static NoDestruct<std::vector<void (*)(void*)>> registered_traits;
+    return *registered_traits;
   }
 };
 

@@ -30,6 +30,7 @@ Contains macros used throughout the repo.
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
 load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("//bazel:experiments.bzl", "EXPERIMENTS", "EXPERIMENT_ENABLES", "EXPERIMENT_POLLERS")
@@ -242,6 +243,25 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         deps = deps,
     )
 
+def grpc_internal_proto_library(
+        name,
+        srcs = [],
+        deps = [],
+        visibility = None,
+        has_services = False):  # buildifier: disable=unused-variable
+    proto_library(
+        name = name,
+        srcs = srcs,
+        deps = deps,
+        visibility = visibility,
+    )
+
+def grpc_cc_proto_library(name, deps = [], visibility = None):
+    native.cc_proto_library(name = name, deps = deps, visibility = visibility)
+
+# DO NOT USE -- callers should instead be changed to use separate
+# grpc_internal_proto_library(), grpc_cc_proto_library(), and
+# grpc_cc_grpc_library() rules.
 def grpc_proto_library(
         name,
         srcs = [],
@@ -260,6 +280,27 @@ def grpc_proto_library(
         proto_only = not has_services,
         use_external = use_external,
         generate_mocks = generate_mocks,
+    )
+
+def grpc_cc_grpc_library(
+        name,
+        srcs = [],
+        deps = [],
+        visibility = None,
+        generate_mocks = False):
+    """A wrapper around cc_grpc_library that forces grpc_only=True.
+
+    Callers are expected to have their own proto_library() and
+    cc_proto_library() rules and then use this rule to produce only the
+    gRPC generated code.
+    """
+    cc_grpc_library(
+        name = name,
+        srcs = srcs,
+        deps = deps,
+        visibility = visibility,
+        generate_mocks = generate_mocks,
+        grpc_only = True,
     )
 
 def ios_cc_test(

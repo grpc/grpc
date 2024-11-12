@@ -36,7 +36,7 @@
 #   flow_control_test:   tests pertaining explicitly to flow control
 #   hpack_test:          hpack encode/decode tests
 #   promise_test:        tests around the promise architecture
-#   resource_quota_test: tests known to exercse resource quota
+#   resource_quota_test: tests known to exercise resource quota
 
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
@@ -52,6 +52,11 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: chaotic_good_legacy_protocol
+  description: If set, use the first version of the chaotic-good protocol when that protocol is enabled.
+  expiry: 2024/12/01
+  owner: ctiller@google.com
+  test_tags: [core_end2end_test]
 - name: client_privacy
   description:
     If set, client privacy
@@ -59,6 +64,12 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: disable_buffer_hint_on_high_memory_pressure
+  description:
+    Disable buffer hint flag parsing in the transport under high memory pressure.
+  expiry: 2025/03/01
+  owner: vigneshbabu@google.com
+  test_tags: []
 - name: event_engine_application_callbacks
   description: Run application callbacks in EventEngine threads, instead of on the thread-local ApplicationCallbackExecCtx
   expiry: 2025/03/01
@@ -103,8 +114,8 @@
   test_tags: [resource_quota_test]
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
-  expiry: 2024/10/30
-  owner: aermolov@google.com
+  expiry: 2024/12/30
+  owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: max_pings_wo_data_throttle
   description:
@@ -130,6 +141,24 @@
   expiry: 2025/03/01
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
+- name: promise_based_http2_client_transport
+  description:
+    Use promises for the http2 client transport. We have kept client and
+    server transport experiments separate to help with smoother roll outs
+    and also help with interop testing.
+  expiry: 2025/06/03
+  owner: tjagtap@google.com
+  test_tags: []
+  allow_in_fuzzing_config: true
+- name: promise_based_http2_server_transport
+  description:
+    Use promises for the http2 server transport. We have kept client and
+    server transport experiments separate to help with smoother roll outs
+    and also help with interop testing.
+  expiry: 2025/06/03
+  owner: tjagtap@google.com
+  test_tags: []
+  allow_in_fuzzing_config: true
 - name: promise_based_inproc_transport
   description:
     Use promises for the in-process transport.

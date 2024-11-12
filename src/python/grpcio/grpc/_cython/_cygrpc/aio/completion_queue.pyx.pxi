@@ -53,7 +53,7 @@ cdef class _BoundEventLoop:
         )
         # NOTE(lidiz) There isn't a way to cleanly pre-check if fd monitoring
         # support is available or not. Checking the event loop policy is not
-        # good enough. The application can has its own loop implementation, or
+        # good enough. The application can have its own loop implementation, or
         # uses different types of event loops (e.g., 1 Proactor, 3 Selectors).
         if _has_fd_monitoring:
             try:
@@ -117,7 +117,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
                 else:
                     with gil:
                         # Event loops can be paused or killed at any time. So,
-                        # instead of deligate to any thread, the polling thread
+                        # instead of delegate to any thread, the polling thread
                         # should handle the distribution of the event.
                         self._handle_events(None)
 

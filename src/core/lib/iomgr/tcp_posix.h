@@ -38,7 +38,7 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
-/// Create a tcp endpoint given a file desciptor and a read slice size.
+/// Create a tcp endpoint given a file descriptor and a read slice size.
 /// Takes ownership of \a fd. Takes ownership of the \a slice_allocator.
 grpc_endpoint* grpc_tcp_create(grpc_fd* fd,
                                const grpc_core::PosixTcpOptions& options,

@@ -29,8 +29,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/channelz/channelz.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -119,8 +117,6 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     ActivityPtr receive_settings_activity_ ABSL_GUARDED_BY(mu_);
     bool orphaned_ ABSL_GUARDED_BY(mu_) = false;
     PromiseEndpoint endpoint_;
-    HPackCompressor hpack_compressor_;
-    HPackParser hpack_parser_;
     absl::BitGen bitgen_;
     std::string connection_id_;
     int32_t data_alignment_;

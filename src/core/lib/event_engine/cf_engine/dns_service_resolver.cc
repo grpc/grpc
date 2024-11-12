@@ -143,7 +143,7 @@ void DNSServiceResolverImpl::ResolveCallback(
       << ", this: " << context;
 
   // no need to increase refcount here, since ResolveCallback and Shutdown is
-  // called from the serial queue and it is guarenteed that it won't be called
+  // called from the serial queue and it is guaranteed that it won't be called
   // after the sdRef is deallocated
   auto that = static_cast<DNSServiceResolverImpl*>(context);
 

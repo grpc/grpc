@@ -181,7 +181,7 @@ int main(int argc, char** argv) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR ONE_SETTING_HDR "\x00\x06\xff\xff\xff\xff",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  // update intiial window size
+  // update initial window size
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR ONE_SETTING_HDR "\x00\x04\x00\x01\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);

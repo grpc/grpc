@@ -41,13 +41,11 @@ class ChaoticGoodTraits {
     auto client = MakeOrphanable<chaotic_good::ChaoticGoodClientTransport>(
         PromiseEndpoint(std::move(control.client), SliceBuffer()),
         PromiseEndpoint(std::move(data.client), SliceBuffer()), channel_args,
-        grpc_event_engine::experimental::GetDefaultEventEngine(), HPackParser(),
-        HPackCompressor());
+        grpc_event_engine::experimental::GetDefaultEventEngine());
     auto server = MakeOrphanable<chaotic_good::ChaoticGoodServerTransport>(
         channel_args, PromiseEndpoint(std::move(control.server), SliceBuffer()),
         PromiseEndpoint(std::move(data.server), SliceBuffer()),
-        grpc_event_engine::experimental::GetDefaultEventEngine(), HPackParser(),
-        HPackCompressor());
+        grpc_event_engine::experimental::GetDefaultEventEngine());
     return {std::move(client), std::move(server)};
   }
 

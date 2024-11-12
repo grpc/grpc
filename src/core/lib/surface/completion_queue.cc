@@ -999,7 +999,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
       break;
     } else {
       // If c == NULL it means either the queue is empty OR in an transient
-      // inconsistent state. If it is the latter, we shold do a 0-timeout poll
+      // inconsistent state. If it is the latter, we should do a 0-timeout poll
       // so that the thread comes back quickly from poll to make a second
       // attempt at popping. Not doing this can potentially deadlock this
       // thread forever (if the deadline is infinity)

@@ -18,19 +18,17 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstdint>
-#include <memory>
 #include <string>
 
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/types/variant.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/message.h"
+#include "src/core/lib/transport/metadata.h"
 #include "src/core/util/match.h"
 
 namespace grpc_core {
@@ -41,21 +39,12 @@ struct BufferPair {
   SliceBuffer data;
 };
 
-struct FrameLimits {
-  size_t max_message_size = 1024 * 1024 * 1024;
-  size_t max_padding = 63;
-
-  absl::Status ValidateMessage(const FrameHeader& header);
-};
-
 class FrameInterface {
  public:
-  virtual absl::Status Deserialize(HPackParser* parser,
-                                   const FrameHeader& header,
-                                   absl::BitGenRef bitsrc, Arena* arena,
-                                   BufferPair buffers, FrameLimits limits) = 0;
-  virtual BufferPair Serialize(HPackCompressor* encoder,
-                               bool& saw_encoding_errors) const = 0;
+  virtual absl::Status Deserialize(const FrameHeader& header,
+                                   SliceBuffer payload) = 0;
+  virtual FrameHeader MakeHeader() const = 0;
+  virtual void SerializePayload(SliceBuffer& payload) const = 0;
   virtual std::string ToString() const = 0;
 
   template <typename Sink>
@@ -64,16 +53,6 @@ class FrameInterface {
   }
 
  protected:
-  static bool EqVal(const grpc_metadata_batch& a,
-                    const grpc_metadata_batch& b) {
-    return a.DebugString() == b.DebugString();
-  }
-  template <typename T>
-  static bool EqHdl(const Arena::PoolPtr<T>& a, const Arena::PoolPtr<T>& b) {
-    if (a == nullptr && b == nullptr) return true;
-    if (a == nullptr || b == nullptr) return false;
-    return EqVal(*a, *b);
-  }
   ~FrameInterface() = default;
 };
 
@@ -81,111 +60,118 @@ inline std::ostream& operator<<(std::ostream& os, const FrameInterface& frame) {
   return os << frame.ToString();
 }
 
+chaotic_good_frame::ClientMetadata ClientMetadataProtoFromGrpc(
+    const ClientMetadata& md);
+absl::StatusOr<ClientMetadataHandle> ClientMetadataGrpcFromProto(
+    chaotic_good_frame::ClientMetadata& metadata);
+chaotic_good_frame::ServerMetadata ServerMetadataProtoFromGrpc(
+    const ServerMetadata& md);
+absl::StatusOr<ServerMetadataHandle> ServerMetadataGrpcFromProto(
+    chaotic_good_frame::ServerMetadata& metadata);
+
 struct SettingsFrame final : public FrameInterface {
-  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           absl::BitGenRef bitsrc, Arena* arena,
-                           BufferPair buffers, FrameLimits limits) override;
-  BufferPair Serialize(HPackCompressor* encoder,
-                       bool& saw_encoding_errors) const override;
-  ClientMetadataHandle headers;
+  absl::Status Deserialize(const FrameHeader& header,
+                           SliceBuffer payload) override;
+  FrameHeader MakeHeader() const override;
+  void SerializePayload(SliceBuffer& payload) const override;
   std::string ToString() const override;
 
-  bool operator==(const SettingsFrame&) const { return true; }
+  chaotic_good_frame::Settings settings;
 };
 
-struct FragmentMessage {
-  FragmentMessage(MessageHandle message, uint32_t padding, uint32_t length)
-      : message(std::move(message)), padding(padding), length(length) {}
+struct ClientInitialMetadataFrame final : public FrameInterface {
+  absl::Status Deserialize(const FrameHeader& header,
+                           SliceBuffer payload) override;
+  FrameHeader MakeHeader() const override;
+  void SerializePayload(SliceBuffer& payload) const override;
+  std::string ToString() const override;
 
+  uint32_t stream_id;
+  chaotic_good_frame::ClientMetadata headers;
+};
+
+struct MessageFrame final : public FrameInterface {
+  absl::Status Deserialize(const FrameHeader& header,
+                           SliceBuffer payload) override;
+  FrameHeader MakeHeader() const override;
+  void SerializePayload(SliceBuffer& payload) const override;
+  std::string ToString() const override;
+
+  uint32_t stream_id;
   MessageHandle message;
-  uint32_t padding;
-  uint32_t length;
-
-  std::string ToString() const;
-
-  static bool EqVal(const Message& a, const Message& b) {
-    return a.payload()->JoinIntoString() == b.payload()->JoinIntoString() &&
-           a.flags() == b.flags();
-  }
-
-  bool operator==(const FragmentMessage& other) const {
-    if (length != other.length) return false;
-    if (message == nullptr && other.message == nullptr) return true;
-    if (message == nullptr || other.message == nullptr) return false;
-    return EqVal(*message, *other.message);
-  }
 };
 
-struct ClientFragmentFrame final : public FrameInterface {
-  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           absl::BitGenRef bitsrc, Arena* arena,
-                           BufferPair buffers, FrameLimits limits) override;
-  BufferPair Serialize(HPackCompressor* encoder,
-                       bool& saw_encoding_errors) const override;
+struct ClientEndOfStream final : public FrameInterface {
+  absl::Status Deserialize(const FrameHeader& header,
+                           SliceBuffer payload) override;
+  FrameHeader MakeHeader() const override;
+  void SerializePayload(SliceBuffer& payload) const override;
   std::string ToString() const override;
 
   uint32_t stream_id;
-  ClientMetadataHandle headers;
-  absl::optional<FragmentMessage> message;
-  bool end_of_stream = false;
-
-  bool operator==(const ClientFragmentFrame& other) const {
-    return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
-           message == other.message && end_of_stream == other.end_of_stream;
-  }
 };
 
-struct ServerFragmentFrame final : public FrameInterface {
-  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           absl::BitGenRef bitsrc, Arena* arena,
-                           BufferPair buffers, FrameLimits limits) override;
-  BufferPair Serialize(HPackCompressor* encoder,
-                       bool& saw_encoding_errors) const override;
+struct ServerInitialMetadataFrame final : public FrameInterface {
+  absl::Status Deserialize(const FrameHeader& header,
+                           SliceBuffer payload) override;
+  FrameHeader MakeHeader() const override;
+  void SerializePayload(SliceBuffer& payload) const override;
   std::string ToString() const override;
 
   uint32_t stream_id;
-  ServerMetadataHandle headers;
-  absl::optional<FragmentMessage> message;
-  ServerMetadataHandle trailers;
+  chaotic_good_frame::ServerMetadata headers;
+};
 
-  bool operator==(const ServerFragmentFrame& other) const {
-    return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
-           message == other.message && EqHdl(trailers, other.trailers);
-  }
+struct ServerTrailingMetadataFrame final : public FrameInterface {
+  absl::Status Deserialize(const FrameHeader& header,
+                           SliceBuffer payload) override;
+  FrameHeader MakeHeader() const override;
+  void SerializePayload(SliceBuffer& payload) const override;
+  std::string ToString() const override;
+
+  uint32_t stream_id;
+  chaotic_good_frame::ServerMetadata trailers;
 };
 
 struct CancelFrame final : public FrameInterface {
   CancelFrame() = default;
   explicit CancelFrame(uint32_t stream_id) : stream_id(stream_id) {}
 
-  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           absl::BitGenRef bitsrc, Arena* arena,
-                           BufferPair buffers, FrameLimits limits) override;
-  BufferPair Serialize(HPackCompressor* encoder,
-                       bool& saw_encoding_errors) const override;
+  absl::Status Deserialize(const FrameHeader& header,
+                           SliceBuffer payload) override;
+  FrameHeader MakeHeader() const override;
+  void SerializePayload(SliceBuffer& payload) const override;
   std::string ToString() const override;
 
   uint32_t stream_id;
-
-  bool operator==(const CancelFrame& other) const {
-    return stream_id == other.stream_id;
-  }
 };
 
-using ClientFrame = absl::variant<ClientFragmentFrame, CancelFrame>;
-using ServerFrame = absl::variant<ServerFragmentFrame>;
+using ClientFrame = absl::variant<ClientInitialMetadataFrame, MessageFrame,
+                                  ClientEndOfStream, CancelFrame>;
+using ServerFrame = absl::variant<ServerInitialMetadataFrame, MessageFrame,
+                                  ServerTrailingMetadataFrame>;
 
 inline FrameInterface& GetFrameInterface(ClientFrame& frame) {
   return MatchMutable(
       &frame,
-      [](ClientFragmentFrame* frame) -> FrameInterface& { return *frame; },
+      [](ClientInitialMetadataFrame* frame) -> FrameInterface& {
+        return *frame;
+      },
+      [](MessageFrame* frame) -> FrameInterface& { return *frame; },
+      [](ClientEndOfStream* frame) -> FrameInterface& { return *frame; },
       [](CancelFrame* frame) -> FrameInterface& { return *frame; });
 }
 
 inline FrameInterface& GetFrameInterface(ServerFrame& frame) {
   return MatchMutable(
       &frame,
-      [](ServerFragmentFrame* frame) -> FrameInterface& { return *frame; });
+      [](ServerInitialMetadataFrame* frame) -> FrameInterface& {
+        return *frame;
+      },
+      [](MessageFrame* frame) -> FrameInterface& { return *frame; },
+      [](ServerTrailingMetadataFrame* frame) -> FrameInterface& {
+        return *frame;
+      });
 }
 
 }  // namespace chaotic_good

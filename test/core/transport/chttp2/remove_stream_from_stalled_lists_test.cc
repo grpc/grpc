@@ -285,7 +285,7 @@ class TestServer {
 // grpc_call_cancel_with_status
 TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
   // 64 threads is arbitrary but chosen because, experimentally it's enough to
-  // repro the targetted crash crash (which is then fixed by
+  // repro the targeted crash crash (which is then fixed by
   // https://github.com/grpc/grpc/pull/23984) at a very high rate.
   const int kNumCalls = 64;
   std::vector<std::thread> threads;

@@ -183,7 +183,7 @@ int gpr_ltoa(long value, char* output) {
 
   sign = value < 0 ? -1 : 1;
   while (value) {
-    output[i++] = static_cast<char>('0' + sign * (value % 10));
+    output[i++] = static_cast<char>('0' + (sign * (value % 10)));
     value /= 10;
   }
   if (sign < 0) output[i++] = '-';
@@ -204,7 +204,7 @@ int int64_ttoa(int64_t value, char* output) {
 
   sign = value < 0 ? -1 : 1;
   while (value) {
-    output[i++] = static_cast<char>('0' + sign * (value % 10));
+    output[i++] = static_cast<char>('0' + (sign * (value % 10)));
     value /= 10;
   }
   if (sign < 0) output[i++] = '-';

@@ -19,7 +19,7 @@
 #include <grpcpp/support/error_details.h>
 #include <gtest/gtest.h>
 
-#include "src/proto/grpc/status/status.pb.h"
+#include "google/rpc/status.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "test/core/test_util/test_config.h"
 

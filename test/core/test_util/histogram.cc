@@ -185,10 +185,10 @@ static double threshold_for_count_below(grpc_histogram* h, double count_below) {
     // should lie
     lower_bound = bucket_start(h, static_cast<double>(lower_idx));
     upper_bound = bucket_start(h, static_cast<double>(lower_idx + 1));
-    return grpc_core::Clamp(upper_bound - (upper_bound - lower_bound) *
-                                              (count_so_far - count_below) /
-                                              h->buckets[lower_idx],
-                            h->min_seen, h->max_seen);
+    return grpc_core::Clamp(
+        upper_bound - ((upper_bound - lower_bound) *
+                       (count_so_far - count_below) / h->buckets[lower_idx]),
+        h->min_seen, h->max_seen);
   }
 }
 

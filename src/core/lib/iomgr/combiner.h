@@ -41,7 +41,7 @@ class Combiner {
   // either:
   // a pointer to the initiating exec ctx if that is the only exec_ctx that has
   // ever queued to this combiner, or NULL. If this is non-null, it's not
-  // dereferencable (since the initiating exec_ctx may have gone out of scope)
+  // dereferenceable (since the initiating exec_ctx may have gone out of scope)
   gpr_atm initiating_exec_ctx_or_null;
   // state is:
   // lower bit - zero if orphaned (STATE_UNORPHANED)

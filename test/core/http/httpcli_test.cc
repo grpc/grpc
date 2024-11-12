@@ -193,8 +193,10 @@ TEST_F(HttpRequestTest, Get) {
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
   LOG(INFO) << "requesting from " << host;
   memset(&req, 0, sizeof(req));
-  auto uri = grpc_core::URI::Create("http", host, "/get", {} /* query params */,
-                                    "" /* fragment */);
+  auto uri = grpc_core::URI::Create(
+      "http", host, "/get",
+      /*query_parameter_pairs=*/{{"foo", "bar"}, {"baz", "quux"}},
+      /*fragment=*/"");
   CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
@@ -219,8 +221,10 @@ TEST_F(HttpRequestTest, Post) {
   memset(&req, 0, sizeof(req));
   req.body = const_cast<char*>("hello");
   req.body_length = 5;
-  auto uri = grpc_core::URI::Create("http", host, "/post",
-                                    {} /* query params */, "" /* fragment */);
+  auto uri = grpc_core::URI::Create(
+      "http", host, "/post",
+      /*query_parameter_pairs=*/{{"foo", "bar"}, {"mumble", "frotz"}},
+      /*fragment=*/"");
   CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Post(
@@ -372,7 +376,7 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
   // TCP connection setups.
   // Note that because the server is rejecting TCP connections, we
   // don't really need to cancel the HTTP requests in this test case
-  // in order for them proceeed i.e. in order for them to pass. The test
+  // in order for them proceed i.e. in order for them to pass. The test
   // is still beneficial though because it can exercise the same code paths
   // that would get taken if the HTTP request was cancelled while the TCP
   // connect attempt was actually hanging.

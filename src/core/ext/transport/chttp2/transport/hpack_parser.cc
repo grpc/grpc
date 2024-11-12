@@ -403,7 +403,7 @@ absl::optional<std::vector<uint8_t>> HPackParser::String::Unbase64Loop(
   }
 
   std::vector<uint8_t> out;
-  out.reserve(3 * (end - cur) / 4 + 3);
+  out.reserve((3 * (end - cur) / 4) + 3);
 
   // Decode 4 bytes at a time while we can
   while (end - cur >= 4) {

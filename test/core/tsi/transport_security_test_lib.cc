@@ -376,7 +376,7 @@ static void do_handshaker_next(handshaker_args* args) {
     if (buf_size > 0) {
       args->transferred_data = true;
     }
-    // Peform handshaker next.
+    // Perform handshaker next.
     result = tsi_handshaker_next(
         handshaker, args->handshake_buffer, buf_size,
         const_cast<const unsigned char**>(&bytes_to_send), &bytes_to_send_size,
@@ -393,7 +393,7 @@ static void do_handshaker_next(handshaker_args* args) {
 }
 
 void tsi_test_do_handshake(tsi_test_fixture* fixture) {
-  // Initializaiton.
+  // Initialization.
   setup_handshakers(fixture);
   handshaker_args* client_args =
       handshaker_args_create(fixture, true /* is_client */);

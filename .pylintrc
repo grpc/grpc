@@ -73,7 +73,7 @@ disable=
 	protected-access,
 	# NOTE(nathaniel): Pylint and I will probably never agree on this.
 	too-few-public-methods,
-	# NOTE(nathaniel): Pylint and I wil probably never agree on this for
+	# NOTE(nathaniel): Pylint and I will probably never agree on this for
 	# private classes. For public classes maybe?
 	too-many-instance-attributes,
 	# NOTE(nathaniel): Some of our modules have a lot of lines... of

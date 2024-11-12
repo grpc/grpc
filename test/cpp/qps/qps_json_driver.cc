@@ -180,7 +180,7 @@ static double BinarySearch(
     const std::map<std::string, std::string>& per_worker_credential_types,
     bool* success) {
   while (low <= high * (1 - absl::GetFlag(FLAGS_error_tolerance))) {
-    double mid = low + (high - low) / 2;
+    double mid = low + ((high - low) / 2);
     double current_cpu_load =
         GetCpuLoad(scenario, mid, per_worker_credential_types, success);
     VLOG(2) << absl::StrFormat("Binary Search: current_offered_load %.0f", mid);

@@ -585,8 +585,6 @@ class CLanguage(object):
                     "-DgRPC_SSL_PROVIDER=package",
                 ],
             )
-        elif compiler == "gcc12":
-            return ("gcc_12", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc12_openssl309":
             return (
                 "debian12_openssl309",
@@ -594,6 +592,8 @@ class CLanguage(object):
                     "-DgRPC_SSL_PROVIDER=package",
                 ],
             )
+        elif compiler == "gcc14":
+            return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
             return ("alpine", [])
         elif compiler == "clang7":
@@ -1705,8 +1705,8 @@ argp.add_argument(
         "gcc10.2",
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
-        "gcc12",
         "gcc12_openssl309",
+        "gcc14",
         "gcc_musl",
         "clang7",
         "clang18",

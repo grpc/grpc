@@ -203,7 +203,7 @@ class Activity : public Orphanable {
   // - assert that there is a current activity (and catch bugs if there's not)
   // - indicate to thread safety analysis that the current activity is indeed
   //   locked
-  // - back up that assertation with a runtime check in debug builds (it's
+  // - back up that assertion with a runtime check in debug builds (it's
   //   prohibitively expensive in non-debug builds)
   static Activity* current() { return g_current_activity_; }
 
