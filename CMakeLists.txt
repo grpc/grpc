@@ -16032,7 +16032,6 @@ add_executable(format_request_test
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
-  test/core/http/format_request_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
@@ -16042,6 +16041,7 @@ add_executable(format_request_test
   test/core/test_util/resolve_localhost_ip46.cc
   test/core/test_util/slice_splitter.cc
   test/core/test_util/tracer_util.cc
+  test/core/util/http_client/format_request_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -19136,9 +19136,9 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(httpcli_test
-    test/core/http/httpcli_test.cc
-    test/core/http/httpcli_test_util.cc
     test/core/test_util/fake_udp_and_tcp_server.cc
+    test/core/util/http_client/httpcli_test.cc
+    test/core/util/http_client/httpcli_test_util.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -19183,9 +19183,9 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(httpscli_test
-    test/core/http/httpcli_test_util.cc
-    test/core/http/httpscli_test.cc
     test/core/test_util/fake_udp_and_tcp_server.cc
+    test/core/util/http_client/httpcli_test_util.cc
+    test/core/util/http_client/httpscli_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -20195,7 +20195,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(json_object_loader_test
-  test/core/json/json_object_loader_test.cc
+  test/core/util/json/json_object_loader_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20237,7 +20237,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(json_test
-  test/core/json/json_test.cc
+  test/core/util/json/json_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -23330,7 +23330,6 @@ add_executable(parser_test
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
-  test/core/http/parser_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
@@ -23340,6 +23339,7 @@ add_executable(parser_test
   test/core/test_util/resolve_localhost_ip46.cc
   test/core/test_util/slice_splitter.cc
   test/core/test_util/tracer_util.cc
+  test/core/util/http_client/parser_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)

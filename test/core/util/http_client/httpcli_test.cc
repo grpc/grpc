@@ -48,7 +48,7 @@
 #include "src/core/util/subprocess.h"
 #include "src/core/util/time.h"
 #include "src/core/util/time_util.h"
-#include "test/core/http/httpcli_test_util.h"
+#include "test/core/util/http_client/httpcli_test_util.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
