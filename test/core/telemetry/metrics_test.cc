@@ -658,7 +658,7 @@ TEST_F(MetricsTest, ParallelStatsPluginRegistrationAndLookup) {
   for (int i = 0; i < 100; ++i) {
     register_threads.emplace_back([] {
       for (int j = 0; j < 100; ++j) {
-        grpc_core::FakeStatsPluginBuilder().BuildAndRegister();
+        FakeStatsPluginBuilder().BuildAndRegister();
       }
     });
   }
