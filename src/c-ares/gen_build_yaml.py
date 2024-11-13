@@ -139,7 +139,7 @@ try:
                 "third_party/cares/cares/src/lib/ares_inet_net_pton.h",
                 "third_party/cares/cares/src/lib/ares_data.h",
                 "third_party/cares/cares/src/lib/ares_getenv.h",
-                "third_party/cares/cares/src/config-win32.h",
+                "third_party/cares/cares/src/lib/config-win32.h",
                 "third_party/cares/cares/src/lib/ares_strdup.h",
                 "third_party/cares/cares/src/lib/ares_iphlpapi.h",
                 "third_party/cares/cares/src/lib/ares_setup.h",

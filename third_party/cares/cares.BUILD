@@ -216,7 +216,7 @@ cc_library(
         "src/lib/ares_inet_net_pton.h",
         "src/lib/ares_data.h",
         "src/lib/ares_getenv.h",
-        "src/config-win32.h",
+        "src/lib/config-win32.h",
         "src/lib/ares_strdup.h",
         "src/lib/ares_iphlpapi.h",
         "src/lib/ares_setup.h",
