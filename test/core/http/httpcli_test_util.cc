@@ -60,8 +60,7 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
   } else {
     python_wrapper_path =
         absl::StrCat(root, "/test/core/http/python_wrapper.sh");
-    test_server_path =
-        absl::StrCat(root, "/test/core/http/test_server.py");
+    test_server_path = absl::StrCat(root, "/test/core/http/test_server.py");
     args.push_back(python_wrapper_path.c_str());
     args.push_back(test_server_path.c_str());
   }
