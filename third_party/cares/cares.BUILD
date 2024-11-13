@@ -209,7 +209,7 @@ cc_library(
         "src/lib/ares_llist.h",
         "src/lib/ares_platform.h",
         "src/lib/ares_ipv6.h",
-        "src/config-dos.h",
+        "src/lib/config-dos.h",
         "src/lib/bitncmp.h",
         "src/lib/ares_strcasecmp.h",
         "src/lib/setup_once.h",

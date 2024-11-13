@@ -132,7 +132,7 @@ try:
                 "third_party/cares/cares/src/lib/ares_llist.h",
                 "third_party/cares/cares/src/lib/ares_platform.h",
                 "third_party/cares/cares/src/lib/ares_ipv6.h",
-                "third_party/cares/cares/src/config-dos.h",
+                "third_party/cares/cares/src/lib/config-dos.h",
                 "third_party/cares/cares/src/lib/bitncmp.h",
                 "third_party/cares/cares/src/lib/ares_strcasecmp.h",
                 "third_party/cares/cares/src/lib/setup_once.h",
