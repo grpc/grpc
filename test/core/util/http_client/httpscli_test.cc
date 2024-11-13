@@ -56,9 +56,9 @@
 #include "src/core/util/time.h"
 #include "src/core/util/time_util.h"
 #include "src/core/util/uri.h"
-#include "test/core/util/http_client/httpcli_test_util.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/util/http_client/httpcli_test_util.h"
 
 namespace {
 

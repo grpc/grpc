@@ -65,9 +65,10 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
   } else {
     char* python_wrapper_arg;
     char* test_server_arg;
-    gpr_asprintf(&python_wrapper_arg, "%s/test/core/util/http_client/python_wrapper.sh",
-                 root);
-    gpr_asprintf(&test_server_arg, "%s/test/core/util/http_client/test_server.py", root);
+    gpr_asprintf(&python_wrapper_arg,
+                 "%s/test/core/util/http_client/python_wrapper.sh", root);
+    gpr_asprintf(&test_server_arg,
+                 "%s/test/core/util/http_client/test_server.py", root);
     args.push_back(python_wrapper_arg);
     args.push_back(test_server_arg);
   }
