@@ -229,8 +229,8 @@ auto ChaoticGoodServerTransport::ReadOneFrame(
       "ReadOneFrame",
       TrySeq(
           transport->ReadFrameBytes(),
-          [this,
-           transport = std::move(transport)](IncomingFrame incoming_frame) {
+          [this, transport = std::move(transport)](
+              IncomingFrame incoming_frame) mutable {
             // CHECK_EQ(header.payload_length, payload.Length());
             return Switch(
                 incoming_frame.header().type,
