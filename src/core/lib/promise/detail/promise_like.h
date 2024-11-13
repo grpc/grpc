@@ -63,7 +63,7 @@ struct PollWrapper<Poll<T>> {
 };
 
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto WrapInPoll(T&& x)
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto WrapInPoll(T&& x)
     -> decltype(PollWrapper<T>::Wrap(std::forward<T>(x))) {
   return PollWrapper<T>::Wrap(std::forward<T>(x));
 }

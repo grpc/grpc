@@ -248,8 +248,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
       ChannelArgs args) {
     auto* channel_credentials = args.GetObject<grpc_channel_credentials>();
     if (channel_credentials == nullptr) {
-      return absl::InternalError(
-          "channel credentials missing for secure channel");
+      return absl::InternalError("channel credentials missing for channel");
     }
     // Make sure security connector does not already exist in args.
     if (args.Contains(GRPC_ARG_SECURITY_CONNECTOR)) {
@@ -269,8 +268,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
                 /*call_creds=*/nullptr, authority->c_str(), &args);
     if (subchannel_security_connector == nullptr) {
       return absl::InternalError(absl::StrFormat(
-          "Failed to create secure subchannel for secure name '%s'",
-          *authority));
+          "Failed to create subchannel for secure name '%s'", *authority));
     }
     return args.SetObject(std::move(subchannel_security_connector));
   }
@@ -299,7 +297,7 @@ void FactoryInit() {
 
 }  // namespace
 
-// Create a secure client channel:
+// Create a client channel:
 //   Asynchronously: - resolve target
 //                   - connect to it (trying alternatives as presented)
 //                   - perform handshakes
@@ -308,8 +306,8 @@ grpc_channel* grpc_channel_create(const char* target,
                                   const grpc_channel_args* c_args) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_secure_channel_create(target=" << target
-      << ", creds=" << (void*)creds << ", args=" << (void*)c_args << ")";
+      << "grpc_channel_create(target=" << target << ", creds=" << (void*)creds
+      << ", args=" << (void*)c_args << ")";
   grpc_channel* channel = nullptr;
   grpc_error_handle error;
   if (creds != nullptr) {
@@ -338,7 +336,7 @@ grpc_channel* grpc_channel_create(const char* target,
       status = static_cast<grpc_status_code>(integer);
     }
     channel = grpc_lame_client_channel_create(
-        target, status, "Failed to create secure client channel");
+        target, status, "Failed to create client channel");
   }
   return channel;
 }

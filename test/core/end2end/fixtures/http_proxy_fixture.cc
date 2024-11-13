@@ -69,6 +69,7 @@ struct grpc_end2end_http_proxy {
   grpc_end2end_http_proxy()
       : combiner(grpc_combiner_create(
             grpc_event_engine::experimental::GetDefaultEventEngine())) {}
+  int port;
   std::string proxy_name;
   std::atomic<bool> is_shutdown{false};
   std::atomic<size_t> users{1};
@@ -78,6 +79,7 @@ struct grpc_end2end_http_proxy {
   gpr_mu* mu = nullptr;
   std::vector<grpc_pollset*> pollset;
   grpc_core::Combiner* combiner = nullptr;
+  std::atomic<size_t> num_connections{0};
 };
 
 namespace {
@@ -581,6 +583,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
     }
   }
   // Resolve address.
+  VLOG(2) << "proxy connecting to backend: " << conn->http_request.path;
   absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
       grpc_core::GetDNSResolver()->LookupHostnameBlocking(
           conn->http_request.path, "80");
@@ -626,6 +629,7 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
     proxy_unref(proxy);
     return;
   }
+  proxy->num_connections.fetch_add(1);
   // Instantiate proxy_connection.
   proxy_connection* conn = grpc_core::Zalloc<proxy_connection>();
   conn->client_endpoint = endpoint;
@@ -678,8 +682,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   grpc_end2end_http_proxy* proxy = new grpc_end2end_http_proxy();
   proxy_destroyed.store(false);
   // Construct proxy address.
-  const int proxy_port = grpc_pick_unused_port_or_die();
-  proxy->proxy_name = grpc_core::JoinHostPort("localhost", proxy_port);
+  proxy->port = grpc_pick_unused_port_or_die();
+  proxy->proxy_name = grpc_core::JoinHostPort("localhost", proxy->port);
   VLOG(2) << "Proxy address: " << proxy->proxy_name;
   // Create TCP server.
   auto channel_args = grpc_core::CoreConfiguration::Get()
@@ -698,11 +702,11 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = sizeof(grpc_sockaddr_in);
   addr->sin_family = GRPC_AF_INET;
-  grpc_sockaddr_set_port(&resolved_addr, proxy_port);
+  grpc_sockaddr_set_port(&resolved_addr, proxy->port);
   int port;
   error = grpc_tcp_server_add_port(proxy->server, &resolved_addr, &port);
   CHECK_OK(error);
-  CHECK(port == proxy_port);
+  CHECK(port == proxy->port);
   // Start server.
   auto* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &proxy->mu);
@@ -737,4 +741,12 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
 const char* grpc_end2end_http_proxy_get_proxy_name(
     grpc_end2end_http_proxy* proxy) {
   return proxy->proxy_name.c_str();
+}
+
+int grpc_end2end_http_proxy_get_proxy_port(grpc_end2end_http_proxy* proxy) {
+  return proxy->port;
+}
+
+size_t grpc_end2end_http_proxy_num_connections(grpc_end2end_http_proxy* proxy) {
+  return proxy->num_connections.load();
 }

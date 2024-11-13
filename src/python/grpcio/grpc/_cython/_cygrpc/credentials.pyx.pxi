@@ -42,7 +42,7 @@ cdef int _get_metadata(void *state,
                        grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
                        size_t *num_creds_md,
                        grpc_status_code *status,
-                       const char **error_details) except * with gil:
+                       const char **error_details) except -1 with gil:
   cdef size_t metadata_count
   cdef grpc_metadata *c_metadata
   def callback(metadata, grpc_status_code status, bytes error_details):
@@ -77,7 +77,7 @@ cdef int g_shutting_down = 0
 # GIL destruction during process shutdown. Since GIL destruction happens after
 # Python's exit handlers, we mark that Python is shutting down from an exit
 # handler and don't grab GIL in this function afterwards using a C mutex.
-cdef void _destroy(void *state) nogil:
+cdef void _destroy(void *state) noexcept nogil:
   global g_shutdown_mu
   global g_shutting_down
   g_shutdown_mu.lock()
@@ -101,7 +101,7 @@ def _maybe_register_shutdown_handler():
   g_shutdown_handler_registered = True
   atexit.register(_on_shutdown)
 
-cdef void _on_shutdown() nogil:
+cdef void _on_shutdown() noexcept nogil:
   global g_shutdown_mu
   global g_shutting_down
   # Wait for up to ~2s if C-core is still cleaning up.

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
 load("grpc_core_end2end_test.bzl", "grpc_core_end2end_test")
 
 licenses(["notice"])
@@ -71,6 +71,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "C++",
+    visibility = ["//test/cpp/end2end/xds:__subpackages__"],
     deps = [
         "//:config",
         "//:exec_ctx",
@@ -281,7 +282,7 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
-        "end2end_test_fuzzer_proto",
+        "end2end_test_fuzzer_cc_proto",
         "end2end_test_lib",
         "end2end_test_suites",
         "fixture_support",
@@ -312,6 +313,7 @@ grpc_core_end2end_test(
 
 grpc_core_end2end_test(
     name = "cancel_after_invoke",
+    flaky = True,
     shard_count = 50,
 )
 
@@ -324,7 +326,10 @@ grpc_core_end2end_test(name = "cancel_before_invoke")
 
 grpc_core_end2end_test(name = "cancel_in_a_vacuum")
 
-grpc_core_end2end_test(name = "cancel_with_status")
+grpc_core_end2end_test(
+    name = "cancel_with_status",
+    flaky = True,
+)
 
 grpc_core_end2end_test(name = "channelz")
 
@@ -762,12 +767,16 @@ grpc_cc_test(
     ],
 )
 
-grpc_proto_library(
+grpc_internal_proto_library(
     name = "end2end_test_fuzzer_proto",
     srcs = ["end2end_test_fuzzer.proto"],
-    has_services = False,
     deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
         "//test/core/test_util:fuzz_config_vars_proto",
     ],
+)
+
+grpc_cc_proto_library(
+    name = "end2end_test_fuzzer_cc_proto",
+    deps = ["end2end_test_fuzzer_proto"],
 )

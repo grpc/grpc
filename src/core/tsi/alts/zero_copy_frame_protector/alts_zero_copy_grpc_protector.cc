@@ -156,7 +156,7 @@ static tsi_result alts_zero_copy_grpc_protector_protect(
   }
   alts_zero_copy_grpc_protector* protector =
       reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
-  // Calls alts_grpc_record_protocol protect repeatly.
+  // Calls alts_grpc_record_protocol protect repeatedly.
   while (unprotected_slices->length > protector->max_unprotected_data_size) {
     grpc_slice_buffer_move_first(unprotected_slices,
                                  protector->max_unprotected_data_size,

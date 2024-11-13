@@ -76,10 +76,8 @@ opentelemetry::sdk::resource::Resource TestUnknownResource() {
 class TestScenario {
  public:
   enum class ResourceType : std::uint8_t { kGke, kGce, kUnknown };
-  enum class XdsBootstrapSource : std::uint8_t { kFromFile, kFromConfig };
 
-  explicit TestScenario(ResourceType type, XdsBootstrapSource bootstrap_source)
-      : type_(type), bootstrap_source_(bootstrap_source) {}
+  explicit TestScenario(ResourceType type) : type_(type) {}
 
   opentelemetry::sdk::resource::Resource GetTestResource() const {
     switch (type_) {
@@ -105,24 +103,13 @@ class TestScenario {
         ret_val += "Unknown";
         break;
     }
-    switch (info.param.bootstrap_source_) {
-      case TestScenario::XdsBootstrapSource::kFromFile:
-        ret_val += "BootstrapFromFile";
-        break;
-      case TestScenario::XdsBootstrapSource::kFromConfig:
-        ret_val += "BootstrapFromConfig";
-        break;
-    }
     return ret_val;
   }
 
   ResourceType type() const { return type_; }
 
-  XdsBootstrapSource bootstrap_source() const { return bootstrap_source_; }
-
  private:
   ResourceType type_;
-  XdsBootstrapSource bootstrap_source_;
 };
 
 // A PluginOption that injects `ServiceMeshLabelsInjector`. (This is different
@@ -157,24 +144,6 @@ class MetadataExchangeTest
       public ::testing::WithParamInterface<TestScenario> {
  protected:
   void Init(Options options, bool enable_client_side_injector = true) {
-    const char* kBootstrap =
-        "{\"node\": {\"id\": "
-        "\"projects/1234567890/networks/mesh:mesh-id/nodes/"
-        "01234567-89ab-4def-8123-456789abcdef\"}}";
-    switch (GetParam().bootstrap_source()) {
-      case TestScenario::XdsBootstrapSource::kFromFile: {
-        ASSERT_EQ(bootstrap_file_name_, nullptr);
-        FILE* bootstrap_file =
-            gpr_tmpfile("xds_bootstrap", &bootstrap_file_name_);
-        fputs(kBootstrap, bootstrap_file);
-        fclose(bootstrap_file);
-        grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP", bootstrap_file_name_);
-        break;
-      }
-      case TestScenario::XdsBootstrapSource::kFromConfig:
-        grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", kBootstrap);
-        break;
-    }
     OpenTelemetryPluginEnd2EndTest::Init(std::move(
         options
             .add_plugin_option(std::make_unique<MeshLabelsPluginOption>(
@@ -184,15 +153,6 @@ class MetadataExchangeTest
                     const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) {
                   return enable_client_side_injector;
                 })));
-  }
-
-  ~MetadataExchangeTest() override {
-    grpc_core::UnsetEnv("GRPC_XDS_BOOTSTRAP_CONFIG");
-    grpc_core::UnsetEnv("GRPC_XDS_BOOTSTRAP");
-    if (bootstrap_file_name_ != nullptr) {
-      remove(bootstrap_file_name_);
-      gpr_free(bootstrap_file_name_);
-    }
   }
 
   void VerifyServiceMeshAttributes(
@@ -269,9 +229,6 @@ class MetadataExchangeTest
           attributes) {
     EXPECT_EQ(attributes.find("csm.remote_workload_type"), attributes.end());
   }
-
- private:
-  char* bootstrap_file_name_ = nullptr;
 };
 
 // Verify that grpc.client.attempt.started does not get service mesh attributes
@@ -603,19 +560,9 @@ TEST(MeshLabelsIterableTest, TestResetIteratorPosition) {
 
 INSTANTIATE_TEST_SUITE_P(
     MetadataExchange, MetadataExchangeTest,
-    ::testing::Values(
-        TestScenario(TestScenario::ResourceType::kGke,
-                     TestScenario::XdsBootstrapSource::kFromConfig),
-        TestScenario(TestScenario::ResourceType::kGke,
-                     TestScenario::XdsBootstrapSource::kFromFile),
-        TestScenario(TestScenario::ResourceType::kGce,
-                     TestScenario::XdsBootstrapSource::kFromConfig),
-        TestScenario(TestScenario::ResourceType::kGce,
-                     TestScenario::XdsBootstrapSource::kFromFile),
-        TestScenario(TestScenario::ResourceType::kUnknown,
-                     TestScenario::XdsBootstrapSource::kFromConfig),
-        TestScenario(TestScenario::ResourceType::kUnknown,
-                     TestScenario::XdsBootstrapSource::kFromFile)),
+    ::testing::Values(TestScenario(TestScenario::ResourceType::kGke),
+                      TestScenario(TestScenario::ResourceType::kGce),
+                      TestScenario(TestScenario::ResourceType::kUnknown)),
     &TestScenario::Name);
 
 }  // namespace
@@ -627,5 +574,6 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc_core::SetEnv("CSM_WORKLOAD_NAME", "workload");
   grpc_core::SetEnv("CSM_CANONICAL_SERVICE_NAME", "canonical_service");
+  grpc_core::SetEnv("CSM_MESH_ID", "mesh-id");
   return RUN_ALL_TESTS();
 }

@@ -76,6 +76,21 @@ CORE_END2END_TEST(RetryTest, RetryNonRetriableStatus) {
       .RecvCloseOnServer(client_close);
   Expect(102, true);
   Expect(1, true);
+  // TODO(roth): After promise conversion, reevalute this.
+  LOG(INFO)
+      << "NOTE(roth): We've seen infrequent flakiness in this test due to "
+         "a callback reordering issue.  I considered making a change similar "
+         "to https://github.com/grpc/grpc/pull/37944 here to avoid the "
+         "flakiness, but that would have made this test essentially the "
+         "same as the existing retry_non_retriable_status_before_trailers "
+         "test, and the reason these are two separate tests is that they "
+         "cover different edge cases in the current implementation.  The "
+         "flake rate is currently low enough (about 3 flakes in 6 months) "
+         "that I think we get more value from having this separate test "
+         "than we're losing due to the flakiness, so I'm leaving the test "
+         "as-is for now.  Once the promise migration is done, this "
+         "difference won't be important anymore, and we'll be able to "
+         "remove a bunch of retry test cases at that point anyway.";
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_INVALID_ARGUMENT);
   EXPECT_EQ(server_status.message(), "xyz");

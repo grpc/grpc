@@ -83,7 +83,7 @@ const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
   }
   // Finally, call the built in configuration builder.
   if (default_builder_ != nullptr) (*default_builder_)(&builder);
-  // Use builder to construct a confguration
+  // Use builder to construct a configuration
   CoreConfiguration* p = builder.Build();
   // Try to set configuration global - it's possible another thread raced us
   // here, in which case we drop the work we did and use the one that got set

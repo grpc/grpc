@@ -50,7 +50,7 @@ void TimerHeap::AdjustUpwards(size_t i, Timer* t) {
 // position.
 void TimerHeap::AdjustDownwards(size_t i, Timer* t) {
   for (;;) {
-    size_t left_child = 1 + 2 * i;
+    size_t left_child = 1 + (2 * i);
     if (left_child >= timers_.size()) break;
     size_t right_child = left_child + 1;
     size_t next_i =

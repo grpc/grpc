@@ -94,6 +94,8 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
   // The set of metrics to propagate from ORCA to LRS.
   RefCountedPtr<const BackendMetricPropagation> lrs_backend_metric_propagation;
 
+  bool use_http_connect = false;
+
   // Tls Context used by clients
   CommonTlsContext common_tls_context;
 

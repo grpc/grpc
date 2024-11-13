@@ -77,7 +77,7 @@ class AllOk {
 // If any fail, cancel the rest and return the failure.
 // If all succeed, return Ok.
 template <typename Result, typename... Promises>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto AllOk(Promises... promises) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto AllOk(Promises... promises) {
   return promise_detail::AllOk<Result, Promises...>(std::move(promises)...);
 }
 

@@ -72,9 +72,6 @@ extern void RegisterLoadBalancedCallDestination(
 #ifndef GRPC_NO_RLS
 extern void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder);
 #endif  // !GRPC_NO_RLS
-#ifdef GPR_SUPPORT_BINDER_TRANSPORT
-extern void RegisterBinderResolver(CoreConfiguration::Builder* builder);
-#endif
 
 namespace {
 
@@ -122,9 +119,6 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterFakeResolver(builder);
   RegisterHttpProxyMapper(builder);
   RegisterLoadBalancedCallDestination(builder);
-#ifdef GPR_SUPPORT_BINDER_TRANSPORT
-  RegisterBinderResolver(builder);
-#endif
 #ifndef GRPC_NO_RLS
   RegisterRlsLbPolicy(builder);
 #endif  // !GRPC_NO_RLS

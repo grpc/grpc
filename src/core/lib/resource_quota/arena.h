@@ -93,7 +93,7 @@ class ArenaContextTraits : public BaseArenaContextTraits {
 };
 
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void DestroyArenaContext(void* p) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void DestroyArenaContext(void* p) {
   ArenaContextType<T>::Destroy(static_cast<T*>(p));
 }
 
