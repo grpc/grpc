@@ -114,18 +114,19 @@ auto ChaoticGoodClientTransport::DispatchFrame(
                 "push-frame", [this, call_handler = *call_handler,
                                incoming_frame = std::move(incoming_frame),
                                transport = std::move(transport)]() mutable {
-                  return call_handler.CancelIfFails(TrySeq(
+                  return TrySeq(
                       incoming_frame.Payload(),
                       [transport = std::move(transport),
                        header = incoming_frame.header()](SliceBuffer payload) {
                         return transport->DeserializeFrame<T>(
                             header, std::move(payload));
                       },
-                      [call_handler, this](T frame) {
-                        return PushFrameIntoCall(std::move(frame),
-                                                 call_handler);
+                      [call_handler, this](T frame) mutable {
+                        return Map(call_handler.CancelIfFails(PushFrameIntoCall(
+                                       std::move(frame), call_handler)),
+                                   [](StatusFlag) { return absl::OkStatus(); });
                       },
-                      ImmediateOkStatus()));
+                      ImmediateOkStatus());
                 });
           },
           []() { return absl::OkStatus(); }));
