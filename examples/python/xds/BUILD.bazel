@@ -15,6 +15,7 @@
 py_binary(
     name = "xds_greeter_server",
     srcs = ["server.py"],
+    main = "server.py",
     python_version = "PY3",
     srcs_version = "PY2AND3",
     deps = [
