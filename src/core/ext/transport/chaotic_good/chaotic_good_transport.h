@@ -45,6 +45,13 @@ inline std::vector<PromiseEndpoint> OneDataEndpoint(PromiseEndpoint endpoint) {
   return ep;
 }
 
+// One received frame: the header, and the serialized bytes of the payload.
+// The payload may not yet be received into memory, so the accessor for that
+// returns a promise that will need to be resolved prior to inspecting the
+// bytes.
+// In this way we can pull bytes from various different data connections and
+// read them in any order, but still have a trivial reassembly in the receiving
+// call promise.
 class IncomingFrame {
  public:
   template <typename T>
@@ -102,14 +109,17 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
                .value_or("<<unknown peer address>>")
         << " " << frame.ToString();
     return If(
+        // If we have no data endpoints, OR this is a small payload
         data_endpoints_.empty() ||
             header.payload_length <= options_.inlined_payload_size_threshold,
+        // ... then write it to the control endpoint
         [this, &header, &frame]() {
           SliceBuffer output;
           header.Serialize(output.AddTiny(FrameHeader::kFrameHeaderSize));
           frame.SerializePayload(output);
           return control_endpoint_.Write(std::move(output));
         },
+        // ... otherwise write it to a data connection
         [this, header, &frame]() mutable {
           SliceBuffer payload;
           // Temporarily give a bogus connection id to get padding right
@@ -136,6 +146,8 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
         });
   }
 
+  // Common outbound loop for both client and server (these vary only over the
+  // frame type).
   template <typename Frame>
   auto TransportWriteLoop(MpscReceiver<Frame>& outgoing_frames) {
     return Loop([self = Ref(), &outgoing_frames] {
@@ -175,7 +187,13 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
         },
         [this](FrameHeader frame_header) {
           return If(
+              // If the payload is on the connection frame
               frame_header.payload_connection_id == 0,
+              // ... then read the data immediately and return an IncomingFrame
+              //     that contains the payload.
+              // We need to do this here so that we do not create head of line
+              // blocking issues reading later control frames (but waiting for a
+              // call to get scheduled time to read the payload).
               [this, frame_header]() {
                 return Map(control_endpoint_.Read(frame_header.payload_length),
                            [frame_header](absl::StatusOr<SliceBuffer> payload)
@@ -185,6 +203,10 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
                                                   std::move(payload), 0);
                            });
               },
+              // ... otherwise issue a read to the appropriate data endpoint,
+              //     which will return a read ticket - which can be used later
+              //     in the call promise to asynchronously wait for those bytes
+              //     to be available.
               [this, frame_header]() -> absl::StatusOr<IncomingFrame> {
                 const auto padding =
                     frame_header.Padding(options_.decode_alignment);

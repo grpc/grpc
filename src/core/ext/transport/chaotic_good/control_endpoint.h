@@ -23,6 +23,11 @@
 namespace grpc_core {
 namespace chaotic_good {
 
+// Wrapper around PromiseEndpoint.
+// Buffers all of the small writes that get enqueued to this endpoint, and then
+// uses a separate party to flush them to the wire.
+// In doing so we get to batch up effectively all the writes from the transport
+// (since party wakeups are sticky), and then flush all the writes in one go.
 class ControlEndpoint {
  private:
   class Buffer : public RefCounted<Buffer> {
