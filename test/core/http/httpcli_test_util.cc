@@ -28,6 +28,7 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -41,12 +42,19 @@ namespace testing {
 HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
                                                  bool use_ssl) {
   int server_port = grpc_pick_unused_port_or_die();
-  // Find root path.
+  // Find root path.  The logic is different for bazel vs. cmake.
   std::string root;
   absl::string_view me(argv[0]);
   size_t last_slash = me.rfind('/');
   if (last_slash != me.npos) {
-    root = absl::StrCat(me.substr(0, last_slash), "/../../..");
+    absl::string_view dirname = me.substr(0, last_slash);
+    if (absl::EndsWith(dirname, "/http")) {
+      // Bazel paths will end in "test/core/http".
+      root = absl::StrCat(dirname, "/../../..");
+    } else {
+      // Cmake paths will be "cmake/build".
+      root = absl::StrCat(dirname, "/../..");
+    }
   } else {
     root = ".";
   }
