@@ -23,10 +23,20 @@
 namespace grpc_core {
 namespace chaotic_good {
 
+// Wrapper around PromiseEndpoint.
+// Buffers all of the small writes that get enqueued to this endpoint, and then
+// uses a separate party to flush them to the wire.
+// In doing so we get to batch up effectively all the writes from the transport
+// (since party wakeups are sticky), and then flush all the writes in one go.
 class ControlEndpoint {
  private:
   class Buffer : public RefCounted<Buffer> {
    public:
+    // Queue some buffer to be written.
+    // We cap the queue size so that we don't infinitely buffer on one
+    // connection - if the cap is hit, this queue operation will not resolve
+    // until it empties.
+    // Returns a promise that resolves to Empty{} when the data has been queued.
     auto Queue(SliceBuffer&& buffer) {
       return [buffer = std::move(buffer), this]() mutable -> Poll<Empty> {
         Waker waker;
@@ -70,6 +80,7 @@ class ControlEndpoint {
   // to Empty{} -- it's not possible to see errors from this api.
   auto Write(SliceBuffer&& bytes) { return buffer_->Queue(std::move(bytes)); }
 
+  // Read operations are simply passthroughs to the underlying promise endpoint.
   auto ReadSlice(size_t length) { return endpoint_->ReadSlice(length); }
   auto Read(size_t length) { return endpoint_->Read(length); }
   auto GetPeerAddress() const { return endpoint_->GetPeerAddress(); }

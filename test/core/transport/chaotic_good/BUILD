@@ -254,9 +254,9 @@ grpc_yodel_simple_test(
         "no_windows",
     ],
     deps = [
-        "//test/core/transport/util:mock_promise_endpoint",
         "//src/core:chaotic_good_control_endpoint",
         "//test/core/call/yodel:yodel_test",
+        "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
 
@@ -269,8 +269,8 @@ grpc_yodel_simple_test(
         "no_windows",
     ],
     deps = [
-        "//test/core/transport/util:mock_promise_endpoint",
         "//src/core:chaotic_good_data_endpoints",
         "//test/core/call/yodel:yodel_test",
+        "//test/core/transport/util:mock_promise_endpoint",
     ],
 )

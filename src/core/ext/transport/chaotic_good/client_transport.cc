@@ -131,12 +131,14 @@ auto ChaoticGoodClientTransport::DispatchFrame(
           stream != nullptr,
           [this, &stream, &incoming_frame, &transport]() {
             auto& call = stream->call;
+            // TODO(ctiller): instead of SpawnWaitable here we probably want a
+            // small queue to push into, so that the call can proceed
+            // asynchronously to other calls regardless of frame ordering.
             return call.SpawnWaitable(
                 "push-frame", [this, stream = std::move(stream),
                                incoming_frame = std::move(incoming_frame),
                                transport = std::move(transport)]() mutable {
-                  auto& call = stream->call;
-                  return call.CancelIfFails(TrySeq(
+                  return TrySeq(
                       incoming_frame.Payload(),
                       [transport = std::move(transport),
                        header = incoming_frame.header()](SliceBuffer payload) {
@@ -144,10 +146,11 @@ auto ChaoticGoodClientTransport::DispatchFrame(
                             header, std::move(payload));
                       },
                       [stream = std::move(stream), this](T frame) mutable {
-                        return PushFrameIntoCall(std::move(frame),
-                                                 std::move(stream));
+                        auto& call = stream->call;
+                        return call.CancelIfFails(PushFrameIntoCall(
+                            std::move(frame), std::move(stream)));
                       },
-                      ImmediateOkStatus()));
+                      ImmediateOkStatus());
                 });
           },
           []() { return absl::OkStatus(); }));
