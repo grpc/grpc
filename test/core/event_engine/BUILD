@@ -253,3 +253,23 @@ grpc_cc_test(
         "//src/core:event_engine_query_extensions",
     ],
 )
+
+grpc_cc_test(
+    name = "timer_train_test",
+    srcs = ["timer_train_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "benchmark",
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//src/core:common_event_engine_closures",
+        "//src/core:timer_train",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)

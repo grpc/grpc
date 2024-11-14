@@ -21201,6 +21201,27 @@ targets:
   - gtest
   - gpr
   uses_polling: false
+- name: slacked_timer_list_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/posix_engine/timer.h
+  - src/core/lib/event_engine/posix_engine/timer_heap.h
+  - src/core/util/time.h
+  - src/core/util/time_averaged_stats.h
+  src:
+  - src/core/lib/event_engine/posix_engine/timer.cc
+  - src/core/lib/event_engine/posix_engine/timer_heap.cc
+  - src/core/util/time.cc
+  - src/core/util/time_averaged_stats.cc
+  - test/core/event_engine/posix/slacked_timer_list_test.cc
+  deps:
+  - gtest
+  - absl/container:flat_hash_map
+  - absl/status:statusor
+  - gpr
+  uses_polling: false
 - name: sleep_test
   gtest: true
   build: test
@@ -21982,6 +22003,7 @@ targets:
   - test/core/event_engine/posix/timer_heap_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -22002,6 +22024,7 @@ targets:
   - test/core/event_engine/posix/timer_list_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -22623,6 +22646,23 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+- name: timer_train_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/timer_train.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - src/core/lib/event_engine/timer_train.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/event_engine/timer_train_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
 - name: tls_certificate_verifier_test
   gtest: true
   build: test

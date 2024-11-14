@@ -180,6 +180,32 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "timer_train",
+    srcs = [
+        "lib/event_engine/timer_train.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/timer_train.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/log:check",
+        "absl/log:log",
+        "absl/types:optional",
+    ],
+    deps = [
+        "event_engine_common",
+        "event_engine_utils",
+        "posix_event_engine_timer",
+        "time",
+        "useful",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "ring_buffer",
     srcs = [],
     hdrs = [
@@ -1992,6 +2018,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:flat_hash_map",
+        "absl/log:log",
         "absl/types:optional",
     ],
     deps = [
