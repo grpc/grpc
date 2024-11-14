@@ -30,6 +30,7 @@ struct Endpoints : public RefCounted<Endpoints> {
   std::vector<PromiseEndpoint> endpoints;
 };
 
+// Buffered writes for one data endpoint
 class OutputBuffer {
  public:
   bool Accept(SliceBuffer& buffer);
@@ -46,6 +47,7 @@ class OutputBuffer {
   SliceBuffer pending_;
 };
 
+// The set of output buffers for all connected data endpoints
 class OutputBuffers : public RefCounted<OutputBuffers> {
  public:
   explicit OutputBuffers(uint32_t num_connections);
@@ -71,6 +73,13 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
 
 class InputQueues : public RefCounted<InputQueues> {
  public:
+  // One outstanding read.
+  // ReadTickets get filed by read requests, and all tickets are fullfilled
+  // by an endpoint.
+  // A call may Await a ticket to get the bytes back later (or it may skip that
+  // step - in which case the bytes are thrown away after reading).
+  // This decoupling is necessary to ensure that cancelled reads by calls do not
+  // cause data corruption for other calls.
   class ReadTicket {
    public:
     ReadTicket(absl::StatusOr<uint64_t> ticket,
@@ -147,6 +156,7 @@ class InputQueues : public RefCounted<InputQueues> {
 };
 }  // namespace data_endpoints_detail
 
+// Collection of data connections.
 class DataEndpoints {
  public:
   using ReadTicket = data_endpoints_detail::InputQueues::ReadTicket;

@@ -73,6 +73,9 @@ auto ChaoticGoodServerTransport::DispatchFrame(
   return If(
       call_initiator.has_value(),
       [this, &call_initiator, &frame, &transport]() {
+        // TODO(ctiller): instead of SpawnWaitable here we probably want a
+        // small queue to push into, so that the call can proceed
+        // asynchronously to other calls regardless of frame ordering.
         return call_initiator->SpawnWaitable(
             "push-frame",
             [this, call_initiator = *call_initiator, frame = std::move(frame),

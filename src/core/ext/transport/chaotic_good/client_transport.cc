@@ -110,6 +110,9 @@ auto ChaoticGoodClientTransport::DispatchFrame(
       If(
           call_handler.has_value(),
           [this, &call_handler, &incoming_frame, &transport]() {
+            // TODO(ctiller): instead of SpawnWaitable here we probably want a
+            // small queue to push into, so that the call can proceed
+            // asynchronously to other calls regardless of frame ordering.
             return call_handler->SpawnWaitable(
                 "push-frame", [this, call_handler = *call_handler,
                                incoming_frame = std::move(incoming_frame),

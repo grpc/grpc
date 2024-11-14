@@ -47,7 +47,9 @@ ControlEndpoint::ControlEndpoint(
       GRPC_LATENT_SEE_PROMISE(
           "FlushLoop", Loop([endpoint = endpoint_, buffer = buffer_]() {
             return TrySeq(
+                // Pull one set of buffered writes
                 buffer->Pull(),
+                // And write them
                 [endpoint, buffer = buffer.get()](SliceBuffer flushing) {
                   GRPC_TRACE_LOG(chaotic_good, INFO)
                       << "CHAOTIC_GOOD: Flush " << flushing.Length()
@@ -56,6 +58,7 @@ ControlEndpoint::ControlEndpoint(
                              .value_or("<<unknown peer address>>");
                   return endpoint->Write(std::move(flushing));
                 },
+                // Then repeat
                 []() -> LoopCtl<absl::Status> { return Continue{}; });
           })),
       [](absl::Status) {});
