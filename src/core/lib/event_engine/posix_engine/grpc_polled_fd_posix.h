@@ -43,7 +43,6 @@
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
-#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -120,7 +119,8 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   void ConfigureAresChannelLocked(ares_channel channel) override {
     ares_set_socket_functions(channel, &kSockFuncs, this);
     ares_set_socket_configure_callback(
-        channel, &GrpcPolledFdFactoryPosix::ConfigureSocket, nullptr);
+        channel, &GrpcPolledFdFactoryPosix::ConfigureSocket,
+        poller_->GetSystemApi());
   }
 
  private:
@@ -168,15 +168,16 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   ///   - non-blocking
   ///   - cloexec flag
   ///   - disable nagle
-  static int ConfigureSocket(ares_socket_t fd, int type, void* /*user_data*/) {
+  static int ConfigureSocket(ares_socket_t fd, int type, void* system_api_ptr) {
     // clang-format off
 #define RETURN_IF_ERROR(expr) if (!(expr).ok()) { return -1; }
     // clang-format on
-    PosixSocketWrapper sock(fd);
-    RETURN_IF_ERROR(sock.SetSocketNonBlocking(1));
-    RETURN_IF_ERROR(sock.SetSocketCloexec(1));
+    SystemApi& system_api = *static_cast<SystemApi*>(system_api_ptr);
+    FileDescriptor adopted = system_api.AdoptExternalFd(fd);
+    RETURN_IF_ERROR(system_api.SetSocketNonBlocking(adopted, 1));
+    RETURN_IF_ERROR(system_api.SetSocketCloexec(adopted, 1));
     if (type == SOCK_STREAM) {
-      RETURN_IF_ERROR(sock.SetSocketLowLatency(1));
+      RETURN_IF_ERROR(system_api.SetSocketLowLatency(adopted, 1));
     }
     return 0;
   }

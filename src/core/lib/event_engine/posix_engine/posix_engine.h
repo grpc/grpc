@@ -28,13 +28,13 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/hash/hash.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
@@ -100,7 +100,8 @@ class AsyncConnect {
 class PosixEnginePollerManager
     : public grpc_event_engine::experimental::Scheduler {
  public:
-  explicit PosixEnginePollerManager(std::shared_ptr<ThreadPool> executor);
+  explicit PosixEnginePollerManager(SystemApi* system_api,
+                                    std::shared_ptr<ThreadPool> executor);
   explicit PosixEnginePollerManager(
       std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
           poller);
@@ -210,6 +211,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
+  SystemApi* GetSystemApi() { return &system_api_; }
 
 #ifdef GRPC_POSIX_SOCKET_TCP
   // The posix EventEngine returned by this method would have a shared ownership
@@ -260,6 +262,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 #ifdef GRPC_POSIX_SOCKET_TCP
   std::shared_ptr<PosixEnginePollerManager> poller_manager_;
 #endif  // GRPC_POSIX_SOCKET_TCP
+  SystemApi system_api_;
 };
 
 }  // namespace experimental

@@ -27,18 +27,15 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
-#include <new>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/hash/hash.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
@@ -490,13 +487,14 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
     return local_address_;
   }
 
-  int GetWrappedFd() { return fd_; }
+  FileDescriptor GetWrappedFd() { return fd_; }
 
   bool CanTrackErrors() const { return poller_->CanTrackErrors(); }
 
   void MaybeShutdown(
       absl::Status why,
-      absl::AnyInvocable<void(absl::StatusOr<int> release_fd)> on_release_fd);
+      absl::AnyInvocable<void(absl::StatusOr<FileDescriptor> release_fd)>
+          on_release_fd);
 
  private:
   void UpdateRcvLowat() ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
@@ -524,6 +522,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
                            ssize_t* sent_length, int* saved_errno,
                            int additional_flags);
   absl::Status TcpAnnotateError(absl::Status src_error) const;
+  SystemApi* get_system_api() const { return poller_->GetSystemApi(); }
 #ifdef GRPC_LINUX_ERRQUEUE
   bool ProcessErrors();
   // Reads a cmsg to process zerocopy control messages.
@@ -532,8 +531,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   struct cmsghdr* ProcessTimestamp(msghdr* msg, struct cmsghdr* cmsg);
 #endif  // GRPC_LINUX_ERRQUEUE
   grpc_core::Mutex read_mu_;
-  PosixSocketWrapper sock_;
-  int fd_;
+  FileDescriptor fd_;
   bool is_first_read_ = true;
   bool has_posted_reclaimer_ ABSL_GUARDED_BY(read_mu_) = false;
   double target_length_;
@@ -575,7 +573,8 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
 
   void* outgoing_buffer_arg_ = nullptr;
 
-  absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd_ = nullptr;
+  absl::AnyInvocable<void(absl::StatusOr<FileDescriptor>)> on_release_fd_ =
+      nullptr;
 
   // A counter which starts at 0. It is initialized the first time the
   // socket options for collecting timestamps are set, and is incremented
@@ -636,7 +635,7 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
     return impl_->GetLocalAddress();
   }
 
-  int GetWrappedFd() override { return impl_->GetWrappedFd(); }
+  int GetWrappedFd() override { return impl_->GetWrappedFd().fd(); }
 
   bool CanTrackErrors() override { return impl_->CanTrackErrors(); }
 
@@ -644,7 +643,14 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
                     on_release_fd) override {
     if (!shutdown_.exchange(true, std::memory_order_acq_rel)) {
       impl_->MaybeShutdown(absl::FailedPreconditionError("Endpoint closing"),
-                           std::move(on_release_fd));
+                           [on_release = std::move(on_release_fd)](
+                               absl::StatusOr<FileDescriptor> fd) mutable {
+                             if (fd.ok()) {
+                               on_release(fd->fd());
+                             } else {
+                               on_release(std::move(fd).status());
+                             }
+                           });
     }
   }
 

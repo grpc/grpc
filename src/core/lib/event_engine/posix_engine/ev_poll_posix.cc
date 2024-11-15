@@ -600,27 +600,16 @@ void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* handle) {
   --num_poll_handles_;
 }
 
-PollPoller::PollPoller(Scheduler* scheduler)
-    : scheduler_(scheduler),
-      use_phony_poll_(false),
-      was_kicked_(false),
-      was_kicked_ext_(false),
-      num_poll_handles_(0),
-      poll_handles_list_head_(nullptr),
-      closed_(false) {
-  wakeup_fd_ = *CreateWakeupFd();
-  CHECK(wakeup_fd_ != nullptr);
-  ForkPollerListAddPoller(this);
-}
-
-PollPoller::PollPoller(Scheduler* scheduler, bool use_phony_poll)
+PollPoller::PollPoller(Scheduler* scheduler, SystemApi* system_api,
+                       bool use_phony_poll)
     : scheduler_(scheduler),
       use_phony_poll_(use_phony_poll),
       was_kicked_(false),
       was_kicked_ext_(false),
       num_poll_handles_(0),
       poll_handles_list_head_(nullptr),
-      closed_(false) {
+      closed_(false),
+      system_api_(system_api) {
   wakeup_fd_ = *CreateWakeupFd();
   CHECK(wakeup_fd_ != nullptr);
   ForkPollerListAddPoller(this);
@@ -836,10 +825,11 @@ void PollPoller::Close() {
 }
 
 std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
+                                           SystemApi* system_api,
                                            bool use_phony_poll) {
   static bool kPollPollerSupported = InitPollPollerPosix();
   if (kPollPollerSupported) {
-    return std::make_shared<PollPoller>(scheduler, use_phony_poll);
+    return std::make_shared<PollPoller>(scheduler, system_api, use_phony_poll);
   }
   return nullptr;
 }
@@ -854,7 +844,8 @@ std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
 namespace grpc_event_engine {
 namespace experimental {
 
-PollPoller::PollPoller(Scheduler* /* engine */) {
+PollPoller::PollPoller(Scheduler* /* engine */, SystemApi* /* system_api */,
+                       bool /* use_phony_poll */) {
   grpc_core::Crash("unimplemented");
 }
 

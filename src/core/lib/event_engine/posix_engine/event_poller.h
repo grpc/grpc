@@ -25,6 +25,7 @@
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -102,6 +103,7 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller,
   //    thread to return.
   // 3. Call Shutdown() on the poller.
   virtual void Shutdown() = 0;
+  virtual SystemApi* GetSystemApi() const = 0;
   ~PosixEventPoller() override = default;
 };
 
