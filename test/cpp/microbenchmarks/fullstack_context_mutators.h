@@ -91,7 +91,7 @@ class RandomAsciiMetadata {
     std::string s;
     s.reserve(length + 1);
     for (int i = 0; i < length; i++) {
-      s += static_cast<char>(rand() % 26 + 'a');
+      s += static_cast<char>((rand() % 26) + 'a');
     }
     return s;
   }

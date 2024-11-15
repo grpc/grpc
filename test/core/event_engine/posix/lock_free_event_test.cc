@@ -155,9 +155,9 @@ namespace {
 
 // A trivial callback sceduler which inherits from the Scheduler interface but
 // immediatey runs the callback/closure.
-class BechmarkCallbackScheduler : public Scheduler {
+class BenchmarkCallbackScheduler : public Scheduler {
  public:
-  BechmarkCallbackScheduler() = default;
+  BenchmarkCallbackScheduler() = default;
   void Run(
       grpc_event_engine::experimental::EventEngine::Closure* closure) override {
     closure->Run();
@@ -170,7 +170,7 @@ class BechmarkCallbackScheduler : public Scheduler {
 // callback with SetReady. This benchmark is intended to measure the cost of
 // NotifyOn and SetReady implementations of the lock free event.
 void BM_LockFreeEvent(benchmark::State& state) {
-  BechmarkCallbackScheduler cb_scheduler;
+  BenchmarkCallbackScheduler cb_scheduler;
   LockfreeEvent event(&cb_scheduler);
   event.InitEvent();
   PosixEngineClosure* notify_on_closure =

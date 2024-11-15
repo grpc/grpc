@@ -28,7 +28,9 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/util/subprocess.h"
@@ -39,46 +41,43 @@ namespace testing {
 
 HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
                                                  bool use_ssl) {
-  char* me = argv[0];
-  char* lslash = strrchr(me, '/');
-  std::vector<char*> args;
   int server_port = grpc_pick_unused_port_or_die();
-  // figure out where we are
-  char* root;
-  if (lslash != nullptr) {
-    // Hack for bazel target
-    if (static_cast<unsigned>(lslash - me) >= (sizeof("http") - 1) &&
-        strncmp(me + (lslash - me) - sizeof("http") + 1, "http",
-                sizeof("http") - 1) == 0) {
-      lslash = me + (lslash - me) - sizeof("http");
+  // Find root path.  The logic is different for bazel vs. cmake.
+  std::string root;
+  absl::string_view me(argv[0]);
+  size_t last_slash = me.rfind('/');
+  if (last_slash != me.npos) {
+    absl::string_view dirname = me.substr(0, last_slash);
+    if (absl::EndsWith(dirname, "/http")) {
+      // Bazel paths will end in "test/core/http".
+      root = absl::StrCat(dirname, "/../../..");
+    } else {
+      // Cmake paths will be "cmake/build".
+      root = absl::StrCat(dirname, "/../..");
     }
-    root = static_cast<char*>(
-        gpr_malloc(static_cast<size_t>(lslash - me + sizeof("/../.."))));
-    memcpy(root, me, static_cast<size_t>(lslash - me));
-    memcpy(root + (lslash - me), "/../..", sizeof("/../.."));
   } else {
-    root = gpr_strdup(".");
+    root = ".";
   }
+  // Construct args.
+  std::vector<const char*> args;
+  std::string python_wrapper_path;
+  std::string test_server_path;
   CHECK_LE(argc, 2);
   if (argc == 2) {
-    args.push_back(gpr_strdup(argv[1]));
+    args.push_back(argv[1]);
   } else {
-    char* python_wrapper_arg;
-    char* test_server_arg;
-    gpr_asprintf(&python_wrapper_arg, "%s/test/core/http/python_wrapper.sh",
-                 root);
-    gpr_asprintf(&test_server_arg, "%s/test/core/http/test_server.py", root);
-    args.push_back(python_wrapper_arg);
-    args.push_back(test_server_arg);
+    python_wrapper_path =
+        absl::StrCat(root, "/test/core/http/python_wrapper.sh");
+    test_server_path = absl::StrCat(root, "/test/core/http/test_server.py");
+    args.push_back(python_wrapper_path.c_str());
+    args.push_back(test_server_path.c_str());
   }
-  // start the server
-  args.push_back(gpr_strdup("--port"));
-  char* server_port_str;
-  gpr_asprintf(&server_port_str, "%d", server_port);
-  args.push_back(server_port_str);
+  args.push_back("--port");
+  std::string port_number = absl::StrCat(server_port);
+  args.push_back(port_number.c_str());
   if (use_ssl) {
-    args.push_back(gpr_strdup("--ssl"));
-    // Set the environment variable for the SSL certificate file
+    args.push_back("--ssl");
+    // Set the environment variable for the SSL certificate file.
     ConfigVars::Overrides overrides;
     overrides.default_ssl_roots_file_path =
         absl::StrCat(root, "/src/core/tsi/test_creds/ca.pem");
@@ -89,13 +88,9 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
     LOG(INFO) << "  HttpRequest test server subprocess argv[" << i
               << "]: " << args[i];
   }
-  gpr_subprocess* server =
-      gpr_subprocess_create(args.size(), const_cast<const char**>(args.data()));
+  // Start the server.
+  gpr_subprocess* server = gpr_subprocess_create(args.size(), args.data());
   CHECK(server);
-  for (size_t i = 0; i < args.size(); i++) {
-    gpr_free(args[i]);
-  }
-  gpr_free(root);
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_seconds(5, GPR_TIMESPAN)));
   return {server, server_port};

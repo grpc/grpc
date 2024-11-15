@@ -25,8 +25,6 @@
 #include "absl/status/statusor.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -48,82 +46,62 @@ struct DeterministicBitGen : public std::numeric_limits<uint64_t> {
   uint64_t operator()() { return 42; }
 };
 
-FrameLimits FuzzerFrameLimits() { return FrameLimits{1024 * 1024 * 1024, 63}; }
-
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
-  HPackCompressor hpack_compressor;
-  bool saw_encoding_errors = false;
-  auto serialized = input.Serialize(&hpack_compressor, saw_encoding_errors);
-  CHECK(serialized.control.Length() >=
-        24);  // Initial output buffer size is 64 byte.
-  uint8_t header_bytes[24];
-  serialized.control.MoveFirstNBytesIntoBuffer(24, header_bytes);
-  auto header = FrameHeader::Parse(header_bytes);
-  if (!header.ok()) {
-    if (!squelch) {
-      LOG(ERROR) << "Failed to parse header: " << header.status().ToString();
-    }
-    Crash("Failed to parse header");
-  }
-  CHECK_EQ(header->type, expected_frame_type);
+  FrameHeader hdr = input.MakeHeader();
+  CHECK_EQ(hdr.type, expected_frame_type);
+  CHECK_EQ(hdr.payload_connection_id, 0);
+  SliceBuffer payload;
+  input.SerializePayload(payload);
+  CHECK_GE(hdr.payload_length, payload.Length());
   T output;
-  HPackParser hpack_parser;
-  DeterministicBitGen bitgen;
-  auto deser = output.Deserialize(&hpack_parser, header.value(),
-                                  absl::BitGenRef(bitgen), GetContext<Arena>(),
-                                  std::move(serialized), FuzzerFrameLimits());
+  auto deser = output.Deserialize(hdr, std::move(payload));
   CHECK_OK(deser);
-  if (!saw_encoding_errors) CHECK_EQ(input, output);
+  CHECK_EQ(input.ToString(), output.ToString());
 }
 
 template <typename T>
-void FinishParseAndChecks(const FrameHeader& header, BufferPair buffers) {
+void FinishParseAndChecks(const FrameHeader& header, SliceBuffer payload) {
   T parsed;
   ExecCtx exec_ctx;  // Initialized to get this_cpu() info in global_stat().
-  HPackParser hpack_parser;
-  DeterministicBitGen bitgen;
-  auto deser = parsed.Deserialize(&hpack_parser, header,
-                                  absl::BitGenRef(bitgen), GetContext<Arena>(),
-                                  std::move(buffers), FuzzerFrameLimits());
+  auto deser = parsed.Deserialize(header, std::move(payload));
   if (!deser.ok()) return;
-  LOG(INFO) << "Read frame: " << parsed.ToString();
   AssertRoundTrips(parsed, header.type);
 }
 
 void Run(const frame_fuzzer::Test& test) {
-  const uint8_t* control_data =
-      reinterpret_cast<const uint8_t*>(test.control().data());
-  size_t control_size = test.control().size();
-  if (test.control().size() < 24) return;
-  auto r = FrameHeader::Parse(control_data);
+  if (test.header().size() != FrameHeader::kFrameHeaderSize) return;
+  auto r = FrameHeader::Parse(
+      reinterpret_cast<const uint8_t*>(test.header().data()));
   if (!r.ok()) return;
-  if (test.data().size() != r->message_length) return;
-  LOG(INFO) << "Read frame header: " << r->ToString();
-  control_data += 24;
-  control_size -= 24;
+  if (test.payload().size() != r->payload_length) return;
   auto arena = SimpleArenaAllocator()->MakeArena();
   TestContext<Arena> ctx(arena.get());
-  BufferPair buffers{
-      SliceBuffer(Slice::FromCopiedBuffer(control_data, control_size)),
-      SliceBuffer(
-          Slice::FromCopiedBuffer(test.data().data(), test.data().size())),
-  };
+  SliceBuffer payload(
+      Slice::FromCopiedBuffer(test.payload().data(), test.payload().size()));
   switch (r->type) {
     default:
       return;  // We don't know how to parse this frame type.
     case FrameType::kSettings:
-      FinishParseAndChecks<SettingsFrame>(*r, std::move(buffers));
+      FinishParseAndChecks<SettingsFrame>(*r, std::move(payload));
       break;
-    case FrameType::kFragment:
-      if (test.is_server()) {
-        FinishParseAndChecks<ServerFragmentFrame>(*r, std::move(buffers));
-      } else {
-        FinishParseAndChecks<ClientFragmentFrame>(*r, std::move(buffers));
-      }
+    case FrameType::kClientInitialMetadata:
+      FinishParseAndChecks<ClientInitialMetadataFrame>(*r, std::move(payload));
+      break;
+    case FrameType::kClientEndOfStream:
+      FinishParseAndChecks<ClientEndOfStream>(*r, std::move(payload));
+      break;
+    case FrameType::kServerInitialMetadata:
+      FinishParseAndChecks<ServerInitialMetadataFrame>(*r, std::move(payload));
+      break;
+    case FrameType::kServerTrailingMetadata:
+      FinishParseAndChecks<ServerTrailingMetadataFrame>(*r, std::move(payload));
+      break;
+    case FrameType::kMessage:
+      FinishParseAndChecks<MessageFrame>(*r, std::move(payload));
       break;
     case FrameType::kCancel:
-      FinishParseAndChecks<CancelFrame>(*r, std::move(buffers));
+      FinishParseAndChecks<CancelFrame>(*r, std::move(payload));
       break;
   }
 }

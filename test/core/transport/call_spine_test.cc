@@ -89,16 +89,16 @@ void CallSpineTest::UnaryRequest(CallInitiator initiator, CallHandler handler) {
                   ContentTypeMetadata::kApplicationGrpc);
         return initiator.PullMessage();
       },
-      [initiator](ValueOrFailure<absl::optional<MessageHandle>> msg) mutable {
+      [initiator](ServerToClientNextMessage msg) mutable {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(),
                   "why hello neighbor");
         return initiator.PullMessage();
       },
-      [initiator](ValueOrFailure<absl::optional<MessageHandle>> msg) mutable {
+      [initiator](ServerToClientNextMessage msg) mutable {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_value());
+        EXPECT_FALSE(msg.has_value());
         return initiator.PullServerTrailingMetadata();
       },
       [initiator](ValueOrFailure<ServerMetadataHandle> md) mutable {
@@ -116,16 +116,15 @@ void CallSpineTest::UnaryRequest(CallInitiator initiator, CallHandler handler) {
                   kTestPath);
         return handler.PullMessage();
       },
-      [handler](ValueOrFailure<absl::optional<MessageHandle>> msg) mutable {
+      [handler](ClientToServerNextMessage msg) mutable {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                  "hello world");
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(), "hello world");
         return handler.PullMessage();
       },
-      [handler](ValueOrFailure<absl::optional<MessageHandle>> msg) mutable {
+      [handler](ClientToServerNextMessage msg) mutable {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_value());
+        EXPECT_FALSE(msg.has_value());
         auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
         return handler.PushServerInitialMetadata(std::move(md));

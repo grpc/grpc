@@ -212,7 +212,7 @@ class ServerCallTracerFactory {
   // instead of directly fetching it with `GetObject`.
   static ServerCallTracerFactory* Get(const ChannelArgs& channel_args);
 
-  // Registers a global ServerCallTracerFactory that wil be used by default if
+  // Registers a global ServerCallTracerFactory that will be used by default if
   // no corresponding channel arg was found. It is only valid to call this
   // before grpc_init(). It is the responsibility of the caller to maintain
   // this for the lifetime of the process.
