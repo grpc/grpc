@@ -72,7 +72,6 @@
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
@@ -80,6 +79,7 @@
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
+#include "xds/data/orca/v3/orca_load_report.pb.h"
 
 namespace grpc {
 namespace testing {

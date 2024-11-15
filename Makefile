@@ -368,7 +368,7 @@ Q = @
 endif
 
 CORE_VERSION = 44.1.0
-CPP_VERSION = 1.68.0-dev
+CPP_VERSION = 1.69.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -720,6 +720,7 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/frame_goaway.cc \
     src/core/ext/transport/chttp2/transport/frame_ping.cc \
     src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
+    src/core/ext/transport/chttp2/transport/frame_security.cc \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
@@ -1301,6 +1302,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/client_call.cc \
     src/core/lib/surface/completion_queue.cc \
     src/core/lib/surface/completion_queue_factory.cc \
+    src/core/lib/surface/connection_context.cc \
     src/core/lib/surface/event_string.cc \
     src/core/lib/surface/filter_stack_call.cc \
     src/core/lib/surface/init.cc \

@@ -15,7 +15,9 @@
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_cc_proto_library",
     "grpc_generate_one_off_internal_targets",
+    "grpc_internal_proto_library",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
 )
@@ -65,9 +67,6 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     language = "c++",
-    deps = [
-        "//:gpr_platform",
-    ],
 )
 
 grpc_cc_library(
@@ -95,6 +94,7 @@ grpc_cc_library(
     ],
     deps = [
         ":memory_quota",
+        ":slice_buffer",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//:tcp_tracer",
@@ -136,6 +136,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "transport_framing_endpoint_extension",
+    hdrs = [
+        "lib/transport/transport_framing_endpoint_extension.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/strings",
+    ],
+    deps = [
+        "slice_buffer",
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "latent_see",
     srcs = [
         "util/latent_see.cc",
@@ -150,6 +166,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
+        "absl/functional:function_ref",
         "absl/log",
         "absl/strings",
         "absl/types:optional",
@@ -682,6 +699,35 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "promise_variant",
+    external_deps = [
+        "absl/types:variant",
+    ],
+    language = "c++",
+    public_hdrs = ["lib/promise/detail/promise_variant.h"],
+    deps = [
+    ],
+)
+
+grpc_cc_library(
+    name = "match_promise",
+    external_deps = [
+        "absl/strings",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    public_hdrs = ["lib/promise/match_promise.h"],
+    deps = [
+        "overload",
+        "poll",
+        "promise_factory",
+        "promise_like",
+        "promise_variant",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "sleep",
     srcs = [
         "lib/promise/sleep.cc",
@@ -798,6 +844,8 @@ grpc_cc_library(
     deps = [
         "if",
         "promise_factory",
+        "promise_variant",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
@@ -2764,6 +2812,7 @@ grpc_cc_library(
     select_deps = [
         {
             "//:windows": ["windows_event_engine"],
+            "//:windows_os": ["windows_event_engine"],
             "//:windows_msvc": ["windows_event_engine"],
             "//:windows_clang": ["windows_event_engine"],
             "//:windows_other": ["windows_event_engine"],
@@ -3651,6 +3700,18 @@ grpc_cc_library(
         "event_engine_common",
         "lb_policy",
         "metadata_batch",
+    ],
+)
+
+grpc_cc_library(
+    name = "connection_context",
+    srcs = ["lib/surface/connection_context.cc"],
+    hdrs = ["lib/surface/connection_context.h"],
+    deps = [
+        "no_destruct",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:orphanable",
     ],
 )
 
@@ -7752,6 +7813,17 @@ grpc_cc_library(
     ],
 )
 
+grpc_internal_proto_library(
+    name = "chaotic_good_frame_proto",
+    srcs = ["ext/transport/chaotic_good/chaotic_good_frame.proto"],
+    has_services = False,
+)
+
+grpc_cc_proto_library(
+    name = "chaotic_good_frame_cc_proto",
+    deps = ["chaotic_good_frame_proto"],
+)
+
 grpc_cc_library(
     name = "chaotic_good_frame",
     srcs = [
@@ -7770,7 +7842,61 @@ grpc_cc_library(
     deps = [
         "arena",
         "bitset",
+        "chaotic_good_frame_cc_proto",
         "chaotic_good_frame_header",
+        "context",
+        "match",
+        "message",
+        "metadata",
+        "metadata_batch",
+        "no_destruct",
+        "slice",
+        "slice_buffer",
+        "status_helper",
+        "//:gpr_platform",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_frame_header",
+    srcs = [
+        "ext/transport/chaotic_good/frame_header.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/frame_header.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "bitset",
+        "//:gpr",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_legacy_frame",
+    srcs = [
+        "ext/transport/chaotic_good_legacy/frame.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good_legacy/frame.h",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/random:bit_gen_ref",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:variant",
+    ],
+    deps = [
+        "arena",
+        "bitset",
+        "chaotic_good_legacy_frame_header",
         "context",
         "match",
         "metadata_batch",
@@ -7787,12 +7913,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "chaotic_good_settings_metadata",
+    name = "chaotic_good_legacy_settings_metadata",
     srcs = [
-        "ext/transport/chaotic_good/settings_metadata.cc",
+        "ext/transport/chaotic_good_legacy/settings_metadata.cc",
     ],
     hdrs = [
-        "ext/transport/chaotic_good/settings_metadata.h",
+        "ext/transport/chaotic_good_legacy/settings_metadata.h",
     ],
     external_deps = [
         "absl/status",
@@ -7806,12 +7932,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "chaotic_good_frame_header",
+    name = "chaotic_good_legacy_frame_header",
     srcs = [
-        "ext/transport/chaotic_good/frame_header.cc",
+        "ext/transport/chaotic_good_legacy/frame_header.cc",
     ],
     hdrs = [
-        "ext/transport/chaotic_good/frame_header.h",
+        "ext/transport/chaotic_good_legacy/frame_header.h",
     ],
     external_deps = [
         "absl/status",
@@ -7969,6 +8095,7 @@ grpc_cc_library(
     external_deps = [
         "absl/log:log",
         "absl/random",
+        "absl/strings",
     ],
     language = "c++",
     deps = [
@@ -7981,7 +8108,6 @@ grpc_cc_library(
         "try_seq",
         "//:gpr_platform",
         "//:grpc_trace",
-        "//:hpack_encoder",
         "//:promise",
     ],
 )
@@ -8021,6 +8147,7 @@ grpc_cc_library(
         "grpc_promise_endpoint",
         "if",
         "inter_activity_pipe",
+        "latent_see",
         "loop",
         "map",
         "memory_quota",
@@ -8031,14 +8158,13 @@ grpc_cc_library(
         "resource_quota",
         "slice",
         "slice_buffer",
+        "switch",
         "try_join",
         "try_seq",
         "//:exec_ctx",
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
-        "//:hpack_encoder",
-        "//:hpack_parser",
         "//:ref_counted_ptr",
     ],
 )
@@ -8072,6 +8198,147 @@ grpc_cc_library(
         "chaotic_good_frame",
         "chaotic_good_frame_header",
         "chaotic_good_transport",
+        "context",
+        "default_event_engine",
+        "event_engine_context",
+        "event_engine_wakeup_scheduler",
+        "for_each",
+        "grpc_promise_endpoint",
+        "if",
+        "inter_activity_latch",
+        "inter_activity_pipe",
+        "loop",
+        "memory_quota",
+        "metadata_batch",
+        "mpsc",
+        "pipe",
+        "poll",
+        "resource_quota",
+        "seq",
+        "slice",
+        "slice_buffer",
+        "switch",
+        "try_join",
+        "try_seq",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_legacy_transport",
+    hdrs = [
+        "ext/transport/chaotic_good_legacy/chaotic_good_transport.h",
+    ],
+    external_deps = [
+        "absl/log:log",
+        "absl/random",
+    ],
+    language = "c++",
+    deps = [
+        "chaotic_good_legacy_frame",
+        "chaotic_good_legacy_frame_header",
+        "event_engine_tcp_socket_utils",
+        "grpc_promise_endpoint",
+        "if",
+        "try_join",
+        "try_seq",
+        "//:gpr_platform",
+        "//:grpc_trace",
+        "//:hpack_encoder",
+        "//:promise",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_legacy_client_transport",
+    srcs = [
+        "ext/transport/chaotic_good_legacy/client_transport.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good_legacy/client_transport.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_map",
+        "absl/log:check",
+        "absl/log",
+        "absl/random",
+        "absl/random:bit_gen_ref",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:optional",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    deps = [
+        "activity",
+        "arena",
+        "chaotic_good_legacy_frame",
+        "chaotic_good_legacy_frame_header",
+        "chaotic_good_legacy_transport",
+        "context",
+        "event_engine_context",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
+        "for_each",
+        "grpc_promise_endpoint",
+        "if",
+        "inter_activity_pipe",
+        "loop",
+        "map",
+        "memory_quota",
+        "metadata_batch",
+        "mpsc",
+        "pipe",
+        "poll",
+        "resource_quota",
+        "slice",
+        "slice_buffer",
+        "try_join",
+        "try_seq",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:hpack_encoder",
+        "//:hpack_parser",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_legacy_server_transport",
+    srcs = [
+        "ext/transport/chaotic_good_legacy/server_transport.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good_legacy/server_transport.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
+        "absl/log:check",
+        "absl/log:log",
+        "absl/random",
+        "absl/random:bit_gen_ref",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:optional",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    deps = [
+        "1999",
+        "activity",
+        "arena",
+        "chaotic_good_legacy_frame",
+        "chaotic_good_legacy_frame_header",
+        "chaotic_good_legacy_transport",
         "context",
         "default_event_engine",
         "event_engine_context",
@@ -8450,8 +8717,74 @@ grpc_cc_library(
         "channel_args_endpoint_config",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
+        "chaotic_good_legacy_server",
         "chaotic_good_server_transport",
-        "chaotic_good_settings_metadata",
+        "closure",
+        "context",
+        "error",
+        "error_utils",
+        "event_engine_common",
+        "event_engine_context",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
+        "event_engine_tcp_socket_utils",
+        "event_engine_utils",
+        "event_engine_wakeup_scheduler",
+        "grpc_promise_endpoint",
+        "if",
+        "inter_activity_latch",
+        "iomgr_fwd",
+        "latch",
+        "memory_quota",
+        "metadata",
+        "metadata_batch",
+        "race",
+        "resource_quota",
+        "sleep",
+        "slice",
+        "slice_buffer",
+        "status_helper",
+        "time",
+        "try_seq",
+        "//:channelz",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:handshaker",
+        "//:iomgr",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:server",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_legacy_server",
+    srcs = [
+        "ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good_legacy/server/chaotic_good_server.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/log:check",
+        "absl/log:log",
+        "absl/random",
+        "absl/random:bit_gen_ref",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    language = "c++",
+    deps = [
+        "activity",
+        "arena",
+        "channel_args",
+        "channel_args_endpoint_config",
+        "chaotic_good_legacy_frame",
+        "chaotic_good_legacy_frame_header",
+        "chaotic_good_legacy_server_transport",
+        "chaotic_good_legacy_settings_metadata",
         "closure",
         "context",
         "error",
@@ -8516,8 +8849,74 @@ grpc_cc_library(
         "channel_args_endpoint_config",
         "chaotic_good_client_transport",
         "chaotic_good_frame",
+        "chaotic_good_frame_cc_proto",
         "chaotic_good_frame_header",
-        "chaotic_good_settings_metadata",
+        "chaotic_good_legacy_connector",
+        "closure",
+        "context",
+        "error",
+        "error_utils",
+        "event_engine_context",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
+        "event_engine_tcp_socket_utils",
+        "event_engine_wakeup_scheduler",
+        "grpc_promise_endpoint",
+        "inter_activity_latch",
+        "latch",
+        "memory_quota",
+        "no_destruct",
+        "notification",
+        "race",
+        "resource_quota",
+        "sleep",
+        "slice",
+        "slice_buffer",
+        "subchannel_connector",
+        "time",
+        "try_seq",
+        "wait_for_callback",
+        "//:channel",
+        "//:channel_create",
+        "//:config",
+        "//:debug_location",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:grpc_client_channel",
+        "//:handshaker",
+        "//:iomgr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_legacy_connector",
+    srcs = [
+        "ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "absl/random",
+        "absl/random:bit_gen_ref",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    language = "c++",
+    deps = [
+        "activity",
+        "arena",
+        "channel_args",
+        "channel_args_endpoint_config",
+        "chaotic_good_legacy_client_transport",
+        "chaotic_good_legacy_frame",
+        "chaotic_good_legacy_frame_header",
+        "chaotic_good_legacy_settings_metadata",
         "closure",
         "context",
         "error",
@@ -8858,7 +9257,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_health_upb",
-    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
+    deps = ["//src/proto/grpc/health/v1:health_proto"],
 )
 
 grpc_upb_proto_library(
@@ -8878,7 +9277,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_lb_upb",
-    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"],
+    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto"],
 )
 
 grpc_upb_proto_library(
@@ -8888,17 +9287,17 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "rls_upb",
-    deps = ["//src/proto/grpc/lookup/v1:rls_proto_descriptor"],
+    deps = ["//src/proto/grpc/lookup/v1:rls_proto"],
 )
 
 grpc_upb_proto_library(
     name = "rls_config_upb",
-    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "rls_config_upbdefs",
-    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [

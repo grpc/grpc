@@ -376,7 +376,7 @@ static bool client_ssl_test(char* server_alpn_preferred) {
 }
 
 TEST(ClientSslTest, MainTest) {
-  // Handshake succeeeds when the server has h2 as the ALPN preference.
+  // Handshake succeeds when the server has h2 as the ALPN preference.
   ASSERT_TRUE(client_ssl_test(const_cast<char*>("h2")));
 
 // TODO(gtcooke94) Figure out why test is failing with OpenSSL and fix it.

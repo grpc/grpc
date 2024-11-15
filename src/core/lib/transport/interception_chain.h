@@ -106,7 +106,7 @@ class Interceptor : public UnstartedCallDestination {
     return Map(call_handler.PullClientInitialMetadata(),
                [call_handler, destination = wrapped_destination_](
                    ValueOrFailure<ClientMetadataHandle> metadata) mutable
-               -> ValueOrFailure<HijackedCall> {
+                   -> ValueOrFailure<HijackedCall> {
                  if (!metadata.ok()) return Failure{};
                  return HijackedCall(std::move(metadata.value()),
                                      std::move(destination),

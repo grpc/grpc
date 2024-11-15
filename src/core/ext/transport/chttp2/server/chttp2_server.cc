@@ -738,7 +738,7 @@ grpc_error_handle Chttp2ServerListener::Create(
   if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
     auto string_address =
-        grpc_event_engine::experimental::ResolvedAddressToString(addr);
+        grpc_event_engine::experimental::ResolvedAddressToURI(addr);
     if (!string_address.ok()) {
       return GRPC_ERROR_CREATE(string_address.status().ToString());
     }

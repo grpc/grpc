@@ -24,8 +24,9 @@ TEST(SwitchTest, JustDefault) {
 
 TEST(SwitchTest, ThreeCases) {
   auto test_switch = [](int d) {
-    return Switch(d, Case(1, [] { return 25; }), Case(2, [] { return 95; }),
-                  Case(3, [] { return 68; }), Default([] { return 52; }));
+    return Switch(d, Case<int, 1>([] { return 25; }),
+                  Case<int, 2>([] { return 95; }),
+                  Case<int, 3>([] { return 68; }), Default([] { return 52; }));
   };
   EXPECT_EQ(test_switch(0)(), Poll<int>(52));
   EXPECT_EQ(test_switch(1)(), Poll<int>(25));
@@ -36,9 +37,10 @@ TEST(SwitchTest, ThreeCases) {
 
 TEST(SwitchTest, Pending) {
   auto test_switch = [](int d) {
-    return Switch(d, Case(42, []() -> Poll<int> { return Pending{}; }),
-                  Case(1, [] { return 25; }), Case(2, [] { return 95; }),
-                  Case(3, [] { return 68; }), Default([] { return 52; }));
+    return Switch(d, Case<int, 42>([]() -> Poll<int> { return Pending{}; }),
+                  Case<int, 1>([] { return 25; }),
+                  Case<int, 2>([] { return 95; }),
+                  Case<int, 3>([] { return 68; }), Default([] { return 52; }));
   };
   EXPECT_EQ(test_switch(0)(), Poll<int>(52));
   EXPECT_EQ(test_switch(1)(), Poll<int>(25));
@@ -52,9 +54,9 @@ TEST(SwitchTest, ThreeCasesFromEnum) {
   enum class X : uint8_t { A, B, C };
 
   auto test_switch = [](X d) {
-    return Switch(d, Case(X::A, [] { return 25; }),
-                  Case(X::B, [] { return 95; }), Case(X::C, [] { return 68; }),
-                  Default([] { return 52; }));
+    return Switch(d, Case<X, X::A>([] { return 25; }),
+                  Case<X, X::B>([] { return 95; }),
+                  Case<X, X::C>([] { return 68; }), Default([] { return 52; }));
   };
   EXPECT_EQ(test_switch(X::A)(), Poll<int>(25));
   EXPECT_EQ(test_switch(X::B)(), Poll<int>(95));

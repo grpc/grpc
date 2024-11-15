@@ -40,7 +40,7 @@ def grpc_yodel_test(name, deps):
         ],
         deps = [
             "//test/core/call/yodel:yodel_test",
-            "//test/core/call/yodel:fuzzer_proto",
+            "//test/core/call/yodel:fuzzer_cc_proto",
             "//:event_engine_base_hdrs",
             "//:config_vars",
             "//:exec_ctx",

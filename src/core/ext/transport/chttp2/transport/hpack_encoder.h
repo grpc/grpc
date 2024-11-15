@@ -103,7 +103,7 @@ class Encoder {
 // void EncodeWith(MetadataTrait, const MetadataTrait::ValueType, Encoder*);
 // This method figures out how to encode the value, and then delegates to
 // Encoder to perform the encoding.
-template <typename MetadataTrait, typename CompressonTraits>
+template <typename MetadataTrait, typename CompressionTraits>
 class Compressor;
 
 // No compression encoder: just emit the key and value as literals.
@@ -173,7 +173,7 @@ class Compressor<MetadataTrait, StableValueCompressor> {
                   Encoder* encoder) {
     auto& table = encoder->hpack_table();
     if (previously_sent_value_ == value &&
-        table.ConvertableToDynamicIndex(previously_sent_index_)) {
+        table.ConvertibleToDynamicIndex(previously_sent_index_)) {
       encoder->EmitIndexed(table.DynamicIndex(previously_sent_index_));
       return;
     }
@@ -231,7 +231,7 @@ class Compressor<MetadataTrait, SmallIntegralValuesCompressor<N>> {
     auto& table = encoder->hpack_table();
     if (static_cast<size_t>(value) < N) {
       index = &previously_sent_[static_cast<uint32_t>(value)];
-      if (table.ConvertableToDynamicIndex(*index)) {
+      if (table.ConvertibleToDynamicIndex(*index)) {
         encoder->EmitIndexed(table.DynamicIndex(*index));
         return;
       }
