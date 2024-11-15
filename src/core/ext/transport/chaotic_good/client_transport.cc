@@ -52,6 +52,7 @@ namespace grpc_core {
 namespace chaotic_good {
 
 void ChaoticGoodClientTransport::Orphan() {
+  GRPC_TRACE_LOG(chaotic_good, INFO) << "Client transport orphan " << this;
   AbortWithError();
   RefCountedPtr<Party> party;
   {
@@ -194,7 +195,8 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
     PromiseEndpoint control_endpoint, PromiseEndpoint data_endpoint,
     const ChannelArgs& args,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
-    : allocator_(args.GetObject<ResourceQuota>()
+    : ClientTransport("ChaoticGoodClientTransport"),
+      allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
       outgoing_frames_(4) {
@@ -237,6 +239,9 @@ void ChaoticGoodClientTransport::AbortWithError() {
   ReleasableMutexLock lock(&mu_);
   StreamMap stream_map = std::move(stream_map_);
   stream_map_.clear();
+  state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
+                          absl::UnavailableError("transport closed"),
+                          "transport closed");
   lock.Release();
   for (const auto& pair : stream_map) {
     auto call_handler = pair.second;
