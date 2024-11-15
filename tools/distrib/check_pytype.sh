@@ -14,6 +14,5 @@
 # limitations under the License.
 
 JOBS=$(nproc) || JOBS=4
-# TODO(xuanwn): update pytype version
-python3 -m pip install pytype
+python3 -m pip install pytype==2024.9.13
 python3 -m pytype --keep-going -j "$JOBS" --strict-import --config "setup.cfg"

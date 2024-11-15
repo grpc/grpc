@@ -18,7 +18,6 @@ from typing import Generic, Iterable, Mapping, NoReturn, Optional, Sequence
 
 import grpc
 
-from ._metadata import Metadata
 from ._typing import DoneCallbackType
 from ._typing import MetadataType
 from ._typing import RequestType
@@ -146,6 +145,7 @@ class Server(abc.ABC):
           method_handlers: A dictionary that maps method names to corresponding
             RpcMethodHandler.
         """
+        raise NotImplementedError()
 
 
 class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
@@ -361,6 +361,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           callback: A callable object will be called with the servicer context
             object as its only argument.
         """
+        raise NotImplementedError()
 
     def cancelled(self) -> bool:
         """Return True if the RPC is cancelled.

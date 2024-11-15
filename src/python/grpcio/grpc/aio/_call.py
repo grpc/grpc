@@ -33,13 +33,12 @@ from typing import (
 import grpc
 from grpc import _common
 from grpc._cython import cygrpc
-from ._eof import EOF
 
 from . import _base_call
+from ._eof import EOF
 from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
-from ._typing import MetadataType
 from ._typing import MetadatumType
 from ._typing import RequestIterableType
 from ._typing import RequestType
@@ -80,8 +79,8 @@ class AioRpcError(grpc.RpcError):
 
     _code: grpc.StatusCode
     _details: Optional[str]
-    _initial_metadata: Optional[Metadata]
-    _trailing_metadata: Optional[Metadata]
+    _initial_metadata: Metadata
+    _trailing_metadata: Metadata
     _debug_error_string: Optional[str]
 
     def __init__(
@@ -125,7 +124,7 @@ class AioRpcError(grpc.RpcError):
         """
         return self._details
 
-    def initial_metadata(self) -> Optional[Metadata]:
+    def initial_metadata(self) -> Metadata:
         """Accesses the initial metadata sent by the server.
 
         Returns:
@@ -133,7 +132,7 @@ class AioRpcError(grpc.RpcError):
         """
         return self._initial_metadata
 
-    def trailing_metadata(self) -> Optional[Metadata]:
+    def trailing_metadata(self) -> Metadata:
         """Accesses the trailing metadata sent by the server.
 
         Returns:
@@ -141,7 +140,7 @@ class AioRpcError(grpc.RpcError):
         """
         return self._trailing_metadata
 
-    def debug_error_string(self) -> Optional[str]:
+    def debug_error_string(self) -> str:
         """Accesses the debug error string sent by the server.
 
         Returns:
@@ -199,15 +198,15 @@ class Call:
     _code: grpc.StatusCode
     _cython_call: cygrpc._AioCall
     _metadata: Tuple[MetadatumType, ...]
-    _request_serializer: Optional[SerializingFunction]
-    _response_deserializer: Optional[DeserializingFunction]
+    _request_serializer: SerializingFunction
+    _response_deserializer: DeserializingFunction
 
     def __init__(
         self,
         cython_call: cygrpc._AioCall,
-        metadata: Optional[MetadataType],
-        request_serializer: Optional[SerializingFunction],
-        response_deserializer: Optional[DeserializingFunction],
+        metadata: Metadata,
+        request_serializer: SerializingFunction,
+        response_deserializer: DeserializingFunction,
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -304,7 +303,7 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
         else:
             return False
 
-    def __await__(self) -> Generator[ResponseType, None, Any]:
+    def __await__(self) -> Generator[Any, None, ResponseType]:
         """Wait till the ongoing RPC request finishes."""
         try:
             response = yield from self._call_response
@@ -564,13 +563,13 @@ class UnaryUnaryCall(
         self,
         request: RequestType,
         deadline: Optional[float],
-        metadata: Optional[MetadataType],
+        metadata: Metadata,
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: Optional[SerializingFunction],
-        response_deserializer: Optional[DeserializingFunction],
+        request_serializer: SerializingFunction,
+        response_deserializer: DeserializingFunction,
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(
@@ -633,13 +632,13 @@ class UnaryStreamCall(
         self,
         request: RequestType,
         deadline: Optional[float],
-        metadata: Optional[MetadataType],
+        metadata: Metadata,
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: Optional[SerializingFunction],
-        response_deserializer: Optional[DeserializingFunction],
+        request_serializer: SerializingFunction,
+        response_deserializer: DeserializingFunction,
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(
@@ -693,13 +692,13 @@ class StreamUnaryCall(
         self,
         request_iterator: Optional[RequestIterableType],
         deadline: Optional[float],
-        metadata: Optional[MetadataType],
+        metadata: Metadata,
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: Optional[SerializingFunction],
-        response_deserializer: Optional[DeserializingFunction],
+        request_serializer: SerializingFunction,
+        response_deserializer: DeserializingFunction,
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(
@@ -747,13 +746,13 @@ class StreamStreamCall(
         self,
         request_iterator: Optional[RequestIterableType],
         deadline: Optional[float],
-        metadata: Optional[MetadataType],
+        metadata: Metadata,
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: Optional[SerializingFunction],
-        response_deserializer: Optional[DeserializingFunction],
+        request_serializer: SerializingFunction,
+        response_deserializer: DeserializingFunction,
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(

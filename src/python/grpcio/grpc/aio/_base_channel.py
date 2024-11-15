@@ -17,6 +17,7 @@ import abc
 from typing import Generic, Optional
 
 import grpc
+
 from . import _base_call
 from ._typing import DeserializingFunction
 from ._typing import MetadataType

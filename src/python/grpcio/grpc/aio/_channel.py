@@ -15,7 +15,7 @@
 
 import asyncio
 import sys
-from typing import Any, Generic, Iterable, List, Optional, Sequence, Union, cast
+from typing import Any, Generic, Iterable, List, Optional, Sequence, cast
 
 import grpc
 from grpc import _common
@@ -89,8 +89,8 @@ class _BaseMultiCallable(Generic[RequestType, ResponseType]):
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
     _method: bytes
-    _request_serializer: Optional[SerializingFunction]
-    _response_deserializer: Optional[DeserializingFunction]
+    _request_serializer: SerializingFunction
+    _response_deserializer: DeserializingFunction
     _interceptors: Sequence[ClientInterceptor]
     _references: List[Any]
 
@@ -99,8 +99,8 @@ class _BaseMultiCallable(Generic[RequestType, ResponseType]):
         self,
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: Optional[SerializingFunction],
-        response_deserializer: Optional[DeserializingFunction],
+        request_serializer: SerializingFunction,
+        response_deserializer: DeserializingFunction,
         interceptors: Sequence[ClientInterceptor],
         references: List[Any],
         loop: asyncio.AbstractEventLoop,
