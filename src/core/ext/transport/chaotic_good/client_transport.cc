@@ -195,8 +195,7 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
     PromiseEndpoint control_endpoint, PromiseEndpoint data_endpoint,
     const ChannelArgs& args,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
-    : ClientTransport("ChaoticGoodClientTransport"),
-      allocator_(args.GetObject<ResourceQuota>()
+    : allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
       outgoing_frames_(4) {
