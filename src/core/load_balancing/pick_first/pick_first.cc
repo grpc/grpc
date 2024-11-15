@@ -767,7 +767,7 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
                            {pick_first_->channel_control_helper()->GetTarget()},
                            {});
   // Report IDLE.
-  pick_first_->GoIdle();
+  pick_first_->RefAsSubclass<PickFirst>()->GoIdle();
 }
 
 //
@@ -788,11 +788,12 @@ PickFirst::SubchannelList::SubchannelData::SubchannelData(
 
 void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     grpc_connectivity_state new_state, absl::Status status) {
-  PickFirst* p = subchannel_list_->policy_.get();
+  RefCountedPtr<PickFirst> p = subchannel_list_->policy_;
   GRPC_TRACE_LOG(pick_first, INFO)
-      << "[PF " << p << "] subchannel list " << subchannel_list_ << " index "
-      << index_ << " of " << subchannel_list_->size() << " (subchannel_state "
-      << subchannel_state_.get() << "): connectivity changed: old_state="
+      << "[PF " << p.get() << "] subchannel list " << subchannel_list_
+      << " index " << index_ << " of " << subchannel_list_->size()
+      << " (subchannel_state " << subchannel_state_.get()
+      << "): connectivity changed: old_state="
       << (connectivity_state_.has_value()
               ? ConnectivityStateName(*connectivity_state_)
               : "N/A")
@@ -842,7 +843,7 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     // connection and report IDLE.
     if (p->selected_ != nullptr) {
       GRPC_TRACE_LOG(pick_first, INFO)
-          << "[PF " << p << "] subchannel list " << subchannel_list_
+          << "[PF " << p.get() << "] subchannel list " << subchannel_list_
           << ": new update has no subchannels in state READY; dropping "
              "existing connection and going IDLE";
       p->GoIdle();
