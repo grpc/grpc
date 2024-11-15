@@ -14189,6 +14189,7 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
+  - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/wait_set.h
   - src/core/util/atomic_utils.h
   - src/core/util/down_cast.h
