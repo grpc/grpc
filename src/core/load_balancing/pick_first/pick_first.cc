@@ -1021,6 +1021,8 @@ void PickFirst::SubchannelList::Orphan() {
       << "[PF " << policy_.get() << "] Shutting down subchannel_list " << this;
   CHECK(!shutting_down_);
   shutting_down_ = true;
+  // Shut down subchannels.
+  subchannels_.clear();
   // Cancel Happy Eyeballs timer, if any.
   if (timer_handle_.has_value()) {
     policy_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
