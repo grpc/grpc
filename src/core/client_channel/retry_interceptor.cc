@@ -100,18 +100,16 @@ RetryInterceptor::Attempt::Attempt(RefCountedPtr<Call> call)
 auto RetryInterceptor::Attempt::ServerToClientGotInitialMetadata(
     ServerMetadataHandle md) {
   Commit();
-  // should be spawn
-  call_->call_handler()->PushServerInitialMetadata(std::move(md));
+  call_->call_handler()->SpawnPushServerInitialMetadata(std::move(md));
   return Seq(
       ForEach(OutgoingMessages(&initiator_),
               [call = call_](MessageHandle message) {
-                // should be spawn
-                return call->call_handler()->PushMessage(std::move(message));
+                return call->call_handler()->SpawnPushMessage(
+                    std::move(message));
               }),
       initiator_.PullServerTrailingMetadata(),
       [call = call_](ServerMetadataHandle md) {
-        // should be spawn
-        call->call_handler()->PushServerTrailingMetadata(std::move(md));
+        call->call_handler()->SpawnPushServerTrailingMetadata(std::move(md));
         return absl::OkStatus();
       });
 }
@@ -131,9 +129,8 @@ auto RetryInterceptor::Attempt::ServerToClientGotTrailersOnlyResponse() {
                    },
                    [self, md = std::move(md)]() mutable {
                      self->Commit();
-                     // should be spawn
-                     self->call_->call_handler()->PushServerTrailingMetadata(
-                         std::move(md));
+                     self->call_->call_handler()
+                         ->SpawnPushServerTrailingMetadata(std::move(md));
                      return absl::OkStatus();
                    });
              });

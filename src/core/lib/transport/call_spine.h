@@ -133,13 +133,18 @@ class CallSpine final : public Party {
     using P = promise_detail::PromiseLike<Promise>;
     using ResultType = typename P::Result;
     return Map(std::move(promise), [this](ResultType r) {
-      if (!IsStatusOk(r)) {
-        auto md = StatusCast<ServerMetadataHandle>(r);
-        md->Set(GrpcCallWasCancelled(), true);
-        PushServerTrailingMetadata(std::move(md));
-      }
+      CancelIfFailed(r);
       return r;
     });
+  }
+
+  template <typename StatusType>
+  void CancelIfFailed(const StatusType& r) {
+    if (!IsStatusOk(r)) {
+      auto md = StatusCast<ServerMetadataHandle>(r);
+      md->Set(GrpcCallWasCancelled(), true);
+      PushServerTrailingMetadata(std::move(md));
+    }
   }
 
   // Spawn a promise that returns Empty{} and save some boilerplate handling
@@ -191,6 +196,51 @@ class CallSpine final : public Party {
     });
   }
 
+  // Spawned operations: these are callable from /outside/ the call; they spawn
+  // an operation into the call and execute that operation.
+
+  void SpawnPushServerInitialMetadata(ServerMetadataHandle md) {
+    SpawnGuarded(
+        "push-server-initial-metadata",
+        [md = std::move(md), self = RefAsSubclass<CallSpine>()]() mutable {
+          self->CancelIfFailed(self->PushServerInitialMetadata(std::move(md)));
+        });
+  }
+
+  auto SpawnPushServerToClientMessage(MessageHandle msg) {
+    return SpawnWaitable(
+        "push-message",
+        [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
+          return self->CancelIfFails(
+              self->PushServerToClientMessage(std::move(msg)));
+        });
+  }
+
+  auto SpawnPushClientToServerMessage(MessageHandle msg) {
+    return SpawnWaitable(
+        "push-message",
+        [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
+          return self->CancelIfFails(
+              self->PushClientToServerMessage(std::move(msg)));
+        });
+  }
+
+  void SpawnFinishSends() {
+    SpawnInfallible("finish-sends", [self = RefAsSubclass<CallSpine>()]() {
+      self->FinishSends();
+      return Empty{};
+    });
+  }
+
+  void SpawnPushServerTrailingMetadata(ServerMetadataHandle md) {
+    SpawnInfallible(
+        "push-server-trailing-metadata",
+        [md = std::move(md), self = RefAsSubclass<CallSpine>()]() mutable {
+          self->PushServerTrailingMetadata(std::move(md));
+          return Empty{};
+        });
+  }
+
  private:
   friend class Arena;
   CallSpine(ClientMetadataHandle client_initial_metadata,
@@ -224,7 +274,13 @@ class CallInitiator {
     return spine_->PushClientToServerMessage(std::move(message));
   }
 
+  auto SpawnPushMessage(MessageHandle message) {
+    return spine_->SpawnPushClientToServerMessage(std::move(message));
+  }
+
   void FinishSends() { spine_->FinishSends(); }
+
+  void SpawnFinishSends() { spine_->SpawnFinishSends(); }
 
   auto PullMessage() { return spine_->PullServerToClientMessage(); }
 
@@ -237,6 +293,13 @@ class CallInitiator {
     auto status = ServerMetadataFromStatus(error);
     status->Set(GrpcCallWasCancelled(), true);
     spine_->PushServerTrailingMetadata(std::move(status));
+  }
+
+  void SpawnCancel(absl::Status error = absl::CancelledError()) {
+    CHECK(!error.ok());
+    auto status = ServerMetadataFromStatus(error);
+    status->Set(GrpcCallWasCancelled(), true);
+    spine_->SpawnPushServerTrailingMetadata(std::move(status));
   }
 
   GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
@@ -290,8 +353,16 @@ class CallHandler {
     return spine_->PushServerInitialMetadata(std::move(md));
   }
 
+  void SpawnPushServerInitialMetadata(ServerMetadataHandle md) {
+    return spine_->SpawnPushServerInitialMetadata(std::move(md));
+  }
+
   void PushServerTrailingMetadata(ServerMetadataHandle status) {
     spine_->PushServerTrailingMetadata(std::move(status));
+  }
+
+  void SpawnPushServerTrailingMetadata(ServerMetadataHandle status) {
+    spine_->SpawnPushServerTrailingMetadata(std::move(status));
   }
 
   GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
@@ -305,6 +376,10 @@ class CallHandler {
 
   auto PushMessage(MessageHandle message) {
     return spine_->PushServerToClientMessage(std::move(message));
+  }
+
+  auto SpawnPushMessage(MessageHandle message) {
+    return spine_->SpawnPushServerToClientMessage(std::move(message));
   }
 
   auto PullMessage() { return spine_->PullClientToServerMessage(); }
