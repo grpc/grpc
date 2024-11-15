@@ -1005,14 +1005,26 @@ Client asserts:
 ### rpc_soak
 
 The client performs many large_unary RPCs in sequence over the same channel.
-The client records the latency and status of each RPC in some data structure.
-If the test ever consumes `soak_overall_timeout_seconds` seconds and still hasn't
-completed `soak_iterations` RPCs, then the test should discontinue sending RPCs
-as soon as possible. After performing all RPCs, the test should examine
-previously recorded RPC latency and status results in a second pass and fail if
-either:
+The test can run in either a concurrent or non-concurrent mode, depending on 
+the number of threads specified (`soak_num_threads`):
 
-a) not all `soak_iterations` RPCs were completed
+* Non-Concurrent Mode: When `soak_num_threads = 1`, all RPCs are performed 
+  sequentially on a single thread.
+* Concurrent Mode: When `soak_num_threads > 1`, the client uses multiple threads
+  to distribute the workload. Each thread performs a portion of the total 
+ `soak_iterations`, executing its own set of RPCs concurrently.
+
+In either case, the client records the latency and status of each RPC in 
+thread-specific data structure, which are later aggregated to form the overall 
+results. If the test ever consumes `soak_overall_timeout_seconds` seconds 
+and still hasn't completed `soak_iterations` RPCs, then the test should 
+discontinue sending RPCs as soon as possible. Each thread should independently 
+track its progress and stop once the overall timeout is reached.
+
+After performing all RPCs, the test should examine the previously aggregated RPC
+latency and status results from all threads in a second pass and fail if either:
+
+a) not all `soak_iterations` RPCs were completed across all threads
 
 b) the sum of RPCs that either completed with a non-OK status or exceeded
    `max_acceptable_per_rpc_latency_ms` exceeds `soak_max_failures`
@@ -1029,10 +1041,12 @@ results of each iteration (i.e. RPC) in a format the matches the following
 regexes:
 
 - Upon success:
-  - `soak iteration: \d+ elapsed_ms: \d+ peer: \S+ succeeded`
+  - `thread_id: \d+ soak iteration: \d+ elapsed_ms: \d+ peer: \S+ server_uri: 
+  \S+ succeeded`
 
 - Upon failure:
-  - `soak iteration: \d+ elapsed_ms: \d+ peer: \S+ failed:`
+  - `thread_id: \d+ soak iteration: \d+ elapsed_ms: \d+ peer: \S+ server_uri: 
+  \S+ failed`
 
 This test must be configurable via a few different command line flags:
 
@@ -1057,6 +1071,12 @@ This test must be configurable via a few different command line flags:
 * `soak_min_time_ms_between_rpcs`: The minimum time in milliseconds between
   consecutive RPCs. Useful for limiting QPS.
 
+* `soak_num_threads`: Specifies the number of threads to use for concurrently 
+  executing the soak test. Each thread performs a portion of the total 
+  soak_iterations. This value defaults to 1 (i.e., no concurrency) but can be 
+  increased for concurrent execution. The total soak_iterations must be 
+  divisible by soak_num_threads.
+
 The following is optional but encouraged to improve debuggability:
 
 * Implementations should log the number of milliseconds that each RPC takes.
@@ -1077,6 +1097,19 @@ latency measurement, but the teardown of that channel should **not** be
 included in that latency measurement (channel teardown semantics differ widely
 between languages). This latency measurement should also be the value that is
 logged and recorded in the latency histogram.
+
+Note on Concurrent Execution and Channel Creation: In a concurrent execution setting (i.e., when `soak_num_threads > 1`), each 
+thread performs a portion of the total soak_iterations and creates and destroys 
+its own channel for each RPC iteration.
+
+* `createNewChannel` Function: In channel_soak, the `createNewChannel` function 
+is used by each thread to create a new channel before every RPC. This function 
+ensures that each RPC has a separate channel, preventing race conditions by 
+isolating channels between threads. It shuts down the previous channel (if any)
+and creates a new one for each iteration, ensuring accurate latency measurement
+per RPC.
+* Thread-specific logs will include the thread_id, helping to track performance 
+across threads, especially when each thread is managing its own channel lifecycle.
 
 
 ### orca_per_rpc
@@ -1200,11 +1233,13 @@ languages. Therefore they are not part of our interop matrix.
 The client performs a number of large_unary RPCs over a single long-lived
 channel with a fixed but configurable interval between each RPC.
 
-#### concurrent_large_unary
+[//]: # (#### concurrent_large_unary)
 
-Status: TODO
+[//]: # ()
+[//]: # (Status: TODO)
 
-Client performs 1000 large_unary tests in parallel on the same channel.
+[//]: # ()
+[//]: # (Client performs 1000 large_unary tests in parallel on the same channel.)
 
 #### Flow control. Pushback at client for large messages (TODO: fix name)
 
