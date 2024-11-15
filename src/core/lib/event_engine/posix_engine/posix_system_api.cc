@@ -17,9 +17,12 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include <tuple>
+
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/strerror.h"
 
@@ -32,6 +35,7 @@
 #include <netinet/tcp.h>
 #endif
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #endif  //  GRPC_POSIX_SOCKET_UTILS_COMMON
@@ -41,7 +45,69 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-namespace {}  // namespace
+#ifdef GRPC_POSIX_SOCKETUTILS
+
+FileDescriptor SystemApi::Accept4(
+    FileDescriptor sockfd,
+    grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
+    int nonblock, int cloexec) const {
+  int flags;
+  EventEngine::ResolvedAddress peer_addr;
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+  FileDescriptor fd =
+      Accept(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len);
+  if (fd.ready()) {
+    if (nonblock) {
+      flags = Fcntl(fd, F_GETFL, 0);
+      if (flags < 0) goto close_and_error;
+      if (Fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) {
+        goto close_and_error;
+      }
+    }
+    if (cloexec) {
+      flags = Fcntl(fd, F_GETFD, 0);
+      if (flags < 0) goto close_and_error;
+      if (Fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0) {
+        goto close_and_error;
+      }
+    }
+  }
+  addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
+  return fd;
+
+close_and_error:
+  Close(fd);
+  return FileDescriptor();
+}
+
+#elif GRPC_LINUX_SOCKETUTILS
+
+FileDescriptor SystemApi::Accept4(FileDescriptor sockfd, struct sockaddr* addr,
+                                  socklen_t* addrlen, int flags) const {
+  return FileDescriptor(accept4(sockfd.fd(), addr, addrlen, flags));
+}
+
+FileDescriptor SystemApi::Accept4(
+    FileDescriptor sockfd,
+    grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
+    int nonblock, int cloexec) const {
+  int flags = 0;
+  flags |= nonblock ? SOCK_NONBLOCK : 0;
+  flags |= cloexec ? SOCK_CLOEXEC : 0;
+  EventEngine::ResolvedAddress peer_addr;
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+  FileDescriptor ret =
+      Accept4(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len, flags);
+  addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
+  return ret;
+}
+
+#endif  // GRPC_LINUX_SOCKETUTILS
+
+FileDescriptor SystemApi::Accept(FileDescriptor sockfd, struct sockaddr* addr,
+                                 socklen_t* addrlen) const {
+  return FileDescriptor(accept(sockfd.fd(), addr, addrlen));
+}
 
 FileDescriptor SystemApi::AdoptExternalFd(int fd) const {
   return FileDescriptor(fd);
@@ -431,6 +497,75 @@ void SystemApi::ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
   }
 }
 
+absl::StatusOr<EventEngine::ResolvedAddress> SystemApi::LocalAddress(
+    FileDescriptor fd) const {
+  EventEngine::ResolvedAddress addr;
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+  if (GetSockName(fd, const_cast<sockaddr*>(addr.address()), &len) < 0) {
+    return absl::InternalError(
+        absl::StrCat("getsockname:", grpc_core::StrError(errno)));
+  }
+  return EventEngine::ResolvedAddress(addr.address(), len);
+}
+
+absl::StatusOr<EventEngine::ResolvedAddress> SystemApi::PeerAddress(
+    FileDescriptor fd) const {
+  EventEngine::ResolvedAddress addr;
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+  if (GetPeerName(fd, const_cast<sockaddr*>(addr.address()), &len) < 0) {
+    return absl::InternalError(
+        absl::StrCat("getpeername:", grpc_core::StrError(errno)));
+  }
+  return EventEngine::ResolvedAddress(addr.address(), len);
+}
+
+absl::StatusOr<std::string> SystemApi::LocalAddressString(
+    FileDescriptor fd) const {
+  auto status = LocalAddress(fd);
+  if (!status.ok()) {
+    return status.status();
+  }
+  return ResolvedAddressToNormalizedString((*status));
+}
+
+absl::StatusOr<std::string> SystemApi::PeerAddressString(
+    FileDescriptor fd) const {
+  auto status = PeerAddress(fd);
+  if (!status.ok()) {
+    return status.status();
+  }
+  return ResolvedAddressToNormalizedString((*status));
+}
+
+int SystemApi::Shutdown(FileDescriptor sockfd, int how) const {
+  return shutdown(sockfd.fd(), how);
+}
+
+int SystemApi::Connect(FileDescriptor sockfd, const struct sockaddr* addr,
+                       socklen_t addrlen) const {
+  return connect(sockfd.fd(), addr, addrlen);
+}
+
+int SystemApi::Ioctl(FileDescriptor fd, int request, void* extras) const {
+  return ioctl(fd.fd(), request, extras);
+}
+
+long SystemApi::Read(FileDescriptor fd, void* buf, size_t count) const {
+  return read(fd.fd(), buf, count);
+}
+
+long SystemApi::Write(FileDescriptor fd, const void* buf, size_t count) const {
+  return write(fd.fd(), buf, count);
+}
+
+std::tuple<int, FileDescriptor, FileDescriptor> SystemApi::SocketPair(
+    int domain, int type, int protocol) {
+  std::array<int, 2> fds;
+  int result = socketpair(domain, type, protocol, fds.data());
+  return std::make_tuple(result, AdoptExternalFd(fds[0]),
+                         AdoptExternalFd(fds[1]));
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
@@ -555,6 +690,32 @@ void SystemApi::ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
 }
 
 bool SystemApi::IsSocketReusePortSupported() const {
+  grpc_core::Crash("unimplemented");
+}
+
+int SystemApi::Shutdown(FileDescriptor sockfd, int how) const {
+  grpc_core::Crash("unimplemented");
+}
+
+int SystemApi::Connect(FileDescriptor sockfd, const struct sockaddr* addr,
+                       socklen_t addrlen) const {
+  grpc_core::Crash("unimplemented");
+}
+
+int SystemApi::Ioctl(FileDescriptor fd, int request, void* extras) const {
+  grpc_core::Crash("unimplemented");
+}
+
+long SystemApi::Read(FileDescriptor fd, void* buf, size_t count) const {
+  grpc_core::Crash("unimplemented");
+}
+
+long SystemApi::Write(FileDescriptor fd, const void* buf, size_t count) const {
+  grpc_core::Crash("unimplemented");
+}
+
+std::tuple<int, FileDescriptor, FileDescriptor> SystemApi::SocketPair(
+    int domain, int type, int protocol) {
   grpc_core::Crash("unimplemented");
 }
 

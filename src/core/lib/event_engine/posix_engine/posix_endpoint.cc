@@ -275,7 +275,7 @@ void PosixEndpointImpl::FinishEstimate() {
 
 absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) const {
   grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kFd,
-                          handle_->WrappedFd());
+                          handle_->WrappedFd().fd());
   grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kRpcStatus,
                           GRPC_STATUS_UNAVAILABLE);
   return src_error;
@@ -1239,14 +1239,12 @@ void PosixEndpointImpl::MaybeShutdown(
 }
 
 PosixEndpointImpl ::~PosixEndpointImpl() {
-  SystemApi* system_api = handle_->Poller()->GetSystemApi();
-  int release_fd = -1;
+  FileDescriptor release_fd;
   handle_->OrphanHandle(on_done_,
                         on_release_fd_ == nullptr ? nullptr : &release_fd, "");
   if (on_release_fd_ != nullptr) {
     engine_->Run([on_release_fd = std::move(on_release_fd_),
-                  release_fd = system_api->AdoptExternalFd(
-                      release_fd)]() mutable { on_release_fd(release_fd); });
+                  release_fd]() mutable { on_release_fd(release_fd); });
   }
   delete on_read_;
   delete on_write_;
@@ -1263,19 +1261,18 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       handle_(handle),
       poller_(handle->Poller()),
       engine_(engine) {
-  fd_ =
-      handle_->Poller()->GetSystemApi()->AdoptExternalFd(handle_->WrappedFd());
-  PosixSocketWrapper sock(fd_);
+  SystemApi* system_api = get_system_api();
+  fd_ = handle_->WrappedFd();
   CHECK(options.resource_quota != nullptr);
-  auto peer_addr_string = sock.PeerAddressString(*get_system_api());
+  auto peer_addr_string = system_api->PeerAddressString(fd_);
   mem_quota_ = options.resource_quota->memory_quota();
   memory_owner_ = mem_quota_->CreateMemoryOwner();
   self_reservation_ = memory_owner_.MakeReservation(sizeof(PosixEndpointImpl));
-  auto local_address = sock.LocalAddress(*get_system_api());
+  auto local_address = system_api->LocalAddress(fd_);
   if (local_address.ok()) {
     local_address_ = *local_address;
   }
-  auto peer_address = sock.PeerAddress(*get_system_api());
+  auto peer_address = system_api->PeerAddress(fd_);
   if (peer_address.ok()) {
     peer_address_ = *peer_address;
   }

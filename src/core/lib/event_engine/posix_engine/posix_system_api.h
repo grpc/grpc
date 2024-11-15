@@ -42,12 +42,25 @@ class SystemApi {
  public:
   static constexpr int kDscpNotSet = -1;
 
+  FileDescriptor Accept(FileDescriptor sockfd, struct sockaddr* addr,
+                        socklen_t* addrlen) const;
+  FileDescriptor Accept4(
+      FileDescriptor sockfd,
+      grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
+      int nonblock, int cloexec) const;
+
   FileDescriptor AdoptExternalFd(int fd) const;
   FileDescriptor Socket(int domain, int type, int protocol) const;
+
+  std::tuple<int, FileDescriptor, FileDescriptor> SocketPair(int domain,
+                                                             int type,
+                                                             int protocol);
 
   int Bind(FileDescriptor fd, const struct sockaddr* addr,
            socklen_t addrlen) const;
   void Close(FileDescriptor fd) const;
+  int Connect(FileDescriptor sockfd, const struct sockaddr* addr,
+              socklen_t addrlen) const;
   int Fcntl(FileDescriptor fd, int op, int args) const;
   int GetSockOpt(FileDescriptor fd, int level, int optname, void* optval,
                  socklen_t* optlen) const;
@@ -55,12 +68,16 @@ class SystemApi {
                   socklen_t* addrlen) const;
   int GetPeerName(FileDescriptor fd, struct sockaddr* addr,
                   socklen_t* addrlen) const;
+  int Ioctl(FileDescriptor fd, int request, void* extras) const;
   int Listen(FileDescriptor fd, int backlog) const;
   long RecvMsg(FileDescriptor fd, struct msghdr* msg, int flags) const;
+  long Read(FileDescriptor fd, void* buf, size_t count) const;
   long SendMsg(FileDescriptor fd, const struct msghdr* message,
                int flags) const;
   int SetSockOpt(FileDescriptor fd, int level, int optname, const void* optval,
                  socklen_t optlen) const;
+  int Shutdown(FileDescriptor sockfd, int how) const;
+  long Write(FileDescriptor fd, const void* buf, size_t count) const;
 
   absl::Status SetSocketNoSigpipeIfPossible(FileDescriptor fd) const;
   bool IsSocketReusePortSupported() const;
@@ -95,8 +112,23 @@ class SystemApi {
   // Configure default values for tcp user timeout to be used by client
   // and server side sockets.
   void ConfigureDefaultTcpUserTimeout(bool enable, int timeout, bool is_client);
+  // Return LocalAddress as EventEngine::ResolvedAddress
+  absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress(
+      FileDescriptor fd) const;
+  // Return PeerAddress as EventEngine::ResolvedAddress
+  absl::StatusOr<EventEngine::ResolvedAddress> PeerAddress(
+      FileDescriptor fd) const;
+  // Return LocalAddress as string
+  absl::StatusOr<std::string> LocalAddressString(FileDescriptor fd) const;
+  // Return PeerAddress as string
+  absl::StatusOr<std::string> PeerAddressString(FileDescriptor fd) const;
 
  private:
+#ifndef GRPC_LINUX_SOCKETUTILS
+  FileDescriptor Accept4(FileDescriptor sockfd, struct sockaddr* addr,
+                         socklen_t* addrlen, int flags) const;
+#endif
+
 #if GPR_LINUX == 1
 // For Linux, it will be detected to support TCP_USER_TIMEOUT
 #ifndef TCP_USER_TIMEOUT

@@ -31,7 +31,7 @@ class ListenerSocketsContainer {
  public:
   struct ListenerSocket {
     // Listener socket fd
-    PosixSocketWrapper sock;
+    FileDescriptor sock;
     // Assigned/chosen listening port
     int port;
     // Socket configuration
@@ -39,7 +39,7 @@ class ListenerSocketsContainer {
     // Address at which the socket is listening for connections
     grpc_event_engine::experimental::EventEngine::ResolvedAddress addr;
     // Dual stack mode.
-    PosixSocketWrapper::DSMode dsmode;
+    DSMode dsmode;
   };
   // Adds a socket to the internal db of sockets associated with a listener.
   virtual void Append(ListenerSocket socket) = 0;

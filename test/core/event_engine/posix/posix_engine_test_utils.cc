@@ -32,22 +32,23 @@ using ResolvedAddress =
 
 // Creates a client socket and blocks until it connects to the specified
 // server address. The function abort fails upon encountering errors.
-int ConnectToServerOrDie(const ResolvedAddress& server_address) {
-  int client_fd;
+FileDescriptor ConnectToServerOrDie(const SystemApi& system_api,
+                                    const ResolvedAddress& server_address) {
   int one = 1;
   int flags;
 
-  client_fd = socket(AF_INET6, SOCK_STREAM, 0);
-  setsockopt(client_fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+  FileDescriptor client_fd = system_api.Socket(AF_INET6, SOCK_STREAM, 0);
+  system_api.SetSockOpt(client_fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
   // Make fd non-blocking.
-  flags = fcntl(client_fd, F_GETFL, 0);
-  fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
+  flags = system_api.Fcntl(client_fd, F_GETFL, 0);
+  system_api.Fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
 
-  if (connect(client_fd, const_cast<struct sockaddr*>(server_address.address()),
-              server_address.size()) == -1) {
+  if (system_api.Connect(client_fd,
+                         const_cast<struct sockaddr*>(server_address.address()),
+                         server_address.size()) == -1) {
     if (errno == EINPROGRESS) {
       struct pollfd pfd;
-      pfd.fd = client_fd;
+      pfd.fd = client_fd.fd();
       pfd.events = POLLOUT;
       pfd.revents = 0;
       if (poll(&pfd, 1, -1) == -1) {

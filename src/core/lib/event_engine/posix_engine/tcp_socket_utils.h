@@ -21,7 +21,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
-#include <string>
 #include <utility>
 
 #include "absl/log/check.h"
@@ -149,118 +148,80 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(
     const SystemApi& system_api,
     const grpc_event_engine::experimental::EndpointConfig& config);
 
-// a wrapper for accept or accept4
-int Accept4(int sockfd,
-            grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
-            int nonblock, int cloexec);
-
 // Unlink the path pointed to by the given address if it refers to UDS path.
 void UnlinkIfUnixDomainSocket(
     const EventEngine::ResolvedAddress& resolved_addr);
 
-class PosixSocketWrapper {
- public:
-  PosixSocketWrapper() = default;
+// An enum to keep track of IPv4/IPv6 socket modes.
 
-  explicit PosixSocketWrapper(FileDescriptor fd) : fd_(fd) {
-    CHECK(fd_.ready());
-  }
-
-  ~PosixSocketWrapper() = default;
-
-  // Return LocalAddress as EventEngine::ResolvedAddress
-  absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress(
-      const SystemApi& system_api);
-
-  // Return PeerAddress as EventEngine::ResolvedAddress
-  absl::StatusOr<EventEngine::ResolvedAddress> PeerAddress(
-      const SystemApi& system_api);
-
-  // Return LocalAddress as string
-  absl::StatusOr<std::string> LocalAddressString(const SystemApi& system_api);
-
-  // Return PeerAddress as string
-  absl::StatusOr<std::string> PeerAddressString(const SystemApi& system_api);
-
-  // An enum to keep track of IPv4/IPv6 socket modes.
-
-  // Currently, this information is only used when a socket is first created,
-  // but in the future we may wish to store it alongside the fd.  This would let
-  // calls like sendto() know which family to use without asking the kernel
-  // first.
-  enum DSMode {
-    // Uninitialized, or a non-IP socket.
-    DSMODE_NONE,
-    // AF_INET only.
-    DSMODE_IPV4,
-    // AF_INET6 only, because IPV6_V6ONLY could not be cleared.
-    DSMODE_IPV6,
-    // AF_INET6, which also supports ::ffff-mapped IPv4 addresses.
-    DSMODE_DUALSTACK
-  };
-
-  // Returns the underlying file-descriptor.
-  FileDescriptor Fd() const { return fd_; }
-
-  // Static methods
-
-  // Returns true if this system can create AF_INET6 sockets bound to ::1.
-  // The value is probed once, and cached for the life of the process.
-
-  // This is more restrictive than checking for socket(AF_INET6) to succeed,
-  // because Linux with "net.ipv6.conf.all.disable_ipv6 = 1" is able to create
-  // and bind IPv6 sockets, but cannot connect to a getsockname() of [::]:port
-  // without a valid loopback interface.  Rather than expose this half-broken
-  // state to library users, we turn off IPv6 sockets.
-  static bool IsIpv6LoopbackAvailable();
-
-  // Creates a new socket for connecting to (or listening on) an address.
-
-  // If addr is AF_INET6, this creates an IPv6 socket first.  If that fails,
-  // and addr is within ::ffff:0.0.0.0/96, then it automatically falls back to
-  // an IPv4 socket.
-
-  // If addr is AF_INET, AF_UNIX, or anything else, then this is similar to
-  // calling socket() directly.
-
-  // Returns an PosixSocketWrapper on success, otherwise returns a not-OK
-  // absl::Status
-
-  // The dsmode output indicates which address family was actually created.
-  static absl::StatusOr<PosixSocketWrapper> CreateDualStackSocket(
-      const SystemApi& posix_apis,
-      std::function<FileDescriptor(int /*domain*/, int /*type*/,
-                                   int /*protocol*/)>
-          socket_factory,
-      const experimental::EventEngine::ResolvedAddress& addr, int type,
-      int protocol, DSMode& dsmode);
-
-  struct PosixSocketCreateResult;
-  // Return a PosixSocketCreateResult which manages a configured, unbound,
-  // unconnected TCP client fd.
-  //  options: may contain custom tcp settings for the fd.
-  //  target_addr: the destination address.
-  //
-  // Returns: Not-OK status on error. Otherwise it returns a
-  // PosixSocketWrapper::PosixSocketCreateResult type which includes a sock
-  // of type PosixSocketWrapper and a mapped_target_addr which is
-  // target_addr mapped to an address appropriate to the type of socket FD
-  // created. For example, if target_addr is IPv4 and dual stack sockets are
-  // available, mapped_target_addr will be an IPv4-mapped IPv6 address.
-  //
-  static absl::StatusOr<PosixSocketCreateResult>
-  CreateAndPrepareTcpClientSocket(
-      const SystemApi& posix_apis, const PosixTcpOptions& options,
-      const EventEngine::ResolvedAddress& target_addr);
-
- private:
-  FileDescriptor fd_;
+// Currently, this information is only used when a socket is first created,
+// but in the future we may wish to store it alongside the fd.  This would let
+// calls like sendto() know which family to use without asking the kernel
+// first.
+enum class DSMode {
+  // Uninitialized, or a non-IP socket.
+  DSMODE_NONE,
+  // AF_INET only.
+  DSMODE_IPV4,
+  // AF_INET6 only, because IPV6_V6ONLY could not be cleared.
+  DSMODE_IPV6,
+  // AF_INET6, which also supports ::ffff-mapped IPv4 addresses.
+  DSMODE_DUALSTACK
 };
 
-struct PosixSocketWrapper::PosixSocketCreateResult {
+// Static methods
+
+// Returns true if this system can create AF_INET6 sockets bound to ::1.
+// The value is probed once, and cached for the life of the process.
+
+// This is more restrictive than checking for socket(AF_INET6) to succeed,
+// because Linux with "net.ipv6.conf.all.disable_ipv6 = 1" is able to create
+// and bind IPv6 sockets, but cannot connect to a getsockname() of [::]:port
+// without a valid loopback interface.  Rather than expose this half-broken
+// state to library users, we turn off IPv6 sockets.
+bool IsIpv6LoopbackAvailable();
+
+// Creates a new socket for connecting to (or listening on) an address.
+
+// If addr is AF_INET6, this creates an IPv6 socket first.  If that fails,
+// and addr is within ::ffff:0.0.0.0/96, then it automatically falls back to
+// an IPv4 socket.
+
+// If addr is AF_INET, AF_UNIX, or anything else, then this is similar to
+// calling socket() directly.
+
+// Returns an PosixSocketWrapper on success, otherwise returns a not-OK
+// absl::Status
+
+// The dsmode output indicates which address family was actually created.
+absl::StatusOr<FileDescriptor> CreateDualStackSocket(
+    const SystemApi& posix_apis,
+    std::function<FileDescriptor(int /*domain*/, int /*type*/,
+                                 int /*protocol*/)>
+        socket_factory,
+    const experimental::EventEngine::ResolvedAddress& addr, int type,
+    int protocol, DSMode& dsmode);
+
+struct PosixSocketCreateResult {
   FileDescriptor sock;
   EventEngine::ResolvedAddress mapped_target_addr;
 };
+
+// Return a PosixSocketCreateResult which manages a configured, unbound,
+// unconnected TCP client fd.
+//  options: may contain custom tcp settings for the fd.
+//  target_addr: the destination address.
+//
+// Returns: Not-OK status on error. Otherwise it returns a
+// PosixSocketWrapper::PosixSocketCreateResult type which includes a sock
+// of type PosixSocketWrapper and a mapped_target_addr which is
+// target_addr mapped to an address appropriate to the type of socket FD
+// created. For example, if target_addr is IPv4 and dual stack sockets are
+// available, mapped_target_addr will be an IPv4-mapped IPv6 address.
+//
+absl::StatusOr<PosixSocketCreateResult> CreateAndPrepareTcpClientSocket(
+    const SystemApi& posix_apis, const PosixTcpOptions& options,
+    const EventEngine::ResolvedAddress& target_addr);
 
 bool SetSocketDualStack(int fd);
 

@@ -28,6 +28,7 @@
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
+#include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/sync.h"
@@ -47,7 +48,7 @@ class Epoll1EventHandle;
 class Epoll1Poller : public PosixEventPoller {
  public:
   Epoll1Poller(Scheduler* scheduler, SystemApi* system_api);
-  EventHandle* CreateHandle(int fd, absl::string_view name,
+  EventHandle* CreateHandle(FileDescriptor fd, absl::string_view name,
                             bool track_err) override;
   Poller::WorkResult Work(
       grpc_event_engine::experimental::EventEngine::Duration timeout,

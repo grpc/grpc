@@ -20,6 +20,7 @@
 
 #include <memory>
 
+#include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/sync.h"
 
@@ -34,7 +35,6 @@
 #include <unistd.h>
 
 #include <string>
-#include <unordered_set>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
@@ -57,7 +57,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
   ~GrpcPolledFdPosix() override {
     // c-ares library will close the fd. This fd may be picked up immediately by
     // another thread and should not be closed by the following OrphanHandle.
-    int phony_release_fd;
+    FileDescriptor phony_release_fd;
     handle_->OrphanHandle(/*on_done=*/nullptr, &phony_release_fd,
                           "c-ares query finished");
   }
@@ -76,7 +76,8 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
 
   bool IsFdStillReadableLocked() override {
     size_t bytes_available = 0;
-    return ioctl(handle_->WrappedFd(), FIONREAD, &bytes_available) == 0 &&
+    return handle_->Poller()->GetSystemApi()->Ioctl(
+               handle_->WrappedFd(), FIONREAD, &bytes_available) == 0 &&
            bytes_available > 0;
   }
 
@@ -97,12 +98,13 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
 
 class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
  public:
-  explicit GrpcPolledFdFactoryPosix(PosixEventPoller* poller)
-      : poller_(poller) {}
+  explicit GrpcPolledFdFactoryPosix(PosixEventPoller* poller,
+                                    SystemApi* system_api)
+      : poller_(poller), system_api_(system_api) {}
 
   ~GrpcPolledFdFactoryPosix() override {
     for (auto& fd : owned_fds_) {
-      close(fd);
+      system_api_->Close(fd.second);
     }
   }
 
@@ -110,24 +112,25 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 
   std::unique_ptr<GrpcPolledFd> NewGrpcPolledFdLocked(
       ares_socket_t as) override {
-    owned_fds_.insert(as);
+    FileDescriptor fd = system_api_->AdoptExternalFd(as);
+    owned_fds_.emplace(as, fd);
     return std::make_unique<GrpcPolledFdPosix>(
         as,
-        poller_->CreateHandle(as, "c-ares socket", poller_->CanTrackErrors()));
+        poller_->CreateHandle(fd, "c-ares socket", poller_->CanTrackErrors()));
   }
 
   void ConfigureAresChannelLocked(ares_channel channel) override {
     ares_set_socket_functions(channel, &kSockFuncs, this);
     ares_set_socket_configure_callback(
-        channel, &GrpcPolledFdFactoryPosix::ConfigureSocket,
-        poller_->GetSystemApi());
+        channel, &GrpcPolledFdFactoryPosix::ConfigureSocket, system_api_);
   }
 
  private:
   /// Overridden socket API for c-ares
-  static ares_socket_t Socket(int af, int type, int protocol,
-                              void* /*user_data*/) {
-    return socket(af, type, protocol);
+  static ares_socket_t Socket(int af, int type, int protocol, void* user_data) {
+    SystemApi* system_api = static_cast<GrpcPolledFdFactoryPosix*>(user_data)
+                                ->poller_->GetSystemApi();
+    return system_api->Socket(af, type, protocol).fd();
   }
 
   /// Overridden connect API for c-ares
@@ -172,12 +175,12 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     // clang-format off
 #define RETURN_IF_ERROR(expr) if (!(expr).ok()) { return -1; }
     // clang-format on
-    SystemApi& system_api = *static_cast<SystemApi*>(system_api_ptr);
-    FileDescriptor adopted = system_api.AdoptExternalFd(fd);
-    RETURN_IF_ERROR(system_api.SetSocketNonBlocking(adopted, 1));
-    RETURN_IF_ERROR(system_api.SetSocketCloexec(adopted, 1));
+    SystemApi* system_api = static_cast<SystemApi*>(system_api_ptr);
+    FileDescriptor adopted = system_api->AdoptExternalFd(fd);
+    RETURN_IF_ERROR(system_api->SetSocketNonBlocking(adopted, 1));
+    RETURN_IF_ERROR(system_api->SetSocketCloexec(adopted, 1));
     if (type == SOCK_STREAM) {
-      RETURN_IF_ERROR(system_api.SetSocketLowLatency(adopted, 1));
+      RETURN_IF_ERROR(system_api->SetSocketLowLatency(adopted, 1));
     }
     return 0;
   }
@@ -191,9 +194,10 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   };
 
   PosixEventPoller* poller_;
+  SystemApi* system_api_;
   // fds that are used/owned by grpc - we (grpc) will close them rather than
   // c-ares
-  std::unordered_set<ares_socket_t> owned_fds_;
+  std::unordered_map<ares_socket_t, FileDescriptor> owned_fds_;
 };
 
 }  // namespace experimental

@@ -243,7 +243,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
       std::shared_ptr<PosixEnginePollerManager> poller_manager);
 
   ConnectionHandle CreateEndpointFromUnconnectedFdInternal(
-      int fd, EventEngine::OnConnectCallback on_connect,
+      FileDescriptor fd, EventEngine::OnConnectCallback on_connect,
       const EventEngine::ResolvedAddress& addr, const PosixTcpOptions& options,
       MemoryAllocator memory_allocator, EventEngine::Duration timeout);
 

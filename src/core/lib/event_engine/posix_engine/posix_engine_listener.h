@@ -85,7 +85,7 @@ class PosixEngineListenerImpl
           listener_(std::move(listener)),
           socket_(socket),
           handle_(listener_->poller_->CreateHandle(
-              socket_.sock.Fd().fd(),
+              socket_.sock,
               *grpc_event_engine::experimental::
                   ResolvedAddressToNormalizedString(socket_.addr),
               listener_->poller_->CanTrackErrors())),
@@ -107,7 +107,7 @@ class PosixEngineListenerImpl
     ListenerSocketsContainer::ListenerSocket& Socket() { return socket_; }
     ~AsyncConnectionAcceptor() {
       auto address =
-          socket_.sock.LocalAddress(*handle_->Poller()->GetSystemApi());
+          handle_->Poller()->GetSystemApi()->LocalAddress(socket_.sock);
       if (address.ok()) {
         // If uds socket, unlink it so that the corresponding file is deleted.
         UnlinkIfUnixDomainSocket(*address);
@@ -141,7 +141,7 @@ class PosixEngineListenerImpl
       acceptors_.push_back(new AsyncConnectionAcceptor(
           listener_->engine_, listener_->shared_from_this(), socket));
       if (on_append_) {
-        on_append_(socket.sock.Fd().fd());
+        on_append_(socket.sock.fd());
       }
     }
 

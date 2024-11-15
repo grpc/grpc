@@ -229,53 +229,6 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const SystemApi& system_api,
   return options;
 }
 
-#ifdef GRPC_POSIX_SOCKETUTILS
-
-int Accept4(int sockfd,
-            grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
-            int nonblock, int cloexec) {
-  int fd, flags;
-  EventEngine::ResolvedAddress peer_addr;
-  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  fd = accept(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len);
-  if (fd >= 0) {
-    if (nonblock) {
-      flags = fcntl(fd, F_GETFL, 0);
-      if (flags < 0) goto close_and_error;
-      if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) goto close_and_error;
-    }
-    if (cloexec) {
-      flags = fcntl(fd, F_GETFD, 0);
-      if (flags < 0) goto close_and_error;
-      if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0) goto close_and_error;
-    }
-  }
-  addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
-  return fd;
-
-close_and_error:
-  close(fd);
-  return -1;
-}
-
-#elif GRPC_LINUX_SOCKETUTILS
-
-int Accept4(int sockfd,
-            grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
-            int nonblock, int cloexec) {
-  int flags = 0;
-  flags |= nonblock ? SOCK_NONBLOCK : 0;
-  flags |= cloexec ? SOCK_CLOEXEC : 0;
-  EventEngine::ResolvedAddress peer_addr;
-  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  int ret =
-      accept4(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len, flags);
-  addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
-  return ret;
-}
-
-#endif  // GRPC_LINUX_SOCKETUTILS
-
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
 void UnlinkIfUnixDomainSocket(
@@ -320,7 +273,7 @@ absl::Status ApplySocketMutatorInOptions(FileDescriptor fd, grpc_fd_usage usage,
   return SetSocketMutator(fd, usage, options.socket_mutator);
 }
 
-bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
+bool IsIpv6LoopbackAvailable() {
   static bool kIpv6LoopbackAvailable = []() -> bool {
     int fd = socket(AF_INET6, SOCK_STREAM, 0);
     bool loopback_available = false;
@@ -345,53 +298,11 @@ bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
   return kIpv6LoopbackAvailable;
 }
 
-absl::StatusOr<EventEngine::ResolvedAddress> PosixSocketWrapper::LocalAddress(
-    const SystemApi& system_api) {
-  EventEngine::ResolvedAddress addr;
-  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  if (system_api.GetSockName(fd_, const_cast<sockaddr*>(addr.address()), &len) <
-      0) {
-    return absl::InternalError(
-        absl::StrCat("getsockname:", grpc_core::StrError(errno)));
-  }
-  return EventEngine::ResolvedAddress(addr.address(), len);
-}
-
-absl::StatusOr<EventEngine::ResolvedAddress> PosixSocketWrapper::PeerAddress(
-    const SystemApi& system_api) {
-  EventEngine::ResolvedAddress addr;
-  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  if (system_api.GetPeerName(fd_, const_cast<sockaddr*>(addr.address()), &len) <
-      0) {
-    return absl::InternalError(
-        absl::StrCat("getpeername:", grpc_core::StrError(errno)));
-  }
-  return EventEngine::ResolvedAddress(addr.address(), len);
-}
-
-absl::StatusOr<std::string> PosixSocketWrapper::LocalAddressString(
-    const SystemApi& system_api) {
-  auto status = LocalAddress(system_api);
-  if (!status.ok()) {
-    return status.status();
-  }
-  return ResolvedAddressToNormalizedString((*status));
-}
-
-absl::StatusOr<std::string> PosixSocketWrapper::PeerAddressString(
-    const SystemApi& system_api) {
-  auto status = PeerAddress(system_api);
-  if (!status.ok()) {
-    return status.status();
-  }
-  return ResolvedAddressToNormalizedString((*status));
-}
-
-absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
+absl::StatusOr<FileDescriptor> CreateDualStackSocket(
     const SystemApi& posix_apis,
     std::function<FileDescriptor(int, int, int)> socket_factory,
     const experimental::EventEngine::ResolvedAddress& addr, int type,
-    int protocol, PosixSocketWrapper::DSMode& dsmode) {
+    int protocol, DSMode& dsmode) {
   const sockaddr* sock_addr = addr.address();
   int family = sock_addr->sa_family;
   FileDescriptor newfd;
@@ -404,16 +315,16 @@ absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
     }
     // Check if we've got a valid dualstack socket.
     if (newfd.ready() && SetSocketDualStack(posix_apis, newfd)) {
-      dsmode = PosixSocketWrapper::DSMode::DSMODE_DUALSTACK;
-      return PosixSocketWrapper(newfd);
+      dsmode = DSMode::DSMODE_DUALSTACK;
+      return newfd;
     }
     // If this isn't an IPv4 address, then return whatever we've got.
     if (!ResolvedAddressIsV4Mapped(addr, nullptr)) {
       if (!newfd.ready()) {
         return ErrorForFd(newfd, addr);
       }
-      dsmode = PosixSocketWrapper::DSMode::DSMODE_IPV6;
-      return PosixSocketWrapper(newfd);
+      dsmode = DSMode::DSMODE_IPV6;
+      return newfd;
     }
     // Fall back to AF_INET.
     if (newfd.ready()) {
@@ -421,20 +332,18 @@ absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
     }
     family = AF_INET;
   }
-  dsmode = family == AF_INET ? PosixSocketWrapper::DSMode::DSMODE_IPV4
-                             : PosixSocketWrapper::DSMode::DSMODE_NONE;
+  dsmode = family == AF_INET ? DSMode::DSMODE_IPV4 : DSMode::DSMODE_NONE;
   newfd = CreateSocket(posix_apis, socket_factory, family, type, protocol);
   if (!newfd.ready()) {
     return ErrorForFd(newfd, addr);
   }
-  return PosixSocketWrapper(newfd);
+  return newfd;
 }
 
-absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
-PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
+absl::StatusOr<PosixSocketCreateResult> CreateAndPrepareTcpClientSocket(
     const SystemApi& posix_apis, const PosixTcpOptions& options,
     const EventEngine::ResolvedAddress& target_addr) {
-  PosixSocketWrapper::DSMode dsmode;
+  DSMode dsmode;
   EventEngine::ResolvedAddress mapped_target_addr;
 
   // Use dualstack sockets where available. Set mapped to v6 or v4 mapped to
@@ -443,36 +352,32 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
     // addr is v4 mapped to v6 or just v6.
     mapped_target_addr = target_addr;
   }
-  absl::StatusOr<PosixSocketWrapper> posix_socket_wrapper =
-      PosixSocketWrapper::CreateDualStackSocket(
-          posix_apis, nullptr, mapped_target_addr, SOCK_STREAM, 0, dsmode);
-  if (!posix_socket_wrapper.ok()) {
-    return posix_socket_wrapper.status();
+  absl::StatusOr<FileDescriptor> fd = CreateDualStackSocket(
+      posix_apis, nullptr, mapped_target_addr, SOCK_STREAM, 0, dsmode);
+  if (!fd.ok()) {
+    return fd.status();
   }
 
-  if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
+  if (dsmode == DSMode::DSMODE_IPV4) {
     // Original addr is either v4 or v4 mapped to v6. Set mapped_addr to v4.
     if (!ResolvedAddressIsV4Mapped(target_addr, &mapped_target_addr)) {
       mapped_target_addr = target_addr;
     }
   }
 
-  auto error = PrepareTcpClientSocket(posix_apis, posix_socket_wrapper->Fd(),
-                                      mapped_target_addr, options);
+  auto error =
+      PrepareTcpClientSocket(posix_apis, *fd, mapped_target_addr, options);
   if (!error.ok()) {
     return error;
   }
-  return PosixSocketWrapper::PosixSocketCreateResult{posix_socket_wrapper->Fd(),
-                                                     mapped_target_addr};
+  return PosixSocketCreateResult{*fd, mapped_target_addr};
 }
 
 #else  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
-bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
-  grpc_core::Crash("unimplemented");
-}
+bool IsIpv6LoopbackAvailable() { grpc_core::Crash("unimplemented"); }
 
-absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
+absl::StatusOr<FileDescriptor> CreateDualStackSocket(
     const SystemApi& /*system_api*/,
     std::function<FileDescriptor(int /*domain*/, int /*type*/,
                                  int /*protocol*/)>
@@ -482,8 +387,7 @@ absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
   grpc_core::Crash("unimplemented");
 }
 
-absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
-PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
+absl::StatusOr<PosixSocketCreateResult> CreateAndPrepareTcpClientSocket(
     const SystemApi& /*system_api*/, const PosixTcpOptions& /*options*/,
     const EventEngine::ResolvedAddress& /*target_addr*/) {
   grpc_core::Crash("unimplemented");
