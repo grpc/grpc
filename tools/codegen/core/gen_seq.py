@@ -133,11 +133,11 @@ tail${i}:
     switch (state) {
 % for i in range(0,n-1):
       case State::kState${i}: {
-        GRPC_TRACE_VLOG(promise_primitives, 2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: begin poll step ${i+1}/${n}";
         auto result = ${"prior."*(n-1-i)}current_promise();
         PromiseResult${i}* p = result.value_if_ready();
-        GRPC_TRACE_VLOG(promise_primitives, 2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: poll step ${i+1}/${n} gets "
                 << (p != nullptr
                     ? (PromiseResultTraits${i}::IsOk(*p)
@@ -158,10 +158,10 @@ tail${i}:
 % endfor
       default:
       case State::kState${n-1}: {
-        GRPC_TRACE_VLOG(promise_primitives, 2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: begin poll step ${n}/${n}";
         auto result = current_promise();
-        GRPC_TRACE_VLOG(promise_primitives, 2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: poll step ${n}/${n} gets "
                 << (result.ready()? "ready" : "pending");
         auto* p = result.value_if_ready();
