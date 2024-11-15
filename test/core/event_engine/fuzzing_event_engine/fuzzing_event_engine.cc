@@ -139,29 +139,79 @@ gpr_timespec FuzzingEventEngine::NowAsTimespec(gpr_clock_type clock_type) {
 }
 
 void FuzzingEventEngine::Tick(Duration max_time) {
-  std::vector<absl::AnyInvocable<void()>> to_run;
-  {
-    grpc_core::MutexLock lock(&*mu_);
-    grpc_core::MutexLock now_lock(&*now_mu_);
-    Duration incr = max_time;
-    if (!tasks_by_time_.empty()) {
-      incr = std::min(incr, tasks_by_time_.begin()->first - now_);
-    }
-    now_ += incr;
-    CHECK_GE(now_.time_since_epoch().count(), 0);
-    // Find newly expired timers.
-    while (!tasks_by_time_.empty() && tasks_by_time_.begin()->first <= now_) {
-      auto& task = *tasks_by_time_.begin()->second;
-      tasks_by_id_.erase(task.id);
-      if (task.closure != nullptr) {
-        to_run.push_back(std::move(task.closure));
+  if (IsSaneTimerEnvironment()) {
+    std::vector<absl::AnyInvocable<void()>> to_run;
+    Duration incr = Duration::zero();
+    {
+      grpc_core::MutexLock lock(&*mu_);
+      grpc_core::MutexLock now_lock(&*now_mu_);
+      incr = max_time;
+      if (!tasks_by_time_.empty()) {
+        incr = std::min(incr, tasks_by_time_.begin()->first - now_);
       }
-      tasks_by_time_.erase(tasks_by_time_.begin());
+      now_ += incr;
+      CHECK_GE(now_.time_since_epoch().count(), 0);
+      // Find newly expired timers.
+      while (!tasks_by_time_.empty() && tasks_by_time_.begin()->first <= now_) {
+        auto& task = *tasks_by_time_.begin()->second;
+        tasks_by_id_.erase(task.id);
+        if (task.closure != nullptr) {
+          to_run.push_back(std::move(task.closure));
+        }
+        tasks_by_time_.erase(tasks_by_time_.begin());
+      }
     }
-  }
-  if (to_run.empty()) return;
-  for (auto& closure : to_run) {
-    closure();
+    UpdateClock(incr);
+    if (to_run.empty()) return;
+    for (auto& closure : to_run) {
+      closure();
+    }
+  } else {
+    bool incremented_time = false;
+    while (true) {
+      std::vector<absl::AnyInvocable<void()>> to_run;
+      Duration incr = Duration::zero();
+      {
+        grpc_core::MutexLock lock(&*mu_);
+        grpc_core::MutexLock now_lock(&*now_mu_);
+        if (!incremented_time) {
+          incr = max_time;
+          // TODO(ctiller): look at tasks_by_time_ and jump forward (once iomgr
+          // timers are gone)
+          if (!tasks_by_time_.empty()) {
+            incr = std::min(incr, tasks_by_time_.begin()->first - now_);
+          }
+          if (incr < exponential_gate_time_increment_) {
+            exponential_gate_time_increment_ = std::chrono::milliseconds(1);
+          } else {
+            incr = std::min(incr, exponential_gate_time_increment_);
+            exponential_gate_time_increment_ +=
+                exponential_gate_time_increment_ / 1000;
+          }
+          incr = std::max(incr, std::chrono::duration_cast<Duration>(
+                                    std::chrono::milliseconds(1)));
+          now_ += incr;
+          CHECK_GE(now_.time_since_epoch().count(), 0);
+          ++current_tick_;
+          incremented_time = true;
+        }
+        // Find newly expired timers.
+        while (!tasks_by_time_.empty() &&
+               tasks_by_time_.begin()->first <= now_) {
+          auto& task = *tasks_by_time_.begin()->second;
+          tasks_by_id_.erase(task.id);
+          if (task.closure != nullptr) {
+            to_run.push_back(std::move(task.closure));
+          }
+          tasks_by_time_.erase(tasks_by_time_.begin());
+        }
+      }
+      UpdateClock(incr);
+      if (to_run.empty()) return;
+      for (auto& closure : to_run) {
+        closure();
+      }
+    }
   }
 }
 

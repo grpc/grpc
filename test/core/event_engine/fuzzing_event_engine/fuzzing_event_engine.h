@@ -40,6 +40,7 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "src/core/lib/event_engine/time_util.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
@@ -299,6 +300,17 @@ class FuzzingEventEngine : public EventEngine {
 
   bool IsIdleLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+  virtual void UpdateClock(Duration) {}
+
+  // We need everything EventEngine to do reasonable timer steps -- without it
+  // we need to do a bunch of evil to make sure both timer systems are ticking
+  // each step.
+  static bool IsSaneTimerEnvironment() {
+    return grpc_core::IsEventEngineClientEnabled() &&
+           grpc_core::IsEventEngineListenerEnabled() &&
+           grpc_core::IsEventEngineDnsEnabled();
+  }
+
   // For the next connection being built, query the list of fuzzer selected
   // write size limits.
   std::queue<size_t> WriteSizesForConnection()
@@ -335,6 +347,12 @@ class FuzzingEventEngine : public EventEngine {
   std::atomic<size_t> outstanding_writes_{0};
   std::atomic<size_t> outstanding_reads_{0};
 
+  // TODO(ctiller): these can be removed when IsSaneTimerEnvironment() is
+  // guaranteed to be true.
+  Duration exponential_gate_time_increment_ ABSL_GUARDED_BY(mu_) =
+      std::chrono::milliseconds(1);
+  intptr_t current_tick_ ABSL_GUARDED_BY(now_mu_);
+
   grpc_core::Mutex run_after_duration_callback_mu_;
   absl::AnyInvocable<void(Duration)> run_after_duration_callback_
       ABSL_GUARDED_BY(run_after_duration_callback_mu_);
@@ -350,11 +368,7 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
                            fuzzing_event_engine::Actions()),
         main_([this, max_time]() {
           while (!done_.load()) {
-            if (max_time > Duration::zero()) {
-              absl::SleepFor(absl::Milliseconds(
-                  grpc_event_engine::experimental::Milliseconds(max_time)));
-            }
-            Tick();
+            Tick(max_time);
           }
         }) {}
 
@@ -364,6 +378,11 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
   }
 
  private:
+  void UpdateClock(Duration duration) override {
+    absl::SleepFor(absl::Milliseconds(
+        1 + grpc_event_engine::experimental::Milliseconds(duration)));
+  }
+
   std::atomic<bool> done_{false};
   std::thread main_;
 };
