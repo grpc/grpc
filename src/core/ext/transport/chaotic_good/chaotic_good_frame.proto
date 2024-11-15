@@ -49,3 +49,11 @@ message ServerMetadata {
 
     repeated UnknownMetadata unknown_metadata = 100;
 }
+
+message UpdateConnections {
+    message Add {
+        bytes connection_name = 1;
+        uint32 connection_id = 2;
+    }
+    repeated Add add_connections = 1;
+}
