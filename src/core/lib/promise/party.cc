@@ -29,11 +29,6 @@
 #include "src/core/util/latent_see.h"
 #include "src/core/util/sync.h"
 
-#ifdef GRPC_MAXIMIZE_THREADYNESS
-#include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
-#include "src/core/util/thd.h"            // IWYU pragma: keep
-#endif
-
 namespace grpc_core {
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -193,16 +188,13 @@ void Party::ForceImmediateRepoll(WakeupMask mask) {
 
 void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
   GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked");
-#ifdef GRPC_MAXIMIZE_THREADYNESS
-  Thread thd(
-      "RunParty",
-      [party, prev_state]() {
+#if defined(GRPC_MAXIMIZE_THREADYNESS)
+  party->arena_->GetContext<grpc_event_engine::experimental::EventEngine>()
+      ->Run([party, prev_state]() {
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
         party->RunPartyAndUnref(prev_state);
-      },
-      nullptr, Thread::Options().set_joinable(false));
-  thd.Start();
+      });
 #else
   struct RunState;
   static thread_local RunState* g_run_state = nullptr;
