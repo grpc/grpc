@@ -112,7 +112,7 @@ class Center : public RefCounted<Center<T>> {
   }
 
   // Mark that the receiver is closed.
-  void ReceiverClosed() {
+  void ReceiverClosed(bool wake_receiver) {
     ReleasableMutexLock lock(&mu_);
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << "MPSC::ReceiverClosed: " << GRPC_DUMP_ARGS(this, batch_);
@@ -121,7 +121,7 @@ class Center : public RefCounted<Center<T>> {
     auto wakeups = send_wakers_.TakeWakeupSet();
     auto receive_waker = std::move(receive_waker_);
     lock.Release();
-    receive_waker.Wakeup();
+    if (wake_receiver) receive_waker.Wakeup();
     wakeups.Wakeup();
   }
 
@@ -201,10 +201,10 @@ class MpscReceiver {
       : center_(MakeRefCounted<mpscpipe_detail::Center<T>>(
             std::max(static_cast<size_t>(1), max_buffer_hint / 2))) {}
   ~MpscReceiver() {
-    if (center_ != nullptr) center_->ReceiverClosed();
+    if (center_ != nullptr) center_->ReceiverClosed(false);
   }
   void MarkClosed() {
-    if (center_ != nullptr) center_->ReceiverClosed();
+    if (center_ != nullptr) center_->ReceiverClosed(true);
   }
   MpscReceiver(const MpscReceiver&) = delete;
   MpscReceiver& operator=(const MpscReceiver&) = delete;

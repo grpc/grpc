@@ -192,6 +192,18 @@ TEST(MpscTest, ImmediateSendWorks) {
   activity.Deactivate();
 }
 
+TEST(MpscTest, CloseFailsNext) {
+  StrictMock<MockActivity> activity;
+  MpscReceiver<Payload> receiver(1);
+  activity.Activate();
+  auto next = receiver.Next();
+  EXPECT_THAT(next(), IsPending());
+  EXPECT_CALL(activity, WakeupRequested());
+  receiver.MarkClosed();
+  EXPECT_THAT(next(), IsReady(Failure{}));
+  activity.Deactivate();
+}
+
 }  // namespace
 }  // namespace grpc_core
 

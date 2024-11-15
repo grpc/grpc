@@ -1266,6 +1266,7 @@ grpc_cc_library(
         "activity",
         "poll",
         "ref_counted",
+        "status_flag",
         "wait_set",
         "//:gpr",
         "//:ref_counted_ptr",
