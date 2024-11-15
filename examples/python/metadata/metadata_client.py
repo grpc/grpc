@@ -34,7 +34,7 @@ def run():
                 ("initial-metadata-1", "The value should be str"),
                 (
                     "binary-metadata-bin",
-                    b"With -bin surffix, the value can be bytes",
+                    b"With -bin surffix, the value should be bytes",
                 ),
                 ("accesstoken", "gRPC Python is great"),
             ),
