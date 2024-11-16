@@ -83,6 +83,7 @@ bool DebugStringBuilder::IsAllowListed(const absl::string_view key) const {
         allow_list.insert(std::string(LbTokenMetadata::key()));
         allow_list.insert(std::string(TeMetadata::key()));
         allow_list.insert(std::string(UserAgentMetadata::key()));
+        allow_list.insert(std::string(W3CTraceParentMetadata::key()));
         allow_list.insert(std::string(XEnvoyPeerMetadata::key()));
         // go/keep-sorted end
         // go/keep-sorted start

@@ -1264,8 +1264,10 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "activity",
+        "dump_args",
         "poll",
         "ref_counted",
+        "status_flag",
         "wait_set",
         "//:gpr",
         "//:ref_counted_ptr",
