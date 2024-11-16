@@ -92,39 +92,39 @@ class Party : public Activity, private Wakeable {
   class WakeupHold {
    public:
     WakeupHold() = default;
-    explicit WakeupHold(Party* party) {
+    explicit WakeupHold(Party* party)
+        : prev_state_(party->state_.load(std::memory_order_relaxed)) {
       // Try to lock
-      auto prev_state = party->state_.load(std::memory_order_relaxed);
-      if (party->state_.compare_exchange_weak(prev_state,
-                                              (prev_state | kLocked) + kOneRef,
+      if (party->state_.compare_exchange_weak(prev_state_,
+                                              (prev_state_ | kLocked) + kOneRef,
                                               std::memory_order_relaxed)) {
-        DCHECK_EQ(prev_state & ~(kRefMask | kAllocatedMask), 0u)
+        DCHECK_EQ(prev_state_ & ~(kRefMask | kAllocatedMask), 0u)
             << "Party should have contained no wakeups on lock";
         // If we win, record that fact for the destructor
-        party->LogStateChange("WakeupHold", prev_state,
-                              (prev_state | kLocked) + kOneRef);
+        party->LogStateChange("WakeupHold", prev_state_,
+                              (prev_state_ | kLocked) + kOneRef);
         party_ = party;
       }
     }
     WakeupHold(const WakeupHold&) = delete;
     WakeupHold& operator=(const WakeupHold&) = delete;
     WakeupHold(WakeupHold&& other) noexcept
-        : party_(std::exchange(other.party_, nullptr)) {}
+        : party_(std::exchange(other.party_, nullptr)),
+          prev_state_(other.prev_state_) {}
     WakeupHold& operator=(WakeupHold&& other) noexcept {
       std::swap(party_, other.party_);
+      std::swap(prev_state_, other.prev_state_);
       return *this;
     }
 
     ~WakeupHold() {
       if (party_ == nullptr) return;
-      auto prev_state = party_->state_.load(std::memory_order_relaxed);
-      DCHECK(prev_state & kLocked);
-      party_->RunLockedAndUnref(
-          party_, (prev_state & ~(kLocked | kWakeupMask)) - kOneRef);
+      party_->RunLockedAndUnref(party_, prev_state_);
     }
 
    private:
     Party* party_ = nullptr;
+    uint64_t prev_state_;
   };
 
   static RefCountedPtr<Party> Make(RefCountedPtr<Arena> arena) {
