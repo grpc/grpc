@@ -45,9 +45,6 @@ namespace grpc {
 /// on any future \a Set calls.
 class Alarm : private grpc::internal::GrpcLibrary {
  public:
-  /// Create an unset Alarm.
-  Alarm();
-
   /// Destroy the given completion queue alarm, cancelling it in the process.
   ~Alarm() override;
 
@@ -59,7 +56,7 @@ class Alarm : private grpc::internal::GrpcLibrary {
   /// internal::GrpcLibraryInitializer instance would need to be introduced
   /// here. \endinternal.
   template <typename T>
-  Alarm(grpc::CompletionQueue* cq, const T& deadline, void* tag) : Alarm() {
+  Alarm(grpc::CompletionQueue* cq, const T& deadline, void* tag) {
     SetInternal(cq, grpc::TimePoint<T>(deadline).raw_time(), tag);
   }
 
@@ -103,7 +100,7 @@ class Alarm : private grpc::internal::GrpcLibrary {
   void SetInternal(grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag);
   void SetInternal(gpr_timespec deadline, std::function<void(bool)> f);
 
-  grpc::internal::CompletionQueueTag* alarm_;
+  grpc::internal::CompletionQueueTag* alarm_ = nullptr;
 };
 
 }  // namespace grpc

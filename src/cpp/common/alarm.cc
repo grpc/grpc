@@ -35,6 +35,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/time.h"
 
 namespace grpc {
@@ -68,6 +69,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     Ref();
     CHECK(cq_armed_.exchange(true) == false);
     CHECK(!callback_armed_.load());
+    cancel_notification_.Reset();
     cq_timer_handle_ = event_engine_->RunAfter(
         grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
             grpc_core::ExecCtx::Get()->Now(),
@@ -80,6 +82,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     Ref();
     CHECK(callback_armed_.exchange(true) == false);
     CHECK(!cq_armed_.load());
+    cancel_notification_.Reset();
     callback_timer_handle_ = event_engine_->RunAfter(
         grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
             grpc_core::ExecCtx::Get()->Now(),
@@ -95,6 +98,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
       event_engine_->Run(
           [this] { OnCQAlarm(absl::CancelledError("cancelled")); });
     }
+    cancel_notification_.WaitForNotification();
   }
   void Destroy() {
     Cancel();
@@ -110,11 +114,15 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     // can be reset when the alarm tag is delivered.
     grpc_completion_queue* cq = cq_;
     cq_ = nullptr;
+    grpc_cq_completion* completion = new grpc_cq_completion;
     grpc_cq_end_op(
         cq, this, error,
-        [](void* /*arg*/, grpc_cq_completion* /*completion*/) {}, nullptr,
-        &completion_);
+        [](void* /*arg*/, grpc_cq_completion* completion) {
+          delete completion;
+        },
+        nullptr, completion);
     GRPC_CQ_INTERNAL_UNREF(cq, "alarm");
+    cancel_notification_.Notify();
   }
 
   void OnCallbackAlarm(bool is_ok) {
@@ -122,6 +130,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     callback_(is_ok);
+    cancel_notification_.Notify();
     Unref();
   }
 
@@ -139,18 +148,20 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
   EventEngine::TaskHandle callback_timer_handle_ =
       EventEngine::TaskHandle::kInvalid;
   gpr_refcount refs_;
-  grpc_cq_completion completion_;
   // completion queue where events about this alarm will be posted
   grpc_completion_queue* cq_;
   void* tag_;
   std::function<void(bool)> callback_;
+  grpc_core::Notification cancel_notification_;
 };
 }  // namespace internal
 
-Alarm::Alarm() : alarm_(new internal::AlarmImpl()) {}
-
 void Alarm::SetInternal(grpc::CompletionQueue* cq, gpr_timespec deadline,
                         void* tag) {
+  if (alarm_ != nullptr) {
+    static_cast<internal::AlarmImpl*>(alarm_)->Destroy();
+  }
+  alarm_ = new internal::AlarmImpl();
   // Note that we know that alarm_ is actually an internal::AlarmImpl
   // but we declared it as the base pointer to avoid a forward declaration
   // or exposing core data structures in the C++ public headers.
@@ -160,6 +171,9 @@ void Alarm::SetInternal(grpc::CompletionQueue* cq, gpr_timespec deadline,
 }
 
 void Alarm::SetInternal(gpr_timespec deadline, std::function<void(bool)> f) {
+  if (alarm_ == nullptr) {
+    alarm_ = new internal::AlarmImpl();
+  }
   // Note that we know that alarm_ is actually an internal::AlarmImpl
   // but we declared it as the base pointer to avoid a forward declaration
   // or exposing core data structures in the C++ public headers.

@@ -438,6 +438,35 @@ TEST(AlarmTest, UnsetDestruction) {
   Alarm alarm;
 }
 
+TEST(AlarmTest, CQAlarmReuse) {
+  constexpr int kIterations = 5000;
+  Alarm alarm;
+  CompletionQueue cq;
+  std::thread polling_thread([&]() {
+    void* tag;
+    bool ok = false;
+    for (int i = 0; i < kIterations; ++i) {
+      ASSERT_TRUE(cq.Next(&tag, &ok));
+    }
+  });
+  for (int i = 0; i < kIterations; ++i) {
+    alarm.Set(&cq, gpr_timespec{0, 0, GPR_TIMESPAN}, /*tag=*/nullptr);
+    alarm.Cancel();
+  }
+  polling_thread.join();
+}
+
+TEST(AlarmTest, CallbackAlarmReuse) {
+  constexpr int kIterations = 5000;
+  std::atomic_int counter{0};
+  Alarm alarm;
+  for (int i = 0; i < kIterations; ++i) {
+    alarm.Set(gpr_timespec{0, 0, GPR_TIMESPAN}, [&](bool ok) { ++counter; });
+    alarm.Cancel();
+  }
+  EXPECT_EQ(counter, kIterations);
+}
+
 }  // namespace
 }  // namespace grpc
 
