@@ -156,6 +156,8 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
 };
 }  // namespace internal
 
+Alarm::Alarm() {}
+
 void Alarm::SetInternal(grpc::CompletionQueue* cq, gpr_timespec deadline,
                         void* tag) {
   if (alarm_ != nullptr) {
