@@ -276,6 +276,10 @@ class Server : public ServerInterface,
 
     void MaybeStartNewGraceTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+    void RemoveConnectionsToBeDrainedOnEmptyLocked(
+        std::deque<ConnectionsToBeDrained>::iterator it)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
     RefCountedPtr<Server> const server_;
     MemoryQuotaRefPtr const memory_quota_;
     ConnectionQuotaRefPtr connection_quota_;

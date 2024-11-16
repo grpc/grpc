@@ -111,13 +111,9 @@ void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
 }
 
 void Server::ListenerState::ConfigFetcherWatcher::StopServing() {
-  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
-      connections;
-  {
-    MutexLock lock(&listener_state_->mu_);
-    listener_state_->is_serving_ = false;
-    listener_state_->DrainConnectionsLocked();
-  }
+  MutexLock lock(&listener_state_->mu_);
+  listener_state_->is_serving_ = false;
+  listener_state_->DrainConnectionsLocked();
 }
 
 //
@@ -265,37 +261,22 @@ void Server::ListenerState::OnHandshakeDone(
 
 void Server::ListenerState::RemoveLogicalConnection(
     ListenerInterface::LogicalConnection* connection) {
-  if (server_->config_fetcher() == nullptr) {
-    // The connection was removed from being tracked in `OnHandshakeDone`.
+  OrphanablePtr<ListenerInterface::LogicalConnection> connection_to_remove;
+  // Remove the connection if it wasn't already removed.
+  MutexLock lock(&mu_);
+  auto connection_handle = connections_.extract(connection);
+  if (!connection_handle.empty()) {
+    connection_to_remove = std::move(connection_handle.value());
     return;
   }
-  OrphanablePtr<ListenerInterface::LogicalConnection> connection_to_remove;
-  {
-    // Remove the connection if it wasn't already removed.
-    MutexLock lock(&mu_);
-    auto connection_handle = connections_.extract(connection);
+  // The connection might be getting drained.
+  for (auto it = connections_to_be_drained_list_.begin();
+       it != connections_to_be_drained_list_.end(); ++it) {
+    auto connection_handle = it->connections.extract(connection);
     if (!connection_handle.empty()) {
       connection_to_remove = std::move(connection_handle.value());
+      RemoveConnectionsToBeDrainedOnEmptyLocked(it);
       return;
-    }
-    // The connection might be getting drained.
-    for (auto it = connections_to_be_drained_list_.begin();
-         it != connections_to_be_drained_list_.end(); ++it) {
-      auto connection_handle = it->connections.extract(connection);
-      if (!connection_handle.empty()) {
-        connection_to_remove = std::move(connection_handle.value());
-        if (it->connections.empty()) {
-          // Cancel the timer if the set of connections is now empty.
-          if (event_engine()->Cancel(drain_grace_timer_handle_)) {
-            // Only remove the entry from the list if the cancellation was
-            // actually successful. OnDrainGraceTimer() will remove if
-            // cancellation is not successful.
-            connections_to_be_drained_list_.erase(it);
-            MaybeStartNewGraceTimerLocked();
-          }
-        }
-        return;
-      }
     }
   }
 }
@@ -351,6 +332,22 @@ void Server::ListenerState::MaybeStartNewGraceTimerLocked() {
         self.reset();
       });
 }
+
+void Server::ListenerState::RemoveConnectionsToBeDrainedOnEmptyLocked(
+    std::deque<ConnectionsToBeDrained>::iterator it) {
+  if (it->connections.empty()) {
+    // Cancel the timer if the set of connections is now empty.
+    if (event_engine()->Cancel(drain_grace_timer_handle_)) {
+      // Only remove the entry from the list if the cancellation was
+      // actually successful. OnDrainGraceTimer() will remove if
+      // cancellation is not successful.
+      connections_to_be_drained_list_.erase(it);
+      MaybeStartNewGraceTimerLocked();
+    }
+  }
+}
+
+//
 
 //
 // Server::RequestMatcherInterface

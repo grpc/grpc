@@ -121,7 +121,7 @@ Timestamp GetConnectionDeadline(const ChannelArgs& args) {
          std::max(
              Duration::Milliseconds(1),
              args.GetDurationFromIntMillis(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
-                 .value_or(Duration::Seconds(120)));
+                 .value_or(Duration::Minutes(2)));
 }
 }  // namespace
 
@@ -975,48 +975,12 @@ void Chttp2ServerListener::Orphan() {
 // New ChttpServerListener used if experiment "server_listener" is enabled
 class NewChttp2ServerListener : public Server::ListenerInterface {
  public:
-  static grpc_error_handle Create(Server* server,
-                                  const EventEngine::ResolvedAddress& addr,
-                                  const ChannelArgs& args, int* port_num);
-
-  static grpc_error_handle CreateWithAcceptor(Server* server, const char* name,
-                                              const ChannelArgs& args);
-
-  static NewChttp2ServerListener* CreateForPassiveListener(
-      Server* server, const ChannelArgs& args,
-      std::shared_ptr<experimental::PassiveListenerImpl> passive_listener);
-
-  // Do not instantiate directly.  Use one of the factory methods above.
-  explicit NewChttp2ServerListener(
-      const ChannelArgs& args,
-      std::shared_ptr<experimental::PassiveListenerImpl> passive_listener =
-          nullptr);
-  ~NewChttp2ServerListener() override;
-
-  void AcceptConnectedEndpoint(std::unique_ptr<EventEngine::Endpoint> endpoint);
-
-  channelz::ListenSocketNode* channelz_listen_socket_node() const override {
-    return channelz_listen_socket_.get();
-  }
-
-  void SetServerListenerState(
-      RefCountedPtr<Server::ListenerState> listener_state) override {
-    listener_state_ = std::move(listener_state);
-  }
-
-  const grpc_resolved_address* resolved_address() const override {
-    return &resolved_address_;
-  }
-
-  void SetOnDestroyDone(grpc_closure* on_destroy_done) override;
-
-  void Orphan() override;
-
- private:
-  friend class experimental::PassiveListenerImpl;
-
+  // Keeps state for an individual connection. Lifetime: Internally refcounted
+  // and owned by Server::ListenerState.
   class ActiveConnection : public LogicalConnection {
    public:
+    // State for handshake. Lifetime: Owned by ActiveConnection and lasts while
+    // the handshake is ongoing.
     class HandshakingState : public InternallyRefCounted<HandshakingState> {
      public:
       HandshakingState(RefCountedPtr<ActiveConnection> connection_ref,
@@ -1084,6 +1048,46 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     grpc_closure on_close_;
     bool shutdown_ = false;
   };
+
+  static grpc_error_handle Create(Server* server,
+                                  const EventEngine::ResolvedAddress& addr,
+                                  const ChannelArgs& args, int* port_num);
+
+  static grpc_error_handle CreateWithAcceptor(Server* server, const char* name,
+                                              const ChannelArgs& args);
+
+  static NewChttp2ServerListener* CreateForPassiveListener(
+      Server* server, const ChannelArgs& args,
+      std::shared_ptr<experimental::PassiveListenerImpl> passive_listener);
+
+  // Do not instantiate directly.  Use one of the factory methods above.
+  explicit NewChttp2ServerListener(
+      const ChannelArgs& args,
+      std::shared_ptr<experimental::PassiveListenerImpl> passive_listener =
+          nullptr);
+  ~NewChttp2ServerListener() override;
+
+  void AcceptConnectedEndpoint(std::unique_ptr<EventEngine::Endpoint> endpoint);
+
+  channelz::ListenSocketNode* channelz_listen_socket_node() const override {
+    return channelz_listen_socket_.get();
+  }
+
+  void SetServerListenerState(
+      RefCountedPtr<Server::ListenerState> listener_state) override {
+    listener_state_ = std::move(listener_state);
+  }
+
+  const grpc_resolved_address* resolved_address() const override {
+    return &resolved_address_;
+  }
+
+  void SetOnDestroyDone(grpc_closure* on_destroy_done) override;
+
+  void Orphan() override;
+
+ private:
+  friend class experimental::PassiveListenerImpl;
 
   // To allow access to RefCounted<> like interface.
   friend class RefCountedPtr<NewChttp2ServerListener>;
@@ -1166,7 +1170,10 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
 
 void NewChttp2ServerListener::ActiveConnection::HandshakingState::StartLocked(
     const ChannelArgs& channel_args) {
-  if (handshake_mgr_ == nullptr) return;
+  if (handshake_mgr_ == nullptr) {
+    // The connection is already shutting down.
+    return;
+  }
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_SERVER, channel_args, interested_parties_,
       handshake_mgr_.get());
@@ -1195,11 +1202,9 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
     return;
   }
   timer_handle_.reset();
-  grpc_transport_op* op = grpc_make_transport_op(nullptr);
-  op->disconnect_with_error = GRPC_ERROR_CREATE(
-      "Did not receive HTTP/2 settings before handshake timeout");
-  absl::get<RefCountedPtr<grpc_chttp2_transport>>(connection_->state_)
-      ->PerformOp(op);
+  auto t = absl::get<RefCountedPtr<grpc_chttp2_transport>>(connection_->state_);
+  t->DisconnectWithError(GRPC_ERROR_CREATE(
+      "Did not receive HTTP/2 settings before handshake timeout"));
 }
 
 void NewChttp2ServerListener::ActiveConnection::HandshakingState::
