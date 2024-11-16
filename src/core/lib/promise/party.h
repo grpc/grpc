@@ -98,6 +98,8 @@ class Party : public Activity, private Wakeable {
       if (party->state_.compare_exchange_weak(prev_state,
                                               (prev_state | kLocked) + kOneRef,
                                               std::memory_order_relaxed)) {
+        DCHECK_EQ(prev_state & ~(kRefMask | kAllocatedMask), 0u)
+            << "Party should have contained no wakeups on lock";
         // If we win, record that fact for the destructor
         party->LogStateChange("WakeupHold", prev_state,
                               (prev_state | kLocked) + kOneRef);
@@ -117,7 +119,8 @@ class Party : public Activity, private Wakeable {
       if (party_ == nullptr) return;
       auto prev_state = party_->state_.load(std::memory_order_relaxed);
       DCHECK(prev_state & kLocked);
-      party_->RunPartyAndUnref(prev_state);
+      party_->RunLockedAndUnref(
+          party_, (prev_state & ~(kLocked | kWakeupMask)) - kOneRef);
     }
 
    private:
