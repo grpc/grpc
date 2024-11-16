@@ -254,10 +254,10 @@ TEST_F(PartyTest, CanBulkSpawn) {
   Notification n1;
   Notification n2;
   {
-    Party::BulkSpawner spawner(party.get());
-    spawner.Spawn(
+    Party::WakeupHold hold(party.get());
+    party->Spawn(
         "spawn1", []() { return Empty{}; }, [&n1](Empty) { n1.Notify(); });
-    spawner.Spawn(
+    party->Spawn(
         "spawn2", []() { return Empty{}; }, [&n2](Empty) { n2.Notify(); });
     for (int i = 0; i < 5000; i++) {
       EXPECT_FALSE(n1.HasBeenNotified());

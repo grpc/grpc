@@ -128,7 +128,7 @@ class ClientCall final
                    bool is_notify_tag_closure);
   template <typename Batch>
   void ScheduleCommittedBatch(Batch batch);
-  void StartCall(const grpc_op& send_initial_metadata_op);
+  Party::WakeupHold StartCall(const grpc_op& send_initial_metadata_op);
 
   std::string DebugTag() { return absl::StrFormat("CLIENT_CALL[%p]: ", this); }
 
