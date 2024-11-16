@@ -15,6 +15,7 @@
 #include "src/core/telemetry/metrics.h"
 
 #include <memory>
+#include <thread>
 
 #include "absl/log/log.h"
 #include "gmock/gmock.h"
@@ -646,6 +647,40 @@ TEST_F(MetricsTest, FindInstrumentByName) {
               ::testing::Optional(::testing::Field(
                   &GlobalInstrumentsRegistry::GlobalInstrumentHandle::index,
                   ::testing::Eq(uint64_counter_handle.index))));
+}
+
+TEST_F(MetricsTest, ParallelStatsPluginRegistrationAndLookup) {
+  std::vector<std::thread> register_threads;
+  std::vector<std::thread> lookup_threads;
+  register_threads.reserve(100);
+  lookup_threads.reserve(100);
+  // 100 threads that register 100 stats plugins each
+  for (int i = 0; i < 100; ++i) {
+    register_threads.emplace_back([] {
+      for (int j = 0; j < 100; ++j) {
+        FakeStatsPluginBuilder().BuildAndRegister();
+      }
+    });
+  }
+  // 100 threads that keep looking up stats plugins till they see 10000 stats
+  // plugins
+  for (int i = 0; i < 100; ++i) {
+    lookup_threads.emplace_back([this] {
+      while (GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+                 StatsPluginChannelScope("", "", endpoint_config_))
+                 .size() < 10000) {
+        // Yield to avoid starving the register threads.
+        std::this_thread::yield();
+      };
+    });
+  }
+  for (int i = 0; i < 100; ++i) {
+    register_threads[i].join();
+    lookup_threads[i].join();
+  }
+  EXPECT_THAT(GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+                  StatsPluginChannelScope("", "", endpoint_config_)),
+              ::testing::SizeIs(10000));
 }
 
 using MetricsDeathTest = MetricsTest;

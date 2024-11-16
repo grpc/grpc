@@ -468,6 +468,14 @@ struct LbCostBinMetadata {
                                   MetadataParseErrorFn on_error);
 };
 
+// traceparent metadata
+struct W3CTraceParentMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
+  using CompressionTraits = NoCompressionCompressor;
+  static absl::string_view key() { return "traceparent"; }
+};
+
 // Annotation added by a transport to note whether a failed request was never
 // placed on the wire, or never seen by a server.
 struct GrpcStreamNetworkState {
@@ -1582,7 +1590,7 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
-    grpc_core::XEnvoyPeerMetadata,
+    grpc_core::XEnvoyPeerMetadata, grpc_core::W3CTraceParentMetadata,
     // Non-encodable things
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,

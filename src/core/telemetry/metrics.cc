@@ -120,27 +120,30 @@ void GlobalStatsPluginRegistry::StatsPluginGroup::AddServerCallTracers(
   }
 }
 
-NoDestruct<Mutex> GlobalStatsPluginRegistry::mutex_;
-NoDestruct<std::vector<std::shared_ptr<StatsPlugin>>>
+std::atomic<GlobalStatsPluginRegistry::GlobalStatsPluginNode*>
     GlobalStatsPluginRegistry::plugins_;
 
 void GlobalStatsPluginRegistry::RegisterStatsPlugin(
     std::shared_ptr<StatsPlugin> plugin) {
-  MutexLock lock(&*mutex_);
-  plugins_->push_back(std::move(plugin));
+  GlobalStatsPluginNode* node = new GlobalStatsPluginNode();
+  node->plugin = std::move(plugin);
+  node->next = plugins_.load(std::memory_order_relaxed);
+  while (!plugins_.compare_exchange_weak(
+      node->next, node, std::memory_order_acq_rel, std::memory_order_relaxed)) {
+  }
 }
 
 GlobalStatsPluginRegistry::StatsPluginGroup
 GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
     const experimental::StatsPluginChannelScope& scope) {
-  MutexLock lock(&*mutex_);
   StatsPluginGroup group;
-  for (const auto& plugin : *plugins_) {
+  for (GlobalStatsPluginNode* node = plugins_.load(std::memory_order_acquire);
+       node != nullptr; node = node->next) {
     bool is_enabled = false;
     std::shared_ptr<StatsPlugin::ScopeConfig> config;
-    std::tie(is_enabled, config) = plugin->IsEnabledForChannel(scope);
+    std::tie(is_enabled, config) = node->plugin->IsEnabledForChannel(scope);
     if (is_enabled) {
-      group.AddStatsPlugin(plugin, std::move(config));
+      group.AddStatsPlugin(node->plugin, std::move(config));
     }
   }
   return group;
@@ -148,14 +151,14 @@ GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
 
 GlobalStatsPluginRegistry::StatsPluginGroup
 GlobalStatsPluginRegistry::GetStatsPluginsForServer(const ChannelArgs& args) {
-  MutexLock lock(&*mutex_);
   StatsPluginGroup group;
-  for (const auto& plugin : *plugins_) {
+  for (GlobalStatsPluginNode* node = plugins_.load(std::memory_order_acquire);
+       node != nullptr; node = node->next) {
     bool is_enabled = false;
     std::shared_ptr<StatsPlugin::ScopeConfig> config;
-    std::tie(is_enabled, config) = plugin->IsEnabledForServer(args);
+    std::tie(is_enabled, config) = node->plugin->IsEnabledForServer(args);
     if (is_enabled) {
-      group.AddStatsPlugin(plugin, std::move(config));
+      group.AddStatsPlugin(node->plugin, std::move(config));
     }
   }
   return group;
