@@ -894,6 +894,7 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
