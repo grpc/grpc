@@ -23,6 +23,7 @@
 #include <string>
 #include <tuple>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
@@ -440,6 +441,12 @@ absl::Status ChaoticGoodServerTransport::NewStream(
 
 void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
   RefCountedPtr<Party> cancelled_party;
+  bool close_outgoing_frames = false;
+  auto cleanup = absl::MakeCleanup([&close_outgoing_frames, this]() {
+    if (close_outgoing_frames) {
+      outgoing_frames_.MarkClosed();
+    }
+  });
   MutexLock lock(&mu_);
   bool did_stuff = false;
   if (op->start_connectivity_watch != nullptr) {
@@ -461,7 +468,7 @@ void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
   }
   if (!op->goaway_error.ok() || !op->disconnect_with_error.ok()) {
     cancelled_party = std::move(party_);
-    outgoing_frames_.MarkClosed();
+    close_outgoing_frames = true;
     state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
                             absl::UnavailableError("transport closed"),
                             "transport closed");

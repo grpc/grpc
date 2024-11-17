@@ -8190,6 +8190,7 @@ grpc_cc_library(
         "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
+        "absl/cleanup",
         "absl/types:optional",
         "absl/types:variant",
     ],
