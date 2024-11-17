@@ -247,11 +247,11 @@ Party::WakeupHold ClientCall::StartCall(
                                                 std::memory_order_acquire)) {
           call_destination_->StartCall(std::move(call.handler));
         }
-        break;
+        return wakeup_hold;
       case kStarted:
         Crash("StartCall called twice");  // probably we crash earlier...
       case kCancelled:
-        break;
+        return wakeup_hold;
       default: {  // UnorderedStart
         if (call_state_.compare_exchange_strong(cur_state, kStarted,
                                                 std::memory_order_acq_rel,
@@ -264,6 +264,7 @@ Party::WakeupHold ClientCall::StartCall(
             delete unordered_start;
             unordered_start = next;
           }
+          return wakeup_hold;
         }
         break;
       }
