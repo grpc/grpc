@@ -141,7 +141,7 @@ class UnaryUnaryCall(
     """The abstract base class of an unary-unary RPC on the client-side."""
 
     @abstractmethod
-    def __await__(self) -> Generator[ResponseType, None, Any]:
+    def __await__(self) -> Generator[Any, None, ResponseType]:
         """Await the response message to be ready.
 
         Returns:
@@ -201,7 +201,7 @@ class StreamUnaryCall(
         """
 
     @abstractmethod
-    def __await__(self) -> Generator[ResponseType, None, Any]:
+    def __await__(self) -> Generator[Any, None, ResponseType]:
         """Await the response message to be ready.
 
         Returns:

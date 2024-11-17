@@ -120,7 +120,7 @@ class AioRpcError(grpc.RpcError):
         """Accesses the details sent by the server.
 
         Returns:
-          The description of the error.
+          The description of the error, or None if the RPC has not been completed.
         """
         return self._details
 
