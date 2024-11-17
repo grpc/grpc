@@ -347,7 +347,10 @@ grpc_event CqVerifier::Step(gpr_timespec deadline) {
       if (r.type != GRPC_QUEUE_TIMEOUT) return r;
       auto now = gpr_now(deadline.clock_type);
       if (gpr_time_cmp(deadline, now) < 0) break;
-      step_fn_(Timestamp::FromTimespecRoundDown(deadline) - Timestamp::Now());
+      // Add a millisecond to ensure we overshoot the cq timeout if nothing is
+      // happening
+      step_fn_(Timestamp::FromTimespecRoundDown(deadline) +
+               Duration::Milliseconds(1) - Timestamp::Now());
     }
     return grpc_event{GRPC_QUEUE_TIMEOUT, 0, nullptr};
   }

@@ -148,6 +148,8 @@ void FuzzingEventEngine::Tick(Duration max_time) {
       incr = max_time;
       if (!tasks_by_time_.empty()) {
         incr = std::min(incr, tasks_by_time_.begin()->first - now_);
+      } else {
+        incr = max_time;
       }
       now_ += incr;
       CHECK_GE(now_.time_since_epoch().count(), 0);
