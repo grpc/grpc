@@ -237,40 +237,45 @@ Party::WakeupHold ClientCall::StartCall(
   auto call = MakeCallPair(std::move(send_initial_metadata_), arena()->Ref());
   started_call_initiator_ = std::move(call.initiator);
   Party::WakeupHold wakeup_hold{started_call_initiator_.party()};
-  while (true) {
-    GRPC_TRACE_LOG(call, INFO)
-        << DebugTag() << "StartCall " << GRPC_DUMP_ARGS(cur_state);
-    switch (cur_state) {
-      case kUnstarted:
-        if (call_state_.compare_exchange_strong(cur_state, kStarted,
-                                                std::memory_order_acq_rel,
-                                                std::memory_order_acquire)) {
-          call_destination_->StartCall(std::move(call.handler));
-        }
-        return wakeup_hold;
-      case kStarted:
-        Crash("StartCall called twice");  // probably we crash earlier...
-      case kCancelled:
-        return wakeup_hold;
-      default: {  // UnorderedStart
-        if (call_state_.compare_exchange_strong(cur_state, kStarted,
-                                                std::memory_order_acq_rel,
-                                                std::memory_order_acquire)) {
-          call_destination_->StartCall(std::move(call.handler));
-          auto unordered_start = reinterpret_cast<UnorderedStart*>(cur_state);
-          while (unordered_start->next != nullptr) {
-            unordered_start->start_pending_batch();
-            auto next = unordered_start->next;
-            delete unordered_start;
-            unordered_start = next;
-          }
-          return wakeup_hold;
-        }
-        break;
-      }
-    }
+  while (!StartCallMaybeUpdateState(cur_state, call.handler)) {
   }
   return wakeup_hold;
+}
+
+bool ClientCall::StartCallMaybeUpdateState(uintptr_t& cur_state,
+                                           UnstartedCallHandler& handler) {
+  GRPC_TRACE_LOG(call, INFO)
+      << DebugTag() << "StartCall " << GRPC_DUMP_ARGS(cur_state);
+  switch (cur_state) {
+    case kUnstarted:
+      if (call_state_.compare_exchange_strong(cur_state, kStarted,
+                                              std::memory_order_acq_rel,
+                                              std::memory_order_acquire)) {
+        call_destination_->StartCall(std::move(handler));
+        return true;
+      }
+      return false;
+    case kStarted:
+      Crash("StartCall called twice");  // probably we crash earlier...
+    case kCancelled:
+      return true;
+    default: {  // UnorderedStart
+      if (call_state_.compare_exchange_strong(cur_state, kStarted,
+                                              std::memory_order_acq_rel,
+                                              std::memory_order_acquire)) {
+        call_destination_->StartCall(std::move(handler));
+        auto unordered_start = reinterpret_cast<UnorderedStart*>(cur_state);
+        while (unordered_start->next != nullptr) {
+          unordered_start->start_pending_batch();
+          auto next = unordered_start->next;
+          delete unordered_start;
+          unordered_start = next;
+        }
+        return true;
+      }
+      return false;
+    }
+  }
 }
 
 void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
