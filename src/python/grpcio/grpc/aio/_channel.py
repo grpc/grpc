@@ -117,18 +117,18 @@ class _BaseMultiCallable(Generic[RequestType, ResponseType]):
     def _init_metadata(
         metadata: Optional[MetadataType] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> MetadataType:
+    ) -> Metadata:
         """Based on the provided values for <metadata> or <compression> initialise the final
         metadata, as it should be used for the current call.
         """
         metadata = metadata or Metadata()
         if not isinstance(metadata, Metadata) and isinstance(metadata, tuple):
-            metadata = Metadata.from_tuple(metadata)  # type: ignore
+            metadata = Metadata.from_tuple(metadata) # type: ignore
         if compression:
             metadata = Metadata(
-                *_compression.augment_metadata(metadata, compression)  # type: ignore
+                *_compression.augment_metadata(metadata, compression)
             )
-        return cast(MetadataType, metadata)
+        return metadata
 
 
 class UnaryUnaryMultiCallable(

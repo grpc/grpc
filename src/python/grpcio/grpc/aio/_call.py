@@ -140,7 +140,7 @@ class AioRpcError(grpc.RpcError):
         """
         return self._trailing_metadata
 
-    def debug_error_string(self) -> str:
+    def debug_error_string(self) -> Optional[str]:
         """Accesses the debug error string sent by the server.
 
         Returns:
@@ -211,7 +211,7 @@ class Call:
     ) -> None:
         self._loop = loop
         self._cython_call = cython_call
-        self._metadata = tuple(metadata)  # type: ignore
+        self._metadata = tuple(metadata)
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
 
