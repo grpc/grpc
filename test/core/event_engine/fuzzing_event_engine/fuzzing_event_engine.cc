@@ -146,10 +146,9 @@ void FuzzingEventEngine::Tick(Duration max_time) {
       grpc_core::MutexLock lock(&*mu_);
       grpc_core::MutexLock now_lock(&*now_mu_);
       incr = max_time;
+      DCHECK_GT(incr.count(), Duration::zero().count());
       if (!tasks_by_time_.empty()) {
         incr = std::min(incr, tasks_by_time_.begin()->first - now_);
-      } else {
-        incr = max_time;
       }
       now_ += incr;
       CHECK_GE(now_.time_since_epoch().count(), 0);
