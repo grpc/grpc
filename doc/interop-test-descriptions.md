@@ -1005,16 +1005,12 @@ Client asserts:
 ### rpc_soak
 
 The client performs many large_unary RPCs in sequence over the same channel.
-The test can run in either a concurrent or non-concurrent mode, depending on 
-the number of threads specified (`soak_num_threads`):
+The total number of RPCs to execute is controlled by the `soak_iterations` 
+parameter, which defaults to 10. The test runs in concurrent mode, where 
+multiple threads are used to execute the RPCs, with the number of threads 
+controlled by soak_num_threads. By default, `soak_num_threads` is set to 1. 
 
-* Non-Concurrent Mode: When `soak_num_threads = 1`, all RPCs are performed 
-  sequentially on a single thread.
-* Concurrent Mode: When `soak_num_threads > 1`, the client uses multiple threads
-  to distribute the workload. Each thread performs a portion of the total 
- `soak_iterations`, executing its own set of RPCs concurrently.
-
-In either case, the client records the latency and status of each RPC in 
+The client records the latency and status of each RPC in 
 thread-specific data structure, which are later aggregated to form the overall 
 results. If the test ever consumes `soak_overall_timeout_seconds` seconds 
 and still hasn't completed `soak_iterations` RPCs, then the test should 
@@ -1233,13 +1229,13 @@ languages. Therefore they are not part of our interop matrix.
 The client performs a number of large_unary RPCs over a single long-lived
 channel with a fixed but configurable interval between each RPC.
 
-[//]: # (#### concurrent_large_unary)
+#### concurrent_large_unary
 
-[//]: # ()
-[//]: # (Status: TODO)
 
-[//]: # ()
-[//]: # (Client performs 1000 large_unary tests in parallel on the same channel.)
+Status: TODO
+
+
+Client performs 1000 large_unary tests in parallel on the same channel.
 
 #### Flow control. Pushback at client for large messages (TODO: fix name)
 
