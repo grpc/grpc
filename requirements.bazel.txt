@@ -38,3 +38,4 @@ typing-extensions==4.9.0
 pyasn1-modules==0.3.0
 zipp==3.17.0
 wrapt==1.16.0
+typeguard==4.4.1

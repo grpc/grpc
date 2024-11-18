@@ -1,4 +1,3 @@
-#! /bin/bash -ex
 # Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Common constants for gRPC Async API"""
 
-JOBS=$(nproc) || JOBS=4
-python3 -m pip install pytype==2024.9.13
-python3 -m pytype --keep-going -j "$JOBS" --strict-import --config "setup.cfg"
+
+class EOF:
+    def __bool__(self):
+        return False
+
+    def __len__(self):
+        return 0
+
+    def _repr(self) -> str:
+        return "<grpc.aio.EOF>"
+
+    def __repr__(self) -> str:
+        return self._repr()
+
+    def __str__(self) -> str:
+        return self._repr()

@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Implementation of the metadata abstraction for gRPC Asyncio Python."""
+
+from __future__ import annotations
+
 from collections import OrderedDict
 from collections import abc
 from typing import Any, Iterator, List, Optional, Tuple, Union
 
 MetadataKey = str
-MetadataValue = Union[str, bytes]
+MetadataValue = Union[str, bytes, None]
 
 
 class Metadata(abc.Collection):
@@ -34,12 +37,12 @@ class Metadata(abc.Collection):
     """
 
     def __init__(self, *args: Tuple[MetadataKey, MetadataValue]) -> None:
-        self._metadata = OrderedDict()
+        self._metadata: OrderedDict = OrderedDict()
         for md_key, md_value in args:
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple(cls, raw_metadata: tuple):
+    def from_tuple(cls, raw_metadata: Metadata):
         if raw_metadata:
             return cls(*raw_metadata)
         return cls()
@@ -90,13 +93,14 @@ class Metadata(abc.Collection):
                 yield (key, value)
 
     def keys(self) -> abc.KeysView:
-        return abc.KeysView(self)
+        # mypy can't infer the type of the view due to limitations with generic ABCs
+        return abc.KeysView(self)  # type: ignore[arg-type]
 
     def values(self) -> abc.ValuesView:
-        return abc.ValuesView(self)
+        return abc.ValuesView(self)  # type: ignore[arg-type]
 
     def items(self) -> abc.ItemsView:
-        return abc.ItemsView(self)
+        return abc.ItemsView(self)  # type: ignore[arg-type]
 
     def get(
         self, key: MetadataKey, default: MetadataValue = None
@@ -115,7 +119,9 @@ class Metadata(abc.Collection):
     def set_all(self, key: MetadataKey, values: List[MetadataValue]) -> None:
         self._metadata[key] = values
 
-    def __contains__(self, key: MetadataKey) -> bool:
+    def __contains__(
+        self, key: object
+    ) -> bool:  # supertype defines 1rd arg type as "object"
         return key in self._metadata
 
     def __eq__(self, other: Any) -> bool:

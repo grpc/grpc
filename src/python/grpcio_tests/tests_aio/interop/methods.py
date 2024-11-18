@@ -30,6 +30,7 @@ from google.auth import environment_vars as google_auth_environment_vars
 from google.auth.transport import grpc as google_auth_transport_grpc
 from google.auth.transport import requests as google_auth_transport_requests
 import grpc
+from grpc.aio import _constants
 from grpc.experimental import aio
 
 from src.proto.grpc.testing import empty_pb2
@@ -275,7 +276,7 @@ async def _timeout_on_sleeping_server(stub: test_pb2_grpc.TestServiceStub):
 async def _empty_stream(stub: test_pb2_grpc.TestServiceStub):
     call = stub.FullDuplexCall()
     await call.done_writing()
-    assert await call.read() == aio.EOF
+    assert await call.read() == _constants.EOF
 
 
 async def _status_code_and_message(stub: test_pb2_grpc.TestServiceStub):
@@ -508,12 +509,12 @@ async def test_interoperability(
     if method is None:
         raise NotImplementedError(f'Test case "{case}" not implemented!')
     else:
-        num_params = len(inspect.signature(method).parameters)
+        num_params = len(inspect.signature(method).parameters)  # type: ignore
         if num_params == 1:
-            await method(stub)
+            await method(stub)  # type: ignore
         elif num_params == 2:
             if args is not None:
-                await method(stub, args)
+                await method(stub, args)  # type: ignore
             else:
                 raise ValueError(f"Failed to run case [{case}]: args is None")
         else:

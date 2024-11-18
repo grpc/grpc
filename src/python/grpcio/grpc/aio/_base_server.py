@@ -18,7 +18,6 @@ from typing import Generic, Iterable, Mapping, NoReturn, Optional, Sequence
 
 import grpc
 
-from ._metadata import Metadata  # pylint: disable=unused-import
 from ._typing import DoneCallbackType
 from ._typing import MetadataType
 from ._typing import RequestType
@@ -146,9 +145,9 @@ class Server(abc.ABC):
           method_handlers: A dictionary that maps method names to corresponding
             RpcMethodHandler.
         """
+        raise NotImplementedError()
 
 
-# pylint: disable=too-many-public-methods
 class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
     """A context object passed to method implementations."""
 
@@ -321,6 +320,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           remaining for the RPC to complete before it is considered to have
           timed out, or None if no deadline was specified for the RPC.
         """
+        raise NotImplementedError()
 
     def trailing_metadata(self):
         """Access value to be used as trailing metadata upon RPC completion.
@@ -361,6 +361,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           callback: A callable object will be called with the servicer context
             object as its only argument.
         """
+        raise NotImplementedError()
 
     def cancelled(self) -> bool:
         """Return True if the RPC is cancelled.
@@ -372,6 +373,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           A bool indicates whether the RPC is cancelled or not.
         """
+        raise NotImplementedError()
 
     def done(self) -> bool:
         """Return True if the RPC is done.
@@ -383,3 +385,4 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           A bool indicates if the RPC is done.
         """
+        raise NotImplementedError()

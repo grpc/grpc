@@ -24,8 +24,6 @@ from typing import (
     Union,
 )
 
-from grpc._cython.cygrpc import EOF
-
 from ._metadata import Metadata
 from ._metadata import MetadataKey
 from ._metadata import MetadataValue
@@ -37,7 +35,6 @@ DeserializingFunction = Callable[[bytes], Any]
 MetadatumType = Tuple[MetadataKey, MetadataValue]
 MetadataType = Union[Metadata, Sequence[MetadatumType]]
 ChannelArgumentType = Sequence[Tuple[str, Any]]
-EOFType = type(EOF)
 DoneCallbackType = Callable[[Any], None]
 RequestIterableType = Union[Iterable[Any], AsyncIterable[Any]]
 ResponseIterableType = AsyncIterable[Any]
