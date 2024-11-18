@@ -185,7 +185,6 @@ struct HostnameQueryArg : public QueryArg {
   HostnameQueryArg(AresResolver* ar, int id, absl::string_view name, int p)
       : QueryArg(ar, id, name), port(p) {}
   int port;
-  int pending_requests;
   absl::Status error_status;
   std::vector<EventEngine::ResolvedAddress> result;
 };
@@ -326,13 +325,9 @@ void AresResolver::LookupHostname(
     // Note that using AF_UNSPEC for both IPv6 and IPv4 queries does not work in
     // all cases, e.g. for localhost:<> it only gets back the IPv6 result (i.e.
     // ::1).
-    resolver_arg->pending_requests = 2;
-    ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET,
-                       &AresResolver::OnHostbynameDoneLocked, resolver_arg);
-    ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET6,
+    ares_gethostbyname(channel_, std::string(host).c_str(), AF_UNSPEC,
                        &AresResolver::OnHostbynameDoneLocked, resolver_arg);
   } else {
-    resolver_arg->pending_requests = 1;
     ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET,
                        &AresResolver::OnHostbynameDoneLocked, resolver_arg);
   }
@@ -598,7 +593,6 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
                                           int /*timeouts*/,
                                           struct hostent* hostent) {
   auto* hostname_qa = static_cast<HostnameQueryArg*>(arg);
-  CHECK_GT(hostname_qa->pending_requests--, 0);
   auto* ares_resolver = hostname_qa->ares_resolver;
   if (status != ARES_SUCCESS) {
     std::string error_msg =
@@ -663,29 +657,27 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
       }
     }
   }
-  if (hostname_qa->pending_requests == 0) {
-    auto nh =
-        ares_resolver->callback_map_.extract(hostname_qa->callback_map_id);
-    CHECK(!nh.empty());
-    CHECK(absl::holds_alternative<
-          EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
-    auto callback = absl::get<EventEngine::DNSResolver::LookupHostnameCallback>(
-        std::move(nh.mapped()));
-    if (!hostname_qa->result.empty() || hostname_qa->error_status.ok()) {
-      ares_resolver->event_engine_->Run(
-          [callback = std::move(callback),
-           result = SortAddresses(hostname_qa->result)]() mutable {
-            callback(std::move(result));
-          });
-    } else {
-      ares_resolver->event_engine_->Run(
-          [callback = std::move(callback),
-           result = std::move(hostname_qa->error_status)]() mutable {
-            callback(std::move(result));
-          });
-    }
-    delete hostname_qa;
+  auto nh = ares_resolver->callback_map_.extract(hostname_qa->callback_map_id);
+  CHECK(!nh.empty());
+  CHECK(
+      absl::holds_alternative<EventEngine::DNSResolver::LookupHostnameCallback>(
+          nh.mapped()));
+  auto callback = absl::get<EventEngine::DNSResolver::LookupHostnameCallback>(
+      std::move(nh.mapped()));
+  if (!hostname_qa->result.empty() || hostname_qa->error_status.ok()) {
+    ares_resolver->event_engine_->Run(
+        [callback = std::move(callback),
+         result = SortAddresses(hostname_qa->result)]() mutable {
+          callback(std::move(result));
+        });
+  } else {
+    ares_resolver->event_engine_->Run(
+        [callback = std::move(callback),
+         result = std::move(hostname_qa->error_status)]() mutable {
+          callback(std::move(result));
+        });
   }
+  delete hostname_qa;
 }
 
 void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
