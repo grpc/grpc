@@ -189,12 +189,13 @@ void Party::ForceImmediateRepoll(WakeupMask mask) {
 void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
   GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked");
 #if defined(GRPC_MAXIMIZE_THREADYNESS)
-  party->arena_->GetContext<grpc_event_engine::experimental::EventEngine>()
-      ->Run([party, prev_state]() {
-        ApplicationCallbackExecCtx app_exec_ctx;
-        ExecCtx exec_ctx;
-        party->RunPartyAndUnref(prev_state);
-      });
+  auto ee =
+      party->arena_->GetContext<grpc_event_engine::experimental::EventEngine>();
+  ee->Run([party, prev_state, ee]() {
+    ApplicationCallbackExecCtx app_exec_ctx;
+    ExecCtx exec_ctx;
+    party->RunPartyAndUnref(prev_state);
+  });
 #else
   struct RunState;
   static thread_local RunState* g_run_state = nullptr;
