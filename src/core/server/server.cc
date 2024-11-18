@@ -91,9 +91,8 @@ namespace grpc_core {
 //
 
 void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
-    RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
-        connection_manager) {
-  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+    RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager) {
+  RefCountedPtr<ServerConfigFetcher::ConnectionManager>
       connection_manager_to_destroy;
   {
     MutexLock lock(&listener_state_->mu_);
@@ -183,8 +182,7 @@ void Server::ListenerState::Stop() {
 absl::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
     OrphanablePtr<ListenerInterface::LogicalConnection> connection,
     const ChannelArgs& args, grpc_endpoint* endpoint) {
-  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
-      connection_manager;
+  RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager;
   {
     MutexLock lock(&mu_);
     if (!is_serving_) {
@@ -2181,7 +2179,8 @@ void grpc_server_set_config_fetcher(
       << "grpc_server_set_config_fetcher(server=" << server
       << ", config_fetcher=" << server_config_fetcher << ")";
   grpc_core::Server::FromC(server)->set_config_fetcher(
-      std::unique_ptr<grpc_server_config_fetcher>(server_config_fetcher));
+      std::unique_ptr<grpc_core::ServerConfigFetcher>(
+          grpc_core::ServerConfigFetcher::FromC(server_config_fetcher)));
 }
 
 void grpc_server_config_fetcher_destroy(
@@ -2191,5 +2190,5 @@ void grpc_server_config_fetcher_destroy(
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_config_fetcher_destroy(config_fetcher="
       << server_config_fetcher << ")";
-  delete server_config_fetcher;
+  delete grpc_core::ServerConfigFetcher::FromC(server_config_fetcher);
 }

@@ -75,7 +75,10 @@
 #define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
   "grpc.server.max_pending_requests_hard_limit"
 
-struct grpc_server_config_fetcher {
+namespace grpc_core {
+
+class ServerConfigFetcher
+    : public CppImplOf<ServerConfigFetcher, grpc_server_config_fetcher> {
  public:
   class ConnectionManager
       : public grpc_core::DualRefCounted<ConnectionManager> {
@@ -98,7 +101,7 @@ struct grpc_server_config_fetcher {
     virtual void StopServing() = 0;
   };
 
-  virtual ~grpc_server_config_fetcher() = default;
+  virtual ~ServerConfigFetcher() = default;
 
   virtual void StartWatch(std::string listening_address,
                           std::unique_ptr<WatcherInterface> watcher) = 0;
@@ -106,7 +109,6 @@ struct grpc_server_config_fetcher {
   virtual grpc_pollset_set* interested_parties() = 0;
 };
 
-namespace grpc_core {
 namespace experimental {
 class PassiveListenerImpl;
 }  // namespace experimental
@@ -251,14 +253,13 @@ class Server : public ServerInterface,
     }
 
    private:
-    class ConfigFetcherWatcher
-        : public grpc_server_config_fetcher::WatcherInterface {
+    class ConfigFetcherWatcher : public ServerConfigFetcher::WatcherInterface {
      public:
       explicit ConfigFetcherWatcher(ListenerState* listener_state)
           : listener_state_(listener_state) {}
 
       void UpdateConnectionManager(
-          RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+          RefCountedPtr<ServerConfigFetcher::ConnectionManager>
               connection_manager) override;
 
       void StopServing() override;
@@ -295,8 +296,8 @@ class Server : public ServerInterface,
     Mutex mu_;  // We could share this mutex with Listener implementations. It's
                 // a tradeoff between increased memory requirement and more
                 // granular critical regions.
-    RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
-        connection_manager_ ABSL_GUARDED_BY(mu_);
+    RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_
+        ABSL_GUARDED_BY(mu_);
     bool is_serving_ ABSL_GUARDED_BY(mu_) = false;
     bool started_ ABSL_GUARDED_BY(mu_) = false;
     absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
@@ -323,16 +324,13 @@ class Server : public ServerInterface,
   // result is valid for the lifetime of the server.
   const std::vector<grpc_pollset*>& pollsets() const { return pollsets_; }
 
-  grpc_server_config_fetcher* config_fetcher() const {
-    return config_fetcher_.get();
-  }
+  ServerConfigFetcher* config_fetcher() const { return config_fetcher_.get(); }
 
   ServerCallTracerFactory* server_call_tracer_factory() const override {
     return server_call_tracer_factory_;
   }
 
-  void set_config_fetcher(
-      std::unique_ptr<grpc_server_config_fetcher> config_fetcher) {
+  void set_config_fetcher(std::unique_ptr<ServerConfigFetcher> config_fetcher) {
     config_fetcher_ = std::move(config_fetcher);
   }
 
@@ -635,7 +633,7 @@ class Server : public ServerInterface,
 
   ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
-  std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
+  std::unique_ptr<ServerConfigFetcher> config_fetcher_;
   ServerCallTracerFactory* const server_call_tracer_factory_;
 
   std::vector<grpc_completion_queue*> cqs_;
@@ -691,8 +689,8 @@ class Server : public ServerInterface,
   std::list<ChannelData*> channels_;
   absl::flat_hash_set<OrphanablePtr<ServerTransport>> connections_
       ABSL_GUARDED_BY(mu_global_);
-  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
-      connection_manager_ ABSL_GUARDED_BY(mu_global_);
+  RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_
+      ABSL_GUARDED_BY(mu_global_);
   size_t connections_open_ ABSL_GUARDED_BY(mu_global_) = 0;
 
   std::list<RefCountedPtr<ListenerState>> listener_states_;

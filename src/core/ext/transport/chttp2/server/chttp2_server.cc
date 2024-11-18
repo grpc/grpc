@@ -135,7 +135,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
   // Do not instantiate directly.  Use one of the factory methods above.
   Chttp2ServerListener(Server* server, const ChannelArgs& args,
-                       grpc_server_config_fetcher* config_fetcher,
+                       ServerConfigFetcher* config_fetcher,
                        std::shared_ptr<experimental::PassiveListenerImpl>
                            passive_listener = nullptr);
   ~Chttp2ServerListener() override;
@@ -164,14 +164,13 @@ class Chttp2ServerListener : public Server::ListenerInterface {
  private:
   friend class experimental::PassiveListenerImpl;
 
-  class ConfigFetcherWatcher
-      : public grpc_server_config_fetcher::WatcherInterface {
+  class ConfigFetcherWatcher : public ServerConfigFetcher::WatcherInterface {
    public:
     explicit ConfigFetcherWatcher(RefCountedPtr<Chttp2ServerListener> listener)
         : listener_(std::move(listener)) {}
 
     void UpdateConnectionManager(
-        RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+        RefCountedPtr<ServerConfigFetcher::ConnectionManager>
             connection_manager) override;
 
     void StopServing() override;
@@ -280,8 +279,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
   ChannelArgs args_;
   Mutex mu_;
-  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
-      connection_manager_ ABSL_GUARDED_BY(mu_);
+  RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_
+      ABSL_GUARDED_BY(mu_);
   // Signals whether grpc_tcp_server_start() has been called.
   bool started_ ABSL_GUARDED_BY(mu_) = false;
   // Signals whether grpc_tcp_server_start() has completed.
@@ -297,7 +296,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   RefCountedPtr<channelz::ListenSocketNode> channelz_listen_socket_;
   MemoryQuotaRefPtr memory_quota_;
   ConnectionQuotaRefPtr connection_quota_;
-  grpc_server_config_fetcher* config_fetcher_ = nullptr;
+  ServerConfigFetcher* config_fetcher_ = nullptr;
   // TODO(yashykt): consider using absl::variant<> to minimize memory usage for
   // disjoint cases where different fields are used.
   std::shared_ptr<experimental::PassiveListenerImpl> passive_listener_;
@@ -308,9 +307,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 //
 
 void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
-    RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
-        connection_manager) {
-  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+    RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager) {
+  RefCountedPtr<ServerConfigFetcher::ConnectionManager>
       connection_manager_to_destroy;
   class GracefulShutdownExistingConnections {
    public:
@@ -779,7 +777,7 @@ Chttp2ServerListener* Chttp2ServerListener::CreateForPassiveListener(
 
 Chttp2ServerListener::Chttp2ServerListener(
     Server* server, const ChannelArgs& args,
-    grpc_server_config_fetcher* config_fetcher,
+    ServerConfigFetcher* config_fetcher,
     std::shared_ptr<experimental::PassiveListenerImpl> passive_listener)
     : server_(server),
       args_(args),
@@ -870,8 +868,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
   ChannelArgs args = self->args_;
   OrphanablePtr<grpc_endpoint> endpoint(tcp);
   AcceptorPtr acceptor(server_acceptor);
-  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
-      connection_manager;
+  RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager;
   {
     MutexLock lock(&self->mu_);
     connection_manager = self->connection_manager_;

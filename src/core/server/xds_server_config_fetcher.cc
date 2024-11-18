@@ -97,7 +97,7 @@ using ReadDelayHandle = XdsClient::ReadDelayHandle;
 
 // A server config fetcher that fetches the information for configuring server
 // listeners from the xDS control plane.
-class XdsServerConfigFetcher final : public grpc_server_config_fetcher {
+class XdsServerConfigFetcher final : public ServerConfigFetcher {
  public:
   XdsServerConfigFetcher(RefCountedPtr<GrpcXdsClient> xds_client,
                          grpc_server_xds_status_notifier notifier);
@@ -106,12 +106,11 @@ class XdsServerConfigFetcher final : public grpc_server_config_fetcher {
     xds_client_.reset(DEBUG_LOCATION, "XdsServerConfigFetcher");
   }
 
-  void StartWatch(std::string listening_address,
-                  std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
-                      watcher) override;
+  void StartWatch(
+      std::string listening_address,
+      std::unique_ptr<ServerConfigFetcher::WatcherInterface> watcher) override;
 
-  void CancelWatch(
-      grpc_server_config_fetcher::WatcherInterface* watcher) override;
+  void CancelWatch(ServerConfigFetcher::WatcherInterface* watcher) override;
 
   // Return the interested parties from the xds client so that it can be polled.
   grpc_pollset_set* interested_parties() override {
@@ -124,7 +123,7 @@ class XdsServerConfigFetcher final : public grpc_server_config_fetcher {
   RefCountedPtr<GrpcXdsClient> xds_client_;
   const grpc_server_xds_status_notifier serving_status_notifier_;
   Mutex mu_;
-  std::map<grpc_server_config_fetcher::WatcherInterface*, ListenerWatcher*>
+  std::map<ServerConfigFetcher::WatcherInterface*, ListenerWatcher*>
       listener_watchers_ ABSL_GUARDED_BY(mu_);
 };
 
@@ -142,7 +141,7 @@ class XdsServerConfigFetcher::ListenerWatcher final
     : public XdsListenerResourceType::WatcherInterface {
  public:
   ListenerWatcher(RefCountedPtr<GrpcXdsClient> xds_client,
-                  std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
+                  std::unique_ptr<ServerConfigFetcher::WatcherInterface>
                       server_config_watcher,
                   grpc_server_xds_status_notifier serving_status_notifier,
                   std::string listening_address);
@@ -182,7 +181,7 @@ class XdsServerConfigFetcher::ListenerWatcher final
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
   RefCountedPtr<GrpcXdsClient> xds_client_;
-  const std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
+  const std::unique_ptr<ServerConfigFetcher::WatcherInterface>
       server_config_watcher_;
   const grpc_server_xds_status_notifier serving_status_notifier_;
   const std::string listening_address_;
@@ -199,7 +198,7 @@ class XdsServerConfigFetcher::ListenerWatcher final
 // args that configure the right mTLS certs and cause the right set of HTTP
 // filters to be injected.
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager final
-    : public grpc_server_config_fetcher::ConnectionManager {
+    : public ServerConfigFetcher::ConnectionManager {
  public:
   FilterChainMatchManager(RefCountedPtr<GrpcXdsClient> xds_client,
                           XdsListenerResource::FilterChainMap filter_chain_map,
@@ -532,8 +531,8 @@ std::string ListenerResourceName(absl::string_view resource_name_template,
 
 void XdsServerConfigFetcher::StartWatch(
     std::string listening_address,
-    std::unique_ptr<grpc_server_config_fetcher::WatcherInterface> watcher) {
-  grpc_server_config_fetcher::WatcherInterface* watcher_ptr = watcher.get();
+    std::unique_ptr<ServerConfigFetcher::WatcherInterface> watcher) {
+  ServerConfigFetcher::WatcherInterface* watcher_ptr = watcher.get();
   auto listener_watcher = MakeRefCounted<ListenerWatcher>(
       xds_client_.Ref(DEBUG_LOCATION, "ListenerWatcher"), std::move(watcher),
       serving_status_notifier_, listening_address);
@@ -550,7 +549,7 @@ void XdsServerConfigFetcher::StartWatch(
 }
 
 void XdsServerConfigFetcher::CancelWatch(
-    grpc_server_config_fetcher::WatcherInterface* watcher) {
+    ServerConfigFetcher::WatcherInterface* watcher) {
   MutexLock lock(&mu_);
   auto it = listener_watchers_.find(watcher);
   if (it != listener_watchers_.end()) {
@@ -572,7 +571,7 @@ void XdsServerConfigFetcher::CancelWatch(
 
 XdsServerConfigFetcher::ListenerWatcher::ListenerWatcher(
     RefCountedPtr<GrpcXdsClient> xds_client,
-    std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
+    std::unique_ptr<ServerConfigFetcher::WatcherInterface>
         server_config_watcher,
     grpc_server_xds_status_notifier serving_status_notifier,
     std::string listening_address)
@@ -1379,6 +1378,7 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
                   "bootstrap file.";
     return nullptr;
   }
-  return new grpc_core::XdsServerConfigFetcher(std::move(*xds_client),
-                                               notifier);
+  return (new grpc_core::XdsServerConfigFetcher(std::move(*xds_client),
+                                                notifier))
+      ->c_ptr();
 }
