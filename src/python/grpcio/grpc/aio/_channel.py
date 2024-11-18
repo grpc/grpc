@@ -89,8 +89,8 @@ class _BaseMultiCallable(Generic[RequestType, ResponseType]):
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
     _method: bytes
-    _request_serializer: SerializingFunction
-    _response_deserializer: DeserializingFunction
+    _request_serializer: Optional[SerializingFunction]
+    _response_deserializer: Optional[DeserializingFunction]
     _interceptors: Sequence[ClientInterceptor]
     _references: List[Any]
 
@@ -99,8 +99,8 @@ class _BaseMultiCallable(Generic[RequestType, ResponseType]):
         self,
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         interceptors: Sequence[ClientInterceptor],
         references: List[Any],
         loop: asyncio.AbstractEventLoop,
@@ -121,14 +121,19 @@ class _BaseMultiCallable(Generic[RequestType, ResponseType]):
         """Based on the provided values for <metadata> or <compression> initialise the final
         metadata, as it should be used for the current call.
         """
-        metadata = metadata or Metadata()
-        if not isinstance(metadata, Metadata) and isinstance(metadata, tuple):
-            metadata = Metadata.from_tuple(metadata)  # type: ignore
+        if metadata is None:
+            final_metadata = Metadata()
+        elif isinstance(metadata, Metadata):
+            final_metadata = metadata
+        elif isinstance(metadata, tuple):
+            final_metadata = Metadata(*metadata)
+        else:
+            final_metadata = Metadata.from_tuple(metadata)  # type: ignore[arg-type]
         if compression:
-            metadata = Metadata(
-                *_compression.augment_metadata(metadata, compression)
+            final_metadata = Metadata(
+                *_compression.augment_metadata(final_metadata, compression)
             )
-        return metadata
+        return final_metadata
 
 
 class UnaryUnaryMultiCallable(

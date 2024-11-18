@@ -276,7 +276,6 @@ async def _timeout_on_sleeping_server(stub: test_pb2_grpc.TestServiceStub):
 async def _empty_stream(stub: test_pb2_grpc.TestServiceStub):
     call = stub.FullDuplexCall()
     await call.done_writing()
-    print(await call.read())
     assert await call.read() == _constants.EOF
 
 

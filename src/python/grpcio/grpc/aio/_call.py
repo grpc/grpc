@@ -35,7 +35,6 @@ from grpc import _common
 from grpc._cython import cygrpc
 
 from . import _base_call
-from ._eof import EOF
 from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
@@ -198,15 +197,15 @@ class Call:
     _code: grpc.StatusCode
     _cython_call: cygrpc._AioCall
     _metadata: Tuple[MetadatumType, ...]
-    _request_serializer: SerializingFunction
-    _response_deserializer: DeserializingFunction
+    _request_serializer: Optional[SerializingFunction]
+    _response_deserializer: Optional[DeserializingFunction]
 
     def __init__(
         self,
         cython_call: cygrpc._AioCall,
         metadata: Metadata,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -392,10 +391,7 @@ class _StreamResponseMixin(Call, Generic[ResponseType]):
                 raw_response, self._response_deserializer
             )
 
-    async def read(self) -> Union[EOF, ResponseType]:
-        # Wait for the request being sent
-        await self._preparation
-
+    async def read(self) -> Union['grpc.aio.EOF', ResponseType]:
         if self.done():
             await self._raise_for_status()
             return cygrpc.EOF
@@ -568,8 +564,8 @@ class UnaryUnaryCall(
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(
@@ -584,7 +580,7 @@ class UnaryUnaryCall(
         self._invocation_task = loop.create_task(self._invoke())
         self._init_unary_response_mixin(self._invocation_task)
 
-    async def _invoke(self) -> Union[EOF, ResponseType]:
+    async def _invoke(self) -> Union['grpc.aio.EOF', ResponseType]:
         serialized_request = _common.serialize(
             self._request, self._request_serializer
         )
@@ -617,7 +613,7 @@ class UnaryStreamCall(
     _StreamResponseMixin,
     Call,
     _base_call.UnaryStreamCall,
-    Generic[RequestType, ResponseType],
+    Generic[RequestType],
 ):
     """Object for managing unary-stream RPC calls.
 
@@ -637,8 +633,8 @@ class UnaryStreamCall(
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(
@@ -697,8 +693,8 @@ class StreamUnaryCall(
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(
@@ -713,7 +709,7 @@ class StreamUnaryCall(
         self._init_stream_request_mixin(request_iterator)
         self._init_unary_response_mixin(loop.create_task(self._conduct_rpc()))
 
-    async def _conduct_rpc(self) -> Union[EOF, ResponseType]:
+    async def _conduct_rpc(self) -> Union['grpc.aio.EOF', ResponseType]:
         try:
             serialized_response = await self._cython_call.stream_unary(
                 self._metadata, self._metadata_sent_observer, self._context
@@ -751,8 +747,8 @@ class StreamStreamCall(
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(
