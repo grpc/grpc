@@ -180,7 +180,6 @@ class Server : public ServerInterface,
     // tracking systems, without increasing memory utilization.
     class LogicalConnection : public InternallyRefCounted<LogicalConnection> {
      public:
-      LogicalConnection() : InternallyRefCounted("server_channel") {}
       ~LogicalConnection() override = default;
 
       // The following two methods are called in the context of a server config
