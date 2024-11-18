@@ -39,4 +39,3 @@ py_binary(
         "//src/python/grpcio/grpc:grpcio",
     ],
 )
-
