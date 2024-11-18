@@ -58,6 +58,21 @@ class Chttp2ServerListenerTestPeer {
   NewChttp2ServerListener* listener_;
 };
 
+class ActiveConnectionTestPeer {
+ public:
+  ActiveConnectionTestPeer(
+      NewChttp2ServerListener::ActiveConnection* connection)
+      : connection_(connection) {}
+
+  void OnClose() {
+    NewChttp2ServerListener::ActiveConnection::OnClose(connection_,
+                                                       absl::OkStatus());
+  }
+
+ private:
+  NewChttp2ServerListener::ActiveConnection* connection_;
+};
+
 class ServerTestPeer {
  public:
   ServerTestPeer(Server* server) : server_(server) {}
@@ -74,23 +89,21 @@ class ServerTestPeer {
 class Chttp2ServerListenerTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    args_ = grpc_core::CoreConfiguration::Get()
+    args_ = CoreConfiguration::Get()
                 .channel_args_preconditioning()
                 .PreconditionChannelArgs(nullptr);
     server_ = MakeOrphanable<Server>(args_);
     auto creds = MakeRefCounted<InsecureServerCredentials>();
     grpc_server_add_http2_port(
         server_->c_ptr(),
-        grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die())
-            .c_str(),
+        JoinHostPort("localhost", grpc_pick_unused_port_or_die()).c_str(),
         creds.get());
     cq_ = grpc_completion_queue_create_for_next(/*reserved=*/nullptr);
     server_->RegisterCompletionQueue(cq_);
     grpc_server_start(server_->c_ptr());
     listener_state_ =
         ServerTestPeer(server_.get()).listener_states().front().get();
-    listener_ = grpc_core::DownCast<NewChttp2ServerListener*>(
-        listener_state_->listener());
+    listener_ = DownCast<NewChttp2ServerListener*>(listener_state_->listener());
   }
 
   void TearDown() override {
@@ -163,6 +176,30 @@ TEST_F(Chttp2ServerListenerTest, ConnectionRefusedAfterShutdown) {
   CqVerifier cqv(cq_);
   cqv.Expect(CqVerifier::tag(1), true);
   cqv.Verify();
+}
+
+using Chttp2ActiveConnectionTest = Chttp2ServerListenerTest;
+
+TEST_F(Chttp2ActiveConnectionTest, CloseReducesConnectionCount) {
+  listener_state_->connection_quota()->SetMaxIncomingConnections(10);
+  // Add a connection
+  ASSERT_TRUE(listener_state_->connection_quota()->AllowIncomingConnection(
+      listener_state_->memory_quota(), "peer"));
+  auto connection = MakeOrphanable<NewChttp2ServerListener::ActiveConnection>(
+      listener_state_->Ref(), /*tcp_server=*/nullptr,
+      /*accepting_pollset=*/nullptr,
+      /*acceptor=*/nullptr, args_,
+      listener_state_->memory_quota()->CreateMemoryOwner(), nullptr);
+  EXPECT_EQ(
+      listener_state_->connection_quota()->TestOnlyActiveIncomingConnections(),
+      1);
+  connection->RefAsSubclass<NewChttp2ServerListener::ActiveConnection>()
+      .release();  // Ref for OnClose
+  // On close, the connection count should go back to 0.
+  ActiveConnectionTestPeer(connection.get()).OnClose();
+  EXPECT_EQ(
+      listener_state_->connection_quota()->TestOnlyActiveIncomingConnections(),
+      0);
 }
 
 }  // namespace testing

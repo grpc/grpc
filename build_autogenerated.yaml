@@ -8633,6 +8633,38 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: chttp2_server_listener_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/test_util/cmdline.h
+  - test/core/test_util/evaluate_args_test_util.h
+  - test/core/test_util/fuzzer_util.h
+  - test/core/test_util/grpc_profiler.h
+  - test/core/test_util/histogram.h
+  - test/core/test_util/mock_endpoint.h
+  - test/core/test_util/parse_hexstring.h
+  - test/core/test_util/resolve_localhost_ip46.h
+  - test/core/test_util/slice_splitter.h
+  - test/core/test_util/tracer_util.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/cmdline.cc
+  - test/core/test_util/fuzzer_util.cc
+  - test/core/test_util/grpc_profiler.cc
+  - test/core/test_util/histogram.cc
+  - test/core/test_util/mock_endpoint.cc
+  - test/core/test_util/parse_hexstring.cc
+  - test/core/test_util/resolve_localhost_ip46.cc
+  - test/core/test_util/slice_splitter.cc
+  - test/core/test_util/tracer_util.cc
+  - test/core/transport/chttp2/chttp2_server_listener_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: chunked_vector_test
   gtest: true
   build: test

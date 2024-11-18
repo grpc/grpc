@@ -1147,7 +1147,7 @@ void NewChttp2ServerListener::ActiveConnection::Orphan() {
         // If ActiveConnection is orphaned before handshake is established,
         // shutdown the handshaker. If the server is stopping to serve or
         // shutting down and a transport has already been established, GOAWAYs
-        // will be sent separately.
+        // should be sent separately.
         shutdown_ = true;
         if (absl::holds_alternative<OrphanablePtr<HandshakingState>>(state_)) {
           state_ = OrphanablePtr<HandshakingState>(nullptr);

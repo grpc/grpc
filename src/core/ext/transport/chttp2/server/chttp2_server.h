@@ -44,6 +44,7 @@ class Chttp2ServerListener;
 
 namespace testing {
 class Chttp2ServerListenerTestPeer;
+class ActiveConnectionTestPeer;
 }  // namespace testing
 
 // New ChttpServerListener used if experiment "server_listener" is enabled
@@ -111,7 +112,10 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     using InternallyRefCounted<LogicalConnection>::RefAsSubclass;
 
    private:
+    friend class grpc_core::testing::ActiveConnectionTestPeer;
+
     static void OnClose(void* arg, grpc_error_handle error);
+
     void SendGoAwayImplLocked();
     void DisconnectImmediatelyImplLocked();
 
