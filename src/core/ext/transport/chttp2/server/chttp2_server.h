@@ -42,6 +42,10 @@ struct AcceptorDeleter {
 
 class Chttp2ServerListener;
 
+namespace testing {
+class Chttp2ServerListenerTestPeer;
+}  // namespace testing
+
 // New ChttpServerListener used if experiment "server_listener" is enabled
 class NewChttp2ServerListener : public Server::ListenerInterface {
  public:
@@ -169,8 +173,10 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
   // To allow access to RefCounted<> like interface.
   friend class RefCountedPtr<NewChttp2ServerListener>;
 
-  // Should only be called once so as to start the TCP server. This should only
-  // be called by the config fetcher.
+  friend class grpc_core::testing::Chttp2ServerListenerTestPeer;
+
+  // Should only be called once so as to start the TCP server. This should
+  // only be called by the config fetcher.
   void Start() override;
 
   static void OnAccept(void* arg, grpc_endpoint* tcp,

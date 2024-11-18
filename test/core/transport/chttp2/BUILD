@@ -519,3 +519,18 @@ grpc_cc_test(
         "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
+
+grpc_cc_test(
+    name = "chttp2_server_listener_test",
+    srcs = ["chttp2_server_listener_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)

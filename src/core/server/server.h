@@ -111,6 +111,10 @@ namespace experimental {
 class PassiveListenerImpl;
 }  // namespace experimental
 
+namespace testing {
+class ServerTestPeer;
+}  // namespace testing
+
 class Server : public ServerInterface,
                public InternallyRefCounted<Server>,
                public CppImplOf<Server, grpc_server> {
@@ -400,6 +404,9 @@ class Server : public ServerInterface,
       grpc_core::Server* server, grpc_server_credentials* credentials,
       std::shared_ptr<grpc_core::experimental::PassiveListenerImpl>
           passive_listener);
+
+  friend class grpc_core::testing::ServerTestPeer;
+
   struct RequestedCall;
 
   class RequestMatcherInterface;
