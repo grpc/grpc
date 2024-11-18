@@ -95,6 +95,10 @@ class PublishToAppEncoder {
     Append(LbTokenMetadata::key(), slice);
   }
 
+  void Encode(W3CTraceParentMetadata, const Slice& slice) {
+    Append(W3CTraceParentMetadata::key(), slice);
+  }
+
  private:
   void Append(absl::string_view key, int64_t value) {
     Append(StaticSlice::FromStaticString(key).c_slice(),

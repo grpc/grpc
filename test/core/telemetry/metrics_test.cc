@@ -669,6 +669,8 @@ TEST_F(MetricsTest, ParallelStatsPluginRegistrationAndLookup) {
       while (GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
                  StatsPluginChannelScope("", "", endpoint_config_))
                  .size() < 10000) {
+        // Yield to avoid starving the register threads.
+        std::this_thread::yield();
       };
     });
   }
