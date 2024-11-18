@@ -69,7 +69,6 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     Ref();
     CHECK(cq_armed_.exchange(true) == false);
     CHECK(!callback_armed_.load());
-    cancel_notification_.Reset();
     cq_timer_handle_ = event_engine_->RunAfter(
         grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
             grpc_core::ExecCtx::Get()->Now(),
