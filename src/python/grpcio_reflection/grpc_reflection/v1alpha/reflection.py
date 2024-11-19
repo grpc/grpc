@@ -14,7 +14,9 @@
 """Reference implementation for reflection in gRPC Python."""
 
 import sys
+from typing import Iterable, Optional, Union
 
+from google.protobuf import descriptor_pool
 import grpc
 from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
 from grpc_reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc
@@ -28,8 +30,13 @@ SERVICE_NAME = _reflection_pb2.DESCRIPTOR.services_by_name[
 class ReflectionServicer(BaseReflectionServicer):
     """Servicer handling RPCs for service statuses."""
 
-    def ServerReflectionInfo(self, request_iterator, context):
-        # pylint: disable=unused-argument
+    def ServerReflectionInfo(
+        self,
+        request_iterator: Iterable[_reflection_pb2.ServerReflectionRequest],
+        context: grpc.ServicerContext,
+    ) -> Iterable[
+        _reflection_pb2.ServerReflectionResponse
+    ]:  # pylint: disable=unused-argument
         for request in request_iterator:
             if request.HasField("file_by_filename"):
                 yield self._file_by_filename(request, request.file_by_filename)
@@ -77,7 +84,11 @@ if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
     # pylint: enable=ungrouped-imports
     from . import _async as aio
 
-    def enable_server_reflection(service_names, server, pool=None):
+    def enable_server_reflection(
+        service_names: Iterable[str],
+        server: grpc.GenericServer,
+        pool: Optional[descriptor_pool.DescriptorPool] = None,
+    ) -> None:
         if isinstance(server, grpc_aio.Server):
             _reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
                 aio.ReflectionServicer(service_names, pool=pool), server
@@ -97,7 +108,11 @@ if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
     ]
 else:
 
-    def enable_server_reflection(service_names, server, pool=None):
+    def enable_server_reflection(
+        service_names: Iterable[str],
+        server: Union[grpc.Server, grpc.aio._server.Server],
+        pool: Optional[descriptor_pool.DescriptorPool] = None,
+    ) -> None:
         _reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
             ReflectionServicer(service_names, pool=pool), server
         )

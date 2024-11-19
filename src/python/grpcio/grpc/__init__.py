@@ -25,6 +25,9 @@ from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
 
+from ._typing import GenericServer
+from ._typing import GenericServicerContext
+
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 try:

@@ -13,7 +13,9 @@
 # limitations under the License.
 """Base implementation of reflection servicer."""
 
-from google.protobuf import descriptor_pb2
+from typing import Iterable, Optional, Sequence
+
+from google.protobuf import descriptor_pb2  # pytype: disable=pyi-error
 from google.protobuf import descriptor_pool
 import grpc
 from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
@@ -63,7 +65,14 @@ def _file_descriptor_response(descriptor, original_request):
 class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
     """Base class for reflection servicer."""
 
-    def __init__(self, service_names, pool=None):
+    _service_names: Sequence[str]
+    _pool: descriptor_pool.DescriptorPool
+
+    def __init__(
+        self,
+        service_names: Iterable[str],
+        pool: Optional[descriptor_pool.DescriptorPool] = None,
+    ):
         """Constructor.
 
         Args:

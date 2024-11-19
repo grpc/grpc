@@ -20,6 +20,8 @@ from typing import MutableMapping
 import grpc
 from grpc_health.v1 import health_pb2 as _health_pb2
 from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
+from grpc_health.v1.health_pb2 import HealthCheckRequest
+from grpc_health.v1.health_pb2 import HealthCheckResponse
 
 
 class HealthServicer(_health_pb2_grpc.HealthServicer):
@@ -37,17 +39,21 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         self._gracefully_shutting_down = False
 
     async def Check(
-        self, request: _health_pb2.HealthCheckRequest, context
-    ) -> None:
+        self,
+        request: HealthCheckRequest,
+        context: grpc.aio.ServicerContext,
+    ) -> HealthCheckResponse:
         status = self._server_status.get(request.service)
 
         if status is None:
             await context.abort(grpc.StatusCode.NOT_FOUND)
         else:
-            return _health_pb2.HealthCheckResponse(status=status)
+            return HealthCheckResponse(status=status)
 
     async def Watch(
-        self, request: _health_pb2.HealthCheckRequest, context
+        self,
+        request: HealthCheckRequest,
+        context: grpc.aio.ServicerContext,
     ) -> None:
         condition = self._server_watchers[request.service]
         last_status = None
@@ -80,10 +86,10 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
     async def _set(
         self,
         service: str,
-        status: _health_pb2.HealthCheckResponse.ServingStatus,
+        status: HealthCheckResponse.ServingStatus,
     ) -> None:
         if service in self._server_watchers:
-            condition = self._server_watchers.get(service)
+            condition = self._server_watchers[service]
             async with condition:
                 self._server_status[service] = status
                 condition.notify_all()
@@ -93,7 +99,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
     async def set(
         self,
         service: str,
-        status: _health_pb2.HealthCheckResponse.ServingStatus,
+        status: HealthCheckResponse.ServingStatus,
     ) -> None:
         """Sets the status of a service.
 
