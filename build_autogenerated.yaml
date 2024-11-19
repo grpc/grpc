@@ -8675,7 +8675,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: chunked_vector_test
   gtest: true
   build: test

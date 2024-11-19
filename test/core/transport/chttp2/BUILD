@@ -525,7 +525,6 @@ grpc_cc_test(
     srcs = ["chttp2_server_listener_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
-    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
