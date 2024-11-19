@@ -29,7 +29,6 @@
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 #include "src/core/server/server.h"
 
 namespace grpc_core {
