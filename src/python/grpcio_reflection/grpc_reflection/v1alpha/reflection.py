@@ -86,7 +86,7 @@ if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
 
     def enable_server_reflection(
         service_names: Iterable[str],
-        server: Union[grpc.Server, grpc.aio._server.Server],
+        server: grpc.GenericServer,
         pool: Optional[descriptor_pool.DescriptorPool] = None,
     ) -> None:
         if isinstance(server, grpc_aio.Server):

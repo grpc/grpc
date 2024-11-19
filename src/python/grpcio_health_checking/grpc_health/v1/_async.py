@@ -40,15 +40,15 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
 
     async def Check(
         self,
-        request: _health_pb2.HealthCheckRequest,
+        request: HealthCheckRequest,
         context: grpc.aio.ServicerContext,
-    ) -> None:
+    ) -> HealthCheckResponse:
         status = self._server_status.get(request.service)
 
         if status is None:
             await context.abort(grpc.StatusCode.NOT_FOUND)
         else:
-            return _health_pb2.HealthCheckResponse(status=status)
+            return HealthCheckResponse(status=status)
 
     async def Watch(
         self,
