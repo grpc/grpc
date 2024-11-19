@@ -79,6 +79,8 @@ inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
+inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
+inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -120,6 +122,8 @@ inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
+inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
+inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -161,6 +165,8 @@ inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
+inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
+inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -196,6 +202,8 @@ enum ExperimentIds {
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
   kExperimentIdPickFirstNew,
+  kExperimentIdPromiseBasedHttp2ClientTransport,
+  kExperimentIdPromiseBasedHttp2ServerTransport,
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdRqFastReject,
   kExperimentIdScheduleCancellationOverWrite,
@@ -277,6 +285,14 @@ inline bool IsMultipingEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() {
   return IsExperimentEnabled<kExperimentIdPickFirstNew>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_HTTP2_CLIENT_TRANSPORT
+inline bool IsPromiseBasedHttp2ClientTransportEnabled() {
+  return IsExperimentEnabled<kExperimentIdPromiseBasedHttp2ClientTransport>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_HTTP2_SERVER_TRANSPORT
+inline bool IsPromiseBasedHttp2ServerTransportEnabled() {
+  return IsExperimentEnabled<kExperimentIdPromiseBasedHttp2ServerTransport>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_INPROC_TRANSPORT
 inline bool IsPromiseBasedInprocTransportEnabled() {

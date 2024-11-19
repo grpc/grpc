@@ -28,10 +28,10 @@
 #include "absl/status/statusor.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chaotic_good/settings_metadata.h"
 #include "src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -91,38 +91,38 @@ ChaoticGoodConnector::~ChaoticGoodConnector() {
 
 auto ChaoticGoodConnector::DataEndpointReadSettingsFrame(
     RefCountedPtr<ChaoticGoodConnector> self) {
-  return TrySeq(
-      self->data_endpoint_.ReadSlice(FrameHeader::kFrameHeaderSize),
-      [self](Slice slice) mutable {
-        // Read setting frame;
-        // Parse frame header
-        auto frame_header_ =
-            FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
-                GRPC_SLICE_START_PTR(slice.c_slice())));
-        return If(
-            frame_header_.ok(),
-            [frame_header_ = *frame_header_, self]() {
-              auto frame_header_length = frame_header_.GetFrameLength();
-              return TrySeq(self->data_endpoint_.Read(frame_header_length),
+  return TrySeq(self->data_endpoint_.ReadSlice(FrameHeader::kFrameHeaderSize),
+                [self](Slice slice) mutable {
+                  // Read setting frame;
+                  // Parse frame header
+                  auto frame_header_ =
+                      FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
+                          GRPC_SLICE_START_PTR(slice.c_slice())));
+                  return If(
+                      frame_header_.ok(),
+                      [frame_header_ = *frame_header_, self]() {
+                        auto frame_header_length = frame_header_.payload_length;
+                        return TrySeq(
+                            self->data_endpoint_.Read(frame_header_length),
                             []() { return absl::OkStatus(); });
-            },
-            [status = frame_header_.status()]() { return status; });
-      });
+                      },
+                      [status = frame_header_.status()]() { return status; });
+                });
 }
 
 auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
     RefCountedPtr<ChaoticGoodConnector> self) {
   // Serialize setting frame.
   SettingsFrame frame;
-  // frame.header set connectiion_type: control
-  frame.headers = SettingsMetadata{SettingsMetadata::ConnectionType::kData,
-                                   self->connection_id_, kDataAlignmentBytes}
-                      .ToMetadataBatch();
-  bool saw_encoding_errors = false;
-  auto write_buffer =
-      frame.Serialize(&self->hpack_compressor_, saw_encoding_errors);
+  frame.settings.set_data_channel(true);
+  frame.settings.set_connection_id(self->connection_id_);
+  frame.settings.set_alignment(kDataAlignmentBytes);
+  SliceBuffer write_buffer;
+  frame.MakeHeader().Serialize(
+      write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
+  frame.SerializePayload(write_buffer);
   // ignore encoding errors: they will be logged separately already
-  return self->data_endpoint_.Write(std::move(write_buffer.control));
+  return self->data_endpoint_.Write(std::move(write_buffer));
 }
 
 auto ChaoticGoodConnector::WaitForDataEndpointSetup(
@@ -187,29 +187,18 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
         return If(
             frame_header.ok(),
             TrySeq(
-                self->control_endpoint_.Read(frame_header->GetFrameLength()),
+                self->control_endpoint_.Read(frame_header->payload_length),
                 [frame_header = *frame_header, self](SliceBuffer buffer) {
                   // Deserialize setting frame.
                   SettingsFrame frame;
-                  BufferPair buffer_pair{std::move(buffer), SliceBuffer()};
-                  auto status = frame.Deserialize(
-                      &self->hpack_parser_, frame_header,
-                      absl::BitGenRef(self->bitgen_), GetContext<Arena>(),
-                      std::move(buffer_pair), FrameLimits{});
+                  auto status =
+                      frame.Deserialize(frame_header, std::move(buffer));
                   if (!status.ok()) return status;
-                  if (frame.headers == nullptr) {
-                    return absl::UnavailableError("no settings headers");
-                  }
-                  auto settings_metadata =
-                      SettingsMetadata::FromMetadataBatch(*frame.headers);
-                  if (!settings_metadata.ok()) {
-                    return settings_metadata.status();
-                  }
-                  if (!settings_metadata->connection_id.has_value()) {
+                  if (frame.settings.connection_id().empty()) {
                     return absl::UnavailableError(
                         "no connection id in settings frame");
                   }
-                  self->connection_id_ = *settings_metadata->connection_id;
+                  self->connection_id_ = frame.settings.connection_id();
                   return absl::OkStatus();
                 },
                 WaitForDataEndpointSetup(self)),
@@ -222,14 +211,13 @@ auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
   // Serialize setting frame.
   SettingsFrame frame;
   // frame.header set connectiion_type: control
-  frame.headers = SettingsMetadata{SettingsMetadata::ConnectionType::kControl,
-                                   absl::nullopt, absl::nullopt}
-                      .ToMetadataBatch();
-  bool saw_encoding_errors = false;
-  auto write_buffer =
-      frame.Serialize(&self->hpack_compressor_, saw_encoding_errors);
+  frame.settings.set_data_channel(false);
+  SliceBuffer write_buffer;
+  frame.MakeHeader().Serialize(
+      write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
+  frame.SerializePayload(write_buffer);
   // ignore encoding errors: they will be logged separately already
-  return self->control_endpoint_.Write(std::move(write_buffer.control));
+  return self->control_endpoint_.Write(std::move(write_buffer));
 }
 
 void ChaoticGoodConnector::Connect(const Args& args, Result* result,
@@ -331,8 +319,7 @@ void ChaoticGoodConnector::OnHandshakeDone(
             self->result_->transport = new ChaoticGoodClientTransport(
                 std::move(self->control_endpoint_),
                 std::move(self->data_endpoint_), self->args_.channel_args,
-                self->event_engine_, std::move(self->hpack_parser_),
-                std::move(self->hpack_compressor_));
+                self->event_engine_);
             self->result_->channel_args = self->args_.channel_args;
             ExecCtx::Run(DEBUG_LOCATION, std::exchange(self->notify_, nullptr),
                          status);

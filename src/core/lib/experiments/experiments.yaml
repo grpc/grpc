@@ -54,7 +54,7 @@
   allow_in_fuzzing_config: false
 - name: chaotic_good_legacy_protocol
   description: If set, use the first version of the chaotic-good protocol when that protocol is enabled.
-  expiry: 2024/12/01
+  expiry: 2025/01/15
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
 - name: client_privacy
@@ -141,6 +141,24 @@
   expiry: 2025/03/01
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
+- name: promise_based_http2_client_transport
+  description:
+    Use promises for the http2 client transport. We have kept client and
+    server transport experiments separate to help with smoother roll outs
+    and also help with interop testing.
+  expiry: 2025/06/03
+  owner: tjagtap@google.com
+  test_tags: []
+  allow_in_fuzzing_config: true
+- name: promise_based_http2_server_transport
+  description:
+    Use promises for the http2 server transport. We have kept client and
+    server transport experiments separate to help with smoother roll outs
+    and also help with interop testing.
+  expiry: 2025/06/03
+  owner: tjagtap@google.com
+  test_tags: []
+  allow_in_fuzzing_config: true
 - name: promise_based_inproc_transport
   description:
     Use promises for the in-process transport.

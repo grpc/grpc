@@ -2750,7 +2750,7 @@ grpc_cc_library(
         "include/grpcpp/test/mock_stream.h",
         "include/grpcpp/test/server_context_test_spouse.h",
     ],
-    visibility = ["@grpc:grpc++_test"],
+    visibility = ["@grpc:public"],
     deps = [
         "channel",
         "grpc++",

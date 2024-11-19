@@ -18,6 +18,7 @@
 #include "absl/types/variant.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/lib/promise/detail/promise_variant.h"
 #include "src/core/util/overload.h"
 
 namespace grpc_core {
@@ -54,28 +55,6 @@ struct ConstructPromiseVariantVisitor {
       decltype(CallConstructorThenFactory(std::declval<Ts>()))>...> {
     return CallConstructorThenFactory(x);
   }
-};
-
-// Visitor function for PromiseVariant - calls the poll operator on the inner
-// type
-class PollVisitor {
- public:
-  template <typename T>
-  auto operator()(T& x) {
-    return x();
-  }
-};
-
-// Helper type - given a variant V, provides the poll operator (which simply
-// visits the inner type on the variant with PollVisitor)
-template <typename V>
-class PromiseVariant {
- public:
-  explicit PromiseVariant(V variant) : variant_(std::move(variant)) {}
-  auto operator()() { return absl::visit(PollVisitor(), variant_); }
-
- private:
-  V variant_;
 };
 
 }  // namespace promise_detail

@@ -36,6 +36,7 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
@@ -55,16 +56,6 @@ using EventEngineSlice = grpc_event_engine::experimental::Slice;
 namespace grpc_core {
 namespace chaotic_good {
 namespace testing {
-
-// Encoded string of header ":path: /demo.Service/Step".
-const uint8_t kPathDemoServiceStep[] = {
-    0x40, 0x05, 0x3a, 0x70, 0x61, 0x74, 0x68, 0x12, 0x2f,
-    0x64, 0x65, 0x6d, 0x6f, 0x2e, 0x53, 0x65, 0x72, 0x76,
-    0x69, 0x63, 0x65, 0x2f, 0x53, 0x74, 0x65, 0x70};
-
-// Encoded string of trailer "grpc-status: 0".
-const uint8_t kGrpcStatus0[] = {0x10, 0x0b, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x73,
-                                0x74, 0x61, 0x74, 0x75, 0x73, 0x01, 0x30};
 
 ClientMetadataHandle TestInitialMetadata() {
   auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
@@ -103,37 +94,46 @@ ChannelArgs MakeChannelArgs() {
 TEST_F(TransportTest, AddOneStream) {
   MockPromiseEndpoint control_endpoint(1000);
   MockPromiseEndpoint data_endpoint(1001);
+  static const std::string many_as(1024 * 1024, 'a');
+  const auto server_initial_metadata =
+      EncodeProto<chaotic_good_frame::ServerMetadata>("message: 'hello'");
+  const auto server_trailing_metadata =
+      EncodeProto<chaotic_good_frame::ServerMetadata>("status: 0");
+  const auto client_initial_metadata =
+      EncodeProto<chaotic_good_frame::ClientMetadata>(
+          "path: '/demo.Service/Step'");
   control_endpoint.ExpectRead(
-      {SerializedFrameHeader(FrameType::kFragment, 7, 1, 26, 8, 56, 15),
-       EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
-                                          sizeof(kPathDemoServiceStep)),
-       EventEngineSlice::FromCopiedBuffer(kGrpcStatus0, sizeof(kGrpcStatus0))},
+      {SerializedFrameHeader(FrameType::kServerInitialMetadata, 0, 1,
+                             server_initial_metadata.length()),
+       server_initial_metadata.Copy(),
+       SerializedFrameHeader(FrameType::kMessage, 1, 1, many_as.length()),
+       SerializedFrameHeader(FrameType::kServerTrailingMetadata, 0, 1,
+                             server_trailing_metadata.length()),
+       server_trailing_metadata.Copy()},
       event_engine().get());
   data_endpoint.ExpectRead(
-      {EventEngineSlice::FromCopiedString("12345678"), Zeros(56)}, nullptr);
+      {EventEngineSlice::FromCopiedString(many_as), Zeros(56)}, nullptr);
   EXPECT_CALL(*control_endpoint.endpoint, Read)
       .InSequence(control_endpoint.read_sequence)
       .WillOnce(Return(false));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
-      event_engine(), HPackParser(), HPackCompressor());
+      event_engine());
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
   control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kFragment, 1, 1,
-                             sizeof(kPathDemoServiceStep), 0, 0, 0),
-       EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
-                                          sizeof(kPathDemoServiceStep))},
+      {SerializedFrameHeader(FrameType::kClientInitialMetadata, 0, 1,
+                             client_initial_metadata.length()),
+       client_initial_metadata.Copy()},
       nullptr);
   control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kFragment, 2, 1, 0, 1, 63, 0)},
+      {SerializedFrameHeader(FrameType::kMessage, 0, 1, 1),
+       EventEngineSlice::FromCopiedString("0")},
       nullptr);
-  data_endpoint.ExpectWrite(
-      {EventEngineSlice::FromCopiedString("0"), Zeros(63)}, nullptr);
   control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kFragment, 4, 1, 0, 0, 0, 0)}, nullptr);
+      {SerializedFrameHeader(FrameType::kClientEndOfStream, 0, 1, 0)}, nullptr);
   transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {
@@ -148,16 +148,16 @@ TEST_F(TransportTest, AddOneStream) {
               EXPECT_TRUE(md.value().has_value());
               EXPECT_EQ(md.value()
                             .value()
-                            ->get_pointer(HttpPathMetadata())
+                            ->get_pointer(GrpcMessageMetadata())
                             ->as_string_view(),
-                        "/demo.Service/Step");
+                        "hello");
               return Empty{};
             },
             [initiator]() mutable { return initiator.PullMessage(); },
             [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
               EXPECT_TRUE(msg.has_value());
-              EXPECT_EQ(msg.value().payload()->JoinIntoString(), "12345678");
+              EXPECT_EQ(msg.value().payload()->JoinIntoString(), many_as);
               return Empty{};
             },
             [initiator]() mutable { return initiator.PullMessage(); },
@@ -183,47 +183,50 @@ TEST_F(TransportTest, AddOneStream) {
 TEST_F(TransportTest, AddOneStreamMultipleMessages) {
   MockPromiseEndpoint control_endpoint(1000);
   MockPromiseEndpoint data_endpoint(1001);
+  const auto server_initial_metadata =
+      EncodeProto<chaotic_good_frame::ServerMetadata>("");
+  const auto server_trailing_metadata =
+      EncodeProto<chaotic_good_frame::ServerMetadata>("status: 0");
+  const auto client_initial_metadata =
+      EncodeProto<chaotic_good_frame::ClientMetadata>(
+          "path: '/demo.Service/Step'");
   control_endpoint.ExpectRead(
-      {SerializedFrameHeader(FrameType::kFragment, 3, 1, 26, 8, 56, 0),
-       EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
-                                          sizeof(kPathDemoServiceStep))},
+      {SerializedFrameHeader(FrameType::kServerInitialMetadata, 0, 1,
+                             server_initial_metadata.length()),
+       server_initial_metadata.Copy(),
+       SerializedFrameHeader(FrameType::kMessage, 0, 1, 8),
+       EventEngineSlice::FromCopiedString("12345678"),
+       SerializedFrameHeader(FrameType::kMessage, 0, 1, 8),
+       EventEngineSlice::FromCopiedString("87654321"),
+       SerializedFrameHeader(FrameType::kServerTrailingMetadata, 0, 1,
+                             server_trailing_metadata.length()),
+       server_trailing_metadata.Copy()},
       event_engine().get());
-  control_endpoint.ExpectRead(
-      {SerializedFrameHeader(FrameType::kFragment, 6, 1, 0, 8, 56, 15),
-       EventEngineSlice::FromCopiedBuffer(kGrpcStatus0, sizeof(kGrpcStatus0))},
-      event_engine().get());
-  data_endpoint.ExpectRead(
-      {EventEngineSlice::FromCopiedString("12345678"), Zeros(56)}, nullptr);
-  data_endpoint.ExpectRead(
-      {EventEngineSlice::FromCopiedString("87654321"), Zeros(56)}, nullptr);
   EXPECT_CALL(*control_endpoint.endpoint, Read)
       .InSequence(control_endpoint.read_sequence)
       .WillOnce(Return(false));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
-      event_engine(), HPackParser(), HPackCompressor());
+      event_engine());
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
   control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kFragment, 1, 1,
-                             sizeof(kPathDemoServiceStep), 0, 0, 0),
-       EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
-                                          sizeof(kPathDemoServiceStep))},
+      {SerializedFrameHeader(FrameType::kClientInitialMetadata, 0, 1,
+                             client_initial_metadata.length()),
+       client_initial_metadata.Copy()},
       nullptr);
   control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kFragment, 2, 1, 0, 1, 63, 0)},
+      {SerializedFrameHeader(FrameType::kMessage, 0, 1, 1),
+       EventEngineSlice::FromCopiedString("0")},
       nullptr);
-  data_endpoint.ExpectWrite(
-      {EventEngineSlice::FromCopiedString("0"), Zeros(63)}, nullptr);
   control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kFragment, 2, 1, 0, 1, 63, 0)},
+      {SerializedFrameHeader(FrameType::kMessage, 0, 1, 1),
+       EventEngineSlice::FromCopiedString("1")},
       nullptr);
-  data_endpoint.ExpectWrite(
-      {EventEngineSlice::FromCopiedString("1"), Zeros(63)}, nullptr);
   control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kFragment, 4, 1, 0, 0, 0, 0)}, nullptr);
+      {SerializedFrameHeader(FrameType::kClientEndOfStream, 0, 1, 0)}, nullptr);
   transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {
@@ -236,11 +239,6 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
               EXPECT_TRUE(md.value().has_value());
-              EXPECT_EQ(md.value()
-                            .value()
-                            ->get_pointer(HttpPathMetadata())
-                            ->as_string_view(),
-                        "/demo.Service/Step");
               return Empty{};
             },
             initiator.PullMessage(),

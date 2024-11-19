@@ -22,9 +22,9 @@
 
 #include "absl/log/log.h"
 #include "absl/random/random.h"
+#include "absl/strings/escaping.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/if.h"
@@ -38,13 +38,17 @@ namespace chaotic_good {
 
 class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
  public:
+  struct Options {
+    uint32_t encode_alignment = 64;
+    uint32_t decode_alignment = 64;
+    uint32_t inlined_payload_size_threshold = 8 * 1024;
+  };
+
   ChaoticGoodTransport(PromiseEndpoint control_endpoint,
-                       PromiseEndpoint data_endpoint, HPackParser hpack_parser,
-                       HPackCompressor hpack_encoder)
+                       PromiseEndpoint data_endpoint, Options options)
       : control_endpoint_(std::move(control_endpoint)),
         data_endpoint_(std::move(data_endpoint)),
-        encoder_(std::move(hpack_encoder)),
-        parser_(std::move(hpack_parser)) {
+        options_(options) {
     // Enable RxMemoryAlignment and RPC receive coalescing after the transport
     // setup is complete. At this point all the settings frames should have
     // been read.
@@ -52,17 +56,31 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   }
 
   auto WriteFrame(const FrameInterface& frame) {
-    bool saw_encoding_errors = false;
-    auto buffers = frame.Serialize(&encoder_, saw_encoding_errors);
+    SliceBuffer control;
+    SliceBuffer data;
+    FrameHeader header = frame.MakeHeader();
+    if (header.payload_length > options_.inlined_payload_size_threshold) {
+      header.payload_connection_id = 1;
+      header.Serialize(control.AddTiny(FrameHeader::kFrameHeaderSize));
+      frame.SerializePayload(data);
+      const size_t padding = header.Padding(options_.encode_alignment);
+      if (padding != 0) {
+        auto slice = MutableSlice::CreateUninitialized(padding);
+        memset(slice.data(), 0, padding);
+        data.AppendIndexed(Slice(std::move(slice)));
+      }
+    } else {
+      header.Serialize(control.AddTiny(FrameHeader::kFrameHeaderSize));
+      frame.SerializePayload(control);
+    }
     // ignore encoding errors: they will be logged separately already
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: WriteFrame to:"
         << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
                .value_or("<<unknown peer address>>")
         << " " << frame.ToString();
-    return TryJoin<absl::StatusOr>(
-        control_endpoint_.Write(std::move(buffers.control)),
-        data_endpoint_.Write(std::move(buffers.data)));
+    return TryJoin<absl::StatusOr>(control_endpoint_.Write(std::move(control)),
+                                   data_endpoint_.Write(std::move(data)));
   }
 
   // Read frame header and payloads for control and data portions of one frame.
@@ -81,59 +99,46 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
               << " "
               << (frame_header.ok() ? frame_header->ToString()
                                     : frame_header.status().ToString());
-          // Read header and trailers from control endpoint.
-          // Read message padding and message from data endpoint.
-          return If(
-              frame_header.ok(),
-              [this, &frame_header] {
-                const uint32_t message_padding = frame_header->message_padding;
-                const uint32_t message_length = frame_header->message_length;
-                return Map(
-                    TryJoin<absl::StatusOr>(
-                        control_endpoint_.Read(frame_header->GetFrameLength()),
-                        data_endpoint_.Read(message_length + message_padding)),
-                    [frame_header = *frame_header, message_padding](
-                        absl::StatusOr<std::tuple<SliceBuffer, SliceBuffer>>
-                            buffers)
-                        -> absl::StatusOr<std::tuple<FrameHeader, BufferPair>> {
-                      if (!buffers.ok()) return buffers.status();
-                      SliceBuffer data_read = std::move(std::get<1>(*buffers));
-                      if (message_padding > 0) {
-                        data_read.RemoveLastNBytesNoInline(message_padding);
-                      }
-                      return std::tuple<FrameHeader, BufferPair>(
-                          frame_header,
-                          BufferPair{std::move(std::get<0>(*buffers)),
-                                     std::move(data_read)});
-                    });
-              },
-              [&frame_header]() {
-                return
-                    [status = frame_header.status()]() mutable
-                        -> absl::StatusOr<std::tuple<FrameHeader, BufferPair>> {
-                      return std::move(status);
-                    };
-              });
+          return frame_header;
+        },
+        [this](FrameHeader frame_header) {
+          current_frame_header_ = frame_header;
+          auto con = frame_header.payload_connection_id == 0
+                         ? &control_endpoint_
+                         : &data_endpoint_;
+          return con->Read(frame_header.payload_length +
+                           frame_header.Padding(options_.decode_alignment));
+        },
+        [this](SliceBuffer payload)
+            -> absl::StatusOr<std::tuple<FrameHeader, SliceBuffer>> {
+          payload.RemoveLastNBytesNoInline(
+              current_frame_header_.Padding(options_.decode_alignment));
+          return std::tuple<FrameHeader, SliceBuffer>(current_frame_header_,
+                                                      std::move(payload));
         });
   }
 
-  absl::Status DeserializeFrame(FrameHeader header, BufferPair buffers,
-                                Arena* arena, FrameInterface& frame,
-                                FrameLimits limits) {
-    auto s = frame.Deserialize(&parser_, header, bitgen_, arena,
-                               std::move(buffers), limits);
+  template <typename T>
+  absl::StatusOr<T> DeserializeFrame(const FrameHeader& header,
+                                     SliceBuffer payload) {
+    T frame;
+    GRPC_TRACE_LOG(chaotic_good, INFO)
+        << "CHAOTIC_GOOD: Deserialize " << header << " with payload "
+        << absl::CEscape(payload.JoinIntoString());
+    CHECK_EQ(header.payload_length, payload.Length());
+    auto s = frame.Deserialize(header, std::move(payload));
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: DeserializeFrame "
         << (s.ok() ? frame.ToString() : s.ToString());
-    return s;
+    if (s.ok()) return std::move(frame);
+    return std::move(s);
   }
 
  private:
   PromiseEndpoint control_endpoint_;
   PromiseEndpoint data_endpoint_;
-  HPackCompressor encoder_;
-  HPackParser parser_;
-  absl::BitGen bitgen_;
+  FrameHeader current_frame_header_;
+  Options options_;
 };
 
 }  // namespace chaotic_good

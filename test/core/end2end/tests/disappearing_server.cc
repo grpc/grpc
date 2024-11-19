@@ -26,7 +26,6 @@
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
-#ifndef GPR_WINDOWS  // b/148110727 for more details
 namespace grpc_core {
 
 static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
@@ -77,4 +76,3 @@ CORE_END2END_TEST(CoreClientChannelTest, DisappearingServer) {
 }
 
 }  // namespace grpc_core
-#endif  // GPR_WINDOWS

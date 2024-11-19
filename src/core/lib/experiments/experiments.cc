@@ -86,6 +86,18 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
+const char* const description_promise_based_http2_client_transport =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs and "
+    "also help with interop testing.";
+const char* const additional_constraints_promise_based_http2_client_transport =
+    "{}";
+const char* const description_promise_based_http2_server_transport =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs and "
+    "also help with interop testing.";
+const char* const additional_constraints_promise_based_http2_server_transport =
+    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
@@ -177,6 +189,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
+    {"promise_based_http2_client_transport",
+     description_promise_based_http2_client_transport,
+     additional_constraints_promise_based_http2_client_transport, nullptr, 0,
+     false, true},
+    {"promise_based_http2_server_transport",
+     description_promise_based_http2_server_transport,
+     additional_constraints_promise_based_http2_server_transport, nullptr, 0,
+     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
@@ -275,6 +295,18 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
+const char* const description_promise_based_http2_client_transport =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs and "
+    "also help with interop testing.";
+const char* const additional_constraints_promise_based_http2_client_transport =
+    "{}";
+const char* const description_promise_based_http2_server_transport =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs and "
+    "also help with interop testing.";
+const char* const additional_constraints_promise_based_http2_server_transport =
+    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
@@ -366,6 +398,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
+    {"promise_based_http2_client_transport",
+     description_promise_based_http2_client_transport,
+     additional_constraints_promise_based_http2_client_transport, nullptr, 0,
+     false, true},
+    {"promise_based_http2_server_transport",
+     description_promise_based_http2_server_transport,
+     additional_constraints_promise_based_http2_server_transport, nullptr, 0,
+     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
@@ -464,6 +504,18 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
+const char* const description_promise_based_http2_client_transport =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs and "
+    "also help with interop testing.";
+const char* const additional_constraints_promise_based_http2_client_transport =
+    "{}";
+const char* const description_promise_based_http2_server_transport =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs and "
+    "also help with interop testing.";
+const char* const additional_constraints_promise_based_http2_server_transport =
+    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
@@ -555,6 +607,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
+    {"promise_based_http2_client_transport",
+     description_promise_based_http2_client_transport,
+     additional_constraints_promise_based_http2_client_transport, nullptr, 0,
+     false, true},
+    {"promise_based_http2_server_transport",
+     description_promise_based_http2_server_transport,
+     additional_constraints_promise_based_http2_server_transport, nullptr, 0,
+     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,

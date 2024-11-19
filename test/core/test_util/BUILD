@@ -263,11 +263,6 @@ grpc_cc_test(
     ],
 )
 
-sh_library(
-    name = "fuzzer_one_entry_runner",
-    srcs = ["fuzzer_one_entry_runner.sh"],
-)
-
 grpc_cc_library(
     name = "stack_tracer",
     srcs = [
