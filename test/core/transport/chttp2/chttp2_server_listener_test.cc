@@ -60,7 +60,7 @@ class Chttp2ServerListenerTestPeer {
 
 class ActiveConnectionTestPeer {
  public:
-  ActiveConnectionTestPeer(
+  explicit ActiveConnectionTestPeer(
       NewChttp2ServerListener::ActiveConnection* connection)
       : connection_(connection) {}
 
@@ -75,7 +75,7 @@ class ActiveConnectionTestPeer {
 
 class ServerTestPeer {
  public:
-  ServerTestPeer(Server* server) : server_(server) {}
+  explicit ServerTestPeer(Server* server) : server_(server) {}
 
   const std::list<RefCountedPtr<Server::ListenerState>>& listener_states()
       const {
