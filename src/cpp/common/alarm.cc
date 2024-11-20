@@ -51,7 +51,8 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
   AlarmImpl()
       : event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()),
         cq_(nullptr),
-        tag_(nullptr) {
+        tag_(nullptr),
+        notify_(std::make_unique<grpc_core::Notification>()) {
     gpr_ref_init(&refs_, 1);
   }
   ~AlarmImpl() override {}
@@ -81,7 +82,6 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     Ref();
     CHECK(callback_armed_.exchange(true) == false);
     CHECK(!cq_armed_.load());
-    cancel_notification_.Reset();
     callback_timer_handle_ = event_engine_->RunAfter(
         grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
             grpc_core::ExecCtx::Get()->Now(),
@@ -89,15 +89,21 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
   }
   void Cancel() {
     grpc_core::ExecCtx exec_ctx;
-    if (callback_armed_.load() &&
-        event_engine_->Cancel(callback_timer_handle_)) {
-      event_engine_->Run([this] { OnCallbackAlarm(/*is_ok=*/false); });
+    if (callback_armed_.load()) {
+      if (event_engine_->Cancel(callback_timer_handle_)) {
+        event_engine_->Run([this] { OnCallbackAlarm(/*is_ok=*/false); });
+      }
+      notify_->WaitForNotification();
+      notify_ = std::make_unique<grpc_core::Notification>();
     }
-    if (cq_armed_.load() && event_engine_->Cancel(cq_timer_handle_)) {
-      event_engine_->Run(
-          [this] { OnCQAlarm(absl::CancelledError("cancelled")); });
+    if (cq_armed_.load()) {
+      if (event_engine_->Cancel(cq_timer_handle_)) {
+        event_engine_->Run(
+            [this] { OnCQAlarm(absl::CancelledError("cancelled")); });
+      }
+      notify_->WaitForNotification();
+      notify_ = std::make_unique<grpc_core::Notification>();
     }
-    cancel_notification_.WaitForNotification();
   }
   void Destroy() {
     Cancel();
@@ -121,7 +127,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
         },
         nullptr, completion);
     GRPC_CQ_INTERNAL_UNREF(cq, "alarm");
-    cancel_notification_.Notify();
+    notify_->Notify();
   }
 
   void OnCallbackAlarm(bool is_ok) {
@@ -129,7 +135,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     callback_(is_ok);
-    cancel_notification_.Notify();
+    notify_->Notify();
     Unref();
   }
 
@@ -151,7 +157,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
   grpc_completion_queue* cq_;
   void* tag_;
   std::function<void(bool)> callback_;
-  grpc_core::Notification cancel_notification_;
+  std::unique_ptr<grpc_core::Notification> notify_;
 };
 }  // namespace internal
 

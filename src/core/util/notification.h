@@ -55,11 +55,6 @@ class Notification {
     return notified_;
   }
 
-  void Reset() {
-    MutexLock lock(&mu_);
-    notified_ = false;
-  }
-
  private:
   Mutex mu_;
   CondVar cv_;
