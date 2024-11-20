@@ -1221,9 +1221,7 @@ channel with a fixed but configurable interval between each RPC.
 
 #### concurrent_large_unary
 
-
 Status: TODO
-
 
 Client performs 1000 large_unary tests in parallel on the same channel.
 
