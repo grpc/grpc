@@ -19,14 +19,14 @@ import types
 from typing import Any, Callable, Optional, Sequence, Tuple
 
 import grpc
+from grpc._typing import InterceptorType
 
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
 from ._typing import MetadataType
+from ._typing import NullaryCallbackType
 from ._typing import RequestIterableType
 from ._typing import SerializingFunction
-from ._typing import NullaryCallbackType
-from grpc._typing import InterceptorType
 
 
 class _ServicePipeline(object):

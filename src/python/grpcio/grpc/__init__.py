@@ -26,13 +26,13 @@ import types
 from typing import (
     Any,
     Callable,
+    Dict,
+    Iterator,
     Mapping,
     NoReturn,
     Optional,
     Sequence,
     Tuple,
-    Iterator,
-    Dict,
 )
 
 from grpc import _compression
@@ -40,6 +40,7 @@ from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
+from grpc._typing import ArityAgnosticMethodHandler
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import GeneralIterableType
@@ -49,7 +50,6 @@ from grpc._typing import NullaryCallbackType
 from grpc._typing import RequestIterableType
 from grpc._typing import RequestType
 from grpc._typing import SerializingFunction
-from grpc._typing import ArityAgnosticMethodHandler
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 

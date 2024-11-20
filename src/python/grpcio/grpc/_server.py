@@ -27,6 +27,7 @@ import traceback
 from typing import (
     Any,
     Callable,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -37,7 +38,6 @@ from typing import (
     Set,
     Tuple,
     Union,
-    Dict,
 )
 
 import grpc  # pytype: disable=pyi-error
