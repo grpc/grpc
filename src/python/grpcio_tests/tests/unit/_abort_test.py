@@ -103,6 +103,10 @@ class AbortTest(unittest.TestCase):
         self._channel.close()
         self._server.stop(0)
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def test_abort(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
@@ -136,6 +140,10 @@ class AbortTest(unittest.TestCase):
         do_not_leak_me = None
         self.assertIsNone(weak_ref())
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def test_abort_with_status(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
@@ -150,6 +158,10 @@ class AbortTest(unittest.TestCase):
         self.assertEqual(rpc_error.details(), _ABORT_DETAILS)
         self.assertEqual(rpc_error.trailing_metadata(), _ABORT_METADATA)
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def test_invalid_code(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(

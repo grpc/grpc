@@ -1,5 +1,5 @@
 #! /bin/bash -ex
-# Copyright 2019 The gRPC Authors
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-JOBS=$(nproc) || JOBS=4
-python3 -m pip install pytype==2024.9.13
-python3 -m pytype --keep-going -j "$JOBS" --strict-import --config "setup.cfg"
+python3 -m pip install mypy==1.13.0
+mypy --explicit-package-bases --config "setup.cfg"

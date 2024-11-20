@@ -16,6 +16,7 @@
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterable,
     Callable,
     Iterable,
     Iterator,
@@ -30,18 +31,27 @@ from grpc._cython import cygrpc
 
 if TYPE_CHECKING:
     from grpc import ServicerContext
+    from grpc import StreamStreamClientInterceptor
+    from grpc import StreamUnaryClientInterceptor
+    from grpc import UnaryStreamClientInterceptor
+    from grpc import UnaryUnaryClientInterceptor
+    from grpc._server import _Context
     from grpc._server import _RPCState
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
 SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
-MetadataType = Sequence[Tuple[str, Union[str, bytes]]]
-ChannelArgumentType = Tuple[str, Any]
+MetadataType = Sequence[Tuple[Union[str, bytes], Union[str, bytes]]]
+TuplifiedMetadataType = Tuple[Tuple[Union[str, bytes], Union[str, bytes]]]
+ChannelArgumentType = Tuple[Union[str, bytes], Any]
 DoneCallbackType = Callable[[Any], None]
 NullaryCallbackType = Callable[[], None]
+RequestIteratorType = Iterator[Any]
+ResponseIteratorType = Iterator[Any]
 RequestIterableType = Iterable[Any]
 ResponseIterableType = Iterable[Any]
+GeneralIterableType = Union[Iterable[Any], AsyncIterable[Any]]
 UserTag = Callable[[cygrpc.BaseEvent], bool]
 IntegratedCallFactory = Callable[
     [
@@ -54,6 +64,7 @@ IntegratedCallFactory = Callable[
         Sequence[Sequence[cygrpc.Operation]],
         UserTag,
         Any,
+        Optional[int],
     ],
     cygrpc.IntegratedCall,
 ]
@@ -63,33 +74,29 @@ ServerTagCallbackType = Tuple[
 ServerCallbackTag = Callable[[cygrpc.BaseEvent], ServerTagCallbackType]
 ArityAgnosticMethodHandler = Union[
     Callable[
-        [RequestType, "ServicerContext", Callable[[ResponseType], None]],
-        ResponseType,
+        [RequestType, "_Context", Callable[[ResponseType], None]], ResponseType
     ],
     Callable[
-        [RequestType, "ServicerContext", Callable[[ResponseType], None]],
+        [RequestType, "_Context", Callable[[ResponseType], None]],
         Iterator[ResponseType],
     ],
     Callable[
-        [
-            Iterator[RequestType],
-            "ServicerContext",
-            Callable[[ResponseType], None],
-        ],
+        [Iterator[RequestType], "_Context", Callable[[ResponseType], None]],
         ResponseType,
     ],
     Callable[
-        [
-            Iterator[RequestType],
-            "ServicerContext",
-            Callable[[ResponseType], None],
-        ],
+        [Iterator[RequestType], "_Context", Callable[[ResponseType], None]],
         Iterator[ResponseType],
     ],
-    Callable[[RequestType, "ServicerContext"], ResponseType],
-    Callable[[RequestType, "ServicerContext"], Iterator[ResponseType]],
-    Callable[[Iterator[RequestType], "ServicerContext"], ResponseType],
-    Callable[
-        [Iterator[RequestType], "ServicerContext"], Iterator[ResponseType]
-    ],
+    Callable[[RequestType, "_Context"], ResponseType],
+    Callable[[RequestType, "_Context"], Iterator[ResponseType]],
+    Callable[[Iterator[RequestType], "_Context"], ResponseType],
+    Callable[[Iterator[RequestType], "_Context"], Iterator[ResponseType]],
+    Callable[[], ResponseType],
+]
+InterceptorType = Union[
+    "UnaryUnaryClientInterceptor",
+    "UnaryStreamClientInterceptor",
+    "StreamUnaryClientInterceptor",
+    "StreamStreamClientInterceptor",
 ]
