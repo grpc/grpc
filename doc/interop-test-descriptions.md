@@ -1006,9 +1006,8 @@ Client asserts:
 
 The client performs many large_unary RPCs in sequence over the same channel.
 The total number of RPCs to execute is controlled by the `soak_iterations` 
-parameter, which defaults to 10. The test runs in concurrent mode, where 
-multiple threads are used to execute the RPCs, with the number of threads 
-controlled by soak_num_threads. By default, `soak_num_threads` is set to 1. 
+parameter, which defaults to 10. The number of threads used to execute RPCs 
+is controlled by `soak_num_threads`. By default, `soak_num_threads` is set to 1. 
 
 The client records the latency and status of each RPC in 
 thread-specific data structure, which are later aggregated to form the overall 
@@ -1068,8 +1067,10 @@ This test must be configurable via a few different command line flags:
   consecutive RPCs. Useful for limiting QPS.
 
 * `soak_num_threads`: Specifies the number of threads to use for concurrently 
-  executing the soak test. Each thread performs a portion of the total 
-  soak_iterations. This value defaults to 1 (i.e., no concurrency) but can be 
+  executing the soak test. Each thread performs `soak_iterations / soak_num_threads`
+  RPCs.
+
+This value defaults to 1 (i.e., no concurrency) but can be 
   increased for concurrent execution. The total soak_iterations must be 
   divisible by soak_num_threads.
 
@@ -1093,10 +1094,6 @@ latency measurement, but the teardown of that channel should **not** be
 included in that latency measurement (channel teardown semantics differ widely
 between languages). This latency measurement should also be the value that is
 logged and recorded in the latency histogram.
-
-Note on Concurrent Execution and Channel Creation: In a concurrent execution setting (i.e., when `soak_num_threads > 1`), each 
-thread performs a portion of the total soak_iterations and creates and destroys 
-its own channel for each RPC iteration.
 
 * `createNewChannel` Function: In channel_soak, the `createNewChannel` function 
 is used by each thread to create a new channel before every RPC. This function 
