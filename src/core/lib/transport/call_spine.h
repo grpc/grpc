@@ -205,6 +205,8 @@ class CallSpine final : public Party {
 
 class CallInitiator {
  public:
+  using NextMessage = ServerToClientNextMessage;
+
   CallInitiator() = default;
   explicit CallInitiator(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
@@ -275,6 +277,8 @@ class CallInitiator {
 
 class CallHandler {
  public:
+  using NextMessage = ClientToServerNextMessage;
+
   explicit CallHandler(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 

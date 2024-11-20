@@ -512,17 +512,17 @@ TEST(AltsHandshakerClientTest, ScheduleRequestGrpcCallFailureTest) {
 
 TEST(MaxNumberOfConcurrentHandshakesTest, Default) {
   grpc_core::UnsetEnv(kMaxConcurrentStreamsEnvironmentVariable);
-  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 40);
+  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 100);
 }
 
 TEST(MaxNumberOfConcurrentHandshakesTest, EnvVarNotInt) {
   grpc_core::SetEnv(kMaxConcurrentStreamsEnvironmentVariable, "not-a-number");
-  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 40);
+  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 100);
 }
 
 TEST(MaxNumberOfConcurrentHandshakesTest, EnvVarNegative) {
   grpc_core::SetEnv(kMaxConcurrentStreamsEnvironmentVariable, "-10");
-  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 40);
+  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 100);
 }
 
 TEST(MaxNumberOfConcurrentHandshakesTest, EnvVarSuccess) {

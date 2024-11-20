@@ -24,9 +24,9 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
+#include "envoy/config/listener/v3/listener.pb.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/proto/grpc/testing/xds/v3/listener.pb.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
@@ -1115,10 +1115,23 @@ TEST_P(XdsFederationTest, FederationServer) {
 class XdsMetricsTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
-    stats_plugin_ = grpc_core::FakeStatsPluginBuilder()
-                        .UseDisabledByDefaultMetrics(true)
-                        .BuildAndRegister();
-    InitClient();
+    stats_plugin_ =
+        grpc_core::FakeStatsPluginBuilder()
+            .UseDisabledByDefaultMetrics(true)
+            .SetChannelFilter(
+                [](const grpc_core::experimental::StatsPluginChannelScope&
+                       scope) {
+                  return scope.target() == absl::StrCat("xds:", kServerName) &&
+                         scope.default_authority() == kServerName &&
+                         scope.experimental_args().GetString("test_only.arg") ==
+                             "test_only.value";
+                })
+            .BuildAndRegister();
+    ChannelArguments args;
+    args.SetString("test_only.arg", "test_only.value");
+    InitClient(/*builder=*/absl::nullopt, /*lb_expected_authority=*/"",
+               /*xds_resource_does_not_exist_timeout_ms=*/0,
+               /*balancer_authority_override=*/"", /*args=*/&args);
   }
 
   std::shared_ptr<grpc_core::FakeStatsPlugin> stats_plugin_;
@@ -1452,7 +1465,8 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
                                    new_route_config);
   // Send kNumRpcsToDefaultBalancer RPCs to the current stub.
-  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsToDefaultBalancer);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsToDefaultBalancer,
+                 RpcOptions().set_wait_for_ready(true).set_timeout_ms(10000));
   // Create second channel to new target uri.
   auto channel2 =
       CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
@@ -1461,7 +1475,8 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   for (size_t i = 0; i < kNumRpcsToAuthorityBalancer; ++i) {
     ClientContext context;
     EchoRequest request;
-    RpcOptions().SetupRpc(&context, &request);
+    RpcOptions().set_wait_for_ready(true).set_timeout_ms(10000).SetupRpc(
+        &context, &request);
     EchoResponse response;
     grpc::Status status = stub2->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok()) << "code=" << status.error_code()

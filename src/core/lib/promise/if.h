@@ -32,8 +32,8 @@ namespace grpc_core {
 namespace promise_detail {
 
 template <typename CallPoll, typename T, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION typename CallPoll::PollResult ChooseIf(
-    CallPoll call_poll, bool result, T* if_true, F* if_false) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline typename CallPoll::PollResult
+ChooseIf(CallPoll call_poll, bool result, T* if_true, F* if_false) {
   if (result) {
     auto promise = if_true->Make();
     return call_poll(promise);
@@ -44,8 +44,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION typename CallPoll::PollResult ChooseIf(
 }
 
 template <typename CallPoll, typename T, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION typename CallPoll::PollResult ChooseIf(
-    CallPoll call_poll, absl::StatusOr<bool> result, T* if_true, F* if_false) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline typename CallPoll::PollResult
+ChooseIf(CallPoll call_poll, absl::StatusOr<bool> result, T* if_true,
+         F* if_false) {
   if (!result.ok()) {
     return typename CallPoll::PollResult(result.status());
   } else if (*result) {
@@ -199,7 +200,7 @@ class If<bool, T, F> {
 // This makes it safe to capture lambda arguments in the promise factory by
 // reference.
 template <typename C, typename T, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::If<C, T, F> If(
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::If<C, T, F> If(
     C condition, T if_true, F if_false) {
   return promise_detail::If<C, T, F>(std::move(condition), std::move(if_true),
                                      std::move(if_false));

@@ -32,7 +32,7 @@
 // boundaries to provide the new steady state.
 //
 // A PromiseFactory formally is f(A) -> Promise<T> for some types A & T.
-// This get a bit awkward and inapproprate to write however, and so the type
+// This get a bit awkward and inappropriate to write however, and so the type
 // contained herein can adapt various kinds of callable into the correct form.
 // Of course a callable of a single argument returning a Promise will see an
 // identity translation. One taking no arguments and returning a Promise
@@ -124,7 +124,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
 // Promote a callable() -> T|Poll<T> to a PromiseFactory(A) -> Promise<T>
 // by dropping the argument passed to the factory.
 template <typename A, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION absl::enable_if_t<
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline absl::enable_if_t<
     !IsVoidCallable<ResultOf<F()>>::value, PromiseLike<RemoveCVRef<F>>>
 PromiseFactoryImpl(F f, A&&) {
   return PromiseLike<F>(std::move(f));
@@ -132,7 +132,7 @@ PromiseFactoryImpl(F f, A&&) {
 
 // Promote a callable() -> T|Poll<T> to a PromiseFactory() -> Promise<T>
 template <typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION absl::enable_if_t<
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline absl::enable_if_t<
     !IsVoidCallable<ResultOf<F()>>::value, PromiseLike<RemoveCVRef<F>>>
 PromiseFactoryImpl(F f) {
   return PromiseLike<F>(std::move(f));
@@ -140,7 +140,7 @@ PromiseFactoryImpl(F f) {
 
 // Given a callable(A) -> Promise<T>, name it a PromiseFactory and use it.
 template <typename A, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION absl::enable_if_t<
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline absl::enable_if_t<
     IsVoidCallable<ResultOf<F(A)>>::value,
     PromiseLike<decltype(std::declval<F>()(std::declval<A>()))>>
 PromiseFactoryImpl(F&& f, A&& arg) {
@@ -149,7 +149,7 @@ PromiseFactoryImpl(F&& f, A&& arg) {
 
 // Given a callable(A) -> Promise<T>, name it a PromiseFactory and use it.
 template <typename A, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION absl::enable_if_t<
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline absl::enable_if_t<
     IsVoidCallable<ResultOf<F(A)>>::value,
     PromiseLike<decltype(std::declval<F>()(std::declval<A>()))>>
 PromiseFactoryImpl(F& f, A&& arg) {

@@ -357,6 +357,7 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
 }
 
 void Party::AddParticipants(Participant** participants, size_t count) {
+  GRPC_LATENT_SEE_INNER_SCOPE("Party::AddParticipants");
   uint64_t state = state_.load(std::memory_order_acquire);
   uint64_t allocated;
 
@@ -400,6 +401,7 @@ void Party::AddParticipants(Participant** participants, size_t count) {
 }
 
 void Party::AddParticipant(Participant* participant) {
+  GRPC_LATENT_SEE_INNER_SCOPE("Party::AddParticipant");
   uint64_t state = state_.load(std::memory_order_acquire);
   uint64_t allocated;
   size_t slot;
@@ -468,6 +470,7 @@ void Party::WakeupAsync(WakeupMask wakeup_mask) {
         wakeup_mask_ |= wakeup_mask;
         arena_->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
             [this, prev_state]() {
+              GRPC_LATENT_SEE_PARENT_SCOPE("Party::WakeupAsync");
               ApplicationCallbackExecCtx app_exec_ctx;
               ExecCtx exec_ctx;
               RunLockedAndUnref(this, prev_state);

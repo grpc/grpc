@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:18-bookworm
+FROM silkeh/clang:19-bookworm
 
 ADD clang_format_all_the_things.sh /
 

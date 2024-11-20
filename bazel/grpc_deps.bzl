@@ -98,11 +98,11 @@ def grpc_deps():
     if "rules_cc" not in native.existing_rules():
         http_archive(
             name = "rules_cc",
-            sha256 = "2037875b9a4456dce4a79d112a8ae885bbc4aad968e6587dca6e64f3a0900cdf",
-            strip_prefix = "rules_cc-0.0.9",
+            sha256 = "b26168b9a13f094794982b832975eaf53cefc5dced5b3be7df6b8b794dc2744b",
+            strip_prefix = "rules_cc-0.0.12",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_cc/releases/download/0.0.9/rules_cc-0.0.9.tar.gz",
-                "https://github.com/bazelbuild/rules_cc/releases/download/0.0.9/rules_cc-0.0.9.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_cc/releases/download/0.0.12/rules_cc-0.0.12.tar.gz",
+                "https://github.com/bazelbuild/rules_cc/releases/download/0.0.12/rules_cc-0.0.12.tar.gz",
             ],
         )
 
@@ -206,14 +206,45 @@ def grpc_deps():
             ],
         )
 
+    # TODO(roth): Need to override version of rules_proto, because
+    # we're using a newer version of rules_go than the xDS protos are,
+    # and that requires a newer version of rules_proto.  In turn, the
+    # newer version of rules_proto requires a newer version of
+    # bazel_features.  So these two entries can go away once the xDS
+    # protos upgrade to the newer version of rules_go.
+    if "bazel_features" not in native.existing_rules():
+        http_archive(
+            name = "bazel_features",
+            sha256 = "5ac743bf5f05d88e84962e978811f2524df09602b789c92cf7ae2111ecdeda94",
+            strip_prefix = "bazel_features-1.14.0",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazel-contrib/bazel_features/releases/download/v1.14.0/bazel_features-v1.14.0.tar.gz",
+                "https://github.com/bazel-contrib/bazel_features/releases/download/v1.14.0/bazel_features-v1.14.0.tar.gz",
+            ],
+        )
+    if "rules_proto" not in native.existing_rules():
+        http_archive(
+            name = "rules_proto",
+            sha256 = "6fb6767d1bef535310547e03247f7518b03487740c11b6c6adb7952033fe1295",
+            strip_prefix = "rules_proto-6.0.2",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_proto/archive/refs/tags/6.0.2.tar.gz",
+                "https://github.com/bazelbuild/rules_proto/archive/refs/tags/6.0.2.tar.gz",
+            ],
+        )
+
     if "io_bazel_rules_go" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_go",
-            sha256 = "69de5c704a05ff37862f7e0f5534d4f479418afc21806c887db544a316f3cb6b",
+            sha256 = "d93ef02f1e72c82d8bb3d5169519b36167b33cf68c252525e3b9d3d5dd143de7",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
-                "https://github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.49.0/rules_go-v0.49.0.zip",
+                "https://github.com/bazelbuild/rules_go/releases/download/v0.49.0/rules_go-v0.49.0.zip",
             ],
+            patches = [
+                "@com_github_grpc_grpc//bazel:rules_go.patch",
+            ],
+            patch_args = ["-p1"],
         )
 
     if "build_bazel_rules_apple" not in native.existing_rules():
@@ -272,13 +303,9 @@ def grpc_deps():
     if "com_envoyproxy_protoc_gen_validate" not in native.existing_rules():
         http_archive(
             name = "com_envoyproxy_protoc_gen_validate",
-            strip_prefix = "protoc-gen-validate-4694024279bdac52b77e22dc87808bd0fd732b69",
-            sha256 = "1e490b98005664d149b379a9529a6aa05932b8a11b76b4cd86f3d22d76346f47",
-            urls = [
-                "https://github.com/envoyproxy/protoc-gen-validate/archive/4694024279bdac52b77e22dc87808bd0fd732b69.tar.gz",
-            ],
-            patches = ["@com_github_grpc_grpc//third_party:protoc-gen-validate.patch"],
-            patch_args = ["-p1"],
+            sha256 = "9372f9ecde8fbadf83c8c7de3dbb49b11067aa26fb608c501106d0b4bf06c28f",
+            strip_prefix = "protoc-gen-validate-1.0.4",
+            urls = ["https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.0.4.zip"],
         )
 
     if "com_github_cncf_xds" not in native.existing_rules():
@@ -313,11 +340,11 @@ def grpc_deps():
     if "io_opentelemetry_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opentelemetry_cpp",
-            sha256 = "ed681d20a684b7d485a49288e7cfb2d182bf882e5c112c5f2fa3f9e9da2278fc",
-            strip_prefix = "opentelemetry-cpp-4bd64c9a336fd438d6c4c9dad2e6b61b0585311f",
+            sha256 = "4b822a2f137b8c2ea403c5ec9a661addcc048aa8ba3afebffd58cbcf218457bc",
+            strip_prefix = "opentelemetry-cpp-a388e87d72b8321c189c8d41edb746ffa687ce3c",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/4bd64c9a336fd438d6c4c9dad2e6b61b0585311f.tar.gz",
-                "https://github.com/open-telemetry/opentelemetry-cpp/archive/4bd64c9a336fd438d6c4c9dad2e6b61b0585311f.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/a388e87d72b8321c189c8d41edb746ffa687ce3c.tar.gz",
+                "https://github.com/open-telemetry/opentelemetry-cpp/archive/a388e87d72b8321c189c8d41edb746ffa687ce3c.tar.gz",
             ],
         )
 

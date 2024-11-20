@@ -38,7 +38,11 @@ class ClientAsyncStreamingInterface {
 
   /// Start the call that was set up by the constructor, but only if the
   /// constructor was invoked through the "Prepare" API which doesn't actually
-  /// start the call
+  /// start the call.
+  ///
+  /// It is illegal to start a write-type operation (eg. Write(), WriteLast(),
+  /// WritesDone()) while the `StartCall()` operation has not finished
+  /// (determined by the returning of \a tag).
   virtual void StartCall(void* tag) = 0;
 
   /// Request notification of the reading of the initial metadata. Completion

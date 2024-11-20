@@ -212,7 +212,7 @@ class ClientChannel::SubchannelWrapper
 //
 // This class handles things like hopping into the WorkSerializer
 // before passing notifications to the LB policy and propagating
-// keepalive information betwen subchannels.
+// keepalive information between subchannels.
 class ClientChannel::SubchannelWrapper::WatcherWrapper
     : public Subchannel::ConnectivityStateWatcherInterface {
  public:
@@ -260,7 +260,7 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         << subchannel_wrapper_.get() << " subchannel "
         << subchannel_wrapper_->subchannel_.get()
         << " watcher=" << watcher_.get()
-        << "state=" << ConnectivityStateName(state) << " status=" << status;
+        << " state=" << ConnectivityStateName(state) << " status=" << status;
     absl::optional<absl::Cord> keepalive_throttling =
         status.GetPayload(kKeepaliveThrottlingKey);
     if (keepalive_throttling.has_value()) {
