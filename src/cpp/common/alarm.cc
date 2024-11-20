@@ -102,7 +102,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     // until it has completed.
     // TODO(C++20): atomic wait?
     while (queued_.load() != executed_.load()) {
-      absl::SleepFor(absl::Milliseconds(100));
+      absl::SleepFor(absl::Milliseconds(10));
     }
   }
   void Destroy() {
