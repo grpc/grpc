@@ -1044,7 +1044,7 @@ regexes:
   \S+ failed`
 
 - Thread-specific logs will include the thread_id, helping to track performance
-  across threads, especially when each thread is managing its own channel lifecycle.
+  across threads.
 
 This test must be configurable via a few different command line flags:
 
