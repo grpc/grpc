@@ -57,13 +57,10 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
   bool FinalizeResult(void** tag, bool* /*status*/) override {
     *tag = tag_;
     executed_++;
-    LOG(INFO) << "[DO NOT SUBMIT] Finalized";
     Unref();
     return true;
   }
   void Set(grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag) {
-    LOG(INFO) << "\n"
-              << "[DO NOT SUBMIT] Setting";
     grpc_core::ExecCtx exec_ctx;
     GRPC_CQ_INTERNAL_REF(cq->cq(), "alarm");
     cq_ = cq->cq();
@@ -91,48 +88,22 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
         [this] { OnCallbackAlarm(true); });
   }
   void Cancel() {
-    LOG(INFO) << "[DO NOT SUBMIT] Cancelling";
     grpc_core::ExecCtx exec_ctx;
     if (callback_armed_.load() &&
         event_engine_->Cancel(callback_timer_handle_)) {
       event_engine_->Run([this] { OnCallbackAlarm(/*is_ok=*/false); });
     }
     if (cq_armed_.load()) {
-      // if (event_engine_->Cancel(cq_timer_handle_)) {
-      //   LOG(INFO) << "[DO NOT SUBMIT] cancelling inline";
-      //   OnCQAlarm(absl::CancelledError("cancelled"));
-      //   LOG(INFO) << "[DO NOT SUBMIT] cancelled inline";
-      // } else {
-      //   LOG(INFO) << "[DO NOT SUBMIT] could not cancel. Waiting for OnCQAlarm
-      //   to finish";
-      //   // Slow path on cancellation. If the timer can't be cancelled, wait
-      //   // until it has completed.
-      //   // TODO(C++20): atomic wait?
-      //   while (queued_.load() != executed_.load()) {
-      //     absl::SleepFor(absl::Milliseconds(100));
-      //   }
-      //   LOG(INFO) << "[DO NOT SUBMIT] OnCQAlarm finished";
-      // }
       if (event_engine_->Cancel(cq_timer_handle_)) {
-        LOG(INFO) << "[DO NOT SUBMIT] cancelling inline";
         OnCQAlarm(absl::CancelledError("cancelled"));
-        LOG(INFO) << "[DO NOT SUBMIT] cancelled inline";
-      } else {
-        LOG(INFO)
-            << "[DO NOT SUBMIT] OnCQAlarm timer cannot be cancelled. Waiting";
       }
     }
-    LOG(INFO) << "[DO NOT SUBMIT] Waiting for FinalizeResult to finish";
     // Slow path on cancellation. If the timer can't be cancelled, wait
     // until it has completed.
     // TODO(C++20): atomic wait?
     while (queued_.load() != executed_.load()) {
-      LOG(INFO) << "[DO NOT SUBMIT] looping in wait";
       absl::SleepFor(absl::Milliseconds(100));
     }
-    LOG(INFO) << "[DO NOT SUBMIT] Done waiting for queued == executed ("
-              << queued_.load() << ")";
-    LOG(INFO) << "[DO NOT SUBMIT] Cancel complete";
   }
   void Destroy() {
     Cancel();
@@ -141,7 +112,6 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
 
  private:
   void OnCQAlarm(grpc_error_handle error) {
-    LOG(INFO) << "[DO NOT SUBMIT] OnCQAlarm running";
     cq_armed_.store(false);
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
@@ -150,7 +120,6 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     grpc_completion_queue* cq = cq_;
     cq_ = nullptr;
     grpc_cq_completion* completion = new grpc_cq_completion();
-    LOG(INFO) << "[DO NOT SUBMIT] end op pushed";
     grpc_cq_end_op(
         cq, this, error,
         [](void* /*arg*/, grpc_cq_completion* completion) {
@@ -158,7 +127,6 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
         },
         nullptr, completion);
     GRPC_CQ_INTERNAL_UNREF(cq, "alarm");
-    LOG(INFO) << "[DO NOT SUBMIT] OnCQAlarm Finished";
   }
 
   void OnCallbackAlarm(bool is_ok) {
