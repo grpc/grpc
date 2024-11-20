@@ -68,6 +68,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     Ref();
     CHECK(cq_armed_.exchange(true) == false);
     CHECK(!callback_armed_.load());
+    queued_++;
     cq_timer_handle_ = event_engine_->RunAfter(
         grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
             grpc_core::ExecCtx::Get()->Now(),
@@ -91,9 +92,16 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
         event_engine_->Cancel(callback_timer_handle_)) {
       event_engine_->Run([this] { OnCallbackAlarm(/*is_ok=*/false); });
     }
-    if (cq_armed_.load() && event_engine_->Cancel(cq_timer_handle_)) {
-      event_engine_->Run(
-          [this] { OnCQAlarm(absl::CancelledError("cancelled")); });
+    if (cq_armed_.load()) {
+      if (event_engine_->Cancel(cq_timer_handle_)) {
+        OnCQAlarm(absl::CancelledError("cancelled"));
+      } else {
+        // Slow path on cancellation. If the timer can't be cancelled, wait until it has completed.
+        // TODO(C++20): atomic wait?
+        while (queued_.load() != executed_.load()) {
+          absl::SleepFor(absl::Milliseconds(100));
+        }
+      }
     }
   }
   void Destroy() {
@@ -110,11 +118,15 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     // can be reset when the alarm tag is delivered.
     grpc_completion_queue* cq = cq_;
     cq_ = nullptr;
+    grpc_cq_completion* completion = new grpc_cq_completion();
     grpc_cq_end_op(
         cq, this, error,
-        [](void* /*arg*/, grpc_cq_completion* /*completion*/) {}, nullptr,
-        &completion_);
+        [](void* /*arg*/, grpc_cq_completion* completion) {
+          delete completion;
+        },
+        nullptr, completion);
     GRPC_CQ_INTERNAL_UNREF(cq, "alarm");
+    executed_++;
   }
 
   void OnCallbackAlarm(bool is_ok) {
@@ -139,7 +151,8 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
   EventEngine::TaskHandle callback_timer_handle_ =
       EventEngine::TaskHandle::kInvalid;
   gpr_refcount refs_;
-  grpc_cq_completion completion_;
+  std::atomic<int> queued_{0};
+  std::atomic<int> executed_{0};
   // completion queue where events about this alarm will be posted
   grpc_completion_queue* cq_;
   void* tag_;
