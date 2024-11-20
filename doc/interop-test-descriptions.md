@@ -1043,6 +1043,9 @@ regexes:
   - `thread_id: \d+ soak iteration: \d+ elapsed_ms: \d+ peer: \S+ server_uri: 
   \S+ failed`
 
+- Thread-specific logs will include the thread_id, helping to track performance
+  across threads, especially when each thread is managing its own channel lifecycle.
+
 This test must be configurable via a few different command line flags:
 
 * `soak_iterations`: Controls the number of RPCs to perform. This should
@@ -1094,16 +1097,6 @@ latency measurement, but the teardown of that channel should **not** be
 included in that latency measurement (channel teardown semantics differ widely
 between languages). This latency measurement should also be the value that is
 logged and recorded in the latency histogram.
-
-* `createNewChannel` Function: In channel_soak, the `createNewChannel` function 
-is used by each thread to create a new channel before every RPC. This function 
-ensures that each RPC has a separate channel, preventing race conditions by 
-isolating channels between threads. It shuts down the previous channel (if any)
-and creates a new one for each iteration, ensuring accurate latency measurement
-per RPC.
-* Thread-specific logs will include the thread_id, helping to track performance 
-across threads, especially when each thread is managing its own channel lifecycle.
-
 
 ### orca_per_rpc
 [orca_per_rpc]: #orca_per_rpc
