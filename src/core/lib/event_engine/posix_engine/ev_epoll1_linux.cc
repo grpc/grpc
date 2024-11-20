@@ -21,11 +21,11 @@
 
 #include <atomic>
 #include <memory>
+#include <utility>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
@@ -364,7 +364,9 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler, SystemApi* system_api)
       closed_(false),
       system_api_(system_api) {
   g_epoll_set_.epfd = EpollCreateAndCloexec();
-  wakeup_fd_ = system_api->CreateWakeupFd();
+  auto wakeup_fd = system_api->CreateWakeupFd();
+  CHECK(wakeup_fd.ok()) << wakeup_fd.status();
+  wakeup_fd_ = std::move(wakeup_fd).value();
   CHECK(wakeup_fd_ != nullptr);
   CHECK_GE(g_epoll_set_.epfd, 0);
   GRPC_TRACE_LOG(event_engine_poller, INFO)

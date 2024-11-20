@@ -114,7 +114,7 @@ class SystemApi {
   absl::StatusOr<std::string> PeerAddressString(FileDescriptor fd) const;
 
   bool SupportsWakeupFd();
-  std::unique_ptr<WakeupFd> CreateWakeupFd();
+  absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd();
 
  private:
 #ifndef GRPC_LINUX_SOCKETUTILS

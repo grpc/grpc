@@ -30,7 +30,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
@@ -620,8 +619,10 @@ PollPoller::PollPoller(Scheduler* scheduler, SystemApi* system_api,
       poll_handles_list_head_(nullptr),
       closed_(false),
       system_api_(system_api) {
-  wakeup_fd_ = system_api->CreateWakeupFd();
-  CHECK(wakeup_fd_ != nullptr);
+  auto wakeup_fd = system_api->CreateWakeupFd();
+  CHECK(wakeup_fd.ok()) << wakeup_fd.status();
+  CHECK(*wakeup_fd != nullptr);
+  wakeup_fd_ = std::move(wakeup_fd).value();
   ForkPollerListAddPoller(this);
 }
 

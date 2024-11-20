@@ -2195,7 +2195,6 @@ grpc_cc_library(
     ],
     deps = [
         "iomgr_port",
-        "posix_event_engine_system_api",
         "posix_event_engine_wakeup_fd_posix",
         "strerror",
         "//:gpr",
@@ -2368,6 +2367,8 @@ grpc_cc_library(
         "iomgr_port",
         "posix_event_engine_file_descriptor",
         "posix_event_engine_wakeup_fd_posix",
+        "posix_event_engine_wakeup_fd_posix_eventfd",
+        "posix_event_engine_wakeup_fd_posix_pipe",
         "strerror",
         "//:config_vars",
         "//:event_engine_base_hdrs",

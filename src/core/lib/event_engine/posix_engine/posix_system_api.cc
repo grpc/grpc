@@ -22,6 +22,9 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/strerror.h"
@@ -564,6 +567,27 @@ std::tuple<int, FileDescriptor, FileDescriptor> SystemApi::SocketPair(
   int result = socketpair(domain, type, protocol, fds.data());
   return std::make_tuple(result, AdoptExternalFd(fds[0]),
                          AdoptExternalFd(fds[1]));
+}
+
+bool SystemApi::SupportsWakeupFd() {
+#ifndef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
+  if (EventFdWakeupFd::IsSupported()) {
+    return true;
+  }
+#endif  // GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
+  return PipeWakeupFd::IsSupported();
+}
+
+absl::StatusOr<std::unique_ptr<WakeupFd>> SystemApi::CreateWakeupFd() {
+#ifndef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
+  if (EventFdWakeupFd::IsSupported()) {
+    return EventFdWakeupFd::CreateEventFdWakeupFd();
+  }
+#endif  // GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
+  if (PipeWakeupFd::IsSupported()) {
+    return PipeWakeupFd::CreatePipeWakeupFd();
+  }
+  return nullptr;
 }
 
 }  // namespace experimental
