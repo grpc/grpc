@@ -472,7 +472,7 @@ def _compute_transitive_metadata(
     # targets. In addition, PY depends on IC.
     #
     # Translate the condition into dependency graph:
-    #   PX -> [IA, IB, PY, IC, PZ]
+    #   PX -> [IA, IB, PY, IC, PZ
     #   PY -> [IC]
     #   Public targets: [PX, PY, PZ]
     #
@@ -524,6 +524,8 @@ def _populate_transitive_metadata(
     bazel_label_to_dep_name = {}
     for dep_name in public_dep_names:
         bazel_label_to_dep_name[_get_bazel_label(dep_name)] = dep_name
+    import pprint
+    pprint.pprint(bazel_label_to_dep_name)
 
     # Make sure we reached all the Bazel rules
     # TODO(lidiz) potentially we could only update a subset of rules
@@ -946,7 +948,7 @@ def _generate_build_extra_metadata_for_tests(
         if "grpc_fuzzer" == bazel_rule["generator_function"]:
             # currently we hand-list fuzzers instead of generating them automatically
             # because there's no way to obtain maxlen property from bazel BUILD file.
-            print(("skipping fuzzer " + test))
+            # print(("skipping fuzzer " + test))
             continue
 
         if "bazel_only" in bazel_tags:
@@ -1005,12 +1007,11 @@ def _generate_build_extra_metadata_for_tests(
         if len(collision_list) > 1:
             for test_name in collision_list:
                 long_name = test_name.replace("/", "_").replace(":", "_")
-                print(
-                    'short name of "%s" collides with another test, renaming'
-                    " to %s" % (test_name, long_name)
-                )
+                #print(
+                #    'short name of "%s" collides with another test, renaming'
+                #    " to %s" % (test_name, long_name)
+                #)
                 test_metadata[test_name]["_RENAME"] = long_name
-    print(test_metadata["test/cpp/ext/otel:otel_plugin_test"])
     return test_metadata
 
 
@@ -1060,6 +1061,7 @@ def _generate_external_proto_libraries() -> List[Dict[str, Any]]:
 
 def _detect_and_print_issues(build_yaml_like: BuildYaml) -> None:
     """Try detecting some unusual situations and warn about them."""
+    return
     for tgt in build_yaml_like["targets"]:
         if tgt["build"] == "test":
             for src in tgt["src"]:
@@ -1230,27 +1232,37 @@ _BUILD_EXTRA_METADATA = {
     },
     # TODO(jtattermusch): consider adding grpc++_core_stats
     # test support libraries
-    "test/core/test_util:grpc_test_util": {
-        "language": "c",
-        "build": "private",
-        "_RENAME": "grpc_test_util",
-    },
-    "test/core/test_util:grpc_test_util_unsecure": {
-        "language": "c",
-        "build": "private",
-        "_RENAME": "grpc_test_util_unsecure",
-    },
+    #"test/core/test_util:grpc_test_util_base": {
+    #    "language": "c",
+    #    "build": "private",
+    #    "_RENAME": "grpc_test_util_base",
+    #},
+    #"test/core/test_util:grpc_test_util": {
+    #    "language": "c",
+    #    "build": "private",
+    #    "_RENAME": "grpc_test_util",
+    #},
+    #"test/core/test_util:grpc_test_util_unsecure": {
+    #    "language": "c",
+    #    "build": "private",
+    #    "_RENAME": "grpc_test_util_unsecure",
+    #},
     # TODO(jtattermusch): consider adding grpc++_test_util_unsecure - it doesn't seem to be used by bazel build (don't forget to set secure: False)
-    "test/cpp/util:test_config": {
-        "language": "c++",
-        "build": "private",
-        "_RENAME": "grpc++_test_config",
-    },
-    "test/cpp/util:test_util": {
-        "language": "c++",
-        "build": "private",
-        "_RENAME": "grpc++_test_util",
-    },
+    #"test/cpp/util:test_config": {
+    #    "language": "c++",
+    #    "build": "private",
+    #    "_RENAME": "grpc++_test_config",
+    #},
+    #"test/cpp/util:test_util": {
+    #    "language": "c++",
+    #    "build": "private",
+    #    "_RENAME": "grpc++_test_util",
+    #},
+    #"test/cpp/util:test_util_unsecure": {
+    #    "language": "c++",
+    #    "build": "private",
+    #    "_RENAME": "grpc++_test_util_unsecure",
+    #},    
     # benchmark support libraries
     "test/cpp/microbenchmarks:helpers": {
         "language": "c++",
@@ -1430,19 +1442,47 @@ tests = _exclude_unwanted_cc_tests(_extract_cc_tests(bazel_rules))
 # only very little "extra metadata" would be needed and/or it would be trivial
 # to generate it automatically.
 all_extra_metadata = {}
-# TODO(veblush): Remove this workaround once protobuf is upgraded to 26.x
-if "@com_google_protobuf//third_party/utf8_range:utf8_range" not in bazel_rules:
-    md = _BUILD_EXTRA_METADATA[
-        "@com_google_protobuf//third_party/utf8_range:utf8_range"
-    ]
-    del _BUILD_EXTRA_METADATA[
-        "@com_google_protobuf//third_party/utf8_range:utf8_range"
-    ]
-    _BUILD_EXTRA_METADATA["@utf8_range//:utf8_range"] = md
 all_extra_metadata.update(
     _generate_build_extra_metadata_for_tests(tests, bazel_rules)
 )
 all_extra_metadata.update(_BUILD_EXTRA_METADATA)
+
+test_pallet_rule = {
+    'name': '//:test_pallet',
+    'class': 'cc_library', 
+    'hdrs': [],
+    'srcs': [],
+    'deps': [],
+    'textual_hdrs': [],
+}
+deps_all = set()
+int_targets = {
+    "//test/core/test_util:grpc_suppressions",
+    "//test/core/test_util:grpc_test_util",
+    "//test/core/test_util:grpc_test_util_base",
+    "//test/core/test_util:grpc_test_util_unsecure",
+    "//test/cpp/util:test_config",
+    "//test/cpp/util:test_util",
+    "//test/cpp/util:test_util_unsecure",
+}
+for rule in bazel_rules.values():
+    if rule["name"] not in int_targets and not int_targets.isdisjoint(set(rule['deps'])):
+        print(rule['name'])
+        rule['deps'] = list(sorted(set(rule['deps']) - int_targets | {'//:test_pallet',}))
+#for target in int_targets:
+#    bazel_target = bazel_rules[target]
+#    deps_all.update(set(bazel_target['deps']))
+#    bazel_target['deps'] = [] #['//:test_pallet']
+test_pallet_rule['deps'] = list(int_targets)
+#print(deps_all)
+bazel_rules[test_pallet_rule['name']] = test_pallet_rule
+all_extra_metadata['test_pallet'] = {
+        "language": "c",
+        "build": "private",
+        "_RENAME": "grpc_test_pallet",
+    }
+
+#bazel_rules.add('')
 
 # Step 4: Compute the build metadata that will be used in the final build.yaml.
 # The final build metadata includes transitive dependencies, and sources/headers
@@ -1455,7 +1495,11 @@ all_extra_metadata.update(_BUILD_EXTRA_METADATA)
 #               '_COLLAPSED_PUBLIC_HEADERS': [...],
 #               '_COLLAPSED_HEADERS': [...]
 #             }
+import pprint
+pprint.pprint(bazel_rules['//test/core/test_util:grpc_test_util_base'])
 _populate_transitive_metadata(bazel_rules, list(all_extra_metadata.keys()))
+#print(bazel_rules.keys())
+#pprint.pprint(bazel_rules['//test/core/test_util:grpc_test_util_base'])
 
 # Step 4a: Update the existing test metadata with the updated build metadata.
 # Certain build metadata of certain test targets depend on the transitive

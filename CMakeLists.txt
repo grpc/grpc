@@ -3188,45 +3188,67 @@ endif()
 
 if(gRPC_BUILD_TESTS)
 
-add_library(grpc_test_util
+add_library(grpc_test_pallet
+  src/core/util/subprocess_posix.cc
+  src/core/util/subprocess_windows.cc
+  test/core/end2end/data/client_certs.cc
+  test/core/end2end/data/server1_cert.cc
+  test/core/end2end/data/server1_key.cc
+  test/core/end2end/data/test_root_cert.cc
   test/core/event_engine/test_init.cc
   test/core/test_util/build.cc
+  test/core/test_util/cmdline.cc
+  test/core/test_util/fuzzer_util.cc
+  test/core/test_util/grpc_profiler.cc
+  test/core/test_util/histogram.cc
+  test/core/test_util/mock_endpoint.cc
+  test/core/test_util/parse_hexstring.cc
   test/core/test_util/port.cc
   test/core/test_util/port_isolated_runtime_environment.cc
   test/core/test_util/port_server_client.cc
   test/core/test_util/reconnect_server.cc
+  test/core/test_util/resolve_localhost_ip46.cc
+  test/core/test_util/slice_splitter.cc
   test/core/test_util/stack_tracer.cc
   test/core/test_util/test_config.cc
   test/core/test_util/test_tcp_server.cc
   test/core/test_util/tls_utils.cc
+  test/core/test_util/tracer_util.cc
+  test/cpp/util/byte_buffer_proto_helper.cc
+  test/cpp/util/create_test_channel.cc
+  test/cpp/util/string_ref_helper.cc
+  test/cpp/util/subprocess.cc
+  test/cpp/util/test_config_cc.cc
+  test/cpp/util/test_credentials_provider.cc
 )
 
-target_compile_features(grpc_test_util PUBLIC cxx_std_14)
+target_compile_features(grpc_test_pallet PUBLIC cxx_std_14)
 
-set_target_properties(grpc_test_util PROPERTIES
+set_target_properties(grpc_test_pallet PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
   SOVERSION ${gRPC_CORE_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
-  set_target_properties(grpc_test_util PROPERTIES COMPILE_PDB_NAME "grpc_test_util"
+  set_target_properties(grpc_test_pallet PROPERTIES COMPILE_PDB_NAME "grpc_test_pallet"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
   if(BUILD_SHARED_LIBS)
-    target_compile_definitions(grpc_test_util
+    target_compile_definitions(grpc_test_pallet
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
   if(gRPC_INSTALL)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_test_util.pdb
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_test_pallet.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
     )
   endif()
 endif()
 
-target_include_directories(grpc_test_util
+target_include_directories(grpc_test_pallet
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -3239,83 +3261,16 @@ target_include_directories(grpc_test_util
     ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-target_link_libraries(grpc_test_util
+target_link_libraries(grpc_test_pallet
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::failure_signal_handler
   absl::stacktrace
   absl::symbolize
+  absl::flags_parse
   absl::log_initialize
-  grpc
+  grpc++
+  grpc++_unsecure
 )
-if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
-  target_link_libraries(grpc_test_util "-framework CoreFoundation")
-endif()
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_library(grpc_test_util_unsecure
-  test/core/event_engine/test_init.cc
-  test/core/test_util/build.cc
-  test/core/test_util/port.cc
-  test/core/test_util/port_isolated_runtime_environment.cc
-  test/core/test_util/port_server_client.cc
-  test/core/test_util/reconnect_server.cc
-  test/core/test_util/stack_tracer.cc
-  test/core/test_util/test_config.cc
-  test/core/test_util/test_tcp_server.cc
-)
-
-target_compile_features(grpc_test_util_unsecure PUBLIC cxx_std_14)
-
-set_target_properties(grpc_test_util_unsecure PROPERTIES
-  VERSION ${gRPC_CORE_VERSION}
-  SOVERSION ${gRPC_CORE_SOVERSION}
-)
-
-if(WIN32 AND MSVC)
-  set_target_properties(grpc_test_util_unsecure PROPERTIES COMPILE_PDB_NAME "grpc_test_util_unsecure"
-    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-  )
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(grpc_test_util_unsecure
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-  if(gRPC_INSTALL)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_test_util_unsecure.pdb
-      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
-    )
-  endif()
-endif()
-
-target_include_directories(grpc_test_util_unsecure
-  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-target_link_libraries(grpc_test_util_unsecure
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::failure_signal_handler
-  absl::stacktrace
-  absl::symbolize
-  absl::log_initialize
-  grpc_unsecure
-)
-if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
-  target_link_libraries(grpc_test_util_unsecure "-framework CoreFoundation")
-endif()
 
 
 endif()
@@ -4483,15 +4438,6 @@ add_library(benchmark_helpers ${_gRPC_STATIC_WIN32}
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/cpp/microbenchmarks/helpers.cc
 )
 
@@ -4538,9 +4484,7 @@ target_include_directories(benchmark_helpers
 target_link_libraries(benchmark_helpers
   ${_gRPC_ALLTARGETS_LIBRARIES}
   ${_gRPC_BENCHMARK_LIBRARIES}
-  grpc++
-  grpc_test_util
-  grpc++_test_config
+  grpc_test_pallet
 )
 
 endif()
@@ -5175,131 +5119,6 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_library(grpc++_test_config
-  test/cpp/util/test_config_cc.cc
-)
-
-target_compile_features(grpc++_test_config PUBLIC cxx_std_14)
-
-set_target_properties(grpc++_test_config PROPERTIES
-  VERSION ${gRPC_CPP_VERSION}
-  SOVERSION ${gRPC_CPP_SOVERSION}
-)
-
-if(WIN32 AND MSVC)
-  set_target_properties(grpc++_test_config PROPERTIES COMPILE_PDB_NAME "grpc++_test_config"
-    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-  )
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(grpc++_test_config
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-  if(gRPC_INSTALL)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_test_config.pdb
-      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
-    )
-  endif()
-endif()
-
-target_include_directories(grpc++_test_config
-  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    ${_gRPC_PROTO_GENS_DIR}
-)
-target_link_libraries(grpc++_test_config
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::flags_parse
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_library(grpc++_test_util
-  src/core/util/subprocess_posix.cc
-  src/core/util/subprocess_windows.cc
-  test/core/end2end/data/client_certs.cc
-  test/core/end2end/data/server1_cert.cc
-  test/core/end2end/data/server1_key.cc
-  test/core/end2end/data/test_root_cert.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
-  test/cpp/util/byte_buffer_proto_helper.cc
-  test/cpp/util/create_test_channel.cc
-  test/cpp/util/string_ref_helper.cc
-  test/cpp/util/subprocess.cc
-  test/cpp/util/test_credentials_provider.cc
-)
-
-target_compile_features(grpc++_test_util PUBLIC cxx_std_14)
-
-set_target_properties(grpc++_test_util PROPERTIES
-  VERSION ${gRPC_CPP_VERSION}
-  SOVERSION ${gRPC_CPP_SOVERSION}
-)
-
-if(WIN32 AND MSVC)
-  set_target_properties(grpc++_test_util PROPERTIES COMPILE_PDB_NAME "grpc++_test_util"
-    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-  )
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(grpc++_test_util
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-      "GRPCXX_DLL_IMPORTS"
-    )
-  endif()
-  if(gRPC_INSTALL)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_test_util.pdb
-      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
-    )
-  endif()
-endif()
-
-target_include_directories(grpc++_test_util
-  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    ${_gRPC_PROTO_GENS_DIR}
-)
-target_link_libraries(grpc++_test_util
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++
-  grpc_test_util
-)
-
 
 endif()
 
@@ -6284,15 +6103,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(fd_conservation_posix_test
     test/core/iomgr/fd_conservation_posix_test.cc
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -6300,6 +6110,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -6320,7 +6131,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   target_link_libraries(fd_conservation_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -6337,6 +6148,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -6357,7 +6169,7 @@ target_include_directories(multiple_server_queues_test
 
 target_link_libraries(multiple_server_queues_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -6374,6 +6186,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -6394,7 +6207,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
 
   target_link_libraries(pollset_windows_starvation_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -6404,15 +6217,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_iomgr_timer_list_test
   test/core/iomgr/timer_list_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -6420,6 +6224,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -6440,7 +6245,7 @@ target_include_directories(test_core_iomgr_timer_list_test
 
 target_link_libraries(test_core_iomgr_timer_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -6448,13 +6253,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(activity_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/promise/activity.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
   test/core/promise/activity_test.cc
 )
 if(WIN32 AND MSVC)
@@ -6462,6 +6260,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(activity_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -6488,13 +6288,7 @@ target_include_directories(activity_test
 target_link_libraries(activity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -6538,8 +6332,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(address_sorting_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_config
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -6549,21 +6342,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(address_sorting_test_unsecure
-    src/core/util/subprocess_posix.cc
-    src/core/util/subprocess_windows.cc
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
     test/cpp/naming/address_sorting_test.cc
-    test/cpp/util/byte_buffer_proto_helper.cc
-    test/cpp/util/string_ref_helper.cc
-    test/cpp/util/subprocess.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -6598,9 +6377,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(address_sorting_test_unsecure
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_unsecure
-    grpc_test_util_unsecure
-    grpc++_test_config
+    grpc_test_pallet
   )
 
 
@@ -7164,7 +6941,7 @@ target_link_libraries(admin_services_end2end_test
   gtest
   grpc++_reflection
   grpcpp_channelz
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -7173,15 +6950,6 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(alarm_test
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
     test/cpp/common/alarm_test.cc
   )
   if(WIN32 AND MSVC)
@@ -7217,8 +6985,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(alarm_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_unsecure
-    grpc_test_util_unsecure
+    grpc_test_pallet
   )
 
 
@@ -7227,9 +6994,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(all_ok_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/util/glob.cc
   test/core/promise/all_ok_test.cc
 )
 if(WIN32 AND MSVC)
@@ -7237,6 +7001,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(all_ok_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7263,11 +7029,7 @@ target_include_directories(all_ok_test
 target_link_libraries(all_ok_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::type_traits
-  absl::statusor
-  absl::utility
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -7283,6 +7045,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7309,7 +7072,7 @@ target_include_directories(alloc_test
 target_link_libraries(alloc_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -7325,6 +7088,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7351,7 +7115,7 @@ target_include_directories(alpn_test
 target_link_libraries(alpn_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -7406,8 +7170,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(alts_concurrent_connectivity_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -7425,6 +7188,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7451,7 +7215,7 @@ target_include_directories(alts_counter_test
 target_link_libraries(alts_counter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -7468,6 +7232,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7494,7 +7259,7 @@ target_include_directories(alts_crypt_test
 target_link_libraries(alts_crypt_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -7511,6 +7276,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7537,7 +7303,7 @@ target_include_directories(alts_crypter_test
 target_link_libraries(alts_crypter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -7555,6 +7321,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7581,7 +7348,7 @@ target_include_directories(alts_frame_protector_test
 target_link_libraries(alts_frame_protector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -7598,6 +7365,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7624,7 +7392,7 @@ target_include_directories(alts_grpc_record_protocol_test
 target_link_libraries(alts_grpc_record_protocol_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -7641,6 +7409,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7667,7 +7436,7 @@ target_include_directories(alts_handshaker_client_test
 target_link_libraries(alts_handshaker_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -7684,6 +7453,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7710,7 +7480,7 @@ target_include_directories(alts_iovec_record_protocol_test
 target_link_libraries(alts_iovec_record_protocol_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -7719,15 +7489,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(alts_security_connector_test
   test/core/security/alts_security_connector_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -7735,6 +7496,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7761,7 +7523,7 @@ target_include_directories(alts_security_connector_test
 target_link_libraries(alts_security_connector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -7778,6 +7540,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7804,7 +7567,7 @@ target_include_directories(alts_tsi_handshaker_test
 target_link_libraries(alts_tsi_handshaker_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -7821,6 +7584,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7847,7 +7611,7 @@ target_include_directories(alts_tsi_utils_test
 target_link_libraries(alts_tsi_utils_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -7891,7 +7655,7 @@ target_link_libraries(alts_util_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++_alts
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -7908,6 +7672,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7934,7 +7699,7 @@ target_include_directories(alts_zero_copy_grpc_protector_test
 target_link_libraries(alts_zero_copy_grpc_protector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -7950,6 +7715,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7976,7 +7742,7 @@ target_include_directories(arena_promise_test
 target_link_libraries(arena_promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util_unsecure
+  grpc_test_pallet
 )
 
 
@@ -7992,6 +7758,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8018,7 +7785,7 @@ target_include_directories(arena_test
 target_link_libraries(arena_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util_unsecure
+  grpc_test_pallet
 )
 
 
@@ -8101,7 +7868,7 @@ target_include_directories(async_end2end_test
 target_link_libraries(async_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -8110,15 +7877,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(auth_context_test
   test/core/security/auth_context_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -8126,6 +7884,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8152,7 +7911,7 @@ target_include_directories(auth_context_test
 target_link_libraries(auth_context_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -8195,7 +7954,7 @@ target_include_directories(auth_property_iterator_test
 target_link_libraries(auth_property_iterator_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -8204,15 +7963,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(authorization_matchers_test
   test/core/security/authorization_matchers_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -8220,6 +7970,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8246,7 +7997,7 @@ target_include_directories(authorization_matchers_test
 target_link_libraries(authorization_matchers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -8290,9 +8041,8 @@ target_include_directories(authorization_policy_provider_test
 target_link_libraries(authorization_policy_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
   grpc_authorization_provider
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -8307,6 +8057,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(avl_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8333,9 +8085,7 @@ target_include_directories(avl_test
 target_link_libraries(avl_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::config
-  absl::hash
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -8344,15 +8094,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(aws_request_signer_test
   test/core/security/aws_request_signer_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -8360,6 +8101,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8386,7 +8128,7 @@ target_include_directories(aws_request_signer_test
 target_link_libraries(aws_request_signer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -8443,9 +8185,7 @@ target_include_directories(backend_metrics_lb_policy_test
 target_link_libraries(backend_metrics_lb_policy_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
-  grpc++_test_config
+  grpc_test_pallet
 )
 
 
@@ -8461,6 +8201,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8487,7 +8228,7 @@ target_include_directories(backoff_test
 target_link_libraries(backoff_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -8532,6 +8273,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8559,9 +8301,7 @@ target_link_libraries(bad_ping_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -8578,6 +8318,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8604,7 +8345,7 @@ target_include_directories(bad_server_response_test
 target_link_libraries(bad_server_response_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -8613,19 +8354,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(bad_ssl_alpn_test
-    src/core/util/subprocess_posix.cc
-    src/core/util/subprocess_windows.cc
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -8633,6 +8363,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -8659,7 +8390,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(bad_ssl_alpn_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -8669,19 +8400,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(bad_ssl_cert_test
-    src/core/util/subprocess_posix.cc
-    src/core/util/subprocess_windows.cc
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -8689,6 +8409,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -8715,7 +8436,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(bad_ssl_cert_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -8734,6 +8455,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8760,7 +8482,7 @@ target_include_directories(bad_streaming_id_bad_client_test
 target_link_libraries(bad_streaming_id_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -8778,6 +8500,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8804,7 +8527,7 @@ target_include_directories(badreq_bad_client_test
 target_link_libraries(badreq_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -8820,6 +8543,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8846,7 +8570,7 @@ target_include_directories(basic_work_queue_test
 target_link_libraries(basic_work_queue_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util_unsecure
+  grpc_test_pallet
 )
 
 
@@ -8863,6 +8587,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -8889,7 +8614,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(bdp_estimator_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -8906,6 +8631,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8932,7 +8658,7 @@ target_include_directories(bin_decoder_test
 target_link_libraries(bin_decoder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -8948,6 +8674,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8974,7 +8701,7 @@ target_include_directories(bin_encoder_test
 target_link_libraries(bin_encoder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -9019,6 +8746,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9046,9 +8774,7 @@ target_link_libraries(binary_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -9058,6 +8784,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(bitset_test
   test/core/util/bitset_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(bitset_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(bitset_test PUBLIC cxx_std_14)
 target_include_directories(bitset_test
   PRIVATE
@@ -9081,8 +8817,7 @@ target_include_directories(bitset_test
 target_link_libraries(bitset_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
-  absl::bits
+  grpc_test_pallet
 )
 
 
@@ -9090,16 +8825,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(blackboard_test
-  src/core/filter/blackboard.cc
-  src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/channel/channel_args.cc
-  src/core/lib/iomgr/sockaddr_utils_posix.cc
-  src/core/lib/iomgr/socket_utils_windows.cc
-  src/core/lib/surface/channel_stack_type.cc
-  src/core/resolver/endpoint_addresses.cc
-  src/core/util/ref_counted_string.cc
-  src/core/util/time.cc
-  src/core/util/uri.cc
   test/core/filters/blackboard_test.cc
 )
 if(WIN32 AND MSVC)
@@ -9107,6 +8832,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(blackboard_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9133,13 +8860,7 @@ target_include_directories(blackboard_test
 target_link_libraries(blackboard_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -9148,15 +8869,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(buffer_list_test
   test/core/iomgr/buffer_list_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9164,6 +8876,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9190,7 +8903,7 @@ target_include_directories(buffer_list_test
 target_link_libraries(buffer_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -9233,7 +8946,7 @@ target_include_directories(byte_buffer_test
 target_link_libraries(byte_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -9249,6 +8962,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9275,7 +8989,7 @@ target_include_directories(c_slice_buffer_test
 target_link_libraries(c_slice_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -9292,6 +9006,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -9318,7 +9033,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(call_arena_allocator_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -9364,6 +9079,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9391,9 +9107,7 @@ target_link_libraries(call_creds_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -9401,50 +9115,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_filters_test
-  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  src/core/lib/channel/channel_args.cc
-  src/core/lib/compression/compression.cc
-  src/core/lib/compression/compression_internal.cc
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/iomgr/closure.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
-  src/core/lib/resource_quota/memory_quota.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/resource_quota.cc
-  src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/transport/call_filters.cc
-  src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_state.cc
-  src/core/lib/transport/error_utils.cc
-  src/core/lib/transport/message.cc
-  src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
-  src/core/lib/transport/parsed_metadata.cc
-  src/core/lib/transport/status_conversion.cc
-  src/core/lib/transport/timeout_encoding.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
-  src/core/util/ref_counted_string.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   test/core/transport/call_filters_test.cc
 )
 if(WIN32 AND MSVC)
@@ -9452,6 +9122,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(call_filters_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9478,18 +9150,7 @@ target_include_directories(call_filters_test
 target_link_libraries(call_filters_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
-  absl::config
-  absl::no_destructor
-  absl::flat_hash_map
-  absl::inlined_vector
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  absl::utility
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -9505,6 +9166,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9531,7 +9193,7 @@ target_include_directories(call_finalization_test
 target_link_libraries(call_finalization_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -9576,6 +9238,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9603,9 +9266,7 @@ target_link_libraries(call_host_override_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -9630,6 +9291,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -9656,8 +9318,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(call_spine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -9666,14 +9327,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_state_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/transport/call_state.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
   test/core/transport/call_state_test.cc
 )
 if(WIN32 AND MSVC)
@@ -9681,6 +9334,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(call_state_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9707,13 +9362,7 @@ target_include_directories(call_state_test
 target_link_libraries(call_state_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -9730,6 +9379,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9756,7 +9406,7 @@ target_include_directories(call_tracer_test
 target_link_libraries(call_tracer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -9764,241 +9414,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_utils_test
-  src/core/channelz/channel_trace.cc
-  src/core/channelz/channelz.cc
-  src/core/channelz/channelz_registry.cc
-  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
-  src/core/filter/blackboard.cc
-  src/core/handshaker/handshaker_registry.cc
-  src/core/handshaker/proxy_mapper_registry.cc
-  src/core/lib/address_utils/parse_address.cc
-  src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/channel/channel_args.cc
-  src/core/lib/channel/channel_args_preconditioning.cc
-  src/core/lib/channel/channel_stack.cc
-  src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/channel_stack_builder_impl.cc
-  src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/status_util.cc
-  src/core/lib/compression/compression.cc
-  src/core/lib/compression/compression_internal.cc
-  src/core/lib/compression/message_compress.cc
-  src/core/lib/config/core_configuration.cc
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/event_engine/ares_resolver.cc
-  src/core/lib/event_engine/cf_engine/cf_engine.cc
-  src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
-  src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
-  src/core/lib/event_engine/channel_args_endpoint_config.cc
-  src/core/lib/event_engine/default_event_engine.cc
-  src/core/lib/event_engine/default_event_engine_factory.cc
-  src/core/lib/event_engine/event_engine.cc
-  src/core/lib/event_engine/forkable.cc
-  src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
-  src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
-  src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
-  src/core/lib/event_engine/posix_engine/internal_errqueue.cc
-  src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
-  src/core/lib/event_engine/posix_engine/posix_endpoint.cc
-  src/core/lib/event_engine/posix_engine/posix_engine.cc
-  src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
-  src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
-  src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/posix_engine/timer.cc
-  src/core/lib/event_engine/posix_engine/timer_heap.cc
-  src/core/lib/event_engine/posix_engine/timer_manager.cc
-  src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
-  src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
-  src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
-  src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
-  src/core/lib/event_engine/resolved_address.cc
-  src/core/lib/event_engine/shim.cc
-  src/core/lib/event_engine/slice.cc
-  src/core/lib/event_engine/slice_buffer.cc
-  src/core/lib/event_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/thread_pool/thread_count.cc
-  src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
-  src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
-  src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
-  src/core/lib/event_engine/time_util.cc
-  src/core/lib/event_engine/utils.cc
-  src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
-  src/core/lib/event_engine/windows/iocp.cc
-  src/core/lib/event_engine/windows/native_windows_dns_resolver.cc
-  src/core/lib/event_engine/windows/win_socket.cc
-  src/core/lib/event_engine/windows/windows_endpoint.cc
-  src/core/lib/event_engine/windows/windows_engine.cc
-  src/core/lib/event_engine/windows/windows_listener.cc
-  src/core/lib/event_engine/work_queue/basic_work_queue.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/iomgr/buffer_list.cc
-  src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/cfstream_handle.cc
-  src/core/lib/iomgr/closure.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/dualstack_socket_posix.cc
-  src/core/lib/iomgr/endpoint.cc
-  src/core/lib/iomgr/endpoint_cfstream.cc
-  src/core/lib/iomgr/endpoint_pair_posix.cc
-  src/core/lib/iomgr/endpoint_pair_windows.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/error_cfstream.cc
-  src/core/lib/iomgr/ev_apple.cc
-  src/core/lib/iomgr/ev_epoll1_linux.cc
-  src/core/lib/iomgr/ev_poll_posix.cc
-  src/core/lib/iomgr/ev_posix.cc
-  src/core/lib/iomgr/event_engine_shims/closure.cc
-  src/core/lib/iomgr/event_engine_shims/endpoint.cc
-  src/core/lib/iomgr/event_engine_shims/tcp_client.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/fork_posix.cc
-  src/core/lib/iomgr/fork_windows.cc
-  src/core/lib/iomgr/internal_errqueue.cc
-  src/core/lib/iomgr/iocp_windows.cc
-  src/core/lib/iomgr/iomgr.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/iomgr/iomgr_posix.cc
-  src/core/lib/iomgr/iomgr_posix_cfstream.cc
-  src/core/lib/iomgr/iomgr_windows.cc
-  src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset.cc
-  src/core/lib/iomgr/pollset_set.cc
-  src/core/lib/iomgr/pollset_set_windows.cc
-  src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/resolve_address.cc
-  src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_windows.cc
-  src/core/lib/iomgr/sockaddr_utils_posix.cc
-  src/core/lib/iomgr/socket_factory_posix.cc
-  src/core/lib/iomgr/socket_mutator.cc
-  src/core/lib/iomgr/socket_utils_common_posix.cc
-  src/core/lib/iomgr/socket_utils_linux.cc
-  src/core/lib/iomgr/socket_utils_posix.cc
-  src/core/lib/iomgr/socket_utils_windows.cc
-  src/core/lib/iomgr/socket_windows.cc
-  src/core/lib/iomgr/systemd_utils.cc
-  src/core/lib/iomgr/tcp_client.cc
-  src/core/lib/iomgr/tcp_client_cfstream.cc
-  src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_windows.cc
-  src/core/lib/iomgr/tcp_posix.cc
-  src/core/lib/iomgr/tcp_server.cc
-  src/core/lib/iomgr/tcp_server_posix.cc
-  src/core/lib/iomgr/tcp_server_utils_posix_common.cc
-  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
-  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_windows.cc
-  src/core/lib/iomgr/tcp_windows.cc
-  src/core/lib/iomgr/timer.cc
-  src/core/lib/iomgr/timer_generic.cc
-  src/core/lib/iomgr/timer_heap.cc
-  src/core/lib/iomgr/timer_manager.cc
-  src/core/lib/iomgr/unix_sockets_posix.cc
-  src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/vsock.cc
-  src/core/lib/iomgr/wakeup_fd_eventfd.cc
-  src/core/lib/iomgr/wakeup_fd_nospecial.cc
-  src/core/lib/iomgr/wakeup_fd_pipe.cc
-  src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
-  src/core/lib/resource_quota/api.cc
-  src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
-  src/core/lib/resource_quota/memory_quota.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/resource_quota.cc
-  src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/security/certificate_provider/certificate_provider_registry.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/byte_buffer.cc
-  src/core/lib/surface/byte_buffer_reader.cc
-  src/core/lib/surface/call.cc
-  src/core/lib/surface/call_details.cc
-  src/core/lib/surface/call_log_batch.cc
-  src/core/lib/surface/call_utils.cc
-  src/core/lib/surface/channel.cc
-  src/core/lib/surface/channel_init.cc
-  src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/surface/client_call.cc
-  src/core/lib/surface/completion_queue.cc
-  src/core/lib/surface/completion_queue_factory.cc
-  src/core/lib/surface/event_string.cc
-  src/core/lib/surface/filter_stack_call.cc
-  src/core/lib/surface/init_internally.cc
-  src/core/lib/surface/lame_client.cc
-  src/core/lib/surface/metadata_array.cc
-  src/core/lib/surface/server_call.cc
-  src/core/lib/surface/validate_metadata.cc
-  src/core/lib/surface/version.cc
-  src/core/lib/transport/call_arena_allocator.cc
-  src/core/lib/transport/call_filters.cc
-  src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
-  src/core/lib/transport/call_state.cc
-  src/core/lib/transport/connectivity_state.cc
-  src/core/lib/transport/error_utils.cc
-  src/core/lib/transport/interception_chain.cc
-  src/core/lib/transport/message.cc
-  src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
-  src/core/lib/transport/parsed_metadata.cc
-  src/core/lib/transport/status_conversion.cc
-  src/core/lib/transport/timeout_encoding.cc
-  src/core/lib/transport/transport.cc
-  src/core/lib/transport/transport_op_string.cc
-  src/core/load_balancing/lb_policy.cc
-  src/core/load_balancing/lb_policy_registry.cc
-  src/core/resolver/endpoint_addresses.cc
-  src/core/resolver/resolver.cc
-  src/core/resolver/resolver_registry.cc
-  src/core/service_config/service_config_parser.cc
-  src/core/telemetry/call_tracer.cc
-  src/core/telemetry/histogram_view.cc
-  src/core/telemetry/metrics.cc
-  src/core/telemetry/stats.cc
-  src/core/telemetry/stats_data.cc
-  src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  src/core/util/backoff.cc
-  src/core/util/dump_args.cc
-  src/core/util/event_log.cc
-  src/core/util/gethostname_fallback.cc
-  src/core/util/gethostname_host_name_max.cc
-  src/core/util/gethostname_sysconf.cc
-  src/core/util/glob.cc
-  src/core/util/grpc_if_nametoindex_posix.cc
-  src/core/util/grpc_if_nametoindex_unsupported.cc
-  src/core/util/json/json_writer.cc
-  src/core/util/latent_see.cc
-  src/core/util/load_file.cc
-  src/core/util/per_cpu.cc
-  src/core/util/ref_counted_string.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
-  src/core/util/time_averaged_stats.cc
-  src/core/util/uri.cc
-  src/core/util/validation_errors.cc
-  src/core/util/work_serializer.cc
   test/core/call/call_utils_test.cc
 )
 if(WIN32 AND MSVC)
@@ -10006,6 +9421,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(call_utils_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -10032,23 +9449,7 @@ target_include_directories(call_utils_test
 target_link_libraries(call_utils_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
-  ${_gRPC_ZLIB_LIBRARIES}
-  absl::config
-  absl::no_destructor
-  absl::cleanup
-  absl::flat_hash_map
-  absl::inlined_vector
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  absl::span
-  absl::utility
-  ${_gRPC_CARES_LIBRARIES}
-  gpr
-  ${_gRPC_ADDRESS_SORTING_LIBRARIES}
+  grpc_test_pallet
 )
 
 
@@ -10093,6 +9494,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -10120,9 +9522,7 @@ target_link_libraries(cancel_after_accept_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -10167,6 +9567,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -10194,9 +9595,7 @@ target_link_libraries(cancel_after_client_done_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -10241,6 +9640,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -10268,9 +9668,7 @@ target_link_libraries(cancel_after_invoke_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -10315,6 +9713,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -10342,9 +9741,7 @@ target_link_libraries(cancel_after_round_trip_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -10390,8 +9787,7 @@ target_include_directories(cancel_ares_query_test
 target_link_libraries(cancel_ares_query_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_config
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -10436,6 +9832,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -10463,9 +9860,7 @@ target_link_libraries(cancel_before_invoke_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -10473,34 +9868,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_callback_test
-  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/iomgr/closure.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
-  src/core/lib/resource_quota/memory_quota.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/resource_quota.cc
-  src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   test/core/promise/cancel_callback_test.cc
 )
 if(WIN32 AND MSVC)
@@ -10508,6 +9875,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(cancel_callback_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -10534,15 +9903,7 @@ target_include_directories(cancel_callback_test
 target_link_libraries(cancel_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -10587,6 +9948,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -10614,9 +9976,7 @@ target_link_libraries(cancel_in_a_vacuum_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -10661,6 +10021,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -10688,9 +10049,7 @@ target_link_libraries(cancel_with_status_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -10788,15 +10147,6 @@ add_executable(cel_authorization_engine_test
   src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c
   src/core/lib/security/authorization/cel_authorization_engine.cc
   test/core/security/cel_authorization_engine_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -10804,6 +10154,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -10830,7 +10181,7 @@ target_include_directories(cel_authorization_engine_test
 target_link_libraries(cel_authorization_engine_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -10846,6 +10197,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -10872,7 +10224,7 @@ target_include_directories(certificate_provider_registry_test
 target_link_libraries(certificate_provider_registry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -10888,6 +10240,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -10914,7 +10267,7 @@ target_include_directories(certificate_provider_store_test
 target_link_libraries(certificate_provider_store_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -10931,6 +10284,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -10957,7 +10311,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(cf_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -10980,6 +10334,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -11006,7 +10361,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(cf_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -11083,7 +10438,7 @@ target_include_directories(cfstream_test
 target_link_libraries(cfstream_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -11099,6 +10454,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -11125,7 +10481,7 @@ target_include_directories(channel_args_test
 target_link_libraries(channel_args_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -11168,8 +10524,7 @@ target_include_directories(channel_arguments_test
 target_link_libraries(channel_arguments_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -11178,15 +10533,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(channel_creds_registry_test
   test/core/security/channel_creds_registry_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -11194,6 +10540,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -11220,7 +10567,7 @@ target_include_directories(channel_creds_registry_test
 target_link_libraries(channel_creds_registry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -11236,6 +10583,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -11262,7 +10610,7 @@ target_include_directories(channel_init_test
 target_link_libraries(channel_init_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -11278,6 +10626,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -11304,7 +10653,7 @@ target_include_directories(channel_stack_builder_test
 target_link_libraries(channel_stack_builder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -11320,6 +10669,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -11346,7 +10696,7 @@ target_include_directories(channel_stack_test
 target_link_libraries(channel_stack_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -11394,8 +10744,7 @@ target_include_directories(channel_trace_test
 target_link_libraries(channel_trace_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -11438,8 +10787,7 @@ target_include_directories(channelz_registry_test
 target_link_libraries(channelz_registry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -11517,7 +10865,7 @@ target_link_libraries(channelz_service_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpcpp_channelz
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -11526,15 +10874,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(check_gcp_environment_linux_test
   test/core/security/check_gcp_environment_linux_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -11542,6 +10881,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -11568,7 +10908,7 @@ target_include_directories(check_gcp_environment_linux_test
 target_link_libraries(check_gcp_environment_linux_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -11577,15 +10917,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(check_gcp_environment_windows_test
   test/core/security/check_gcp_environment_windows_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -11593,6 +10924,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -11619,7 +10951,7 @@ target_include_directories(check_gcp_environment_windows_test
 target_link_libraries(check_gcp_environment_windows_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -11627,34 +10959,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(chunked_vector_test
-  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/iomgr/closure.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
-  src/core/lib/resource_quota/memory_quota.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/resource_quota.cc
-  src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   test/core/util/chunked_vector_test.cc
 )
 if(WIN32 AND MSVC)
@@ -11662,6 +10966,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(chunked_vector_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -11688,15 +10994,7 @@ target_include_directories(chunked_vector_test
 target_link_libraries(chunked_vector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -11782,7 +11080,7 @@ target_link_libraries(cli_call_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -11804,6 +11102,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -11830,8 +11129,7 @@ target_include_directories(client_auth_filter_test
 target_link_libraries(client_auth_filter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -11853,6 +11151,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -11879,8 +11178,7 @@ target_include_directories(client_authority_filter_test
 target_link_libraries(client_authority_filter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -11907,6 +11205,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -11933,8 +11232,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(client_call_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -12012,7 +11310,7 @@ target_include_directories(client_callback_end2end_test
 target_link_libraries(client_callback_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -12028,6 +11326,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -12054,7 +11353,7 @@ target_include_directories(client_channel_service_config_test
 target_link_libraries(client_channel_service_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -12079,6 +11378,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -12105,8 +11405,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(client_channel_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -12150,7 +11449,7 @@ target_include_directories(client_context_test_peer_test
 target_link_libraries(client_context_test_peer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -12230,9 +11529,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(client_fork_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++
-    grpc_test_util
-    grpc++_test_config
+    grpc_test_pallet
   )
 
 
@@ -12310,7 +11607,7 @@ target_include_directories(client_interceptors_end2end_test
 target_link_libraries(client_interceptors_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -12402,7 +11699,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(client_lb_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -12420,6 +11717,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -12446,7 +11744,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(client_ssl_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -12492,6 +11790,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -12519,9 +11818,7 @@ target_link_libraries(client_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -12529,16 +11826,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cmdline_test
-  test/core/test_util/cmdline.cc
   test/core/test_util/cmdline_test.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -12546,6 +11834,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -12572,7 +11861,7 @@ target_include_directories(cmdline_test
 target_link_libraries(cmdline_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -12615,8 +11904,7 @@ target_include_directories(codegen_test_full
 target_link_libraries(codegen_test_full
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -12659,8 +11947,7 @@ target_include_directories(codegen_test_minimal
 target_link_libraries(codegen_test_minimal
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -12670,15 +11957,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(combiner_test
     test/core/iomgr/combiner_test.cc
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -12686,6 +11964,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -12712,7 +11991,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(combiner_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -12728,6 +12007,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(common_closures_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -12754,8 +12035,7 @@ target_include_directories(common_closures_test
 target_link_libraries(common_closures_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -12771,6 +12051,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -12797,7 +12078,7 @@ target_include_directories(completion_queue_threading_test
 target_link_libraries(completion_queue_threading_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -12842,6 +12123,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -12869,9 +12151,7 @@ target_link_libraries(compressed_payload_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -12887,6 +12167,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -12913,7 +12194,7 @@ target_include_directories(compression_test
 target_link_libraries(compression_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -12929,6 +12210,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -12955,7 +12237,7 @@ target_include_directories(concurrent_connectivity_test
 target_link_libraries(concurrent_connectivity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -12980,6 +12262,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -13006,8 +12289,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(connected_subchannel_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -13017,15 +12299,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(connection_context_test
   test/core/surface/connection_context_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -13033,6 +12306,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -13059,7 +12333,7 @@ target_include_directories(connection_context_test
 target_link_libraries(connection_context_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -13077,6 +12351,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -13103,7 +12378,7 @@ target_include_directories(connection_prefix_bad_client_test
 target_link_libraries(connection_prefix_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -13120,6 +12395,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -13146,7 +12422,7 @@ target_include_directories(connection_refused_test
 target_link_libraries(connection_refused_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -13154,15 +12430,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(connectivity_state_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/transport/connectivity_state_test.cc
 )
 if(WIN32 AND MSVC)
@@ -13171,6 +12438,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -13197,7 +12465,7 @@ target_include_directories(connectivity_state_test
 target_link_libraries(connectivity_state_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -13242,6 +12510,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -13269,9 +12538,7 @@ target_link_libraries(connectivity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -13347,7 +12614,7 @@ target_include_directories(context_allocator_end2end_test
 target_link_libraries(context_allocator_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -13362,6 +12629,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(context_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -13388,9 +12657,7 @@ target_include_directories(context_test
 target_link_libraries(context_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::config
-  absl::type_traits
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -13406,6 +12673,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -13432,7 +12700,7 @@ target_include_directories(core_configuration_test
 target_link_libraries(core_configuration_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc
+  grpc_test_pallet
 )
 
 
@@ -13442,6 +12710,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(cpp_impl_of_test
   test/core/util/cpp_impl_of_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cpp_impl_of_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(cpp_impl_of_test PUBLIC cxx_std_14)
 target_include_directories(cpp_impl_of_test
   PRIVATE
@@ -13465,6 +12743,7 @@ target_include_directories(cpp_impl_of_test
 target_link_libraries(cpp_impl_of_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc_test_pallet
 )
 
 
@@ -13480,6 +12759,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -13506,7 +12786,7 @@ target_include_directories(cpu_test
 target_link_libraries(cpu_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -13582,7 +12862,7 @@ target_include_directories(crl_provider_test
 target_link_libraries(crl_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -13600,6 +12880,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -13626,7 +12907,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(crl_ssl_transport_security_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -13643,6 +12924,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -13669,7 +12951,7 @@ target_include_directories(default_engine_methods_test
 target_link_libraries(default_engine_methods_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -13714,6 +12996,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -13741,9 +13024,7 @@ target_link_libraries(default_host_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -13819,7 +13100,7 @@ target_include_directories(delegating_channel_test
 target_link_libraries(delegating_channel_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -13862,7 +13143,7 @@ target_include_directories(destroy_grpclb_channel_with_active_connect_stress_tes
 target_link_libraries(destroy_grpclb_channel_with_active_connect_stress_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -13878,6 +13159,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -13904,7 +13186,7 @@ target_include_directories(directory_reader_test
 target_link_libraries(directory_reader_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -13949,6 +13231,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -13976,9 +13259,7 @@ target_link_libraries(disappearing_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -13994,6 +13275,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14020,7 +13302,7 @@ target_include_directories(dns_resolver_cooldown_test
 target_link_libraries(dns_resolver_cooldown_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -14036,6 +13318,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14062,7 +13345,7 @@ target_include_directories(dns_resolver_test
 target_link_libraries(dns_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -14077,6 +13360,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(down_cast_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14103,8 +13388,7 @@ target_include_directories(down_cast_test
 target_link_libraries(down_cast_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::config
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -14120,6 +13404,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14146,7 +13431,7 @@ target_include_directories(dual_ref_counted_test
 target_link_libraries(dual_ref_counted_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -14164,6 +13449,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -14190,7 +13476,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(dualstack_socket_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -14199,9 +13485,18 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(dump_args_test
-  src/core/util/dump_args.cc
   test/core/util/dump_args_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(dump_args_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(dump_args_test PUBLIC cxx_std_14)
 target_include_directories(dump_args_test
   PRIVATE
@@ -14225,9 +13520,7 @@ target_include_directories(dump_args_test
 target_link_libraries(dump_args_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::any_invocable
-  absl::check
-  absl::str_format
+  grpc_test_pallet
 )
 
 
@@ -14245,6 +13538,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14271,7 +13565,7 @@ target_include_directories(duplicate_header_bad_client_test
 target_link_libraries(duplicate_header_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -14316,6 +13610,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14343,9 +13638,7 @@ target_link_libraries(empty_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -14426,7 +13719,7 @@ target_include_directories(end2end_test
 target_link_libraries(end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -14442,6 +13735,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14468,7 +13762,7 @@ target_include_directories(endpoint_addresses_test
 target_link_libraries(endpoint_addresses_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -14476,11 +13770,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(endpoint_config_test
-  src/core/lib/channel/channel_args.cc
-  src/core/lib/event_engine/channel_args_endpoint_config.cc
-  src/core/lib/surface/channel_stack_type.cc
-  src/core/util/ref_counted_string.cc
-  src/core/util/time.cc
   test/core/event_engine/endpoint_config_test.cc
 )
 if(WIN32 AND MSVC)
@@ -14488,6 +13777,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(endpoint_config_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14514,11 +13805,7 @@ target_include_directories(endpoint_config_test
 target_link_libraries(endpoint_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::config
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -14528,15 +13815,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(endpoint_pair_test
   test/core/iomgr/endpoint_pair_test.cc
   test/core/iomgr/endpoint_tests.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -14544,6 +13822,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14570,7 +13849,7 @@ target_include_directories(endpoint_pair_test
 target_link_libraries(endpoint_pair_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -14586,6 +13865,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14612,7 +13892,7 @@ target_include_directories(env_test
 target_link_libraries(env_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -14680,7 +13960,7 @@ target_link_libraries(error_details_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++_error_details
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -14690,15 +13970,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(error_test
   test/core/iomgr/endpoint_tests.cc
   test/core/iomgr/error_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -14706,6 +13977,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14732,7 +14004,7 @@ target_include_directories(error_test
 target_link_libraries(error_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -14740,15 +14012,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(error_utils_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/transport/error_utils_test.cc
 )
 if(WIN32 AND MSVC)
@@ -14757,6 +14020,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14783,7 +14047,7 @@ target_include_directories(error_utils_test
 target_link_libraries(error_utils_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -14792,15 +14056,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(evaluate_args_test
   test/core/security/evaluate_args_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -14808,6 +14063,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14834,7 +14090,7 @@ target_include_directories(evaluate_args_test
 target_link_libraries(evaluate_args_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -14850,6 +14106,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14876,7 +14133,7 @@ target_include_directories(event_engine_wakeup_scheduler_test
 target_link_libraries(event_engine_wakeup_scheduler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc
+  grpc_test_pallet
 )
 
 
@@ -14894,6 +14151,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -14920,7 +14178,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(event_poller_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -14938,6 +14196,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -14964,7 +14223,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(examine_stack_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -15040,7 +14299,7 @@ target_include_directories(exception_test
 target_link_libraries(exception_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -15048,28 +14307,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(exec_ctx_wakeup_scheduler_test
-  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/iomgr/closure.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
 )
 if(WIN32 AND MSVC)
@@ -15077,6 +14314,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(exec_ctx_wakeup_scheduler_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -15103,15 +14342,7 @@ target_include_directories(exec_ctx_wakeup_scheduler_test
 target_link_libraries(exec_ctx_wakeup_scheduler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -15119,8 +14350,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(experiments_tag_test
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
   test/core/experiments/experiments_tag_test.cc
   test/core/experiments/fixtures/experiments.cc
 )
@@ -15129,6 +14358,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(experiments_tag_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -15155,8 +14386,7 @@ target_include_directories(experiments_tag_test
 target_link_libraries(experiments_tag_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -15164,8 +14394,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(experiments_test
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
   test/core/experiments/experiments_test.cc
   test/core/experiments/fixtures/experiments.cc
 )
@@ -15174,6 +14402,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(experiments_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -15200,7 +14430,7 @@ target_include_directories(experiments_test
 target_link_libraries(experiments_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -15216,6 +14446,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -15242,7 +14473,7 @@ target_include_directories(factory_test
 target_link_libraries(factory_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util_unsecure
+  grpc_test_pallet
 )
 
 
@@ -15258,6 +14489,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -15284,7 +14516,7 @@ target_include_directories(fake_resolver_test
 target_link_libraries(fake_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -15301,6 +14533,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -15327,7 +14560,7 @@ target_include_directories(fake_transport_security_test
 target_link_libraries(fake_transport_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -15337,15 +14570,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(fd_posix_test
     test/core/iomgr/fd_posix_test.cc
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -15353,6 +14577,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -15379,7 +14604,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(fd_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -15396,6 +14621,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -15422,7 +14648,7 @@ target_include_directories(file_watcher_certificate_provider_factory_test
 target_link_libraries(file_watcher_certificate_provider_factory_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -15467,6 +14693,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -15494,9 +14721,7 @@ target_link_libraries(filter_causes_close_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -15541,6 +14766,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -15568,9 +14794,7 @@ target_link_libraries(filter_init_fails_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -15592,6 +14816,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -15618,9 +14843,7 @@ target_include_directories(filter_test_test
 target_link_libraries(filter_test_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -15665,6 +14888,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -15692,9 +14916,7 @@ target_link_libraries(filtered_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -15770,7 +14992,7 @@ target_include_directories(flaky_network_test
 target_link_libraries(flaky_network_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -15778,38 +15000,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(flow_control_test
-  src/core/ext/transport/chttp2/transport/flow_control.cc
-  src/core/ext/transport/chttp2/transport/frame.cc
-  src/core/ext/transport/chttp2/transport/http2_settings.cc
-  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/iomgr/closure.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/resource_quota/connection_quota.cc
-  src/core/lib/resource_quota/memory_quota.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/resource_quota.cc
-  src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/transport/bdp_estimator.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   test/core/transport/chttp2/flow_control_test.cc
 )
 if(WIN32 AND MSVC)
@@ -15817,6 +15007,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(flow_control_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -15843,16 +15035,7 @@ target_include_directories(flow_control_test
 target_link_libraries(flow_control_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  absl::span
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -15860,34 +15043,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(for_each_test
-  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/iomgr/closure.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
-  src/core/lib/resource_quota/memory_quota.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/resource_quota.cc
-  src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   test/core/promise/for_each_test.cc
 )
 if(WIN32 AND MSVC)
@@ -15895,6 +15050,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(for_each_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -15921,15 +15078,7 @@ target_include_directories(for_each_test
 target_link_libraries(for_each_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -15946,6 +15095,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -15972,7 +15122,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(fork_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -15981,10 +15131,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(forkable_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/event_engine/forkable.cc
-  src/core/util/glob.cc
   test/core/event_engine/forkable_test.cc
 )
 if(WIN32 AND MSVC)
@@ -15992,6 +15138,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(forkable_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -16018,9 +15166,7 @@ target_include_directories(forkable_test
 target_link_libraries(forkable_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -16028,20 +15174,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(format_request_test
-  test/core/end2end/data/client_certs.cc
-  test/core/end2end/data/server1_cert.cc
-  test/core/end2end/data/server1_key.cc
-  test/core/end2end/data/test_root_cert.cc
   test/core/http/format_request_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -16049,6 +15182,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -16075,7 +15209,7 @@ target_include_directories(format_request_test
 target_link_libraries(format_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -16092,6 +15226,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -16118,7 +15253,7 @@ target_include_directories(frame_handler_test
 target_link_libraries(frame_handler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -16126,13 +15261,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(frame_test
-  src/core/ext/transport/chttp2/transport/frame.cc
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/util/glob.cc
   test/core/transport/chttp2/frame_test.cc
 )
 if(WIN32 AND MSVC)
@@ -16140,6 +15268,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(frame_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -16166,11 +15296,7 @@ target_include_directories(frame_test
 target_link_libraries(frame_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::hash
-  absl::statusor
-  absl::span
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -16197,6 +15323,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -16223,8 +15350,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(fuzzing_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -16246,6 +15372,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -16272,8 +15399,7 @@ target_include_directories(fuzzing_event_engine_unittest
 target_link_libraries(fuzzing_event_engine_unittest
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -16295,6 +15421,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -16321,8 +15448,7 @@ target_include_directories(gcp_authentication_filter_test
 target_link_libraries(gcp_authentication_filter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -16401,7 +15527,7 @@ target_include_directories(generic_end2end_test
 target_link_libraries(generic_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -16417,6 +15543,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -16443,7 +15570,7 @@ target_include_directories(glob_test
 target_link_libraries(glob_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -16460,6 +15587,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -16486,7 +15614,7 @@ target_include_directories(goaway_server_test
 target_link_libraries(goaway_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -16530,7 +15658,7 @@ target_include_directories(google_c2p_resolver_test
 target_link_libraries(google_c2p_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -16546,6 +15674,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -16572,7 +15701,7 @@ target_include_directories(gpr_time_test
 target_link_libraries(gpr_time_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -16617,6 +15746,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -16644,9 +15774,7 @@ target_link_libraries(graceful_server_shutdown_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -16663,6 +15791,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -16689,7 +15818,7 @@ target_include_directories(graceful_shutdown_test
 target_link_libraries(graceful_shutdown_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -16698,15 +15827,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_alts_credentials_options_test
   test/core/security/grpc_alts_credentials_options_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -16714,6 +15834,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -16740,7 +15861,7 @@ target_include_directories(grpc_alts_credentials_options_test
 target_link_libraries(grpc_alts_credentials_options_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -16756,6 +15877,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -16782,7 +15904,7 @@ target_include_directories(grpc_audit_logging_test
 target_link_libraries(grpc_audit_logging_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -16792,15 +15914,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_authorization_engine_test
   test/core/security/grpc_authorization_engine_test.cc
   test/core/test_util/audit_logging_utils.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -16808,6 +15921,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -16834,7 +15948,7 @@ target_include_directories(grpc_authorization_engine_test
 target_link_libraries(grpc_authorization_engine_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -16843,15 +15957,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_authorization_policy_provider_test
   test/core/security/grpc_authorization_policy_provider_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -16859,6 +15964,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -16886,7 +15992,7 @@ target_link_libraries(grpc_authorization_policy_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -16965,7 +16071,7 @@ target_link_libraries(grpc_authz_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -17010,6 +16116,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -17037,9 +16144,7 @@ target_link_libraries(grpc_authz_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -17055,6 +16160,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -17081,7 +16187,7 @@ target_include_directories(grpc_byte_buffer_reader_test
 target_link_libraries(grpc_byte_buffer_reader_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -17129,9 +16235,8 @@ target_include_directories(grpc_cli
 
 target_link_libraries(grpc_cli
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  grpc++_test_config
+  grpc_test_pallet
 )
 
 
@@ -17147,6 +16252,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -17173,7 +16279,7 @@ target_include_directories(grpc_completion_queue_test
 target_link_libraries(grpc_completion_queue_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -17258,15 +16364,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_ipv6_loopback_available_test
   test/core/iomgr/grpc_ipv6_loopback_available_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -17274,6 +16371,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -17300,7 +16398,7 @@ target_include_directories(grpc_ipv6_loopback_available_test
 target_link_libraries(grpc_ipv6_loopback_available_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -17499,15 +16597,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_certificate_distributor_test
   test/core/security/grpc_tls_certificate_distributor_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -17515,6 +16604,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -17541,7 +16631,7 @@ target_include_directories(grpc_tls_certificate_distributor_test
 target_link_libraries(grpc_tls_certificate_distributor_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -17550,15 +16640,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_certificate_provider_test
   test/core/security/grpc_tls_certificate_provider_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -17566,6 +16647,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -17592,7 +16674,7 @@ target_include_directories(grpc_tls_certificate_provider_test
 target_link_libraries(grpc_tls_certificate_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -17601,15 +16683,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_certificate_verifier_test
   test/core/security/grpc_tls_certificate_verifier_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -17617,6 +16690,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -17643,7 +16717,7 @@ target_include_directories(grpc_tls_certificate_verifier_test
 target_link_libraries(grpc_tls_certificate_verifier_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -17652,15 +16726,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_credentials_options_comparator_test
   test/core/security/grpc_tls_credentials_options_comparator_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -17668,6 +16733,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -17694,7 +16760,7 @@ target_include_directories(grpc_tls_credentials_options_comparator_test
 target_link_libraries(grpc_tls_credentials_options_comparator_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -17703,15 +16769,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_credentials_options_test
   test/core/security/grpc_tls_credentials_options_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -17719,6 +16776,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -17745,7 +16803,7 @@ target_include_directories(grpc_tls_credentials_options_test
 target_link_libraries(grpc_tls_credentials_options_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -17772,6 +16830,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -17798,8 +16857,7 @@ target_include_directories(grpc_tls_crl_provider_test
 target_link_libraries(grpc_tls_crl_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -17883,8 +16941,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     gtest
     grpc++_reflection
     ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-    grpc++_test_config
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -17932,7 +16989,7 @@ target_include_directories(grpclb_api_test
 target_link_libraries(grpclb_api_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -18017,8 +17074,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(grpclb_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_config
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -18029,10 +17085,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(h2_ssl_cert_test
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
-  test/core/end2end/data/client_certs.cc
-  test/core/end2end/data/server1_cert.cc
-  test/core/end2end/data/server1_key.cc
-  test/core/end2end/data/test_root_cert.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/local_util.cc
   test/core/end2end/h2_ssl_cert_test.cc
@@ -18044,6 +17096,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18070,7 +17123,7 @@ target_include_directories(h2_ssl_cert_test
 target_link_libraries(h2_ssl_cert_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -18087,6 +17140,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18113,7 +17167,7 @@ target_include_directories(h2_ssl_session_reuse_test
 target_link_libraries(h2_ssl_session_reuse_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -18130,6 +17184,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18156,7 +17211,7 @@ target_include_directories(h2_tls_peer_property_external_verifier_test
 target_link_libraries(h2_tls_peer_property_external_verifier_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -18172,6 +17227,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18198,7 +17254,7 @@ target_include_directories(handle_tests
 target_link_libraries(handle_tests
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc
+  grpc_test_pallet
 )
 
 
@@ -18216,6 +17272,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -18242,7 +17299,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(handshake_server_with_readahead_handshaker_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -18261,6 +17318,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18287,7 +17345,7 @@ target_include_directories(head_of_line_blocking_bad_client_test
 target_link_libraries(head_of_line_blocking_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -18305,6 +17363,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18331,7 +17390,7 @@ target_include_directories(headers_bad_client_test
 target_link_libraries(headers_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -18416,7 +17475,7 @@ target_include_directories(health_service_end2end_test
 target_link_libraries(health_service_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -18461,6 +17520,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18488,9 +17548,7 @@ target_link_libraries(high_initial_seqno_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -18498,16 +17556,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(histogram_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
   test/core/test_util/histogram_test.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -18515,6 +17564,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18541,7 +17591,7 @@ target_include_directories(histogram_test
 target_link_libraries(histogram_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -18557,6 +17607,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18583,7 +17634,7 @@ target_include_directories(host_port_test
 target_link_libraries(host_port_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -18591,15 +17642,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(hpack_encoder_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/transport/chttp2/hpack_encoder_test.cc
 )
 if(WIN32 AND MSVC)
@@ -18608,6 +17650,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18634,7 +17677,7 @@ target_include_directories(hpack_encoder_test
 target_link_libraries(hpack_encoder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -18642,15 +17685,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(hpack_parser_table_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/transport/chttp2/hpack_parser_table_test.cc
 )
 if(WIN32 AND MSVC)
@@ -18659,6 +17693,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18685,7 +17720,7 @@ target_include_directories(hpack_parser_table_test
 target_link_libraries(hpack_parser_table_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -18693,15 +17728,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(hpack_parser_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/transport/chttp2/hpack_parser_test.cc
 )
 if(WIN32 AND MSVC)
@@ -18710,6 +17736,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18736,7 +17763,7 @@ target_include_directories(hpack_parser_test
 target_link_libraries(hpack_parser_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -18781,6 +17808,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18808,9 +17836,7 @@ target_link_libraries(hpack_size_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -18860,8 +17886,7 @@ target_include_directories(http2_client
 
 target_link_libraries(http2_client
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_config
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -18871,15 +17896,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(http2_client_transport_test
   src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   src/core/lib/transport/promise_endpoint.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/transport/chttp2/http2_client_transport_test.cc
   test/core/transport/util/mock_promise_endpoint.cc
 )
@@ -18889,6 +17905,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18915,7 +17932,7 @@ target_include_directories(http2_client_transport_test
 target_link_libraries(http2_client_transport_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -18925,15 +17942,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(http2_server_transport_test
   src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   src/core/lib/transport/promise_endpoint.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/transport/chttp2/http2_server_transport_test.cc
   test/core/transport/util/mock_promise_endpoint.cc
 )
@@ -18943,6 +17951,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18969,7 +17978,7 @@ target_include_directories(http2_server_transport_test
 target_link_libraries(http2_server_transport_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -18985,6 +17994,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -19011,7 +18021,7 @@ target_include_directories(http2_settings_test
 target_link_libraries(http2_settings_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -19056,6 +18066,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -19083,9 +18094,7 @@ target_link_libraries(http2_stats_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -19101,6 +18110,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -19127,7 +18137,7 @@ target_include_directories(http_proxy_mapper_test
 target_link_libraries(http_proxy_mapper_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -19173,7 +18183,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(httpcli_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -19220,7 +18230,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(httpscli_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -19301,7 +18311,7 @@ target_include_directories(hybrid_end2end_test
 target_link_libraries(hybrid_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -19309,9 +18319,18 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(idle_filter_state_test
-  src/core/ext/filters/channel_idle/idle_filter_state.cc
   test/core/client_idle/idle_filter_state_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(idle_filter_state_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(idle_filter_state_test PUBLIC cxx_std_14)
 target_include_directories(idle_filter_state_test
   PRIVATE
@@ -19335,6 +18354,7 @@ target_include_directories(idle_filter_state_test
 target_link_libraries(idle_filter_state_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc_test_pallet
 )
 
 
@@ -19344,6 +18364,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(if_list_test
   test/core/util/if_list_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(if_list_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(if_list_test PUBLIC cxx_std_14)
 target_include_directories(if_list_test
   PRIVATE
@@ -19367,6 +18397,7 @@ target_include_directories(if_list_test
 target_link_libraries(if_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc_test_pallet
 )
 
 
@@ -19381,6 +18412,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(if_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -19407,9 +18440,7 @@ target_include_directories(if_test
 target_link_libraries(if_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -19425,6 +18456,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -19451,7 +18483,7 @@ target_include_directories(init_test
 target_link_libraries(init_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -19469,6 +18501,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -19495,7 +18528,7 @@ target_include_directories(initial_settings_frame_bad_client_test
 target_link_libraries(initial_settings_frame_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -19525,6 +18558,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -19551,8 +18585,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(inproc_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -19562,15 +18595,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(insecure_security_connector_test
   test/core/security/insecure_security_connector_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -19578,6 +18602,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -19604,7 +18629,7 @@ target_include_directories(insecure_security_connector_test
 target_link_libraries(insecure_security_connector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -19620,6 +18645,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -19646,7 +18672,7 @@ target_include_directories(inter_activity_latch_test
 target_link_libraries(inter_activity_latch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc
+  grpc_test_pallet
 )
 
 
@@ -19654,13 +18680,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(inter_activity_pipe_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/promise/activity.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
   test/core/promise/inter_activity_pipe_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19668,6 +18687,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(inter_activity_pipe_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -19694,13 +18715,7 @@ target_include_directories(inter_activity_pipe_test
 target_link_libraries(inter_activity_pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -19716,6 +18731,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -19742,7 +18758,7 @@ target_include_directories(interception_chain_test
 target_link_libraries(interception_chain_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc
+  grpc_test_pallet
 )
 
 
@@ -19750,34 +18766,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(interceptor_list_test
-  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/iomgr/closure.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
-  src/core/lib/resource_quota/memory_quota.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/resource_quota.cc
-  src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   test/core/promise/interceptor_list_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19785,6 +18773,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(interceptor_list_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -19811,15 +18801,7 @@ target_include_directories(interceptor_list_test
 target_link_libraries(interceptor_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -19873,8 +18855,7 @@ target_include_directories(interop_client
 
 target_link_libraries(interop_client
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_config
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -19927,8 +18908,7 @@ target_include_directories(interop_server
 
 target_link_libraries(interop_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_config
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -19945,6 +18925,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -19971,7 +18952,7 @@ target_include_directories(invalid_call_argument_test
 target_link_libraries(invalid_call_argument_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -20016,6 +18997,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20043,9 +19025,7 @@ target_link_libraries(invoke_large_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -20063,6 +19043,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -20089,7 +19070,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
   target_link_libraries(iocp_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -20138,9 +19119,7 @@ target_include_directories(istio_echo_server_test
 target_link_libraries(istio_echo_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
-  grpc++_test_config
+  grpc_test_pallet
 )
 
 
@@ -20148,9 +19127,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(join_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/util/glob.cc
   test/core/promise/join_test.cc
 )
 if(WIN32 AND MSVC)
@@ -20158,6 +19134,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(join_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20184,10 +19162,7 @@ target_include_directories(join_test
 target_link_libraries(join_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -20203,6 +19178,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20229,7 +19205,7 @@ target_include_directories(json_object_loader_test
 target_link_libraries(json_object_loader_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -20245,6 +19221,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20271,7 +19248,7 @@ target_include_directories(json_test
 target_link_libraries(json_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -20280,15 +19257,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(json_token_test
   test/core/security/json_token_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20296,6 +19264,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20322,7 +19291,7 @@ target_include_directories(json_token_test
 target_link_libraries(json_token_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -20331,15 +19300,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(jwt_verifier_test
   test/core/security/jwt_verifier_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20347,6 +19307,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20373,7 +19334,7 @@ target_include_directories(jwt_verifier_test
 target_link_libraries(jwt_verifier_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -20418,6 +19379,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20445,9 +19407,7 @@ target_link_libraries(keepalive_timeout_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -20464,6 +19424,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20490,7 +19451,7 @@ target_include_directories(lame_client_test
 target_link_libraries(lame_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -20535,6 +19496,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20562,9 +19524,7 @@ target_link_libraries(large_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -20572,13 +19532,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(latch_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/promise/activity.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
   test/core/promise/latch_test.cc
 )
 if(WIN32 AND MSVC)
@@ -20586,6 +19539,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(latch_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20612,13 +19567,7 @@ target_include_directories(latch_test
 target_link_libraries(latch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -20638,6 +19587,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20664,7 +19614,7 @@ target_include_directories(lb_get_cpu_stats_test
 target_link_libraries(lb_get_cpu_stats_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -20708,8 +19658,7 @@ target_include_directories(lb_load_data_store_test
 target_link_libraries(lb_load_data_store_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -20725,6 +19674,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20751,7 +19701,7 @@ target_include_directories(lb_metadata_test
 target_link_libraries(lb_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -20776,6 +19726,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -20802,8 +19753,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(load_balanced_call_destination_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -20820,6 +19770,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20846,7 +19797,7 @@ target_include_directories(load_config_test
 target_link_libraries(load_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc
+  grpc_test_pallet
 )
 
 
@@ -20862,6 +19813,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20888,7 +19840,7 @@ target_include_directories(load_file_test
 target_link_libraries(load_file_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -20897,15 +19849,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(local_security_connector_test
   test/core/security/local_security_connector_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20913,6 +19856,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20939,7 +19883,7 @@ target_include_directories(local_security_connector_test
 target_link_libraries(local_security_connector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -20956,6 +19900,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -20982,7 +19927,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(log_too_many_open_files_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -20991,9 +19936,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(loop_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/util/glob.cc
   test/core/promise/loop_test.cc
 )
 if(WIN32 AND MSVC)
@@ -21001,6 +19943,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(loop_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21027,10 +19971,7 @@ target_include_directories(loop_test
 target_link_libraries(loop_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -21040,6 +19981,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(lru_cache_test
   test/core/util/lru_cache_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(lru_cache_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(lru_cache_test PUBLIC cxx_std_14)
 target_include_directories(lru_cache_test
   PRIVATE
@@ -21063,10 +20014,7 @@ target_include_directories(lru_cache_test
 target_link_libraries(lru_cache_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::any_invocable
-  absl::check
-  absl::statusor
+  grpc_test_pallet
 )
 
 
@@ -21074,34 +20022,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(map_pipe_test
-  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/iomgr/closure.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
-  src/core/lib/resource_quota/memory_quota.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/resource_quota.cc
-  src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   test/core/promise/map_pipe_test.cc
 )
 if(WIN32 AND MSVC)
@@ -21109,6 +20029,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(map_pipe_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21135,15 +20057,7 @@ target_include_directories(map_pipe_test
 target_link_libraries(map_pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -21158,6 +20072,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(match_promise_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21184,8 +20100,7 @@ target_include_directories(match_promise_test
 target_link_libraries(match_promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::type_traits
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -21195,6 +20110,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(match_test
   test/core/util/match_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(match_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(match_test PUBLIC cxx_std_14)
 target_include_directories(match_test
   PRIVATE
@@ -21218,6 +20143,7 @@ target_include_directories(match_test
 target_link_libraries(match_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc_test_pallet
 )
 
 
@@ -21225,15 +20151,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(matchers_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/util/matchers_test.cc
 )
 if(WIN32 AND MSVC)
@@ -21242,6 +20159,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21268,7 +20186,7 @@ target_include_directories(matchers_test
 target_link_libraries(matchers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -21313,6 +20231,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21340,9 +20259,7 @@ target_link_libraries(max_concurrent_streams_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -21387,6 +20304,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21414,9 +20332,7 @@ target_link_libraries(max_connection_age_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -21461,6 +20377,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21488,9 +20405,7 @@ target_link_libraries(max_connection_idle_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -21535,6 +20450,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21562,9 +20478,7 @@ target_link_libraries(max_message_length_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -21581,6 +20495,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -21607,7 +20522,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(memory_quota_stress_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util_unsecure
+    grpc_test_pallet
   )
 
 
@@ -21624,6 +20539,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21650,7 +20566,7 @@ target_include_directories(memory_quota_test
 target_link_libraries(memory_quota_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util_unsecure
+  grpc_test_pallet
 )
 
 
@@ -21726,7 +20642,7 @@ target_include_directories(message_allocator_end2end_test
 target_link_libraries(message_allocator_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -21735,15 +20651,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(message_compress_test
   test/core/compression/message_compress_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -21751,6 +20658,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21777,7 +20685,7 @@ target_include_directories(message_compress_test
 target_link_libraries(message_compress_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -21793,6 +20701,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21819,7 +20728,7 @@ target_include_directories(message_size_service_config_test
 target_link_libraries(message_size_service_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -21827,15 +20736,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(metadata_map_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/transport/metadata_map_test.cc
 )
 if(WIN32 AND MSVC)
@@ -21844,6 +20744,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21870,7 +20771,7 @@ target_include_directories(metadata_map_test
 target_link_libraries(metadata_map_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -21887,6 +20788,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21913,7 +20815,7 @@ target_include_directories(metrics_test
 target_link_libraries(metrics_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -21929,6 +20831,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21955,7 +20858,7 @@ target_include_directories(minimal_stack_is_minimal_test
 target_link_libraries(minimal_stack_is_minimal_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -21965,6 +20868,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(miscompile_with_no_unique_address_test
   test/core/compiler_bugs/miscompile_with_no_unique_address_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(miscompile_with_no_unique_address_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(miscompile_with_no_unique_address_test PUBLIC cxx_std_14)
 target_include_directories(miscompile_with_no_unique_address_test
   PRIVATE
@@ -21988,6 +20901,7 @@ target_include_directories(miscompile_with_no_unique_address_test
 target_link_libraries(miscompile_with_no_unique_address_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc_test_pallet
 )
 
 
@@ -22062,7 +20976,7 @@ target_include_directories(mock_stream_test
 target_link_libraries(mock_stream_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -22141,7 +21055,7 @@ target_include_directories(mock_test
 target_link_libraries(mock_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -22149,13 +21063,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(mpsc_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/promise/activity.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
   test/core/promise/mpsc_test.cc
 )
 if(WIN32 AND MSVC)
@@ -22163,6 +21070,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(mpsc_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -22189,13 +21098,7 @@ target_include_directories(mpsc_test
 target_link_libraries(mpsc_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -22212,6 +21115,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -22238,7 +21142,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(mpscq_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -22284,6 +21188,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -22311,9 +21216,7 @@ target_link_libraries(negative_deadline_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -22323,6 +21226,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(no_destruct_test
   test/core/util/no_destruct_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(no_destruct_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(no_destruct_test PUBLIC cxx_std_14)
 target_include_directories(no_destruct_test
   PRIVATE
@@ -22346,6 +21259,7 @@ target_include_directories(no_destruct_test
 target_link_libraries(no_destruct_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc_test_pallet
 )
 
 
@@ -22390,6 +21304,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -22417,9 +21332,7 @@ target_link_libraries(no_logging_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -22464,6 +21377,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -22491,9 +21405,7 @@ target_link_libraries(no_op_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -22510,6 +21422,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -22536,7 +21449,7 @@ target_include_directories(no_server_test
 target_link_libraries(no_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -22611,7 +21524,7 @@ target_include_directories(nonblocking_test
 target_link_libraries(nonblocking_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -22626,6 +21539,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(notification_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -22652,7 +21567,7 @@ target_include_directories(notification_test
 target_link_libraries(notification_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -22668,6 +21583,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -22694,7 +21610,7 @@ target_include_directories(num_external_connectivity_watchers_test
 target_link_libraries(num_external_connectivity_watchers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -22702,13 +21618,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(observable_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/promise/activity.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
   test/core/promise/observable_test.cc
 )
 if(WIN32 AND MSVC)
@@ -22716,6 +21625,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(observable_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -22742,13 +21653,7 @@ target_include_directories(observable_test
 target_link_libraries(observable_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -22770,6 +21675,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -22796,7 +21702,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(oracle_event_engine_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -22865,7 +21771,7 @@ target_include_directories(orca_service_end2end_test
 target_link_libraries(orca_service_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -22881,6 +21787,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -22907,7 +21814,7 @@ target_include_directories(orphanable_test
 target_link_libraries(orphanable_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -22918,6 +21825,16 @@ add_executable(osa_distance_test
   test/core/test_util/osa_distance.cc
   test/core/test_util/osa_distance_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(osa_distance_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(osa_distance_test PUBLIC cxx_std_14)
 target_include_directories(osa_distance_test
   PRIVATE
@@ -22941,6 +21858,7 @@ target_include_directories(osa_distance_test
 target_link_libraries(osa_distance_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc_test_pallet
 )
 
 
@@ -23023,7 +21941,7 @@ target_link_libraries(otel_plugin_test
   gtest
   opentelemetry-cpp::api
   opentelemetry-cpp::metrics
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -23041,6 +21959,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23067,7 +21986,7 @@ target_include_directories(out_of_bounds_bad_client_test
 target_link_libraries(out_of_bounds_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -23083,6 +22002,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23109,7 +22029,7 @@ target_include_directories(outlier_detection_lb_config_parser_test
 target_link_libraries(outlier_detection_lb_config_parser_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -23131,6 +22051,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23157,8 +22078,7 @@ target_include_directories(outlier_detection_test
 target_link_libraries(outlier_detection_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -23168,6 +22088,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(overload_test
   test/core/util/overload_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(overload_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(overload_test PUBLIC cxx_std_14)
 target_include_directories(overload_test
   PRIVATE
@@ -23191,6 +22121,7 @@ target_include_directories(overload_test
 target_link_libraries(overload_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc_test_pallet
 )
 
 
@@ -23206,6 +22137,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23232,7 +22164,7 @@ target_include_directories(parse_address_test
 target_link_libraries(parse_address_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -23249,6 +22181,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -23275,7 +22208,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(parse_address_with_named_scope_id_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -23292,6 +22225,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23318,7 +22252,7 @@ target_include_directories(parsed_metadata_test
 target_link_libraries(parsed_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -23326,20 +22260,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(parser_test
-  test/core/end2end/data/client_certs.cc
-  test/core/end2end/data/server1_cert.cc
-  test/core/end2end/data/server1_key.cc
-  test/core/end2end/data/test_root_cert.cc
   test/core/http/parser_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -23347,6 +22268,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23373,7 +22295,7 @@ target_include_directories(parser_test
 target_link_libraries(parser_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -23389,6 +22311,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23415,7 +22338,7 @@ target_include_directories(party_test
 target_link_libraries(party_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_unsecure
+  grpc_test_pallet
 )
 
 
@@ -23460,6 +22383,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23487,9 +22411,7 @@ target_link_libraries(payload_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -23505,6 +22427,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23531,7 +22454,7 @@ target_include_directories(percent_encoding_test
 target_link_libraries(percent_encoding_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -23539,27 +22462,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(periodic_update_test
-  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/iomgr/closure.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   test/core/resource_quota/periodic_update_test.cc
 )
 if(WIN32 AND MSVC)
@@ -23567,6 +22469,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(periodic_update_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23593,13 +22497,7 @@ target_include_directories(periodic_update_test
 target_link_libraries(periodic_update_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -23622,6 +22520,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23648,8 +22547,7 @@ target_include_directories(pick_first_test
 target_link_libraries(pick_first_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -23657,15 +22555,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(ping_abuse_policy_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/transport/chttp2/ping_abuse_policy_test.cc
 )
 if(WIN32 AND MSVC)
@@ -23674,6 +22563,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23700,7 +22590,7 @@ target_include_directories(ping_abuse_policy_test
 target_link_libraries(ping_abuse_policy_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -23716,6 +22606,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23742,7 +22633,7 @@ target_include_directories(ping_callbacks_test
 target_link_libraries(ping_callbacks_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc
+  grpc_test_pallet
 )
 
 
@@ -23750,15 +22641,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(ping_configuration_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/transport/chttp2/ping_configuration_test.cc
 )
 if(WIN32 AND MSVC)
@@ -23767,6 +22649,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23793,7 +22676,7 @@ target_include_directories(ping_configuration_test
 target_link_libraries(ping_configuration_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -23838,6 +22721,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23865,9 +22749,7 @@ target_link_libraries(ping_pong_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -23875,15 +22757,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(ping_rate_policy_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/transport/chttp2/ping_rate_policy_test.cc
 )
 if(WIN32 AND MSVC)
@@ -23892,6 +22765,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23918,7 +22792,7 @@ target_include_directories(ping_rate_policy_test
 target_link_libraries(ping_rate_policy_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -23963,6 +22837,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23990,9 +22865,7 @@ target_link_libraries(ping_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -24008,6 +22881,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -24034,7 +22908,7 @@ target_include_directories(pipe_test
 target_link_libraries(pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc
+  grpc_test_pallet
 )
 
 
@@ -24049,6 +22923,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(poll_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -24075,7 +22951,7 @@ target_include_directories(poll_test
 target_link_libraries(poll_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -24151,7 +23027,7 @@ target_include_directories(port_sharing_end2end_test
 target_link_libraries(port_sharing_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -24172,6 +23048,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -24198,7 +23075,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_endpoint_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -24216,6 +23093,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -24242,7 +23120,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_engine_listener_utils_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -24263,6 +23141,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -24289,7 +23168,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_event_engine_connect_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -24341,7 +23220,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_event_engine_native_dns_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -24396,7 +23275,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -24983,8 +23862,7 @@ target_link_libraries(pre_stop_hook_server_test
   gtest
   grpc++_reflection
   grpcpp_channelz
-  grpc_test_util
-  grpc++_test_config
+  grpc_test_pallet
 )
 
 
@@ -24999,6 +23877,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(prioritized_race_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25025,7 +23905,7 @@ target_include_directories(prioritized_race_test
 target_link_libraries(prioritized_race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -25042,6 +23922,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25068,7 +23949,7 @@ target_include_directories(promise_endpoint_test
 target_link_libraries(promise_endpoint_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc
+  grpc_test_pallet
 )
 
 
@@ -25083,6 +23964,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(promise_factory_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25109,9 +23992,7 @@ target_include_directories(promise_factory_test
 target_link_libraries(promise_factory_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::bind_front
-  absl::type_traits
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -25126,6 +24007,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(promise_map_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25152,8 +24035,7 @@ target_include_directories(promise_map_test
 target_link_libraries(promise_map_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::type_traits
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -25161,13 +24043,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(promise_mutex_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/promise/activity.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
   test/core/promise/promise_mutex_test.cc
 )
 if(WIN32 AND MSVC)
@@ -25175,6 +24050,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(promise_mutex_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25201,13 +24078,7 @@ target_include_directories(promise_mutex_test
 target_link_libraries(promise_mutex_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -25222,6 +24093,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(promise_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25248,8 +24121,7 @@ target_include_directories(promise_test
 target_link_libraries(promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::type_traits
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -25292,7 +24164,7 @@ target_include_directories(proto_buffer_reader_test
 target_link_libraries(proto_buffer_reader_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -25335,7 +24207,7 @@ target_include_directories(proto_buffer_writer_test
 target_link_libraries(proto_buffer_writer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -25417,7 +24289,7 @@ target_link_libraries(proto_server_reflection_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++_reflection
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -25460,8 +24332,7 @@ target_include_directories(proto_utils_test
 target_link_libraries(proto_utils_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -25506,6 +24377,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25533,9 +24405,7 @@ target_link_libraries(proxy_auth_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -25614,8 +24484,7 @@ target_include_directories(qps_json_driver
 
 target_link_libraries(qps_json_driver
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_config
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -25686,8 +24555,7 @@ target_include_directories(qps_worker
 
 target_link_libraries(qps_worker
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_config
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -25702,6 +24570,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(query_extensions_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25728,8 +24598,7 @@ target_include_directories(query_extensions_test
 target_link_libraries(query_extensions_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -25744,6 +24613,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(race_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25770,7 +24641,7 @@ target_include_directories(race_test
 target_link_libraries(race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -25778,9 +24649,18 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(random_early_detection_test
-  src/core/util/random_early_detection.cc
   test/core/util/random_early_detection_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(random_early_detection_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(random_early_detection_test PUBLIC cxx_std_14)
 target_include_directories(random_early_detection_test
   PRIVATE
@@ -25804,9 +24684,7 @@ target_include_directories(random_early_detection_test
 target_link_libraries(random_early_detection_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::random_bit_gen_ref
-  absl::random_distributions
-  absl::random_random
+  grpc_test_pallet
 )
 
 
@@ -25886,7 +24764,7 @@ target_include_directories(raw_end2end_test
 target_link_libraries(raw_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -25902,6 +24780,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25928,7 +24807,7 @@ target_include_directories(rbac_service_config_parser_test
 target_link_libraries(rbac_service_config_parser_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -25937,15 +24816,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(rbac_translator_test
   test/core/security/rbac_translator_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -25953,6 +24823,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25980,7 +24851,7 @@ target_link_libraries(rbac_translator_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -25996,6 +24867,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26022,7 +24894,7 @@ target_include_directories(ref_counted_ptr_test
 target_link_libraries(ref_counted_ptr_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -26038,6 +24910,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26064,7 +24937,7 @@ target_include_directories(ref_counted_test
 target_link_libraries(ref_counted_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -26109,6 +24982,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26136,9 +25010,7 @@ target_link_libraries(registered_call_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -26155,6 +25027,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -26181,7 +25054,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(remove_stream_from_stalled_lists_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -26191,53 +25064,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(request_buffer_test
   src/core/call/request_buffer.cc
-  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  src/core/lib/channel/channel_args.cc
-  src/core/lib/compression/compression.cc
-  src/core/lib/compression/compression_internal.cc
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/iomgr/closure.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
-  src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
-  src/core/lib/resource_quota/memory_quota.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/resource_quota.cc
-  src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/transport/call_arena_allocator.cc
-  src/core/lib/transport/call_filters.cc
-  src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
-  src/core/lib/transport/call_state.cc
-  src/core/lib/transport/error_utils.cc
-  src/core/lib/transport/message.cc
-  src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
-  src/core/lib/transport/parsed_metadata.cc
-  src/core/lib/transport/status_conversion.cc
-  src/core/lib/transport/timeout_encoding.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
-  src/core/util/ref_counted_string.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   test/core/call/request_buffer_test.cc
 )
 if(WIN32 AND MSVC)
@@ -26245,6 +25071,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(request_buffer_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26271,18 +25099,7 @@ target_include_directories(request_buffer_test
 target_link_libraries(request_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
-  absl::config
-  absl::no_destructor
-  absl::flat_hash_map
-  absl::inlined_vector
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  absl::utility
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -26327,6 +25144,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26354,9 +25172,7 @@ target_link_libraries(request_with_flags_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -26401,6 +25217,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26428,9 +25245,7 @@ target_link_libraries(request_with_payload_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -26440,15 +25255,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(resolve_address_using_ares_resolver_posix_test
     test/core/iomgr/resolve_address_posix_test.cc
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -26456,6 +25262,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -26482,7 +25289,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(resolve_address_using_ares_resolver_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -26492,16 +25299,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(resolve_address_using_ares_resolver_test
   test/core/iomgr/resolve_address_test.cc
-  test/core/test_util/cmdline.cc
   test/core/test_util/fake_udp_and_tcp_server.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -26509,6 +25307,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26535,8 +25334,7 @@ target_include_directories(resolve_address_using_ares_resolver_test
 target_link_libraries(resolve_address_using_ares_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
-  grpc++_test_config
+  grpc_test_pallet
 )
 
 
@@ -26546,15 +25344,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(resolve_address_using_native_resolver_posix_test
     test/core/iomgr/resolve_address_posix_test.cc
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -26562,6 +25351,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -26588,7 +25378,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(resolve_address_using_native_resolver_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -26598,16 +25388,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(resolve_address_using_native_resolver_test
   test/core/iomgr/resolve_address_test.cc
-  test/core/test_util/cmdline.cc
   test/core/test_util/fake_udp_and_tcp_server.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -26615,6 +25396,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26641,8 +25423,7 @@ target_include_directories(resolve_address_using_native_resolver_test
 target_link_libraries(resolve_address_using_native_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
-  grpc++_test_config
+  grpc_test_pallet
 )
 
 
@@ -26717,7 +25498,7 @@ target_include_directories(resource_quota_end2end_stress_test
 target_link_libraries(resource_quota_end2end_stress_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -26762,6 +25543,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26789,9 +25571,7 @@ target_link_libraries(resource_quota_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -26807,6 +25587,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26833,7 +25614,7 @@ target_include_directories(resource_quota_test
 target_link_libraries(resource_quota_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util_unsecure
+  grpc_test_pallet
 )
 
 
@@ -26878,6 +25659,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26905,9 +25687,7 @@ target_link_libraries(retry_cancel_after_first_attempt_starts_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -26952,6 +25732,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26979,9 +25760,7 @@ target_link_libraries(retry_cancel_during_delay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -27026,6 +25805,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -27053,9 +25833,7 @@ target_link_libraries(retry_cancel_with_multiple_send_batches_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -27100,6 +25878,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -27127,9 +25906,7 @@ target_link_libraries(retry_cancellation_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -27174,6 +25951,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -27201,9 +25979,7 @@ target_link_libraries(retry_disabled_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -27248,6 +26024,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -27275,9 +26052,7 @@ target_link_libraries(retry_exceeds_buffer_size_in_delay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -27322,6 +26097,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -27349,9 +26125,7 @@ target_link_libraries(retry_exceeds_buffer_size_in_initial_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -27396,6 +26170,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -27423,9 +26198,7 @@ target_link_libraries(retry_exceeds_buffer_size_in_subsequent_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -27470,6 +26243,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -27497,9 +26271,7 @@ target_link_libraries(retry_lb_drop_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -27544,6 +26316,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -27571,9 +26344,7 @@ target_link_libraries(retry_lb_fail_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -27618,6 +26389,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -27645,9 +26417,7 @@ target_link_libraries(retry_non_retriable_status_before_trailers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -27692,6 +26462,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -27719,9 +26490,7 @@ target_link_libraries(retry_non_retriable_status_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -27766,6 +26535,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -27793,9 +26563,7 @@ target_link_libraries(retry_per_attempt_recv_timeout_on_last_attempt_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -27840,6 +26608,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -27867,9 +26636,7 @@ target_link_libraries(retry_per_attempt_recv_timeout_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -27914,6 +26681,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -27941,9 +26709,7 @@ target_link_libraries(retry_recv_initial_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -27988,6 +26754,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28015,9 +26782,7 @@ target_link_libraries(retry_recv_message_replay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -28062,6 +26827,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28089,9 +26855,7 @@ target_link_libraries(retry_recv_message_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -28136,6 +26900,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28163,9 +26928,7 @@ target_link_libraries(retry_recv_trailing_metadata_error_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -28210,6 +26973,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28237,9 +27001,7 @@ target_link_libraries(retry_send_initial_metadata_refs_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -28284,6 +27046,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28311,9 +27074,7 @@ target_link_libraries(retry_send_op_fails_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -28358,6 +27119,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28385,9 +27147,7 @@ target_link_libraries(retry_send_recv_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -28432,6 +27192,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28459,9 +27220,7 @@ target_link_libraries(retry_server_pushback_delay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -28506,6 +27265,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28533,9 +27293,7 @@ target_link_libraries(retry_server_pushback_disabled_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -28551,6 +27309,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28577,7 +27336,7 @@ target_include_directories(retry_service_config_test
 target_link_libraries(retry_service_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -28622,6 +27381,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28649,9 +27409,7 @@ target_link_libraries(retry_streaming_after_commit_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -28696,6 +27454,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28723,9 +27482,7 @@ target_link_libraries(retry_streaming_succeeds_before_replay_finished_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -28770,6 +27527,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28797,9 +27555,7 @@ target_link_libraries(retry_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -28844,6 +27600,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28871,9 +27628,7 @@ target_link_libraries(retry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -28889,6 +27644,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28915,7 +27671,7 @@ target_include_directories(retry_throttle_test
 target_link_libraries(retry_throttle_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -28960,6 +27716,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28987,9 +27744,7 @@ target_link_libraries(retry_throttled_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -29034,6 +27789,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -29061,9 +27817,7 @@ target_link_libraries(retry_too_many_attempts_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -29108,6 +27862,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -29135,9 +27890,7 @@ target_link_libraries(retry_transparent_goaway_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -29182,6 +27935,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -29209,9 +27963,7 @@ target_link_libraries(retry_transparent_max_concurrent_streams_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -29256,6 +28008,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -29283,9 +28036,7 @@ target_link_libraries(retry_transparent_not_sent_on_wire_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -29330,6 +28081,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -29357,9 +28109,7 @@ target_link_libraries(retry_unref_before_finish_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -29404,6 +28154,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -29431,9 +28182,7 @@ target_link_libraries(retry_unref_before_recv_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -29443,6 +28192,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(ring_buffer_test
   test/core/util/ring_buffer_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(ring_buffer_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(ring_buffer_test PUBLIC cxx_std_14)
 target_include_directories(ring_buffer_test
   PRIVATE
@@ -29466,6 +28225,7 @@ target_include_directories(ring_buffer_test
 target_link_libraries(ring_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc_test_pallet
 )
 
 
@@ -29487,6 +28247,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -29513,8 +28274,7 @@ target_include_directories(ring_hash_test
 target_link_libraries(ring_hash_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -29602,8 +28362,7 @@ target_include_directories(rls_end2end_test
 target_link_libraries(rls_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_config
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -29619,6 +28378,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -29645,7 +28405,7 @@ target_include_directories(rls_lb_config_parser_test
 target_link_libraries(rls_lb_config_parser_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -29667,6 +28427,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -29693,8 +28454,7 @@ target_include_directories(round_robin_test
 target_link_libraries(round_robin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -29737,7 +28497,7 @@ target_include_directories(secure_auth_context_test
 target_link_libraries(secure_auth_context_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -29753,6 +28513,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -29779,7 +28540,7 @@ target_include_directories(secure_channel_create_test
 target_link_libraries(secure_channel_create_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -29789,15 +28550,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(secure_endpoint_test
   test/core/iomgr/endpoint_tests.cc
   test/core/security/secure_endpoint_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29805,6 +28557,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -29831,7 +28584,7 @@ target_include_directories(secure_endpoint_test
 target_link_libraries(secure_endpoint_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -29840,15 +28593,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(security_connector_test
   test/core/security/security_connector_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29856,6 +28600,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -29882,7 +28627,7 @@ target_include_directories(security_connector_test
 target_link_libraries(security_connector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -29890,9 +28635,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(seq_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/util/glob.cc
   test/core/promise/seq_test.cc
 )
 if(WIN32 AND MSVC)
@@ -29900,6 +28642,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(seq_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -29926,10 +28670,7 @@ target_include_directories(seq_test
 target_link_libraries(seq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -29945,6 +28686,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -29971,7 +28713,7 @@ target_include_directories(sequential_connectivity_test
 target_link_libraries(sequential_connectivity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -30051,7 +28793,7 @@ target_include_directories(server_builder_plugin_test
 target_link_libraries(server_builder_plugin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -30093,15 +28835,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
     test/core/event_engine/event_engine_test_utils.cc
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
     test/cpp/server/server_builder_test.cc
   )
   if(WIN32 AND MSVC)
@@ -30137,8 +28870,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_unsecure
-    grpc_test_util_unsecure
+    grpc_test_pallet
   )
 
 
@@ -30180,15 +28912,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
     test/cpp/server/server_builder_with_socket_mutator_test.cc
   )
   if(WIN32 AND MSVC)
@@ -30224,8 +28947,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_with_socket_mutator_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_unsecure
-    grpc_test_util_unsecure
+    grpc_test_pallet
   )
 
 
@@ -30253,6 +28975,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -30279,8 +29002,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_call_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -30297,6 +29019,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -30323,7 +29046,7 @@ target_include_directories(server_call_tracer_factory_test
 target_link_libraries(server_call_tracer_factory_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -30339,6 +29062,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -30365,7 +29089,7 @@ target_include_directories(server_chttp2_test
 target_link_libraries(server_chttp2_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -30381,6 +29105,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -30407,7 +29132,7 @@ target_include_directories(server_config_selector_test
 target_link_libraries(server_config_selector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -30450,7 +29175,7 @@ target_include_directories(server_context_test_spouse_test
 target_link_libraries(server_context_test_spouse_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -30525,7 +29250,7 @@ target_include_directories(server_early_return_test
 target_link_libraries(server_early_return_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -30570,6 +29295,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -30597,9 +29323,7 @@ target_link_libraries(server_finishes_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -30676,7 +29400,7 @@ target_include_directories(server_interceptors_end2end_test
 target_link_libraries(server_interceptors_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -30694,6 +29418,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -30720,7 +29445,7 @@ target_include_directories(server_registered_method_bad_client_test
 target_link_libraries(server_registered_method_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -30761,15 +29486,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
     test/cpp/server/server_request_call_test.cc
   )
   if(WIN32 AND MSVC)
@@ -30805,8 +29521,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_request_call_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_unsecure
-    grpc_test_util_unsecure
+    grpc_test_pallet
   )
 
 
@@ -30825,6 +29540,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -30851,7 +29567,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_ssl_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -30897,6 +29613,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -30924,9 +29641,7 @@ target_link_libraries(server_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -30942,6 +29657,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -30968,7 +29684,7 @@ target_include_directories(server_test
 target_link_libraries(server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -31048,7 +29764,7 @@ target_include_directories(service_config_end2end_test
 target_link_libraries(service_config_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -31064,6 +29780,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31090,7 +29807,7 @@ target_include_directories(service_config_test
 target_link_libraries(service_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -31098,15 +29815,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(settings_timeout_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/transport/chttp2/settings_timeout_test.cc
 )
 if(WIN32 AND MSVC)
@@ -31115,6 +29823,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31141,7 +29850,7 @@ target_include_directories(settings_timeout_test
 target_link_libraries(settings_timeout_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -31186,6 +29895,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31213,9 +29923,7 @@ target_link_libraries(shutdown_finishes_calls_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -31260,6 +29968,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31287,9 +29996,7 @@ target_link_libraries(shutdown_finishes_tags_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -31368,7 +30075,7 @@ target_include_directories(shutdown_test
 target_link_libraries(shutdown_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -31413,6 +30120,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31440,9 +30148,7 @@ target_link_libraries(simple_delayed_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -31487,6 +30193,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31514,9 +30221,7 @@ target_link_libraries(simple_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -31534,6 +30239,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31560,7 +30266,7 @@ target_include_directories(simple_request_bad_client_test
 target_link_libraries(simple_request_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -31605,6 +30311,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31632,9 +30339,7 @@ target_link_libraries(simple_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -31649,6 +30354,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(single_set_ptr_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31675,7 +30382,7 @@ target_include_directories(single_set_ptr_test
 target_link_libraries(single_set_ptr_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -31691,6 +30398,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31717,7 +30425,7 @@ target_include_directories(sleep_test
 target_link_libraries(sleep_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc
+  grpc_test_pallet
 )
 
 
@@ -31725,11 +30433,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(slice_string_helpers_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/util/glob.cc
   test/core/slice/slice_string_helpers_test.cc
 )
 if(WIN32 AND MSVC)
@@ -31737,6 +30440,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(slice_string_helpers_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31763,10 +30468,7 @@ target_include_directories(slice_string_helpers_test
 target_link_libraries(slice_string_helpers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::hash
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -31782,6 +30484,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31808,7 +30511,7 @@ target_include_directories(smoke_test
 target_link_libraries(smoke_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util_unsecure
+  grpc_test_pallet
 )
 
 
@@ -31824,6 +30527,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31850,7 +30554,7 @@ target_include_directories(sockaddr_resolver_test
 target_link_libraries(sockaddr_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -31866,6 +30570,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31892,7 +30597,7 @@ target_include_directories(sockaddr_utils_test
 target_link_libraries(sockaddr_utils_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -31902,15 +30607,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(socket_utils_test
     test/core/iomgr/socket_utils_test.cc
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -31918,6 +30614,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -31944,7 +30641,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(socket_utils_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -31955,6 +30652,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(sorted_pack_test
   test/core/util/sorted_pack_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(sorted_pack_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(sorted_pack_test PUBLIC cxx_std_14)
 target_include_directories(sorted_pack_test
   PRIVATE
@@ -31978,6 +30685,7 @@ target_include_directories(sorted_pack_test
 target_link_libraries(sorted_pack_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc_test_pallet
 )
 
 
@@ -31993,6 +30701,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32019,7 +30728,7 @@ target_include_directories(spinlock_test
 target_link_libraries(spinlock_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -32037,6 +30746,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -32063,7 +30773,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(ssl_transport_security_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -32082,6 +30792,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -32108,7 +30819,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(ssl_transport_security_utils_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -32126,6 +30837,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -32152,7 +30864,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(stack_tracer_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -32169,6 +30881,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32195,7 +30908,7 @@ target_include_directories(stat_test
 target_link_libraries(stat_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -32203,7 +30916,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(static_stride_scheduler_test
-  src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc
   test/core/load_balancing/static_stride_scheduler_test.cc
 )
 if(WIN32 AND MSVC)
@@ -32211,6 +30923,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(static_stride_scheduler_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32237,8 +30951,7 @@ target_include_directories(static_stride_scheduler_test
 target_link_libraries(static_stride_scheduler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::span
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -32254,6 +30967,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32280,7 +30994,7 @@ target_include_directories(stats_test
 target_link_libraries(stats_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -32288,15 +31002,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(status_conversion_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/transport/status_conversion_test.cc
 )
 if(WIN32 AND MSVC)
@@ -32305,6 +31010,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32331,7 +31037,7 @@ target_include_directories(status_conversion_test
 target_link_libraries(status_conversion_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -32346,6 +31052,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(status_flag_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32372,8 +31080,7 @@ target_include_directories(status_flag_test
 target_link_libraries(status_flag_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -32389,6 +31096,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32415,7 +31123,7 @@ target_include_directories(status_helper_test
 target_link_libraries(status_helper_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -32431,6 +31139,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32457,7 +31166,7 @@ target_include_directories(status_util_test
 target_link_libraries(status_util_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -32473,6 +31182,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32499,7 +31209,7 @@ target_include_directories(stream_leak_with_queued_flow_control_update_test
 target_link_libraries(stream_leak_with_queued_flow_control_update_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -32544,6 +31254,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32571,9 +31282,7 @@ target_link_libraries(streaming_error_response_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -32653,7 +31362,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(streaming_throughput_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -32663,15 +31372,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(streams_not_seen_test
   test/core/end2end/cq_verifier.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/transport/chttp2/streams_not_seen_test.cc
 )
 if(WIN32 AND MSVC)
@@ -32680,6 +31380,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32706,7 +31407,7 @@ target_include_directories(streams_not_seen_test
 target_link_libraries(streams_not_seen_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -32749,8 +31450,7 @@ target_include_directories(string_ref_test
 target_link_libraries(string_ref_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -32766,6 +31466,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32792,7 +31493,7 @@ target_include_directories(string_test
 target_link_libraries(string_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -32808,6 +31509,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32834,7 +31536,7 @@ target_include_directories(subchannel_args_test
 target_link_libraries(subchannel_args_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -32849,6 +31551,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(switch_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32875,9 +31579,7 @@ target_include_directories(switch_test
 target_link_libraries(switch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -32893,6 +31595,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32919,7 +31622,7 @@ target_include_directories(sync_test
 target_link_libraries(sync_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -32928,15 +31631,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(system_roots_test
   test/core/security/system_roots_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -32944,6 +31638,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32970,7 +31665,7 @@ target_include_directories(system_roots_test
 target_link_libraries(system_roots_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -32980,6 +31675,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(table_test
   test/core/util/table_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(table_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(table_test PUBLIC cxx_std_14)
 target_include_directories(table_test
   PRIVATE
@@ -33003,10 +31708,7 @@ target_include_directories(table_test
 target_link_libraries(table_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
-  absl::type_traits
-  absl::bits
-  absl::utility
+  grpc_test_pallet
 )
 
 
@@ -33016,15 +31718,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(tcp_client_posix_test
     test/core/iomgr/tcp_client_posix_test.cc
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -33032,6 +31725,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -33058,7 +31752,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(tcp_client_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -33076,6 +31770,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -33102,7 +31797,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(tcp_posix_socket_utils_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -33114,15 +31809,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   add_executable(tcp_posix_test
     test/core/iomgr/endpoint_tests.cc
     test/core/iomgr/tcp_posix_test.cc
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -33130,6 +31816,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -33156,7 +31843,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(tcp_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -33167,15 +31854,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(tcp_server_posix_test
     test/core/iomgr/tcp_server_posix_test.cc
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -33183,6 +31861,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -33209,7 +31888,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(tcp_server_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -33226,6 +31905,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -33252,7 +31932,7 @@ target_include_directories(tcp_socket_utils_test
 target_link_libraries(tcp_socket_utils_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc
+  grpc_test_pallet
 )
 
 
@@ -33301,8 +31981,7 @@ target_include_directories(test_core_channelz_channelz_test
 target_link_libraries(test_core_channelz_channelz_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -33347,6 +32026,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -33374,9 +32054,7 @@ target_link_libraries(test_core_end2end_channelz_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -33384,10 +32062,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_posix_timer_heap_test
-  src/core/lib/event_engine/posix_engine/timer.cc
-  src/core/lib/event_engine/posix_engine/timer_heap.cc
-  src/core/util/time.cc
-  src/core/util/time_averaged_stats.cc
   test/core/event_engine/posix/timer_heap_test.cc
 )
 if(WIN32 AND MSVC)
@@ -33395,6 +32069,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(test_core_event_engine_posix_timer_heap_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -33421,8 +32097,7 @@ target_include_directories(test_core_event_engine_posix_timer_heap_test
 target_link_libraries(test_core_event_engine_posix_timer_heap_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -33430,10 +32105,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_posix_timer_list_test
-  src/core/lib/event_engine/posix_engine/timer.cc
-  src/core/lib/event_engine/posix_engine/timer_heap.cc
-  src/core/util/time.cc
-  src/core/util/time_averaged_stats.cc
   test/core/event_engine/posix/timer_list_test.cc
 )
 if(WIN32 AND MSVC)
@@ -33441,6 +32112,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(test_core_event_engine_posix_timer_list_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -33467,8 +32140,7 @@ target_include_directories(test_core_event_engine_posix_timer_list_test
 target_link_libraries(test_core_event_engine_posix_timer_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -33476,16 +32148,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_slice_buffer_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/event_engine/event_engine.cc
-  src/core/lib/event_engine/resolved_address.cc
-  src/core/lib/event_engine/slice.cc
-  src/core/lib/event_engine/slice_buffer.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/util/glob.cc
   test/core/event_engine/slice_buffer_test.cc
 )
 if(WIN32 AND MSVC)
@@ -33493,6 +32155,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(test_core_event_engine_slice_buffer_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -33519,11 +32183,7 @@ target_include_directories(test_core_event_engine_slice_buffer_test
 target_link_libraries(test_core_event_engine_slice_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::hash
-  absl::statusor
-  absl::utility
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -33532,15 +32192,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_iomgr_timer_heap_test
   test/core/iomgr/timer_heap_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -33548,6 +32199,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -33574,7 +32226,7 @@ target_include_directories(test_core_iomgr_timer_heap_test
 target_link_libraries(test_core_iomgr_timer_heap_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -33589,15 +32241,6 @@ add_executable(test_core_security_credentials_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/security/credentials_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -33605,6 +32248,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -33631,8 +32275,7 @@ target_include_directories(test_core_security_credentials_test
 target_link_libraries(test_core_security_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -33641,15 +32284,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_security_ssl_credentials_test
   test/core/security/ssl_credentials_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -33657,6 +32291,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -33683,7 +32318,7 @@ target_include_directories(test_core_security_ssl_credentials_test
 target_link_libraries(test_core_security_ssl_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -33699,6 +32334,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -33725,7 +32361,7 @@ target_include_directories(test_core_slice_slice_buffer_test
 target_link_libraries(test_core_slice_slice_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -33734,7 +32370,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_slice_slice_test
   test/core/slice/slice_test.cc
-  test/core/test_util/build.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -33742,6 +32377,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -33768,7 +32404,7 @@ target_include_directories(test_core_slice_slice_test
 target_link_libraries(test_core_slice_slice_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc
+  grpc_test_pallet
 )
 
 
@@ -33807,6 +32443,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -33833,8 +32470,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(test_core_transport_test_suite_chaotic_good_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -33843,7 +32479,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_util_time_test
-  src/core/util/time.cc
   test/core/util/time_test.cc
 )
 if(WIN32 AND MSVC)
@@ -33851,6 +32486,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(test_core_util_time_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -33877,8 +32514,7 @@ target_include_directories(test_core_util_time_test
 target_link_libraries(test_core_util_time_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -33922,8 +32558,7 @@ target_include_directories(test_cpp_client_credentials_test
 target_link_libraries(test_cpp_client_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -33999,7 +32634,7 @@ target_include_directories(test_cpp_end2end_ssl_credentials_test
 target_link_libraries(test_cpp_end2end_ssl_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -34061,8 +32696,7 @@ target_include_directories(test_cpp_ext_chaotic_good_test
 target_link_libraries(test_cpp_ext_chaotic_good_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -34106,8 +32740,7 @@ target_include_directories(test_cpp_server_credentials_test
 target_link_libraries(test_cpp_server_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -34150,7 +32783,7 @@ target_include_directories(test_cpp_util_slice_test
 target_link_libraries(test_cpp_util_slice_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -34193,7 +32826,7 @@ target_include_directories(test_cpp_util_time_test
 target_link_libraries(test_cpp_util_time_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -34209,6 +32842,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -34235,7 +32869,7 @@ target_include_directories(thd_test
 target_link_libraries(thd_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -34278,8 +32912,7 @@ target_include_directories(thread_manager_test
 target_link_libraries(thread_manager_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_config
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -34295,6 +32928,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -34321,8 +32955,7 @@ target_include_directories(thread_pool_test
 target_link_libraries(thread_pool_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc
-  grpc_test_util_unsecure
+  grpc_test_pallet
 )
 
 
@@ -34330,7 +32963,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(thread_quota_test
-  src/core/lib/resource_quota/thread_quota.cc
   test/core/resource_quota/thread_quota_test.cc
 )
 if(WIN32 AND MSVC)
@@ -34338,6 +32970,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(thread_quota_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -34364,9 +32998,7 @@ target_include_directories(thread_quota_test
 target_link_libraries(thread_quota_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::config
-  absl::hash
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -34446,7 +33078,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(thread_stress_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -34470,6 +33102,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -34496,7 +33129,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(thready_posix_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -34541,8 +33174,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(time_jump_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -34559,6 +33191,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -34585,7 +33218,7 @@ target_include_directories(time_util_test
 target_link_libraries(time_util_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -34630,6 +33263,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -34657,9 +33291,7 @@ target_link_libraries(timeout_before_request_call_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -34667,15 +33299,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(timeout_encoding_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
   test/core/transport/timeout_encoding_test.cc
 )
 if(WIN32 AND MSVC)
@@ -34684,6 +33307,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -34710,7 +33334,7 @@ target_include_directories(timeout_encoding_test
 target_link_libraries(timeout_encoding_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -34726,6 +33350,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -34752,7 +33377,7 @@ target_include_directories(timer_manager_test
 target_link_libraries(timer_manager_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -34795,8 +33420,7 @@ target_include_directories(timer_test
 target_link_libraries(timer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -34840,8 +33464,7 @@ target_include_directories(tls_certificate_verifier_test
 target_link_libraries(tls_certificate_verifier_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -34917,7 +33540,7 @@ target_include_directories(tls_credentials_test
 target_link_libraries(tls_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -34992,7 +33615,7 @@ target_include_directories(tls_key_export_test
 target_link_libraries(tls_key_export_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -35001,15 +33624,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(tls_security_connector_test
   test/core/security/tls_security_connector_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -35017,6 +33631,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35043,7 +33658,7 @@ target_include_directories(tls_security_connector_test
 target_link_libraries(tls_security_connector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -35087,8 +33702,7 @@ target_include_directories(too_many_pings_test
 target_link_libraries(too_many_pings_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_config
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -35104,6 +33718,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35130,7 +33745,7 @@ target_include_directories(trace_flags_test
 target_link_libraries(trace_flags_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -35147,6 +33762,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -35173,7 +33789,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(traced_buffer_list_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -35219,6 +33835,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35246,9 +33863,7 @@ target_link_libraries(trailing_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -35264,6 +33879,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35290,7 +33906,7 @@ target_include_directories(transport_security_common_api_test
 target_link_libraries(transport_security_common_api_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -35306,6 +33922,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35332,7 +33949,7 @@ target_include_directories(transport_security_test
 target_link_libraries(transport_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -35340,9 +33957,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(try_join_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/util/glob.cc
   test/core/promise/try_join_test.cc
 )
 if(WIN32 AND MSVC)
@@ -35350,6 +33964,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(try_join_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35376,11 +33992,7 @@ target_include_directories(try_join_test
 target_link_libraries(try_join_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::type_traits
-  absl::statusor
-  absl::utility
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -35396,6 +34008,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35422,7 +34035,7 @@ target_include_directories(try_seq_metadata_test
 target_link_libraries(try_seq_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc
+  grpc_test_pallet
 )
 
 
@@ -35430,9 +34043,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(try_seq_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/util/glob.cc
   test/core/promise/try_seq_test.cc
 )
 if(WIN32 AND MSVC)
@@ -35440,6 +34050,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(try_seq_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35466,10 +34078,7 @@ target_include_directories(try_seq_test
 target_link_libraries(try_seq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -35479,6 +34088,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(unique_ptr_with_bitset_test
   test/core/util/unique_ptr_with_bitset_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(unique_ptr_with_bitset_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(unique_ptr_with_bitset_test PUBLIC cxx_std_14)
 target_include_directories(unique_ptr_with_bitset_test
   PRIVATE
@@ -35502,8 +34121,7 @@ target_include_directories(unique_ptr_with_bitset_test
 target_link_libraries(unique_ptr_with_bitset_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
-  absl::bits
+  grpc_test_pallet
 )
 
 
@@ -35513,6 +34131,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(unique_type_name_test
   test/core/util/unique_type_name_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(unique_type_name_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(unique_type_name_test PUBLIC cxx_std_14)
 target_include_directories(unique_type_name_test
   PRIVATE
@@ -35536,10 +34164,7 @@ target_include_directories(unique_type_name_test
 target_link_libraries(unique_type_name_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::check
-  absl::bits
-  absl::str_format
+  grpc_test_pallet
 )
 
 
@@ -35557,6 +34182,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35583,7 +34209,7 @@ target_include_directories(unknown_frame_bad_client_test
 target_link_libraries(unknown_frame_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -35599,6 +34225,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35625,7 +34252,7 @@ target_include_directories(uri_test
 target_link_libraries(uri_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util_unsecure
+  grpc_test_pallet
 )
 
 
@@ -35635,6 +34262,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(useful_test
   test/core/util/useful_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(useful_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(useful_test PUBLIC cxx_std_14)
 target_include_directories(useful_test
   PRIVATE
@@ -35658,8 +34295,7 @@ target_include_directories(useful_test
 target_link_libraries(useful_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
-  absl::bits
+  grpc_test_pallet
 )
 
 
@@ -35675,6 +34311,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35701,7 +34338,7 @@ target_include_directories(uuid_v4_test
 target_link_libraries(uuid_v4_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -35717,6 +34354,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35743,7 +34381,7 @@ target_include_directories(validation_errors_test
 target_link_libraries(validation_errors_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -35759,6 +34397,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35785,7 +34424,7 @@ target_include_directories(varint_test
 target_link_libraries(varint_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -35793,13 +34432,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(wait_for_callback_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/promise/activity.cc
-  src/core/util/dump_args.cc
-  src/core/util/glob.cc
-  src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
   test/core/promise/wait_for_callback_test.cc
 )
 if(WIN32 AND MSVC)
@@ -35807,6 +34439,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(wait_for_callback_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35833,13 +34467,7 @@ target_include_directories(wait_for_callback_test
 target_link_libraries(wait_for_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::config
-  absl::flat_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -35856,6 +34484,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -35882,7 +34511,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(wakeup_fd_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -35900,6 +34529,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35926,7 +34556,7 @@ target_include_directories(weighted_round_robin_config_test
 target_link_libraries(weighted_round_robin_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -35949,6 +34579,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -35975,8 +34606,7 @@ target_include_directories(weighted_round_robin_test
 target_link_libraries(weighted_round_robin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -35994,6 +34624,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -36020,7 +34651,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
   target_link_libraries(win_socket_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -36039,6 +34670,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -36065,7 +34697,7 @@ target_include_directories(window_overflow_bad_client_test
 target_link_libraries(window_overflow_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -36083,6 +34715,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -36109,7 +34742,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
   target_link_libraries(windows_endpoint_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -36128,6 +34761,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -36154,7 +34788,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(work_serializer_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -36200,6 +34834,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -36227,9 +34862,7 @@ target_link_libraries(write_buffering_at_end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -36274,6 +34907,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -36301,9 +34935,7 @@ target_link_libraries(write_buffering_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
-  grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -36311,8 +34943,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(write_size_policy_test
-  src/core/ext/transport/chttp2/transport/write_size_policy.cc
-  src/core/util/time.cc
   test/core/transport/chttp2/write_size_policy_test.cc
 )
 if(WIN32 AND MSVC)
@@ -36320,6 +34950,8 @@ if(WIN32 AND MSVC)
     target_compile_definitions(write_size_policy_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -36346,8 +34978,7 @@ target_include_directories(write_size_policy_test
 target_link_libraries(write_size_policy_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::statusor
-  gpr
+  grpc_test_pallet
 )
 
 
@@ -36394,15 +35025,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
     test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-    test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
-    test/core/test_util/grpc_profiler.cc
-    test/core/test_util/histogram.cc
-    test/core/test_util/mock_endpoint.cc
-    test/core/test_util/parse_hexstring.cc
-    test/core/test_util/resolve_localhost_ip46.cc
-    test/core/test_util/slice_splitter.cc
-    test/core/test_util/tracer_util.cc
     test/cpp/performance/writes_per_rpc_test.cc
   )
   if(WIN32 AND MSVC)
@@ -36438,8 +35060,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(writes_per_rpc_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++
-    grpc_test_util
+    grpc_test_pallet
   )
 
 
@@ -36824,9 +35445,8 @@ target_include_directories(xds_audit_logger_registry_test
 target_link_libraries(xds_audit_logger_registry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -36842,6 +35462,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -36868,7 +35489,7 @@ target_include_directories(xds_bootstrap_test
 target_link_libraries(xds_bootstrap_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -36884,6 +35505,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -36910,7 +35532,7 @@ target_include_directories(xds_certificate_provider_test
 target_link_libraries(xds_certificate_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -37178,8 +35800,6 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.h
-  src/cpp/client/global_callback_hook.cc
-  src/cpp/util/status.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/xds/xds_client_test.cc
@@ -37191,6 +35811,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -37217,10 +35838,7 @@ target_include_directories(xds_client_test
 target_link_libraries(xds_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::absl_check
-  absl::absl_log
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -37751,7 +36369,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_cluster_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -38224,8 +36842,6 @@ add_executable(xds_cluster_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.h
-  src/cpp/client/global_callback_hook.cc
-  src/cpp/util/status.cc
   test/core/xds/xds_cluster_resource_type_test.cc
 )
 if(WIN32 AND MSVC)
@@ -38234,6 +36850,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -38260,10 +36877,7 @@ target_include_directories(xds_cluster_resource_type_test
 target_link_libraries(xds_cluster_resource_type_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::absl_check
-  absl::absl_log
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -38797,7 +37411,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_cluster_type_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -39142,9 +37756,8 @@ target_include_directories(xds_common_types_test
 target_link_libraries(xds_common_types_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -39674,7 +38287,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_core_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -39751,7 +38364,7 @@ target_include_directories(xds_credentials_end2end_test
 target_link_libraries(xds_credentials_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_test_util
+  grpc_test_pallet
 )
 
 
@@ -39760,15 +38373,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(xds_credentials_test
   test/core/security/xds_credentials_test.cc
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -39776,6 +38380,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -39802,7 +38407,7 @@ target_include_directories(xds_credentials_test
 target_link_libraries(xds_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -40424,7 +39029,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_csds_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -40987,8 +39592,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_config
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -41257,8 +39861,6 @@ add_executable(xds_endpoint_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.h
-  src/cpp/client/global_callback_hook.cc
-  src/cpp/util/status.cc
   test/core/xds/xds_endpoint_resource_type_test.cc
 )
 if(WIN32 AND MSVC)
@@ -41267,6 +39869,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -41293,10 +39896,7 @@ target_include_directories(xds_endpoint_resource_type_test
 target_link_libraries(xds_endpoint_resource_type_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::absl_check
-  absl::absl_log
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -41825,7 +40425,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_fallback_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -42363,7 +40963,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_fault_injection_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -42897,7 +41497,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_gcp_authn_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -43432,7 +42032,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_http_connect_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -43905,9 +42505,8 @@ target_include_directories(xds_http_filters_test
 target_link_libraries(xds_http_filters_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -44283,9 +42882,8 @@ target_include_directories(xds_lb_policy_registry_test
 target_link_libraries(xds_lb_policy_registry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -44785,9 +43383,8 @@ target_include_directories(xds_listener_resource_type_test
 target_link_libraries(xds_listener_resource_type_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -45055,6 +43652,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -45081,8 +43679,7 @@ target_include_directories(xds_metadata_test
 target_link_libraries(xds_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -45619,7 +44216,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_outlier_detection_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -46157,7 +44754,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_override_host_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -46174,6 +44771,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -46200,7 +44798,7 @@ target_include_directories(xds_override_host_lb_config_parser_test
 target_link_libraries(xds_override_host_lb_config_parser_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -46222,6 +44820,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -46248,8 +44847,7 @@ target_include_directories(xds_override_host_test
 target_link_libraries(xds_override_host_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -46787,7 +45385,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_pick_first_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -47322,7 +45920,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_ring_hash_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -47861,7 +46459,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_rls_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -48254,9 +46852,8 @@ target_include_directories(xds_route_config_resource_type_test
 target_link_libraries(xds_route_config_resource_type_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  grpc_test_util
+  grpc_test_pallet
 )
 
 
@@ -48793,7 +47390,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_routing_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
@@ -49371,8 +47968,7 @@ target_link_libraries(xds_stats_watcher_test
   gtest
   grpc++_reflection
   grpcpp_channelz
-  grpc_test_util
-  grpc++_test_config
+  grpc_test_pallet
 )
 
 
@@ -49910,7 +48506,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_wrr_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++_test_util
+    grpc_test_pallet
   )
 
 
