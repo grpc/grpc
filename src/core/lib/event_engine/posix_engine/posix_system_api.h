@@ -19,9 +19,11 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
+#include <memory>
 
 #include "absl/status/status.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptor.h"
+#include "wakeup_fd_posix.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -110,6 +112,9 @@ class SystemApi {
   absl::StatusOr<std::string> LocalAddressString(FileDescriptor fd) const;
   // Return PeerAddress as string
   absl::StatusOr<std::string> PeerAddressString(FileDescriptor fd) const;
+
+  bool SupportsWakeupFd();
+  std::unique_ptr<WakeupFd> CreateWakeupFd();
 
  private:
 #ifndef GRPC_LINUX_SOCKETUTILS

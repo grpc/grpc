@@ -26,10 +26,10 @@ namespace experimental {
 class WakeupFd;
 
 // Returns true if wakeup-fd is supported by the system.
-bool SupportsWakeupFd();
+// bool SupportsWakeupFd();
 
 // Create and return an initialized WakeupFd instance if supported.
-absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd();
+// absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

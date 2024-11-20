@@ -231,7 +231,7 @@ void ForkPollerListRemovePoller(Epoll1Poller* poller) {
   }
 }
 
-bool InitEpoll1PollerLinux();
+bool InitEpoll1PollerLinux(SystemApi* system_api);
 
 // Called by the child process's post-fork handler to close open fds,
 // including the global epoll fd of each poller. This allows gRPC to shutdown in
@@ -240,6 +240,14 @@ bool InitEpoll1PollerLinux();
 void ResetEventManagerOnFork() {
   // Delete all pending Epoll1EventHandles.
   gpr_mu_lock(&fork_fd_list_mu);
+  SystemApi* system_api = nullptr;
+  if (fork_fd_list_head != nullptr) {
+    system_api = fork_fd_list_head->Poller()->GetSystemApi();
+  } else if (!fork_poller_list.empty()) {
+    system_api = fork_poller_list.front()->GetSystemApi();
+  }
+  CHECK_NE(system_api, nullptr);
+
   while (fork_fd_list_head != nullptr) {
     close(fork_fd_list_head->WrappedFd().fd());
     Epoll1EventHandle* next = fork_fd_list_head->ForkFdListPos().next;
@@ -253,13 +261,13 @@ void ResetEventManagerOnFork() {
     poller->Close();
   }
   gpr_mu_unlock(&fork_fd_list_mu);
-  InitEpoll1PollerLinux();
+  InitEpoll1PollerLinux(system_api);
 }
 
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
 // Create epoll_fd to make sure epoll support is available
-bool InitEpoll1PollerLinux() {
-  if (!grpc_event_engine::experimental::SupportsWakeupFd()) {
+bool InitEpoll1PollerLinux(SystemApi* system_api) {
+  if (!system_api->SupportsWakeupFd()) {
     return false;
   }
   int fd = EpollCreateAndCloexec();
@@ -356,7 +364,7 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler, SystemApi* system_api)
       closed_(false),
       system_api_(system_api) {
   g_epoll_set_.epfd = EpollCreateAndCloexec();
-  wakeup_fd_ = *CreateWakeupFd();
+  wakeup_fd_ = system_api->CreateWakeupFd();
   CHECK(wakeup_fd_ != nullptr);
   CHECK_GE(g_epoll_set_.epfd, 0);
   GRPC_TRACE_LOG(event_engine_poller, INFO)
@@ -567,7 +575,7 @@ void Epoll1Poller::Kick() {
 
 std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler,
                                                SystemApi* system_api) {
-  static bool kEpoll1PollerSupported = InitEpoll1PollerLinux();
+  static bool kEpoll1PollerSupported = InitEpoll1PollerLinux(system_api);
   if (kEpoll1PollerSupported) {
     return std::make_shared<Epoll1Poller>(scheduler, system_api);
   }
