@@ -61,6 +61,14 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     return true;
   }
   void Set(grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag) {
+    if (queued_.load() != executed_.load()) {
+      // Slow path on cancellation. If the timer can't be cancelled, wait
+      // until it has completed.
+      // TODO(C++20): atomic wait?
+      while (queued_.load() != executed_.load()) {
+        absl::SleepFor(absl::Milliseconds(10));
+      }
+    }
     grpc_core::ExecCtx exec_ctx;
     GRPC_CQ_INTERNAL_REF(cq->cq(), "alarm");
     cq_ = cq->cq();
@@ -97,12 +105,6 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
       if (event_engine_->Cancel(cq_timer_handle_)) {
         OnCQAlarm(absl::CancelledError("cancelled"));
       }
-    }
-    // Slow path on cancellation. If the timer can't be cancelled, wait
-    // until it has completed.
-    // TODO(C++20): atomic wait?
-    while (queued_.load() != executed_.load()) {
-      absl::SleepFor(absl::Milliseconds(10));
     }
   }
   void Destroy() {
