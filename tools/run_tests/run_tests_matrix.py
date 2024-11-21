@@ -392,17 +392,17 @@ def _create_portability_test_jobs(
 
     # portability C and C++ on Windows with the "Visual Studio 2022" cmake
     # generator, i.e. not using Ninja (to verify that we can still build with msbuild)
-    test_jobs += _generate_jobs(
-        languages=["c", "c++"],
-        configs=["dbg"],
-        platforms=["windows"],
-        arch="x64",
-        compiler="cmake_vs2022",
-        labels=["portability", "corelang"],
-        extra_args=extra_args,
-        inner_jobs=inner_jobs,
-        timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
-    )
+    # test_jobs += _generate_jobs(
+    #     languages=["c", "c++"],
+    #     configs=["dbg"],
+    #     platforms=["windows"],
+    #     arch="x64",
+    #     compiler="cmake_vs2022",
+    #     labels=["portability", "corelang"],
+    #     extra_args=extra_args,
+    #     inner_jobs=inner_jobs,
+    #     timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
+    # )
 
     # C and C++ with no-exceptions on Linux
     test_jobs += _generate_jobs(

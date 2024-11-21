@@ -72,6 +72,10 @@ build:fuzzer_asan --copt=-fno-omit-frame-pointer
 build:fuzzer_asan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:fuzzer_asan --copt=-DGRPC_ASAN
 build:fuzzer_asan --copt=-DADDRESS_SANITIZER  # used by absl
+# add a macro that can be used to determine that we're running under a fuzzer
+# allowing different code paths to be substituted under fuzzing (say, additional
+# checks)
+build:fuzzer_asan --copt=-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 build:fuzzer_asan --linkopt=-fsanitize=fuzzer,address
 build:fuzzer_asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 build:fuzzer_asan --action_env=LSAN_OPTIONS=suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1

@@ -342,6 +342,7 @@ class Party : public Activity, private Wakeable {
 
   // Wakeable implementation
   void Wakeup(WakeupMask wakeup_mask) final {
+    GRPC_LATENT_SEE_INNER_SCOPE("Party::Wakeup");
     if (Activity::current() == this) {
       wakeup_mask_ |= wakeup_mask;
       Unref();
@@ -352,6 +353,7 @@ class Party : public Activity, private Wakeable {
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void WakeupFromState(
       uint64_t cur_state, WakeupMask wakeup_mask) {
+    GRPC_LATENT_SEE_INNER_SCOPE("Party::WakeupFromState");
     DCHECK_NE(wakeup_mask & kWakeupMask, 0u)
         << "Wakeup mask must be non-zero: " << wakeup_mask;
     while (true) {

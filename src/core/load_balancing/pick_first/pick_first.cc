@@ -423,7 +423,7 @@ PickFirst::PickFirst(Args args)
 
 PickFirst::~PickFirst() {
   GRPC_TRACE_LOG(pick_first, INFO) << "Destroying Pick First " << this;
-  CHECK(subchannel_list_ == nullptr);
+  CHECK_EQ(subchannel_list_.get(), nullptr);
 }
 
 void PickFirst::ShutdownLocked() {
@@ -744,6 +744,8 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
   // If we're still part of a subchannel list trying to connect, check
   // if we're connected.
   if (subchannel_data_ != nullptr) {
+    CHECK_EQ(pick_first_->subchannel_list_.get(),
+             subchannel_data_->subchannel_list_);
     // If the subchannel is READY, use it.
     // Otherwise, tell the subchannel list to keep trying.
     if (new_state == GRPC_CHANNEL_READY) {
@@ -754,7 +756,7 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
     return;
   }
   // We aren't trying to connect, so we must be the selected subchannel.
-  CHECK(pick_first_->selected_.get() == this);
+  CHECK_EQ(pick_first_->selected_.get(), this);
   GRPC_TRACE_LOG(pick_first, INFO)
       << "Pick First " << pick_first_.get()
       << " selected subchannel connectivity changed to "
@@ -803,15 +805,14 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
       << ", p->subchannel_list_=" << p->subchannel_list_.get()
       << ", p->subchannel_list_->shutting_down_="
       << p->subchannel_list_->shutting_down_;
-
   if (subchannel_list_->shutting_down_) return;
   // The notification must be for a subchannel in the current list.
-  CHECK(subchannel_list_ == p->subchannel_list_.get());
+  CHECK_EQ(subchannel_list_, p->subchannel_list_.get());
   // SHUTDOWN should never happen.
-  CHECK(new_state != GRPC_CHANNEL_SHUTDOWN);
+  CHECK_NE(new_state, GRPC_CHANNEL_SHUTDOWN);
   // READY should be caught by SubchannelState, in which case it will
   // not call us in the first place.
-  CHECK(new_state != GRPC_CHANNEL_READY);
+  CHECK_NE(new_state, GRPC_CHANNEL_READY);
   // Update state.
   absl::optional<grpc_connectivity_state> old_state = connectivity_state_;
   connectivity_state_ = new_state;
@@ -935,7 +936,7 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
   if (connectivity_state_ == GRPC_CHANNEL_IDLE) {
     subchannel_state_->RequestConnection();
   } else {
-    CHECK(connectivity_state_ == GRPC_CHANNEL_CONNECTING);
+    CHECK_EQ(connectivity_state_.value(), GRPC_CHANNEL_CONNECTING);
   }
   // If this is not the last subchannel in the list, start the timer.
   if (index_ != subchannel_list_->size() - 1) {
@@ -1021,6 +1022,8 @@ void PickFirst::SubchannelList::Orphan() {
       << "[PF " << policy_.get() << "] Shutting down subchannel_list " << this;
   CHECK(!shutting_down_);
   shutting_down_ = true;
+  // Shut down subchannels.
+  subchannels_.clear();
   // Cancel Happy Eyeballs timer, if any.
   if (timer_handle_.has_value()) {
     policy_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);

@@ -894,6 +894,7 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
@@ -1265,8 +1266,10 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "activity",
+        "dump_args",
         "poll",
         "ref_counted",
+        "status_flag",
         "wait_set",
         "//:gpr",
         "//:ref_counted_ptr",
@@ -8237,6 +8240,7 @@ grpc_cc_library(
         "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
+        "absl/cleanup",
         "absl/types:optional",
         "absl/types:variant",
     ],
@@ -8378,6 +8382,7 @@ grpc_cc_library(
         "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
+        "absl/cleanup",
         "absl/types:optional",
         "absl/types:variant",
     ],
