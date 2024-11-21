@@ -984,6 +984,7 @@ grpc_cc_library(
     deps = [
         "construct_destruct",
         "poll",
+        "promise_factory",
         "//:gpr_platform",
     ],
 )
