@@ -115,6 +115,7 @@ class PassiveListenerImpl;
 
 namespace testing {
 class ServerTestPeer;
+class ListenerStateTestPeer;
 }  // namespace testing
 
 class Server : public ServerInterface,
@@ -252,6 +253,8 @@ class Server : public ServerInterface,
     }
 
    private:
+    friend class grpc_core::testing::ListenerStateTestPeer;
+
     class ConfigFetcherWatcher : public ServerConfigFetcher::WatcherInterface {
      public:
       explicit ConfigFetcherWatcher(ListenerState* listener_state)

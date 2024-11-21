@@ -346,8 +346,6 @@ void Server::ListenerState::RemoveConnectionsToBeDrainedOnEmptyLocked(
 }
 
 //
-
-//
 // Server::RequestMatcherInterface
 //
 

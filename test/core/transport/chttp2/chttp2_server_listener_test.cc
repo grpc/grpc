@@ -19,15 +19,21 @@
 #include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
+#include <thread>
+
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
+#include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/server/server.h"
 #include "src/core/util/host_port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/mock_endpoint.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 
 using grpc_event_engine::experimental::EventEngine;
 
@@ -86,14 +92,31 @@ class ServerTestPeer {
   Server* server_;
 };
 
+class ListenerStateTestPeer {
+ public:
+  explicit ListenerStateTestPeer(Server::ListenerState* listener_state)
+      : listener_state_(listener_state) {}
+
+  // Returns the number of connections currently being actively tracked
+  size_t ConnectionsSize() {
+    MutexLock lock(&listener_state_->mu_);
+    return listener_state_->connections_.size();
+  }
+
+ private:
+  Server::ListenerState* listener_state_;
+};
+
+namespace {
+
 class Chttp2ServerListenerTest : public ::testing::Test {
  protected:
-  void SetUp() override {
+  void SetUpServer(const RefCountedPtr<grpc_server_credentials>& creds =
+                       MakeRefCounted<InsecureServerCredentials>()) {
     args_ = CoreConfiguration::Get()
                 .channel_args_preconditioning()
                 .PreconditionChannelArgs(nullptr);
     server_ = MakeOrphanable<Server>(args_);
-    auto creds = MakeRefCounted<InsecureServerCredentials>();
     grpc_server_add_http2_port(
         server_->c_ptr(),
         JoinHostPort("localhost", grpc_pick_unused_port_or_die()).c_str(),
@@ -123,6 +146,7 @@ class Chttp2ServerListenerTest : public ::testing::Test {
 };
 
 TEST_F(Chttp2ServerListenerTest, Basic) {
+  SetUpServer();
   listener_state_->connection_quota()->SetMaxIncomingConnections(10);
   auto mock_endpoint_controller =
       grpc_event_engine::experimental::MockEndpointController::Create(
@@ -137,6 +161,7 @@ TEST_F(Chttp2ServerListenerTest, Basic) {
 }
 
 TEST_F(Chttp2ServerListenerTest, NoConnectionQuota) {
+  SetUpServer();
   listener_state_->connection_quota()->SetMaxIncomingConnections(0);
   auto mock_endpoint_controller =
       grpc_event_engine::experimental::MockEndpointController::Create(
@@ -151,6 +176,7 @@ TEST_F(Chttp2ServerListenerTest, NoConnectionQuota) {
 }
 
 TEST_F(Chttp2ServerListenerTest, ConnectionRefusedAfterShutdown) {
+  SetUpServer();
   listener_state_->connection_quota()->SetMaxIncomingConnections(10);
   // Take ref on listener to prevent destruction of listener
   RefCountedPtr<NewChttp2ServerListener> listener_ref =
@@ -180,7 +206,8 @@ TEST_F(Chttp2ServerListenerTest, ConnectionRefusedAfterShutdown) {
 
 using Chttp2ActiveConnectionTest = Chttp2ServerListenerTest;
 
-TEST_F(Chttp2ActiveConnectionTest, CloseReducesConnectionCount) {
+TEST_F(Chttp2ActiveConnectionTest, CloseWithoutHandshakeStarting) {
+  SetUpServer();
   listener_state_->connection_quota()->SetMaxIncomingConnections(10);
   // Add a connection
   ASSERT_TRUE(listener_state_->connection_quota()->AllowIncomingConnection(
@@ -202,6 +229,103 @@ TEST_F(Chttp2ActiveConnectionTest, CloseReducesConnectionCount) {
       0);
 }
 
+RefCountedPtr<grpc_server_credentials> CreateSecureServerCredentials() {
+  std::string ca_cert =
+      grpc_core::testing::GetFileContents("src/core/tsi/test_creds/client.pem");
+  std::string server_cert = grpc_core::testing::GetFileContents(
+      "src/core/tsi/test_creds/server1.pem");
+  std::string server_key = grpc_core::testing::GetFileContents(
+      "src/core/tsi/test_creds/server1.key");
+  grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
+  // Set credential provider.
+  grpc_tls_identity_pairs* server_pairs = grpc_tls_identity_pairs_create();
+  grpc_tls_identity_pairs_add_pair(server_pairs, server_key.c_str(),
+                                   server_cert.c_str());
+  grpc_tls_certificate_provider* server_provider =
+      grpc_tls_certificate_provider_static_data_create(ca_cert.c_str(),
+                                                       server_pairs);
+  grpc_tls_credentials_options_set_certificate_provider(options,
+                                                        server_provider);
+  grpc_tls_certificate_provider_release(server_provider);
+  grpc_tls_credentials_options_watch_root_certs(options);
+  grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
+  // Set client certificate request type.
+  grpc_tls_credentials_options_set_cert_request_type(
+      options, GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  grpc_server_credentials* creds = grpc_tls_server_credentials_create(options);
+  return RefCountedPtr<grpc_server_credentials>(creds);
+}
+
+TEST_F(Chttp2ActiveConnectionTest, CloseDuringHandshake) {
+  // Use TlsCreds to make sure handshake doesn't complete.
+  SetUpServer(CreateSecureServerCredentials());
+  listener_state_->connection_quota()->SetMaxIncomingConnections(10);
+  // Add a connection
+  ASSERT_TRUE(listener_state_->connection_quota()->AllowIncomingConnection(
+      listener_state_->memory_quota(), "peer"));
+  auto connection = MakeOrphanable<NewChttp2ServerListener::ActiveConnection>(
+      listener_state_->Ref(), /*tcp_server=*/nullptr,
+      /*accepting_pollset=*/nullptr,
+      /*acceptor=*/nullptr, args_,
+      listener_state_->memory_quota()->CreateMemoryOwner(), nullptr);
+  EXPECT_EQ(
+      listener_state_->connection_quota()->TestOnlyActiveIncomingConnections(),
+      1);
+  connection->RefAsSubclass<NewChttp2ServerListener::ActiveConnection>()
+      .release();  // Ref for OnClose
+  // On close, the connection count should go back to 0.
+  ActiveConnectionTestPeer(connection.get()).OnClose();
+  EXPECT_EQ(
+      listener_state_->connection_quota()->TestOnlyActiveIncomingConnections(),
+      0);
+}
+
+TEST_F(Chttp2ActiveConnectionTest, CloseAfterHandshakeButBeforeSettingsFrame) {
+  SetUpServer();
+  listener_state_->connection_quota()->SetMaxIncomingConnections(10);
+  // Add a connection
+  auto mock_endpoint_controller =
+      grpc_event_engine::experimental::MockEndpointController::Create(
+          args_.GetObjectRef<EventEngine>());
+  mock_endpoint_controller->NoMoreReads();
+  ASSERT_TRUE(listener_state_->connection_quota()->AllowIncomingConnection(
+      listener_state_->memory_quota(), "peer"));
+  auto connection = MakeOrphanable<NewChttp2ServerListener::ActiveConnection>(
+      listener_state_->Ref(), /*tcp_server=*/nullptr,
+      /*accepting_pollset=*/nullptr,
+      /*acceptor=*/nullptr, args_,
+      listener_state_->memory_quota()->CreateMemoryOwner(),
+      OrphanablePtr<grpc_endpoint>(mock_endpoint_controller->TakeCEndpoint()));
+  auto* connection_ptr = connection.get();
+  listener_state_->AddLogicalConnection(std::move(connection), args_,
+                                        /*endpoint=*/nullptr);
+  EXPECT_EQ(
+      listener_state_->connection_quota()->TestOnlyActiveIncomingConnections(),
+      1);
+  connection_ptr->Start(args_);
+  // Wait for handshake to be done. When handshake is done, the connection will
+  // be removed from the ListenerState's connection map since there is no config
+  // fetcher.
+  absl::Time test_deadline =
+      absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
+  while (ListenerStateTestPeer(listener_state_).ConnectionsSize() != 0) {
+    ASSERT_LE(absl::Now(), test_deadline);
+    // Yield for other threads to make progress.
+    // If the test turns out to be flaky, convert this to a sleep.
+    std::this_thread::yield();
+  }
+  // Trigger close from the server
+  grpc_server_cancel_all_calls(server_->c_ptr());
+  while (listener_state_->connection_quota()
+             ->TestOnlyActiveIncomingConnections() != 0) {
+    ASSERT_LE(absl::Now(), test_deadline);
+    // Yield for other threads to make progress.
+    // If the test turns out to be flaky, convert this to a sleep.
+    std::this_thread::yield();
+  }
+}
+
+}  // namespace
 }  // namespace testing
 }  // namespace grpc_core
 
