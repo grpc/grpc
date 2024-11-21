@@ -312,7 +312,7 @@ void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
 }
 
 PosixEnginePollerManager::PosixEnginePollerManager(
-    SystemApi* system_api, std::shared_ptr<ThreadPool> executor)
+    const SystemApi& system_api, std::shared_ptr<ThreadPool> executor)
     : poller_(
           grpc_event_engine::experimental::MakeDefaultPoller(system_api, this)),
       executor_(std::move(executor)),
@@ -382,7 +382,7 @@ PosixEventEngine::PosixEventEngine()
       TimerForkCallbackMethods::PostforkChild);
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   poller_manager_ =
-      std::make_shared<PosixEnginePollerManager>(&system_api_, executor_);
+      std::make_shared<PosixEnginePollerManager>(system_api_, executor_);
   // The threadpool must be instantiated after the poller otherwise, the
   // process will deadlock when forking.
   if (poller_manager_->Poller() != nullptr) {

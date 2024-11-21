@@ -17,13 +17,14 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
+#include <sys/epoll.h>
 
+#include <array>
 #include <atomic>
-#include <memory>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptor.h"
-#include "wakeup_fd_posix.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -38,19 +39,25 @@ class SystemApi {
       FileDescriptor sockfd,
       grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
       int nonblock, int cloexec) const;
-
   FileDescriptor AdoptExternalFd(int fd) const;
   FileDescriptor Socket(int domain, int type, int protocol) const;
+  FileDescriptor EventFd(unsigned int initval, int flags) const;
+  FileDescriptor EpollCreateAndCloexec() const;
 
-  std::tuple<int, FileDescriptor, FileDescriptor> SocketPair(int domain,
-                                                             int type,
-                                                             int protocol);
+  std::pair<int, std::array<FileDescriptor, 2>> Pipe() const;
+  std::pair<int, std::array<FileDescriptor, 2>> SocketPair(int domain, int type,
+                                                           int protocol);
 
   int Bind(FileDescriptor fd, const struct sockaddr* addr,
            socklen_t addrlen) const;
   void Close(FileDescriptor fd) const;
   int Connect(FileDescriptor sockfd, const struct sockaddr* addr,
               socklen_t addrlen) const;
+  long EventFdRead(FileDescriptor fd, uint64_t* value) const;
+  int EpollCtl(FileDescriptor epfd, int op, FileDescriptor fd,
+               struct epoll_event* event) const;
+  int EpollWait(FileDescriptor epfd, struct epoll_event* events, int maxevents,
+                int timeout) const;
   int Fcntl(FileDescriptor fd, int op, int args) const;
   int GetSockOpt(FileDescriptor fd, int level, int optname, void* optval,
                  socklen_t* optlen) const;
@@ -67,6 +74,7 @@ class SystemApi {
   int SetSockOpt(FileDescriptor fd, int level, int optname, const void* optval,
                  socklen_t optlen) const;
   int Shutdown(FileDescriptor sockfd, int how) const;
+  long EventFdWrite(FileDescriptor fd, uint64_t value) const;
   long Write(FileDescriptor fd, const void* buf, size_t count) const;
 
   absl::Status SetSocketNoSigpipeIfPossible(FileDescriptor fd) const;
@@ -112,9 +120,7 @@ class SystemApi {
   absl::StatusOr<std::string> LocalAddressString(FileDescriptor fd) const;
   // Return PeerAddress as string
   absl::StatusOr<std::string> PeerAddressString(FileDescriptor fd) const;
-
-  bool SupportsWakeupFd();
-  absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd();
+  absl::Status SetSocketNonBlocking(FileDescriptor fd) const;
 
  private:
 #ifndef GRPC_LINUX_SOCKETUTILS

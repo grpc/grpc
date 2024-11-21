@@ -838,7 +838,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
                                             ssize_t* sent_length,
                                             int* saved_errno,
                                             int additional_flags) {
-  SystemApi* system_api = get_system_api();
+  const SystemApi* system_api = get_system_api();
   if (!socket_ts_enabled_) {
     uint32_t opt = kTimestampingSocketOptions;
     if (system_api->SetSockOpt(fd_, SOL_SOCKET, SO_TIMESTAMPING,
@@ -1261,7 +1261,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       handle_(handle),
       poller_(handle->Poller()),
       engine_(engine) {
-  SystemApi* system_api = get_system_api();
+  const SystemApi* system_api = get_system_api();
   fd_ = handle_->WrappedFd();
   CHECK(options.resource_quota != nullptr);
   auto peer_addr_string = system_api->PeerAddressString(fd_);

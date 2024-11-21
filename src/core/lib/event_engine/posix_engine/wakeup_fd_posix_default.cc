@@ -13,10 +13,12 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include <functional>
 #include <memory>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
@@ -27,29 +29,41 @@ namespace experimental {
 
 #ifdef GRPC_POSIX_WAKEUP_FD
 
-absl::StatusOr<std::unique_ptr<WakeupFd>> NotSupported() {
-  return absl::NotFoundError("Wakeup-fd is not supported on this system");
+namespace {
+
+using WakeupFdFactory = std::function<absl::StatusOr<std::unique_ptr<WakeupFd>>(
+    const SystemApi& system_api)>;
+
+absl::optional<WakeupFdFactory> GetWakeupFdFactory(
+    const SystemApi& system_api) {
+  static absl::optional<WakeupFdFactory> g_wakeup_fd_fn =
+      [&]() -> absl::optional<WakeupFdFactory> {
+#ifndef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
+    if (EventFdWakeupFd::IsSupported(system_api)) {
+      return &EventFdWakeupFd::CreateEventFdWakeupFd;
+    }
+#endif  // GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
+    if (PipeWakeupFd::IsSupported(system_api)) {
+      return &PipeWakeupFd::CreatePipeWakeupFd;
+    }
+    return absl::nullopt;
+  }();
+  return g_wakeup_fd_fn;
 }
 
-namespace {
-absl::StatusOr<std::unique_ptr<WakeupFd>> (*g_wakeup_fd_fn)() =
-    []() -> absl::StatusOr<std::unique_ptr<WakeupFd>> (*)() {
-#ifndef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
-  if (EventFdWakeupFd::IsSupported()) {
-    return &EventFdWakeupFd::CreateEventFdWakeupFd;
-  }
-#endif  // GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
-  if (PipeWakeupFd::IsSupported()) {
-    return &PipeWakeupFd::CreatePipeWakeupFd;
-  }
-  return NotSupported;
-}();
 }  // namespace
 
-bool SupportsWakeupFd() { return g_wakeup_fd_fn != NotSupported; }
+bool SupportsWakeupFd(const SystemApi& system_api) {
+  return GetWakeupFdFactory(system_api).has_value();
+}
 
-absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd() {
-  return g_wakeup_fd_fn();
+absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd(
+    const SystemApi& system_api) {
+  auto factory = GetWakeupFdFactory(system_api);
+  if (!factory.has_value()) {
+    return absl::NotFoundError("Wakeup-fd is not supported on this system");
+  }
+  return (*factory)(system_api);
 }
 
 #else  // GRPC_POSIX_WAKEUP_FD

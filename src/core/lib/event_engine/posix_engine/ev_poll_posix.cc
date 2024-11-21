@@ -289,7 +289,7 @@ int PollElapsedTimeToMillis(grpc_core::Timestamp start) {
   }
 }
 
-bool InitPollPollerPosix(SystemApi* system_api);
+bool InitPollPollerPosix(const SystemApi& system_api);
 
 // Called by the child process's post-fork handler to close open fds,
 // including the global epoll fd of each poller. This allows gRPC to shutdown
@@ -298,7 +298,7 @@ bool InitPollPollerPosix(SystemApi* system_api);
 void ResetEventManagerOnFork() {
   // Delete all pending Epoll1EventHandles.
   gpr_mu_lock(&fork_fd_list_mu);
-  SystemApi* system_api = nullptr;
+  const SystemApi* system_api = nullptr;
   if (fork_fd_list_head != nullptr) {
     system_api = fork_fd_list_head->Poller()->GetSystemApi();
   } else if (!fork_poller_list.empty()) {
@@ -319,13 +319,13 @@ void ResetEventManagerOnFork() {
     poller->Close();
   }
   gpr_mu_unlock(&fork_fd_list_mu);
-  InitPollPollerPosix(system_api);
+  InitPollPollerPosix(*system_api);
 }
 
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
 // Create epoll_fd to make sure epoll support is available
-bool InitPollPollerPosix(SystemApi* system_api) {
-  if (!system_api->SupportsWakeupFd()) {
+bool InitPollPollerPosix(const SystemApi& system_api) {
+  if (!grpc_event_engine::experimental::SupportsWakeupFd(system_api)) {
     return false;
   }
   if (grpc_core::Fork::Enabled()) {
@@ -609,7 +609,7 @@ void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* handle) {
   --num_poll_handles_;
 }
 
-PollPoller::PollPoller(Scheduler* scheduler, SystemApi* system_api,
+PollPoller::PollPoller(Scheduler* scheduler, const SystemApi& system_api,
                        bool use_phony_poll)
     : scheduler_(scheduler),
       use_phony_poll_(use_phony_poll),
@@ -618,11 +618,9 @@ PollPoller::PollPoller(Scheduler* scheduler, SystemApi* system_api,
       num_poll_handles_(0),
       poll_handles_list_head_(nullptr),
       closed_(false),
-      system_api_(system_api) {
-  auto wakeup_fd = system_api->CreateWakeupFd();
-  CHECK(wakeup_fd.ok()) << wakeup_fd.status();
-  CHECK(*wakeup_fd != nullptr);
-  wakeup_fd_ = std::move(wakeup_fd).value();
+      system_api_(&system_api) {
+  wakeup_fd_ = *CreateWakeupFd(system_api);
+  CHECK(wakeup_fd_ != nullptr);
   ForkPollerListAddPoller(this);
 }
 
@@ -672,7 +670,7 @@ Poller::WorkResult PollPoller::Work(
     }
 
     pfd_count = 1;
-    pfds[0].fd = wakeup_fd_->ReadFd();
+    pfds[0].fd = wakeup_fd_->ReadFd().fd();
     pfds[0].events = POLLIN;
     pfds[0].revents = 0;
     PollEventHandle* head = poll_handles_list_head_;
@@ -836,7 +834,7 @@ void PollPoller::Close() {
 }
 
 std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
-                                           SystemApi* system_api,
+                                           const SystemApi& system_api,
                                            bool use_phony_poll) {
   static bool kPollPollerSupported = InitPollPollerPosix(system_api);
   if (kPollPollerSupported) {

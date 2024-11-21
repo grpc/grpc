@@ -47,7 +47,7 @@ class Epoll1EventHandle;
 // Definition of epoll1 based poller.
 class Epoll1Poller : public PosixEventPoller {
  public:
-  Epoll1Poller(Scheduler* scheduler, SystemApi* system_api);
+  Epoll1Poller(Scheduler* scheduler, const SystemApi& system_api);
   EventHandle* CreateHandle(FileDescriptor fd, absl::string_view name,
                             bool track_err) override;
   Poller::WorkResult Work(
@@ -72,7 +72,7 @@ class Epoll1Poller : public PosixEventPoller {
   void PostforkChild() override;
 
   void Close();
-  SystemApi* GetSystemApi() const override { return system_api_; }
+  const SystemApi* GetSystemApi() const override { return system_api_; }
 
  private:
   // This initial vector size may need to be tuned
@@ -103,7 +103,7 @@ class Epoll1Poller : public PosixEventPoller {
   friend class Epoll1EventHandle;
 #ifdef GRPC_LINUX_EPOLL
   struct EpollSet {
-    int epfd = -1;
+    FileDescriptor epfd;
 
     // The epoll_events after the last call to epoll_wait()
     struct epoll_event events[MAX_EPOLL_EVENTS]{};
@@ -126,13 +126,13 @@ class Epoll1Poller : public PosixEventPoller {
   std::list<EventHandle*> free_epoll1_handles_list_ ABSL_GUARDED_BY(mu_);
   std::unique_ptr<WakeupFd> wakeup_fd_;
   bool closed_;
-  SystemApi* system_api_;
+  const SystemApi* system_api_;
 };
 
 // Return an instance of a epoll1 based poller tied to the specified event
 // engine.
 std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler,
-                                               SystemApi* system_api);
+                                               const SystemApi& system_api);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

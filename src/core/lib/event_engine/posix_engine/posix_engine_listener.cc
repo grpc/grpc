@@ -203,7 +203,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
       }
       addr = EventEngine::ResolvedAddress(addr.address(), len);
     }
-    SystemApi* system_api = handle_->Poller()->GetSystemApi();
+    const SystemApi* system_api = handle_->Poller()->GetSystemApi();
     (void)system_api->SetSocketNoSigpipeIfPossible(fd);
     auto result = ApplySocketMutatorInOptions(
         fd, GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
@@ -261,7 +261,7 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
     return absl::UnknownError(
         absl::StrCat("HandleExternalConnection: Invalid peer socket: ", fd));
   }
-  SystemApi* system_api = poller_->GetSystemApi();
+  const SystemApi* system_api = poller_->GetSystemApi();
   FileDescriptor sock = system_api->AdoptExternalFd(fd);
   (void)system_api->SetSocketNoSigpipeIfPossible(sock);
   auto peer_name = system_api->PeerAddressString(sock);

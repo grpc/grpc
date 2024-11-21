@@ -128,8 +128,9 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
  private:
   /// Overridden socket API for c-ares
   static ares_socket_t Socket(int af, int type, int protocol, void* user_data) {
-    SystemApi* system_api = static_cast<GrpcPolledFdFactoryPosix*>(user_data)
-                                ->poller_->GetSystemApi();
+    const SystemApi* system_api =
+        static_cast<GrpcPolledFdFactoryPosix*>(user_data)
+            ->poller_->GetSystemApi();
     return system_api->Socket(af, type, protocol).fd();
   }
 

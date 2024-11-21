@@ -29,7 +29,7 @@ class Scheduler;
 
 // Return an instance of an event poller which is tied to the specified
 // scheduler.
-std::shared_ptr<PosixEventPoller> MakeDefaultPoller(SystemApi* system_api,
+std::shared_ptr<PosixEventPoller> MakeDefaultPoller(const SystemApi& system_api,
                                                     Scheduler* scheduler);
 
 }  // namespace experimental

@@ -100,7 +100,7 @@ class AsyncConnect {
 class PosixEnginePollerManager
     : public grpc_event_engine::experimental::Scheduler {
  public:
-  explicit PosixEnginePollerManager(SystemApi* system_api,
+  explicit PosixEnginePollerManager(const SystemApi& system_api,
                                     std::shared_ptr<ThreadPool> executor);
   explicit PosixEnginePollerManager(
       std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>

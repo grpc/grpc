@@ -522,7 +522,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
                            ssize_t* sent_length, int* saved_errno,
                            int additional_flags);
   absl::Status TcpAnnotateError(absl::Status src_error) const;
-  SystemApi* get_system_api() const { return poller_->GetSystemApi(); }
+  const SystemApi* get_system_api() const { return poller_->GetSystemApi(); }
 #ifdef GRPC_LINUX_ERRQUEUE
   bool ProcessErrors();
   // Reads a cmsg to process zerocopy control messages.

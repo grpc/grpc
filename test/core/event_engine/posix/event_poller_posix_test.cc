@@ -585,7 +585,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
     EXPECT_GT(num_wakeups_, 0);
     EXPECT_NE(scheduler_, nullptr);
     EXPECT_NE(poller_, nullptr);
-    wakeup_fd_ = *PipeWakeupFd::CreatePipeWakeupFd();
+    wakeup_fd_ = *PipeWakeupFd::CreatePipeWakeupFd(*poller_->GetSystemApi());
     handle_ = poller_->CreateHandle(
         poller_->GetSystemApi()->AdoptExternalFd(wakeup_fd_->ReadFd()), "test",
         false);

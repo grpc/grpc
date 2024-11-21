@@ -48,7 +48,7 @@ bool PollStrategyMatches(absl::string_view strategy, absl::string_view want) {
 }
 }  // namespace
 
-std::shared_ptr<PosixEventPoller> MakeDefaultPoller(SystemApi* system_api,
+std::shared_ptr<PosixEventPoller> MakeDefaultPoller(const SystemApi& system_api,
                                                     Scheduler* scheduler) {
   std::shared_ptr<PosixEventPoller> poller;
   auto strings =

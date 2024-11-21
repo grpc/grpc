@@ -17,14 +17,13 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include <array>
 #include <tuple>
 
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
+#include "file_descriptor.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h"
-#include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
-#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/strerror.h"
@@ -561,33 +560,46 @@ long SystemApi::Write(FileDescriptor fd, const void* buf, size_t count) const {
   return write(fd.fd(), buf, count);
 }
 
-std::tuple<int, FileDescriptor, FileDescriptor> SystemApi::SocketPair(
+std::pair<int, std::array<FileDescriptor, 2>> SystemApi::SocketPair(
     int domain, int type, int protocol) {
   std::array<int, 2> fds;
   int result = socketpair(domain, type, protocol, fds.data());
-  return std::make_tuple(result, AdoptExternalFd(fds[0]),
-                         AdoptExternalFd(fds[1]));
+  return {result, {AdoptExternalFd(fds[0]), AdoptExternalFd(fds[1])}};
 }
 
-bool SystemApi::SupportsWakeupFd() {
-#ifndef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
-  if (EventFdWakeupFd::IsSupported()) {
-    return true;
+absl::Status SystemApi::SetSocketNonBlocking(FileDescriptor fd) const {
+  int oldflags = Fcntl(fd, F_GETFL, 0);
+  if (oldflags < 0) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
   }
-#endif  // GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
-  return PipeWakeupFd::IsSupported();
+
+  oldflags |= O_NONBLOCK;
+
+  if (Fcntl(fd, F_SETFL, oldflags) != 0) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
+  }
+
+  return absl::OkStatus();
 }
 
-absl::StatusOr<std::unique_ptr<WakeupFd>> SystemApi::CreateWakeupFd() {
-#ifndef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
-  if (EventFdWakeupFd::IsSupported()) {
-    return EventFdWakeupFd::CreateEventFdWakeupFd();
+FileDescriptor SystemApi::EpollCreateAndCloexec() const {
+#ifdef GRPC_LINUX_EPOLL_CREATE1
+  int fd = epoll_create1(EPOLL_CLOEXEC);
+  if (fd < 0) {
+    LOG(ERROR) << "epoll_create1 unavailable";
   }
-#endif  // GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
-  if (PipeWakeupFd::IsSupported()) {
-    return PipeWakeupFd::CreatePipeWakeupFd();
+#else
+  int fd = epoll_create(MAX_EPOLL_EVENTS);
+  if (fd < 0) {
+    LOG(ERROR) << "epoll_create unavailable";
+  } else if (fcntl(fd, F_SETFD, FD_CLOEXEC) != 0) {
+    LOG(ERROR) << "fcntl following epoll_create failed";
+    return -1;
   }
-  return nullptr;
+#endif
+  return AdoptExternalFd(fd);
 }
 
 }  // namespace experimental
