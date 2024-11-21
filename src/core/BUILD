@@ -894,6 +894,7 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
@@ -8189,6 +8190,7 @@ grpc_cc_library(
         "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
+        "absl/cleanup",
         "absl/types:optional",
         "absl/types:variant",
     ],
@@ -8330,6 +8332,7 @@ grpc_cc_library(
         "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
+        "absl/cleanup",
         "absl/types:optional",
         "absl/types:variant",
     ],

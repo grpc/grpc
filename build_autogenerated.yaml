@@ -5932,6 +5932,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/cpp/server/orca/orca_service.h
   - test/cpp/interop/backend_metrics_lb_policy.h
   src:
   - src/proto/grpc/testing/empty.proto
@@ -8961,6 +8962,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/cpp/server/orca/orca_service.h
   - test/core/test_util/test_lb_policies.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/test_service_impl.h
@@ -12851,6 +12853,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/cpp/server/orca/orca_service.h
   - test/cpp/interop/server_helper.h
   src:
   - src/proto/grpc/testing/empty.proto
@@ -14616,7 +14619,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/cpp/server/orca/orca_service.h
   src:
   - src/proto/grpc/testing/xds/v3/orca_service.proto
   - third_party/googleapis/google/api/annotations.proto
@@ -14626,6 +14630,18 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - src/cpp/server/orca/orca_service.cc
   - test/cpp/end2end/orca_service_end2end_test.cc
+  deps:
+  - gtest
+  - grpc++_test_util
+- name: orca_service_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/cpp/server/orca/orca_service.h
+  src:
+  - src/cpp/server/orca/orca_service.cc
+  - test/cpp/server/orca_service_test.cc
   deps:
   - gtest
   - grpc++_test_util
