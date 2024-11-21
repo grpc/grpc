@@ -253,7 +253,11 @@ OpenTelemetryPluginImpl::ClientCallTracer::ClientCallTracer(
       arena_(arena),
       registered_method_(registered_method),
       otel_plugin_(otel_plugin),
-      scope_config_(std::move(scope_config)) {}
+      scope_config_(std::move(scope_config)) {
+  if (otel_plugin_->tracer_ != nullptr) {
+    span_ = otel_plugin_->tracer_->StartSpan();
+  }
+}
 
 OpenTelemetryPluginImpl::ClientCallTracer::~ClientCallTracer() {}
 

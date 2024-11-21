@@ -40,6 +40,7 @@
 #include "opentelemetry/metrics/observer_result.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/nostd/shared_ptr.h"
+#include "opentelemetry/trace/tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/metrics.h"
@@ -204,6 +205,7 @@ class OpenTelemetryPluginBuilderImpl {
       plugin_options_;
   std::set<absl::string_view> optional_label_keys_;
   std::shared_ptr<opentelemetry::trace::TracerProvider> tracer_provider_;
+
   std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
       text_map_propagator_;
   absl::AnyInvocable<bool(
@@ -528,6 +530,7 @@ class OpenTelemetryPluginImpl
   std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
       plugin_options_;
   std::shared_ptr<opentelemetry::trace::TracerProvider> const tracer_provider_;
+  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer> const tracer_;
   std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator> const
       text_map_propagator_;
   absl::AnyInvocable<bool(

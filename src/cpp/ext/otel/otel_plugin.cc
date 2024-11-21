@@ -32,8 +32,6 @@
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/nostd/string_view.h"
 #include "opentelemetry/nostd/variant.h"
-#include "opentelemetry/std/shared_ptr.h"
-#include "opentelemetry/std/unique_ptr.h"
 #include "opentelemetry/trace/context.h"
 #include "opentelemetry/trace/span_context.h"
 #include "src/core/client_channel/client_channel_filter.h"
@@ -45,6 +43,11 @@
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_client_call_tracer.h"
 #include "src/cpp/ext/otel/otel_server_call_tracer.h"
+
+using opentelemetry::context::propagation::TextMapPropagator;
+using opentelemetry::trace::SpanContext;
+using opentelemetry::trace::SpanId;
+using opentelemetry::trace::TraceId;
 
 namespace grpc {
 namespace internal {
@@ -85,6 +88,17 @@ absl::flat_hash_set<std::string> BaseMetrics() {
       });
   return base_metrics;
 }
+
+absl::string_view NoStdStringViewToAbslStringView(
+    opentelemetry::nostd::string_view string) {
+  return absl::string_view(string.data(), string.size());
+}
+
+opentelemetry::nostd::string_view AbslStringViewToNoStdStringView(
+    absl::string_view string) {
+  return opentelemetry::nostd::string_view(string.data(), string.size());
+}
+
 }  // namespace
 
 class OpenTelemetryPluginImpl::NPCMetricsKeyValueIterable
@@ -228,8 +242,7 @@ OpenTelemetryPluginBuilderImpl::SetTracerProvider(
 
 OpenTelemetryPluginBuilderImpl&
 OpenTelemetryPluginBuilderImpl::SetTextMapPropagator(
-    std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
-        text_map_propagator) {
+    std::unique_ptr<TextMapPropagator> text_map_propagator) {
   text_map_propagator_ = std::move(text_map_propagator);
   return *this;
 }
@@ -253,7 +266,8 @@ absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
           metrics_, meter_provider_, std::move(target_attribute_filter_),
           std::move(generic_method_attribute_filter_),
           std::move(server_selector_), std::move(plugin_options_),
-          std::move(optional_label_keys_), std::move(channel_scope_filter_)));
+          std::move(optional_label_keys_), std::move(tracer_provider_),
+          std::move(text_map_propagator_), std::move(channel_scope_filter_)));
   return absl::OkStatus();
 }
 
@@ -267,6 +281,7 @@ OpenTelemetryPluginBuilderImpl::Build() {
       metrics_, meter_provider_, std::move(target_attribute_filter_),
       std::move(generic_method_attribute_filter_), std::move(server_selector_),
       std::move(plugin_options_), std::move(optional_label_keys_),
+      std::move(tracer_provider_), std::move(text_map_propagator_),
       std::move(channel_scope_filter_));
 }
 
@@ -399,8 +414,7 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
         plugin_options,
     const std::set<absl::string_view>& optional_label_keys,
     std::shared_ptr<opentelemetry::trace::TracerProvider> tracer_provider,
-    std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
-        text_map_propagator,
+    std::unique_ptr<TextMapPropagator> text_map_propagator,
     absl::AnyInvocable<
         bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
         channel_scope_filter)
@@ -411,6 +425,11 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
           std::move(generic_method_attribute_filter)),
       plugin_options_(std::move(plugin_options)),
       tracer_provider_(std::move(tracer_provider)),
+      tracer_(
+          tracer_provider_ != nullptr
+              ? tracer_provider_->GetTracer("grpc-c++", GRPC_CPP_VERSION_STRING)
+              : opentelemetry::nostd::shared_ptr<
+                    opentelemetry::trace::Tracer>()),
       text_map_propagator_(std::move(text_map_propagator)),
       channel_scope_filter_(std::move(channel_scope_filter)) {
   auto meter = meter_provider_->GetMeter("grpc-c++", GRPC_CPP_VERSION_STRING);
@@ -1056,8 +1075,7 @@ void OpenTelemetryPluginImpl::AddToServerBuilder(grpc::ServerBuilder* builder) {
   builder->SetOption(std::make_unique<ServerBuilderOption>(shared_from_this()));
 }
 
-class GrpcTraceBinTextMapPropagator
-    : public opentelemetry::context::propagation::TextMapPropagator {
+class GrpcTraceBinTextMapPropagator : public TextMapPropagator {
  public:
   opentelemetry::context::Context Extract(
       const opentelemetry::context::propagation::TextMapCarrier& carrier,
@@ -1070,7 +1088,7 @@ class GrpcTraceBinTextMapPropagator
         &base64_escaped_val);
     return opentelemetry::trace::SetSpan(
         context, std::shared_ptr<opentelemetry::trace::Span>(
-                     new opentelemetry::trace::DefaultSpan(
+                     new (std::nothrow) opentelemetry::trace::DefaultSpan(
                          GrpcTraceBinHeaderToSpanContext(base64_escaped_val))));
   }
 
@@ -1081,74 +1099,110 @@ class GrpcTraceBinTextMapPropagator
     if (!span_context.IsValid()) {
       return;
     }
-    carrier.Set(
-        "grpc-trace-bin",
-        // gRPC C++ does not have RTTI, so we encode bytes to String to comply
-        // with the TextMapSetter API.
-        absl::Base64Escape(
-            absl::string_view(SpanContextToGrpcTraceBinHeader(span_context))
-                .data()),
-        kGrpcTraceBinHeaderLen);
+    carrier.Set("grpc-trace-bin",
+                // gRPC C++ does not have RTTI, so we encode bytes to String to
+                // comply with the TextMapSetter API.
+                absl::Base64Escape(absl::string_view(
+                    reinterpret_cast<char*>(
+                        SpanContextToGrpcTraceBinHeader(span_context).data()),
+                    kGrpcTraceBinHeaderLen)));
+  }
+
+  bool Fields(opentelemetry::nostd::function_ref<bool(
+                  opentelemetry::nostd::string_view)>) const noexcept override {
+    return true;
   }
 
  private:
   static constexpr int kGrpcTraceBinHeaderLen = 29;
 
   std::array<uint8_t, kGrpcTraceBinHeaderLen> SpanContextToGrpcTraceBinHeader(
-      const opentelemetry::trace::SpanContext& ctx) {
+      const SpanContext& ctx) {
     std::array<uint8_t, kGrpcTraceBinHeaderLen> header;
     header[0] = 0;
     header[1] = 0;
-    ctx.trace_id().CopyBytesTo(&header[2], 16);
+    ctx.trace_id().CopyBytesTo(
+        opentelemetry::nostd::span<uint8_t, 16>(&header[2], 16));
     header[18] = 1;
-    ctx.span_id().CopyBytesTo(&header[19], 8);
+    ctx.span_id().CopyBytesTo(
+        opentelemetry::nostd::span<uint8_t, 8>(&header[19], 8));
     header[27] = 2;
     header[28] = ctx.trace_flags().flags();
     return header;
   }
 
-  opentelemetry::trace::SpanContext GrpcTraceBinHeaderToSpanContext(
-      nostd::string_view header) {
+  SpanContext GrpcTraceBinHeaderToSpanContext(
+      opentelemetry::nostd::string_view header) {
     if (header.size() != kGrpcTraceBinHeaderLen || header[0] != 0 ||
         header[1] != 0 || header[18] != 1 || header[27] != 2) {
       return SpanContext::GetInvalid();
     }
-    return SpanContext(TraceId(&header[2], 16), SpanId(&header[19], 8),
-                       TraceFlags(header[28]), /*is_remote*/ true);
+    return SpanContext(TraceId(opentelemetry::nostd::span<const uint8_t, 16>(
+                           reinterpret_cast<const uint8_t*>(&header[2]), 16)),
+                       SpanId(opentelemetry::nostd::span<const uint8_t, 8>(
+                           reinterpret_cast<const uint8_t*>(&header[19]), 8)),
+                       opentelemetry::trace::TraceFlags(header[28]),
+                       /*is_remote*/ true);
   }
 };
 
-class GrpcTextMapCarrier : public opentelemetry::context::TextMapCarrier {
+class GrpcTextMapCarrier
+    : public opentelemetry::context::propagation::TextMapCarrier {
  public:
-  GrpcTextMapCarrier(grpc_metadata_batch* metadata) : metadata_(metadata) {}
+  explicit GrpcTextMapCarrier(grpc_metadata_batch* metadata)
+      : metadata_(metadata) {}
 
-  nostd::string_view Get(nostd::string_view key) {
-    if (key == "grpc-trace-bin") {
-      return absl::Base64Escape(metadata_->GetStringValue(key).value_or(""));
-    } else if (absl::EndsWith(key, "-bin")) {
+  opentelemetry::nostd::string_view Get(
+      opentelemetry::nostd::string_view key) const noexcept override {
+    absl::string_view absl_key = NoStdStringViewToAbslStringView(key);
+    std::string scratch;
+    std::string ret_val;
+    if (absl_key == "grpc-trace-bin") {
+      ret_val = absl::Base64Escape(
+          metadata_->GetStringValue(absl_key, &scratch).value_or(""));
+    } else if (absl::EndsWith(absl_key, "-bin")) {
       // Maybe ok to support a custom binary propagator. Needs based64 encoding
       // validation if so. Not for now.
-      gpr_log(GPR_ERROR,
-              "Binary propagator other than GrpcTraceBinPropagator is not "
-              "supported.");
+      LOG(ERROR) << "Binary propagator other than GrpcTraceBinPropagator is "
+                    "not supported.";
+    } else {
+      ret_val = std::string(AbslStringViewToNoStdStringView(
+          metadata_->GetStringValue(absl_key, &scratch).value_or("")));
+    }
+    if (ret_val.empty()) {
       return "";
     }
-    return metadata_->GetStringValue(key);
+    // Store the string on the arena since we are returning a string_view.
+    std::string* arena_stored_string =
+        grpc_core::GetContext<grpc_core::Arena>()->ManagedNew<std::string>(
+            ret_val);
+    return *arena_stored_string;
+    return AbslStringViewToNoStdStringView(
+        metadata_->GetStringValue(absl_key, &scratch).value_or(""));
   }
 
-  void Set(nostd::string_view key, nostd::string_view value) {
-    if (key == "grpc-trace-bin") {
-      metadata_->Set(
-          grpc_core::GrpcTraceBinMetadata(),
-          grpc_core::Slice::FromCopiedString(absl::Base64Unescape(value)));
-    } else if (absl::EndsWith(key, "-bin")) {
-      gpr_log(GPR_ERROR,
-              "Binary propagator other than GrpcTraceBinPropagator is not "
-              "supported.");
+  void Set(opentelemetry::nostd::string_view key,
+           opentelemetry::nostd::string_view value) noexcept override {
+    absl::string_view absl_key = NoStdStringViewToAbslStringView(key);
+    absl::string_view absl_value = NoStdStringViewToAbslStringView(value);
+    if (absl_key == "grpc-trace-bin") {
+      std::string unescaped_value;
+      if (!absl::Base64Unescape(absl_value, &unescaped_value)) {
+        return;
+      }
+      metadata_->Set(grpc_core::GrpcTraceBinMetadata(),
+                     grpc_core::Slice::FromCopiedString(unescaped_value));
+    } else if (absl::EndsWith(absl_key, "-bin")) {
+      LOG(ERROR) << "Binary propagator other than GrpcTraceBinPropagator is "
+                    "not supported.";
       return;
     } else {
       // A propagator other than GrpcTraceBinTextMapPropagator was used.
-      metadata_->Append(key, grpc_core::Slice::FromCopiedString(value));
+      metadata_->Append(
+          absl_key, grpc_core::Slice::FromCopiedString(absl_value),
+          [](absl::string_view, const grpc_core::Slice&) {
+            LOG(ERROR) << "Failed to add tracing information in metadata.";
+          });
     }
   }
 
@@ -1246,8 +1300,7 @@ OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetTracerProvider(
 }
 
 OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetTextMapPropagator(
-    std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
-        text_map_propagator) {
+    std::unique_ptr<TextMapPropagator> text_map_propagator) {
   impl_->SetTextMapPropagator(std::move(text_map_propagator));
   return *this;
 }
@@ -1268,8 +1321,7 @@ OpenTelemetryPluginBuilder::Build() {
   return impl_->Build();
 }
 
-std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
-MakeGrpcTraceBinTextMapPropagator() {
+std::unique_ptr<TextMapPropagator> MakeGrpcTraceBinTextMapPropagator() {
   return std::make_unique<internal::GrpcTraceBinTextMapPropagator>();
 }
 
