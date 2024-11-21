@@ -1045,9 +1045,6 @@ regexes:
   - `thread_id: \d+ soak iteration: \d+ elapsed_ms: \d+ peer: \S+ server_uri: 
   \S+ failed`
 
-- Thread-specific logs will include the thread_id, helping to track performance
-  across threads.
-
 This test must be configurable via a few different command line flags:
 
 * `soak_iterations`: Controls the number of RPCs to perform. This should
