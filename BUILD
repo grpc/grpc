@@ -2343,6 +2343,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
+        "backoff",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
