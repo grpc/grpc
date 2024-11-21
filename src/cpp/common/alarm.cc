@@ -52,7 +52,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
       : event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()),
         backoff_(grpc_core::BackOff::Options()
                      .set_initial_backoff(grpc_core::Duration::Milliseconds(10))
-                     .set_multiplier(2)
+                     .set_multiplier(1.5)
                      .set_max_backoff(grpc_core::Duration::Milliseconds(100))
                      .set_jitter(0.2)),
         cq_(nullptr),
