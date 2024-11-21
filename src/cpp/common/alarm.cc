@@ -35,6 +35,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/util/backoff.h"
 #include "src/core/util/time.h"
 
 namespace grpc {
@@ -49,6 +50,11 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
  public:
   AlarmImpl()
       : event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()),
+        backoff_(grpc_core::BackOff::Options()
+                     .set_initial_backoff(grpc_core::Duration::Milliseconds(10))
+                     .set_multiplier(2)
+                     .set_max_backoff(grpc_core::Duration::Milliseconds(100))
+                     .set_jitter(0.2)),
         cq_(nullptr),
         tag_(nullptr) {
     gpr_ref_init(&refs_, 1);
@@ -61,14 +67,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     return true;
   }
   void Set(grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag) {
-    if (queued_.load() != executed_.load()) {
-      // Slow path on cancellation. If the timer can't be cancelled, wait
-      // until it has completed.
-      // TODO(C++20): atomic wait?
-      while (queued_.load() != executed_.load()) {
-        absl::SleepFor(absl::Milliseconds(10));
-      }
-    }
+    WaitForExecution();
     grpc_core::ExecCtx exec_ctx;
     GRPC_CQ_INTERNAL_REF(cq->cq(), "alarm");
     cq_ = cq->cq();
@@ -84,14 +83,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
         [this] { OnCQAlarm(absl::OkStatus()); });
   }
   void Set(gpr_timespec deadline, std::function<void(bool)> f) {
-    if (queued_.load() != executed_.load()) {
-      // Slow path on cancellation. If the timer can't be cancelled, wait
-      // until it has completed.
-      // TODO(C++20): atomic wait?
-      while (queued_.load() != executed_.load()) {
-        absl::SleepFor(absl::Milliseconds(10));
-      }
-    }
+    WaitForExecution();
     grpc_core::ExecCtx exec_ctx;
     // Don't use any CQ at all. Instead just use the timer to fire the function
     callback_ = std::move(f);
@@ -154,6 +146,21 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     }
   }
 
+  // Waits for either the previous CQ event being read by the user or callback
+  // is executed before doing another Set.
+  void WaitForExecution() {
+    if (queued_.load() != executed_.load()) {
+      // Slow path on cancellation. If the timer can't be cancelled, wait
+      // until it has completed.
+      // TODO(C++20): atomic wait?
+      while (queued_.load() != executed_.load()) {
+        absl::SleepFor(
+            absl::Milliseconds(backoff_.NextAttemptDelay().millis()));
+      }
+    }
+    backoff_.Reset();
+  }
+
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::atomic<bool> cq_armed_{false};
   EventEngine::TaskHandle cq_timer_handle_ = EventEngine::TaskHandle::kInvalid;
@@ -163,6 +170,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
   gpr_refcount refs_;
   std::atomic<int> queued_{0};
   std::atomic<int> executed_{0};
+  grpc_core::BackOff backoff_;
   // completion queue where events about this alarm will be posted
   grpc_completion_queue* cq_;
   void* tag_;
