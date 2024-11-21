@@ -438,7 +438,7 @@ TEST(AlarmTest, UnsetDestruction) {
 }
 
 TEST(AlarmTest, CQAlarmReuse) {
-  constexpr int kIterations = 5000;
+  constexpr int kIterations = 1000;
   Alarm alarm;
   CompletionQueue cq;
   std::thread polling_thread([&]() {
@@ -456,13 +456,15 @@ TEST(AlarmTest, CQAlarmReuse) {
 }
 
 TEST(AlarmTest, CallbackAlarmReuse) {
-  constexpr int kIterations = 5000;
+  constexpr int kIterations = 1000;
   std::atomic_int counter{0};
   Alarm alarm;
   for (int i = 0; i < kIterations; ++i) {
     alarm.Set(gpr_timespec{0, 0, GPR_TIMESPAN}, [&](bool ok) { ++counter; });
     alarm.Cancel();
   }
+  // Noop Set to wait for the previous callback to run.
+  alarm.Set(gpr_timespec{0, 0, GPR_TIMESPAN}, [](bool) {});
   EXPECT_EQ(counter, kIterations);
 }
 

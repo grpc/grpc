@@ -85,9 +85,18 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
         [this] { OnCQAlarm(absl::OkStatus()); });
   }
   void Set(gpr_timespec deadline, std::function<void(bool)> f) {
+    if (queued_.load() != executed_.load()) {
+      // Slow path on cancellation. If the timer can't be cancelled, wait
+      // until it has completed.
+      // TODO(C++20): atomic wait?
+      while (queued_.load() != executed_.load()) {
+        absl::SleepFor(absl::Milliseconds(10));
+      }
+    }
     grpc_core::ExecCtx exec_ctx;
     // Don't use any CQ at all. Instead just use the timer to fire the function
     callback_ = std::move(f);
+    queued_++;
     Ref();
     CHECK(callback_armed_.exchange(true) == false);
     CHECK(!cq_armed_.load());
@@ -135,6 +144,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     callback_(is_ok);
+    executed_++;
     Unref();
   }
 
