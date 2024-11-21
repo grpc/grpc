@@ -35,7 +35,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/util/notification.h"
 #include "src/core/util/time.h"
 
 namespace grpc {
