@@ -16,9 +16,10 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
+#include <sys/epoll.h>
+#include <sys/eventfd.h>
 
 #include <array>
-#include <tuple>
 
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
@@ -600,6 +601,34 @@ FileDescriptor SystemApi::EpollCreateAndCloexec() const {
   }
 #endif
   return AdoptExternalFd(fd);
+}
+
+std::pair<int, std::array<FileDescriptor, 2>> SystemApi::Pipe() const {
+  std::array<int, 2> fds;
+  int status = pipe(fds.data());
+  return {status, {AdoptExternalFd(fds[0]), AdoptExternalFd(fds[1])}};
+}
+
+long SystemApi::EventFdRead(FileDescriptor fd, uint64_t* value) const {
+  return eventfd_read(fd.fd(), value);
+}
+
+int SystemApi::EpollCtl(FileDescriptor epfd, int op, FileDescriptor fd,
+                        struct epoll_event* event) const {
+  return epoll_ctl(epfd.fd(), op, fd.fd(), event);
+}
+
+int SystemApi::EpollWait(FileDescriptor epfd, struct epoll_event* events,
+                         int maxevents, int timeout) const {
+  return epoll_wait(epfd.fd(), events, maxevents, timeout);
+}
+
+FileDescriptor SystemApi::EventFd(unsigned int initval, int flags) const {
+  return AdoptExternalFd(eventfd(initval, flags));
+}
+
+long SystemApi::EventFdWrite(FileDescriptor fd, uint64_t value) const {
+  return eventfd_write(fd.fd(), value);
 }
 
 }  // namespace experimental

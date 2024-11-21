@@ -54,6 +54,7 @@ class SystemApi {
   int Connect(FileDescriptor sockfd, const struct sockaddr* addr,
               socklen_t addrlen) const;
   long EventFdRead(FileDescriptor fd, uint64_t* value) const;
+  long EventFdWrite(FileDescriptor fd, uint64_t value) const;
   int EpollCtl(FileDescriptor epfd, int op, FileDescriptor fd,
                struct epoll_event* event) const;
   int EpollWait(FileDescriptor epfd, struct epoll_event* events, int maxevents,
@@ -74,7 +75,6 @@ class SystemApi {
   int SetSockOpt(FileDescriptor fd, int level, int optname, const void* optval,
                  socklen_t optlen) const;
   int Shutdown(FileDescriptor sockfd, int how) const;
-  long EventFdWrite(FileDescriptor fd, uint64_t value) const;
   long Write(FileDescriptor fd, const void* buf, size_t count) const;
 
   absl::Status SetSocketNoSigpipeIfPossible(FileDescriptor fd) const;
