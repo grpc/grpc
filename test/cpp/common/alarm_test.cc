@@ -388,8 +388,8 @@ TEST(AlarmTest, CallbackCancellationLocked) {
               c->completed = true;
               c->cv.notify_one();
             });
-  alarm.Cancel();
   std::unique_lock<std::mutex> l(c->mu);
+  alarm.Cancel();
   EXPECT_TRUE(c->cv.wait_until(
       l, std::chrono::system_clock::now() + std::chrono::seconds(1),
       [c] { return c->completed; }));
