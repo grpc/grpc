@@ -1004,10 +1004,12 @@ Client asserts:
 
 ### rpc_soak
 
-The client performs many large_unary RPCs in sequence over the same channel.
+The client performs many large_unary RPCs over the same channel.
 The total number of RPCs to execute is controlled by the `soak_iterations` 
 parameter, which defaults to 10. The number of threads used to execute RPCs 
 is controlled by `soak_num_threads`. By default, `soak_num_threads` is set to 1. 
+Each thread processes RPCs sequentially. If multiple threads are used, RPCs can 
+be executed concurrently, with each thread handling its own set of RPCs.
 
 The client records the latency and status of each RPC in 
 thread-specific data structure, which are later aggregated to form the overall 
@@ -1071,11 +1073,9 @@ This test must be configurable via a few different command line flags:
 
 * `soak_num_threads`: Specifies the number of threads to use for concurrently 
   executing the soak test. Each thread performs `soak_iterations / soak_num_threads`
-  RPCs.
-
-This value defaults to 1 (i.e., no concurrency) but can be 
+  RPCs. This value defaults to 1 (i.e., no concurrency) but can be 
   increased for concurrent execution. The total soak_iterations must be 
-  divisible by soak_num_threads.
+  divisible by soak_num_threads; otherwise, the client should fail.
 
 The following is optional but encouraged to improve debuggability:
 
