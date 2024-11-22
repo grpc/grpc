@@ -15,9 +15,53 @@
 #ifndef CG_CHUNKER_H
 #define CG_CHUNKER_H
 
+#include <cstdint>
+
 #include "frame.h"
 namespace grpc_core {
 namespace chaotic_good {
+
+namespace message_chunker_detail {
+struct ChunkResult {
+  MessageChunkFrame frame;
+  bool done;
+};
+class PayloadChunker {
+ public:
+  PayloadChunker(uint32_t max_chunk_size, uint32_t alignment,
+                 uint32_t stream_id, SliceBuffer payload)
+      : max_chunk_size_(max_chunk_size),
+        alignment_(alignment),
+        stream_id_(stream_id),
+        payload_(std::move(payload)) {}
+
+  ChunkResult NextChunk() {
+    auto remaining = payload_.Length();
+    ChunkResult result;
+    if (remaining > max_chunk_size_) {
+      auto take = max_chunk_size_;
+      if (remaining / 2 < max_chunk_size_) {
+        take = remaining / 2;
+        if (take % alignment_ != 0) take += alignment_ - (take % alignment_);
+      }
+      payload_.MoveFirstNBytesIntoSliceBuffer(take, result.frame.payload);
+      result.frame.stream_id = stream_id_;
+      result.done = false;
+    } else {
+      result.frame.payload = std::move(payload_);
+      result.frame.stream_id = stream_id_;
+      result.done = true;
+    }
+    return result;
+  }
+
+ private:
+  uint32_t max_chunk_size_;
+  uint32_t alignment_;
+  uint32_t stream_id_;
+  SliceBuffer payload_;
+};
+}  // namespace message_chunker_detail
 
 class MessageChunker {
  public:
@@ -32,38 +76,19 @@ class MessageChunker {
           BeginMessageFrame begin;
           begin.payload.set_length(message->payload()->Length());
           begin.stream_id = stream_id;
-          return Seq(
-              output.Send(std::move(begin)),
-              Loop([max_chunk_size = max_chunk_size_, alignment = alignment_,
-                    stream_id, payload = std::move(*message->payload()),
-                    output]() mutable {
-                auto remaining = payload.Length();
-                return If(
-                    remaining > max_chunk_size,
-                    [&]() {
-                      auto take = max_chunk_size;
-                      if (remaining / 2 < max_chunk_size) {
-                        take = remaining / 2;
-                        take += (take % alignment == 0
-                                     ? 0
-                                     : alignment - (take % alignment));
-                      }
-                      MessageChunkFrame chunk;
-                      payload.MoveFirstNBytesIntoSliceBuffer(take,
-                                                             chunk.payload);
-                      chunk.stream_id = stream_id;
-                      return Map(
-                          output.Send(std::move(chunk)),
-                          [](bool) -> LoopCtl<bool> { return Continue{}; });
-                    },
-                    [&]() {
-                      MessageChunkFrame chunk;
-                      chunk.payload = std::move(payload);
-                      chunk.stream_id = stream_id;
-                      return Map(output.Send(std::move(chunk)),
-                                 [](bool x) -> LoopCtl<bool> { return x; });
-                    });
-              }));
+          return Seq(output.Send(std::move(begin)),
+                     Loop([chunker = message_chunker_detail::PayloadChunker(
+                               max_chunk_size_, alignment_, stream_id,
+                               std::move(*message->payload())),
+                           output]() mutable {
+                       auto next = chunker.NextChunk();
+                       return Map(output.Send(std::move(next.frame)),
+                                  [done = next.done](bool x) -> LoopCtl<bool> {
+                                    if (!done) return Continue{};
+                                    return x;
+                                  });
+                     }));
+
         },
         [&]() {
           MessageFrame frame;
@@ -78,11 +103,6 @@ class MessageChunker {
     return max_chunk_size_ == 0 ||
            message.payload()->Length() > max_chunk_size_;
   }
-
-  struct ChunkResult {
-    MessageChunkFrame frame;
-    bool done;
-  };
 
   const uint32_t max_chunk_size_;
   const uint32_t alignment_;

@@ -25,7 +25,7 @@
 #include "absl/random/random.h"
 #include "absl/status/statusor.h"
 #include "src/core/client_channel/connector.h"
-#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
+#include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"

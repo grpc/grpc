@@ -15,6 +15,9 @@
 #ifndef CG_REASS_H
 #define CG_REASS_H
 
+namespace grpc_core {
+namespace chaotic_good {
+
 class MessageReassembly {
  public:
   void FailCall(CallInitiator& call, absl::string_view msg) {
@@ -102,5 +105,8 @@ class MessageReassembly {
   };
   std::unique_ptr<ChunkReceiver> chunk_receiver_;
 };
+
+}  // namespace chaotic_good
+}  // namespace grpc_core
 
 #endif

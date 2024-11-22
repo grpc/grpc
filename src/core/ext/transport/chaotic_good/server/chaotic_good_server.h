@@ -29,7 +29,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/channelz/channelz.h"
-#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
+#include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
