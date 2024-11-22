@@ -548,6 +548,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   /// True if we count stream allocation (instead of HTTP2 concurrency) for
   /// MAX_CONCURRENT_STREAMS
   bool max_concurrent_streams_overload_protection = false;
+  bool max_concurrent_streams_reject_on_client = false;
 
   // What percentage of rst_stream frames on the server should cause a ping
   // frame to be generated.
@@ -697,6 +698,11 @@ struct grpc_chttp2_stream {
 // against MAX_CONCURRENT_STREAMS
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION \
   "grpc.http.overload_protection"
+
+// EXPERIMENTAL: Fail requests at the client if the client is over max
+// concurrent streams, so they may be retried elsewhere.
+#define GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT \
+  "grpc.http.max_concurrent_streams_reject_on_client"
 
 /// Transport writing call flow:
 /// grpc_chttp2_initiate_write() is called anywhere that we know bytes need to
