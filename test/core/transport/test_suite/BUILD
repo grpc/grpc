@@ -33,10 +33,10 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "chaotic_good",
+    name = "chaotic_good_fixture_helpers",
     testonly = 1,
-    srcs = ["chaotic_good.cc"],
-    hdrs = ["chaotic_good.h"],
+    srcs = ["chaotic_good_fixture_helpers.cc"],
+    hdrs = ["chaotic_good_fixture_helpers.h"],
     external_deps = [
         "absl/log:check",
         "gtest",
@@ -61,7 +61,7 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
-        "chaotic_good",
+        "chaotic_good_fixture_helpers",
     ],
     alwayslink = 1,
 )
@@ -75,7 +75,7 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
-        "chaotic_good",
+        "chaotic_good_fixture_helpers",
     ],
     alwayslink = 1,
 )
