@@ -142,11 +142,6 @@ class SystemApi {
   absl::Status SetSocketNonBlocking(FileDescriptor fd) const;
 
  private:
-#ifndef GRPC_LINUX_SOCKETUTILS
-  FileDescriptor Accept4(FileDescriptor sockfd, struct sockaddr* addr,
-                         socklen_t* addrlen, int flags) const;
-#endif
-
 #if GPR_LINUX == 1
 // For Linux, it will be detected to support TCP_USER_TIMEOUT
 #ifndef TCP_USER_TIMEOUT
