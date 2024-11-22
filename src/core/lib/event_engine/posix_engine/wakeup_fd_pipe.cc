@@ -38,10 +38,6 @@ namespace experimental {
 
 #ifdef GRPC_POSIX_WAKEUP_FD
 
-namespace {
-
-}  // namespace
-
 absl::Status PipeWakeupFd::Init(const SystemApi& system_api) {
   auto r = system_api.Pipe();
   if (0 != r.first) {
