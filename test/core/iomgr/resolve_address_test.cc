@@ -31,7 +31,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
