@@ -11573,7 +11573,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/transport/test_suite/call_content.cc
     test/core/transport/test_suite/call_shapes.cc
-    test/core/transport/test_suite/chaotic_good.cc
+    test/core/transport/test_suite/chaotic_good_fixture_helpers.cc
     test/core/transport/test_suite/chaotic_good_single_connection_fixture.cc
     test/core/transport/test_suite/no_op.cc
     test/core/transport/test_suite/stress.cc
@@ -34088,8 +34088,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/transport/test_suite/call_content.cc
     test/core/transport/test_suite/call_shapes.cc
-    test/core/transport/test_suite/chaotic_good.cc
     test/core/transport/test_suite/chaotic_good_fixture.cc
+    test/core/transport/test_suite/chaotic_good_fixture_helpers.cc
     test/core/transport/test_suite/no_op.cc
     test/core/transport/test_suite/stress.cc
     test/core/transport/test_suite/transport_test.cc
