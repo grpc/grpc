@@ -788,7 +788,7 @@ long SystemApi::Write(FileDescriptor fd, const void* buf, size_t count) const {
   grpc_core::Crash("unimplemented");
 }
 
-std::tuple<int, FileDescriptor, FileDescriptor> SystemApi::SocketPair(
+std::pair<int, std::array<FileDescriptor, 2>> SystemApi::SocketPair(
     int domain, int type, int protocol) {
   grpc_core::Crash("unimplemented");
 }
