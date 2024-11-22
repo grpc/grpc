@@ -287,6 +287,19 @@ void AbslStringify(Sink& sink, const Poll<T>& poll) {
 }
 
 template <typename Sink, typename T>
+void AbslStringify(Sink& sink, const Poll<absl::StatusOr<T>>& poll) {
+  if (poll.pending()) {
+    absl::Format(&sink, "<<pending>>");
+    return;
+  }
+  if (poll.value().ok()) {
+    absl::Format(&sink, "%v", *poll.value());
+  } else {
+    absl::Format(&sink, "%v", poll.value().status());
+  }
+}
+
+template <typename Sink, typename T>
 void AbslStringify(Sink& sink, const Poll<absl::optional<T>>& poll) {
   if (poll.pending()) {
     absl::Format(&sink, "<<pending>>");
