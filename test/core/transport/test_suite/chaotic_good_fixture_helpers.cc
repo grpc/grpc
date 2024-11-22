@@ -14,11 +14,15 @@
 
 #include "test/core/transport/test_suite/chaotic_good_fixture_helpers.h"
 
+using grpc_event_engine::experimental::EventEngine;
+using grpc_event_engine::experimental::FuzzingEventEngine;
+using grpc_event_engine::experimental::MemoryQuotaBasedMemoryAllocatorFactory;
+using grpc_event_engine::experimental::URIToResolvedAddress;
+
 namespace grpc_core {
 
-EndpointPair CreateEndpointPair(
-    grpc_event_engine::experimental::FuzzingEventEngine* event_engine,
-    ResourceQuota* resource_quota, int port) {
+EndpointPair CreateEndpointPair(FuzzingEventEngine* event_engine,
+                                ResourceQuota* resource_quota, int port) {
   std::unique_ptr<EventEngine::Endpoint> client_endpoint;
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
 

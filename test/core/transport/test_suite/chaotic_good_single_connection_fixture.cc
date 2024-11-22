@@ -14,6 +14,8 @@
 
 #include "test/core/transport/test_suite/chaotic_good_fixture_helpers.h"
 
+using grpc_event_engine::experimental::EventEngine;
+
 namespace grpc_core {
 
 TRANSPORT_FIXTURE(ChaoticGoodSingleConnection) {
