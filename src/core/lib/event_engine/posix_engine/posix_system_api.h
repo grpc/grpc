@@ -58,7 +58,7 @@ class SystemApi {
 
   std::pair<int, std::array<FileDescriptor, 2>> Pipe() const;
   std::pair<int, std::array<FileDescriptor, 2>> SocketPair(int domain, int type,
-                                                           int protocol);
+                                                           int protocol) const;
 
   int Bind(FileDescriptor fd, const struct sockaddr* addr,
            socklen_t addrlen) const;

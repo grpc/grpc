@@ -19,12 +19,10 @@
 #include <grpc/impl/channel_arg_names.h>
 
 #include <algorithm>
-#include <chrono>
 #include <list>
 #include <memory>
 #include <string>
 #include <thread>
-#include <type_traits>
 #include <vector>
 
 #include "absl/log/check.h"
@@ -74,8 +72,8 @@ struct Connection {
 
 std::list<Connection> CreateConnectedEndpoints(
     PosixEventPoller& poller, bool is_zero_copy_enabled, int num_connections,
-    std::shared_ptr<EventEngine> posix_ee,
-    std::shared_ptr<EventEngine> oracle_ee) {
+    const std::shared_ptr<EventEngine>& posix_ee,
+    const std::shared_ptr<EventEngine>& oracle_ee) {
   std::list<Connection> connections;
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
@@ -103,7 +101,7 @@ std::list<Connection> CreateConnectedEndpoints(
   ChannelArgsEndpointConfig config(args);
   auto listener = oracle_ee->CreateListener(
       std::move(accept_cb),
-      [](absl::Status status) { ASSERT_TRUE(status.ok()); }, config,
+      [](const absl::Status& status) { ASSERT_TRUE(status.ok()); }, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
   CHECK_OK(listener);
 
@@ -126,7 +124,7 @@ std::list<Connection> CreateConnectedEndpoints(
         CreatePosixEndpoint(
             handle,
             PosixEngineClosure::TestOnlyToClosure(
-                [&poller](absl::Status /*status*/) {
+                [&poller](const absl::Status& /*status*/) {
                   if (--g_num_active_connections == 0) {
                     poller.Kick();
                   }
@@ -200,7 +198,7 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
         std::make_unique<grpc_event_engine::experimental::TestScheduler>(
             posix_ee_.get());
     EXPECT_NE(scheduler_, nullptr);
-    poller_ = MakeDefaultPoller(&system_api_, scheduler_.get());
+    poller_ = MakeDefaultPoller(system_api_, scheduler_.get());
     posix_ee_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(poller_);
     EXPECT_NE(posix_ee_, nullptr);
     scheduler_->ChangeCurrentEventEngine(posix_ee_.get());
