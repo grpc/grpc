@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_CORE_TRANSPORT_TEST_SUITE_CHAOTIC_GOOD_H
-#define TEST_CORE_TRANSPORT_TEST_SUITE_CHAOTIC_GOOD_H
+#ifndef GRPC_TEST_CORE_TRANSPORT_TEST_SUITE_CHAOTIC_GOOD_H
+#define GRPC_TEST_CORE_TRANSPORT_TEST_SUITE_CHAOTIC_GOOD_H
 
 #include <memory>
 
@@ -56,4 +56,4 @@ EndpointPair CreateEndpointPair(
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_TEST_CORE_TRANSPORT_TEST_SUITE_CHAOTIC_GOOD_H
