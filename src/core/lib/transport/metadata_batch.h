@@ -472,7 +472,7 @@ struct LbCostBinMetadata {
 struct W3CTraceParentMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
-  using CompressionTraits = FrequentKeyWithNoValueCompressionCompressor;
+  using CompressionTraits = NoCompressionCompressor;
   static absl::string_view key() { return "traceparent"; }
 };
 

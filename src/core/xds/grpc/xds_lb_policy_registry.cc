@@ -33,7 +33,7 @@
 #include "envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h"
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"

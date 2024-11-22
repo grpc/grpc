@@ -516,11 +516,12 @@ class FixtureWithTracing final : public CoreTestFixture {
   std::unique_ptr<CoreTestFixture> fixture_;
 };
 
-class ChaoticGoodFixture final : public CoreTestFixture {
+class ChaoticGoodFixture : public CoreTestFixture {
  public:
-  explicit ChaoticGoodFixture(std::string localaddr = JoinHostPort(
+  explicit ChaoticGoodFixture(int data_connections = 1,
+                              std::string localaddr = JoinHostPort(
                                   "localhost", grpc_pick_unused_port_or_die()))
-      : localaddr_(std::move(localaddr)) {}
+      : data_connections_(data_connections), localaddr_(std::move(localaddr)) {}
 
  protected:
   const std::string& localaddr() const { return localaddr_; }
@@ -529,7 +530,11 @@ class ChaoticGoodFixture final : public CoreTestFixture {
   grpc_server* MakeServer(
       const ChannelArgs& args, grpc_completion_queue* cq,
       absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
-    auto* server = grpc_server_create(args.ToC().get(), nullptr);
+    auto* server = grpc_server_create(
+        args.Set(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS, data_connections_)
+            .ToC()
+            .get(),
+        nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
     CHECK(grpc_server_add_chaotic_good_port(server, localaddr_.c_str()));
     pre_server_start(server);
@@ -545,7 +550,18 @@ class ChaoticGoodFixture final : public CoreTestFixture {
     return client;
   }
 
+  int data_connections_;
   std::string localaddr_;
+};
+
+class ChaoticGoodSingleConnectionFixture final : public ChaoticGoodFixture {
+ public:
+  ChaoticGoodSingleConnectionFixture() : ChaoticGoodFixture(1) {}
+};
+
+class ChaoticGoodManyConnectionFixture final : public ChaoticGoodFixture {
+ public:
+  ChaoticGoodManyConnectionFixture() : ChaoticGoodFixture(16) {}
 };
 
 #ifdef GRPC_POSIX_WAKEUP_FD

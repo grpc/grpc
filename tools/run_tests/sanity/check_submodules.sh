@@ -26,7 +26,7 @@ want_submodules=$(mktemp /tmp/submXXXXXX)
 git submodule | sed 's/+//g' | awk '{ print $2 " " $1 }' | sort >"$submodules"
 cat <<EOF | sort >"$want_submodules"
 third_party/abseil-cpp 4447c7562e3bc702ade25105912dce503f0c4010
-third_party/benchmark 344117638c8ff7e239044fd0fa7085839fc03021
+third_party/benchmark 12235e24652fc7f809373e7c11a5f73c5763fc4c
 third_party/bloaty 60209eb1ccc34d5deefb002d1b7f37545204f7f2
 third_party/boringssl-with-bazel b8b3e6e11166719a8ebfa43c0cde9ad7d57a84f6
 third_party/cares/cares 6360e96b5cf8e5980c887ce58ef727e53d77243a
@@ -35,7 +35,7 @@ third_party/googleapis fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0
 third_party/googletest 2dd1c131950043a8ad5ab0d2dda0e0970596586a
 third_party/opencensus-proto 4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89
 third_party/opentelemetry 60fa8754d890b5c55949a8c68dcfd7ab5c2395df
-third_party/opentelemetry-cpp 4bd64c9a336fd438d6c4c9dad2e6b61b0585311f
+third_party/opentelemetry-cpp a388e87d72b8321c189c8d41edb746ffa687ce3c
 third_party/protobuf 10ef3f77683f77fb3c059bf47725c27b3ff41e63
 third_party/protoc-gen-validate 32c2415389a3538082507ae537e7edd9578c64ed
 third_party/re2 0c5616df9c0aaa44c9440d87422012423d91c7d1
