@@ -401,7 +401,7 @@ class MessageReassembly {
 
 class Config {
  public:
-  Config(const ChannelArgs& channel_args) {
+  explicit Config(const ChannelArgs& channel_args) {
     decode_alignment_ = channel_args.GetInt("grpc.chaotic_good.alignment")
                             .value_or(decode_alignment_);
     max_recv_chunk_size_ =

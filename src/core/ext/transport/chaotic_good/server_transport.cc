@@ -102,7 +102,6 @@ auto ChaoticGoodServerTransport::DispatchFrame(
         return stream->call.SpawnWaitable(
             "push-frame", [this, stream, frame = std::move(frame),
                            transport = std::move(transport)]() mutable {
-              auto& call = stream->call;
               return TrySeq(
                   frame.Payload(),
                   [transport = std::move(transport),
