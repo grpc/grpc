@@ -292,11 +292,11 @@ TEST_F(Chttp2ActiveConnectionTest, CloseWithoutHandshakeStarting) {
 
 RefCountedPtr<grpc_server_credentials> CreateSecureServerCredentials() {
   std::string ca_cert =
-      grpc_core::testing::GetFileContents("src/core/tsi/test_creds/client.pem");
-  std::string server_cert = grpc_core::testing::GetFileContents(
-      "src/core/tsi/test_creds/server1.pem");
-  std::string server_key = grpc_core::testing::GetFileContents(
-      "src/core/tsi/test_creds/server1.key");
+      testing::GetFileContents("src/core/tsi/test_creds/client.pem");
+  std::string server_cert =
+      testing::GetFileContents("src/core/tsi/test_creds/server1.pem");
+  std::string server_key =
+      testing::GetFileContents("src/core/tsi/test_creds/server1.key");
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   // Set credential provider.
   grpc_tls_identity_pairs* server_pairs = grpc_tls_identity_pairs_create();
