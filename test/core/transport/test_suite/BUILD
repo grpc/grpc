@@ -89,7 +89,7 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
-        "chaotic_good",
+        "chaotic_good_fixture_helpers",
     ],
     alwayslink = 1,
 )

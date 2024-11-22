@@ -19,7 +19,7 @@ namespace grpc_core {
 TRANSPORT_FIXTURE(ChaoticGoodSingleConnection) {
   auto resource_quota = MakeResourceQuota("test");
   EndpointPair control_endpoints =
-      CreateEndpointPair(event_engine.get(), resource_quota, 1234);
+      CreateEndpointPair(event_engine.get(), resource_quota.get(), 1234);
   auto channel_args =
       ChannelArgs()
           .SetObject(resource_quota)
