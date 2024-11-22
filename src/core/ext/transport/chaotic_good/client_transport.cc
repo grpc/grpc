@@ -161,7 +161,7 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
   return Loop([this, transport = std::move(transport)] {
     return TrySeq(
         transport->ReadFrameBytes(),
-        [this, transport](IncomingFrame incoming_frame) {
+        [this, transport](IncomingFrame incoming_frame) mutable {
           return Switch(
               incoming_frame.header().type,
               Case<FrameType, FrameType::kServerInitialMetadata>([&, this]() {
