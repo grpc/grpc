@@ -1,4 +1,4 @@
-// Copyright 2023 gRPC authors.
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/transport/test_suite/chaotic_good_fixture_helpers.h"
+#include "test/core/transport/test_suite/chaotic_good.h"
 
 namespace grpc_core {
 
@@ -20,8 +20,6 @@ TRANSPORT_FIXTURE(ChaoticGoodSingleConnection) {
   auto resource_quota = MakeResourceQuota("test");
   EndpointPair control_endpoints =
       CreateEndpointPair(event_engine.get(), resource_quota, 1234);
-  EndpointPair data_endpoints =
-      CreateEndpointPair(event_engine.get(), resource_quota, 4321);
   auto channel_args =
       ChannelArgs()
           .SetObject(resource_quota)

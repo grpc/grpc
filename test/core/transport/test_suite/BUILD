@@ -33,9 +33,10 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "chaotic_good_fixture_helpers",
-    testonly=1,
-    srcs = ["chaotic_good_fixture_helpers.h"],
+    name = "chaotic_good",
+    testonly = 1,
+    srcs = ["chaotic_good.cc"],
+    hdrs = ["chaotic_good.h"],
     external_deps = [
         "absl/log:check",
         "gtest",
@@ -55,7 +56,13 @@ grpc_cc_library(
     name = "chaotic_good_fixture",
     testonly = 1,
     srcs = ["chaotic_good_fixture.cc"],
-    deps = [":chaotic_good_fixture_helpers"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    deps = [
+        "chaotic_good",
+    ],
     alwayslink = 1,
 )
 
@@ -63,7 +70,13 @@ grpc_cc_library(
     name = "chaotic_good_single_connection_fixture",
     testonly = 1,
     srcs = ["chaotic_good_single_connection_fixture.cc"],
-    deps = [":chaotic_good_fixture_helpers"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    deps = [
+        "chaotic_good",
+    ],
     alwayslink = 1,
 )
 
@@ -71,7 +84,13 @@ grpc_cc_library(
     name = "chaotic_good_one_byte_chunk_fixture",
     testonly = 1,
     srcs = ["chaotic_good_one_byte_chunk_fixture.cc"],
-    deps = [":chaotic_good_fixture_helpers"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    deps = [
+        "chaotic_good",
+    ],
     alwayslink = 1,
 )
 
@@ -157,7 +176,6 @@ grpc_transport_test(
         ":stress",
     ],
 )
-
 
 grpc_transport_test(
     name = "chaotic_good_one_byte_chunk",
