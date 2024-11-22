@@ -8732,7 +8732,7 @@ targets:
   - test/core/call/yodel/yodel_test.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/transport/test_suite/chaotic_good.h
+  - test/core/transport/test_suite/chaotic_good_fixture_helpers.h
   - test/core/transport/test_suite/transport_test.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -8750,7 +8750,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/test_suite/call_content.cc
   - test/core/transport/test_suite/call_shapes.cc
-  - test/core/transport/test_suite/chaotic_good.cc
+  - test/core/transport/test_suite/chaotic_good_fixture_helpers.cc
   - test/core/transport/test_suite/chaotic_good_single_connection_fixture.cc
   - test/core/transport/test_suite/no_op.cc
   - test/core/transport/test_suite/stress.cc
@@ -22239,7 +22239,7 @@ targets:
   - test/core/call/yodel/yodel_test.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/transport/test_suite/chaotic_good.h
+  - test/core/transport/test_suite/chaotic_good_fixture_helpers.h
   - test/core/transport/test_suite/transport_test.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -22257,8 +22257,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/test_suite/call_content.cc
   - test/core/transport/test_suite/call_shapes.cc
-  - test/core/transport/test_suite/chaotic_good.cc
   - test/core/transport/test_suite/chaotic_good_fixture.cc
+  - test/core/transport/test_suite/chaotic_good_fixture_helpers.cc
   - test/core/transport/test_suite/no_op.cc
   - test/core/transport/test_suite/stress.cc
   - test/core/transport/test_suite/transport_test.cc
