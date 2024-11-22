@@ -27,15 +27,10 @@
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "test/core/transport/test_suite/transport_test.h"
 
-using grpc_event_engine::experimental::EndpointConfig;
-using grpc_event_engine::experimental::EventEngine;
-using grpc_event_engine::experimental::FuzzingEventEngine;
-using grpc_event_engine::experimental::MemoryQuotaBasedMemoryAllocatorFactory;
-using grpc_event_engine::experimental::URIToResolvedAddress;
-
 namespace grpc_core {
 
-class MockEndpointConfig : public EndpointConfig {
+class MockEndpointConfig
+    : public grpc_event_engine::experimental::EndpointConfig {
  public:
   MOCK_METHOD(absl::optional<int>, GetInt, (absl::string_view key),
               (const, override));
