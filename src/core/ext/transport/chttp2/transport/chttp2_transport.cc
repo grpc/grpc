@@ -1431,11 +1431,6 @@ static void send_initial_metadata_locked(
     if (t->is_client) {
       if (t->closed_with_error.ok()) {
         CHECK_EQ(s->id, 0u);
-        LOG(INFO) << "NEW STREAM "
-                  << GRPC_DUMP_ARGS(
-                         t->max_concurrent_streams_reject_on_client,
-                         t->stream_map.size(),
-                         t->settings.peer().max_concurrent_streams());
         if (t->max_concurrent_streams_reject_on_client &&
             t->stream_map.size() >=
                 t->settings.peer().max_concurrent_streams()) {
