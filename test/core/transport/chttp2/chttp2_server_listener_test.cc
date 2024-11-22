@@ -22,8 +22,8 @@
 #include <thread>
 
 #include "absl/synchronization/notification.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
