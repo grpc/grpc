@@ -18,6 +18,8 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/port.h"
+
 #ifdef GRPC_LINUX_EPOLL
 #include <sys/epoll.h>
 #endif  // GRPC_LINUX_EPOLL
@@ -54,6 +56,8 @@ class SystemApi {
       FileDescriptor sockfd,
       grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
       int nonblock, int cloexec) const;
+  FileDescriptor Accept4(FileDescriptor sockfd, struct sockaddr* addr,
+                         socklen_t* addrlen, int flags) const;
   FileDescriptor AdoptExternalFd(int fd) const;
   FileDescriptor Socket(int domain, int type, int protocol) const;
   FileDescriptor EventFd(unsigned int initval, int flags) const;

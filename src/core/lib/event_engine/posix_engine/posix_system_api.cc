@@ -16,12 +16,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
-#ifdef GRPC_LINUX_EPOLL
-#include <sys/epoll.h>
-#endif  // GRPC_LINUX_EPOLL
-#ifdef GRPC_LINUX_EVENTFD
-#include <sys/eventfd.h>
-#endif  // GRPC_LINUX_EVENTFD
 
 #include <array>
 
@@ -45,6 +39,13 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #endif  //  GRPC_POSIX_SOCKET_UTILS_COMMON
+
+#ifdef GRPC_LINUX_EPOLL
+#include <sys/epoll.h>
+#endif  // GRPC_LINUX_EPOLL
+#ifdef GRPC_LINUX_EVENTFD
+#include <sys/eventfd.h>
+#endif  // GRPC_LINUX_EVENTFD
 
 #ifdef GRPC_POSIX_SOCKET
 
@@ -614,7 +615,7 @@ std::pair<int, std::array<FileDescriptor, 2>> SystemApi::Pipe() const {
   return {status, {AdoptExternalFd(fds[0]), AdoptExternalFd(fds[1])}};
 }
 
-#ifdef GRPC_LINUX_EVENTFD
+#ifdef GRPC_LINUX_EPOLL
 long SystemApi::EventFdRead(FileDescriptor fd, uint64_t* value) const {
   return eventfd_read(fd.fd(), value);
 }

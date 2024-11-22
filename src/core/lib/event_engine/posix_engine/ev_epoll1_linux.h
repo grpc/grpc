@@ -36,6 +36,9 @@
 #ifdef GRPC_LINUX_EPOLL
 #include <sys/epoll.h>
 #endif
+#ifdef GRPC_LINUX_EVENTFD
+#include <sys/eventfd.h>
+#endif  // GRPC_LINUX_EVENTFD
 
 #define MAX_EPOLL_EVENTS 100
 
