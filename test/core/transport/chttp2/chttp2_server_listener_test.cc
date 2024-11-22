@@ -21,6 +21,7 @@
 
 #include <thread>
 
+#include "absl/synchronization/notification.h"
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -75,8 +76,68 @@ class ActiveConnectionTestPeer {
                                                        absl::OkStatus());
   }
 
+  NewChttp2ServerListener::ActiveConnection::HandshakingState*
+  handshaking_state() {
+    absl::Notification notification;
+    NewChttp2ServerListener::ActiveConnection::HandshakingState*
+        handshaking_state = nullptr;
+    connection_->work_serializer_.Run(
+        [&]() {
+          handshaking_state = absl::get<OrphanablePtr<
+              NewChttp2ServerListener::ActiveConnection::HandshakingState>>(
+                                  connection_->state_)
+                                  .get();
+          notification.Notify();
+        },
+        DEBUG_LOCATION);
+    notification.WaitForNotificationWithTimeout(absl::Seconds(5) *
+                                                grpc_test_slowdown_factor());
+    return handshaking_state;
+  }
+
  private:
   NewChttp2ServerListener::ActiveConnection* connection_;
+};
+
+class HandshakingStateTestPeer {
+ public:
+  explicit HandshakingStateTestPeer(
+      NewChttp2ServerListener::ActiveConnection::HandshakingState*
+          handshaking_state)
+      : handshaking_state_(handshaking_state) {}
+
+  RefCountedPtr<NewChttp2ServerListener::ActiveConnection::HandshakingState>
+  Ref() {
+    return handshaking_state_->Ref();
+  }
+
+  bool WaitForSettingsFrame() {
+    absl::Notification settings_received_notification;
+    absl::Time deadline =
+        absl::Now() + absl::Seconds(5) * grpc_test_slowdown_factor();
+    // When settings frame is received, the handshaking state will no longer
+    // have a valid timer.
+    do {
+      absl::Notification callback_done;
+      handshaking_state_->connection_->work_serializer_.Run(
+          [&]() {
+            if (!handshaking_state_->timer_handle_.has_value()) {
+              settings_received_notification.Notify();
+            }
+            callback_done.Notify();
+          },
+          DEBUG_LOCATION);
+      if (!callback_done.WaitForNotificationWithDeadline(deadline)) {
+        break;
+      }
+    } while (!settings_received_notification.HasBeenNotified() &&
+             absl::Now() < deadline);
+    return settings_received_notification.HasBeenNotified();
+  }
+
+ private:
+  NewChttp2ServerListener::ActiveConnection::HandshakingState*
+      handshaking_state_;
 };
 
 class ServerTestPeer {
@@ -314,6 +375,65 @@ TEST_F(Chttp2ActiveConnectionTest, CloseAfterHandshakeButBeforeSettingsFrame) {
     // If the test turns out to be flaky, convert this to a sleep.
     std::this_thread::yield();
   }
+  // Trigger close from the server
+  grpc_server_cancel_all_calls(server_->c_ptr());
+  while (listener_state_->connection_quota()
+             ->TestOnlyActiveIncomingConnections() != 0) {
+    ASSERT_LE(absl::Now(), test_deadline);
+    // Yield for other threads to make progress.
+    // If the test turns out to be flaky, convert this to a sleep.
+    std::this_thread::yield();
+  }
+}
+
+TEST_F(Chttp2ActiveConnectionTest, CloseAfterSettingsFrame) {
+  SetUpServer();
+  listener_state_->connection_quota()->SetMaxIncomingConnections(10);
+  // Add a connection
+  auto mock_endpoint_controller =
+      grpc_event_engine::experimental::MockEndpointController::Create(
+          args_.GetObjectRef<EventEngine>());
+  // Provide settings frame to the mock endpoint
+  mock_endpoint_controller->TriggerReadEvent(
+      grpc_event_engine::experimental::Slice::FromCopiedString(
+          "PRI * "
+          "HTTP/2.0\r\n\r\nSM\r\n\r\n\x00\x00\x00\x04\x00\x00\x00\x00\x00"));
+  mock_endpoint_controller->NoMoreReads();
+  ASSERT_TRUE(listener_state_->connection_quota()->AllowIncomingConnection(
+      listener_state_->memory_quota(), "peer"));
+  auto connection = MakeOrphanable<NewChttp2ServerListener::ActiveConnection>(
+      listener_state_->Ref(), /*tcp_server=*/nullptr,
+      /*accepting_pollset=*/nullptr,
+      /*acceptor=*/nullptr, args_,
+      listener_state_->memory_quota()->CreateMemoryOwner(),
+      OrphanablePtr<grpc_endpoint>(mock_endpoint_controller->TakeCEndpoint()));
+  auto* connection_ptr = connection.get();
+  // Keep the handshaking state alive for verification
+  RefCountedPtr<NewChttp2ServerListener::ActiveConnection::HandshakingState>
+      handshaking_state =
+          HandshakingStateTestPeer(
+              ActiveConnectionTestPeer(connection_ptr).handshaking_state())
+              .Ref();
+  listener_state_->AddLogicalConnection(std::move(connection), args_,
+                                        /*endpoint=*/nullptr);
+  EXPECT_EQ(
+      listener_state_->connection_quota()->TestOnlyActiveIncomingConnections(),
+      1);
+  connection_ptr->Start(args_);
+  // Wait for handshake to be done. When handshake is done, the connection will
+  // be removed from the ListenerState's connection map since there is no config
+  // fetcher.
+  absl::Time test_deadline =
+      absl::Now() + absl::Seconds(10) * grpc_test_slowdown_factor();
+  while (ListenerStateTestPeer(listener_state_).ConnectionsSize() != 0) {
+    ASSERT_LE(absl::Now(), test_deadline);
+    // Yield for other threads to make progress.
+    // If the test turns out to be flaky, convert this to a sleep.
+    std::this_thread::yield();
+  }
+  // Wait for settings frame to be received.
+  ASSERT_TRUE(
+      HandshakingStateTestPeer(handshaking_state.get()).WaitForSettingsFrame());
   // Trigger close from the server
   grpc_server_cancel_all_calls(server_->c_ptr());
   while (listener_state_->connection_quota()

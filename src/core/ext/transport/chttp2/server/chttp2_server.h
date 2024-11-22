@@ -44,6 +44,7 @@ class Chttp2ServerListener;
 namespace testing {
 class Chttp2ServerListenerTestPeer;
 class ActiveConnectionTestPeer;
+class HandshakingStateTestPeer;
 }  // namespace testing
 
 // New ChttpServerListener used if experiment "server_listener" is enabled
@@ -75,6 +76,8 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
       void ShutdownLocked(absl::Status status);
 
      private:
+      friend class grpc_core::testing::HandshakingStateTestPeer;
+
       void OnTimeoutLocked();
       static void OnReceiveSettings(void* arg, grpc_error_handle /* error */);
       void OnHandshakeDoneLocked(absl::StatusOr<HandshakerArgs*> result);
@@ -112,6 +115,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
 
    private:
     friend class grpc_core::testing::ActiveConnectionTestPeer;
+    friend class grpc_core::testing::HandshakingStateTestPeer;
 
     static void OnClose(void* arg, grpc_error_handle error);
 
