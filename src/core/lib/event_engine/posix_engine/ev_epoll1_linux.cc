@@ -585,7 +585,7 @@ using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Poller;
 
 Epoll1Poller::Epoll1Poller(Scheduler* /* engine */,
-                           SystemApi* /* system_api */) {
+                           const SystemApi& /* system_api */) {
   grpc_core::Crash("unimplemented");
 }
 
@@ -618,8 +618,8 @@ void Epoll1Poller::Kick() { grpc_core::Crash("unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
-std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* /*scheduler*/,
-                                               SystemApi* /*system_api*/) {
+std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(
+    Scheduler* /*scheduler*/, const SystemApi& /*system_api*/) {
   return nullptr;
 }
 

@@ -17,7 +17,10 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
+
+#ifdef GRPC_LINUX_EPOLL
 #include <sys/epoll.h>
+#endif  // GRPC_LINUX_EPOLL
 
 #include <array>
 #include <atomic>

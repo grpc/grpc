@@ -16,8 +16,12 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
+#ifdef GRPC_LINUX_EPOLL
 #include <sys/epoll.h>
+#endif  // GRPC_LINUX_EPOLL
+#ifdef GRPC_LINUX_EVENTFD
 #include <sys/eventfd.h>
+#endif  // GRPC_LINUX_EVENTFD
 
 #include <array>
 
@@ -584,6 +588,7 @@ absl::Status SystemApi::SetSocketNonBlocking(FileDescriptor fd) const {
   return absl::OkStatus();
 }
 
+#ifdef GRPC_LINUX_EPOLL
 FileDescriptor SystemApi::EpollCreateAndCloexec() const {
 #ifdef GRPC_LINUX_EPOLL_CREATE1
   int fd = epoll_create1(EPOLL_CLOEXEC);
@@ -601,6 +606,7 @@ FileDescriptor SystemApi::EpollCreateAndCloexec() const {
 #endif
   return AdoptExternalFd(fd);
 }
+#endif  // GRPC_LINUX_EPOLL
 
 std::pair<int, std::array<FileDescriptor, 2>> SystemApi::Pipe() const {
   std::array<int, 2> fds;
@@ -608,6 +614,7 @@ std::pair<int, std::array<FileDescriptor, 2>> SystemApi::Pipe() const {
   return {status, {AdoptExternalFd(fds[0]), AdoptExternalFd(fds[1])}};
 }
 
+#ifdef GRPC_LINUX_EVENTFD
 long SystemApi::EventFdRead(FileDescriptor fd, uint64_t* value) const {
   return eventfd_read(fd.fd(), value);
 }
@@ -629,6 +636,8 @@ FileDescriptor SystemApi::EventFd(unsigned int initval, int flags) const {
 long SystemApi::EventFdWrite(FileDescriptor fd, uint64_t value) const {
   return eventfd_write(fd.fd(), value);
 }
+
+#endif  // GRPC_LINUX_EVENTFD
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
