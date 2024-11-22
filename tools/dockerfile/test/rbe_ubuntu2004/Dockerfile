@@ -49,7 +49,6 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 # Some bazel tests expect "python" binary to exist
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
-
 # Install Google's LLVM build for Ubuntu 20.04
 # Heavily inspired by https://github.com/GoogleCloudPlatform/container-definitions/tree/master/ubuntu1804_rbe
 # See go/llvm-docker
