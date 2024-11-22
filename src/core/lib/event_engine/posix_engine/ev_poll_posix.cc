@@ -853,7 +853,8 @@ std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
 namespace grpc_event_engine {
 namespace experimental {
 
-PollPoller::PollPoller(Scheduler* /* engine */, SystemApi* /* system_api */,
+PollPoller::PollPoller(Scheduler* /* engine */,
+                       const SystemApi& /* system_api */,
                        bool /* use_phony_poll */) {
   grpc_core::Crash("unimplemented");
 }

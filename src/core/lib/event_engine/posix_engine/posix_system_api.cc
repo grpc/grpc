@@ -793,6 +793,19 @@ std::pair<int, std::array<FileDescriptor, 2>> SystemApi::SocketPair(
   grpc_core::Crash("unimplemented");
 }
 
+long SystemApi::EventFdRead(FileDescriptor fd, uint64_t* value) const {
+  grpc_core::Crash("unimplemented");
+}
+
+long SystemApi::EventFdWrite(FileDescriptor fd, uint64_t value) const {
+  grpc_core::Crash("unimplemented");
+}
+
+int SystemApi::EpollCtl(FileDescriptor epfd, int op, FileDescriptor fd,
+                        struct epoll_event* event) const {
+  grpc_core::Crash("unimplemented");
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
