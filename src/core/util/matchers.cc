@@ -180,6 +180,13 @@ absl::StatusOr<HeaderMatcher> HeaderMatcher::Create(
   }
 }
 
+HeaderMatcher HeaderMatcher::CreateFromStringMatcher(absl::string_view name,
+                                                     StringMatcher matcher,
+                                                     bool invert_match) {
+  return HeaderMatcher(name, static_cast<HeaderMatcher::Type>(matcher.type()),
+                       std::move(matcher), invert_match);
+}
+
 HeaderMatcher::HeaderMatcher(absl::string_view name, Type type,
                              StringMatcher string_matcher, bool invert_match)
     : name_(name),
