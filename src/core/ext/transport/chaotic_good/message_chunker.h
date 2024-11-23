@@ -26,6 +26,9 @@ struct ChunkResult {
   MessageChunkFrame frame;
   bool done;
 };
+
+// Given a set of parameters defining the desired size, produce frames of chunks
+// of payload to send one at a time.
 class PayloadChunker {
  public:
   PayloadChunker(uint32_t max_chunk_size, uint32_t alignment,
@@ -63,6 +66,7 @@ class PayloadChunker {
 };
 }  // namespace message_chunker_detail
 
+// Helper to send message payloads (possibly chunked!) between client & server.
 class MessageChunker {
  public:
   MessageChunker(uint32_t max_chunk_size, uint32_t alignment)

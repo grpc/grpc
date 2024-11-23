@@ -24,26 +24,42 @@
 namespace grpc_core {
 namespace chaotic_good {
 
+#define GRPC_ARG_CHAOTIC_GOOD_ALIGNMENT "grpc.chaotic_good.alignment"
+#define GRPC_ARG_CHAOTIC_GOOD_MAX_CHUNK_SIZE "grpc.chaotic_good.max_chunk_size"
+#define GRPC_ARG_CHAOTIC_GOOD_INLINED_PAYLOAD_SIZE_THRESHOLD \
+  "grpc.chaotic_good.inlined_payload_size_threshold"
+
+// Transport configuration.
+// Most of our configuration is derived from channel args, and then exchanged
+// via settings frames to define a final shared configuration between client and
+// server.
 class Config {
  public:
   explicit Config(const ChannelArgs& channel_args) {
-    decode_alignment_ = channel_args.GetInt("grpc.chaotic_good.alignment")
+    decode_alignment_ = channel_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_ALIGNMENT)
                             .value_or(decode_alignment_);
     max_recv_chunk_size_ =
-        channel_args.GetInt("grpc.chaotic_good.recv_chunk_size")
+        channel_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_MAX_CHUNK_SIZE)
             .value_or(max_recv_chunk_size_);
     inline_payload_size_threshold_ =
-        channel_args.GetInt("grpc.chaotic_good.inlined_payload_size_threshold")
+        channel_args
+            .GetInt(GRPC_ARG_CHAOTIC_GOOD_INLINED_PAYLOAD_SIZE_THRESHOLD)
             .value_or(inline_payload_size_threshold_);
     tracing_enabled_ =
         channel_args.GetBool(GRPC_ARG_TCP_TRACING_ENABLED).value_or(false);
   }
 
+  // Fill-in a settings frame to be sent with the results of the negotiation so
+  // far. For the client this will be whatever we got from channel args; for the
+  // server this is called *AFTER* ReceiveIncomingSettings and so contains the
+  // result of mixing the server channel args with the client settings frame.
   void PrepareOutgoingSettings(chaotic_good_frame::Settings& settings) const {
     settings.set_alignment(decode_alignment_);
     settings.set_max_chunk_size(max_recv_chunk_size_);
   }
 
+  // Receive a settings frame from our peer and integrate its settings with our
+  // own.
   absl::Status ReceiveIncomingSettings(
       const chaotic_good_frame::Settings& settings) {
     if (settings.alignment() != 0) encode_alignment_ = settings.alignment();
@@ -55,6 +71,7 @@ class Config {
     return absl::OkStatus();
   }
 
+  // Factory: make transport options from the settings derived here-in.
   ChaoticGoodTransport::Options MakeTransportOptions() const {
     ChaoticGoodTransport::Options options;
     options.encode_alignment = encode_alignment_;
@@ -63,6 +80,7 @@ class Config {
     return options;
   }
 
+  // Factory: create a message chunker based on negotiated settings.
   MessageChunker MakeMessageChunker() const {
     return MessageChunker(max_send_chunk_size_, encode_alignment_);
   }

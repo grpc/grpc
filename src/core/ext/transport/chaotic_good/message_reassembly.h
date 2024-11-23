@@ -18,6 +18,8 @@
 namespace grpc_core {
 namespace chaotic_good {
 
+// Reassemble chunks of messages into messages, and enforce invariants about
+// never having two messages in flight on the same stream.
 class MessageReassembly {
  public:
   void FailCall(CallInitiator& call, absl::string_view msg) {
