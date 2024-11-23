@@ -8654,6 +8654,61 @@ targets:
   - gtest
   - grpcpp_channelz
   - grpc++_test_util
+- name: chaotic_good_single_connection_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/control_endpoint.h
+  - src/core/ext/transport/chaotic_good/data_endpoints.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/match_promise.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/yodel/yodel_test.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/transport/test_suite/chaotic_good_fixture_helpers.h
+  - test/core/transport/test_suite/transport_test.h
+  src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/control_endpoint.cc
+  - src/core/ext/transport/chaotic_good/data_endpoints.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/yodel/test_main.cc
+  - test/core/call/yodel/yodel_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/test_suite/call_content.cc
+  - test/core/transport/test_suite/call_shapes.cc
+  - test/core/transport/test_suite/chaotic_good_fixture_helpers.cc
+  - test/core/transport/test_suite/chaotic_good_single_connection_fixture.cc
+  - test/core/transport/test_suite/no_op.cc
+  - test/core/transport/test_suite/stress.cc
+  - test/core/transport/test_suite/transport_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: check_gcp_environment_linux_test
   gtest: true
   build: test
@@ -22130,6 +22185,7 @@ targets:
   - test/core/call/yodel/yodel_test.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/transport/test_suite/chaotic_good_fixture_helpers.h
   - test/core/transport/test_suite/transport_test.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -22148,6 +22204,7 @@ targets:
   - test/core/transport/test_suite/call_content.cc
   - test/core/transport/test_suite/call_shapes.cc
   - test/core/transport/test_suite/chaotic_good_fixture.cc
+  - test/core/transport/test_suite/chaotic_good_fixture_helpers.cc
   - test/core/transport/test_suite/no_op.cc
   - test/core/transport/test_suite/stress.cc
   - test/core/transport/test_suite/transport_test.cc

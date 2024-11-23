@@ -1,4 +1,4 @@
-// Copyright 2023 gRPC authors.
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ using grpc_event_engine::experimental::EventEngine;
 
 namespace grpc_core {
 
-TRANSPORT_FIXTURE(ChaoticGood) {
+TRANSPORT_FIXTURE(ChaoticGoodSingleConnection) {
   auto resource_quota = MakeResourceQuota("test");
   EndpointPair control_endpoints =
       CreateEndpointPair(event_engine.get(), resource_quota.get(), 1234);
@@ -30,14 +30,12 @@ TRANSPORT_FIXTURE(ChaoticGood) {
           .SetObject(std::static_pointer_cast<EventEngine>(event_engine));
   auto client_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodClientTransport>(
-          std::move(control_endpoints.client),
-          chaotic_good::OneDataEndpoint(std::move(data_endpoints.client)),
+          std::move(control_endpoints.client), std::vector<PromiseEndpoint>{},
           ChannelArgs().SetObject(resource_quota), event_engine);
   auto server_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodServerTransport>(
           channel_args, std::move(control_endpoints.server),
-          chaotic_good::OneDataEndpoint(std::move(data_endpoints.server)),
-          event_engine);
+          std::vector<PromiseEndpoint>{}, event_engine);
   return ClientAndServerTransportPair{std::move(client_transport),
                                       std::move(server_transport)};
 }
