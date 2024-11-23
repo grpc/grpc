@@ -25,7 +25,10 @@ namespace grpc_core {
 namespace chaotic_good {
 
 #define GRPC_ARG_CHAOTIC_GOOD_ALIGNMENT "grpc.chaotic_good.alignment"
-#define GRPC_ARG_CHAOTIC_GOOD_MAX_CHUNK_SIZE "grpc.chaotic_good.max_chunk_size"
+#define GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE \
+  "grpc.chaotic_good.max_recv_chunk_size"
+#define GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE \
+  "grpc.chaotic_good.max_send_chunk_size"
 #define GRPC_ARG_CHAOTIC_GOOD_INLINED_PAYLOAD_SIZE_THRESHOLD \
   "grpc.chaotic_good.inlined_payload_size_threshold"
 
@@ -36,11 +39,15 @@ namespace chaotic_good {
 class Config {
  public:
   explicit Config(const ChannelArgs& channel_args) {
-    decode_alignment_ = channel_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_ALIGNMENT)
-                            .value_or(decode_alignment_);
+    decode_alignment_ =
+        std::max(1, channel_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_ALIGNMENT)
+                        .value_or(decode_alignment_));
     max_recv_chunk_size_ =
-        channel_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_MAX_CHUNK_SIZE)
+        channel_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE)
             .value_or(max_recv_chunk_size_);
+    max_send_chunk_size_ =
+        channel_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE)
+            .value_or(max_send_chunk_size_);
     inline_payload_size_threshold_ =
         channel_args
             .GetInt(GRPC_ARG_CHAOTIC_GOOD_INLINED_PAYLOAD_SIZE_THRESHOLD)
@@ -90,6 +97,14 @@ class Config {
   void TestOnlySetChunkSizes(uint32_t size) {
     max_send_chunk_size_ = size;
     max_recv_chunk_size_ = size;
+  }
+
+  uint32_t encode_alignment() const { return encode_alignment_; }
+  uint32_t decode_alignment() const { return decode_alignment_; }
+  uint32_t max_send_chunk_size() const { return max_send_chunk_size_; }
+  uint32_t max_recv_chunk_size() const { return max_recv_chunk_size_; }
+  uint32_t inline_payload_size_threshold() const {
+    return inline_payload_size_threshold_;
   }
 
  private:

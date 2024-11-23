@@ -17,7 +17,12 @@
 
 #include <cstdint>
 
-#include "frame.h"
+#include "src/core/ext/transport/chaotic_good/frame.h"
+#include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/seq.h"
+
 namespace grpc_core {
 namespace chaotic_good {
 
@@ -37,6 +42,10 @@ class PayloadChunker {
         alignment_(alignment),
         stream_id_(stream_id),
         payload_(std::move(payload)) {}
+  PayloadChunker(const PayloadChunker&) = delete;
+  PayloadChunker(PayloadChunker&&) = default;
+  PayloadChunker& operator=(const PayloadChunker&) = delete;
+  PayloadChunker& operator=(PayloadChunker&&) = delete;
 
   ChunkResult NextChunk() {
     auto remaining = payload_.Length();
@@ -45,7 +54,10 @@ class PayloadChunker {
       auto take = max_chunk_size_;
       if (remaining / 2 < max_chunk_size_) {
         take = remaining / 2;
-        if (take % alignment_ != 0) take += alignment_ - (take % alignment_);
+        if (alignment_ != 0 && take % alignment_ != 0) {
+          take += alignment_ - (take % alignment_);
+          if (take > max_chunk_size_) take = max_chunk_size_;
+        }
       }
       payload_.MoveFirstNBytesIntoSliceBuffer(take, result.frame.payload);
       result.frame.stream_id = stream_id_;
@@ -84,7 +96,7 @@ class MessageChunker {
                      Loop([chunker = message_chunker_detail::PayloadChunker(
                                max_chunk_size_, alignment_, stream_id,
                                std::move(*message->payload())),
-                           output]() mutable {
+                           &output]() mutable {
                        auto next = chunker.NextChunk();
                        return Map(output.Send(std::move(next.frame)),
                                   [done = next.done](bool x) -> LoopCtl<bool> {
@@ -102,9 +114,12 @@ class MessageChunker {
         });
   }
 
+  uint32_t max_chunk_size() const { return max_chunk_size_; }
+  uint32_t alignment() const { return alignment_; }
+
  private:
   bool ShouldChunk(Message& message) {
-    return max_chunk_size_ == 0 ||
+    return max_chunk_size_ != 0 &&
            message.payload()->Length() > max_chunk_size_;
   }
 

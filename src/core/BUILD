@@ -8111,6 +8111,13 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chaotic_good/message_chunker.h",
     ],
+    deps = [
+        "chaotic_good_frame",
+        "if",
+        "loop",
+        "map",
+        "seq",
+    ],
 )
 
 grpc_cc_library(
@@ -8798,11 +8805,11 @@ grpc_cc_library(
         "arena",
         "channel_args",
         "channel_args_endpoint_config",
+        "chaotic_good_config",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
         "chaotic_good_legacy_server",
         "chaotic_good_server_transport",
-        "chaotic_good_config",
         "chaotic_good_transport",
         "closure",
         "context",
@@ -8937,8 +8944,8 @@ grpc_cc_library(
         "chaotic_good_client_transport",
         "chaotic_good_config",
         "chaotic_good_frame",
-        "chaotic_good_frame_header",
         "chaotic_good_frame_cc_proto",
+        "chaotic_good_frame_header",
         "chaotic_good_legacy_connector",
         "chaotic_good_transport",
         "closure",
