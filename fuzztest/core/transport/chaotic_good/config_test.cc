@@ -19,30 +19,54 @@
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
-#include "test/core/test_util/fuzzing_channel_args.h"
-#include "test/core/test_util/fuzzing_channel_args.pb.h"
 
 namespace grpc_core {
+namespace {
 
-void ConfigTest(grpc::testing::FuzzingChannelArgs client_args_proto,
-                grpc::testing::FuzzingChannelArgs server_args_proto) {
+struct FuzzerChannelArgs {
+  absl::optional<int> alignment;
+  absl::optional<int> max_recv_chunk_size;
+  absl::optional<int> max_send_chunk_size;
+  absl::optional<int> inlined_payload_size_threshold;
+  absl::optional<bool> tracing_enabled;
+
+  ChannelArgs MakeChannelArgs() {
+    ChannelArgs out;
+    auto transfer = [&out](auto value, const char* name) {
+      if (!value.has_value()) return;
+      out = out.Set(name, *value);
+    };
+    transfer(alignment, GRPC_ARG_CHAOTIC_GOOD_ALIGNMENT);
+    transfer(max_recv_chunk_size, GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE);
+    transfer(max_send_chunk_size, GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE);
+    transfer(inlined_payload_size_threshold,
+             GRPC_ARG_CHAOTIC_GOOD_INLINED_PAYLOAD_SIZE_THRESHOLD);
+    transfer(tracing_enabled, GRPC_ARG_TCP_TRACING_ENABLED);
+    return out;
+  }
+};
+
+void ConfigTest(FuzzerChannelArgs client_args_input,
+                FuzzerChannelArgs server_args_input) {
   // Create channel args
-  testing::FuzzingEnvironment client_environment;
-  testing::FuzzingEnvironment server_environment;
-  const auto client_args = testing::CreateChannelArgsFromFuzzingConfiguration(
-      client_args_proto, client_environment);
-  const auto server_args = testing::CreateChannelArgsFromFuzzingConfiguration(
-      server_args_proto, server_environment);
+  const auto client_args = client_args_input.MakeChannelArgs();
+  const auto server_args = server_args_input.MakeChannelArgs();
   // Initialize configs
   chaotic_good::Config client_config(client_args);
   chaotic_good::Config server_config(server_args);
+  VLOG(2) << "client_config: " << client_config;
+  VLOG(2) << "server_config: " << server_config;
   // Perform handshake
   chaotic_good_frame::Settings client_settings;
   client_config.PrepareOutgoingSettings(client_settings);
+  VLOG(2) << "client settings: " << client_settings.ShortDebugString();
   CHECK_OK(server_config.ReceiveIncomingSettings(client_settings));
+  VLOG(2) << "server_config': " << server_config;
   chaotic_good_frame::Settings server_settings;
   server_config.PrepareOutgoingSettings(server_settings);
+  VLOG(2) << "server settings: " << server_settings.ShortDebugString();
   CHECK_OK(client_config.ReceiveIncomingSettings(server_settings));
+  VLOG(2) << "client_config': " << client_config;
   // Generate results
   const chaotic_good::ChaoticGoodTransport::Options client_options =
       client_config.MakeTransportOptions();
@@ -57,9 +81,9 @@ void ConfigTest(grpc::testing::FuzzingChannelArgs client_args_proto,
   EXPECT_EQ(client_options.decode_alignment, server_options.encode_alignment);
   EXPECT_EQ(client_chunker.alignment(), client_options.encode_alignment);
   EXPECT_EQ(server_chunker.alignment(), server_options.encode_alignment);
-  EXPECT_LE(server_config.max_recv_chunk_size(),
+  EXPECT_GE(server_config.max_recv_chunk_size(),
             client_config.max_send_chunk_size());
-  EXPECT_LE(client_config.max_recv_chunk_size(),
+  EXPECT_GE(client_config.max_recv_chunk_size(),
             server_config.max_send_chunk_size());
   if (auto a = client_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_ALIGNMENT);
       a.has_value() && *a > 0) {
@@ -71,15 +95,16 @@ void ConfigTest(grpc::testing::FuzzingChannelArgs client_args_proto,
   }
   if (auto a = client_args.GetInt(
           GRPC_ARG_CHAOTIC_GOOD_INLINED_PAYLOAD_SIZE_THRESHOLD);
-      a.has_value()) {
+      a.has_value() && *a > 0) {
     EXPECT_EQ(client_options.inlined_payload_size_threshold, *a);
   }
   if (auto a = server_args.GetInt(
           GRPC_ARG_CHAOTIC_GOOD_INLINED_PAYLOAD_SIZE_THRESHOLD);
-      a.has_value()) {
+      a.has_value() && *a > 0) {
     EXPECT_EQ(server_options.inlined_payload_size_threshold, *a);
   }
 }
 FUZZ_TEST(MyTestSuite, ConfigTest);
 
+}  // namespace
 }  // namespace grpc_core

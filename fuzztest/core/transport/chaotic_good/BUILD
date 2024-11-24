@@ -24,8 +24,6 @@ grpc_fuzz_test(
     ],
     deps = [
         "//src/core:chaotic_good_config",
-        "//test/core/test_util:fuzzing_channel_args",
-        "//test/core/test_util:fuzzing_channel_args_cc_proto"
     ],
 )
 

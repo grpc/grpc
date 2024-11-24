@@ -42,16 +42,20 @@ class Config {
     decode_alignment_ =
         std::max(1, channel_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_ALIGNMENT)
                         .value_or(decode_alignment_));
-    max_recv_chunk_size_ =
-        channel_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE)
-            .value_or(max_recv_chunk_size_);
-    max_send_chunk_size_ =
-        channel_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE)
-            .value_or(max_send_chunk_size_);
-    inline_payload_size_threshold_ =
-        channel_args
-            .GetInt(GRPC_ARG_CHAOTIC_GOOD_INLINED_PAYLOAD_SIZE_THRESHOLD)
-            .value_or(inline_payload_size_threshold_);
+    max_recv_chunk_size_ = std::max(
+        0, channel_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE)
+               .value_or(max_recv_chunk_size_));
+    max_send_chunk_size_ = std::max(
+        0, channel_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE)
+               .value_or(max_send_chunk_size_));
+    if (max_recv_chunk_size_ == 0 || max_send_chunk_size_ == 0) {
+      max_recv_chunk_size_ = 0;
+      max_send_chunk_size_ = 0;
+    }
+    inline_payload_size_threshold_ = std::max(
+        0, channel_args
+               .GetInt(GRPC_ARG_CHAOTIC_GOOD_INLINED_PAYLOAD_SIZE_THRESHOLD)
+               .value_or(inline_payload_size_threshold_));
     tracing_enabled_ =
         channel_args.GetBool(GRPC_ARG_TCP_TRACING_ENABLED).value_or(false);
   }
@@ -74,6 +78,7 @@ class Config {
         std::min(max_send_chunk_size_, settings.max_chunk_size());
     if (settings.max_chunk_size() == 0) {
       max_recv_chunk_size_ = 0;
+      max_send_chunk_size_ = 0;
     }
     return absl::OkStatus();
   }
@@ -105,6 +110,18 @@ class Config {
   uint32_t max_recv_chunk_size() const { return max_recv_chunk_size_; }
   uint32_t inline_payload_size_threshold() const {
     return inline_payload_size_threshold_;
+  }
+
+  std::string ToString() const {
+    return absl::StrCat(GRPC_DUMP_ARGS(tracing_enabled_, encode_alignment_,
+                                       decode_alignment_, max_send_chunk_size_,
+                                       max_recv_chunk_size_,
+                                       inline_payload_size_threshold_));
+  }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const Config& config) {
+    sink.Append(config.ToString());
   }
 
  private:
