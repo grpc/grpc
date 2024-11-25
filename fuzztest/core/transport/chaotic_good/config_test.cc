@@ -23,6 +23,10 @@
 namespace grpc_core {
 namespace {
 
+// Arguments to a config class - these represent channel args, but in a format
+// that the fuzzer can search really quickly.
+// We then convert this struct to channel args, and feed it into the config to
+// keep things as they would be in production code.
 struct FuzzerChannelArgs {
   absl::optional<int> alignment;
   absl::optional<int> max_recv_chunk_size;
