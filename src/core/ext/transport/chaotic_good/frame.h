@@ -67,16 +67,22 @@ absl::StatusOr<ServerMetadataHandle> ServerMetadataGrpcFromProto(
 absl::Status ReadProto(SliceBuffer payload, google::protobuf::MessageLite& msg);
 void WriteProto(const google::protobuf::MessageLite& msg, SliceBuffer& output);
 uint32_t ProtoPayloadSize(const google::protobuf::MessageLite& msg);
+absl::Status ReadTransportProto(const FrameHeader& header, SliceBuffer payload,
+                                google::protobuf::MessageLite& body);
+absl::Status ReadStreamProto(const FrameHeader& header, SliceBuffer payload,
+                             google::protobuf::MessageLite& body,
+                             uint32_t& stream_id);
+absl::Status ReadEmptyFrame(const FrameHeader& header, uint32_t& stream_id);
+
+// Generic implementation of a transport-bound frame (stream_id is zero always)
+// with a protobuf specified body.
 
 template <FrameType frame_type, typename Body>
 struct ProtoTransportFrame final : public FrameInterface {
   absl::Status Deserialize(const FrameHeader& header,
                            SliceBuffer payload) override {
     DCHECK_EQ(header.type, frame_type);
-    if (header.stream_id != 0) {
-      return absl::InternalError("Expected stream id 0");
-    }
-    return ReadProto(std::move(payload), body);
+    return ReadTransportProto(header, std::move(payload), body);
   }
   FrameHeader MakeHeader() const override {
     return FrameHeader{frame_type, 0, 0, ProtoPayloadSize(body)};
@@ -92,16 +98,14 @@ struct ProtoTransportFrame final : public FrameInterface {
   Body body;
 };
 
+// Generic implementation of a stream-bound frame with a protobuf specified
+// body.
 template <FrameType frame_type, typename Body>
 struct ProtoStreamFrame final : public FrameInterface {
   absl::Status Deserialize(const FrameHeader& header,
                            SliceBuffer payload) override {
     DCHECK_EQ(header.type, frame_type);
-    if (header.stream_id == 0) {
-      return absl::InternalError("Expected non-zero stream id");
-    }
-    stream_id = header.stream_id;
-    return ReadProto(std::move(payload), body);
+    return ReadStreamProto(header, std::move(payload), body, stream_id);
   }
   FrameHeader MakeHeader() const override {
     return FrameHeader{frame_type, 0, stream_id, ProtoPayloadSize(body)};
@@ -119,21 +123,14 @@ struct ProtoStreamFrame final : public FrameInterface {
   uint32_t stream_id;
 };
 
+// Generic implementation of an empty stream frame.
 template <FrameType frame_type>
 struct EmptyStreamFrame final : public FrameInterface {
   EmptyStreamFrame() = default;
   explicit EmptyStreamFrame(uint32_t stream_id) : stream_id(stream_id) {}
   absl::Status Deserialize(const FrameHeader& header, SliceBuffer) override {
-    CHECK_EQ(header.type, FrameType::kClientEndOfStream);
-    if (header.stream_id == 0) {
-      return absl::InternalError("Expected non-zero stream id");
-    }
-    if (header.payload_length != 0) {
-      return absl::InternalError(absl::StrCat(
-          "Expected zero payload length on ", FrameTypeString(frame_type)));
-    }
-    stream_id = header.stream_id;
-    return absl::OkStatus();
+    DCHECK_EQ(header.type, frame_type);
+    return ReadEmptyFrame(header, stream_id);
   }
   FrameHeader MakeHeader() const override {
     return FrameHeader{frame_type, 0, stream_id, 0};

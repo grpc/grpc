@@ -60,6 +60,36 @@ uint32_t ProtoPayloadSize(const google::protobuf::MessageLite& msg) {
   return static_cast<uint32_t>(length);
 }
 
+absl::Status ReadTransportProto(const FrameHeader& header, SliceBuffer payload,
+                                google::protobuf::MessageLite& body) {
+  if (header.stream_id != 0) {
+    return absl::InternalError("Expected stream id 0");
+  }
+  return ReadProto(std::move(payload), body);
+}
+
+absl::Status ReadStreamProto(const FrameHeader& header, SliceBuffer payload,
+                             google::protobuf::MessageLite& body,
+                             uint32_t& stream_id) {
+  if (header.stream_id == 0) {
+    return absl::InternalError("Expected non-zero stream id");
+  }
+  stream_id = header.stream_id;
+  return ReadProto(std::move(payload), body);
+}
+
+absl::Status ReadEmptyFrame(const FrameHeader& header, uint32_t& stream_id) {
+  if (header.stream_id == 0) {
+    return absl::InternalError("Expected non-zero stream id");
+  }
+  if (header.payload_length != 0) {
+    return absl::InternalError(absl::StrCat("Expected zero payload length on ",
+                                            FrameTypeString(header.type)));
+  }
+  stream_id = header.stream_id;
+  return absl::OkStatus();
+}
+
 namespace {
 
 struct ClientMetadataEncoder {
