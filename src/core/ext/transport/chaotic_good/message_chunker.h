@@ -90,7 +90,7 @@ class MessageChunker {
         ShouldChunk(*message),
         [&]() {
           BeginMessageFrame begin;
-          begin.payload.set_length(message->payload()->Length());
+          begin.body.set_length(message->payload()->Length());
           begin.stream_id = stream_id;
           return Seq(output.Send(std::move(begin)),
                      Loop([chunker = message_chunker_detail::PayloadChunker(

@@ -52,16 +52,16 @@ class MessageReassembly {
       FailCall(sink,
                "Received begin message without completing previous chunked "
                "message");
-    } else if (frame.payload.length() == 0) {
+    } else if (frame.body.length() == 0) {
       FailCall(sink,
                "Received begin message for an empty message (not allowed)");
-    } else if (frame.payload.length() > std::numeric_limits<size_t>::max()) {
+    } else if (frame.body.length() > std::numeric_limits<size_t>::max()) {
       FailCall(sink, "Received too large begin message");
     } else {
       GRPC_TRACE_LOG(chaotic_good, INFO)
-          << this << " begin message " << frame.payload.ShortDebugString();
+          << this << " begin message " << frame.body.ShortDebugString();
       chunk_receiver_ = std::make_unique<ChunkReceiver>();
-      chunk_receiver_->bytes_remaining = frame.payload.length();
+      chunk_receiver_->bytes_remaining = frame.body.length();
       ok = true;
     }
     return Immediate(StatusFlag(ok));

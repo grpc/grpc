@@ -74,7 +74,7 @@ ChaoticGoodClientTransport::LookupStream(uint32_t stream_id) {
 auto ChaoticGoodClientTransport::PushFrameIntoCall(
     ServerInitialMetadataFrame frame, RefCountedPtr<Stream> stream) {
   DCHECK(stream->message_reassembly.in_message_boundary());
-  auto headers = ServerMetadataGrpcFromProto(frame.headers);
+  auto headers = ServerMetadataGrpcFromProto(frame.body);
   if (!headers.ok()) {
     LOG_EVERY_N_SEC(INFO, 10) << "Encode headers failed: " << headers.status();
     return Immediate(StatusFlag(Failure{}));
@@ -102,7 +102,7 @@ auto ChaoticGoodClientTransport::PushFrameIntoCall(
 
 auto ChaoticGoodClientTransport::PushFrameIntoCall(
     ServerTrailingMetadataFrame frame, RefCountedPtr<Stream> stream) {
-  auto trailers = ServerMetadataGrpcFromProto(frame.trailers);
+  auto trailers = ServerMetadataGrpcFromProto(frame.body);
   if (!trailers.ok()) {
     stream->call.PushServerTrailingMetadata(
         CancelledServerMetadataFromStatus(trailers.status()));
@@ -323,7 +323,7 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
                 << "CHAOTIC_GOOD: Sending initial metadata: "
                 << md->DebugString();
             ClientInitialMetadataFrame frame;
-            frame.headers = ClientMetadataProtoFromGrpc(*md);
+            frame.body = ClientMetadataProtoFromGrpc(*md);
             return send_fragment(std::move(frame));
           },
           // Continuously send client frame with client to server messages.

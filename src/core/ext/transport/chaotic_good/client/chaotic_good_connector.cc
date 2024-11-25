@@ -117,10 +117,9 @@ auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
     RefCountedPtr<ChaoticGoodConnector> self, uint32_t data_connection_index) {
   // Serialize setting frame.
   SettingsFrame frame;
-  frame.settings.set_data_channel(true);
-  frame.settings.add_connection_id(
-      self->connection_ids_[data_connection_index]);
-  frame.settings.set_alignment(kDataAlignmentBytes);
+  frame.body.set_data_channel(true);
+  frame.body.add_connection_id(self->connection_ids_[data_connection_index]);
+  frame.body.set_alignment(kDataAlignmentBytes);
   SliceBuffer write_buffer;
   frame.MakeHeader().Serialize(
       write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
@@ -200,16 +199,15 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
                   auto status =
                       frame.Deserialize(frame_header, std::move(buffer));
                   if (!status.ok()) return status;
-                  if (frame.settings.connection_id().empty()) {
+                  if (frame.body.connection_id().empty()) {
                     return absl::UnavailableError(
                         "no connection id in settings frame");
                   }
-                  for (const auto& connection_id :
-                       frame.settings.connection_id()) {
+                  for (const auto& connection_id : frame.body.connection_id()) {
                     self->connection_ids_.push_back(connection_id);
                   }
                   auto settings_status =
-                      self->config_->ReceiveIncomingSettings(frame.settings);
+                      self->config_->ReceiveIncomingSettings(frame.body);
                   if (!settings_status.ok()) return settings_status;
                   self->data_endpoints_.resize(self->connection_ids_.size());
                   for (size_t i = 0; i < self->connection_ids_.size(); ++i) {
@@ -239,8 +237,8 @@ auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
   // Serialize setting frame.
   SettingsFrame frame;
   // frame.header set connectiion_type: control
-  frame.settings.set_data_channel(false);
-  self->config_->PrepareOutgoingSettings(frame.settings);
+  frame.body.set_data_channel(false);
+  self->config_->PrepareOutgoingSettings(frame.body);
   SliceBuffer write_buffer;
   frame.MakeHeader().Serialize(
       write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));

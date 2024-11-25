@@ -122,12 +122,6 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   // Resolves to a StatusOr<tuple<SliceBuffer, SliceBuffer>>
   auto ReadFrameBody(Slice read_buffer);
   void SendCancel(uint32_t stream_id, absl::Status why);
-  auto DeserializeAndPushFragmentToNewCall(FrameHeader frame_header,
-                                           BufferPair buffers,
-                                           ChaoticGoodTransport& transport);
-  auto DeserializeAndPushFragmentToExistingCall(
-      FrameHeader frame_header, BufferPair buffers,
-      ChaoticGoodTransport& transport);
   absl::Status NewStream(ChaoticGoodTransport& transport,
                          const FrameHeader& header,
                          SliceBuffer initial_metadata_payload);

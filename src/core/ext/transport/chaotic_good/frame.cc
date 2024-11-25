@@ -39,8 +39,6 @@
 namespace grpc_core {
 namespace chaotic_good {
 
-namespace {
-
 absl::Status ReadProto(SliceBuffer payload,
                        google::protobuf::MessageLite& msg) {
   auto payload_slice = payload.JoinIntoSlice();
@@ -61,6 +59,8 @@ uint32_t ProtoPayloadSize(const google::protobuf::MessageLite& msg) {
   CHECK_LE(length, std::numeric_limits<uint32_t>::max());
   return static_cast<uint32_t>(length);
 }
+
+namespace {
 
 struct ClientMetadataEncoder {
   void Encode(HttpPathMetadata,
@@ -196,74 +196,6 @@ absl::StatusOr<ServerMetadataHandle> ServerMetadataGrpcFromProto(
   return ReadUnknownFields(metadata, std::move(md));
 }
 
-absl::Status SettingsFrame::Deserialize(const FrameHeader& header,
-                                        SliceBuffer payload) {
-  CHECK_EQ(header.type, FrameType::kSettings);
-  if (header.stream_id != 0) {
-    return absl::InternalError("Expected stream id 0");
-  }
-  return ReadProto(std::move(payload), settings);
-}
-
-FrameHeader SettingsFrame::MakeHeader() const {
-  return FrameHeader{FrameType::kSettings, 0, 0, ProtoPayloadSize(settings)};
-}
-
-void SettingsFrame::SerializePayload(SliceBuffer& payload) const {
-  WriteProto(settings, payload);
-}
-
-std::string SettingsFrame::ToString() const {
-  return settings.ShortDebugString();
-}
-
-absl::Status ClientInitialMetadataFrame::Deserialize(const FrameHeader& header,
-                                                     SliceBuffer payload) {
-  CHECK_EQ(header.type, FrameType::kClientInitialMetadata);
-  if (header.stream_id == 0) {
-    return absl::InternalError("Expected non-zero stream id");
-  }
-  stream_id = header.stream_id;
-  return ReadProto(std::move(payload), headers);
-}
-
-FrameHeader ClientInitialMetadataFrame::MakeHeader() const {
-  return FrameHeader{FrameType::kClientInitialMetadata, 0, stream_id,
-                     ProtoPayloadSize(headers)};
-}
-
-void ClientInitialMetadataFrame::SerializePayload(SliceBuffer& payload) const {
-  CHECK_NE(stream_id, 0u);
-  WriteProto(headers, payload);
-}
-
-std::string ClientInitialMetadataFrame::ToString() const {
-  return absl::StrCat("ClientInitialMetadataFrame{stream_id=", stream_id,
-                      ", headers=", headers.ShortDebugString(), "}");
-}
-
-absl::Status ClientEndOfStream::Deserialize(const FrameHeader& header,
-                                            SliceBuffer) {
-  CHECK_EQ(header.type, FrameType::kClientEndOfStream);
-  if (header.stream_id == 0) {
-    return absl::InternalError("Expected non-zero stream id");
-  }
-  if (header.payload_length != 0) {
-    return absl::InternalError(
-        "Expected zero payload length on ClientEndOfStream");
-  }
-  stream_id = header.stream_id;
-  return absl::OkStatus();
-}
-
-FrameHeader ClientEndOfStream::MakeHeader() const {
-  return FrameHeader{FrameType::kClientEndOfStream, 0, stream_id, 0};
-}
-
-void ClientEndOfStream::SerializePayload(SliceBuffer&) const {}
-
-std::string ClientEndOfStream::ToString() const { return "ClientEndOfStream"; }
-
 absl::Status MessageFrame::Deserialize(const FrameHeader& header,
                                        SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kMessage);
@@ -296,31 +228,6 @@ std::string MessageFrame::ToString() const {
   return out;
 }
 
-absl::Status BeginMessageFrame::Deserialize(const FrameHeader& header,
-                                            SliceBuffer payload) {
-  CHECK_EQ(header.type, FrameType::kBeginMessage);
-  if (header.stream_id == 0) {
-    return absl::InternalError("Expected non-zero stream id");
-  }
-  stream_id = header.stream_id;
-  return ReadProto(std::move(payload), this->payload);
-}
-
-FrameHeader BeginMessageFrame::MakeHeader() const {
-  return FrameHeader{FrameType::kBeginMessage, 0, stream_id,
-                     ProtoPayloadSize(payload)};
-}
-
-void BeginMessageFrame::SerializePayload(SliceBuffer& payload) const {
-  CHECK_NE(stream_id, 0u);
-  WriteProto(this->payload, payload);
-}
-
-std::string BeginMessageFrame::ToString() const {
-  return absl::StrCat("BeginMessageFrame{stream_id=", stream_id,
-                      ", payload=", payload.ShortDebugString(), "}");
-}
-
 absl::Status MessageChunkFrame::Deserialize(const FrameHeader& header,
                                             SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kMessageChunk);
@@ -347,87 +254,6 @@ void MessageChunkFrame::SerializePayload(SliceBuffer& payload) const {
 std::string MessageChunkFrame::ToString() const {
   return absl::StrCat("MessageChunk{stream_id=", stream_id,
                       ", payload=", payload.Length(), "b}");
-}
-
-absl::Status ServerInitialMetadataFrame::Deserialize(const FrameHeader& header,
-                                                     SliceBuffer payload) {
-  CHECK_EQ(header.type, FrameType::kServerInitialMetadata);
-  if (header.stream_id == 0) {
-    return absl::InternalError("Expected non-zero stream id");
-  }
-  stream_id = header.stream_id;
-  return ReadProto(std::move(payload), headers);
-}
-
-FrameHeader ServerInitialMetadataFrame::MakeHeader() const {
-  return FrameHeader{FrameType::kServerInitialMetadata, 0, stream_id,
-                     ProtoPayloadSize(headers)};
-}
-
-void ServerInitialMetadataFrame::SerializePayload(SliceBuffer& payload) const {
-  CHECK_NE(stream_id, 0u);
-  WriteProto(headers, payload);
-}
-
-std::string ServerInitialMetadataFrame::ToString() const {
-  return absl::StrCat("ServerInitialMetadataFrame{stream_id=", stream_id,
-                      ", headers=", headers.ShortDebugString(), "}");
-}
-
-absl::Status ServerTrailingMetadataFrame::Deserialize(const FrameHeader& header,
-                                                      SliceBuffer payload) {
-  CHECK_EQ(header.type, FrameType::kServerTrailingMetadata);
-  if (header.stream_id == 0) {
-    return absl::InternalError("Expected non-zero stream id");
-  }
-  stream_id = header.stream_id;
-  return ReadProto(std::move(payload), trailers);
-}
-
-FrameHeader ServerTrailingMetadataFrame::MakeHeader() const {
-  return FrameHeader{FrameType::kServerTrailingMetadata, 0, stream_id,
-                     ProtoPayloadSize(trailers)};
-}
-
-void ServerTrailingMetadataFrame::SerializePayload(SliceBuffer& payload) const {
-  CHECK_NE(stream_id, 0u);
-  WriteProto(trailers, payload);
-}
-
-std::string ServerTrailingMetadataFrame::ToString() const {
-  return absl::StrCat("ServerTrailingMetadataFrame{stream_id=", stream_id,
-                      ", trailers=", trailers.ShortDebugString(), "}");
-}
-
-absl::Status CancelFrame::Deserialize(const FrameHeader& header,
-                                      SliceBuffer payload) {
-  // Ensure the frame type is Cancel
-  CHECK_EQ(header.type, FrameType::kCancel);
-
-  // Ensure the stream_id is non-zero
-  if (header.stream_id == 0) {
-    return absl::InternalError("Expected non-zero stream id");
-  }
-
-  // Ensure there is no payload
-  if (payload.Length() != 0) {
-    return absl::InternalError("Unexpected payload for Cancel frame");
-  }
-
-  // Set the stream_id
-  stream_id = header.stream_id;
-
-  return absl::OkStatus();
-}
-
-FrameHeader CancelFrame::MakeHeader() const {
-  return FrameHeader{FrameType::kCancel, 0, stream_id, 0};
-}
-
-void CancelFrame::SerializePayload(SliceBuffer&) const {}
-
-std::string CancelFrame::ToString() const {
-  return absl::StrCat("CancelFrame{stream_id=", stream_id, "}");
 }
 
 }  // namespace chaotic_good

@@ -178,7 +178,7 @@ auto ChaoticGoodServerTransport::SendCallInitialMetadataAndBody(
             md.has_value(),
             [&md, stream_id, &outgoing_frames, &call_initiator, this]() {
               ServerInitialMetadataFrame frame;
-              frame.headers = ServerMetadataProtoFromGrpc(**md);
+              frame.body = ServerMetadataProtoFromGrpc(**md);
               frame.stream_id = stream_id;
               return TrySeq(
                   SendFrame(std::move(frame), outgoing_frames, call_initiator),
@@ -207,7 +207,7 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
           [this, stream_id, outgoing_frames,
            call_initiator](ServerMetadataHandle md) mutable {
             ServerTrailingMetadataFrame frame;
-            frame.trailers = ServerMetadataProtoFromGrpc(*md);
+            frame.body = ServerMetadataProtoFromGrpc(*md);
             frame.stream_id = stream_id;
             return SendFrame(std::move(frame), outgoing_frames, call_initiator);
           }));
@@ -223,7 +223,7 @@ absl::Status ChaoticGoodServerTransport::NewStream(
   if (!client_initial_metadata_frame.ok()) {
     return client_initial_metadata_frame.status();
   }
-  auto md = ClientMetadataGrpcFromProto(client_initial_metadata_frame->headers);
+  auto md = ClientMetadataGrpcFromProto(client_initial_metadata_frame->body);
   if (!md.ok()) {
     return md.status();
   }

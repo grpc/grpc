@@ -246,34 +246,34 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                     auto status =
                         frame.Deserialize(frame_header, std::move(buffer));
                     if (!status.ok()) return status;
-                    if (frame.settings.data_channel()) {
-                      if (frame.settings.connection_id().empty()) {
+                    if (frame.body.data_channel()) {
+                      if (frame.body.connection_id().empty()) {
                         return absl::UnavailableError(
                             "no connection id in data endpoint settings frame");
                       }
-                      if (frame.settings.connection_id().size() != 1) {
+                      if (frame.body.connection_id().size() != 1) {
                         return absl::UnavailableError(absl::StrCat(
-                            "Got ", frame.settings.connection_id().size(),
+                            "Got ", frame.body.connection_id().size(),
                             " connection ids in data endpoint "
                             "settings frame (expect one)"));
                       }
-                      if (frame.settings.alignment() == 0) {
+                      if (frame.body.alignment() == 0) {
                         return absl::UnavailableError(
                             "no alignment in data endpoint settings frame");
                       }
                       // Get connection-id and data-alignment for data endpoint.
                       self->connection_->connection_ids_.clear();
                       self->connection_->connection_ids_.push_back(
-                          frame.settings.connection_id()[0]);
+                          frame.body.connection_id()[0]);
                       self->connection_->data_alignment_ =
-                          frame.settings.alignment();
+                          frame.body.alignment();
                     } else {
                       auto settings_status =
                           self->connection_->config_.ReceiveIncomingSettings(
-                              frame.settings);
+                              frame.body);
                       if (!settings_status.ok()) return settings_status;
                     }
-                    return !frame.settings.data_channel();
+                    return !frame.body.data_channel();
                   });
             },
             [&frame_header]() {
@@ -346,11 +346,11 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
           .GetInt(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS)
           .value_or(1));
   SettingsFrame frame;
-  frame.settings.set_data_channel(false);
+  frame.body.set_data_channel(false);
   for (const auto& connection_id : self->connection_->connection_ids_) {
-    frame.settings.add_connection_id(connection_id);
+    frame.body.add_connection_id(connection_id);
   }
-  self->connection_->config_.PrepareOutgoingSettings(frame.settings);
+  self->connection_->config_.PrepareOutgoingSettings(frame.body);
   SliceBuffer write_buffer;
   frame.MakeHeader().Serialize(
       write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
@@ -364,8 +364,8 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     DataEndpointWriteSettingsFrame(RefCountedPtr<HandshakingState> self) {
   // Send data endpoint setting frame
   SettingsFrame frame;
-  frame.settings.set_data_channel(true);
-  frame.settings.set_alignment(self->connection_->data_alignment_);
+  frame.body.set_data_channel(true);
+  frame.body.set_alignment(self->connection_->data_alignment_);
   SliceBuffer write_buffer;
   frame.MakeHeader().Serialize(
       write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
