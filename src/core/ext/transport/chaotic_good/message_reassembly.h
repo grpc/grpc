@@ -15,6 +15,10 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_MESSAGE_REASSEMBLY_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_MESSAGE_REASSEMBLY_H
 
+#include "absl/log/log.h"
+#include "src/core/ext/transport/chaotic_good/frame.h"
+#include "src/core/lib/transport/call_spine.h"
+
 namespace grpc_core {
 namespace chaotic_good {
 

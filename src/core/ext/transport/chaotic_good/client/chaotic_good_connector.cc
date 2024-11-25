@@ -261,7 +261,7 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
     notify_ = notify;
   }
   args_ = args;
-  config_.reset(new Config(args.channel_args));
+  config_ = std::make_unique<Config>(args.channel_args);
   resolved_addr_ = EventEngine::ResolvedAddress(
       reinterpret_cast<const sockaddr*>(args_.address->addr),
       args_.address->len);

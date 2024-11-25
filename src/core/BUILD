@@ -8125,6 +8125,11 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chaotic_good/message_reassembly.h",
     ],
+    external_deps = ["absl/log"],
+    deps = [
+        "call_spine",
+        "chaotic_good_frame",
+    ],
 )
 
 grpc_cc_library(

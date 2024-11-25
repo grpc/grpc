@@ -260,7 +260,7 @@ void ChaoticGoodClientTransport::AbortWithError() {
                           absl::UnavailableError("transport closed"),
                           "transport closed");
   lock.Release();
-  for (const auto& pair : stream_map) {
+  for (auto& pair : stream_map) {
     auto stream = std::move(pair.second);
     auto& call = stream->call;
     call.SpawnInfallible("cancel", [stream = std::move(stream)]() mutable {
