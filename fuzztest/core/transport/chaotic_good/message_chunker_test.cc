@@ -64,7 +64,7 @@ void MessageChunkerTest(uint32_t max_chunk_size, uint32_t alignment,
     } else {
       auto& f0 = absl::get<chaotic_good::BeginMessageFrame>(sender.frames[0]);
       EXPECT_EQ(f0.stream_id, stream_id);
-      EXPECT_EQ(f0.payload.length(), payload.length());
+      EXPECT_EQ(f0.body.length(), payload.length());
       std::string received_payload;
       for (size_t i = 1; i < sender.frames.size(); i++) {
         auto& f = absl::get<chaotic_good::MessageChunkFrame>(sender.frames[i]);
