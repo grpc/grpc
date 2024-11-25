@@ -24,10 +24,10 @@
 #include <utility>
 
 #include "absl/status/status.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/promise.h"

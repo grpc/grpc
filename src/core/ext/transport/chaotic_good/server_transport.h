@@ -77,7 +77,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
  public:
   ChaoticGoodServerTransport(
       const ChannelArgs& args, PromiseEndpoint control_endpoint,
-      PromiseEndpoint data_endpoint,
+      std::vector<PromiseEndpoint> data_endpoints,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine);
 
@@ -108,8 +108,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
-  auto ReadOneFrame(ChaoticGoodTransport& transport);
-  auto TransportWriteLoop(RefCountedPtr<ChaoticGoodTransport> transport);
+  auto ReadOneFrame(RefCountedPtr<ChaoticGoodTransport> transport);
   // Read different parts of the server frame from control/data endpoints
   // based on frame header.
   // Resolves to a StatusOr<tuple<SliceBuffer, SliceBuffer>>
@@ -125,8 +124,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
                          const FrameHeader& header,
                          SliceBuffer initial_metadata_payload);
   template <typename T>
-  auto DispatchFrame(ChaoticGoodTransport& transport, const FrameHeader& header,
-                     SliceBuffer payload);
+  auto DispatchFrame(RefCountedPtr<ChaoticGoodTransport> transport,
+                     IncomingFrame frame);
   auto PushFrameIntoCall(CallInitiator call_initiator, MessageFrame frame);
   auto PushFrameIntoCall(CallInitiator call_initiator, ClientEndOfStream frame);
   auto SendFrame(ServerFrame frame, MpscSender<ServerFrame> outgoing_frames,

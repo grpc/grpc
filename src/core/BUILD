@@ -928,6 +928,7 @@ grpc_cc_library(
     deps = [
         "join_state",
         "map",
+        "promise_factory",
         "//:gpr_platform",
     ],
 )
@@ -968,6 +969,7 @@ grpc_cc_library(
         "join_state",
         "map",
         "poll",
+        "promise_factory",
         "status_flag",
         "//:gpr_platform",
     ],
@@ -982,6 +984,7 @@ grpc_cc_library(
     deps = [
         "construct_destruct",
         "poll",
+        "promise_factory",
         "//:gpr_platform",
     ],
 )
@@ -1045,7 +1048,6 @@ grpc_cc_library(
         "promise_status",
         "seq_state",
         "status_flag",
-        "//:debug_location",
         "//:gpr_platform",
     ],
 )
@@ -8091,6 +8093,50 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chaotic_good_control_endpoint",
+    srcs = [
+        "ext/transport/chaotic_good/control_endpoint.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/control_endpoint.h",
+    ],
+    external_deps = ["absl/cleanup"],
+    deps = [
+        "1999",
+        "event_engine_context",
+        "event_engine_tcp_socket_utils",
+        "grpc_promise_endpoint",
+        "loop",
+        "try_seq",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_data_endpoints",
+    srcs = [
+        "ext/transport/chaotic_good/data_endpoints.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/data_endpoints.h",
+    ],
+    external_deps = [
+        "absl/cleanup",
+        "absl/strings",
+    ],
+    deps = [
+        "1999",
+        "event_engine_context",
+        "grpc_promise_endpoint",
+        "loop",
+        "seq",
+        "slice_buffer",
+        "try_seq",
+        "//:promise",
+    ],
+)
+
+grpc_cc_library(
     name = "chaotic_good_transport",
     hdrs = [
         "ext/transport/chaotic_good/chaotic_good_transport.h",
@@ -8102,16 +8148,21 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "chaotic_good_control_endpoint",
+        "chaotic_good_data_endpoints",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
+        "event_engine_context",
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
-        "if",
+        "loop",
+        "match_promise",
+        "mpsc",
+        "seq",
         "try_join",
         "try_seq",
         "//:gpr_platform",
         "//:grpc_trace",
-        "//:promise",
     ],
 )
 
@@ -8126,8 +8177,8 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
-        "absl/log:check",
         "absl/log",
+        "absl/log:check",
         "absl/random",
         "absl/random:bit_gen_ref",
         "absl/status",
@@ -8184,8 +8235,8 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
+        "absl/log",
         "absl/log:check",
-        "absl/log:log",
         "absl/random",
         "absl/random:bit_gen_ref",
         "absl/status",
@@ -8707,8 +8758,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:flat_hash_map",
+        "absl/log",
         "absl/log:check",
-        "absl/log:log",
         "absl/random",
         "absl/random:bit_gen_ref",
         "absl/status",
@@ -8739,6 +8790,7 @@ grpc_cc_library(
         "if",
         "inter_activity_latch",
         "iomgr_fwd",
+        "join",
         "latch",
         "memory_quota",
         "metadata",
@@ -8839,8 +8891,8 @@ grpc_cc_library(
         "ext/transport/chaotic_good/client/chaotic_good_connector.h",
     ],
     external_deps = [
+        "absl/log",
         "absl/log:check",
-        "absl/log:log",
         "absl/random",
         "absl/random:bit_gen_ref",
         "absl/status",
@@ -8849,6 +8901,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "activity",
+        "all_ok",
         "arena",
         "channel_args",
         "channel_args_endpoint_config",

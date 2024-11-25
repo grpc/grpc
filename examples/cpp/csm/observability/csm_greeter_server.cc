@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   // default was "localhost:9464" which causes connection issue across GKE pods
   opts.url = "0.0.0.0:9464";
+  opts.without_otel_scope = false;
   auto prometheus_exporter =
       opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
   auto meter_provider =

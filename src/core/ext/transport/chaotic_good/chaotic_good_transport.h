@@ -20,21 +20,67 @@
 #include <cstdint>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/random/random.h"
 #include "absl/strings/escaping.h"
+#include "src/core/ext/transport/chaotic_good/control_endpoint.h"
+#include "src/core/ext/transport/chaotic_good/data_endpoints.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/promise/if.h"
-#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/match_promise.h"
+#include "src/core/lib/promise/mpsc.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 
 namespace grpc_core {
 namespace chaotic_good {
+
+inline std::vector<PromiseEndpoint> OneDataEndpoint(PromiseEndpoint endpoint) {
+  std::vector<PromiseEndpoint> ep;
+  ep.emplace_back(std::move(endpoint));
+  return ep;
+}
+
+// One received frame: the header, and the serialized bytes of the payload.
+// The payload may not yet be received into memory, so the accessor for that
+// returns a promise that will need to be resolved prior to inspecting the
+// bytes.
+// In this way we can pull bytes from various different data connections and
+// read them in any order, but still have a trivial reassembly in the receiving
+// call promise.
+class IncomingFrame {
+ public:
+  template <typename T>
+  IncomingFrame(FrameHeader header, T payload, size_t remove_padding)
+      : header_(header),
+        payload_(std::move(payload)),
+        remove_padding_(remove_padding) {}
+
+  const FrameHeader& header() { return header_; }
+
+  auto Payload() {
+    return Map(
+        MatchPromise(
+            std::move(payload_),
+            [](absl::StatusOr<SliceBuffer> status) { return status; },
+            [](DataEndpoints::ReadTicket ticket) { return ticket.Await(); }),
+        [remove_padding =
+             remove_padding_](absl::StatusOr<SliceBuffer> payload) {
+          if (payload.ok()) payload->RemoveLastNBytesNoInline(remove_padding);
+          return payload;
+        });
+  }
+
+ private:
+  FrameHeader header_;
+  absl::variant<absl::StatusOr<SliceBuffer>, DataEndpoints::ReadTicket>
+      payload_;
+  size_t remove_padding_;
+};
 
 class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
  public:
@@ -44,47 +90,85 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
     uint32_t inlined_payload_size_threshold = 8 * 1024;
   };
 
-  ChaoticGoodTransport(PromiseEndpoint control_endpoint,
-                       PromiseEndpoint data_endpoint, Options options)
-      : control_endpoint_(std::move(control_endpoint)),
-        data_endpoint_(std::move(data_endpoint)),
-        options_(options) {
-    // Enable RxMemoryAlignment and RPC receive coalescing after the transport
-    // setup is complete. At this point all the settings frames should have
-    // been read.
-    data_endpoint_.EnforceRxMemoryAlignmentAndCoalescing();
-  }
+  ChaoticGoodTransport(
+      PromiseEndpoint control_endpoint,
+      std::vector<PromiseEndpoint> data_endpoints,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine,
+      Options options)
+      : event_engine_(std::move(event_engine)),
+        control_endpoint_(std::move(control_endpoint), event_engine_.get()),
+        data_endpoints_(std::move(data_endpoints), event_engine_.get()),
+        options_(options) {}
 
   auto WriteFrame(const FrameInterface& frame) {
-    SliceBuffer control;
-    SliceBuffer data;
     FrameHeader header = frame.MakeHeader();
-    if (header.payload_length > options_.inlined_payload_size_threshold) {
-      header.payload_connection_id = 1;
-      header.Serialize(control.AddTiny(FrameHeader::kFrameHeaderSize));
-      frame.SerializePayload(data);
-      const size_t padding = header.Padding(options_.encode_alignment);
-      if (padding != 0) {
-        auto slice = MutableSlice::CreateUninitialized(padding);
-        memset(slice.data(), 0, padding);
-        data.AppendIndexed(Slice(std::move(slice)));
-      }
-    } else {
-      header.Serialize(control.AddTiny(FrameHeader::kFrameHeaderSize));
-      frame.SerializePayload(control);
-    }
-    // ignore encoding errors: they will be logged separately already
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: WriteFrame to:"
         << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
                .value_or("<<unknown peer address>>")
         << " " << frame.ToString();
-    return TryJoin<absl::StatusOr>(control_endpoint_.Write(std::move(control)),
-                                   data_endpoint_.Write(std::move(data)));
+    return If(
+        // If we have no data endpoints, OR this is a small payload
+        data_endpoints_.empty() ||
+            header.payload_length <= options_.inlined_payload_size_threshold,
+        // ... then write it to the control endpoint
+        [this, &header, &frame]() {
+          SliceBuffer output;
+          header.Serialize(output.AddTiny(FrameHeader::kFrameHeaderSize));
+          frame.SerializePayload(output);
+          return control_endpoint_.Write(std::move(output));
+        },
+        // ... otherwise write it to a data connection
+        [this, header, &frame]() mutable {
+          SliceBuffer payload;
+          // Temporarily give a bogus connection id to get padding right
+          header.payload_connection_id = 1;
+          const size_t padding = header.Padding(options_.encode_alignment);
+          frame.SerializePayload(payload);
+          GRPC_TRACE_LOG(chaotic_good, INFO)
+              << "CHAOTIC_GOOD: Send " << payload.Length()
+              << "b payload on data channel; add " << padding << " bytes for "
+              << options_.encode_alignment << " alignment";
+          if (padding != 0) {
+            auto slice = MutableSlice::CreateUninitialized(padding);
+            memset(slice.data(), 0, padding);
+            payload.AppendIndexed(Slice(std::move(slice)));
+          }
+          return Seq(data_endpoints_.Write(std::move(payload)),
+                     [this, header](uint32_t connection_id) mutable {
+                       header.payload_connection_id = connection_id + 1;
+                       SliceBuffer header_frame;
+                       header.Serialize(
+                           header_frame.AddTiny(FrameHeader::kFrameHeaderSize));
+                       return control_endpoint_.Write(std::move(header_frame));
+                     });
+        });
+  }
+
+  // Common outbound loop for both client and server (these vary only over the
+  // frame type).
+  template <typename Frame>
+  auto TransportWriteLoop(MpscReceiver<Frame>& outgoing_frames) {
+    return Loop([self = Ref(), &outgoing_frames] {
+      return TrySeq(
+          // Get next outgoing frame.
+          outgoing_frames.Next(),
+          // Serialize and write it out.
+          [self = self.get()](Frame client_frame) {
+            return self->WriteFrame(GetFrameInterface(client_frame));
+          },
+          []() -> LoopCtl<absl::Status> {
+            // The write failures will be caught in TrySeq and exit loop.
+            // Therefore, only need to return Continue() in the last lambda
+            // function.
+            return Continue();
+          });
+    });
   }
 
   // Read frame header and payloads for control and data portions of one frame.
-  // Resolves to StatusOr<tuple<FrameHeader, BufferPair>>.
+  // Resolves to StatusOr<IncomingFrame>.
   auto ReadFrameBytes() {
     return TrySeq(
         control_endpoint_.ReadSlice(FrameHeader::kFrameHeaderSize),
@@ -102,19 +186,36 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           return frame_header;
         },
         [this](FrameHeader frame_header) {
-          current_frame_header_ = frame_header;
-          auto con = frame_header.payload_connection_id == 0
-                         ? &control_endpoint_
-                         : &data_endpoint_;
-          return con->Read(frame_header.payload_length +
-                           frame_header.Padding(options_.decode_alignment));
-        },
-        [this](SliceBuffer payload)
-            -> absl::StatusOr<std::tuple<FrameHeader, SliceBuffer>> {
-          payload.RemoveLastNBytesNoInline(
-              current_frame_header_.Padding(options_.decode_alignment));
-          return std::tuple<FrameHeader, SliceBuffer>(current_frame_header_,
-                                                      std::move(payload));
+          return If(
+              // If the payload is on the connection frame
+              frame_header.payload_connection_id == 0,
+              // ... then read the data immediately and return an IncomingFrame
+              //     that contains the payload.
+              // We need to do this here so that we do not create head of line
+              // blocking issues reading later control frames (but waiting for a
+              // call to get scheduled time to read the payload).
+              [this, frame_header]() {
+                return Map(control_endpoint_.Read(frame_header.payload_length),
+                           [frame_header](absl::StatusOr<SliceBuffer> payload)
+                               -> absl::StatusOr<IncomingFrame> {
+                             if (!payload.ok()) return payload.status();
+                             return IncomingFrame(frame_header,
+                                                  std::move(payload), 0);
+                           });
+              },
+              // ... otherwise issue a read to the appropriate data endpoint,
+              //     which will return a read ticket - which can be used later
+              //     in the call promise to asynchronously wait for those bytes
+              //     to be available.
+              [this, frame_header]() -> absl::StatusOr<IncomingFrame> {
+                const auto padding =
+                    frame_header.Padding(options_.decode_alignment);
+                return IncomingFrame(
+                    frame_header,
+                    data_endpoints_.Read(frame_header.payload_connection_id - 1,
+                                         frame_header.payload_length + padding),
+                    padding);
+              });
         });
   }
 
@@ -135,10 +236,10 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   }
 
  private:
-  PromiseEndpoint control_endpoint_;
-  PromiseEndpoint data_endpoint_;
-  FrameHeader current_frame_header_;
-  Options options_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  ControlEndpoint control_endpoint_;
+  DataEndpoints data_endpoints_;
+  const Options options_;
 };
 
 }  // namespace chaotic_good
