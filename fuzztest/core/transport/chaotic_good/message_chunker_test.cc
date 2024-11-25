@@ -24,9 +24,14 @@
 namespace grpc_core {
 namespace {
 
+// One frame for this test is one of the message carrying frame types.
 using Frame =
     absl::variant<chaotic_good::BeginMessageFrame,
                   chaotic_good::MessageChunkFrame, chaotic_good::MessageFrame>;
+
+// This type looks like an mpsc for sending frames, but simply accumulates
+// frames so we can look at them at the end of the test and ensure they're
+// correct.
 struct Sender {
   std::vector<Frame> frames;
   Sender() = default;
@@ -39,6 +44,7 @@ struct Sender {
     return []() -> Poll<bool> { return true; };
   }
 };
+
 void MessageChunkerTest(uint32_t max_chunk_size, uint32_t alignment,
                         uint32_t stream_id, uint32_t message_flags,
                         std::string payload) {
@@ -50,18 +56,23 @@ void MessageChunkerTest(uint32_t max_chunk_size, uint32_t alignment,
                            stream_id, sender)(),
               IsReady(true));
   if (max_chunk_size == 0) {
+    // No chunking ==> one frame with just a message.
     EXPECT_EQ(sender.frames.size(), 1);
     auto& f = absl::get<chaotic_good::MessageFrame>(sender.frames[0]);
     EXPECT_EQ(f.message->payload()->JoinIntoString(), payload);
     EXPECT_EQ(f.stream_id, stream_id);
   } else {
+    // Chunking ==> we'd better get at least one frame.
     ASSERT_GE(sender.frames.size(), 1);
     if (sender.frames.size() == 1) {
+      // If just one frame, it'd better be one of the old-style message frames.
       EXPECT_LE(payload.length(), max_chunk_size);
       auto& f = absl::get<chaotic_good::MessageFrame>(sender.frames[0]);
       EXPECT_EQ(f.message->payload()->JoinIntoString(), payload);
       EXPECT_EQ(f.stream_id, stream_id);
     } else {
+      // Otherwise we should get a BeginMessage frame followed by a sequence of
+      // MessageChunk frames, in payload order.
       auto& f0 = absl::get<chaotic_good::BeginMessageFrame>(sender.frames[0]);
       EXPECT_EQ(f0.stream_id, stream_id);
       EXPECT_EQ(f0.body.length(), payload.length());
