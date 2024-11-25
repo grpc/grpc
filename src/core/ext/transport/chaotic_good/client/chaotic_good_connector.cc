@@ -28,6 +28,7 @@
 #include "absl/status/statusor.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -35,7 +36,6 @@
 #include "src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
@@ -117,10 +117,9 @@ auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
     RefCountedPtr<ChaoticGoodConnector> self, uint32_t data_connection_index) {
   // Serialize setting frame.
   SettingsFrame frame;
-  frame.settings.set_data_channel(true);
-  frame.settings.add_connection_id(
-      self->connection_ids_[data_connection_index]);
-  frame.settings.set_alignment(kDataAlignmentBytes);
+  frame.body.set_data_channel(true);
+  frame.body.add_connection_id(self->connection_ids_[data_connection_index]);
+  frame.body.set_alignment(kDataAlignmentBytes);
   SliceBuffer write_buffer;
   frame.MakeHeader().Serialize(
       write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
@@ -200,14 +199,16 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
                   auto status =
                       frame.Deserialize(frame_header, std::move(buffer));
                   if (!status.ok()) return status;
-                  if (frame.settings.connection_id().empty()) {
+                  if (frame.body.connection_id().empty()) {
                     return absl::UnavailableError(
                         "no connection id in settings frame");
                   }
-                  for (const auto& connection_id :
-                       frame.settings.connection_id()) {
+                  for (const auto& connection_id : frame.body.connection_id()) {
                     self->connection_ids_.push_back(connection_id);
                   }
+                  auto settings_status =
+                      self->config_->ReceiveIncomingSettings(frame.body);
+                  if (!settings_status.ok()) return settings_status;
                   self->data_endpoints_.resize(self->connection_ids_.size());
                   for (size_t i = 0; i < self->connection_ids_.size(); ++i) {
                     self->data_endpoint_ready_.emplace_back(
@@ -236,7 +237,8 @@ auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
   // Serialize setting frame.
   SettingsFrame frame;
   // frame.header set connectiion_type: control
-  frame.settings.set_data_channel(false);
+  frame.body.set_data_channel(false);
+  self->config_->PrepareOutgoingSettings(frame.body);
   SliceBuffer write_buffer;
   frame.MakeHeader().Serialize(
       write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
@@ -259,6 +261,7 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
     notify_ = notify;
   }
   args_ = args;
+  config_ = std::make_unique<Config>(args.channel_args);
   resolved_addr_ = EventEngine::ResolvedAddress(
       reinterpret_cast<const sockaddr*>(args_.address->addr),
       args_.address->len);
@@ -344,7 +347,7 @@ void ChaoticGoodConnector::OnHandshakeDone(
             self->result_->transport = new ChaoticGoodClientTransport(
                 std::move(self->control_endpoint_),
                 std::move(self->data_endpoints_), self->args_.channel_args,
-                self->event_engine_);
+                self->event_engine_, *self->config_);
             self->result_->channel_args = self->args_.channel_args;
             ExecCtx::Run(DEBUG_LOCATION, std::exchange(self->notify_, nullptr),
                          status);

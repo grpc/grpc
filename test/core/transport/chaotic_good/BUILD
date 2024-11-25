@@ -13,8 +13,8 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
 load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
 
 licenses(["notice"])
 

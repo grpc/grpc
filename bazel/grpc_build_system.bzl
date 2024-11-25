@@ -117,7 +117,6 @@ def _update_visibility(visibility):
         "grpcpp_gcp_observability": PUBLIC,
         "grpc_resolver_fake": PRIVATE,
         "grpc++_public_hdrs": PUBLIC,
-        "grpc++_test": PRIVATE,
         "http": PRIVATE,
         "httpcli": PRIVATE,
         "iomgr_internal_errqueue": PRIVATE,
@@ -625,6 +624,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         srcs = srcs,
         deps = core_deps,
         tags = tags,
+        alwayslink = 1,
     )
 
     for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):

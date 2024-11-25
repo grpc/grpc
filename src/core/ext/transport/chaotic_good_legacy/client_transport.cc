@@ -237,6 +237,9 @@ void ChaoticGoodClientTransport::AbortWithError() {
   ReleasableMutexLock lock(&mu_);
   StreamMap stream_map = std::move(stream_map_);
   stream_map_.clear();
+  state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
+                          absl::UnavailableError("transport closed"),
+                          "transport closed");
   lock.Release();
   for (const auto& pair : stream_map) {
     auto call_handler = pair.second;

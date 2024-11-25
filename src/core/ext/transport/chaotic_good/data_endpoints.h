@@ -88,8 +88,14 @@ class InputQueues : public RefCounted<InputQueues> {
 
     ReadTicket(const ReadTicket&) = delete;
     ReadTicket& operator=(const ReadTicket&) = delete;
-    ReadTicket(ReadTicket&&) noexcept = default;
-    ReadTicket& operator=(ReadTicket&&) noexcept = default;
+    ReadTicket(ReadTicket&& other) noexcept
+        : ticket_(std::move(other.ticket_)),
+          input_queues_(std::move(other.input_queues_)) {}
+    ReadTicket& operator=(ReadTicket&& other) noexcept {
+      ticket_ = std::move(other.ticket_);
+      input_queues_ = std::move(other.input_queues_);
+      return *this;
+    }
 
     ~ReadTicket() {
       if (input_queues_ != nullptr && ticket_.ok()) {

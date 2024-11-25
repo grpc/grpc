@@ -17,7 +17,7 @@
 #include <memory>
 
 #include "absl/random/random.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -340,7 +340,7 @@ std::string YodelTest::RandomMessage() {
     }
     return out;
   }()};
-  return RandomString(0, 1024 * 1024, *kChars);
+  return RandomString(0, max_random_message_size_, *kChars);
 }
 
 }  // namespace grpc_core

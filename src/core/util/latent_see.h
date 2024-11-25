@@ -35,6 +35,7 @@
 #include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "src/core/util/per_cpu.h"
 #include "src/core/util/sync.h"
 

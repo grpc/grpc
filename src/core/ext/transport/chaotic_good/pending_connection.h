@@ -24,7 +24,7 @@
 namespace grpc_core {
 namespace chaotic_good {
 
-class PendingServerConnection {
+class PendingConnection : public RefCounted<PendingConnection> {
  public:
   absl::string_view id() { return id_; }
   auto Await() { return latch_.Wait(); }
@@ -34,9 +34,16 @@ class PendingServerConnection {
   Latch<absl::StatusOr<PromiseEndpoint>> latch_;
 };
 
+using PendingConnectionPtr = RefCountedPtr<PendingConnection>;
+
 class ChaoticGoodListener {
  public:
-  virtual PendingServerConnection RequestDataConnection() = 0;
+  virtual PendingConnectionPtr RequestDataConnection() = 0;
+};
+
+class ChaoticGoodConnector {
+ public:
+  virtual PendingConnectionPtr Connect(absl::string_view id) = 0;
 };
 
 }  // namespace chaotic_good
