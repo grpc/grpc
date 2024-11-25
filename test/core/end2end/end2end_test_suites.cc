@@ -521,7 +521,9 @@ class ChaoticGoodFixture : public CoreTestFixture {
   explicit ChaoticGoodFixture(int data_connections = 1, int chunk_size = 0,
                               std::string localaddr = JoinHostPort(
                                   "localhost", grpc_pick_unused_port_or_die()))
-      : data_connections_(data_connections), localaddr_(std::move(localaddr)) {}
+      : data_connections_(data_connections),
+        chunk_size_(chunk_size),
+        localaddr_(std::move(localaddr)) {}
 
  protected:
   const std::string& localaddr() const { return localaddr_; }
