@@ -111,10 +111,10 @@ auto ChaoticGoodServerTransport::DispatchFrame(
                   },
                   [stream = std::move(stream), this](T frame) mutable {
                     auto& call = stream->call;
-                    return call.CancelIfFails(
-                        PushFrameIntoCall(std::move(stream), std::move(frame)));
-                  },
-                  ImmediateOkStatus());
+                    return Map(call.CancelIfFails(PushFrameIntoCall(
+                                   std::move(stream), std::move(frame))),
+                               [](auto) { return absl::OkStatus(); });
+                  });
             });
       },
       []() { return absl::OkStatus(); });
@@ -255,7 +255,6 @@ auto ChaoticGoodServerTransport::ReadOneFrame(
       TrySeq(
           transport->ReadFrameBytes(),
           [this, transport](IncomingFrame incoming_frame) mutable {
-            // CHECK_EQ(header.payload_length, payload.Length());
             return Switch(
                 incoming_frame.header().type,
                 Case<FrameType, FrameType::kClientInitialMetadata>([&, this]() {

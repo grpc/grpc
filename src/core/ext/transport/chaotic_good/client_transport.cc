@@ -147,10 +147,10 @@ auto ChaoticGoodClientTransport::DispatchFrame(
                       },
                       [stream = std::move(stream), this](T frame) mutable {
                         auto& call = stream->call;
-                        return call.CancelIfFails(PushFrameIntoCall(
-                            std::move(frame), std::move(stream)));
-                      },
-                      ImmediateOkStatus());
+                        return Map(call.CancelIfFails(PushFrameIntoCall(
+                                       std::move(frame), std::move(stream))),
+                                   [](auto) { return absl::OkStatus(); });
+                      });
                 });
           },
           []() { return absl::OkStatus(); }));
