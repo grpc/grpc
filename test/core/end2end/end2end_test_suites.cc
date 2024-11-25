@@ -1046,7 +1046,7 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           }},
       CoreTestConfiguration{
           "ChaoticGoodOneByteChunk",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_1BYTE_AT_A_TIME |
               FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
               FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
               FEATURE_MASK_IS_CALL_V3,

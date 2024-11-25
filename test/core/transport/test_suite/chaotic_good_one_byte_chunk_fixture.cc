@@ -39,7 +39,7 @@ TRANSPORT_FIXTURE(ChaoticGoodOneByteChunks) {
           channel_args, std::move(control_endpoints.server),
           std::vector<PromiseEndpoint>{}, event_engine, config);
   return ClientAndServerTransportPair{std::move(client_transport),
-                                      std::move(server_transport)};
+                                      std::move(server_transport), true};
 }
 
 }  // namespace grpc_core
