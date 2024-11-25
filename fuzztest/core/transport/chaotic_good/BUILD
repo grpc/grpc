@@ -37,6 +37,6 @@ grpc_fuzz_test(
     ],
     deps = [
         "//src/core:chaotic_good_message_chunker",
-        "//test/core/promise:poll_matcher"
+        "//test/core/promise:poll_matcher",
     ],
 )
