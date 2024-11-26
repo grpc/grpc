@@ -548,13 +548,14 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
           std::string(method->ServerStreaming() ? (render_async ? "AsyncIterator[" : "Iterator[") : "") + response_module_and_class +
           std::string(method->ServerStreaming() ? "]" : "");
 
+      method_dict["RequestModuleAndClass"] = request_module_and_class;
       method_dict["ResponseModuleAndClass"] = response_module_and_class;
       method_dict["InputTypeName"] = server_request_type;
       method_dict["OutputTypeName"] = server_response_type;
 
       out->Print("\n");
       if (render_async) {
-        out->Print(method_dict, "async def $Method$(self, $ArgName$: $InputTypeName$, context: grpc.aio.ServicerContext[$InputTypeName$, $OutputTypeName$]) -> $OutputTypeName$:\n");
+        out->Print(method_dict, "async def $Method$(self, $ArgName$: $InputTypeName$, context: grpc.aio.ServicerContext[$RequestModuleAndClass$, $ResponseModuleAndClass$]) -> $OutputTypeName$:\n");
       } else {
         out->Print(method_dict, "def $Method$(self, $ArgName$: $InputTypeName$, context: grpc.ServicerContext) -> $OutputTypeName$:\n");
       }
