@@ -551,10 +551,13 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
       method_dict["ResponseModuleAndClass"] = response_module_and_class;
       method_dict["InputTypeName"] = server_request_type;
       method_dict["OutputTypeName"] = server_response_type;
-      method_dict["AsyncFuncPrefix"] = render_async ? "async " : "";
 
       out->Print("\n");
-      out->Print(method_dict, "$AsyncFuncPrefix$def $Method$(self, $ArgName$: $InputTypeName$, context: grpc.ServicerContext) -> $OutputTypeName$:\n");
+      if (render_async) {
+        out->Print(method_dict, "async def $Method$(self, $ArgName$: $InputTypeName$, context: grpc.aio.ServicerContext[$InputTypeName$, $OutputTypeName$]) -> $OutputTypeName$:\n");
+      } else {
+        out->Print(method_dict, "def $Method$(self, $ArgName$: $InputTypeName$, context: grpc.ServicerContext) -> $OutputTypeName$:\n");
+      }
       {
         IndentScope raii_method_indent(out);
         StringVector method_comments = method->GetAllComments();
