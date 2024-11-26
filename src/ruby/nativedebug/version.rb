@@ -14,6 +14,6 @@
 
 module GRPC
   module NativeDebug
-    VERSION = '1.68.0'
+    VERSION = '1.68.1'
   end
 end
