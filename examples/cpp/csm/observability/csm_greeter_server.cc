@@ -67,6 +67,6 @@ int main(int argc, char** argv) {
               << observability.status().ToString() << std::endl;
     return static_cast<int>(observability.status().code());
   }
-  RunServer(absl::GetFlag(FLAGS_port));
+  RunXdsEnabledServer(absl::GetFlag(FLAGS_port));
   return 0;
 }
