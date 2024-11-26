@@ -2431,6 +2431,36 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPostPermissionAnyPrincipal) {
           grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
+TEST_P(XdsRbacTestWithActionPermutations,
+       MethodPostPermissionWithStringMatcherAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name(":method");
+  auto* string_match = header->mutable_string_match();
+  string_match->set_exact("post");
+  string_match->set_ignore_case(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->set_allow_put_requests(true);
+  backends_[0]->Start();
+  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  // All RPCs use POST method by default
+  SendRpc([this]() { return CreateInsecureChannel(); },
+          RpcOptions().set_wait_for_ready(true), {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
+  // Test that an RPC with PUT method is handled properly.
+  SendRpc([this]() { return CreateInsecureChannel(/*use_put_requests=*/true); },
+          RpcOptions().set_wait_for_ready(true), {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() != RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
+}
+
 TEST_P(XdsRbacTestWithActionPermutations, MethodGetPermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
