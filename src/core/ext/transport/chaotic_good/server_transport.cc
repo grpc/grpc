@@ -330,24 +330,23 @@ auto ChaoticGoodServerTransport::OnTransportActivityDone(
 }
 
 ChaoticGoodServerTransport::ChaoticGoodServerTransport(
-    const ChannelArgs& args, PromiseEndpoint control_endpoint,
-    std::vector<PromiseEndpoint> data_endpoints,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
-    Config config)
+    const ChannelArgs& args, PromiseEndpoint control_endpoint, Config config,
+    RefCountedPtr<ServerConnectionFactory> listener)
     : call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
           args.GetObject<ResourceQuota>()
               ->memory_quota()
               ->CreateMemoryAllocator("chaotic-good"),
           1024)),
-      event_engine_(event_engine),
+      event_engine_(
+          args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       outgoing_frames_(4),
       message_chunker_(config.MakeMessageChunker()) {
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
-      std::move(control_endpoint), std::move(data_endpoints), event_engine,
-      config.MakeTransportOptions());
+      std::move(control_endpoint), config.TakePendingDataEndpoints(),
+      event_engine_, config.MakeTransportOptions(), false);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-      event_engine.get());
+      event_engine_.get());
   party_ = Party::Make(std::move(party_arena));
   party_->Spawn(
       "server-chaotic-writer",

@@ -41,6 +41,7 @@
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/message_reassembly.h"
+#include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
@@ -65,11 +66,9 @@ namespace chaotic_good {
 
 class ChaoticGoodClientTransport final : public ClientTransport {
  public:
-  ChaoticGoodClientTransport(
-      PromiseEndpoint control_endpoint, const ChannelArgs& args,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine,
-      const Config& config);
+  ChaoticGoodClientTransport(const ChannelArgs& args,
+                             PromiseEndpoint control_endpoint, Config config,
+                             RefCountedPtr<ClientConnectionFactory> connector);
   ~ChaoticGoodClientTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }

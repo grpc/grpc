@@ -18,32 +18,39 @@
 #include <string>
 
 #include "absl/status/statusor.h"
-#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 
 namespace grpc_core {
 namespace chaotic_good {
 
-class PendingConnection : public RefCounted<PendingConnection> {
+class PendingConnection {
  public:
-  absl::string_view id() { return id_; }
-  auto Await() { return latch_.Wait(); }
+  explicit PendingConnection(absl::string_view id,
+                             Promise<absl::StatusOr<PromiseEndpoint>> connector)
+      : id_(id), connector_(std::move(connector)) {}
+
+  PendingConnection(const PendingConnection&) = delete;
+  PendingConnection& operator=(const PendingConnection&) = delete;
+  PendingConnection(PendingConnection&&) = default;
+  PendingConnection& operator=(PendingConnection&&) = default;
+
+  absl::string_view id() const { return id_; }
+  auto Await() { return std::move(connector_); }
 
  private:
-  const std::string id_;
-  Latch<absl::StatusOr<PromiseEndpoint>> latch_;
+  std::string id_;
+  Promise<absl::StatusOr<PromiseEndpoint>> connector_;
 };
 
-using PendingConnectionPtr = RefCountedPtr<PendingConnection>;
-
-class ChaoticGoodListener {
+class ServerConnectionFactory : public RefCounted<ServerConnectionFactory> {
  public:
-  virtual PendingConnectionPtr RequestDataConnection() = 0;
+  virtual PendingConnection RequestDataConnection() = 0;
 };
 
-class ChaoticGoodConnector {
+class ClientConnectionFactory : public RefCounted<ClientConnectionFactory> {
  public:
-  virtual PendingConnectionPtr Connect(absl::string_view id) = 0;
+  virtual PendingConnection Connect(absl::string_view id) = 0;
 };
 
 }  // namespace chaotic_good

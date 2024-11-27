@@ -56,11 +56,3 @@ message ServerMetadata {
 message BeginMessage {
     uint64 length = 1;
 }
-
-message UpdateConnections {
-    message Add {
-        bytes connection_name = 1;
-        uint32 connection_id = 2;
-    }
-    repeated Add add_connections = 1;
-}

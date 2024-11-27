@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CONFIG_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CONFIG_H
 
+#include "pending_connection.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/message_chunker.h"
@@ -60,27 +61,48 @@ class Config {
         channel_args.GetBool(GRPC_ARG_TCP_TRACING_ENABLED).value_or(false);
   }
 
-  // Fill-in a settings frame to be sent with the results of the negotiation so
-  // far. For the client this will be whatever we got from channel args; for the
-  // server this is called *AFTER* ReceiveIncomingSettings and so contains the
-  // result of mixing the server channel args with the client settings frame.
-  void PrepareOutgoingSettings(chaotic_good_frame::Settings& settings) const {
-    settings.set_alignment(decode_alignment_);
-    settings.set_max_chunk_size(max_recv_chunk_size_);
+  Config(const Config&) = delete;
+  Config& operator=(const Config&) = delete;
+  Config(Config&&) = default;
+  Config& operator=(Config&&) = default;
+
+  ~Config() = default;
+
+  void ServerAddPendingDataEndpoint(PendingConnection endpoint) {
+    pending_data_endpoints_.emplace_back(std::move(endpoint));
   }
 
-  // Receive a settings frame from our peer and integrate its settings with our
-  // own.
-  absl::Status ReceiveIncomingSettings(
-      const chaotic_good_frame::Settings& settings) {
-    if (settings.alignment() != 0) encode_alignment_ = settings.alignment();
-    max_send_chunk_size_ =
-        std::min(max_send_chunk_size_, settings.max_chunk_size());
-    if (settings.max_chunk_size() == 0) {
-      max_recv_chunk_size_ = 0;
-      max_send_chunk_size_ = 0;
+  std::vector<PendingConnection> TakePendingDataEndpoints() {
+    return std::move(pending_data_endpoints_);
+  }
+
+  void PrepareServerOutgoingSettings(chaotic_good_frame::Settings& settings) {
+    for (const auto& pending_data_endpoint : pending_data_endpoints_) {
+      settings.add_connection_id(pending_data_endpoint.id());
     }
-    return absl::OkStatus();
+    PrepareOutgoingSettings(settings);
+  }
+
+  void PrepareClientOutgoingSettings(chaotic_good_frame::Settings& settings) {
+    CHECK_EQ(pending_data_endpoints_.size(), 0);
+    PrepareOutgoingSettings(settings);
+  }
+
+  absl::Status ReceiveServerIncomingSettings(
+      const chaotic_good_frame::Settings& settings,
+      ClientConnectionFactory& connector) {
+    for (const auto& connection_id : settings.connection_id()) {
+      pending_data_endpoints_.emplace_back(connector.Connect(connection_id));
+    }
+    return ReceiveIncomingSettings(settings);
+  }
+
+  absl::Status ReceiveClientIncomingSettings(
+      const chaotic_good_frame::Settings& settings) {
+    if (settings.connection_id_size() != 0) {
+      return absl::InternalError("Client cannot specify connection ids");
+    }
+    return ReceiveIncomingSettings(settings);
   }
 
   // Factory: make transport options from the settings derived here-in.
@@ -125,12 +147,36 @@ class Config {
   }
 
  private:
+  // Fill-in a settings frame to be sent with the results of the negotiation so
+  // far. For the client this will be whatever we got from channel args; for the
+  // server this is called *AFTER* ReceiveIncomingSettings and so contains the
+  // result of mixing the server channel args with the client settings frame.
+  void PrepareOutgoingSettings(chaotic_good_frame::Settings& settings) const {
+    settings.set_alignment(decode_alignment_);
+    settings.set_max_chunk_size(max_recv_chunk_size_);
+  }
+
+  // Receive a settings frame from our peer and integrate its settings with our
+  // own.
+  absl::Status ReceiveIncomingSettings(
+      const chaotic_good_frame::Settings& settings) {
+    if (settings.alignment() != 0) encode_alignment_ = settings.alignment();
+    max_send_chunk_size_ =
+        std::min(max_send_chunk_size_, settings.max_chunk_size());
+    if (settings.max_chunk_size() == 0) {
+      max_recv_chunk_size_ = 0;
+      max_send_chunk_size_ = 0;
+    }
+    return absl::OkStatus();
+  }
+
   bool tracing_enabled_ = false;
   uint32_t encode_alignment_ = 64;
   uint32_t decode_alignment_ = 64;
   uint32_t max_send_chunk_size_ = 1024 * 1024;
   uint32_t max_recv_chunk_size_ = 1024 * 1024;
   uint32_t inline_payload_size_threshold_ = 8 * 1024;
+  std::vector<PendingConnection> pending_data_endpoints_;
 };
 
 }  // namespace chaotic_good
