@@ -53,6 +53,15 @@ class ClientConnectionFactory : public RefCounted<ClientConnectionFactory> {
   virtual PendingConnection Connect(absl::string_view id) = 0;
 };
 
+// Helper: convert an already existing endpoint into a pending connection
+inline PendingConnection ImmediateConnection(absl::string_view id,
+                                             PromiseEndpoint endpoint) {
+  return PendingConnection(
+      id,
+      [endpoint = std::move(endpoint)]() mutable
+          -> absl::StatusOr<PromiseEndpoint> { return std::move(endpoint); });
+}
+
 }  // namespace chaotic_good
 }  // namespace grpc_core
 

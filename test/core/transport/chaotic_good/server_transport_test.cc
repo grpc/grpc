@@ -78,7 +78,16 @@ ChannelArgs MakeChannelArgs() {
       .PreconditionChannelArgs(nullptr);
 }
 
-Config MakeConfig() { return Config(MakeChannelArgs()); }
+template <typename... PromiseEndpoints>
+Config MakeConfig(PromiseEndpoints... promise_endpoints) {
+  Config config(MakeChannelArgs());
+  auto name_endpoint = [i = 0]() mutable { return absl::StrCat(++i); };
+  std::vector<int> this_is_only_here_to_unpack_the_following_statement{
+      (config.ServerAddPendingDataEndpoint(
+           ImmediateConnection(name_endpoint(), std::move(promise_endpoints))),
+       0)...};
+  return config;
+}
 
 class MockCallDestination : public UnstartedCallDestination {
  public:
@@ -88,15 +97,22 @@ class MockCallDestination : public UnstartedCallDestination {
               (override));
 };
 
+class MockServerConnectionFactory : public ServerConnectionFactory {
+ public:
+  MOCK_METHOD(PendingConnection, RequestDataConnection, (), (override));
+};
+
 TEST_F(TransportTest, ReadAndWriteOneMessage) {
   MockPromiseEndpoint control_endpoint(1);
   MockPromiseEndpoint data_endpoint(2);
+  auto server_connection_factory =
+      MakeRefCounted<StrictMock<MockServerConnectionFactory>>();
   auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
   EXPECT_CALL(*call_destination, Orphaned()).Times(1);
   auto transport = MakeOrphanable<ChaoticGoodServerTransport>(
       MakeChannelArgs(), std::move(control_endpoint.promise_endpoint),
-      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      event_engine(), MakeConfig());
+      MakeConfig(std::move(data_endpoint.promise_endpoint)),
+      server_connection_factory);
   const auto server_initial_metadata =
       EncodeProto<chaotic_good_frame::ServerMetadata>("message: 'hello'");
   const auto server_trailing_metadata =

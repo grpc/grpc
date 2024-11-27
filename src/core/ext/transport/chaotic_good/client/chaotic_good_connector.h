@@ -46,9 +46,8 @@
 
 namespace grpc_core {
 namespace chaotic_good {
-class ChaoticGoodConnector : public SubchannelConnector {
+class ChaoticGoodConnector final : public SubchannelConnector {
  public:
-  ~ChaoticGoodConnector() override;
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;
   void Shutdown(grpc_error_handle error) override {
     ActivityPtr connect_activity;

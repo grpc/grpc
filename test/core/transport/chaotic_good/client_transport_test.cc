@@ -57,6 +57,11 @@ namespace grpc_core {
 namespace chaotic_good {
 namespace testing {
 
+class MockClientConnectionFactory : public ClientConnectionFactory {
+ public:
+  MOCK_METHOD(PendingConnection, Connect, (absl::string_view), (override));
+};
+
 ClientMetadataHandle TestInitialMetadata() {
   auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step"));
@@ -91,11 +96,22 @@ ChannelArgs MakeChannelArgs() {
       .PreconditionChannelArgs(nullptr);
 }
 
-Config MakeConfig() { return Config(MakeChannelArgs()); }
+template <typename... PromiseEndpoints>
+Config MakeConfig(PromiseEndpoints... promise_endpoints) {
+  Config config(MakeChannelArgs());
+  auto name_endpoint = [i = 0]() mutable { return absl::StrCat(++i); };
+  std::vector<int> this_is_only_here_to_unpack_the_following_statement{
+      (config.ServerAddPendingDataEndpoint(
+           ImmediateConnection(name_endpoint(), std::move(promise_endpoints))),
+       0)...};
+  return config;
+}
 
 TEST_F(TransportTest, AddOneStream) {
   MockPromiseEndpoint control_endpoint(1000);
   MockPromiseEndpoint data_endpoint(1001);
+  auto client_connection_factory =
+      MakeRefCounted<StrictMock<MockClientConnectionFactory>>();
   static const std::string many_as(1024 * 1024, 'a');
   const auto server_initial_metadata =
       EncodeProto<chaotic_good_frame::ServerMetadata>("message: 'hello'");
@@ -119,9 +135,9 @@ TEST_F(TransportTest, AddOneStream) {
       .InSequence(control_endpoint.read_sequence)
       .WillOnce(Return(false));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      std::move(control_endpoint.promise_endpoint),
-      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      MakeChannelArgs(), event_engine(), MakeConfig());
+      MakeChannelArgs(), std::move(control_endpoint.promise_endpoint),
+      MakeConfig(std::move(data_endpoint.promise_endpoint)),
+      client_connection_factory);
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
@@ -184,6 +200,8 @@ TEST_F(TransportTest, AddOneStream) {
 TEST_F(TransportTest, AddOneStreamMultipleMessages) {
   MockPromiseEndpoint control_endpoint(1000);
   MockPromiseEndpoint data_endpoint(1001);
+  auto client_connection_factory =
+      MakeRefCounted<StrictMock<MockClientConnectionFactory>>();
   const auto server_initial_metadata =
       EncodeProto<chaotic_good_frame::ServerMetadata>("");
   const auto server_trailing_metadata =
@@ -207,9 +225,9 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       .InSequence(control_endpoint.read_sequence)
       .WillOnce(Return(false));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      std::move(control_endpoint.promise_endpoint),
-      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      MakeChannelArgs(), event_engine(), MakeConfig());
+      MakeChannelArgs(), std::move(control_endpoint.promise_endpoint),
+      MakeConfig(std::move(data_endpoint.promise_endpoint)),
+      client_connection_factory);
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());

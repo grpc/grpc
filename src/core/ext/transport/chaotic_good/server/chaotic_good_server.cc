@@ -80,10 +80,9 @@ const Duration kConnectionDeadline = Duration::Seconds(120);
 using grpc_event_engine::experimental::EventEngine;
 
 ChaoticGoodServerListener::ChaoticGoodServerListener(
-    Server* server, const ChannelArgs& args,
+    const ChannelArgs& args,
     absl::AnyInvocable<std::string()> connection_id_generator)
-    : server_(server),
-      args_(args),
+    : args_(args),
       event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       data_connection_listener_(MakeRefCounted<DataConnectionListener>(
@@ -179,6 +178,12 @@ void ChaoticGoodServerListener::ActiveConnection::Orphan() {
   activity.reset();
   Unref();
 }
+
+ChaoticGoodServerListener::DataConnectionListener::DataConnectionListener(
+    absl::AnyInvocable<std::string()> connection_id_generator,
+    Duration connect_timeout)
+    : connection_id_generator_(std::move(connection_id_generator)),
+      connect_timeout_(connect_timeout) {}
 
 PendingConnection
 ChaoticGoodServerListener::DataConnectionListener::RequestDataConnection() {
@@ -508,7 +513,7 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
   for (const auto& ee_addr : results.value()) {
     auto listener = grpc_core::MakeOrphanable<
         grpc_core::chaotic_good::ChaoticGoodServerListener>(
-        core_server, core_server->channel_args());
+        core_server->channel_args());
     std::string addr_str =
         *grpc_event_engine::experimental::ResolvedAddressToString(ee_addr);
     GRPC_TRACE_LOG(chaotic_good, INFO) << "BIND: " << addr_str;
