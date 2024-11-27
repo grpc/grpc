@@ -103,7 +103,8 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
         std::string connection_id;
       };
       struct ControlConnection {
-        std::vector<PendingConnection> pending_connections;
+        explicit ControlConnection(Config config) : config(std::move(config)) {}
+        Config config;
       };
 
       static auto EndpointReadSettingsFrame(
@@ -130,7 +131,6 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     ActivityPtr receive_settings_activity_ ABSL_GUARDED_BY(mu_);
     bool orphaned_ ABSL_GUARDED_BY(mu_) = false;
     PromiseEndpoint endpoint_;
-    Config config_;
     absl::BitGen bitgen_;
   };
 

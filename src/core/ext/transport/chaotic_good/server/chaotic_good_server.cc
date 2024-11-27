@@ -153,7 +153,7 @@ absl::Status ChaoticGoodServerListener::StartListening() {
 ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
     RefCountedPtr<ChaoticGoodServerListener> listener,
     std::unique_ptr<EventEngine::Endpoint> endpoint)
-    : listener_(std::move(listener)), config_(args()) {
+    : listener_(std::move(listener)) {
   arena_->SetContext<grpc_event_engine::experimental::EventEngine>(
       listener_->event_engine_.get());
   handshaking_state_ = MakeRefCounted<HandshakingState>(Ref());
@@ -201,9 +201,8 @@ ChaoticGoodServerListener::DataConnectionListener::RequestDataConnection() {
       });
   pending_connections_.emplace(connection_id,
                                PendingConnectionInfo{latch, timeout_task});
-  return PendingConnection(connection_id, [latch = std::move(latch)]() {
-    return Map(latch->Wait(), [latch](auto x) { return x; });
-  });
+  return PendingConnection(connection_id,
+                           Map(latch->Wait(), [latch](auto x) { return x; }));
 }
 
 ChaoticGoodServerListener::DataConnectionListener::PromiseEndpointLatchPtr
@@ -244,8 +243,7 @@ void ChaoticGoodServerListener::DataConnectionListener::Shutdown() {
   }
   for (const auto& conn : pending_connections) {
     event_engine_->Cancel(conn.second.timeout);
-    conn.second.pending_connection->Finish(
-        absl::UnavailableError("Server shutdown"));
+    conn.second.latch->Set(absl::UnavailableError("Server shutdown"));
   }
 }
 
@@ -318,7 +316,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                       self->data_.emplace<DataConnection>(
                           frame.body.connection_id()[0]);
                     } else {
-                      Config& config = self->connection_->config_;
+                      Config config{self->connection_->args()};
                       auto settings_status =
                           config.ReceiveClientIncomingSettings(frame.body);
                       if (!settings_status.ok()) return settings_status;
@@ -329,15 +327,11 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                       auto& data_connection_listener =
                           *self->connection_->listener_
                                ->data_connection_listener_;
-                      ControlConnection control_connection;
                       for (int i = 0; i < num_data_connections; i++) {
-                        control_connection.pending_connections.emplace_back(
-                            data_connection_listener.RequestDataConnection());
                         config.ServerAddPendingDataEndpoint(
-                            control_connection.pending_connections.back());
+                            data_connection_listener.RequestDataConnection());
                       }
-                      self->data_.emplace<ControlConnection>(
-                          std::move(control_connection));
+                      self->data_.emplace<ControlConnection>(std::move(config));
                     }
                     return !frame.body.data_channel();
                   });
@@ -354,7 +348,8 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     ControlEndpointWriteSettingsFrame(RefCountedPtr<HandshakingState> self) {
   SettingsFrame frame;
   frame.body.set_data_channel(false);
-  self->connection_->config_.PrepareServerOutgoingSettings(frame.body);
+  absl::get<ControlConnection>(self->data_)
+      .config.PrepareServerOutgoingSettings(frame.body);
   SliceBuffer write_buffer;
   frame.MakeHeader().Serialize(
       write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
