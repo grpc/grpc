@@ -429,7 +429,7 @@ bool PrivateGenerator::PrintStub(
       out->Print("Args:\n");
       {
         IndentScope raii_args_indent(out);
-        out->Print("channel: A grpc.Channel.\n");
+        out->Print(dict, "channel: A $ChannelClass$.\n");
       }
       out->Print("\"\"\"\n");
       for (int i = 0; i < service->method_count(); ++i) {
@@ -437,6 +437,9 @@ bool PrivateGenerator::PrintStub(
         std::string multi_callable_constructor =
             std::string(method->ClientStreaming() ? "stream" : "unary") + "_" +
             std::string(method->ServerStreaming() ? "stream" : "unary");
+        std::string multi_callable_return_type =
+            std::string(method->ClientStreaming() ? "Stream" : "Unary") +
+            std::string(method->ServerStreaming() ? "Stream" : "Unary") + "MultiCallable";
         std::string request_module_and_class;
         if (!method->get_module_and_message_path_input(
                 &request_module_and_class, generator_file_name,
@@ -452,29 +455,25 @@ bool PrivateGenerator::PrintStub(
           return false;
         }
 
-        std::string client_request_type =
-            std::string(method->ClientStreaming() ? (render_async ? "AsyncIterator[" : "Iterator[") : "") + request_module_and_class +
-            std::string(method->ClientStreaming() ? "]" : "");
-        std::string client_response_type =
-            std::string(method->ServerStreaming() ? (render_async ? "AsyncIterator[" : "Iterator[") : (render_async ? "Coroutine[Any, Any, " : "")) + response_module_and_class +
-            std::string(method->ServerStreaming() ? "]" : (render_async ? "]" : ""));
-
         StringMap method_dict;
         method_dict["Method"] = method->name();
         method_dict["MultiCallableConstructor"] = multi_callable_constructor;
+        method_dict["MultiCallableReturnType"] = multi_callable_return_type;
         {
           method_dict["PackageQualifiedService"] =
               package_qualified_service_name;
           method_dict["RequestModuleAndClass"] = request_module_and_class;
           method_dict["ResponseModuleAndClass"] = response_module_and_class;
-          method_dict["ClientRequestType"] = client_request_type;
-          method_dict["ClientResponseType"] = client_response_type;
           out->Print(method_dict, "self.$Method$ = cast(\n");
           IndentScope raii_first_attribute_indent(out);
-          out->Print(method_dict, "Callable[\n");
-          out->Print(method_dict, "    [$ClientRequestType$],\n");
-          out->Print(method_dict, "    $ClientResponseType$,\n");
-          out->Print(method_dict, "],\n");
+          if (render_async) {
+            out->Print(method_dict, "grpc.aio.$MultiCallableReturnType$[\n");
+            out->Print(method_dict, "    $RequestModuleAndClass$,\n");
+            out->Print(method_dict, "    $ResponseModuleAndClass$,\n");
+            out->Print(method_dict, "],\n");
+          } else {
+            out->Print(method_dict, "grpc.$MultiCallableReturnType$,\n");
+          }
           out->Print(method_dict, "channel.$MultiCallableConstructor$(\n");
 
           {
