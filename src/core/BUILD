@@ -3958,6 +3958,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "tdigest",
+    hdrs = [
+        "util/tdigest.h",
+    ],
+    srcs = [
+        "util/tdigest.cc",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/status",
+        "absl/log:check",
+        "absl/log",
+    ],
+    language = "c++",
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "certificate_provider_factory",
     hdrs = [
         "lib/security/certificate_provider/certificate_provider_factory.h",
