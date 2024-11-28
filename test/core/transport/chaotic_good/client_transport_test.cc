@@ -90,15 +90,20 @@ auto SendClientToServerMessages(CallInitiator initiator, int num_messages) {
   });
 }
 
-ChannelArgs MakeChannelArgs() {
+ChannelArgs MakeChannelArgs(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine) {
   return CoreConfiguration::Get()
       .channel_args_preconditioning()
-      .PreconditionChannelArgs(nullptr);
+      .PreconditionChannelArgs(nullptr)
+      .SetObject<grpc_event_engine::experimental::EventEngine>(
+          std::move(event_engine));
 }
 
 template <typename... PromiseEndpoints>
-Config MakeConfig(PromiseEndpoints... promise_endpoints) {
-  Config config(MakeChannelArgs());
+Config MakeConfig(const ChannelArgs& channel_args,
+                  PromiseEndpoints... promise_endpoints) {
+  Config config(channel_args);
   auto name_endpoint = [i = 0]() mutable { return absl::StrCat(++i); };
   std::vector<int> this_is_only_here_to_unpack_the_following_statement{
       (config.ServerAddPendingDataEndpoint(
@@ -134,9 +139,10 @@ TEST_F(TransportTest, AddOneStream) {
   EXPECT_CALL(*control_endpoint.endpoint, Read)
       .InSequence(control_endpoint.read_sequence)
       .WillOnce(Return(false));
+  auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      MakeChannelArgs(), std::move(control_endpoint.promise_endpoint),
-      MakeConfig(std::move(data_endpoint.promise_endpoint)),
+      channel_args, std::move(control_endpoint.promise_endpoint),
+      MakeConfig(channel_args, std::move(data_endpoint.promise_endpoint)),
       client_connection_factory);
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
@@ -224,9 +230,10 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
   EXPECT_CALL(*control_endpoint.endpoint, Read)
       .InSequence(control_endpoint.read_sequence)
       .WillOnce(Return(false));
+  auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      MakeChannelArgs(), std::move(control_endpoint.promise_endpoint),
-      MakeConfig(std::move(data_endpoint.promise_endpoint)),
+      channel_args, std::move(control_endpoint.promise_endpoint),
+      MakeConfig(channel_args, std::move(data_endpoint.promise_endpoint)),
       client_connection_factory);
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
