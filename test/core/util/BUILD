@@ -14,6 +14,7 @@
 
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 load(
     "//test/core/test_util:grpc_fuzzer.bzl",
     "grpc_fuzzer",
@@ -42,6 +43,34 @@ grpc_cc_test(
     deps = [
         "//src/core:directory_reader",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "tdigest_test",
+    srcs = ["tdigest_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/random",
+        "absl/container:flat_hash_map",
+        "benchmark",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:tdigest",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_tdigest",
+    srcs = ["bm_tdigest.cc"],
+    external_deps = [
+    ],
+    monitoring = HISTORY,
+    deps = [
+        "//src/core:tdigest",
     ],
 )
 
