@@ -138,7 +138,9 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
    public:
     DataConnectionListener(
         absl::AnyInvocable<std::string()> connection_id_generator,
-        Duration connect_timeout);
+        Duration connect_timeout,
+        std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+            event_engine);
     ~DataConnectionListener() override { CHECK(shutdown_); }
 
     PendingConnection RequestDataConnection() override;

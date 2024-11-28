@@ -72,15 +72,20 @@ ServerMetadataHandle TestTrailingMetadata() {
   return md;
 }
 
-ChannelArgs MakeChannelArgs() {
+ChannelArgs MakeChannelArgs(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine) {
   return CoreConfiguration::Get()
       .channel_args_preconditioning()
-      .PreconditionChannelArgs(nullptr);
+      .PreconditionChannelArgs(nullptr)
+      .SetObject<grpc_event_engine::experimental::EventEngine>(
+          std::move(event_engine));
 }
 
 template <typename... PromiseEndpoints>
-Config MakeConfig(PromiseEndpoints... promise_endpoints) {
-  Config config(MakeChannelArgs());
+Config MakeConfig(const ChannelArgs& channel_args,
+                  PromiseEndpoints... promise_endpoints) {
+  Config config(channel_args);
   auto name_endpoint = [i = 0]() mutable { return absl::StrCat(++i); };
   std::vector<int> this_is_only_here_to_unpack_the_following_statement{
       (config.ServerAddPendingDataEndpoint(
@@ -109,9 +114,10 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
       MakeRefCounted<StrictMock<MockServerConnectionFactory>>();
   auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
   EXPECT_CALL(*call_destination, Orphaned()).Times(1);
+  auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodServerTransport>(
-      MakeChannelArgs(), std::move(control_endpoint.promise_endpoint),
-      MakeConfig(std::move(data_endpoint.promise_endpoint)),
+      channel_args, std::move(control_endpoint.promise_endpoint),
+      MakeConfig(channel_args, std::move(data_endpoint.promise_endpoint)),
       server_connection_factory);
   const auto server_initial_metadata =
       EncodeProto<chaotic_good_frame::ServerMetadata>("message: 'hello'");
@@ -204,6 +210,8 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
       nullptr);
   // Wait until ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
+  ::testing::Mock::VerifyAndClearExpectations(control_endpoint.endpoint);
+  ::testing::Mock::VerifyAndClearExpectations(data_endpoint.endpoint);
   event_engine()->UnsetGlobalHooks();
 }
 

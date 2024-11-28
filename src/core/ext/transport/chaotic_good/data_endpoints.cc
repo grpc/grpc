@@ -24,6 +24,7 @@
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
 #include "src/core/lib/event_engine/query_extensions.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -243,6 +244,12 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
             [id, enable_tracing, output_buffers = std::move(output_buffers),
              input_queues = std::move(input_queues),
              arena = std::move(arena)](PromiseEndpoint ep) mutable {
+              GRPC_TRACE_LOG(chaotic_good, INFO)
+                  << "CHAOTIC_GOOD: data endpoint " << id << " to "
+                  << grpc_event_engine::experimental::ResolvedAddressToString(
+                         ep.GetPeerAddress())
+                         .value_or("<<unknown peer address>>")
+                  << " ready";
               auto endpoint = std::make_shared<PromiseEndpoint>(std::move(ep));
               // Enable RxMemoryAlignment and RPC receive coalescing after the
               // transport setup is complete. At this point all the settings

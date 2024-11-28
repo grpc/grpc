@@ -49,6 +49,25 @@ class TransportTest : public YodelTest {
 
   CallHandler TickUntilServerCall();
 
+  ChannelArgs MakeChannelArgs() {
+    return CoreConfiguration::Get()
+        .channel_args_preconditioning()
+        .PreconditionChannelArgs(nullptr)
+        .SetObject<grpc_event_engine::experimental::FuzzingEventEngine>(
+            event_engine());
+  }
+
+  template <typename... PromiseEndpoints>
+  Config MakeConfig(PromiseEndpoints... promise_endpoints) {
+    Config config(MakeChannelArgs());
+    auto name_endpoint = [i = 0]() mutable { return absl::StrCat(++i); };
+    std::vector<int> this_is_only_here_to_unpack_the_following_statement{
+        (config.ServerAddPendingDataEndpoint(ImmediateConnection(
+             name_endpoint(), std::move(promise_endpoints))),
+         0)...};
+    return config;
+  }
+
  private:
   class ServerCallDestination final : public UnstartedCallDestination {
    public:

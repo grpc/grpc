@@ -230,35 +230,34 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
         client_settings.set_data_channel(false);
         result_notifier_ptr->config.PrepareClientOutgoingSettings(
             client_settings);
-        return ConnectChaoticGood(
-            resolved_addr, result_notifier_ptr->args.channel_args,
-            Timestamp::Now() + Duration::FromSecondsAsDouble(kTimeoutSecs),
-            std::move(client_settings));
+        return TrySeq(
+            ConnectChaoticGood(
+                resolved_addr, result_notifier_ptr->args.channel_args,
+                Timestamp::Now() + Duration::FromSecondsAsDouble(kTimeoutSecs),
+                std::move(client_settings)),
+            [resolved_addr,
+             result_notifier_ptr](ConnectChaoticGoodResult result) {
+              auto connector = MakeRefCounted<ConnectionCreator>(
+                  resolved_addr, result.connect_result.channel_args);
+              auto parse_status =
+                  result_notifier_ptr->config.ReceiveServerIncomingSettings(
+                      result.server_settings, *connector);
+              if (!parse_status.ok()) {
+                return parse_status;
+              }
+              auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
+                  result.connect_result.channel_args,
+                  std::move(result.connect_result.endpoint),
+                  std::move(result_notifier_ptr->config), std::move(connector));
+              result_notifier_ptr->result->transport = transport.release();
+              result_notifier_ptr->result->channel_args =
+                  result.connect_result.channel_args;
+              return absl::OkStatus();
+            });
       },
       EventEngineWakeupScheduler(event_engine),
-      [result_notifier = std::move(result_notifier),
-       resolved_addr](absl::StatusOr<ConnectChaoticGoodResult> result) {
-        if (!result.ok()) {
-          result_notifier->Run(result.status());
-          return;
-        }
-        auto connector = MakeRefCounted<ConnectionCreator>(
-            resolved_addr, result->connect_result.channel_args);
-        auto parse_status =
-            result_notifier->config.ReceiveServerIncomingSettings(
-                result->server_settings, *connector);
-        if (!parse_status.ok()) {
-          result_notifier->Run(parse_status);
-          return;
-        }
-        auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-            result->connect_result.channel_args,
-            std::move(result->connect_result.endpoint),
-            std::move(result_notifier->config), std::move(connector));
-        result_notifier->result->transport = transport.release();
-        result_notifier->result->channel_args =
-            result->connect_result.channel_args;
-        result_notifier->Run(absl::OkStatus());
+      [result_notifier = std::move(result_notifier)](absl::Status status) {
+        result_notifier->Run(status);
       },
       arena);
   MutexLock lock(&mu_);

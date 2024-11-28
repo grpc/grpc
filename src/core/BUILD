@@ -8188,6 +8188,7 @@ grpc_cc_library(
         "event_engine_context",
         "event_engine_extensions",
         "event_engine_query_extensions",
+        "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
         "loop",
         "seq",

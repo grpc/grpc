@@ -88,7 +88,8 @@ ChaoticGoodServerListener::ChaoticGoodServerListener(
       data_connection_listener_(MakeRefCounted<DataConnectionListener>(
           std::move(connection_id_generator),
           args.GetDurationFromIntMillis(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
-              .value_or(kConnectionDeadline))) {}
+              .value_or(kConnectionDeadline),
+          event_engine_)) {}
 
 ChaoticGoodServerListener::~ChaoticGoodServerListener() {
   data_connection_listener_->Shutdown();
@@ -181,8 +182,10 @@ void ChaoticGoodServerListener::ActiveConnection::Orphan() {
 
 ChaoticGoodServerListener::DataConnectionListener::DataConnectionListener(
     absl::AnyInvocable<std::string()> connection_id_generator,
-    Duration connect_timeout)
+    Duration connect_timeout,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : connection_id_generator_(std::move(connection_id_generator)),
+      event_engine_(std::move(event_engine)),
       connect_timeout_(connect_timeout) {}
 
 PendingConnection
