@@ -207,6 +207,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/base/log_severity', abseil_version
     ss.dependency 'abseil/base/no_destructor', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
+    ss.dependency 'abseil/container/fixed_array', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -216,6 +217,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
+    ss.dependency 'abseil/log/absl_check', abseil_version
+    ss.dependency 'abseil/log/absl_log', abseil_version
     ss.dependency 'abseil/log/check', abseil_version
     ss.dependency 'abseil/log/globals', abseil_version
     ss.dependency 'abseil/log/log', abseil_version
@@ -2179,6 +2182,7 @@ Pod::Spec.new do |s|
                       'src/core/xds/xds_client/xds_resource_type.h',
                       'src/core/xds/xds_client/xds_resource_type_impl.h',
                       'src/core/xds/xds_client/xds_transport.h',
+                      'third_party/re2/re2/bitmap256.cc',
                       'third_party/re2/re2/bitmap256.h',
                       'third_party/re2/re2/bitstate.cc',
                       'third_party/re2/re2/compile.cc',
@@ -2206,7 +2210,6 @@ Pod::Spec.new do |s|
                       'third_party/re2/re2/simplify.cc',
                       'third_party/re2/re2/sparse_array.h',
                       'third_party/re2/re2/sparse_set.h',
-                      'third_party/re2/re2/stringpiece.cc',
                       'third_party/re2/re2/stringpiece.h',
                       'third_party/re2/re2/tostring.cc',
                       'third_party/re2/re2/unicode_casefold.cc',
@@ -2214,14 +2217,10 @@ Pod::Spec.new do |s|
                       'third_party/re2/re2/unicode_groups.cc',
                       'third_party/re2/re2/unicode_groups.h',
                       'third_party/re2/re2/walker-inl.h',
-                      'third_party/re2/util/logging.h',
-                      'third_party/re2/util/mix.h',
-                      'third_party/re2/util/mutex.h',
                       'third_party/re2/util/rune.cc',
                       'third_party/re2/util/strutil.cc',
                       'third_party/re2/util/strutil.h',
                       'third_party/re2/util/utf.h',
-                      'third_party/re2/util/util.h',
                       'third_party/upb/upb/base/descriptor_constants.h',
                       'third_party/upb/upb/base/internal/endian.h',
                       'third_party/upb/upb/base/internal/log2.h',
@@ -3510,12 +3509,8 @@ Pod::Spec.new do |s|
                               'third_party/re2/re2/unicode_casefold.h',
                               'third_party/re2/re2/unicode_groups.h',
                               'third_party/re2/re2/walker-inl.h',
-                              'third_party/re2/util/logging.h',
-                              'third_party/re2/util/mix.h',
-                              'third_party/re2/util/mutex.h',
                               'third_party/re2/util/strutil.h',
                               'third_party/re2/util/utf.h',
-                              'third_party/re2/util/util.h',
                               'third_party/upb/upb/base/descriptor_constants.h',
                               'third_party/upb/upb/base/internal/endian.h',
                               'third_party/upb/upb/base/internal/log2.h',
