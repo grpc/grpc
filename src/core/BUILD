@@ -3976,6 +3976,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "kolmogorov_smirnov",
+    hdrs = [
+        "util/kolmogorov_smirnov.h",
+    ],
+    srcs = [
+        "util/kolmogorov_smirnov.cc",
+    ],
+    external_deps = [
+    ],
+    language = "c++",
+    deps = ["tdigest"],
+)
+
+grpc_cc_library(
     name = "certificate_provider_factory",
     hdrs = [
         "lib/security/certificate_provider/certificate_provider_factory.h",
