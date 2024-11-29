@@ -624,6 +624,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         srcs = srcs,
         deps = core_deps,
         tags = tags,
+        alwayslink = 1,
     )
 
     for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
