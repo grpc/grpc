@@ -49,6 +49,16 @@ grpc_cc_test(
     deps = ["//src/core:chaotic_good_frame_header"],
 )
 
+grpc_cc_test(
+    name = "auto_scaler_test",
+    srcs = ["auto_scaler_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
+    deps = ["//src/core:chaotic_good_auto_scaler"],
+)
+
 grpc_fuzzer(
     name = "frame_header_fuzzer",
     srcs = ["frame_header_fuzzer.cc"],
