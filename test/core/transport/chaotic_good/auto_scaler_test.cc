@@ -14,103 +14,365 @@
 
 #include "src/core/ext/transport/chaotic_good/auto_scaler.h"
 
+#include <grpc/grpc.h>
+
+#include <memory>
+
 #include "absl/random/random.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/util/tdigest.h"
+#include "src/core/lib/promise/inter_activity_latch.h"
+#include "src/core/lib/promise/race.h"
+#include "test/core/call/yodel/yodel_test.h"
 
 namespace grpc_core {
-namespace chaotic_good {
-namespace {
 
-TDigest RandomDigest(double median, double stddev, size_t samples = 1000) {
-  absl::BitGen gen;
-  TDigest digest(AutoScaler::Metrics::compression());
-  for (int i = 0; i < samples; i++) {
-    digest.Add(absl::Gaussian<double>(gen, median, stddev));
+class AutoScalerTest : public YodelTest {
+ protected:
+  using YodelTest::YodelTest;
+
+  void SetUp() override {
+    auto subject = std::make_unique<FakeSubject>(this);
+    subject_ = subject.get();
+    auto_scaler_ = MakeRefCounted<chaotic_good::AutoScaler>(
+        std::move(subject), chaotic_good::AutoScaler::Options());
   }
-  return digest;
-}
 
-TDigest BimodalRandomDigest(double peak1_bias, double peak1,
-                            double stddev_peak1, double peak2,
-                            double stddev_peak2, size_t samples = 1000) {
-  absl::BitGen gen;
-  TDigest digest(AutoScaler::Metrics::compression());
-  for (int i = 0; i < samples; i++) {
-    if (absl::Bernoulli(gen, peak1_bias)) {
-      digest.Add(absl::Gaussian<double>(gen, peak1, stddev_peak1));
-    } else {
-      digest.Add(absl::Gaussian<double>(gen, peak2, stddev_peak2));
+  class RunLoop {
+   public:
+    explicit RunLoop(AutoScalerTest* test) : test_(test) {
+      test_->SpawnTestSeqWithoutContext("control_loop", [this, test = test_]() {
+        return Race(std::exchange(test->auto_scaler_, nullptr)->ControlLoop(),
+                    [this]() -> Poll<Empty> {
+                      if (!done_) {
+                        waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+                        return Pending{};
+                      }
+                      return Empty{};
+                    });
+      });
     }
-  }
-  return digest;
-}
-
-TEST(PreReqTest, RandomDigestWorks) {
-  EXPECT_NEAR(RandomDigest(100.0, 10.0).Quantile(0.5), 100.0, 3.0);
-}
-
-TEST(PreReqTest, BimodalRandomDigestWorks) {
-  EXPECT_NEAR(BimodalRandomDigest(1.0, 100.0, 10.0, 200.0, 10.0).Quantile(0.5),
-              100.0, 3.0);
-  EXPECT_NEAR(BimodalRandomDigest(0.0, 100.0, 10.0, 200.0, 10.0).Quantile(0.5),
-              200.0, 3.0);
-}
-
-}  // namespace
-
-namespace autoscaler_detail {
-
-TEST(EvaluateOneSidedExperimentTest, ClearlyBetter) {
-  auto before = RandomDigest(100.0, 10.0);
-  auto after = RandomDigest(50.0, 10.0);
-  EXPECT_EQ(EvaluateOneSidedExperiment(before, after),
-            ExperimentResult::kSuccess);
-}
-
-TEST(EvaluateOneSidedExperimentTest, ClearlyWorse) {
-  auto before = RandomDigest(100.0, 10.0);
-  auto after = RandomDigest(150.0, 10.0);
-  EXPECT_EQ(EvaluateOneSidedExperiment(before, after),
-            ExperimentResult::kFailure);
-}
-
-TEST(EvaluateOneSidedExperimentTest, TailClearlyWorse) {
-  auto before = RandomDigest(100.0, 10.0);
-  auto after = BimodalRandomDigest(0.1, 100.0, 10.0, 150, 10.0);
-  EXPECT_EQ(EvaluateOneSidedExperiment(before, after),
-            ExperimentResult::kFailure);
-}
-
-TEST(ChooseWorstTailLatencyTest, WorksForClient) {
-  std::vector<Metrics> metrics;
-  for (int i = 0; i < 100; i++) {
-    if (i == 3) {
-      metrics.push_back(Metrics(RandomDigest(150, 10), RandomDigest(100, 10)));
-    } else {
-      metrics.push_back(Metrics(RandomDigest(100, 10), RandomDigest(100, 10)));
+    ~RunLoop() {
+      done_ = true;
+      waker_.WakeupAsync();
+      test_->WaitForAllPendingWork();
     }
-  }
-  EXPECT_EQ(ChooseWorstTailLatency(std::move(metrics)), 3);
-}
 
-TEST(ChooseWorstTailLatencyTest, WorksForServer) {
-  std::vector<Metrics> metrics;
-  for (int i = 0; i < 100; i++) {
-    if (i == 3) {
-      metrics.push_back(Metrics(RandomDigest(100, 10), RandomDigest(150, 10)));
-    } else {
-      metrics.push_back(Metrics(RandomDigest(100, 10), RandomDigest(100, 10)));
+    void ExpectAddConnection() {
+      test_->TickUntilDone(test_->subject_->Expect<ExpectedAddConnection>());
     }
+
+    void ExpectRemoveConnection() {
+      test_->TickUntilDone(test_->subject_->Expect<ExpectedRemoveConnection>());
+    }
+
+    void ExpectMeasureOverallLatency(TDigest client, TDigest server) {
+      test_->TickUntilDone(
+          test_->subject_->Expect<ExpectedMeasureOverallLatency>(
+              std::move(client), std::move(server)));
+    }
+
+    void ExpectMeasurePerConnectionLatency(
+        absl::flat_hash_map<uint32_t, chaotic_good::AutoScaler::Metrics>
+            metrics) {
+      test_->TickUntilDone(
+          test_->subject_->Expect<ExpectedMeasurePerConnectionLatency>(
+              std::move(metrics)));
+    }
+
+    void ExpectParkConnection(uint32_t id) {
+      test_->TickUntilDone(test_->subject_->Expect<ExpectedParkConnection>(id));
+    }
+
+    void ExpectUnparkConnection(uint32_t id) {
+      test_->TickUntilDone(
+          test_->subject_->Expect<ExpectedUnparkConnection>(id));
+    }
+
+    std::vector<uint32_t> ListActiveConnections() {
+      return test_->subject_->ListActiveConnections();
+    }
+
+   private:
+    AutoScalerTest* const test_;
+    bool done_ = false;
+    Waker waker_;
+  };
+
+  static TDigest RandomDigest(double median, double stddev,
+                              size_t samples = 1000) {
+    absl::BitGen gen;
+    TDigest digest(chaotic_good::AutoScaler::Metrics::compression());
+    for (int i = 0; i < samples; i++) {
+      digest.Add(absl::Gaussian<double>(gen, median, stddev));
+    }
+    return digest;
   }
-  EXPECT_EQ(ChooseWorstTailLatency(std::move(metrics)), 3);
+
+ private:
+  class Notifier {
+   public:
+    void Done() { *done_ = true; }
+    bool IsDone() const { return *done_; }
+
+   private:
+    std::shared_ptr<bool> done_ = std::make_shared<bool>(false);
+  };
+
+  class ExpectedOp {
+   public:
+    virtual ~ExpectedOp() { notifier_.Done(); }
+
+    virtual void AddConnection() { Crash("unexpected AddConnection"); }
+    virtual void RemoveConnection() { Crash("unexpected RemoveConnection"); }
+    virtual void ParkConnection(uint32_t id) {
+      Crash("unexpected ParkConnection");
+    }
+    virtual void UnparkConnection(uint32_t id) {
+      Crash("unexpected UnparkConnection");
+    }
+    virtual chaotic_good::AutoScaler::Metrics MeasureOverallLatency() {
+      Crash("unexpected MeasureOverallLatency");
+    }
+    virtual absl::flat_hash_map<uint32_t, chaotic_good::AutoScaler::Metrics>
+    MeasurePerConnectionLatency() {
+      Crash("unexpected MeasurePerConnectionLatency");
+    }
+
+    Notifier notifier() { return notifier_; }
+
+   private:
+    Notifier notifier_;
+  };
+
+  class ExpectedMeasureOverallLatency final : public ExpectedOp {
+   public:
+    ExpectedMeasureOverallLatency(TDigest client, TDigest server)
+        : client_(std::move(client)), server_(std::move(server)) {}
+
+    chaotic_good::AutoScaler::Metrics MeasureOverallLatency() override {
+      return chaotic_good::AutoScaler::Metrics{std::move(client_),
+                                               std::move(server_)};
+    }
+
+   private:
+    TDigest client_;
+    TDigest server_;
+  };
+
+  class ExpectedMeasurePerConnectionLatency final : public ExpectedOp {
+   public:
+    explicit ExpectedMeasurePerConnectionLatency(
+        absl::flat_hash_map<uint32_t, chaotic_good::AutoScaler::Metrics>
+            metrics)
+        : per_connection_metrics_(std::move(metrics)) {}
+
+    absl::flat_hash_map<uint32_t, chaotic_good::AutoScaler::Metrics>
+    MeasurePerConnectionLatency() override {
+      return std::move(per_connection_metrics_);
+    }
+
+   private:
+    absl::flat_hash_map<uint32_t, chaotic_good::AutoScaler::Metrics>
+        per_connection_metrics_;
+  };
+
+  class ExpectedAddConnection final : public ExpectedOp {
+   public:
+    void AddConnection() override {}
+  };
+
+  class ExpectedRemoveConnection final : public ExpectedOp {
+   public:
+    void RemoveConnection() override {}
+  };
+
+  class ExpectedParkConnection final : public ExpectedOp {
+   public:
+    explicit ExpectedParkConnection(uint32_t id) : id_(id) {}
+    void ParkConnection(uint32_t id) override { CHECK_EQ(id, id_); }
+
+   private:
+    uint32_t id_;
+  };
+
+  class ExpectedUnparkConnection final : public ExpectedOp {
+   public:
+    explicit ExpectedUnparkConnection(uint32_t id) : id_(id) {}
+    void UnparkConnection(uint32_t id) override { CHECK_EQ(id, id_); }
+
+   private:
+    uint32_t id_;
+  };
+
+  class FakeSubject final : public chaotic_good::AutoScaler::SubjectInterface {
+   public:
+    explicit FakeSubject(AutoScalerTest* test) : test_(test) {}
+
+    Promise<uint32_t> AddConnection() override {
+      return Seq(WaitExpected(), [this](std::unique_ptr<ExpectedOp> op) {
+        op->AddConnection();
+        uint32_t id = connections_.size();
+        connections_.emplace_back();
+        return id;
+      });
+    }
+    Promise<Empty> RemoveConnection(uint32_t id) override {
+      return Seq(WaitExpected(), [this, id](std::unique_ptr<ExpectedOp> op) {
+        CHECK_EQ(connections_[id].state, ConnectionState::kActive);
+        op->RemoveConnection();
+        connections_[id].state = ConnectionState::kRemoved;
+        return Empty{};
+      });
+    }
+    Promise<Empty> ParkConnection(uint32_t id) override {
+      return Seq(WaitExpected(), [this, id](std::unique_ptr<ExpectedOp> op) {
+        CHECK_EQ(connections_[id].state, ConnectionState::kActive);
+        op->ParkConnection(id);
+        connections_[id].state = ConnectionState::kParked;
+        return Empty{};
+      });
+    }
+    Promise<Empty> UnparkConnection(uint32_t id) override {
+      return Seq(WaitExpected(), [this, id](std::unique_ptr<ExpectedOp> op) {
+        CHECK_EQ(connections_[id].state, ConnectionState::kParked);
+        op->UnparkConnection(id);
+        connections_[id].state = ConnectionState::kActive;
+        return Empty{};
+      });
+    }
+    Promise<chaotic_good::AutoScaler::Metrics> MeasureOverallLatency()
+        override {
+      return Seq(WaitExpected(), [](std::unique_ptr<ExpectedOp> op) {
+        return op->MeasureOverallLatency();
+      });
+    }
+    Promise<absl::flat_hash_map<uint32_t, chaotic_good::AutoScaler::Metrics>>
+    MeasurePerConnectionLatency() override {
+      return Seq(WaitExpected(), [](std::unique_ptr<ExpectedOp> op) {
+        return op->MeasurePerConnectionLatency();
+      });
+    }
+    size_t GetNumConnections() override {
+      size_t count = 0;
+      for (const auto& con : connections_) {
+        if (con.state != ConnectionState::kRemoved) ++count;
+      }
+      return count;
+    }
+    std::vector<uint32_t> ListActiveConnections() {
+      std::vector<uint32_t> ids;
+      for (size_t i = 0; i < connections_.size(); i++) {
+        if (connections_[i].state == ConnectionState::kActive) {
+          ids.push_back(i);
+        }
+      }
+      return ids;
+    }
+
+    template <typename T, typename... Args>
+    Notifier Expect(Args&&... args) {
+      auto op = std::make_unique<T>(std::forward<Args>(args)...);
+      auto notifier = op->notifier();
+      test_->event_engine()->Run([op = std::move(op), this]() mutable {
+        CHECK(expected_op_ == nullptr);
+        expected_op_ = std::move(op);
+        expected_op_waker_.Wakeup();
+      });
+      return notifier;
+    }
+
+   private:
+    Promise<std::unique_ptr<ExpectedOp>> WaitExpected() {
+      return [this]() mutable -> Poll<std::unique_ptr<ExpectedOp>> {
+        if (expected_op_ == nullptr) {
+          expected_op_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+          return Pending();
+        }
+        return std::move(expected_op_);
+      };
+    }
+
+    enum class ConnectionState {
+      kActive,
+      kRemoved,
+      kParked,
+    };
+    friend std::ostream& operator<<(std::ostream& out, ConnectionState st) {
+      switch (st) {
+        case ConnectionState::kActive:
+          return out << "Active";
+        case ConnectionState::kRemoved:
+          return out << "Removed";
+        case ConnectionState::kParked:
+          return out << "Parked";
+      }
+      return out;
+    }
+    struct Connection {
+      ConnectionState state = ConnectionState::kActive;
+    };
+
+    AutoScalerTest* const test_;
+    std::unique_ptr<ExpectedOp> expected_op_;
+    Waker expected_op_waker_;
+    std::vector<Connection> connections_;
+  };
+
+  void TickUntilDone(Notifier n) {
+    TickUntil<Empty>([n]() -> Poll<Empty> {
+      return n.IsDone() ? Poll<Empty>{Empty{}} : Pending{};
+    });
+  }
+
+  FakeSubject* subject_;
+  RefCountedPtr<chaotic_good::AutoScaler> auto_scaler_;
+};
+
+#define AUTO_SCALER_TEST(name) YODEL_TEST(AutoScalerTest, name)
+
+AUTO_SCALER_TEST(NoOp) { RunLoop run_loop(this); }
+
+AUTO_SCALER_TEST(Run) {
+  RunLoop run_loop(this);
+  run_loop.ExpectMeasureOverallLatency(RandomDigest(100, 10),
+                                       RandomDigest(100, 10));
+  run_loop.ExpectAddConnection();
+  run_loop.ExpectMeasureOverallLatency(RandomDigest(70, 10),
+                                       RandomDigest(100, 10));
+  run_loop.ExpectMeasureOverallLatency(RandomDigest(70, 10),
+                                       RandomDigest(100, 10));
+  run_loop.ExpectAddConnection();
+  run_loop.ExpectMeasureOverallLatency(RandomDigest(70, 10),
+                                       RandomDigest(100, 10));
+  run_loop.ExpectRemoveConnection();
+  run_loop.ExpectMeasureOverallLatency(RandomDigest(70, 10),
+                                       RandomDigest(100, 10));
+  run_loop.ExpectAddConnection();
+  run_loop.ExpectMeasureOverallLatency(RandomDigest(50, 10),
+                                       RandomDigest(100, 10));
+  run_loop.ExpectMeasureOverallLatency(RandomDigest(70, 10),
+                                       RandomDigest(120, 10));
+  run_loop.ExpectAddConnection();
+  run_loop.ExpectMeasureOverallLatency(RandomDigest(150, 10),
+                                       RandomDigest(150, 10));
+  run_loop.ExpectRemoveConnection();
+  run_loop.ExpectMeasureOverallLatency(RandomDigest(70, 10),
+                                       RandomDigest(120, 10));
+  auto connections = run_loop.ListActiveConnections();
+  EXPECT_EQ(connections.size(), 2);
+  absl::flat_hash_map<uint32_t, chaotic_good::AutoScaler::Metrics> metrics;
+  metrics.emplace(connections[0],
+                  chaotic_good::AutoScaler::Metrics{RandomDigest(70, 10),
+                                                    RandomDigest(100, 10)});
+  metrics.emplace(connections[1],
+                  chaotic_good::AutoScaler::Metrics{RandomDigest(120, 10),
+                                                    RandomDigest(100, 10)});
+  run_loop.ExpectMeasurePerConnectionLatency(std::move(metrics));
+  run_loop.ExpectParkConnection(connections[1]);
+  run_loop.ExpectMeasureOverallLatency(RandomDigest(90, 10),
+                                       RandomDigest(150, 10));
+  run_loop.ExpectUnparkConnection(connections[1]);
 }
 
-}  // namespace autoscaler_detail
-}  // namespace chaotic_good
 }  // namespace grpc_core
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}

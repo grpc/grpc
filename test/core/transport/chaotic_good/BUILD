@@ -50,13 +50,31 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "auto_scaler_test",
-    srcs = ["auto_scaler_test.cc"],
+    name = "auto_scaler_unittest",
+    srcs = ["auto_scaler_unittest.cc"],
     external_deps = [
         "absl/status",
         "gtest",
     ],
-    deps = ["//src/core:chaotic_good_auto_scaler"],
+    deps = [
+        "//src/core:chaotic_good_auto_scaler",
+        "//test/core/promise:poll_matcher",
+    ],
+)
+
+grpc_yodel_simple_test(
+    name = "auto_scaler",
+    srcs = ["auto_scaler_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    deps = [
+        "//src/core:chaotic_good_auto_scaler",
+        "//test/core/call/yodel:yodel_test",
+        "//src/core:inter_activity_latch",
+    ],
 )
 
 grpc_fuzzer(

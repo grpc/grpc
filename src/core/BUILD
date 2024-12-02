@@ -3959,11 +3959,11 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "tdigest",
-    hdrs = [
-        "util/tdigest.h",
-    ],
     srcs = [
         "util/tdigest.cc",
+    ],
+    hdrs = [
+        "util/tdigest.h",
     ],
     external_deps = [
         "absl/strings",
@@ -3977,11 +3977,11 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "kolmogorov_smirnov",
-    hdrs = [
-        "util/kolmogorov_smirnov.h",
-    ],
     srcs = [
         "util/kolmogorov_smirnov.cc",
+    ],
+    hdrs = [
+        "util/kolmogorov_smirnov.h",
     ],
     external_deps = [
     ],
@@ -7903,17 +7903,18 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chaotic_good/auto_scaler.h",
     ],
+    external_deps = ["absl/container:flat_hash_map"],
     deps = [
-        "tdigest",
-        "kolmogorov_smirnov",
-        "ref_counted",
-        "time",
-        "loop",
         "if",
+        "loop",
+        "map",
+        "ref_counted",
         "seq",
-        "sleep","map",
+        "sleep",
+        "tdigest",
+        "time",
         "//:promise",
-    ]
+    ],
 )
 
 grpc_cc_library(

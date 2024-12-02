@@ -19,7 +19,6 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/sleep.h"
-#include "src/core/util/kolmogorov_smirnov.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -27,19 +26,13 @@ namespace chaotic_good {
 namespace autoscaler_detail {
 ExperimentResult EvaluateExperiment(Metrics& latency_before,
                                     Metrics& latency_after) {
-  static const double kAlpha = 0.2;
-  const bool client_changed = KolmogorovSmirnovTest(
-      latency_before.client_latency, latency_after.client_latency, kAlpha);
-  const bool server_changed = KolmogorovSmirnovTest(
-      latency_before.server_latency, latency_after.server_latency, kAlpha);
-  const ExperimentResult client_result =
-      client_changed ? EvaluateOneSidedExperiment(latency_before.client_latency,
-                                                  latency_after.client_latency)
-                     : ExperimentResult::kInconclusive;
-  const ExperimentResult server_result =
-      server_changed ? EvaluateOneSidedExperiment(latency_before.server_latency,
-                                                  latency_after.server_latency)
-                     : ExperimentResult::kInconclusive;
+  const ExperimentResult client_result = EvaluateOneSidedExperiment(
+      latency_before.client_latency, latency_after.client_latency);
+  const ExperimentResult server_result = EvaluateOneSidedExperiment(
+      latency_before.server_latency, latency_after.server_latency);
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CG_AUTOSCALER: evaluate experiment "
+      << GRPC_DUMP_ARGS(client_result, server_result);
   return MergeExperimentResults(client_result, server_result);
 }
 
@@ -65,19 +58,22 @@ ExperimentResult MergeExperimentResults(ExperimentResult a,
   return a == b ? a : ExperimentResult::kInconclusive;
 }
 
-size_t ChooseWorstTailLatency(std::vector<Metrics> latencies) {
+uint32_t ChooseWorstTailLatency(
+    absl::flat_hash_map<uint32_t, Metrics> latencies) {
   static const double kQuantile = 0.75;
   auto measure = [](Metrics& m) {
     return std::max(m.client_latency.Quantile(kQuantile),
                     m.server_latency.Quantile(kQuantile));
   };
   CHECK(!latencies.empty());
-  uint32_t worst = 0;
-  double worst_latency = measure(latencies[0]);
-  for (size_t i = 1; i < latencies.size(); ++i) {
-    const double latency = measure(latencies[i]);
+  auto it = latencies.begin();
+  uint32_t worst = it->first;
+  double worst_latency = measure(it->second);
+  ++it;
+  for (; it != latencies.end(); ++it) {
+    const double latency = measure(it->second);
     if (latency > worst_latency) {
-      worst = i;
+      worst = it->first;
       worst_latency = latency;
     }
   }
@@ -139,8 +135,11 @@ void AutoScaler::FinishExperiment(ExperimentResult result) {
 Promise<uint32_t> AutoScaler::Enact(Experiment e) {
   switch (e) {
     case Experiment::kUp:
+      GRPC_TRACE_LOG(chaotic_good, INFO) << "CG_AUTOSCALER: add connection";
       return subject_->AddConnection();
     case Experiment::kDown:
+      GRPC_TRACE_LOG(chaotic_good, INFO)
+          << "CG_AUTOSCALER: park worst connection";
       return ParkWorstConnection();
   }
   GPR_UNREACHABLE_CODE(return Never<uint32_t>());
@@ -148,7 +147,7 @@ Promise<uint32_t> AutoScaler::Enact(Experiment e) {
 
 Promise<uint32_t> AutoScaler::ParkWorstConnection() {
   return Seq(subject_->MeasurePerConnectionLatency(),
-             [self = Ref()](std::vector<Metrics> latencies) {
+             [self = Ref()](absl::flat_hash_map<uint32_t, Metrics> latencies) {
                const uint32_t worst = autoscaler_detail::ChooseWorstTailLatency(
                    std::move(latencies));
                return Map(self->subject_->ParkConnection(worst),
@@ -183,20 +182,42 @@ Promise<AutoScaler::ExperimentResult> AutoScaler::PerformExperiment(
     // Skip experiment if we're already at the minimum - this can never succeed
     return Immediate(ExperimentResult::kFailure);
   }
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CG_AUTOSCALER: perform experiment " << direction;
   return Seq(
       subject_->MeasureOverallLatency(),
       [self = Ref(), direction](Metrics latency) {
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CG_AUTOSCALER: measured latency 50/75 client:"
+            << latency.client_latency.Quantile(0.5) << "/"
+            << latency.client_latency.Quantile(0.75)
+            << " server:" << latency.server_latency.Quantile(0.5) << "/"
+            << latency.server_latency.Quantile(0.75);
         self->active_experiment_->latency_before = std::move(latency);
         return self->Enact(direction);
       },
       [self = Ref()](uint32_t connection) {
         self->active_experiment_->affected_connection = connection;
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CG_AUTOSCALER: sleep " << self->post_enactment_sleep_;
         return Sleep(Timestamp::Now() + self->post_enactment_sleep_);
       },
-      [self = Ref()]() { return self->subject_->MeasureOverallLatency(); },
+      [self = Ref()]() {
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CG_AUTOSCALER: measure latency after experiment";
+        return self->subject_->MeasureOverallLatency();
+      },
       [self = Ref(), direction](Metrics latency) {
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CG_AUTOSCALER: measured latency 50/75 client:"
+            << latency.client_latency.Quantile(0.5) << "/"
+            << latency.client_latency.Quantile(0.75)
+            << " server:" << latency.server_latency.Quantile(0.5) << "/"
+            << latency.server_latency.Quantile(0.75);
         const auto result = autoscaler_detail::EvaluateExperiment(
             self->active_experiment_->latency_before, latency);
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CG_AUTOSCALER: experiment result " << result;
         const uint32_t connection =
             self->active_experiment_->affected_connection;
         self->active_experiment_.reset();

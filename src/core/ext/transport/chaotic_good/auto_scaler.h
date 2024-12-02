@@ -15,6 +15,7 @@
 #ifndef CHAOTIC_GOOD_AUTOSCALER_H
 #define CHAOTIC_GOOD_AUTOSCALER_H
 
+#include "absl/container/flat_hash_map.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/tdigest.h"
@@ -40,18 +41,46 @@ enum class Experiment : uint8_t {
   kDown,
 };
 
+template <typename Sink>
+void AbslStringify(Sink& sink, Experiment e) {
+  switch (e) {
+    case Experiment::kUp:
+      sink.Append("Up");
+      break;
+    case Experiment::kDown:
+      sink.Append("Down");
+      break;
+  }
+}
+
 enum class ExperimentResult : uint8_t {
   kSuccess,
   kFailure,
   kInconclusive,
 };
 
+template <typename Sink>
+void AbslStringify(Sink& sink, ExperimentResult e) {
+  switch (e) {
+    case ExperimentResult::kSuccess:
+      sink.Append("Success");
+      break;
+    case ExperimentResult::kFailure:
+      sink.Append("Failure");
+      break;
+    case ExperimentResult::kInconclusive:
+      sink.Append("Inconclusive");
+      break;
+  }
+}
+
 ExperimentResult EvaluateExperiment(Metrics& before, Metrics& after);
 ExperimentResult EvaluateQuantile(TDigest& before, TDigest& after,
                                   double quantile, double range);
 ExperimentResult EvaluateOneSidedExperiment(TDigest& before, TDigest& after);
 ExperimentResult MergeExperimentResults(ExperimentResult a, ExperimentResult b);
-size_t ChooseWorstTailLatency(std::vector<Metrics> latencies);
+uint32_t ChooseWorstTailLatency(
+    absl::flat_hash_map<uint32_t, Metrics> latencies);
 Experiment Reverse(Experiment e);
 
 }  // namespace autoscaler_detail
@@ -68,9 +97,17 @@ class AutoScaler : public RefCounted<AutoScaler> {
     virtual Promise<Empty> ParkConnection(uint32_t which) = 0;
     virtual Promise<Empty> UnparkConnection(uint32_t which) = 0;
     virtual Promise<Metrics> MeasureOverallLatency() = 0;
-    virtual Promise<std::vector<Metrics>> MeasurePerConnectionLatency() = 0;
+    virtual Promise<absl::flat_hash_map<uint32_t, Metrics>>
+    MeasurePerConnectionLatency() = 0;
     virtual size_t GetNumConnections() = 0;
   };
+
+  class Options {
+   public:
+  };
+
+  AutoScaler(std::unique_ptr<SubjectInterface> subject, Options options)
+      : subject_(std::move(subject)) {}
 
   Promise<Empty> ControlLoop();
 
