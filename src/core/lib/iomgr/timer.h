@@ -48,8 +48,7 @@ typedef struct grpc_timer {
   };
 } grpc_timer;
 
-static_assert(std::is_trivial<grpc_timer>::value,
-              "grpc_timer is expected to be a trivial type");
+static_assert(std::is_trivial<grpc_timer>::value);
 
 typedef enum {
   GRPC_TIMERS_NOT_CHECKED,
