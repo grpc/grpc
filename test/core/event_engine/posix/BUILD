@@ -279,3 +279,20 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "posix_system_api_test",
+    srcs = ["posix_system_api_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    deps = [
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
