@@ -258,7 +258,7 @@ uint32_t ChaoticGoodClientTransport::MakeStream(CallHandler call_handler) {
         auto ex = self->stream_start_time_.extract(stream_id);
         if (!ex.empty()) {
           Duration latency = Timestamp::Now() - ex.mapped();
-          if (latency > Duration::Milliseconds(10)) {
+          if (latency > Duration::Milliseconds(10000000)) {
             LOG(INFO) << "long request: " << latency;
           }
         }
