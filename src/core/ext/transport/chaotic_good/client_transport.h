@@ -109,6 +109,8 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
+  absl::flat_hash_map<uint32_t, Timestamp> stream_start_time_
+      ABSL_GUARDED_BY(mu_);
   RefCountedPtr<Party> party_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
       "chaotic_good_client", GRPC_CHANNEL_READY};
