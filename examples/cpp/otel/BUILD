@@ -26,6 +26,7 @@ cc_library(
     deps = [
         "//:grpc++",
         "//:grpc++_reflection",
+        "//:grpc++_xds_server",
         "//examples/protos:helloworld_cc_grpc",
         "@io_opentelemetry_cpp//sdk/src/metrics",
     ],

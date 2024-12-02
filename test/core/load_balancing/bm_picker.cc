@@ -32,7 +32,9 @@
 namespace grpc_core {
 namespace {
 
-bool IsSlowBuild() { return BuiltUnderMsan() || BuiltUnderUbsan(); }
+bool IsSlowBuild() {
+  return BuiltUnderMsan() || BuiltUnderUbsan() || BuiltUnderTsan();
+}
 
 class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
  public:
