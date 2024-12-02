@@ -134,7 +134,6 @@ declare -A useLanguage=(
 # Disable specific languages.
 declare -a disabledLanguages=(
   # Add a language here to disable it.
-  dotnet
 )
 for language in "${disabledLanguages[@]}"; do
   unset "useLanguage[${language}]"
