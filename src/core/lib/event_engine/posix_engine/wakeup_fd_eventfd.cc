@@ -81,13 +81,13 @@ EventFdWakeupFd::~EventFdWakeupFd() {
   }
 }
 
-bool EventFdWakeupFd::IsSupported(const SystemApi& system_api) {
+bool EventFdWakeupFd::IsSupported(SystemApi& system_api) {
   EventFdWakeupFd event_fd_wakeup_fd(&system_api);
   return event_fd_wakeup_fd.Init().ok();
 }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>>
-EventFdWakeupFd::CreateEventFdWakeupFd(const SystemApi& system_api) {
+EventFdWakeupFd::CreateEventFdWakeupFd(SystemApi& system_api) {
   static bool kIsEventFdWakeupFdSupported =
       EventFdWakeupFd::IsSupported(system_api);
   if (kIsEventFdWakeupFdSupported) {
@@ -118,7 +118,7 @@ bool EventFdWakeupFd::IsSupported(const SystemApi& /*system_api*/) {
 }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>>
-EventFdWakeupFd::CreateEventFdWakeupFd(const SystemApi& /*system_api*/) {
+EventFdWakeupFd::CreateEventFdWakeupFd(SystemApi& /*system_api*/) {
   return absl::NotFoundError("Eventfd wakeup fd is not supported");
 }
 

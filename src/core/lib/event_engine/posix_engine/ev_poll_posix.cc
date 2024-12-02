@@ -289,7 +289,7 @@ int PollElapsedTimeToMillis(grpc_core::Timestamp start) {
   }
 }
 
-bool InitPollPollerPosix(const SystemApi& system_api);
+bool InitPollPollerPosix(SystemApi& system_api);
 
 // Called by the child process's post-fork handler to close open fds,
 // including the global epoll fd of each poller. This allows gRPC to shutdown
@@ -298,7 +298,7 @@ bool InitPollPollerPosix(const SystemApi& system_api);
 void ResetEventManagerOnFork() {
   // Delete all pending Epoll1EventHandles.
   gpr_mu_lock(&fork_fd_list_mu);
-  const SystemApi* system_api = nullptr;
+  SystemApi* system_api = nullptr;
   if (fork_fd_list_head != nullptr) {
     system_api = fork_fd_list_head->Poller()->GetSystemApi();
   } else if (!fork_poller_list.empty()) {
@@ -324,7 +324,7 @@ void ResetEventManagerOnFork() {
 
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
 // Create epoll_fd to make sure epoll support is available
-bool InitPollPollerPosix(const SystemApi& system_api) {
+bool InitPollPollerPosix(SystemApi& system_api) {
   if (!grpc_event_engine::experimental::SupportsWakeupFd(system_api)) {
     return false;
   }
@@ -609,7 +609,7 @@ void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* handle) {
   --num_poll_handles_;
 }
 
-PollPoller::PollPoller(Scheduler* scheduler, const SystemApi& system_api,
+PollPoller::PollPoller(Scheduler* scheduler, SystemApi& system_api,
                        bool use_phony_poll)
     : scheduler_(scheduler),
       use_phony_poll_(use_phony_poll),
@@ -834,7 +834,7 @@ void PollPoller::Close() {
 }
 
 std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
-                                           const SystemApi& system_api,
+                                           SystemApi& system_api,
                                            bool use_phony_poll) {
   static bool kPollPollerSupported = InitPollPollerPosix(system_api);
   if (kPollPollerSupported) {

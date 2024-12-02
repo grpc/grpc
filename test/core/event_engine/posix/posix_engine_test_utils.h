@@ -57,7 +57,7 @@ class TestScheduler : public Scheduler {
 // Creates a client socket and blocks until it connects to the specified
 // server address. The function abort fails upon encountering errors.
 FileDescriptor ConnectToServerOrDie(
-    const SystemApi& system_api,
+    SystemApi& system_api,
     const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
         server_address);
 

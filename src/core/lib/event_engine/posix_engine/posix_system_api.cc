@@ -21,6 +21,7 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
+#include "absl/synchronization/mutex.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
@@ -90,14 +91,14 @@ close_and_error:
 #elif GRPC_LINUX_SOCKETUTILS
 
 FileDescriptor SystemApi::Accept4(FileDescriptor sockfd, struct sockaddr* addr,
-                                  socklen_t* addrlen, int flags) const {
-  return FileDescriptor(accept4(sockfd.fd(), addr, addrlen, flags));
+                                  socklen_t* addrlen, int flags) {
+  return RegisterFileDescriptor(accept4(sockfd.fd(), addr, addrlen, flags));
 }
 
 FileDescriptor SystemApi::Accept4(
     FileDescriptor sockfd,
     grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
-    int nonblock, int cloexec) const {
+    int nonblock, int cloexec) {
   int flags = 0;
   flags |= nonblock ? SOCK_NONBLOCK : 0;
   flags |= cloexec ? SOCK_CLOEXEC : 0;
@@ -111,17 +112,25 @@ FileDescriptor SystemApi::Accept4(
 
 #endif  // GRPC_LINUX_SOCKETUTILS
 
-FileDescriptor SystemApi::Accept(FileDescriptor sockfd, struct sockaddr* addr,
-                                 socklen_t* addrlen) const {
-  return FileDescriptor(accept(sockfd.fd(), addr, addrlen));
-}
+void SystemApi::AdvanceGeneration() {}
 
-FileDescriptor SystemApi::AdoptExternalFd(int fd) const {
+FileDescriptor SystemApi::RegisterFileDescriptor(int fd) {
+  absl::MutexLock lock(&mu_);
+  fds_.insert(fd);
   return FileDescriptor(fd);
 }
 
-FileDescriptor SystemApi::Socket(int domain, int type, int protocol) const {
-  return FileDescriptor(socket(domain, type, protocol));
+FileDescriptor SystemApi::Accept(FileDescriptor sockfd, struct sockaddr* addr,
+                                 socklen_t* addrlen) {
+  return RegisterFileDescriptor(accept(sockfd.fd(), addr, addrlen));
+}
+
+FileDescriptor SystemApi::AdoptExternalFd(int fd) {
+  return RegisterFileDescriptor(fd);
+}
+
+FileDescriptor SystemApi::Socket(int domain, int type, int protocol) {
+  return RegisterFileDescriptor(socket(domain, type, protocol));
 }
 
 int SystemApi::Bind(FileDescriptor fd, const struct sockaddr* addr,
@@ -197,16 +206,16 @@ absl::Status SystemApi::SetSocketNoSigpipeIfPossible(FileDescriptor fd) const {
 bool SystemApi::IsSocketReusePortSupported() const {
   // This is depends on the OS so it is ok to make it static
   static bool kSupportSoReusePort = [this]() -> bool {
-    FileDescriptor s = Socket(AF_INET, SOCK_STREAM, 0);
-    if (!s.ready()) {
+    int s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s < 0) {
       // This might be an ipv6-only environment in which case
       // 'socket(AF_INET,..)' call would fail. Try creating IPv6 socket in
       // that case
-      s = Socket(AF_INET6, SOCK_STREAM, 0);
+      s = socket(AF_INET6, SOCK_STREAM, 0);
     }
-    if (s.ready()) {
-      bool result = SetSocketReusePort(s, 1).ok();
-      Close(s);
+    if (s >= 0) {
+      bool result = SetSocketReusePort(FileDescriptor(s), 1).ok();
+      close(s);
       return result;
     } else {
       return false;
@@ -561,12 +570,13 @@ long SystemApi::Read(FileDescriptor fd, void* buf, size_t count) const {
   return read(fd.fd(), buf, count);
 }
 
-long SystemApi::Write(FileDescriptor fd, const void* buf, size_t count) const {
-  return write(fd.fd(), buf, count);
+absl::StatusOr<long> SystemApi::Write(FileDescriptor fd, const void* buf,
+                                      size_t count) const {
+  return WithFd(fd, [=](int fd) { return write(fd, buf, count); });
 }
 
 std::pair<int, std::array<FileDescriptor, 2>> SystemApi::SocketPair(
-    int domain, int type, int protocol) const {
+    int domain, int type, int protocol) {
   std::array<int, 2> fds;
   int result = socketpair(domain, type, protocol, fds.data());
   return {result, {AdoptExternalFd(fds[0]), AdoptExternalFd(fds[1])}};
@@ -590,7 +600,7 @@ absl::Status SystemApi::SetSocketNonBlocking(FileDescriptor fd) const {
 }
 
 #ifdef GRPC_LINUX_EPOLL
-FileDescriptor SystemApi::EpollCreateAndCloexec() const {
+FileDescriptor SystemApi::EpollCreateAndCloexec() {
 #ifdef GRPC_LINUX_EPOLL_CREATE1
   int fd = epoll_create1(EPOLL_CLOEXEC);
   if (fd < 0) {
@@ -609,7 +619,7 @@ FileDescriptor SystemApi::EpollCreateAndCloexec() const {
 }
 #endif  // GRPC_LINUX_EPOLL
 
-std::pair<int, std::array<FileDescriptor, 2>> SystemApi::Pipe() const {
+std::pair<int, std::array<FileDescriptor, 2>> SystemApi::Pipe() {
   std::array<int, 2> fds;
   int status = pipe(fds.data());
   return {status, {AdoptExternalFd(fds[0]), AdoptExternalFd(fds[1])}};
@@ -630,7 +640,7 @@ int SystemApi::EpollWait(FileDescriptor epfd, struct epoll_event* events,
   return epoll_wait(epfd.fd(), events, maxevents, timeout);
 }
 
-FileDescriptor SystemApi::EventFd(unsigned int initval, int flags) const {
+FileDescriptor SystemApi::EventFd(unsigned int initval, int flags) {
   return AdoptExternalFd(eventfd(initval, flags));
 }
 

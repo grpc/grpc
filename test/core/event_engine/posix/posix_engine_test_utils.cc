@@ -32,7 +32,7 @@ using ResolvedAddress =
 
 // Creates a client socket and blocks until it connects to the specified
 // server address. The function abort fails upon encountering errors.
-FileDescriptor ConnectToServerOrDie(const SystemApi& system_api,
+FileDescriptor ConnectToServerOrDie(SystemApi& system_api,
                                     const ResolvedAddress& server_address) {
   int one = 1;
   int flags;

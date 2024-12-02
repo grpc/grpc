@@ -60,7 +60,7 @@ using ListenerSocket = ListenerSocketsContainer::ListenerSocket;
 #ifdef GRPC_HAVE_IFADDRS
 
 // Bind to "::" to get a port number not used by any address.
-absl::StatusOr<int> GetUnusedPort(const SystemApi& system_api) {
+absl::StatusOr<int> GetUnusedPort(SystemApi& system_api) {
   ResolvedAddress wild = ResolvedAddressMakeWild6(0);
   DSMode dsmode;
   auto sock =
@@ -210,7 +210,7 @@ absl::Status PrepareSocket(const SystemApi& system_api,
 }  // namespace
 
 absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
-    const SystemApi& system_api, const PosixTcpOptions& options,
+    SystemApi& system_api, const PosixTcpOptions& options,
     const ResolvedAddress& addr) {
   ResolvedAddress addr4_copy;
   ListenerSocket socket;
@@ -232,7 +232,7 @@ absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
 }
 
 absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
-    const SystemApi& system_api, ListenerSocketsContainer& listener_sockets,
+    SystemApi& system_api, ListenerSocketsContainer& listener_sockets,
     const PosixTcpOptions& options, int requested_port) {
 #ifdef GRPC_HAVE_IFADDRS
   absl::Status op_status = absl::OkStatus();
@@ -314,7 +314,7 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
 }
 
 absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
-    const SystemApi& system_api, ListenerSocketsContainer& listener_sockets,
+    SystemApi& system_api, ListenerSocketsContainer& listener_sockets,
     const PosixTcpOptions& options, int requested_port) {
   ResolvedAddress wild4 = ResolvedAddressMakeWild4(requested_port);
   ResolvedAddress wild6 = ResolvedAddressMakeWild6(requested_port);

@@ -22,6 +22,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/log/internal/check_op.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -99,7 +100,7 @@ absl::Status SetSocketSendBuf(const SystemApi* system_api, FileDescriptor fd,
 // Create a test socket with the right properties for testing.
 // port is the TCP port to listen or connect to.
 // Return a socket FD and sockaddr_in.
-void CreateTestSocket(const SystemApi* system_api, int port,
+void CreateTestSocket(SystemApi* system_api, int port,
                       FileDescriptor* socket_fd, struct sockaddr_in6* sin) {
   int one = 1;
   int buffer_size_bytes = BUF_SIZE;
@@ -217,7 +218,7 @@ void ListenCb(server* sv, const absl::Status& status) {
   struct sockaddr_storage ss;
   socklen_t slen = sizeof(ss);
   EventHandle* listen_em_fd = sv->em_fd;
-  const SystemApi* system_api = listen_em_fd->Poller()->GetSystemApi();
+  SystemApi* system_api = listen_em_fd->Poller()->GetSystemApi();
 
   if (!status.ok()) {
     ListenShutdownCb(sv);
@@ -262,7 +263,7 @@ int ServerStart(server* sv) {
   struct sockaddr_in6 sin;
   socklen_t addr_len;
 
-  const SystemApi* system_api = g_event_poller->GetSystemApi();
+  SystemApi* system_api = g_event_poller->GetSystemApi();
 
   CreateTestSocket(system_api, port, &fd, &sin);
   addr_len = sizeof(sin);
@@ -319,10 +320,12 @@ void ClientSessionWrite(client* cl, const absl::Status& status) {
     return;
   }
 
+  absl::StatusOr<long> written;
   do {
-    write_once = system_api->Write(fd, cl->write_buf, CLIENT_WRITE_BUF_SIZE);
-    if (write_once > 0) cl->write_bytes_total += write_once;
-  } while (write_once > 0);
+    written = system_api->Write(fd, cl->write_buf, CLIENT_WRITE_BUF_SIZE);
+    ASSERT_TRUE(written.ok()) << written.status();
+    if (write_once > 0) cl->write_bytes_total += *written;
+  } while (*written > 0);
 
   EXPECT_EQ(errno, EAGAIN);
   gpr_mu_lock(&g_mu);
@@ -342,7 +345,7 @@ void ClientSessionWrite(client* cl, const absl::Status& status) {
 void ClientStart(client* cl, int port) {
   FileDescriptor fd;
   struct sockaddr_in6 sin;
-  const SystemApi* system_api = g_event_poller->GetSystemApi();
+  SystemApi* system_api = g_event_poller->GetSystemApi();
   CreateTestSocket(system_api, port, &fd, &sin);
   if (system_api->Connect(fd, reinterpret_cast<struct sockaddr*>(&sin),
                           sizeof(sin)) == -1) {
@@ -472,7 +475,7 @@ TEST_F(EventPollerTest, TestEventPollerHandleChange) {
   InitChangeData(&a);
   InitChangeData(&b);
 
-  const SystemApi* system_api = g_event_poller->GetSystemApi();
+  SystemApi* system_api = g_event_poller->GetSystemApi();
 
   // Will work better with the structured bindings in C++17
   auto code_sv = system_api->SocketPair(AF_UNIX, SOCK_STREAM, 0);
@@ -490,8 +493,9 @@ TEST_F(EventPollerTest, TestEventPollerHandleChange) {
   // Register the first callback, then make its FD readable
   em_fd->NotifyOnRead(first_closure);
   data = 0;
-  result = system_api->Write(sv[1], &data, 1);
-  EXPECT_EQ(result, 1);
+  auto written = system_api->Write(sv[1], &data, 1);
+  EXPECT_TRUE(written.ok()) << written.status();
+  EXPECT_EQ(*written, 1);
 
   // And now wait for it to run.
   auto poller_work = [](FdChangeData* fdc) {
@@ -516,8 +520,9 @@ TEST_F(EventPollerTest, TestEventPollerHandleChange) {
   // thing again.
   em_fd->NotifyOnRead(second_closure);
   data = 0;
-  result = system_api->Write(sv[1], &data, 1);
-  EXPECT_EQ(result, 1);
+  written = system_api->Write(sv[1], &data, 1);
+  EXPECT_TRUE(written.ok()) << written.status();
+  EXPECT_EQ(*written, 1);
 
   // And now wait for it to run.
   poller_work(&b);

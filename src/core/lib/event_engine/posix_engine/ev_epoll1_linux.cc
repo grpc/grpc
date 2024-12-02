@@ -212,7 +212,7 @@ void ForkPollerListRemovePoller(Epoll1Poller* poller) {
   }
 }
 
-bool InitEpoll1PollerLinux(const SystemApi& system_api);
+bool InitEpoll1PollerLinux(SystemApi& system_api);
 
 // Called by the child process's post-fork handler to close open fds,
 // including the global epoll fd of each poller. This allows gRPC to shutdown in
@@ -221,7 +221,7 @@ bool InitEpoll1PollerLinux(const SystemApi& system_api);
 void ResetEventManagerOnFork() {
   // Delete all pending Epoll1EventHandles.
   gpr_mu_lock(&fork_fd_list_mu);
-  const SystemApi* system_api = nullptr;
+  SystemApi* system_api = nullptr;
   if (fork_fd_list_head != nullptr) {
     system_api = fork_fd_list_head->Poller()->GetSystemApi();
   } else if (!fork_poller_list.empty()) {
@@ -247,7 +247,7 @@ void ResetEventManagerOnFork() {
 
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
 // Create epoll_fd to make sure epoll support is available
-bool InitEpoll1PollerLinux(const SystemApi& system_api) {
+bool InitEpoll1PollerLinux(SystemApi& system_api) {
   if (!grpc_event_engine::experimental::SupportsWakeupFd(system_api)) {
     return false;
   }
@@ -339,7 +339,7 @@ void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
   }
 }
 
-Epoll1Poller::Epoll1Poller(Scheduler* scheduler, const SystemApi& system_api)
+Epoll1Poller::Epoll1Poller(Scheduler* scheduler, SystemApi& system_api)
     : scheduler_(scheduler),
       was_kicked_(false),
       closed_(false),
@@ -556,7 +556,7 @@ void Epoll1Poller::Kick() {
 }
 
 std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler,
-                                               const SystemApi& system_api) {
+                                               SystemApi& system_api) {
   static bool kEpoll1PollerSupported = InitEpoll1PollerLinux(system_api);
   if (kEpoll1PollerSupported) {
     return std::make_shared<Epoll1Poller>(scheduler, system_api);

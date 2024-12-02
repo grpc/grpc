@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <cstring>
 
-#include "gmock/gmock.h"
+#include "absl/strings/str_cat.h"
 #include "test/core/test_util/port.h"
 
 namespace grpc_event_engine {
@@ -29,6 +29,16 @@ MATCHER(IsPosixSuccess, "") {
   }
   *result_listener << absl::StrFormat("(%d) %s", errno, strerror(errno));
   return false;
+}
+
+MATCHER_P(IsSuccessWithValue, value, absl::StrCat(value)) {
+  if ((arg.ok())) {
+    return testing::ExplainMatchResult(value, arg.value(), result_listener);
+  } else {
+    *result_listener << absl::StrFormat(
+        "failed with (%d) %s", arg.status().code(), arg.status().message());
+    return false;
+  }
 }
 
 }  // namespace
@@ -63,12 +73,16 @@ TEST(PosixSystemApiTest, EndpointSurvivesGeneration) {
   result = client_api.Connect(client, sa, sizeof(addr));
   ASSERT_EQ(result, 0);
   std::array<uint8_t, 3> buf = {0x20, 0x30, 0x30};
-  ASSERT_EQ(client_api.Write(client, buf.data(), buf.size()), buf.size());
+  ASSERT_THAT(client_api.Write(client, buf.data(), buf.size()),
+              IsSuccessWithValue(buf.size()));
   std::array<uint8_t, 20> rcv;
   rcv.fill(0);
   ASSERT_EQ(server_api.Read(server_end, rcv.data(), rcv.size()), buf.size());
   EXPECT_THAT(absl::MakeSpan(rcv).first(buf.size()),
               ::testing::ElementsAreArray(buf));
+  client_api.AdvanceGeneration();
+  ASSERT_THAT(client_api.Write(client, buf.data(), buf.size()),
+              IsSuccessWithValue(buf.size()));
 }
 
 }  // namespace experimental

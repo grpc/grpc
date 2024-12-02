@@ -60,7 +60,7 @@ class ListenerSocketsContainer {
 // socket fd and its dsmode. If unsuccessful, it returns a Not-OK status.
 absl::StatusOr<ListenerSocketsContainer::ListenerSocket>
 CreateAndPrepareListenerSocket(
-    const SystemApi& system_api, const PosixTcpOptions& options,
+    SystemApi& system_api, const PosixTcpOptions& options,
     const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr);
 
 // Instead of creating and adding a socket bound to specific address, this
@@ -70,7 +70,7 @@ CreateAndPrepareListenerSocket(
 // returns the port at which the created socket listens for incoming
 // connections.
 absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
-    const SystemApi& system_api, ListenerSocketsContainer& listener_sockets,
+    SystemApi& system_api, ListenerSocketsContainer& listener_sockets,
     const PosixTcpOptions& options, int requested_port);
 
 // Get all addresses assigned to network interfaces on the machine and create
@@ -80,7 +80,7 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
 // every socket. If set to 0, a random port will be used for every socket.
 // The function returns the chosen port number for all created sockets.
 absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
-    const SystemApi& system_api, ListenerSocketsContainer& listener_sockets,
+    SystemApi& system_api, ListenerSocketsContainer& listener_sockets,
     const PosixTcpOptions& options, int requested_port);
 
 }  // namespace experimental

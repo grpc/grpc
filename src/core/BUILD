@@ -2354,9 +2354,11 @@ grpc_cc_library(
         "lib/event_engine/posix_engine/posix_system_api.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/log:log",
         "absl/status",
         "absl/strings",
+        "absl/synchronization",
     ],
     deps = [
         "event_engine_tcp_socket_utils",

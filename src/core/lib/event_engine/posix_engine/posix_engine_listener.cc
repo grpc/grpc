@@ -70,7 +70,7 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     const EventEngine::ResolvedAddress& addr,
     PosixListenerWithFdSupport::OnPosixBindNewFdCallback on_bind_new_fd) {
   grpc_core::MutexLock lock(&this->mu_);
-  const SystemApi& system_api = *poller_->GetSystemApi();
+  SystemApi& system_api = *poller_->GetSystemApi();
   if (this->started_) {
     return absl::FailedPreconditionError(
         "Listener is already started, ports can no longer be bound");
@@ -132,7 +132,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     Unref();
     return;
   }
-  const SystemApi& system_api = *handle_->Poller()->GetSystemApi();
+  SystemApi& system_api = *handle_->Poller()->GetSystemApi();
   // loop until accept4 returns EAGAIN, and then re-arm notification.
   for (;;) {
     EventEngine::ResolvedAddress addr;
@@ -261,7 +261,7 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
     return absl::UnknownError(
         absl::StrCat("HandleExternalConnection: Invalid peer socket: ", fd));
   }
-  const SystemApi* system_api = poller_->GetSystemApi();
+  SystemApi* system_api = poller_->GetSystemApi();
   FileDescriptor sock = system_api->AdoptExternalFd(fd);
   (void)system_api->SetSocketNoSigpipeIfPossible(sock);
   auto peer_name = system_api->PeerAddressString(sock);

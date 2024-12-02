@@ -18,6 +18,10 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include <unordered_set>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/synchronization/mutex.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_LINUX_EPOLL
@@ -50,22 +54,24 @@ class SystemApi {
  public:
   static constexpr int kDscpNotSet = -1;
 
+  void AdvanceGeneration();
+
   FileDescriptor Accept(FileDescriptor sockfd, struct sockaddr* addr,
-                        socklen_t* addrlen) const;
+                        socklen_t* addrlen);
   FileDescriptor Accept4(
       FileDescriptor sockfd,
       grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
-      int nonblock, int cloexec) const;
+      int nonblock, int cloexec);
   FileDescriptor Accept4(FileDescriptor sockfd, struct sockaddr* addr,
-                         socklen_t* addrlen, int flags) const;
-  FileDescriptor AdoptExternalFd(int fd) const;
-  FileDescriptor Socket(int domain, int type, int protocol) const;
-  FileDescriptor EventFd(unsigned int initval, int flags) const;
-  FileDescriptor EpollCreateAndCloexec() const;
+                         socklen_t* addrlen, int flags);
+  FileDescriptor AdoptExternalFd(int fd);
+  FileDescriptor Socket(int domain, int type, int protocol);
+  FileDescriptor EventFd(unsigned int initval, int flags);
+  FileDescriptor EpollCreateAndCloexec();
 
-  std::pair<int, std::array<FileDescriptor, 2>> Pipe() const;
+  std::pair<int, std::array<FileDescriptor, 2>> Pipe();
   std::pair<int, std::array<FileDescriptor, 2>> SocketPair(int domain, int type,
-                                                           int protocol) const;
+                                                           int protocol);
 
   int Bind(FileDescriptor fd, const struct sockaddr* addr,
            socklen_t addrlen) const;
@@ -96,7 +102,8 @@ class SystemApi {
   int SetSockOpt(FileDescriptor fd, int level, int optname, const void* optval,
                  socklen_t optlen) const;
   int Shutdown(FileDescriptor sockfd, int how) const;
-  long Write(FileDescriptor fd, const void* buf, size_t count) const;
+  absl::StatusOr<long> Write(FileDescriptor fd, const void* buf,
+                             size_t count) const;
 
   absl::Status SetSocketNoSigpipeIfPossible(FileDescriptor fd) const;
   bool IsSocketReusePortSupported() const;
@@ -159,11 +166,31 @@ class SystemApi {
 #define SOCKET_SUPPORTS_TCP_USER_TIMEOUT_DEFAULT (-1)
 #endif  // TCP_USER_TIMEOUT
 #endif  // GPR_LINUX == 1
+  FileDescriptor RegisterFileDescriptor(int fd);
+
+  template <typename Fn>
+  auto WithFd(const FileDescriptor& fd, const Fn& fn) const
+      -> absl::StatusOr<decltype(fn(0))> {
+    int native_fd;
+    if (!fd.ready()) {
+      return absl::InternalError("Invalid file descriptor");
+    }
+    {
+      absl::MutexLock lock(&mu_);
+      if (fds_.find(fd.fd()) == fds_.end()) {
+        return absl::InvalidArgumentError("File descriptor was closed");
+      }
+      native_fd = fd.fd();
+    }
+    return fn(native_fd);
+  }
 
   // Whether the socket supports TCP_USER_TIMEOUT option.
   // (0: don't know, 1: support, -1: not support)
   mutable std::atomic<int> g_socket_supports_tcp_user_timeout = {
       SOCKET_SUPPORTS_TCP_USER_TIMEOUT_DEFAULT};
+  std::unordered_set<int> fds_ ABSL_GUARDED_BY(&mu_);
+  mutable absl::Mutex mu_;
 
   // The default values for TCP_USER_TIMEOUT are currently configured to be in
   // line with the default values of KEEPALIVE_TIMEOUT as proposed in

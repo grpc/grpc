@@ -38,7 +38,7 @@ namespace experimental {
 
 #ifdef GRPC_POSIX_WAKEUP_FD
 
-absl::Status PipeWakeupFd::Init(const SystemApi& system_api) {
+absl::Status PipeWakeupFd::Init(SystemApi& system_api) {
   auto r = system_api.Pipe();
   if (0 != r.first) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -75,8 +75,13 @@ absl::Status PipeWakeupFd::ConsumeWakeup() {
 
 absl::Status PipeWakeupFd::Wakeup() {
   char c = 0;
-  while (system_api_->Write(WriteFd(), &c, 1) != 1 && errno == EINTR) {
-  }
+  absl::StatusOr<long> result;
+  do {
+    result = system_api_->Write(WriteFd(), &c, 1);
+    if (!result.ok()) {
+      return std::move(result).status();
+    }
+  } while (*result != 1 && errno == EINTR);
   return absl::OkStatus();
 }
 
@@ -89,13 +94,13 @@ PipeWakeupFd::~PipeWakeupFd() {
   }
 }
 
-bool PipeWakeupFd::IsSupported(const SystemApi& system_api) {
+bool PipeWakeupFd::IsSupported(SystemApi& system_api) {
   PipeWakeupFd pipe_wakeup_fd(&system_api);
   return pipe_wakeup_fd.Init(system_api).ok();
 }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd(
-    const SystemApi& system_api) {
+    SystemApi& system_api) {
   static bool kIsPipeWakeupFdSupported = PipeWakeupFd::IsSupported(system_api);
   if (kIsPipeWakeupFdSupported) {
     auto pipe_wakeup_fd = std::make_unique<PipeWakeupFd>(&system_api);

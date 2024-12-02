@@ -312,7 +312,7 @@ void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
 }
 
 PosixEnginePollerManager::PosixEnginePollerManager(
-    const SystemApi& system_api, std::shared_ptr<ThreadPool> executor)
+    SystemApi& system_api, std::shared_ptr<ThreadPool> executor)
     : poller_(
           grpc_event_engine::experimental::MakeDefaultPoller(system_api, this)),
       executor_(std::move(executor)),

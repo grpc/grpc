@@ -28,19 +28,18 @@ namespace experimental {
 
 class EventFdWakeupFd : public WakeupFd {
  public:
-  explicit EventFdWakeupFd(const SystemApi* system_api)
-      : system_api_(system_api) {}
+  explicit EventFdWakeupFd(SystemApi* system_api) : system_api_(system_api) {}
   ~EventFdWakeupFd() override;
   absl::Status ConsumeWakeup() override;
   absl::Status Wakeup() override;
   static absl::StatusOr<std::unique_ptr<WakeupFd>> CreateEventFdWakeupFd(
-      const SystemApi& system_api);
-  static bool IsSupported(const SystemApi& system_api);
+      SystemApi& system_api);
+  static bool IsSupported(SystemApi& system_api);
 
  private:
   absl::Status Init();
 
-  const SystemApi* system_api_;
+  SystemApi* system_api_;
 };
 
 }  // namespace experimental

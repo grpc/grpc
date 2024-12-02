@@ -32,10 +32,9 @@ namespace experimental {
 namespace {
 
 using WakeupFdFactory = std::function<absl::StatusOr<std::unique_ptr<WakeupFd>>(
-    const SystemApi& system_api)>;
+    SystemApi& system_api)>;
 
-absl::optional<WakeupFdFactory> GetWakeupFdFactory(
-    const SystemApi& system_api) {
+absl::optional<WakeupFdFactory> GetWakeupFdFactory(SystemApi& system_api) {
   static absl::optional<WakeupFdFactory> g_wakeup_fd_fn =
       [&]() -> absl::optional<WakeupFdFactory> {
 #ifndef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
@@ -53,12 +52,12 @@ absl::optional<WakeupFdFactory> GetWakeupFdFactory(
 
 }  // namespace
 
-bool SupportsWakeupFd(const SystemApi& system_api) {
+bool SupportsWakeupFd(SystemApi& system_api) {
   return GetWakeupFdFactory(system_api).has_value();
 }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd(
-    const SystemApi& system_api) {
+    SystemApi& system_api) {
   auto factory = GetWakeupFdFactory(system_api);
   if (!factory.has_value()) {
     return absl::NotFoundError("Wakeup-fd is not supported on this system");

@@ -89,7 +89,7 @@ absl::Status ErrorForFd(
 }
 
 FileDescriptor CreateSocket(
-    const SystemApi& posix_apis,
+    SystemApi& posix_apis,
     std::function<FileDescriptor(int, int, int)> socket_factory, int family,
     int type, int protocol) {
   FileDescriptor res = socket_factory != nullptr
@@ -299,7 +299,7 @@ bool IsIpv6LoopbackAvailable() {
 }
 
 absl::StatusOr<FileDescriptor> CreateDualStackSocket(
-    const SystemApi& posix_apis,
+    SystemApi& posix_apis,
     std::function<FileDescriptor(int, int, int)> socket_factory,
     const experimental::EventEngine::ResolvedAddress& addr, int type,
     int protocol, DSMode& dsmode) {
@@ -341,7 +341,7 @@ absl::StatusOr<FileDescriptor> CreateDualStackSocket(
 }
 
 absl::StatusOr<PosixSocketCreateResult> CreateAndPrepareTcpClientSocket(
-    const SystemApi& posix_apis, const PosixTcpOptions& options,
+    SystemApi& posix_apis, const PosixTcpOptions& options,
     const EventEngine::ResolvedAddress& target_addr) {
   DSMode dsmode;
   EventEngine::ResolvedAddress mapped_target_addr;

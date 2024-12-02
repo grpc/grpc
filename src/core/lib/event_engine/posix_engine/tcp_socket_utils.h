@@ -195,7 +195,7 @@ bool IsIpv6LoopbackAvailable();
 
 // The dsmode output indicates which address family was actually created.
 absl::StatusOr<FileDescriptor> CreateDualStackSocket(
-    const SystemApi& posix_apis,
+    SystemApi& posix_apis,
     std::function<FileDescriptor(int /*domain*/, int /*type*/,
                                  int /*protocol*/)>
         socket_factory,
@@ -220,7 +220,7 @@ struct PosixSocketCreateResult {
 // available, mapped_target_addr will be an IPv4-mapped IPv6 address.
 //
 absl::StatusOr<PosixSocketCreateResult> CreateAndPrepareTcpClientSocket(
-    const SystemApi& posix_apis, const PosixTcpOptions& options,
+    SystemApi& posix_apis, const PosixTcpOptions& options,
     const EventEngine::ResolvedAddress& target_addr);
 
 bool SetSocketDualStack(int fd);
