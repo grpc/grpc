@@ -95,7 +95,8 @@ class Party : public Activity, private Wakeable {
     explicit WakeupHold(Party* party)
         : prev_state_(party->state_.load(std::memory_order_relaxed)) {
       // Try to lock
-      if (party->state_.compare_exchange_weak(prev_state_,
+      if ((prev_state_ & kLocked) == 0 &&
+          party->state_.compare_exchange_weak(prev_state_,
                                               (prev_state_ | kLocked) + kOneRef,
                                               std::memory_order_relaxed)) {
         DCHECK_EQ(prev_state_ & ~(kRefMask | kAllocatedMask), 0u)
