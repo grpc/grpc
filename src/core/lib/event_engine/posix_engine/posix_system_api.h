@@ -72,12 +72,14 @@ class SystemApi {
   void Close(FileDescriptor fd) const;
   int Connect(FileDescriptor sockfd, const struct sockaddr* addr,
               socklen_t addrlen) const;
+#ifdef GRPC_LINUX_EPOLL
   long EventFdRead(FileDescriptor fd, uint64_t* value) const;
   long EventFdWrite(FileDescriptor fd, uint64_t value) const;
   int EpollCtl(FileDescriptor epfd, int op, FileDescriptor fd,
                struct epoll_event* event) const;
   int EpollWait(FileDescriptor epfd, struct epoll_event* events, int maxevents,
                 int timeout) const;
+#endif  // GRPC_LINUX_EPOLL
   int Fcntl(FileDescriptor fd, int op, int args) const;
   int GetSockOpt(FileDescriptor fd, int level, int optname, void* optval,
                  socklen_t* optlen) const;
