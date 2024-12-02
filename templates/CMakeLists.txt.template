@@ -713,10 +713,24 @@
     DEPENDS tools_c tools_cxx)
 
   % for src in sorted(protobuf_gen_files):
+  % if not src.startswith('third_party/'):
   protobuf_generate_grpc_cpp_with_import_path_correction(
     ${src} ${third_party_proto_import_path(src)}
   )
+  % endif
   % endfor
+
+  # This enables CMake to build the project without requiring submodules
+  # in the third_party directory as long as test builds are disabled.
+  if (gRPC_BUILD_TESTS)
+  % for src in sorted(protobuf_gen_files):
+  % if src.startswith('third_party/'):
+  protobuf_generate_grpc_cpp_with_import_path_correction(
+    ${src} ${third_party_proto_import_path(src)}
+  )
+  % endif
+  % endfor
+  endif()
 
   if(gRPC_BUILD_TESTS)
     add_custom_target(buildtests_c)

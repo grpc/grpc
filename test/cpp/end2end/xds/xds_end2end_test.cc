@@ -65,12 +65,12 @@
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
 #include "src/core/client_channel/backup_poller.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
@@ -2412,6 +2412,36 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPostPermissionAnyPrincipal) {
   auto* header = policy.add_permissions()->mutable_header();
   header->set_name(":method");
   header->set_exact_match("POST");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->set_allow_put_requests(true);
+  backends_[0]->Start();
+  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  // All RPCs use POST method by default
+  SendRpc([this]() { return CreateInsecureChannel(); },
+          RpcOptions().set_wait_for_ready(true), {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
+  // Test that an RPC with PUT method is handled properly.
+  SendRpc([this]() { return CreateInsecureChannel(/*use_put_requests=*/true); },
+          RpcOptions().set_wait_for_ready(true), {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() != RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
+}
+
+TEST_P(XdsRbacTestWithActionPermutations,
+       MethodPostPermissionWithStringMatcherAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name(":method");
+  auto* string_match = header->mutable_string_match();
+  string_match->set_exact("post");
+  string_match->set_ignore_case(true);
   policy.add_principals()->set_any(true);
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);

@@ -445,6 +445,8 @@ for dirname in [
             "grpc_fuzz_test": grpc_cc_library,
             "grpc_proto_fuzzer": grpc_cc_library,
             "grpc_proto_library": grpc_proto_library,
+            "grpc_internal_proto_library": grpc_proto_library,
+            "grpc_cc_proto_library": grpc_cc_library,
             "select": lambda d: d["//conditions:default"],
             "glob": lambda files, **kwargs: None,
             "grpc_end2end_tests": lambda: None,
@@ -459,6 +461,7 @@ for dirname in [
             "grpc_clang_cl_settings": lambda **kwargs: None,
             "grpc_benchmark_args": lambda **kwargs: [],
             "LARGE_MACHINE": 1,
+            "HISTORY": 1,
         },
         {},
     )

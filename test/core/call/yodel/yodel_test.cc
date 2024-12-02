@@ -17,7 +17,7 @@
 #include <memory>
 
 #include "absl/random/random.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -55,9 +55,9 @@ absl::string_view ActionState::StateString(State state) {
 }
 
 void ActionState::Set(State state, SourceLocation whence) {
-  LOG(INFO) << StateString(state) << " " << name() << " [" << step() << "] "
-            << file() << ":" << line() << " @ " << whence.file() << ":"
-            << whence.line();
+  LOG(INFO) << StateString(state) << " " << name() << " [" << step()
+            << "] t=" << Timestamp::Now() << " " << file() << ":" << line()
+            << " @ " << whence.file() << ":" << whence.line();
   state_ = state;
 }
 
@@ -207,7 +207,8 @@ void YodelTest::WaitForAllPendingWork() {
 
 void YodelTest::Timeout() {
   std::vector<std::string> lines;
-  lines.emplace_back("Timeout waiting for pending actions to complete");
+  lines.emplace_back(absl::StrCat(
+      "Timeout waiting for pending actions to complete ", Timestamp::Now()));
   while (!pending_actions_.empty()) {
     auto action = std::move(pending_actions_.front());
     pending_actions_.pop();

@@ -19,10 +19,10 @@ package chaotic_good_frame;
 message Settings {
     // Connection id
     // - sent server->client on the control channel to specify the
-    //   data channel connection id
-    // - sent client->server on the data channel to complete the
-    //   connection
-    bytes connection_id = 1;
+    //   data channel connection id, one for each desired connection
+    // - exactly one sent client->server on the data channel to 
+    //   complete the connection
+    repeated bytes connection_id = 1;
     // Flag true if this is a data channel (and not a control channel)
     bool data_channel = 2;
     // Requested alignment for the data channel

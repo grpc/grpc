@@ -115,6 +115,11 @@ class HeaderMatcher {
                                               bool invert_match = false,
                                               bool case_sensitive = true);
 
+  // Creates a HeaderMatcher from an existing StringMatcher instance.
+  static HeaderMatcher CreateFromStringMatcher(absl::string_view name,
+                                               StringMatcher matcher,
+                                               bool invert_match);
+
   HeaderMatcher() = default;
   HeaderMatcher(const HeaderMatcher& other);
   HeaderMatcher& operator=(const HeaderMatcher& other);

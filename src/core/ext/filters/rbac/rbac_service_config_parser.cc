@@ -353,6 +353,13 @@ void RbacConfig::RbacPolicy::Rules::Policy::HeaderMatch::JsonPostLoad(
                                              range_match->end, invert_match));
     return;
   }
+  auto string_match = LoadJsonObjectField<StringMatch>(
+      json.object(), args, "stringMatch", errors, /*required=*/false);
+  if (string_match.has_value()) {
+    matcher = HeaderMatcher::CreateFromStringMatcher(
+        name, std::move(string_match->matcher), invert_match);
+    return;
+  }
   if (errors->size() == original_error_size) {
     errors->AddError("no valid matcher found");
   }
@@ -390,7 +397,8 @@ void RbacConfig::RbacPolicy::Rules::Policy::StringMatch::JsonPostLoad(
                                                   field_name, errors,
                                                   /*required=*/false);
     if (match.has_value()) {
-      set_string_matcher(StringMatcher::Create(type, *match, ignore_case));
+      set_string_matcher(
+          StringMatcher::Create(type, *match, /*case_sensitive=*/!ignore_case));
       return true;
     }
     return false;
@@ -406,7 +414,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::StringMatch::JsonPostLoad(
                                                          /*required=*/false);
   if (regex_match.has_value()) {
     set_string_matcher(StringMatcher::Create(StringMatcher::Type::kSafeRegex,
-                                             regex_match->regex, ignore_case));
+                                             regex_match->regex));
     return;
   }
   if (errors->size() == original_error_size) {

@@ -22,8 +22,8 @@
 #include "gtest/gtest.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/local_subchannel_pool.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "test/core/call/yodel/yodel_test.h"
 
 namespace grpc_core {

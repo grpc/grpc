@@ -251,13 +251,16 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
       // gets held for a really long time.
       auto wakeup =
           std::exchange(g_run_state->next, PartyWakeup{party, prev_state});
-      party->arena_->GetContext<grpc_event_engine::experimental::EventEngine>()
-          ->Run([wakeup]() {
-            GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked offload");
-            ApplicationCallbackExecCtx app_exec_ctx;
-            ExecCtx exec_ctx;
-            RunState{wakeup}.Run();
-          });
+      auto arena = party->arena_.get();
+      auto* event_engine =
+          arena->GetContext<grpc_event_engine::experimental::EventEngine>();
+      CHECK(event_engine != nullptr) << "; " << GRPC_DUMP_ARGS(party, arena);
+      event_engine->Run([wakeup]() {
+        GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked offload");
+        ApplicationCallbackExecCtx app_exec_ctx;
+        ExecCtx exec_ctx;
+        RunState{wakeup}.Run();
+      });
       return;
     }
     g_run_state->next = PartyWakeup{party, prev_state};

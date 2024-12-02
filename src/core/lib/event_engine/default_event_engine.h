@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/util/debug_location.h"
 
 namespace grpc_event_engine {

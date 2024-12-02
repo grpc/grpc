@@ -553,6 +553,10 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   // frame to be generated.
   uint8_t ping_on_rst_stream_percent;
 
+  // The last time a transport window update was received.
+  grpc_core::Timestamp last_window_update_time =
+      grpc_core::Timestamp::InfPast();
+
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
 };
 
@@ -688,6 +692,10 @@ struct grpc_chttp2_stream {
 
   /// Whether the bytes needs to be traced using Fathom
   bool traced = false;
+
+  // The last time a stream window update was received.
+  grpc_core::Timestamp last_window_update_time =
+      grpc_core::Timestamp::InfPast();
 };
 
 #define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"

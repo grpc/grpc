@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 
 /// Channel arg indicating the server in HTTP CONNECT request (string).
 /// The presence of this arg triggers the use of HTTP CONNECT.

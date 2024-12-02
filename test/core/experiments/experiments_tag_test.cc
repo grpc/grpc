@@ -22,7 +22,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "gtest/gtest.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/experiments/config.h"
 #include "test/core/experiments/fixtures/experiments.h"
 

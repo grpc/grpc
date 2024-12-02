@@ -64,7 +64,8 @@ namespace chaotic_good {
 class ChaoticGoodClientTransport final : public ClientTransport {
  public:
   ChaoticGoodClientTransport(
-      PromiseEndpoint control_endpoint, PromiseEndpoint data_endpoint,
+      PromiseEndpoint control_endpoint,
+      std::vector<PromiseEndpoint> data_endpoints,
       const ChannelArgs& channel_args,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine);
@@ -89,10 +90,9 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   absl::optional<CallHandler> LookupStream(uint32_t stream_id);
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
   auto OnTransportActivityDone(absl::string_view what);
-  auto TransportWriteLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   template <typename T>
-  auto DispatchFrame(ChaoticGoodTransport* transport, const FrameHeader& header,
-                     SliceBuffer payload);
+  auto DispatchFrame(RefCountedPtr<ChaoticGoodTransport> transport,
+                     IncomingFrame incoming_frame);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   // Push one frame into a call
   auto PushFrameIntoCall(ServerInitialMetadataFrame frame,

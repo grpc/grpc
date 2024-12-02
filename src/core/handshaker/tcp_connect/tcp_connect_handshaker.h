@@ -19,7 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 
 // Indicates the address that the tcp connect handshaker should connect to.
 #define GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS \

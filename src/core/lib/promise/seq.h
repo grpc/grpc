@@ -47,12 +47,6 @@ struct SeqTraits {
   static R ReturnValue(T&&) {
     abort();
   }
-  template <typename F, typename Elem>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallSeqFactory(F& f,
-                                                                  Elem&& elem,
-                                                                  T&& value) {
-    return f(std::forward<Elem>(elem), std::forward<T>(value));
-  }
   template <typename Result, typename PriorResult, typename RunNext>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>
   CheckResultAndRunNext(PriorResult prior, RunNext run_next) {
@@ -77,25 +71,8 @@ class Seq {
   SeqState<SeqTraits, P, Fs...> state_;
 };
 
-template <typename I, typename F, typename Arg>
-struct SeqIterTraits {
-  using Iter = I;
-  using Factory = F;
-  using Argument = Arg;
-  using IterValue = decltype(*std::declval<Iter>());
-  using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
-                                                  std::declval<Arg>()));
-  using State = PromiseLike<StateCreated>;
-  using Wrapped = typename State::Result;
-
-  using Traits = SeqTraits<Wrapped>;
-};
-
 template <typename Iter, typename Factory, typename Argument>
-struct SeqIterResultTraits {
-  using IterTraits = SeqIterTraits<Iter, Factory, Argument>;
-  using Result = BasicSeqIter<IterTraits>;
-};
+using SeqIter = BasicSeqIter<SeqTraits, Iter, Factory, Argument>;
 
 }  // namespace promise_detail
 
@@ -227,11 +204,11 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
 //   }
 //   return argument;
 template <typename Iter, typename Factory, typename Argument>
-typename promise_detail::SeqIterResultTraits<Iter, Factory, Argument>::Result
-SeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
-  using Result = typename promise_detail::SeqIterResultTraits<Iter, Factory,
-                                                              Argument>::Result;
-  return Result(begin, end, std::move(factory), std::move(argument));
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqIter(Iter begin, Iter end,
+                                                  Argument argument,
+                                                  Factory factory) {
+  return promise_detail::SeqIter<Iter, Factory, Argument>(
+      begin, end, std::move(factory), std::move(argument));
 }
 
 }  // namespace grpc_core

@@ -175,7 +175,7 @@
   test_tags: []
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
-  expiry: 2024/12/01
+  expiry: 2025/03/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: server_privacy
@@ -191,12 +191,12 @@
     TCP would not indicate completion of a read operation until a specified
     number of bytes have been read over the socket.
     Buffers are also allocated according to estimated RPC sizes.
-  expiry: 2024/12/01
+  expiry: 2025/03/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tcp_rcv_lowat
   description: Use SO_RCVLOWAT to avoid wakeups on the read path.
-  expiry: 2024/12/01
+  expiry: 2025/03/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: time_caching_in_party
@@ -206,7 +206,7 @@
   test_tags: []
 - name: trace_record_callops
   description: Enables tracing of call batch initiation and completion.
-  expiry: 2024/12/01
+  expiry: 2025/01/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: unconstrained_max_quota_buffer_size

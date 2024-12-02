@@ -36,6 +36,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/telemetry/stats.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/useful.h"
 
@@ -100,6 +101,21 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         if (cur == end) {
           parser->state = GRPC_CHTTP2_SPS_ID0;
           if (is_last) {
+            grpc_core::Http2Settings* target_settings =
+                parser->incoming_settings.get();
+            grpc_core::global_stats().IncrementHttp2HeaderTableSize(
+                target_settings->header_table_size());
+            grpc_core::global_stats().IncrementHttp2InitialWindowSize(
+                target_settings->initial_window_size());
+            grpc_core::global_stats().IncrementHttp2MaxConcurrentStreams(
+                target_settings->max_concurrent_streams());
+            grpc_core::global_stats().IncrementHttp2MaxFrameSize(
+                target_settings->max_frame_size());
+            grpc_core::global_stats().IncrementHttp2MaxHeaderListSize(
+                target_settings->max_header_list_size());
+            grpc_core::global_stats()
+                .IncrementHttp2PreferredReceiveCryptoMessageSize(
+                    target_settings->preferred_receive_crypto_message_size());
             *parser->target_settings = *parser->incoming_settings;
             t->num_pending_induced_frames++;
             grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());

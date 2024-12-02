@@ -31,7 +31,7 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/util/no_destruct.h"
 #include "test/core/end2end/cq_verifier.h"

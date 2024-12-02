@@ -704,7 +704,7 @@ TEST_F(StatsPluginEnd2EndTest, TestMessageSizeAnnotations) {
     grpc::Status status = stub_->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok());
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  absl::SleepFor(absl::Milliseconds(1000 * grpc_test_slowdown_factor()));
   TestUtils::Flush();
   ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   traces_recorder_->StopRecording();

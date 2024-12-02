@@ -24,7 +24,7 @@
 #include "absl/strings/str_split.h"
 #include "envoy/extensions/filters/http/stateful_session/v3/stateful_session.pb.h"
 #include "envoy/extensions/http/stateful_session/cookie/v3/cookie.pb.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"

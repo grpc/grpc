@@ -69,7 +69,8 @@ def _run(
     csm_plugin = _prepare_csm_observability_plugin(prometheus_endpoint)
     csm_plugin.register_global()
     server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=_THREAD_POOL_SIZE)
+        futures.ThreadPoolExecutor(max_workers=_THREAD_POOL_SIZE),
+        xds=secure_mode,
     )
     _configure_test_server(server, port, secure_mode, server_id)
     server.start()

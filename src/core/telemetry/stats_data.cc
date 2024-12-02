@@ -216,6 +216,16 @@ const absl::string_view
         "http2_send_message_size",
         "http2_metadata_size",
         "http2_hpack_entry_lifetime",
+        "http2_header_table_size",
+        "http2_initial_window_size",
+        "http2_max_concurrent_streams",
+        "http2_max_frame_size",
+        "http2_max_header_list_size",
+        "http2_preferred_receive_crypto_message_size",
+        "http2_stream_remote_window_update",
+        "http2_transport_remote_window_update",
+        "http2_transport_window_update_period",
+        "http2_stream_window_update_period",
         "wrr_subchannel_list_size",
         "wrr_subchannel_ready_size",
         "work_serializer_run_time_ms",
@@ -248,6 +258,17 @@ const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
     "Size of messages received by HTTP2 transport",
     "Number of bytes consumed by metadata, according to HPACK accounting rules",
     "Lifetime of HPACK entries in the cache (in milliseconds)",
+    "Http2 header table size received through SETTINGS frame",
+    "Http2 initial window size received through SETTINGS frame",
+    "Http2 max concurrent streams received through SETTINGS frame",
+    "Http2 max frame size received through SETTINGS frame",
+    "Http2 max header list size received through SETTINGS frame",
+    "Http2 preferred receive crypto message size received through SETTINGS "
+    "frame",
+    "Stream window update sent by peer",
+    "Transport window update sent by peer",
+    "Period in milliseconds at which peer sends transport window update",
+    "Period in milliseconds at which peer sends stream window update",
     "Number of subchannels in a subchannel list at picker creation time",
     "Number of READY subchannels in a subchannel list at picker creation time",
     "Number of milliseconds work serializers run for",
@@ -531,6 +552,37 @@ HistogramView GlobalStats::histogram(Histogram which) const {
     case Histogram::kHttp2HpackEntryLifetime:
       return HistogramView{&Histogram_1800000_40::BucketFor, kStatsTable12, 40,
                            http2_hpack_entry_lifetime.buckets()};
+    case Histogram::kHttp2HeaderTableSize:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+                           http2_header_table_size.buckets()};
+    case Histogram::kHttp2InitialWindowSize:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+                           http2_initial_window_size.buckets()};
+    case Histogram::kHttp2MaxConcurrentStreams:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+                           http2_max_concurrent_streams.buckets()};
+    case Histogram::kHttp2MaxFrameSize:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+                           http2_max_frame_size.buckets()};
+    case Histogram::kHttp2MaxHeaderListSize:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+                           http2_max_header_list_size.buckets()};
+    case Histogram::kHttp2PreferredReceiveCryptoMessageSize:
+      return HistogramView{
+          &Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+          http2_preferred_receive_crypto_message_size.buckets()};
+    case Histogram::kHttp2StreamRemoteWindowUpdate:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+                           http2_stream_remote_window_update.buckets()};
+    case Histogram::kHttp2TransportRemoteWindowUpdate:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+                           http2_transport_remote_window_update.buckets()};
+    case Histogram::kHttp2TransportWindowUpdatePeriod:
+      return HistogramView{&Histogram_100000_20::BucketFor, kStatsTable0, 20,
+                           http2_transport_window_update_period.buckets()};
+    case Histogram::kHttp2StreamWindowUpdatePeriod:
+      return HistogramView{&Histogram_100000_20::BucketFor, kStatsTable0, 20,
+                           http2_stream_window_update_period.buckets()};
     case Histogram::kWrrSubchannelListSize:
       return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable10, 20,
                            wrr_subchannel_list_size.buckets()};
@@ -675,6 +727,23 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
     data.http2_metadata_size.Collect(&result->http2_metadata_size);
     data.http2_hpack_entry_lifetime.Collect(
         &result->http2_hpack_entry_lifetime);
+    data.http2_header_table_size.Collect(&result->http2_header_table_size);
+    data.http2_initial_window_size.Collect(&result->http2_initial_window_size);
+    data.http2_max_concurrent_streams.Collect(
+        &result->http2_max_concurrent_streams);
+    data.http2_max_frame_size.Collect(&result->http2_max_frame_size);
+    data.http2_max_header_list_size.Collect(
+        &result->http2_max_header_list_size);
+    data.http2_preferred_receive_crypto_message_size.Collect(
+        &result->http2_preferred_receive_crypto_message_size);
+    data.http2_stream_remote_window_update.Collect(
+        &result->http2_stream_remote_window_update);
+    data.http2_transport_remote_window_update.Collect(
+        &result->http2_transport_remote_window_update);
+    data.http2_transport_window_update_period.Collect(
+        &result->http2_transport_window_update_period);
+    data.http2_stream_window_update_period.Collect(
+        &result->http2_stream_window_update_period);
     data.wrr_subchannel_list_size.Collect(&result->wrr_subchannel_list_size);
     data.wrr_subchannel_ready_size.Collect(&result->wrr_subchannel_ready_size);
     data.work_serializer_run_time_ms.Collect(
@@ -780,6 +849,31 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
   result->http2_metadata_size = http2_metadata_size - other.http2_metadata_size;
   result->http2_hpack_entry_lifetime =
       http2_hpack_entry_lifetime - other.http2_hpack_entry_lifetime;
+  result->http2_header_table_size =
+      http2_header_table_size - other.http2_header_table_size;
+  result->http2_initial_window_size =
+      http2_initial_window_size - other.http2_initial_window_size;
+  result->http2_max_concurrent_streams =
+      http2_max_concurrent_streams - other.http2_max_concurrent_streams;
+  result->http2_max_frame_size =
+      http2_max_frame_size - other.http2_max_frame_size;
+  result->http2_max_header_list_size =
+      http2_max_header_list_size - other.http2_max_header_list_size;
+  result->http2_preferred_receive_crypto_message_size =
+      http2_preferred_receive_crypto_message_size -
+      other.http2_preferred_receive_crypto_message_size;
+  result->http2_stream_remote_window_update =
+      http2_stream_remote_window_update -
+      other.http2_stream_remote_window_update;
+  result->http2_transport_remote_window_update =
+      http2_transport_remote_window_update -
+      other.http2_transport_remote_window_update;
+  result->http2_transport_window_update_period =
+      http2_transport_window_update_period -
+      other.http2_transport_window_update_period;
+  result->http2_stream_window_update_period =
+      http2_stream_window_update_period -
+      other.http2_stream_window_update_period;
   result->wrr_subchannel_list_size =
       wrr_subchannel_list_size - other.wrr_subchannel_list_size;
   result->wrr_subchannel_ready_size =
