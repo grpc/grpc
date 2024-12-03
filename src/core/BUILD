@@ -3505,6 +3505,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "retry_interceptor",
+    srcs = [
+        "client_channel/retry_interceptor.cc",
+    ],
+    hdrs = [
+        "client_channel/retry_interceptor.h",
+    ],
+    deps = [
+        "cancel_callback",
+        "for_each",
+        "interception_chain",
+        "map",
+        "request_buffer",
+        "sleep",
+    ],
+)
+
+grpc_cc_library(
     name = "retry_service_config",
     srcs = [
         "client_channel/retry_service_config.cc",
