@@ -59,7 +59,7 @@ void DirectChannel::StartCall(UnstartedCallHandler unstarted_handler) {
       "start",
       [interception_chain = interception_chain_, unstarted_handler]() mutable {
         interception_chain->StartCall(std::move(unstarted_handler));
-        return []() { return Empty{}; };
+        return []() {};
       });
 }
 

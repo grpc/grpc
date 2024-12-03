@@ -57,7 +57,6 @@ class ControlEndpoint {
             << " bytes on " << this;
         waker = std::move(flush_waker_);
         queued_output_.Append(buffer);
-        return Empty{};
       };
     }
 

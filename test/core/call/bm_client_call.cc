@@ -160,7 +160,6 @@ void BM_Unary(benchmark::State& state) {
                 Arena::MakePooledForOverwrite<ServerMetadata>();
             trailing_metadata->Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
             handler.PushServerTrailingMetadata(std::move(trailing_metadata));
-            return Empty{};
           });
     });
     auto ev = grpc_completion_queue_next(

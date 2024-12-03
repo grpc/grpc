@@ -105,7 +105,6 @@ void CallSpineTest::UnaryRequest(CallInitiator initiator, CallHandler handler) {
         EXPECT_TRUE(md.ok());
         EXPECT_EQ(*md.value()->get_pointer(GrpcStatusMetadata()),
                   GRPC_STATUS_UNIMPLEMENTED);
-        return Empty{};
       });
   SpawnTestSeq(
       handler, "handler",
@@ -139,7 +138,6 @@ void CallSpineTest::UnaryRequest(CallInitiator initiator, CallHandler handler) {
         auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
-        return Empty{};
       });
 }
 
@@ -161,7 +159,6 @@ CALL_SPINE_TEST(UnaryRequestThroughForwardCall) {
         auto call2 = MakeCall(std::move(md.value()));
         ForwardCall(handler, call2.initiator);
         UnaryRequest(initiator, call2.handler.StartCall());
-        return Empty{};
       });
   WaitForAllPendingWork();
 }
@@ -180,7 +177,6 @@ CALL_SPINE_TEST(UnaryRequestThroughForwardCallWithServerTrailingMetadataHook) {
         ForwardCall(handler, call2.initiator,
                     [&got_md](ServerMetadata&) { got_md = true; });
         UnaryRequest(initiator, call2.handler.StartCall());
-        return Empty{};
       });
   WaitForAllPendingWork();
   EXPECT_TRUE(got_md);
