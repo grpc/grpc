@@ -16,11 +16,20 @@
 #define RETRY_INTERCEPTOR_H
 
 #include "src/core/call/request_buffer.h"
+#include "src/core/filter/filter_args.h"
 #include "src/core/lib/transport/interception_chain.h"
 
 namespace grpc_core {
 
 class RetryInterceptor : public Interceptor {
+ public:
+  static RefCountedPtr<RetryInterceptor> Create(const ChannelArgs&,
+                                                const FilterArgs&) {
+    return MakeRefCounted<RetryInterceptor>();
+  }
+
+  void Orphaned() override {}
+
  protected:
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
 

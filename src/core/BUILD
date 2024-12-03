@@ -3397,6 +3397,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "filter_args",
+    hdrs = [
+        "filter/filter_args.h",
+    ],
+    deps = [
+        "blackboard",
+        "channel_fwd",
+        "match",
+    ],
+)
+
+grpc_cc_library(
     name = "subchannel_connector",
     hdrs = [
         "client_channel/connector.h",
@@ -3514,6 +3526,7 @@ grpc_cc_library(
     ],
     deps = [
         "cancel_callback",
+        "filter_args",
         "for_each",
         "interception_chain",
         "map",
