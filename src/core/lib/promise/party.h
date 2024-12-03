@@ -182,7 +182,7 @@ class Party : public Activity, private Wakeable {
   template <typename T>
   RefCountedPtr<T> RefAsSubclass() {
     IncrementRefCount();
-    return RefCountedPtr<T>(DownCast<T>(this));
+    return RefCountedPtr<T>(DownCast<T*>(this));
   }
 
   Arena* arena() { return arena_.get(); }

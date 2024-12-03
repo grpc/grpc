@@ -28,7 +28,8 @@ void RetryInterceptor::InterceptCall(
     UnstartedCallHandler unstarted_call_handler) {
   auto call_handler = unstarted_call_handler.StartCall();
   auto* arena = call_handler.arena();
-  auto call = arena->MakeRefCounted<Call>(std::move(call_handler));
+  auto call = arena->MakeRefCounted<Call>(RefAsSubclass<RetryInterceptor>(),
+                                          std::move(call_handler));
   call->StartAttempt();
   call->Start();
 }

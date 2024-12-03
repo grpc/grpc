@@ -200,7 +200,7 @@ class CallSpine final : public Party {
   // an operation into the call and execute that operation.
 
   void SpawnPushServerInitialMetadata(ServerMetadataHandle md) {
-    SpawnGuarded(
+    SpawnInfallible(
         "push-server-initial-metadata",
         [md = std::move(md), self = RefAsSubclass<CallSpine>()]() mutable {
           self->CancelIfFailed(self->PushServerInitialMetadata(std::move(md)));
