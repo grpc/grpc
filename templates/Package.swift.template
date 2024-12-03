@@ -65,6 +65,7 @@
             .headerSearchPath("third_party/upb/"),
             .headerSearchPath("third_party/utf8_range/"),
             .headerSearchPath("third_party/xxhash/"),
+            .headerSearchPath("third_party/address_sorting/include/"),
             .headerSearchPath("src/core/ext/upb-gen/"),
             .headerSearchPath("src/core/ext/upbdefs-gen/"),
             .define("GRPC_ARES", to: "0"),
