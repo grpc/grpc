@@ -162,7 +162,6 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
             "CancelWithError", [self = WeakRefAsSubclass<ClientCall>(),
                                 error = std::move(error)]() mutable {
               self->started_call_initiator_.Cancel(std::move(error));
-              return Empty{};
             });
         return;
       default:

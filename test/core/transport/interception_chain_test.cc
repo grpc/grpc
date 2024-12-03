@@ -219,7 +219,6 @@ class TestHijackingInterceptor final : public Interceptor {
                        ForwardCall(
                            hijacked_call.value().original_call_handler(),
                            hijacked_call.value().MakeCall());
-                       return Empty{};
                      });
         });
   }
@@ -262,7 +261,6 @@ class InterceptionChainTest : public ::testing::Test {
           return Map(call.initiator.PullServerTrailingMetadata(),
                      [&trailing_md](ServerMetadataHandle md) {
                        trailing_md = std::move(md);
-                       return Empty{};
                      });
         });
     EXPECT_THAT(trailing_md, IsReady());

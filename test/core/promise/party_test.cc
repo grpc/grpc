@@ -99,13 +99,7 @@ TEST_F(PartyTest, CanSpawnWaitableAndRun) {
       },
       [&n](Empty) { n.Notify(); });
   ASSERT_FALSE(n.HasBeenNotified());
-  party1->Spawn(
-      "party1_notify_latch",
-      [&done]() {
-        done.Set();
-        return Empty{};
-      },
-      [](Empty) {});
+  party1->Spawn("party1_notify_latch", [&done]() { done.Set(); }, [](Empty) {});
   n.WaitForNotification();
 }
 
@@ -255,10 +249,8 @@ TEST_F(PartyTest, CanBulkSpawn) {
   Notification n2;
   {
     Party::WakeupHold hold(party.get());
-    party->Spawn(
-        "spawn1", []() { return Empty{}; }, [&n1](Empty) { n1.Notify(); });
-    party->Spawn(
-        "spawn2", []() { return Empty{}; }, [&n2](Empty) { n2.Notify(); });
+    party->Spawn("spawn1", []() {}, [&n1](Empty) { n1.Notify(); });
+    party->Spawn("spawn2", []() {}, [&n2](Empty) { n2.Notify(); });
     for (int i = 0; i < 5000; i++) {
       EXPECT_FALSE(n1.HasBeenNotified());
       EXPECT_FALSE(n2.HasBeenNotified());
@@ -275,10 +267,8 @@ TEST_F(PartyTest, CanNestWakeupHold) {
   {
     Party::WakeupHold hold1(party.get());
     Party::WakeupHold hold2(party.get());
-    party->Spawn(
-        "spawn1", []() { return Empty{}; }, [&n1](Empty) { n1.Notify(); });
-    party->Spawn(
-        "spawn2", []() { return Empty{}; }, [&n2](Empty) { n2.Notify(); });
+    party->Spawn("spawn1", []() {}, [&n1](Empty) { n1.Notify(); });
+    party->Spawn("spawn2", []() {}, [&n2](Empty) { n2.Notify(); });
     for (int i = 0; i < 5000; i++) {
       EXPECT_FALSE(n1.HasBeenNotified());
       EXPECT_FALSE(n2.HasBeenNotified());
@@ -559,7 +549,6 @@ TEST_F(PartyTest, NestedWakeup) {
               started3.WaitForNotification();
               EXPECT_EQ(whats_going_on, 3);
               whats_going_on = 4;
-              return Empty{};
             },
             [&](Empty) {
               EXPECT_EQ(whats_going_on, 4);
@@ -574,7 +563,6 @@ TEST_F(PartyTest, NestedWakeup) {
               done2.WaitForNotification();
               EXPECT_EQ(whats_going_on, 5);
               whats_going_on = 6;
-              return Empty{};
             },
             [&](Empty) {
               EXPECT_EQ(whats_going_on, 6);
@@ -583,7 +571,6 @@ TEST_F(PartyTest, NestedWakeup) {
             });
         EXPECT_EQ(whats_going_on, 1);
         whats_going_on = 2;
-        return Empty{};
       },
       [&](Empty) {
         EXPECT_EQ(whats_going_on, 2);
