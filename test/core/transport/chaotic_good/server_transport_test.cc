@@ -89,7 +89,8 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
           .channel_args_preconditioning()
           .PreconditionChannelArgs(nullptr),
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), event_engine());
+      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
+      event_engine());
   const auto server_initial_metadata =
       EncodeProto<chaotic_good_frame::ServerMetadata>("message: 'hello'");
   const auto server_trailing_metadata =
@@ -172,10 +173,8 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kServerInitialMetadata, 0, 1,
                              server_initial_metadata.length()),
-       server_initial_metadata.Copy()},
-      nullptr);
-  control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kMessage, 0, 1, 8),
+       server_initial_metadata.Copy(),
+       SerializedFrameHeader(FrameType::kMessage, 0, 1, 8),
        EventEngineSlice::FromCopiedString("87654321")},
       nullptr);
   control_endpoint.ExpectWrite(

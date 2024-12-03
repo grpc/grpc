@@ -62,25 +62,6 @@ void ChaoticGoodClientTransport::Orphan() {
   Unref();
 }
 
-auto ChaoticGoodClientTransport::TransportWriteLoop(
-    RefCountedPtr<ChaoticGoodTransport> transport) {
-  return Loop([this, transport = std::move(transport)] {
-    return TrySeq(
-        // Get next outgoing frame.
-        outgoing_frames_.Next(),
-        // Serialize and write it out.
-        [transport = transport.get()](ClientFrame client_frame) {
-          return transport->WriteFrame(GetFrameInterface(client_frame));
-        },
-        []() -> LoopCtl<absl::Status> {
-          // The write failures will be caught in TrySeq and exit loop.
-          // Therefore, only need to return Continue() in the last lambda
-          // function.
-          return Continue();
-        });
-  });
-}
-
 absl::optional<CallHandler> ChaoticGoodClientTransport::LookupStream(
     uint32_t stream_id) {
   MutexLock lock(&mu_);
@@ -119,31 +100,39 @@ auto ChaoticGoodClientTransport::PushFrameIntoCall(
 }
 
 template <typename T>
-auto ChaoticGoodClientTransport::DispatchFrame(ChaoticGoodTransport* transport,
-                                               const FrameHeader& header,
-                                               SliceBuffer payload) {
+auto ChaoticGoodClientTransport::DispatchFrame(
+    RefCountedPtr<ChaoticGoodTransport> transport,
+    IncomingFrame incoming_frame) {
+  absl::optional<CallHandler> call_handler =
+      LookupStream(incoming_frame.header().stream_id);
   return GRPC_LATENT_SEE_PROMISE(
       "ChaoticGoodClientTransport::DispatchFrame",
-      TrySeq(
-          [transport, header, payload = std::move(payload)]() mutable {
-            return transport->DeserializeFrame<T>(header, std::move(payload));
-          },
-          [this](T frame) {
-            absl::optional<CallHandler> call_handler =
-                LookupStream(frame.stream_id);
-            return If(
-                call_handler.has_value(),
-                [this, &call_handler, &frame]() {
-                  return call_handler->SpawnWaitable(
-                      "push-frame", [this, call_handler = *call_handler,
-                                     frame = std::move(frame)]() mutable {
+      If(
+          call_handler.has_value(),
+          [this, &call_handler, &incoming_frame, &transport]() {
+            // TODO(ctiller): instead of SpawnWaitable here we probably want a
+            // small queue to push into, so that the call can proceed
+            // asynchronously to other calls regardless of frame ordering.
+            return call_handler->SpawnWaitable(
+                "push-frame", [this, call_handler = *call_handler,
+                               incoming_frame = std::move(incoming_frame),
+                               transport = std::move(transport)]() mutable {
+                  return TrySeq(
+                      incoming_frame.Payload(),
+                      [transport = std::move(transport),
+                       header = incoming_frame.header()](SliceBuffer payload) {
+                        return transport->DeserializeFrame<T>(
+                            header, std::move(payload));
+                      },
+                      [call_handler, this](T frame) mutable {
                         return Map(call_handler.CancelIfFails(PushFrameIntoCall(
                                        std::move(frame), call_handler)),
                                    [](StatusFlag) { return absl::OkStatus(); });
-                      });
-                },
-                []() { return absl::OkStatus(); });
-          }));
+                      },
+                      ImmediateOkStatus());
+                });
+          },
+          []() { return absl::OkStatus(); }));
 }
 
 auto ChaoticGoodClientTransport::TransportReadLoop(
@@ -151,27 +140,24 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
   return Loop([this, transport = std::move(transport)] {
     return TrySeq(
         transport->ReadFrameBytes(),
-        [this, transport = transport.get()](
-            std::tuple<FrameHeader, SliceBuffer> frame_bytes) {
-          const auto& header = std::get<0>(frame_bytes);
-          SliceBuffer& payload = std::get<1>(frame_bytes);
+        [this, transport](IncomingFrame incoming_frame) {
           return Switch(
-              header.type,
+              incoming_frame.header().type,
               Case<FrameType, FrameType::kServerInitialMetadata>([&, this]() {
                 return DispatchFrame<ServerInitialMetadataFrame>(
-                    transport, header, std::move(payload));
+                    transport, std::move(incoming_frame));
               }),
               Case<FrameType, FrameType::kServerTrailingMetadata>([&, this]() {
                 return DispatchFrame<ServerTrailingMetadataFrame>(
-                    transport, header, std::move(payload));
+                    transport, std::move(incoming_frame));
               }),
               Case<FrameType, FrameType::kMessage>([&, this]() {
-                return DispatchFrame<MessageFrame>(transport, header,
-                                                   std::move(payload));
+                return DispatchFrame<MessageFrame>(transport,
+                                                   std::move(incoming_frame));
               }),
               Default([&]() {
                 LOG_EVERY_N_SEC(INFO, 10)
-                    << "Bad frame type: " << header.ToString();
+                    << "Bad frame type: " << incoming_frame.header().ToString();
                 return absl::OkStatus();
               }));
         },
@@ -191,36 +177,42 @@ auto ChaoticGoodClientTransport::OnTransportActivityDone(
 }
 
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
-    PromiseEndpoint control_endpoint, PromiseEndpoint data_endpoint,
-    const ChannelArgs& args,
+    PromiseEndpoint control_endpoint,
+    std::vector<PromiseEndpoint> data_endpoints, const ChannelArgs& args,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
       outgoing_frames_(4) {
+  CHECK(event_engine != nullptr);
   // Set up TCP tracer if enabled.
   if (args.GetBool(GRPC_ARG_TCP_TRACING_ENABLED).value_or(false)) {
-    auto* epte = grpc_event_engine::experimental::QueryExtension<
-        grpc_event_engine::experimental::TcpTraceExtension>(
-        data_endpoint.GetEventEngineEndpoint().get());
-    if (epte != nullptr) {
-      epte->InitializeAndReturnTcpTracer();
+    for (auto& ep : data_endpoints) {
+      auto* epte = grpc_event_engine::experimental::QueryExtension<
+          grpc_event_engine::experimental::TcpTraceExtension>(
+          ep.GetEventEngineEndpoint().get());
+      if (epte != nullptr) {
+        epte->InitializeAndReturnTcpTracer();
+      }
     }
   }
+  CHECK(event_engine != nullptr);
   ChaoticGoodTransport::Options options;
   options.inlined_payload_size_threshold =
       args.GetInt("grpc.chaotic_good.inlined_payload_size_threshold")
           .value_or(options.inlined_payload_size_threshold);
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
-      std::move(control_endpoint), std::move(data_endpoint), options);
+      std::move(control_endpoint), std::move(data_endpoints), event_engine,
+      options);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());
   party_ = Party::Make(std::move(party_arena));
-  party_->Spawn("client-chaotic-writer",
-                GRPC_LATENT_SEE_PROMISE("ClientTransportWriteLoop",
-                                        TransportWriteLoop(transport)),
-                OnTransportActivityDone("write_loop"));
+  party_->Spawn(
+      "client-chaotic-writer",
+      GRPC_LATENT_SEE_PROMISE("ClientTransportWriteLoop",
+                              transport->TransportWriteLoop(outgoing_frames_)),
+      OnTransportActivityDone("write_loop"));
   party_->Spawn(
       "client-chaotic-reader",
       GRPC_LATENT_SEE_PROMISE("ClientTransportReadLoop",
@@ -237,6 +229,9 @@ void ChaoticGoodClientTransport::AbortWithError() {
   ReleasableMutexLock lock(&mu_);
   StreamMap stream_map = std::move(stream_map_);
   stream_map_.clear();
+  state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
+                          absl::UnavailableError("transport closed"),
+                          "transport closed");
   lock.Release();
   for (const auto& pair : stream_map) {
     auto call_handler = pair.second;

@@ -14,7 +14,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal grpc_lookup_v1_RouteLookupRequest_submsgs[1] = {
+static const upb_MiniTableSubInternal grpc_lookup_v1_RouteLookupRequest__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__RouteLookupRequest__KeyMapEntry_msg_init_ptr},
 };
 
@@ -26,7 +26,7 @@ static const upb_MiniTableField grpc_lookup_v1_RouteLookupRequest__fields[4] = {
 };
 
 const upb_MiniTable grpc__lookup__v1__RouteLookupRequest_msg_init = {
-  &grpc_lookup_v1_RouteLookupRequest_submsgs[0],
+  &grpc_lookup_v1_RouteLookupRequest__submsgs[0],
   &grpc_lookup_v1_RouteLookupRequest__fields[0],
   UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED

@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_TRACE_V3_HTTP_TRACER_PROTO_UPB_H_
-#define ENVOY_CONFIG_TRACE_V3_HTTP_TRACER_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_TRACE_V3_HTTP_TRACER_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_TRACE_V3_HTTP_TRACER_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -198,4 +198,4 @@ UPB_INLINE struct google_protobuf_Any* envoy_config_trace_v3_Tracing_Http_mutabl
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_TRACE_V3_HTTP_TRACER_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_TRACE_V3_HTTP_TRACER_PROTO_UPB_H__UPB_H_ */

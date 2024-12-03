@@ -588,6 +588,10 @@ inline MemoryQuotaRefPtr MakeMemoryQuota(std::string name) {
 
 std::vector<std::shared_ptr<BasicMemoryQuota>> AllMemoryQuotas();
 
+void SetContainerMemoryPressure(double pressure);
+
+double ContainerMemoryPressure();
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
