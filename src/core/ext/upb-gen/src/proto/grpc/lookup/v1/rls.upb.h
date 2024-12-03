@@ -6,12 +6,13 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef SRC_PROTO_GRPC_LOOKUP_V1_RLS_PROTO_UPB_H_
-#define SRC_PROTO_GRPC_LOOKUP_V1_RLS_PROTO_UPB_H_
+#ifndef SRC_PROTO_GRPC_LOOKUP_V1_RLS_PROTO_UPB_H__UPB_H_
+#define SRC_PROTO_GRPC_LOOKUP_V1_RLS_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
 #include "src/proto/grpc/lookup/v1/rls.upb_minitable.h"
+
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -315,4 +316,4 @@ UPB_INLINE bool grpc_lookup_v1_RouteLookupResponse_add_targets(grpc_lookup_v1_Ro
 
 #include "upb/port/undef.inc"
 
-#endif  /* SRC_PROTO_GRPC_LOOKUP_V1_RLS_PROTO_UPB_H_ */
+#endif  /* SRC_PROTO_GRPC_LOOKUP_V1_RLS_PROTO_UPB_H__UPB_H_ */

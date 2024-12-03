@@ -17,7 +17,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_type_v3_HashPolicy_submsgs[2] = {
+static const upb_MiniTableSubInternal envoy_type_v3_HashPolicy__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &envoy__type__v3__HashPolicy__SourceIp_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__type__v3__HashPolicy__FilterState_msg_init_ptr},
 };
@@ -28,7 +28,7 @@ static const upb_MiniTableField envoy_type_v3_HashPolicy__fields[2] = {
 };
 
 const upb_MiniTable envoy__type__v3__HashPolicy_msg_init = {
-  &envoy_type_v3_HashPolicy_submsgs[0],
+  &envoy_type_v3_HashPolicy__submsgs[0],
   &envoy_type_v3_HashPolicy__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED

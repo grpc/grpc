@@ -15,7 +15,7 @@ settings:
   core_version: 44.1.0
   csharp_major_version: 2
   g_stands_for: gridiron
-  protobuf_version: 3.28.1
+  protobuf_version: 3.29.0
   supported_python_versions:
   - '3.8'
   - '3.9'

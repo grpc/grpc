@@ -128,7 +128,15 @@ class ClientCall final
                    bool is_notify_tag_closure);
   template <typename Batch>
   void ScheduleCommittedBatch(Batch batch);
-  void StartCall(const grpc_op& send_initial_metadata_op);
+  Party::WakeupHold StartCall(const grpc_op& send_initial_metadata_op);
+  // Attempt to start the call and send handler down the stack; returns true if
+  // state was updated, false otherwise (with cur_state updated to the new
+  // current state).
+  // If this function returns false, it's guaranteed that handler is not
+  // touched.
+  // Should be called repeatedly until it returns true.
+  bool StartCallMaybeUpdateState(uintptr_t& cur_state,
+                                 UnstartedCallHandler& handler);
 
   std::string DebugTag() { return absl::StrFormat("CLIENT_CALL[%p]: ", this); }
 

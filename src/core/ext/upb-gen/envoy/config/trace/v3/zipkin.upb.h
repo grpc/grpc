@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_TRACE_V3_ZIPKIN_PROTO_UPB_H_
-#define ENVOY_CONFIG_TRACE_V3_ZIPKIN_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_TRACE_V3_ZIPKIN_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_TRACE_V3_ZIPKIN_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -209,4 +209,4 @@ UPB_INLINE void envoy_config_trace_v3_ZipkinConfig_set_split_spans_for_request(e
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_TRACE_V3_ZIPKIN_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_TRACE_V3_ZIPKIN_PROTO_UPB_H__UPB_H_ */

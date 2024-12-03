@@ -20,7 +20,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/util/env.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/tmpfile.h"

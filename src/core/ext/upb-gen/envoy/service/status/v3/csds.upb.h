@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_SERVICE_STATUS_V3_CSDS_PROTO_UPB_H_
-#define ENVOY_SERVICE_STATUS_V3_CSDS_PROTO_UPB_H_
+#ifndef ENVOY_SERVICE_STATUS_V3_CSDS_PROTO_UPB_H__UPB_H_
+#define ENVOY_SERVICE_STATUS_V3_CSDS_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -1000,4 +1000,4 @@ UPB_INLINE struct envoy_service_status_v3_ClientConfig* envoy_service_status_v3_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_SERVICE_STATUS_V3_CSDS_PROTO_UPB_H_ */
+#endif  /* ENVOY_SERVICE_STATUS_V3_CSDS_PROTO_UPB_H__UPB_H_ */

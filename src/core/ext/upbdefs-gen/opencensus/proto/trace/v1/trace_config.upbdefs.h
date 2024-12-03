@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPBDEFS_H_
-#define OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPBDEFS_H_
+#ifndef OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPB_H__UPBDEFS_H_
+#define OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -45,4 +45,4 @@ UPB_INLINE const upb_MessageDef *opencensus_proto_trace_v1_RateLimitingSampler_g
 
 #include "upb/port/undef.inc"
 
-#endif  /* OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPBDEFS_H_ */
+#endif  /* OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPB_H__UPBDEFS_H_ */

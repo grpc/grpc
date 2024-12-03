@@ -36,7 +36,7 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/seq.h"

@@ -25,7 +25,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_config_listener_v3_Filter_submsgs[2] = {
+static const upb_MiniTableSubInternal envoy_config_listener_v3_Filter__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ExtensionConfigSource_msg_init_ptr},
 };
@@ -37,7 +37,7 @@ static const upb_MiniTableField envoy_config_listener_v3_Filter__fields[3] = {
 };
 
 const upb_MiniTable envoy__config__listener__v3__Filter_msg_init = {
-  &envoy_config_listener_v3_Filter_submsgs[0],
+  &envoy_config_listener_v3_Filter__submsgs[0],
   &envoy_config_listener_v3_Filter__fields[0],
   UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -56,7 +56,7 @@ const upb_MiniTable envoy__config__listener__v3__Filter_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__listener__v3__Filter_msg_init_ptr = &envoy__config__listener__v3__Filter_msg_init;
-static const upb_MiniTableSubInternal envoy_config_listener_v3_FilterChainMatch_submsgs[5] = {
+static const upb_MiniTableSubInternal envoy_config_listener_v3_FilterChainMatch__submsgs[5] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__CidrRange_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__CidrRange_msg_init_ptr},
@@ -79,7 +79,7 @@ static const upb_MiniTableField envoy_config_listener_v3_FilterChainMatch__field
 };
 
 const upb_MiniTable envoy__config__listener__v3__FilterChainMatch_msg_init = {
-  &envoy_config_listener_v3_FilterChainMatch_submsgs[0],
+  &envoy_config_listener_v3_FilterChainMatch__submsgs[0],
   &envoy_config_listener_v3_FilterChainMatch__fields[0],
   UPB_SIZE(64, 112), 11, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -106,7 +106,7 @@ const upb_MiniTable envoy__config__listener__v3__FilterChainMatch_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__listener__v3__FilterChainMatch_msg_init_ptr = &envoy__config__listener__v3__FilterChainMatch_msg_init;
-static const upb_MiniTableSubInternal envoy_config_listener_v3_FilterChain_submsgs[7] = {
+static const upb_MiniTableSubInternal envoy_config_listener_v3_FilterChain__submsgs[7] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__FilterChainMatch_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__Filter_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
@@ -128,7 +128,7 @@ static const upb_MiniTableField envoy_config_listener_v3_FilterChain__fields[8] 
 };
 
 const upb_MiniTable envoy__config__listener__v3__FilterChain_msg_init = {
-  &envoy_config_listener_v3_FilterChain_submsgs[0],
+  &envoy_config_listener_v3_FilterChain__submsgs[0],
   &envoy_config_listener_v3_FilterChain__fields[0],
   UPB_SIZE(48, 88), 8, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -147,7 +147,7 @@ const upb_MiniTable envoy__config__listener__v3__FilterChain_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__listener__v3__FilterChain_msg_init_ptr = &envoy__config__listener__v3__FilterChain_msg_init;
-static const upb_MiniTableSubInternal envoy_config_listener_v3_FilterChain_OnDemandConfiguration_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_config_listener_v3_FilterChain_OnDemandConfiguration__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
@@ -156,7 +156,7 @@ static const upb_MiniTableField envoy_config_listener_v3_FilterChain_OnDemandCon
 };
 
 const upb_MiniTable envoy__config__listener__v3__FilterChain__OnDemandConfiguration_msg_init = {
-  &envoy_config_listener_v3_FilterChain_OnDemandConfiguration_submsgs[0],
+  &envoy_config_listener_v3_FilterChain_OnDemandConfiguration__submsgs[0],
   &envoy_config_listener_v3_FilterChain_OnDemandConfiguration__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -165,7 +165,7 @@ const upb_MiniTable envoy__config__listener__v3__FilterChain__OnDemandConfigurat
 };
 
 const upb_MiniTable* envoy__config__listener__v3__FilterChain__OnDemandConfiguration_msg_init_ptr = &envoy__config__listener__v3__FilterChain__OnDemandConfiguration_msg_init;
-static const upb_MiniTableSubInternal envoy_config_listener_v3_ListenerFilterChainMatchPredicate_submsgs[4] = {
+static const upb_MiniTableSubInternal envoy_config_listener_v3_ListenerFilterChainMatchPredicate__submsgs[4] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__ListenerFilterChainMatchPredicate__MatchSet_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__ListenerFilterChainMatchPredicate__MatchSet_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__ListenerFilterChainMatchPredicate_msg_init_ptr},
@@ -181,7 +181,7 @@ static const upb_MiniTableField envoy_config_listener_v3_ListenerFilterChainMatc
 };
 
 const upb_MiniTable envoy__config__listener__v3__ListenerFilterChainMatchPredicate_msg_init = {
-  &envoy_config_listener_v3_ListenerFilterChainMatchPredicate_submsgs[0],
+  &envoy_config_listener_v3_ListenerFilterChainMatchPredicate__submsgs[0],
   &envoy_config_listener_v3_ListenerFilterChainMatchPredicate__fields[0],
   UPB_SIZE(16, 24), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -200,7 +200,7 @@ const upb_MiniTable envoy__config__listener__v3__ListenerFilterChainMatchPredica
 };
 
 const upb_MiniTable* envoy__config__listener__v3__ListenerFilterChainMatchPredicate_msg_init_ptr = &envoy__config__listener__v3__ListenerFilterChainMatchPredicate_msg_init;
-static const upb_MiniTableSubInternal envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__ListenerFilterChainMatchPredicate_msg_init_ptr},
 };
 
@@ -209,7 +209,7 @@ static const upb_MiniTableField envoy_config_listener_v3_ListenerFilterChainMatc
 };
 
 const upb_MiniTable envoy__config__listener__v3__ListenerFilterChainMatchPredicate__MatchSet_msg_init = {
-  &envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet_submsgs[0],
+  &envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet__submsgs[0],
   &envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -222,7 +222,7 @@ const upb_MiniTable envoy__config__listener__v3__ListenerFilterChainMatchPredica
 };
 
 const upb_MiniTable* envoy__config__listener__v3__ListenerFilterChainMatchPredicate__MatchSet_msg_init_ptr = &envoy__config__listener__v3__ListenerFilterChainMatchPredicate__MatchSet_msg_init;
-static const upb_MiniTableSubInternal envoy_config_listener_v3_ListenerFilter_submsgs[3] = {
+static const upb_MiniTableSubInternal envoy_config_listener_v3_ListenerFilter__submsgs[3] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__ListenerFilterChainMatchPredicate_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ExtensionConfigSource_msg_init_ptr},
@@ -236,7 +236,7 @@ static const upb_MiniTableField envoy_config_listener_v3_ListenerFilter__fields[
 };
 
 const upb_MiniTable envoy__config__listener__v3__ListenerFilter_msg_init = {
-  &envoy_config_listener_v3_ListenerFilter_submsgs[0],
+  &envoy_config_listener_v3_ListenerFilter__submsgs[0],
   &envoy_config_listener_v3_ListenerFilter__fields[0],
   UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED

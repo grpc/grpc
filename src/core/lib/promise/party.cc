@@ -251,13 +251,16 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
       // gets held for a really long time.
       auto wakeup =
           std::exchange(g_run_state->next, PartyWakeup{party, prev_state});
-      party->arena_->GetContext<grpc_event_engine::experimental::EventEngine>()
-          ->Run([wakeup]() {
-            GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked offload");
-            ApplicationCallbackExecCtx app_exec_ctx;
-            ExecCtx exec_ctx;
-            RunState{wakeup}.Run();
-          });
+      auto arena = party->arena_.get();
+      auto* event_engine =
+          arena->GetContext<grpc_event_engine::experimental::EventEngine>();
+      CHECK(event_engine != nullptr) << "; " << GRPC_DUMP_ARGS(party, arena);
+      event_engine->Run([wakeup]() {
+        GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked offload");
+        ApplicationCallbackExecCtx app_exec_ctx;
+        ExecCtx exec_ctx;
+        RunState{wakeup}.Run();
+      });
       return;
     }
     g_run_state->next = PartyWakeup{party, prev_state};
@@ -356,50 +359,6 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
   }
 }
 
-void Party::AddParticipants(Participant** participants, size_t count) {
-  GRPC_LATENT_SEE_INNER_SCOPE("Party::AddParticipants");
-  uint64_t state = state_.load(std::memory_order_acquire);
-  uint64_t allocated;
-
-  size_t slots[party_detail::kMaxParticipants];
-
-  // Find slots for each new participant, ordering them from lowest available
-  // slot upwards to ensure the same poll ordering as presentation ordering to
-  // this function.
-  WakeupMask wakeup_mask;
-  uint64_t new_state;
-  do {
-    wakeup_mask = 0;
-    allocated = (state & kAllocatedMask) >> kAllocatedShift;
-    for (size_t i = 0; i < count; i++) {
-      auto new_mask = LowestOneBit(~allocated);
-      if (GPR_UNLIKELY((new_mask & kWakeupMask) == 0)) {
-        DelayAddParticipants(participants, count);
-        return;
-      }
-      wakeup_mask |= new_mask;
-      allocated |= new_mask;
-      slots[i] = absl::countr_zero(new_mask);
-    }
-    // Try to allocate this slot and take a ref (atomically).
-    // Ref needs to be taken because once we store the participant it could be
-    // spuriously woken up and unref the party.
-    new_state = (state | (allocated << kAllocatedShift)) + kOneRef;
-  } while (!state_.compare_exchange_weak(
-      state, new_state, std::memory_order_acq_rel, std::memory_order_acquire));
-  LogStateChange("AddParticipantsAndRef", state, new_state);
-
-  for (size_t i = 0; i < count; i++) {
-    GRPC_TRACE_LOG(party_state, INFO)
-        << "Party " << this << "                 AddParticipant: " << slots[i]
-        << " " << participants[i];
-    participants_[slots[i]].store(participants[i], std::memory_order_release);
-  }
-
-  // Now we need to wake up the party.
-  WakeupFromState(new_state, wakeup_mask);
-}
-
 void Party::AddParticipant(Participant* participant) {
   GRPC_LATENT_SEE_INNER_SCOPE("Party::AddParticipant");
   uint64_t state = state_.load(std::memory_order_acquire);
@@ -415,7 +374,7 @@ void Party::AddParticipant(Participant* participant) {
     allocated = (state & kAllocatedMask) >> kAllocatedShift;
     wakeup_mask = LowestOneBit(~allocated);
     if (GPR_UNLIKELY((wakeup_mask & kWakeupMask) == 0)) {
-      DelayAddParticipants(&participant, 1);
+      DelayAddParticipant(participant);
       return;
     }
     DCHECK_NE(wakeup_mask & kWakeupMask, 0u)
@@ -438,20 +397,16 @@ void Party::AddParticipant(Participant* participant) {
   WakeupFromState(new_state, wakeup_mask);
 }
 
-void Party::DelayAddParticipants(Participant** participants, size_t count) {
+void Party::DelayAddParticipant(Participant* participant) {
   // We need to delay the addition of participants.
   IncrementRefCount();
-  VLOG_EVERY_N_SEC(2, 10) << "Delaying addition of " << count
-                          << " participants to party " << this
-                          << " because it is full.";
-  std::vector<Participant*> delayed_participants{participants,
-                                                 participants + count};
+  VLOG_EVERY_N_SEC(2, 10) << "Delaying addition of participant to party "
+                          << this << " because it is full.";
   arena_->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
-      [this, delayed_participants = std::move(delayed_participants)]() mutable {
+      [this, participant]() mutable {
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
-        AddParticipants(delayed_participants.data(),
-                        delayed_participants.size());
+        AddParticipant(participant);
         Unref();
       });
 }

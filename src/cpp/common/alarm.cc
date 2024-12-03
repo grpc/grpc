@@ -35,6 +35,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/util/backoff.h"
 #include "src/core/util/time.h"
 
 namespace grpc {
@@ -49,6 +50,11 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
  public:
   AlarmImpl()
       : event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()),
+        backoff_(grpc_core::BackOff::Options()
+                     .set_initial_backoff(grpc_core::Duration::Milliseconds(10))
+                     .set_multiplier(1.5)
+                     .set_max_backoff(grpc_core::Duration::Milliseconds(100))
+                     .set_jitter(0.2)),
         cq_(nullptr),
         tag_(nullptr) {
     gpr_ref_init(&refs_, 1);
@@ -56,14 +62,17 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
   ~AlarmImpl() override {}
   bool FinalizeResult(void** tag, bool* /*status*/) override {
     *tag = tag_;
+    executed_++;
     Unref();
     return true;
   }
   void Set(grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag) {
+    WaitForExecution();
     grpc_core::ExecCtx exec_ctx;
     GRPC_CQ_INTERNAL_REF(cq->cq(), "alarm");
     cq_ = cq->cq();
     tag_ = tag;
+    queued_++;
     CHECK(grpc_cq_begin_op(cq_, this));
     Ref();
     CHECK(cq_armed_.exchange(true) == false);
@@ -74,9 +83,11 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
         [this] { OnCQAlarm(absl::OkStatus()); });
   }
   void Set(gpr_timespec deadline, std::function<void(bool)> f) {
+    WaitForExecution();
     grpc_core::ExecCtx exec_ctx;
     // Don't use any CQ at all. Instead just use the timer to fire the function
     callback_ = std::move(f);
+    queued_++;
     Ref();
     CHECK(callback_armed_.exchange(true) == false);
     CHECK(!cq_armed_.load());
@@ -92,8 +103,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
       event_engine_->Run([this] { OnCallbackAlarm(/*is_ok=*/false); });
     }
     if (cq_armed_.load() && event_engine_->Cancel(cq_timer_handle_)) {
-      event_engine_->Run(
-          [this] { OnCQAlarm(absl::CancelledError("cancelled")); });
+      OnCQAlarm(absl::CancelledError("cancelled"));
     }
   }
   void Destroy() {
@@ -110,10 +120,13 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     // can be reset when the alarm tag is delivered.
     grpc_completion_queue* cq = cq_;
     cq_ = nullptr;
+    grpc_cq_completion* completion = new grpc_cq_completion();
     grpc_cq_end_op(
         cq, this, error,
-        [](void* /*arg*/, grpc_cq_completion* /*completion*/) {}, nullptr,
-        &completion_);
+        [](void* /*arg*/, grpc_cq_completion* completion) {
+          delete completion;
+        },
+        nullptr, completion);
     GRPC_CQ_INTERNAL_UNREF(cq, "alarm");
   }
 
@@ -122,6 +135,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     callback_(is_ok);
+    executed_++;
     Unref();
   }
 
@@ -132,6 +146,21 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     }
   }
 
+  // Waits for either the previous CQ event being read by the user or callback
+  // is executed before doing another Set.
+  void WaitForExecution() {
+    if (queued_.load() != executed_.load()) {
+      // Slow path on cancellation. If the timer can't be cancelled, wait
+      // until it has completed.
+      // TODO(C++20): atomic wait?
+      while (queued_.load() != executed_.load()) {
+        absl::SleepFor(
+            absl::Milliseconds(backoff_.NextAttemptDelay().millis()));
+      }
+    }
+    backoff_.Reset();
+  }
+
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::atomic<bool> cq_armed_{false};
   EventEngine::TaskHandle cq_timer_handle_ = EventEngine::TaskHandle::kInvalid;
@@ -139,7 +168,9 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
   EventEngine::TaskHandle callback_timer_handle_ =
       EventEngine::TaskHandle::kInvalid;
   gpr_refcount refs_;
-  grpc_cq_completion completion_;
+  std::atomic<int> queued_{0};
+  std::atomic<int> executed_{0};
+  grpc_core::BackOff backoff_;
   // completion queue where events about this alarm will be posted
   grpc_completion_queue* cq_;
   void* tag_;

@@ -53,13 +53,6 @@ struct TrySeqTraitsWithSfinae {
   static R ReturnValue(T&&) {
     abort();
   }
-  template <typename F, typename Elem>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallSeqFactory(F& f,
-                                                                  Elem&& elem,
-                                                                  T&& value)
-      -> decltype(f(std::forward<Elem>(elem), std::forward<T>(value))) {
-    return f(std::forward<Elem>(elem), std::forward<T>(value));
-  }
   template <typename Result, typename RunNext>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>
   CheckResultAndRunNext(T prior, RunNext run_next) {
@@ -87,12 +80,6 @@ struct TrySeqTraitsWithSfinae<absl::StatusOr<T>> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R ReturnValue(
       absl::StatusOr<T>&& status) {
     return FailureStatusCast<R>(status.status());
-  }
-  template <typename F, typename Elem>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallSeqFactory(
-      F& f, Elem&& elem, absl::StatusOr<T> value)
-      -> decltype(f(std::forward<Elem>(elem), std::move(*value))) {
-    return f(std::forward<Elem>(elem), std::move(*value));
   }
   template <typename Result, typename RunNext>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>
@@ -241,24 +228,30 @@ class TrySeq {
   SeqState<TrySeqTraits, P, Fs...> state_;
 };
 
-template <typename I, typename F, typename Arg>
-struct TrySeqIterTraits {
-  using Iter = I;
-  using Factory = F;
-  using Argument = Arg;
-  using IterValue = decltype(*std::declval<Iter>());
-  using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
-                                                  std::declval<Arg>()));
-  using State = PromiseLike<StateCreated>;
-  using Wrapped = typename State::Result;
-
-  using Traits = TrySeqTraits<Wrapped>;
-};
-
 template <typename Iter, typename Factory, typename Argument>
-struct TrySeqIterResultTraits {
-  using IterTraits = TrySeqIterTraits<Iter, Factory, Argument>;
-  using Result = BasicSeqIter<IterTraits>;
+using TrySeqIter = BasicSeqIter<TrySeqTraits, Iter, Factory, Argument>;
+
+template <typename Container, typename Factory, typename Argument>
+struct TrySeqContainerResultTraits {
+  using BaseResult =
+      TrySeqIter<typename Container::iterator, Factory, Argument>;
+  class Result {
+   public:
+    Result(Container container, Factory factory, Argument argument)
+        : container_(std::move(container)),
+          base_result_(container_.begin(), container_.end(), std::move(factory),
+                       std::move(argument)) {}
+    Result(const Result&) = delete;
+    Result& operator=(const Result&) = delete;
+    Result(Result&&) = default;
+    Result& operator=(Result&&) = default;
+
+    auto operator()() { return base_result_(); }
+
+   private:
+    Container container_;
+    BaseResult base_result_;
+  };
 };
 
 }  // namespace promise_detail
@@ -352,14 +345,19 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
 //   }
 //   return argument;
 template <typename Iter, typename Factory, typename Argument>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
-    typename promise_detail::TrySeqIterResultTraits<Iter, Factory,
-                                                    Argument>::Result
-    TrySeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TrySeqIter(Iter begin, Iter end,
+                                                     Argument argument,
+                                                     Factory factory) {
+  return promise_detail::TrySeqIter<Iter, Factory, Argument>(
+      begin, end, std::move(factory), std::move(argument));
+}
+
+template <typename Container, typename Factory, typename Argument>
+auto TrySeqContainer(Container container, Argument argument, Factory factory) {
   using Result =
-      typename promise_detail::TrySeqIterResultTraits<Iter, Factory,
-                                                      Argument>::Result;
-  return Result(begin, end, std::move(factory), std::move(argument));
+      typename promise_detail::TrySeqContainerResultTraits<Container, Factory,
+                                                           Argument>::Result;
+  return Result(std::move(container), std::move(factory), std::move(argument));
 }
 
 }  // namespace grpc_core

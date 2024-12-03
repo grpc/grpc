@@ -53,7 +53,7 @@ struct ConstructPromiseVariantVisitor {
   template <typename T>
   auto operator()(T x) -> absl::variant<promise_detail::PromiseLike<
       decltype(CallConstructorThenFactory(std::declval<Ts>()))>...> {
-    return CallConstructorThenFactory(x);
+    return CallConstructorThenFactory(std::move(x));
   }
 };
 
