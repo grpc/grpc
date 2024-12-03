@@ -24,7 +24,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_config_accesslog_v3_AccessLog_submsgs[2] = {
+static const upb_MiniTableSubInternal envoy_config_accesslog_v3_AccessLog__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__AccessLogFilter_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
@@ -36,7 +36,7 @@ static const upb_MiniTableField envoy_config_accesslog_v3_AccessLog__fields[3] =
 };
 
 const upb_MiniTable envoy__config__accesslog__v3__AccessLog_msg_init = {
-  &envoy_config_accesslog_v3_AccessLog_submsgs[0],
+  &envoy_config_accesslog_v3_AccessLog__submsgs[0],
   &envoy_config_accesslog_v3_AccessLog__fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -55,7 +55,7 @@ const upb_MiniTable envoy__config__accesslog__v3__AccessLog_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__accesslog__v3__AccessLog_msg_init_ptr = &envoy__config__accesslog__v3__AccessLog_msg_init;
-static const upb_MiniTableSubInternal envoy_config_accesslog_v3_AccessLogFilter_submsgs[13] = {
+static const upb_MiniTableSubInternal envoy_config_accesslog_v3_AccessLogFilter__submsgs[13] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__StatusCodeFilter_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__DurationFilter_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__NotHealthCheckFilter_msg_init_ptr},
@@ -88,7 +88,7 @@ static const upb_MiniTableField envoy_config_accesslog_v3_AccessLogFilter__field
 };
 
 const upb_MiniTable envoy__config__accesslog__v3__AccessLogFilter_msg_init = {
-  &envoy_config_accesslog_v3_AccessLogFilter_submsgs[0],
+  &envoy_config_accesslog_v3_AccessLogFilter__submsgs[0],
   &envoy_config_accesslog_v3_AccessLogFilter__fields[0],
   UPB_SIZE(16, 24), 13, kUpb_ExtMode_NonExtendable, 13, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -115,7 +115,7 @@ const upb_MiniTable envoy__config__accesslog__v3__AccessLogFilter_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__accesslog__v3__AccessLogFilter_msg_init_ptr = &envoy__config__accesslog__v3__AccessLogFilter_msg_init;
-static const upb_MiniTableSubInternal envoy_config_accesslog_v3_ComparisonFilter_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_config_accesslog_v3_ComparisonFilter__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RuntimeUInt32_msg_init_ptr},
 };
 
@@ -125,7 +125,7 @@ static const upb_MiniTableField envoy_config_accesslog_v3_ComparisonFilter__fiel
 };
 
 const upb_MiniTable envoy__config__accesslog__v3__ComparisonFilter_msg_init = {
-  &envoy_config_accesslog_v3_ComparisonFilter_submsgs[0],
+  &envoy_config_accesslog_v3_ComparisonFilter__submsgs[0],
   &envoy_config_accesslog_v3_ComparisonFilter__fields[0],
   24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -138,7 +138,7 @@ const upb_MiniTable envoy__config__accesslog__v3__ComparisonFilter_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__accesslog__v3__ComparisonFilter_msg_init_ptr = &envoy__config__accesslog__v3__ComparisonFilter_msg_init;
-static const upb_MiniTableSubInternal envoy_config_accesslog_v3_StatusCodeFilter_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_config_accesslog_v3_StatusCodeFilter__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__ComparisonFilter_msg_init_ptr},
 };
 
@@ -147,7 +147,7 @@ static const upb_MiniTableField envoy_config_accesslog_v3_StatusCodeFilter__fiel
 };
 
 const upb_MiniTable envoy__config__accesslog__v3__StatusCodeFilter_msg_init = {
-  &envoy_config_accesslog_v3_StatusCodeFilter_submsgs[0],
+  &envoy_config_accesslog_v3_StatusCodeFilter__submsgs[0],
   &envoy_config_accesslog_v3_StatusCodeFilter__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -156,7 +156,7 @@ const upb_MiniTable envoy__config__accesslog__v3__StatusCodeFilter_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__accesslog__v3__StatusCodeFilter_msg_init_ptr = &envoy__config__accesslog__v3__StatusCodeFilter_msg_init;
-static const upb_MiniTableSubInternal envoy_config_accesslog_v3_DurationFilter_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_config_accesslog_v3_DurationFilter__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__ComparisonFilter_msg_init_ptr},
 };
 
@@ -165,7 +165,7 @@ static const upb_MiniTableField envoy_config_accesslog_v3_DurationFilter__fields
 };
 
 const upb_MiniTable envoy__config__accesslog__v3__DurationFilter_msg_init = {
-  &envoy_config_accesslog_v3_DurationFilter_submsgs[0],
+  &envoy_config_accesslog_v3_DurationFilter__submsgs[0],
   &envoy_config_accesslog_v3_DurationFilter__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -194,7 +194,7 @@ const upb_MiniTable envoy__config__accesslog__v3__TraceableFilter_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__accesslog__v3__TraceableFilter_msg_init_ptr = &envoy__config__accesslog__v3__TraceableFilter_msg_init;
-static const upb_MiniTableSubInternal envoy_config_accesslog_v3_RuntimeFilter_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_config_accesslog_v3_RuntimeFilter__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init_ptr},
 };
 
@@ -205,7 +205,7 @@ static const upb_MiniTableField envoy_config_accesslog_v3_RuntimeFilter__fields[
 };
 
 const upb_MiniTable envoy__config__accesslog__v3__RuntimeFilter_msg_init = {
-  &envoy_config_accesslog_v3_RuntimeFilter_submsgs[0],
+  &envoy_config_accesslog_v3_RuntimeFilter__submsgs[0],
   &envoy_config_accesslog_v3_RuntimeFilter__fields[0],
   UPB_SIZE(32, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -220,7 +220,7 @@ const upb_MiniTable envoy__config__accesslog__v3__RuntimeFilter_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__accesslog__v3__RuntimeFilter_msg_init_ptr = &envoy__config__accesslog__v3__RuntimeFilter_msg_init;
-static const upb_MiniTableSubInternal envoy_config_accesslog_v3_AndFilter_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_config_accesslog_v3_AndFilter__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__AccessLogFilter_msg_init_ptr},
 };
 
@@ -229,7 +229,7 @@ static const upb_MiniTableField envoy_config_accesslog_v3_AndFilter__fields[1] =
 };
 
 const upb_MiniTable envoy__config__accesslog__v3__AndFilter_msg_init = {
-  &envoy_config_accesslog_v3_AndFilter_submsgs[0],
+  &envoy_config_accesslog_v3_AndFilter__submsgs[0],
   &envoy_config_accesslog_v3_AndFilter__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -242,7 +242,7 @@ const upb_MiniTable envoy__config__accesslog__v3__AndFilter_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__accesslog__v3__AndFilter_msg_init_ptr = &envoy__config__accesslog__v3__AndFilter_msg_init;
-static const upb_MiniTableSubInternal envoy_config_accesslog_v3_OrFilter_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_config_accesslog_v3_OrFilter__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__AccessLogFilter_msg_init_ptr},
 };
 
@@ -251,7 +251,7 @@ static const upb_MiniTableField envoy_config_accesslog_v3_OrFilter__fields[1] = 
 };
 
 const upb_MiniTable envoy__config__accesslog__v3__OrFilter_msg_init = {
-  &envoy_config_accesslog_v3_OrFilter_submsgs[0],
+  &envoy_config_accesslog_v3_OrFilter__submsgs[0],
   &envoy_config_accesslog_v3_OrFilter__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -266,7 +266,7 @@ const upb_MiniTable envoy__config__accesslog__v3__OrFilter_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__accesslog__v3__OrFilter_msg_init_ptr = &envoy__config__accesslog__v3__OrFilter_msg_init;
-static const upb_MiniTableSubInternal envoy_config_accesslog_v3_HeaderFilter_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_config_accesslog_v3_HeaderFilter__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__HeaderMatcher_msg_init_ptr},
 };
 
@@ -275,7 +275,7 @@ static const upb_MiniTableField envoy_config_accesslog_v3_HeaderFilter__fields[1
 };
 
 const upb_MiniTable envoy__config__accesslog__v3__HeaderFilter_msg_init = {
-  &envoy_config_accesslog_v3_HeaderFilter_submsgs[0],
+  &envoy_config_accesslog_v3_HeaderFilter__submsgs[0],
   &envoy_config_accesslog_v3_HeaderFilter__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -323,7 +323,7 @@ const upb_MiniTable envoy__config__accesslog__v3__GrpcStatusFilter_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__accesslog__v3__GrpcStatusFilter_msg_init_ptr = &envoy__config__accesslog__v3__GrpcStatusFilter_msg_init;
-static const upb_MiniTableSubInternal envoy_config_accesslog_v3_MetadataFilter_submsgs[2] = {
+static const upb_MiniTableSubInternal envoy_config_accesslog_v3_MetadataFilter__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__MetadataMatcher_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
 };
@@ -334,7 +334,7 @@ static const upb_MiniTableField envoy_config_accesslog_v3_MetadataFilter__fields
 };
 
 const upb_MiniTable envoy__config__accesslog__v3__MetadataFilter_msg_init = {
-  &envoy_config_accesslog_v3_MetadataFilter_submsgs[0],
+  &envoy_config_accesslog_v3_MetadataFilter__submsgs[0],
   &envoy_config_accesslog_v3_MetadataFilter__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -364,7 +364,7 @@ const upb_MiniTable envoy__config__accesslog__v3__LogTypeFilter_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__accesslog__v3__LogTypeFilter_msg_init_ptr = &envoy__config__accesslog__v3__LogTypeFilter_msg_init;
-static const upb_MiniTableSubInternal envoy_config_accesslog_v3_ExtensionFilter_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_config_accesslog_v3_ExtensionFilter__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
@@ -374,7 +374,7 @@ static const upb_MiniTableField envoy_config_accesslog_v3_ExtensionFilter__field
 };
 
 const upb_MiniTable envoy__config__accesslog__v3__ExtensionFilter_msg_init = {
-  &envoy_config_accesslog_v3_ExtensionFilter_submsgs[0],
+  &envoy_config_accesslog_v3_ExtensionFilter__submsgs[0],
   &envoy_config_accesslog_v3_ExtensionFilter__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED

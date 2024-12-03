@@ -14,7 +14,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal opencensus_proto_trace_v1_TraceConfig_submsgs[3] = {
+static const upb_MiniTableSubInternal opencensus_proto_trace_v1_TraceConfig__submsgs[3] = {
   {.UPB_PRIVATE(submsg) = &opencensus__proto__trace__v1__ProbabilitySampler_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &opencensus__proto__trace__v1__ConstantSampler_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &opencensus__proto__trace__v1__RateLimitingSampler_msg_init_ptr},
@@ -31,7 +31,7 @@ static const upb_MiniTableField opencensus_proto_trace_v1_TraceConfig__fields[7]
 };
 
 const upb_MiniTable opencensus__proto__trace__v1__TraceConfig_msg_init = {
-  &opencensus_proto_trace_v1_TraceConfig_submsgs[0],
+  &opencensus_proto_trace_v1_TraceConfig__submsgs[0],
   &opencensus_proto_trace_v1_TraceConfig__fields[0],
   UPB_SIZE(48, 56), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
