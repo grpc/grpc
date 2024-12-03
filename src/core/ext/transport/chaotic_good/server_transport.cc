@@ -178,6 +178,7 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
                 GRPC_TRACE_VLOG(chaotic_good, 2)
                     << "CHAOTIC_GOOD: CallOutboundLoop: stream_id=" << stream_id
                     << " main_body_result=" << main_body_result;
+                return Empty{};
               }),
           call_initiator.PullServerTrailingMetadata(),
           // Capture the call_initiator to ensure the underlying call_spine

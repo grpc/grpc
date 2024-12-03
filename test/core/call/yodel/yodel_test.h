@@ -132,6 +132,7 @@ class SequenceSpawner {
           (*spawner)(name_and_location.name(),
                      WrapPromiseAndNext(std::move(action_state),
                                         std::move(promise), std::move(next)));
+          return Empty{};
         });
   }
 
