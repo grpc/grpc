@@ -300,7 +300,13 @@ class FuzzingEventEngine : public EventEngine {
 
   bool IsIdleLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  virtual void UpdateClock(Duration) {}
+  // Called whenever the time is incremented, and used by
+  // ThreadedFuzzingEventEngine to insert a sleep so that real time passes at
+  // approximately the same rate as FuzzingEventEngine time.
+  // TODO(ctiller): This is very approximate and unsound and we should probably
+  // evaluate whether we want to continue supporting ThreadedFuzzingEventEngine
+  // at all.
+  virtual void OnClockIncremented(Duration) {}
 
   // We need everything EventEngine to do reasonable timer steps -- without it
   // we need to do a bunch of evil to make sure both timer systems are ticking
@@ -326,8 +332,12 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_ACQUIRED_AFTER(mu_);
 
   const Duration max_delay_[2];
-  intptr_t next_task_id_ ABSL_GUARDED_BY(mu_);
-  Time now_ ABSL_GUARDED_BY(now_mu_);
+  intptr_t next_task_id_ ABSL_GUARDED_BY(mu_) = 1;
+  // Start at 5 seconds after the epoch.
+  // This needs to be more than 1, and otherwise is kind of arbitrary.
+  // The grpc_core::Timer code special cases the zero second time period after
+  // epoch to allow for some fancy atomic stuff.
+  Time now_ ABSL_GUARDED_BY(now_mu_) = Time() + std::chrono::seconds(5);
   std::queue<Duration> task_delays_ ABSL_GUARDED_BY(mu_);
   std::map<intptr_t, std::shared_ptr<Task>> tasks_by_id_ ABSL_GUARDED_BY(mu_);
   std::multimap<Time, std::shared_ptr<Task>> tasks_by_time_
@@ -351,7 +361,7 @@ class FuzzingEventEngine : public EventEngine {
   // guaranteed to be true.
   Duration exponential_gate_time_increment_ ABSL_GUARDED_BY(mu_) =
       std::chrono::milliseconds(1);
-  intptr_t current_tick_ ABSL_GUARDED_BY(now_mu_);
+  intptr_t current_tick_ ABSL_GUARDED_BY(now_mu_) = 0;
 
   grpc_core::Mutex run_after_duration_callback_mu_;
   absl::AnyInvocable<void(Duration)> run_after_duration_callback_
@@ -378,7 +388,7 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
   }
 
  private:
-  void UpdateClock(Duration duration) override {
+  void OnClockIncremented(Duration duration) override {
     absl::SleepFor(absl::Milliseconds(
         1 + grpc_event_engine::experimental::Milliseconds(duration)));
   }

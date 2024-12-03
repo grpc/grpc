@@ -78,15 +78,6 @@ gpr_timespec (*g_orig_gpr_now_impl)(gpr_clock_type clock_type);
 FuzzingEventEngine::FuzzingEventEngine(
     Options options, const fuzzing_event_engine::Actions& actions)
     : max_delay_{options.max_delay_write, options.max_delay_run_after} {
-  tasks_by_id_.clear();
-  tasks_by_time_.clear();
-  next_task_id_ = 1;
-  // Start at 5 seconds after the epoch.
-  // This needs to be more than 1, and otherwise is kind of arbitrary.
-  // The grpc_core::Timer code special cases the zero second time period after
-  // epoch to allow for some fancy atomic stuff.
-  now_ = Time() + std::chrono::seconds(5);
-
   // Allow the fuzzer to assign ports.
   // Once this list is exhausted, we fall back to a deterministic algorithm.
   for (auto port : actions.assign_ports()) {
@@ -141,12 +132,11 @@ gpr_timespec FuzzingEventEngine::NowAsTimespec(gpr_clock_type clock_type) {
 void FuzzingEventEngine::Tick(Duration max_time) {
   if (IsSaneTimerEnvironment()) {
     std::vector<absl::AnyInvocable<void()>> to_run;
-    Duration incr = Duration::zero();
+    Duration incr = max_time;
+    DCHECK_GT(incr.count(), Duration::zero().count());
     {
       grpc_core::MutexLock lock(&*mu_);
       grpc_core::MutexLock now_lock(&*now_mu_);
-      incr = max_time;
-      DCHECK_GT(incr.count(), Duration::zero().count());
       if (!tasks_by_time_.empty()) {
         incr = std::min(incr, tasks_by_time_.begin()->first - now_);
       }
@@ -162,7 +152,7 @@ void FuzzingEventEngine::Tick(Duration max_time) {
         tasks_by_time_.erase(tasks_by_time_.begin());
       }
     }
-    UpdateClock(incr);
+    OnClockIncremented(incr);
     if (to_run.empty()) return;
     for (auto& closure : to_run) {
       closure();
@@ -207,7 +197,7 @@ void FuzzingEventEngine::Tick(Duration max_time) {
           tasks_by_time_.erase(tasks_by_time_.begin());
         }
       }
-      UpdateClock(incr);
+      OnClockIncremented(incr);
       if (to_run.empty()) return;
       for (auto& closure : to_run) {
         closure();

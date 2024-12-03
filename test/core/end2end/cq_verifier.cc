@@ -348,7 +348,8 @@ grpc_event CqVerifier::Step(gpr_timespec deadline) {
       auto now = gpr_now(deadline.clock_type);
       if (gpr_time_cmp(deadline, now) < 0) break;
       // Add a millisecond to ensure we overshoot the cq timeout if nothing is
-      // happening
+      // happening. Not doing so can lead to infinite loops in some tests.
+      // TODO(ctiller): see if there's a cleaner way to resolve this.
       step_fn_(Timestamp::FromTimespecRoundDown(deadline) +
                Duration::Milliseconds(1) - Timestamp::Now());
     }
