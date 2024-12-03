@@ -54,7 +54,7 @@
   allow_in_fuzzing_config: false
 - name: chaotic_good_legacy_protocol
   description: If set, use the first version of the chaotic-good protocol when that protocol is enabled.
-  expiry: 2024/12/01
+  expiry: 2025/01/15
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
 - name: client_privacy
@@ -64,6 +64,12 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: disable_buffer_hint_on_high_memory_pressure
+  description:
+    Disable buffer hint flag parsing in the transport under high memory pressure.
+  expiry: 2025/03/01
+  owner: vigneshbabu@google.com
+  test_tags: []
 - name: event_engine_application_callbacks
   description: Run application callbacks in EventEngine threads, instead of on the thread-local ApplicationCallbackExecCtx
   expiry: 2025/03/01
@@ -108,8 +114,8 @@
   test_tags: [resource_quota_test]
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
-  expiry: 2024/10/30
-  owner: aermolov@google.com
+  expiry: 2024/12/30
+  owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: max_pings_wo_data_throttle
   description:
@@ -135,6 +141,24 @@
   expiry: 2025/03/01
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
+- name: promise_based_http2_client_transport
+  description:
+    Use promises for the http2 client transport. We have kept client and
+    server transport experiments separate to help with smoother roll outs
+    and also help with interop testing.
+  expiry: 2025/06/03
+  owner: tjagtap@google.com
+  test_tags: []
+  allow_in_fuzzing_config: true
+- name: promise_based_http2_server_transport
+  description:
+    Use promises for the http2 server transport. We have kept client and
+    server transport experiments separate to help with smoother roll outs
+    and also help with interop testing.
+  expiry: 2025/06/03
+  owner: tjagtap@google.com
+  test_tags: []
+  allow_in_fuzzing_config: true
 - name: promise_based_inproc_transport
   description:
     Use promises for the in-process transport.
@@ -151,7 +175,7 @@
   test_tags: []
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
-  expiry: 2024/12/01
+  expiry: 2025/03/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: server_privacy
@@ -167,22 +191,22 @@
     TCP would not indicate completion of a read operation until a specified
     number of bytes have been read over the socket.
     Buffers are also allocated according to estimated RPC sizes.
-  expiry: 2024/12/01
+  expiry: 2025/03/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tcp_rcv_lowat
   description: Use SO_RCVLOWAT to avoid wakeups on the read path.
-  expiry: 2024/12/01
+  expiry: 2025/03/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: time_caching_in_party
   description: Disable time caching in exec_ctx, and enable it only in a single party execution.
   owner: ctiller@google.com
-  expiry: 2024/12/12
+  expiry: 2025/01/17
   test_tags: []
 - name: trace_record_callops
   description: Enables tracing of call batch initiation and completion.
-  expiry: 2024/12/01
+  expiry: 2025/01/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: unconstrained_max_quota_buffer_size

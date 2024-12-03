@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_CORE_V3_RESOURCE_LOCATOR_PROTO_UPB_H_
-#define XDS_CORE_V3_RESOURCE_LOCATOR_PROTO_UPB_H_
+#ifndef XDS_CORE_V3_RESOURCE_LOCATOR_PROTO_UPB_H__UPB_H_
+#define XDS_CORE_V3_RESOURCE_LOCATOR_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -348,4 +348,4 @@ UPB_INLINE void xds_core_v3_ResourceLocator_Directive_set_entry(xds_core_v3_Reso
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_CORE_V3_RESOURCE_LOCATOR_PROTO_UPB_H_ */
+#endif  /* XDS_CORE_V3_RESOURCE_LOCATOR_PROTO_UPB_H__UPB_H_ */

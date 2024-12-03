@@ -50,10 +50,10 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -72,7 +72,6 @@
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
@@ -80,6 +79,7 @@
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
+#include "xds/data/orca/v3/orca_load_report.pb.h"
 
 namespace grpc {
 namespace testing {

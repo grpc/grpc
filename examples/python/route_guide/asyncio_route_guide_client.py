@@ -33,7 +33,7 @@ def make_route_note(
     )
 
 
-# Performs an unary call
+# Performs a unary call
 async def guide_get_one_feature(
     stub: route_guide_pb2_grpc.RouteGuideStub, point: route_guide_pb2.Point
 ) -> None:

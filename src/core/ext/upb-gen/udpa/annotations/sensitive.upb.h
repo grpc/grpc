@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H_
-#define UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H_
+#ifndef UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H__UPB_H_
+#define UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -55,4 +55,4 @@ UPB_INLINE void udpa_annotations_set_sensitive(struct google_protobuf_FieldOptio
 
 #include "upb/port/undef.inc"
 
-#endif  /* UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H_ */
+#endif  /* UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPB_H__UPB_H_ */

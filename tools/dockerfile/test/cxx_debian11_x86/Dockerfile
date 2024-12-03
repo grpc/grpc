@@ -121,7 +121,5 @@ RUN mkdir /var/local/jenkins
 RUN if [ -f ./generate_artifacts.sh ]; then ./generate_artifacts.sh; fi
 
 
-# docker is running on a 64-bit machine, so we need to
-# override "uname -m" to report i686 instead of x86_64, otherwise
-# cmake will choose a wrong option to build.
-ENTRYPOINT ["linux32"]
+# Define the default command.
+CMD ["bash"]

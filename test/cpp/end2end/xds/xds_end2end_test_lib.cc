@@ -35,13 +35,13 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/server/server.h"
 #include "src/core/util/env.h"
 #include "src/core/util/tmpfile.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_channel_args.h"
-#include "src/proto/grpc/testing/xds/v3/router.pb.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/credentials.h"
@@ -502,7 +502,7 @@ void XdsEnd2endTest::InitClient(
   if (xds_resource_does_not_exist_timeout_ms > 0) {
     xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
-        xds_resource_does_not_exist_timeout_ms));
+        xds_resource_does_not_exist_timeout_ms * grpc_test_slowdown_factor()));
   }
   if (!lb_expected_authority.empty()) {
     constexpr char authority_const[] = "localhost:%d";

@@ -130,7 +130,17 @@ class SliceRefCount : public grpc_slice_refcount {
   size_t size_;
 };
 
+std::atomic<double> container_memory_pressure{0.0};
+
 }  // namespace
+
+void SetContainerMemoryPressure(double pressure) {
+  container_memory_pressure.store(pressure, std::memory_order_relaxed);
+}
+
+double ContainerMemoryPressure() {
+  return container_memory_pressure.load(std::memory_order_relaxed);
+}
 
 //
 // Reclaimer
@@ -346,7 +356,7 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
     size_t ret = 0;
     if (!IsUnconstrainedMaxQuotaBufferSizeEnabled() &&
         free > kMaxQuotaBufferSize / 2) {
-      ret = std::max(ret, free - kMaxQuotaBufferSize / 2);
+      ret = std::max(ret, free - (kMaxQuotaBufferSize / 2));
     }
     ret = std::max(ret, free > 8192 ? free / 2 : free);
     const size_t new_free = free - ret;
@@ -646,7 +656,8 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   double size = quota_size;
   if (size < 1) return PressureInfo{1, 1, 1};
   PressureInfo pressure_info;
-  pressure_info.instantaneous_pressure = std::max(0.0, (size - free) / size);
+  pressure_info.instantaneous_pressure =
+      std::max({0.0, (size - free) / size, ContainerMemoryPressure()});
   pressure_info.pressure_control_value =
       pressure_tracker_.AddSampleAndGetControlValue(
           pressure_info.instantaneous_pressure);
@@ -719,8 +730,8 @@ double PressureController::Update(double error) {
   // (If we want a control value that's higher than the last one we snap
   // immediately because it's likely that memory pressure is growing unchecked).
   if (new_control < last_control_) {
-    new_control =
-        std::max(new_control, last_control_ - max_reduction_per_tick_ / 1000.0);
+    new_control = std::max(new_control,
+                           last_control_ - (max_reduction_per_tick_ / 1000.0));
   }
   last_control_ = new_control;
   return new_control;

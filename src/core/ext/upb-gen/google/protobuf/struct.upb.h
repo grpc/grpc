@@ -6,12 +6,13 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef GOOGLE_PROTOBUF_STRUCT_PROTO_UPB_H_
-#define GOOGLE_PROTOBUF_STRUCT_PROTO_UPB_H_
+#ifndef GOOGLE_PROTOBUF_STRUCT_PROTO_UPB_H__UPB_H_
+#define GOOGLE_PROTOBUF_STRUCT_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
 #include "google/protobuf/struct.upb_minitable.h"
+
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -459,4 +460,4 @@ UPB_INLINE struct google_protobuf_Value* google_protobuf_ListValue_add_values(go
 
 #include "upb/port/undef.inc"
 
-#endif  /* GOOGLE_PROTOBUF_STRUCT_PROTO_UPB_H_ */
+#endif  /* GOOGLE_PROTOBUF_STRUCT_PROTO_UPB_H__UPB_H_ */

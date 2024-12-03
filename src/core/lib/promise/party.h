@@ -82,6 +82,52 @@ class Party : public Activity, private Wakeable {
   Party(const Party&) = delete;
   Party& operator=(const Party&) = delete;
 
+  // When calling into a Party from outside the promises system we often would
+  // like to perform more than one action.
+  // This class tries to acquire the party lock just once - if it succeeds then
+  // it runs the party in its destructor, effectively holding all wakeups of the
+  // party until it goes out of scope.
+  // If it fails, presumably some other thread holds the lock - and in this case
+  // we don't attempt to do any buffering.
+  class WakeupHold {
+   public:
+    WakeupHold() = default;
+    explicit WakeupHold(Party* party)
+        : prev_state_(party->state_.load(std::memory_order_relaxed)) {
+      // Try to lock
+      if ((prev_state_ & kLocked) == 0 &&
+          party->state_.compare_exchange_weak(prev_state_,
+                                              (prev_state_ | kLocked) + kOneRef,
+                                              std::memory_order_relaxed)) {
+        DCHECK_EQ(prev_state_ & ~(kRefMask | kAllocatedMask), 0u)
+            << "Party should have contained no wakeups on lock";
+        // If we win, record that fact for the destructor
+        party->LogStateChange("WakeupHold", prev_state_,
+                              (prev_state_ | kLocked) + kOneRef);
+        party_ = party;
+      }
+    }
+    WakeupHold(const WakeupHold&) = delete;
+    WakeupHold& operator=(const WakeupHold&) = delete;
+    WakeupHold(WakeupHold&& other) noexcept
+        : party_(std::exchange(other.party_, nullptr)),
+          prev_state_(other.prev_state_) {}
+    WakeupHold& operator=(WakeupHold&& other) noexcept {
+      std::swap(party_, other.party_);
+      std::swap(prev_state_, other.prev_state_);
+      return *this;
+    }
+
+    ~WakeupHold() {
+      if (party_ == nullptr) return;
+      party_->RunLockedAndUnref(party_, prev_state_);
+    }
+
+   private:
+    Party* party_ = nullptr;
+    uint64_t prev_state_;
+  };
+
   static RefCountedPtr<Party> Make(RefCountedPtr<Arena> arena) {
     auto* arena_ptr = arena.get();
     return RefCountedPtr<Party>(arena_ptr->New<Party>(std::move(arena)));
@@ -134,23 +180,6 @@ class Party : public Activity, private Wakeable {
   }
 
   Arena* arena() { return arena_.get(); }
-
-  class BulkSpawner {
-   public:
-    explicit BulkSpawner(Party* party) : party_(party) {}
-    ~BulkSpawner() {
-      party_->AddParticipants(participants_, num_participants_);
-    }
-
-    template <typename Factory, typename OnComplete>
-    void Spawn(absl::string_view name, Factory promise_factory,
-               OnComplete on_complete);
-
-   private:
-    Party* const party_;
-    size_t num_participants_ = 0;
-    Participant* participants_[party_detail::kMaxParticipants];
-  };
 
  protected:
   friend class Arena;
@@ -342,6 +371,7 @@ class Party : public Activity, private Wakeable {
 
   // Wakeable implementation
   void Wakeup(WakeupMask wakeup_mask) final {
+    GRPC_LATENT_SEE_INNER_SCOPE("Party::Wakeup");
     if (Activity::current() == this) {
       wakeup_mask_ |= wakeup_mask;
       Unref();
@@ -352,6 +382,7 @@ class Party : public Activity, private Wakeable {
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void WakeupFromState(
       uint64_t cur_state, WakeupMask wakeup_mask) {
+    GRPC_LATENT_SEE_INNER_SCOPE("Party::WakeupFromState");
     DCHECK_NE(wakeup_mask & kWakeupMask, 0u)
         << "Wakeup mask must be non-zero: " << wakeup_mask;
     while (true) {
@@ -384,9 +415,8 @@ class Party : public Activity, private Wakeable {
   void Drop(WakeupMask wakeup_mask) final;
 
   // Add a participant (backs Spawn, after type erasure to ParticipantFactory).
-  void AddParticipants(Participant** participant, size_t count);
   void AddParticipant(Participant* participant);
-  void DelayAddParticipants(Participant** participant, size_t count);
+  void DelayAddParticipant(Participant* participant);
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void LogStateChange(
       const char* op, uint64_t prev_state, uint64_t new_state,
@@ -414,16 +444,6 @@ template <>
 struct ContextSubclass<Party> {
   using Base = Activity;
 };
-
-template <typename Factory, typename OnComplete>
-void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
-                               OnComplete on_complete) {
-  GRPC_TRACE_LOG(promise_primitives, INFO)
-      << party_->DebugTag() << "[bulk_spawn] On " << this << " queue " << name
-      << " (" << sizeof(ParticipantImpl<Factory, OnComplete>) << " bytes)";
-  participants_[num_participants_++] = new ParticipantImpl<Factory, OnComplete>(
-      name, std::move(promise_factory), std::move(on_complete));
-}
 
 template <typename Factory, typename OnComplete>
 void Party::Spawn(absl::string_view name, Factory promise_factory,

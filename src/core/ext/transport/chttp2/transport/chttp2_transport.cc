@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <memory>
 #include <new>
@@ -54,6 +55,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -72,7 +74,6 @@
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -561,6 +562,10 @@ static void read_channel_args(grpc_chttp2_transport* t,
   t->max_concurrent_streams_overload_protection =
       channel_args.GetBool(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION)
           .value_or(true);
+
+  t->max_concurrent_streams_reject_on_client =
+      channel_args.GetBool(GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT)
+          .value_or(false);
 }
 
 static void init_keepalive_pings_if_enabled_locked(
@@ -1426,8 +1431,24 @@ static void send_initial_metadata_locked(
     if (t->is_client) {
       if (t->closed_with_error.ok()) {
         CHECK_EQ(s->id, 0u);
-        grpc_chttp2_list_add_waiting_for_concurrency(t, s);
-        maybe_start_some_streams(t);
+        if (t->max_concurrent_streams_reject_on_client &&
+            t->stream_map.size() >=
+                t->settings.peer().max_concurrent_streams()) {
+          s->trailing_metadata_buffer.Set(
+              grpc_core::GrpcStreamNetworkState(),
+              grpc_core::GrpcStreamNetworkState::kNotSentOnWire);
+          grpc_chttp2_cancel_stream(
+              t, s,
+              grpc_error_set_int(
+                  GRPC_ERROR_CREATE_REFERENCING("Too many streams",
+                                                &t->closed_with_error, 1),
+                  grpc_core::StatusIntProperty::kRpcStatus,
+                  GRPC_STATUS_RESOURCE_EXHAUSTED),
+              false);
+        } else {
+          grpc_chttp2_list_add_waiting_for_concurrency(t, s);
+          maybe_start_some_streams(t);
+        }
       } else {
         s->trailing_metadata_buffer.Set(
             grpc_core::GrpcStreamNetworkState(),
@@ -1470,7 +1491,7 @@ static void send_message_locked(
       op->payload->send_message.send_message->Length());
   on_complete->next_data.scratch |= t->closure_barrier_may_cover_write;
   s->send_message_finished = add_closure_barrier(op->on_complete);
-  const uint32_t flags = op_payload->send_message.flags;
+  uint32_t flags = 0;
   if (s->write_closed) {
     op->payload->send_message.stream_write_closed = true;
     // We should NOT return an error here, so as to avoid a cancel OP being
@@ -1480,6 +1501,19 @@ static void send_message_locked(
                                       absl::OkStatus(),
                                       "fetching_send_message_finished");
   } else {
+    // Buffer hint is used to buffer the message in the transport until the
+    // write buffer size (specified through GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE) is
+    // reached. This is to batch writes sent down to tcp. However, if the memory
+    // pressure is high, disable the buffer hint to flush data down to tcp as
+    // soon as possible to avoid OOM.
+    if (grpc_core::IsDisableBufferHintOnHighMemoryPressureEnabled() &&
+        t->memory_owner.GetPressureInfo().pressure_control_value >= 0.8) {
+      // Disable write buffer hint if memory pressure is high. The value of 0.8
+      // is chosen to match the threshold used by the tcp endpoint (in
+      // allocating memory for socket reads).
+      op_payload->send_message.flags &= ~GRPC_WRITE_BUFFER_HINT;
+    }
+    flags = op_payload->send_message.flags;
     uint8_t* frame_hdr = grpc_slice_buffer_tiny_add(&s->flow_controlled_buffer,
                                                     GRPC_HEADER_SIZE_IN_BYTES);
     frame_hdr[0] = (flags & GRPC_WRITE_INTERNAL_COMPRESS) != 0;

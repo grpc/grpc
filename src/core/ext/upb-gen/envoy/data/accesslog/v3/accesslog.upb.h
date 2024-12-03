@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_DATA_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H_
-#define ENVOY_DATA_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H_
+#ifndef ENVOY_DATA_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H__UPB_H_
+#define ENVOY_DATA_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -2974,4 +2974,4 @@ UPB_INLINE void envoy_data_accesslog_v3_HTTPResponseProperties_ResponseTrailersE
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_DATA_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H_ */
+#endif  /* ENVOY_DATA_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H__UPB_H_ */

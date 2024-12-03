@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 /* Public Imports. */
@@ -37,4 +37,4 @@ extern const upb_MiniTableFile envoy_config_trace_v3_trace_proto_upb_file_layout
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPB_H__UPB_MINITABLE_H_ */

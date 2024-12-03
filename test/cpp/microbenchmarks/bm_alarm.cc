@@ -42,7 +42,7 @@ static void BM_Alarm_Tag_Immediate(benchmark::State& state) {
     cq.Next(&output_tag, &ok);
   }
 }
-BENCHMARK(BM_Alarm_Tag_Immediate);
+BENCHMARK(BM_Alarm_Tag_Immediate)->MeasureProcessCPUTime()->UseRealTime();
 
 }  // namespace testing
 }  // namespace grpc

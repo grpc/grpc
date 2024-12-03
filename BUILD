@@ -107,6 +107,11 @@ config_setting(
 )
 
 config_setting(
+    name = "windows_os",
+    constraint_values = ["@platforms//os:windows"],
+)
+
+config_setting(
     name = "systemd",
     values = {"define": "use_systemd=true"},
 )
@@ -897,6 +902,19 @@ grpc_cc_library(
 grpc_cc_library(
     name = "channel_arg_names",
     hdrs = ["include/grpc/impl/channel_arg_names.h"],
+)
+
+grpc_cc_library(
+    name = "grpc_slice",
+    hdrs = [
+        "include/grpc/slice.h",
+        "include/grpc/slice_buffer.h",
+    ],
+    visibility = ["@grpc:public"],
+    deps = [
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+    ],
 )
 
 grpc_cc_library(
@@ -2174,6 +2192,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:closure",
+        "//src/core:connection_context",
         "//src/core:context",
         "//src/core:error",
         "//src/core:event_engine_memory_allocator",
@@ -2324,6 +2343,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
+        "backoff",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
@@ -2416,6 +2436,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
+        "backoff",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
@@ -2466,6 +2487,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc++_codegen_proto",
+    hdrs = ["include/grpcpp/impl/generic_serialize.h"],
     external_deps = [
         "absl/strings:cord",
         "protobuf_headers",
@@ -2491,6 +2513,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_config_proto",
     external_deps = [
+        "absl/status",
         "protobuf_headers",
         "protobuf",
     ],
@@ -2526,8 +2549,8 @@ grpc_cc_library(
         "config_vars",
         "grpc++",
         "grpc++_config_proto",
-        "//src/proto/grpc/reflection/v1:reflection_cc_grpc",
-        "//src/proto/grpc/reflection/v1alpha:reflection_cc_grpc",
+        "//src/proto/grpc/reflection/v1:reflection_proto",
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
     alwayslink = 1,
 )
@@ -2579,9 +2602,13 @@ grpc_cc_library(
     srcs = [
         "src/cpp/server/orca/orca_service.cc",
     ],
+    hdrs = [
+        "src/cpp/server/orca/orca_service.h",
+    ],
     external_deps = [
         "absl/base:core_headers",
         "absl/log:check",
+        "absl/log:log",
         "absl/strings",
         "absl/time",
         "absl/types:optional",
@@ -2635,7 +2662,7 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_config_proto",
-        "//src/proto/grpc/channelz:channelz_cc_grpc",
+        "//src/proto/grpc/channelz:channelz_proto",
     ],
     alwayslink = 1,
 )
@@ -2708,7 +2735,7 @@ grpc_cc_library(
         "include/grpcpp/test/mock_stream.h",
         "include/grpcpp/test/server_context_test_spouse.h",
     ],
-    visibility = ["@grpc:grpc++_test"],
+    visibility = ["@grpc:public"],
     deps = [
         "channel",
         "grpc++",
@@ -2946,10 +2973,10 @@ grpc_filegroup(
 grpc_cc_library(
     name = "load_config",
     srcs = [
-        "//src/core:lib/config/load_config.cc",
+        "//src/core:config/load_config.cc",
     ],
     hdrs = [
-        "//src/core:lib/config/load_config.h",
+        "//src/core:config/load_config.h",
     ],
     external_deps = [
         "absl/flags:flag",
@@ -2967,11 +2994,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "config_vars",
     srcs = [
-        "//src/core:lib/config/config_vars.cc",
-        "//src/core:lib/config/config_vars_non_generated.cc",
+        "//src/core:config/config_vars.cc",
+        "//src/core:config/config_vars_non_generated.cc",
     ],
     hdrs = [
-        "//src/core:lib/config/config_vars.h",
+        "//src/core:config/config_vars.h",
     ],
     external_deps = [
         "absl/flags:flag",
@@ -2987,7 +3014,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "config",
     srcs = [
-        "//src/core:lib/config/core_configuration.cc",
+        "//src/core:config/core_configuration.cc",
     ],
     external_deps = [
         "absl/functional:any_invocable",
@@ -2995,7 +3022,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "//src/core:lib/config/core_configuration.h",
+        "//src/core:config/core_configuration.h",
     ],
     visibility = ["@grpc:client_channel"],
     deps = [

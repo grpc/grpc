@@ -43,9 +43,9 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -924,7 +924,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
     double stdev = std::sqrt(variance);
     const double success_rate_stdev_factor =
         static_cast<double>(config.success_rate_ejection->stdev_factor) / 1000;
-    double ejection_threshold = mean - stdev * success_rate_stdev_factor;
+    double ejection_threshold = mean - (stdev * success_rate_stdev_factor);
     GRPC_TRACE_LOG(outlier_detection_lb, INFO)
         << "[outlier_detection_lb " << parent_.get() << "] stdev=" << stdev
         << ", ejection_threshold=" << ejection_threshold;

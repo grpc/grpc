@@ -23,6 +23,7 @@
 #include <string>
 #include <tuple>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
@@ -176,7 +177,7 @@ auto ChaoticGoodServerTransport::SendCallBody(
         const uint32_t padding =
             message_length % aligned_bytes == 0
                 ? 0
-                : aligned_bytes - message_length % aligned_bytes;
+                : aligned_bytes - (message_length % aligned_bytes);
         CHECK_EQ((message_length + padding) % aligned_bytes, 0u);
         frame.message =
             FragmentMessage(std::move(message), padding, message_length);
@@ -297,42 +298,40 @@ auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
             auto& buffers = std::get<1>(frame_bytes);
             return Switch(
                 frame_header.type,
-                Case(FrameType::kSettings,
-                     []() -> absl::Status {
-                       return absl::InternalError("Unexpected settings frame");
-                     }),
-                Case(FrameType::kFragment,
-                     [this, &frame_header, &buffers, transport]() {
-                       return If(
-                           frame_header.flags.is_set(0),
-                           [this, &frame_header, &buffers, transport]() {
-                             return DeserializeAndPushFragmentToNewCall(
-                                 frame_header, std::move(buffers), *transport);
-                           },
-                           [this, &frame_header, &buffers, transport]() {
-                             return DeserializeAndPushFragmentToExistingCall(
-                                 frame_header, std::move(buffers), *transport);
-                           });
-                     }),
-                Case(FrameType::kCancel,
-                     [this, &frame_header]() {
-                       absl::optional<CallInitiator> call_initiator =
-                           ExtractStream(frame_header.stream_id);
-                       GRPC_TRACE_LOG(chaotic_good, INFO)
-                           << "Cancel stream " << frame_header.stream_id
-                           << (call_initiator.has_value() ? " (active)"
-                                                          : " (not found)");
-                       return If(
-                           call_initiator.has_value(),
-                           [&call_initiator]() {
-                             auto c = std::move(*call_initiator);
-                             return c.SpawnWaitable("cancel", [c]() mutable {
-                               c.Cancel();
-                               return absl::OkStatus();
-                             });
-                           },
-                           []() -> absl::Status { return absl::OkStatus(); });
-                     }),
+                Case<FrameType, FrameType::kSettings>([]() -> absl::Status {
+                  return absl::InternalError("Unexpected settings frame");
+                }),
+                Case<FrameType, FrameType::kFragment>(
+                    [this, &frame_header, &buffers, transport]() {
+                      return If(
+                          frame_header.flags.is_set(0),
+                          [this, &frame_header, &buffers, transport]() {
+                            return DeserializeAndPushFragmentToNewCall(
+                                frame_header, std::move(buffers), *transport);
+                          },
+                          [this, &frame_header, &buffers, transport]() {
+                            return DeserializeAndPushFragmentToExistingCall(
+                                frame_header, std::move(buffers), *transport);
+                          });
+                    }),
+                Case<FrameType, FrameType::kCancel>([this, &frame_header]() {
+                  absl::optional<CallInitiator> call_initiator =
+                      ExtractStream(frame_header.stream_id);
+                  GRPC_TRACE_LOG(chaotic_good, INFO)
+                      << "Cancel stream " << frame_header.stream_id
+                      << (call_initiator.has_value() ? " (active)"
+                                                     : " (not found)");
+                  return If(
+                      call_initiator.has_value(),
+                      [&call_initiator]() {
+                        auto c = std::move(*call_initiator);
+                        return c.SpawnWaitable("cancel", [c]() mutable {
+                          c.Cancel();
+                          return absl::OkStatus();
+                        });
+                      },
+                      []() -> absl::Status { return absl::OkStatus(); });
+                }),
                 Default([frame_header]() {
                   return absl::InternalError(
                       absl::StrCat("Unexpected frame type: ",
@@ -490,6 +489,12 @@ absl::Status ChaoticGoodServerTransport::NewStream(
 
 void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
   RefCountedPtr<Party> cancelled_party;
+  bool close_outgoing_frames = false;
+  auto cleanup = absl::MakeCleanup([&close_outgoing_frames, this]() {
+    if (close_outgoing_frames) {
+      outgoing_frames_.MarkClosed();
+    }
+  });
   MutexLock lock(&mu_);
   bool did_stuff = false;
   if (op->start_connectivity_watch != nullptr) {
@@ -511,7 +516,7 @@ void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
   }
   if (!op->goaway_error.ok() || !op->disconnect_with_error.ok()) {
     cancelled_party = std::move(party_);
-    outgoing_frames_.MarkClosed();
+    close_outgoing_frames = true;
     state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
                             absl::UnavailableError("transport closed"),
                             "transport closed");

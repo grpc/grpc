@@ -6,12 +6,13 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPB_H_
-#define OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPB_H_
+#ifndef OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPB_H__UPB_H_
+#define OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
 #include "opencensus/proto/trace/v1/trace_config.upb_minitable.h"
+
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -404,4 +405,4 @@ UPB_INLINE void opencensus_proto_trace_v1_RateLimitingSampler_set_qps(opencensus
 
 #include "upb/port/undef.inc"
 
-#endif  /* OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPB_H_ */
+#endif  /* OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPB_H__UPB_H_ */

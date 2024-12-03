@@ -92,79 +92,6 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
   }
 }
 
-// Unary call with one promise spawned per operation on the spine.
-// It's a little unclear what the optimum should be between the above variant
-// and this: whilst a spawn per end minimizes the number of spawns we need to
-// do, a spawn per operation can conceivably (but not at the time of writing)
-// minimize the number of internal wakeups in the parties.
-// For now we track both.
-template <typename Fixture>
-void BM_UnaryWithSpawnPerOp(benchmark::State& state) {
-  Fixture fixture;
-  for (auto _ : state) {
-    BenchmarkCall call = fixture.MakeCall();
-    Notification handler_done;
-    Notification initiator_done;
-    {
-      ExecCtx exec_ctx;
-      Party::BulkSpawner handler_spawner(call.handler.party());
-      Party::BulkSpawner initiator_spawner(call.initiator.party());
-      handler_spawner.Spawn(
-          "HANDLER:PushServerInitialMetadata",
-          [&]() {
-            call.handler.PushServerInitialMetadata(
-                fixture.MakeServerInitialMetadata());
-            return Empty{};
-          },
-          [](Empty) {});
-      handler_spawner.Spawn(
-          "HANDLER:PullClientInitialMetadata",
-          [&]() { return call.handler.PullClientInitialMetadata(); },
-          [](ValueOrFailure<ClientMetadataHandle> md) { CHECK(md.ok()); });
-      handler_spawner.Spawn(
-          "HANDLER:PullMessage", [&]() { return call.handler.PullMessage(); },
-          [&](ClientToServerNextMessage msg) {
-            CHECK(msg.ok());
-            call.handler.SpawnInfallible(
-                "HANDLER:PushServerTrailingMetadata", [&]() {
-                  call.handler.PushServerTrailingMetadata(
-                      fixture.MakeServerTrailingMetadata());
-                  handler_done.Notify();
-                  return Empty{};
-                });
-          });
-      handler_spawner.Spawn(
-          "HANDLER:PushMessage",
-          [&]() { return call.handler.PushMessage(fixture.MakePayload()); },
-          [](StatusFlag) {});
-
-      initiator_spawner.Spawn(
-          "INITIATOR:PushMessage",
-          [&]() { return call.initiator.PushMessage(fixture.MakePayload()); },
-          [](StatusFlag) {});
-      initiator_spawner.Spawn(
-          "INITIATOR:PullServerInitialMetadata",
-          [&]() { return call.initiator.PullServerInitialMetadata(); },
-          [](absl::optional<ServerMetadataHandle> md) {
-            CHECK(md.has_value());
-          });
-      initiator_spawner.Spawn(
-          "INITIATOR:PullMessage",
-          [&]() { return call.initiator.PullMessage(); },
-          [](ServerToClientNextMessage msg) { CHECK(msg.ok()); });
-      initiator_spawner.Spawn(
-          "INITIATOR:PullServerTrailingMetadata",
-          [&]() { return call.initiator.PullServerTrailingMetadata(); },
-          [&](ServerMetadataHandle md) {
-            initiator_done.Notify();
-            return Empty{};
-          });
-    }
-    handler_done.WaitForNotification();
-    initiator_done.WaitForNotification();
-  }
-}
-
 template <typename Fixture>
 void BM_ClientToServerStreaming(benchmark::State& state) {
   Fixture fixture;
@@ -447,7 +374,6 @@ class TransportFixture {
 // Must be called within the grpc_core namespace
 #define GRPC_CALL_SPINE_BENCHMARK(Fixture)     \
   BENCHMARK(BM_UnaryWithSpawnPerEnd<Fixture>); \
-  BENCHMARK(BM_UnaryWithSpawnPerOp<Fixture>);  \
   BENCHMARK(BM_ClientToServerStreaming<Fixture>)
 
 #endif  // GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H
