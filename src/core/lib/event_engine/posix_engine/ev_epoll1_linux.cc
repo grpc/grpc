@@ -277,7 +277,7 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
     HandleShutdownInternal(absl::Status(absl::StatusCode::kUnknown, reason),
                            is_release_fd);
   }
-  const SystemApi* api = poller_->GetSystemApi();
+  SystemApi* api = poller_->GetSystemApi();
   // If release_fd is not NULL, we should be relinquishing control of the file
   // descriptor fd->fd (but we still own the grpc_fd structure).
   if (is_release_fd) {

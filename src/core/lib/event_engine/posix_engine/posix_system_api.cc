@@ -17,8 +17,12 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
 #include <array>
+#include <unordered_set>
+#include <utility>
 
+#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
@@ -52,6 +56,14 @@
 
 namespace grpc_event_engine {
 namespace experimental {
+
+SystemApi::~SystemApi() {
+  absl::MutexLock lock(&mu_);
+  for (int fd : fds_) {
+    close(fd);
+  }
+  fds_.clear();
+}
 
 #ifdef GRPC_POSIX_SOCKETUTILS
 
@@ -112,7 +124,16 @@ FileDescriptor SystemApi::Accept4(
 
 #endif  // GRPC_LINUX_SOCKETUTILS
 
-void SystemApi::AdvanceGeneration() {}
+void SystemApi::AdvanceGeneration() {
+  std::unordered_set<int> fds;
+  {
+    absl::MutexLock lock(&mu_);
+    std::swap(fds, fds_);
+  }
+  for (int fd : fds) {
+    close(fd);
+  }
+}
 
 FileDescriptor SystemApi::RegisterFileDescriptor(int fd) {
   absl::MutexLock lock(&mu_);
@@ -138,7 +159,12 @@ int SystemApi::Bind(FileDescriptor fd, const struct sockaddr* addr,
   return bind(fd.fd(), addr, addrlen);
 }
 
-void SystemApi::Close(FileDescriptor fd) const { close(fd.fd()); }
+void SystemApi::Close(FileDescriptor fd) {
+  absl::MutexLock lock(&mu_);
+  if (fds_.erase(fd.fd()) > 0) {
+    close(fd.fd());
+  }
+}
 
 int SystemApi::Fcntl(FileDescriptor fd, int op, int args) const {
   return fcntl(fd.fd(), op, args);

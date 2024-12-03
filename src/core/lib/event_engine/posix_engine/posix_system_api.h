@@ -54,6 +54,11 @@ class SystemApi {
  public:
   static constexpr int kDscpNotSet = -1;
 
+  SystemApi() = default;
+  SystemApi(const SystemApi& other) = delete;
+
+  ~SystemApi();
+
   void AdvanceGeneration();
 
   FileDescriptor Accept(FileDescriptor sockfd, struct sockaddr* addr,
@@ -75,7 +80,7 @@ class SystemApi {
 
   int Bind(FileDescriptor fd, const struct sockaddr* addr,
            socklen_t addrlen) const;
-  void Close(FileDescriptor fd) const;
+  void Close(FileDescriptor fd);
   int Connect(FileDescriptor sockfd, const struct sockaddr* addr,
               socklen_t addrlen) const;
 #ifdef GRPC_LINUX_EPOLL

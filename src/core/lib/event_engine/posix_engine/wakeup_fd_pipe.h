@@ -28,8 +28,7 @@ namespace experimental {
 
 class PipeWakeupFd : public WakeupFd {
  public:
-  explicit PipeWakeupFd(const SystemApi* system_api)
-      : system_api_(system_api) {}
+  explicit PipeWakeupFd(SystemApi* system_api) : system_api_(system_api) {}
   ~PipeWakeupFd() override;
   absl::Status ConsumeWakeup() override;
   absl::Status Wakeup() override;
@@ -40,7 +39,7 @@ class PipeWakeupFd : public WakeupFd {
  private:
   absl::Status Init(SystemApi& system_api);
 
-  const SystemApi* system_api_;
+  SystemApi* system_api_;
 };
 
 }  // namespace experimental

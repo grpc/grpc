@@ -130,7 +130,7 @@ int GetMaxAcceptQueueSize() {
 }
 
 // Prepare a recently-created socket for listening.
-absl::Status PrepareSocket(const SystemApi& system_api,
+absl::Status PrepareSocket(SystemApi& system_api,
                            const PosixTcpOptions& options,
                            ListenerSocket& socket) {
   ResolvedAddress sockname_temp;

@@ -111,8 +111,7 @@ FileDescriptor CreateSocket(
   return res;
 }
 
-absl::Status PrepareTcpClientSocket(const SystemApi& system_api,
-                                    FileDescriptor fd,
+absl::Status PrepareTcpClientSocket(SystemApi& system_api, FileDescriptor fd,
                                     const EventEngine::ResolvedAddress& addr,
                                     const PosixTcpOptions& options) {
   bool close_fd = true;
