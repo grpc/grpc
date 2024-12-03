@@ -34,23 +34,25 @@
 #define ALTS_RECORD_PROTOCOL "ALTSRP_GCM_AES128_REKEY"
 #define ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING "lame"
 
-const size_t kAltsAes128GcmRekeyKeyLength = 44;
+constexpr size_t kAltsAes128GcmRekeyKeyLength = 44;
 
-typedef struct alts_tsi_handshaker alts_tsi_handshaker;
+// Main struct for ALTS TSI handshaker.
+struct alts_tsi_handshaker;
+
 ///
 /// A ALTS handshaker client interface. It is used to communicate with
 /// ALTS handshaker service by scheduling a handshaker request that could be one
 /// of client_start, server_start, and next handshaker requests. All APIs in the
 /// header are thread-compatible.
 ///
-typedef struct alts_handshaker_client alts_handshaker_client;
+struct alts_handshaker_client;
 
 // A function that makes the grpc call to the handshaker service.
-typedef grpc_call_error (*alts_grpc_caller)(grpc_call* call, const grpc_op* ops,
+grpc_call_error (*alts_grpc_caller)(grpc_call* call, const grpc_op* ops,
                                             size_t nops, grpc_closure* tag);
 
 // V-table for ALTS handshaker client operations.
-typedef struct alts_handshaker_client_vtable {
+struct alts_handshaker_client_vtable {
   tsi_result (*client_start)(alts_handshaker_client* client);
   tsi_result (*server_start)(alts_handshaker_client* client,
                              grpc_slice* bytes_received);
@@ -58,7 +60,7 @@ typedef struct alts_handshaker_client_vtable {
                      grpc_slice* bytes_received);
   void (*shutdown)(alts_handshaker_client* client);
   void (*destruct)(alts_handshaker_client* client);
-} alts_handshaker_client_vtable;
+};
 
 ///
 /// This method schedules a client_start handshaker request to ALTS handshaker

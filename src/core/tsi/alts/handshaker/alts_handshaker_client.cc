@@ -55,7 +55,7 @@ struct recv_message_result {
   tsi_handshaker_result* result;
 };
 
-typedef struct alts_grpc_handshaker_client {
+struct alts_grpc_handshaker_client {
   alts_handshaker_client base;
   // One ref is held by the entity that created this handshaker_client, and
   // another ref is held by the pending RECEIVE_STATUS_ON_CLIENT op.
