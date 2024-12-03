@@ -62,7 +62,6 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
               handler.PushServerTrailingMetadata(
                   fixture.MakeServerTrailingMetadata());
               handler_done.Notify();
-              return Empty{};
             });
       });
       call.initiator.SpawnInfallible("initiator", [initiator = call.initiator,
@@ -83,7 +82,6 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
             [&initiator_done](StatusFlag result) {
               CHECK(result.ok());
               initiator_done.Notify();
-              return Empty{};
             });
       });
     }
@@ -105,7 +103,6 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
                  call.handler.PushServerInitialMetadata(
                      fixture.MakeServerInitialMetadata());
                  handler_metadata_done.Notify();
-                 return Empty{};
                });
   });
   call.initiator.SpawnInfallible("initiator-initial-metadata", [&]() {
@@ -113,7 +110,6 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
                [&](absl::optional<ServerMetadataHandle> md) {
                  CHECK(md.has_value());
                  initiator_metadata_done.Notify();
-                 return Empty{};
                });
   });
   handler_metadata_done.WaitForNotification();
@@ -126,7 +122,6 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
                  [&](ClientToServerNextMessage msg) {
                    CHECK(msg.ok());
                    handler_done.Notify();
-                   return Empty{};
                  });
     });
     call.initiator.SpawnInfallible("initiator", [&]() {
@@ -134,21 +129,16 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
                  [&](StatusFlag result) {
                    CHECK(result.ok());
                    initiator_done.Notify();
-                   return Empty{};
                  });
     });
     handler_done.WaitForNotification();
     initiator_done.WaitForNotification();
   }
-  call.initiator.SpawnInfallible("done",
-                                 [initiator = call.initiator]() mutable {
-                                   initiator.Cancel();
-                                   return Empty{};
-                                 });
+  call.initiator.SpawnInfallible(
+      "done", [initiator = call.initiator]() mutable { initiator.Cancel(); });
   call.handler.SpawnInfallible("done", [handler = call.handler]() mutable {
     handler.PushServerTrailingMetadata(
         CancelledServerMetadataFromStatus(GRPC_STATUS_CANCELLED));
-    return Empty{};
   });
 }
 
@@ -210,7 +200,6 @@ class UnstartedCallDestinationFixture {
         MakeCallPair(traits_->MakeClientInitialMetadata(), std::move(arena));
     p.handler.SpawnInfallible("initiator_setup", [&]() {
       top_destination_->StartCall(std::move(p.handler));
-      return Empty{};
     });
     auto handler = bottom_destination_->TakeHandler();
     absl::optional<CallHandler> started_handler;
@@ -218,7 +207,6 @@ class UnstartedCallDestinationFixture {
     handler.SpawnInfallible("handler_setup", [&]() {
       started_handler = handler.StartCall();
       started.Notify();
-      return Empty{};
     });
     started.WaitForNotification();
     CHECK(started_handler.has_value());
@@ -314,7 +302,6 @@ class TransportFixture {
     handler.SpawnInfallible("handler_setup", [&]() {
       started_handler = handler.StartCall();
       started.Notify();
-      return Empty{};
     });
     started.WaitForNotification();
     CHECK(started_handler.has_value());

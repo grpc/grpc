@@ -38,7 +38,6 @@ TRANSPORT_TEST(MetadataOnlyRequest) {
         EXPECT_TRUE(md.ok());
         EXPECT_EQ(*md.value()->get_pointer(GrpcStatusMetadata()),
                   GRPC_STATUS_UNIMPLEMENTED);
-        return Empty{};
       });
   auto handler = TickUntilServerCall();
   SpawnTestSeq(
@@ -61,7 +60,6 @@ TRANSPORT_TEST(MetadataOnlyRequest) {
         auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
-        return Empty{};
       });
   WaitForAllPendingWork();
 }
@@ -93,7 +91,6 @@ TRANSPORT_TEST(MetadataOnlyRequestServerAbortsAfterInitialMetadata) {
         EXPECT_TRUE(md.ok());
         EXPECT_EQ(*md.value()->get_pointer(GrpcStatusMetadata()),
                   GRPC_STATUS_UNIMPLEMENTED);
-        return Empty{};
       });
   auto handler = TickUntilServerCall();
   SpawnTestSeq(
@@ -114,7 +111,6 @@ TRANSPORT_TEST(MetadataOnlyRequestServerAbortsAfterInitialMetadata) {
         auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
-        return Empty{};
       });
   WaitForAllPendingWork();
 }
@@ -144,7 +140,6 @@ TRANSPORT_TEST(MetadataOnlyRequestServerAbortsImmediately) {
         EXPECT_TRUE(md.ok());
         EXPECT_EQ(*md.value()->get_pointer(GrpcStatusMetadata()),
                   GRPC_STATUS_UNIMPLEMENTED);
-        return Empty{};
       });
   auto handler = TickUntilServerCall();
   SpawnTestSeq(
@@ -159,7 +154,6 @@ TRANSPORT_TEST(MetadataOnlyRequestServerAbortsImmediately) {
         auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
-        return Empty{};
       });
   WaitForAllPendingWork();
 }
@@ -170,10 +164,7 @@ TRANSPORT_TEST(CanCreateCallThenAbandonIt) {
   md->Set(HttpPathMetadata(), Slice::FromExternalString("/foo/bar"));
   auto initiator = CreateCall(std::move(md));
   auto handler = TickUntilServerCall();
-  SpawnTestSeq(initiator, "end-call", [&]() {
-    initiator.Cancel();
-    return Empty{};
-  });
+  SpawnTestSeq(initiator, "end-call", [&]() { initiator.Cancel(); });
   WaitForAllPendingWork();
 }
 
@@ -216,7 +207,6 @@ TRANSPORT_TEST(UnaryRequest) {
         EXPECT_TRUE(md.ok());
         EXPECT_EQ(*md.value()->get_pointer(GrpcStatusMetadata()),
                   GRPC_STATUS_UNIMPLEMENTED);
-        return Empty{};
       });
   auto handler = TickUntilServerCall();
   SpawnTestSeq(
@@ -250,7 +240,6 @@ TRANSPORT_TEST(UnaryRequest) {
         auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
-        return Empty{};
       });
   WaitForAllPendingWork();
 }
@@ -289,7 +278,6 @@ TRANSPORT_TEST(UnaryRequestOmitCheckEndOfStream) {
         EXPECT_TRUE(md.ok());
         EXPECT_EQ(*md.value()->get_pointer(GrpcStatusMetadata()),
                   GRPC_STATUS_UNIMPLEMENTED);
-        return Empty{};
       });
   auto handler = TickUntilServerCall();
   SpawnTestSeq(
@@ -318,7 +306,6 @@ TRANSPORT_TEST(UnaryRequestOmitCheckEndOfStream) {
         auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
-        return Empty{};
       });
   WaitForAllPendingWork();
 }
@@ -360,7 +347,6 @@ TRANSPORT_TEST(UnaryRequestWaitForServerInitialMetadataBeforeSendingPayload) {
         EXPECT_TRUE(md.ok());
         EXPECT_EQ(*md.value()->get_pointer(GrpcStatusMetadata()),
                   GRPC_STATUS_UNIMPLEMENTED);
-        return Empty{};
       });
   auto handler = TickUntilServerCall();
   SpawnTestSeq(
@@ -395,7 +381,6 @@ TRANSPORT_TEST(UnaryRequestWaitForServerInitialMetadataBeforeSendingPayload) {
         auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
-        return Empty{};
       });
   WaitForAllPendingWork();
 }
@@ -450,7 +435,6 @@ TRANSPORT_TEST(ClientStreamingRequest) {
         EXPECT_TRUE(md.ok());
         EXPECT_EQ(*md.value()->get_pointer(GrpcStatusMetadata()),
                   GRPC_STATUS_UNIMPLEMENTED);
-        return Empty{};
       });
   auto handler = TickUntilServerCall();
   SpawnTestSeq(
@@ -504,7 +488,6 @@ TRANSPORT_TEST(ClientStreamingRequest) {
         auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
-        return Empty{};
       });
   WaitForAllPendingWork();
 }
@@ -576,7 +559,6 @@ TRANSPORT_TEST(ServerStreamingRequest) {
         EXPECT_TRUE(md.ok());
         EXPECT_EQ(*md.value()->get_pointer(GrpcStatusMetadata()),
                   GRPC_STATUS_UNIMPLEMENTED);
-        return Empty{};
       });
   auto handler = TickUntilServerCall();
   SpawnTestSeq(
@@ -630,7 +612,6 @@ TRANSPORT_TEST(ServerStreamingRequest) {
         auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
-        return Empty{};
       });
   WaitForAllPendingWork();
 }

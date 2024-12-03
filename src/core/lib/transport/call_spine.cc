@@ -27,29 +27,26 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                  absl::AnyInvocable<void(ServerMetadata&)>
                      on_server_trailing_metadata_from_initiator) {
   // Read messages from handler into initiator.
-  call_handler.SpawnInfallible(
-      "read_messages", [call_handler, call_initiator]() mutable {
-        return Seq(
-            ForEach(OutgoingMessages(call_handler),
-                    [call_initiator](MessageHandle msg) mutable {
-                      // Need to spawn a job into the initiator's activity to
-                      // push the message in.
-                      return call_initiator.SpawnPushMessage(std::move(msg));
-                    }),
-            [call_initiator](StatusFlag result) mutable {
-              if (result.ok()) {
-                call_initiator.SpawnFinishSends();
-              }
-              return Empty{};
-            });
-      });
+  call_handler.SpawnInfallible("read_messages", [call_handler,
+                                                 call_initiator]() mutable {
+    return Seq(ForEach(OutgoingMessages(call_handler),
+                       [call_initiator](MessageHandle msg) mutable {
+                         // Need to spawn a job into the initiator's activity to
+                         // push the message in.
+                         return call_initiator.SpawnPushMessage(std::move(msg));
+                       }),
+               [call_initiator](StatusFlag result) mutable {
+                 if (result.ok()) {
+                   call_initiator.SpawnFinishSends();
+                 }
+               });
+  });
   call_handler.SpawnInfallible(
       "check_cancellation", [call_handler, call_initiator]() mutable {
         return Map(call_handler.WasCancelled(),
                    [call_initiator =
                         std::move(call_initiator)](bool cancelled) mutable {
                      if (cancelled) call_initiator.SpawnCancel();
-                     return Empty();
                    });
       });
   call_initiator.SpawnInfallible(
@@ -58,26 +55,26 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
        on_server_trailing_metadata_from_initiator =
            std::move(on_server_trailing_metadata_from_initiator)]() mutable {
         return Seq(
-            call_initiator.CancelIfFails(TrySeq(
-                call_initiator.PullServerInitialMetadata(),
-                [call_handler, call_initiator](
-                    absl::optional<ServerMetadataHandle> md) mutable {
-                  const bool has_md = md.has_value();
-                  return If(
-                      has_md,
-                      [&call_handler, &call_initiator,
-                       md = std::move(md)]() mutable {
-                        call_handler.SpawnPushServerInitialMetadata(
-                            std::move(*md));
-                        return ForEach(
-                            OutgoingMessages(call_initiator),
-                            [call_handler](MessageHandle msg) mutable {
-                              return call_handler.SpawnPushMessage(
-                                  std::move(msg));
-                            });
-                      },
-                      []() -> StatusFlag { return Success{}; });
-                })),
+            call_initiator.CancelIfFails(
+                TrySeq(call_initiator.PullServerInitialMetadata(),
+                       [call_handler, call_initiator](
+                           absl::optional<ServerMetadataHandle> md) mutable {
+                         const bool has_md = md.has_value();
+                         return If(
+                             has_md,
+                             [&call_handler, &call_initiator,
+                              md = std::move(md)]() mutable {
+                               call_handler.SpawnPushServerInitialMetadata(
+                                   std::move(*md));
+                               return ForEach(
+                                   OutgoingMessages(call_initiator),
+                                   [call_handler](MessageHandle msg) mutable {
+                                     return call_handler.SpawnPushMessage(
+                                         std::move(msg));
+                                   });
+                             },
+                             []() -> StatusFlag { return Success{}; });
+                       })),
             call_initiator.PullServerTrailingMetadata(),
             [call_handler,
              on_server_trailing_metadata_from_initiator =
@@ -85,7 +82,6 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                 ServerMetadataHandle md) mutable {
               on_server_trailing_metadata_from_initiator(*md);
               call_handler.SpawnPushServerTrailingMetadata(std::move(md));
-              return Empty{};
             });
       });
 }
