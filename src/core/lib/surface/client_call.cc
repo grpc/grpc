@@ -331,7 +331,7 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                 ProcessIncomingInitialMetadata(*metadata);
                 PublishMetadataArray(metadata.get(), array, true);
                 received_initial_metadata_ = std::move(metadata);
-                return Success{};
+                return StatusFlag(!is_trailers_only_);
               });
         };
       });
