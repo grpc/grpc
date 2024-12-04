@@ -254,9 +254,17 @@ uint32_t ChaoticGoodClientTransport::MakeStream(CallHandler call_handler) {
         }
         MutexLock lock(&self->mu_);
         self->stream_map_.erase(stream_id);
+        auto ex = self->stream_start_time_.extract(stream_id);
+        if (!ex.empty()) {
+          Duration latency = Timestamp::Now() - ex.mapped();
+          if (latency > Duration::Milliseconds(10000000)) {
+            LOG(INFO) << "long request: " << latency;
+          }
+        }
       });
   if (!on_done_added) return 0;
   stream_map_.emplace(stream_id, call_handler);
+  stream_start_time_.emplace(stream_id, Timestamp::Now());
   return stream_id;
 }
 
