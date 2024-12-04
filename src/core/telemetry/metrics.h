@@ -15,6 +15,9 @@
 #ifndef GRPC_SRC_CORE_TELEMETRY_METRICS_H
 #define GRPC_SRC_CORE_TELEMETRY_METRICS_H
 
+#include <grpc/support/metrics.h>
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <memory>
 #include <type_traits>
@@ -24,10 +27,6 @@
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/metrics.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/call_tracer.h"
@@ -447,6 +446,8 @@ class GlobalStatsPluginRegistry {
       return false;
     }
 
+    size_t size() const { return plugins_state_.size(); }
+
     // Registers a callback to be used to populate callback metrics.
     // The callback will update the specified metrics.  The callback
     // will be invoked no more often than min_interval.  Multiple callbacks may
@@ -509,13 +510,15 @@ class GlobalStatsPluginRegistry {
   static StatsPluginGroup GetStatsPluginsForServer(const ChannelArgs& args);
 
  private:
+  struct GlobalStatsPluginNode {
+    std::shared_ptr<StatsPlugin> plugin;
+    GlobalStatsPluginNode* next = nullptr;
+  };
   friend class GlobalStatsPluginRegistryTestPeer;
 
   GlobalStatsPluginRegistry() = default;
 
-  static NoDestruct<Mutex> mutex_;
-  static NoDestruct<std::vector<std::shared_ptr<StatsPlugin>>> plugins_
-      ABSL_GUARDED_BY(mutex_);
+  static std::atomic<GlobalStatsPluginNode*> plugins_;
 };
 
 // A metric callback that is registered with a stats plugin group.

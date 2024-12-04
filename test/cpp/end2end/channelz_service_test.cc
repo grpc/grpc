@@ -17,11 +17,6 @@
 //
 
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/memory/memory.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
@@ -34,7 +29,10 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+#include "absl/memory/memory.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -218,7 +216,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     backends_.clear();
     proxy_service_.reset();
     // Ensure all pending callbacks are handled before finishing the test
-    // to ensure hygene between test cases.
+    // to ensure hygiene between test cases.
     // (requires any grpc-object-holding values be cleared out first).
     grpc_event_engine::experimental::WaitForSingleOwner(
         grpc_event_engine::experimental::GetDefaultEventEngine());

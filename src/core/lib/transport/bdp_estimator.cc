@@ -18,6 +18,7 @@
 
 #include "src/core/lib/transport/bdp_estimator.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
@@ -25,8 +26,6 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -44,7 +43,7 @@ Timestamp BdpEstimator::CompletePing() {
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec dt_ts = gpr_time_sub(now, ping_start_time_);
   double dt = static_cast<double>(dt_ts.tv_sec) +
-              1e-9 * static_cast<double>(dt_ts.tv_nsec);
+              (1e-9 * static_cast<double>(dt_ts.tv_nsec));
   double bw = dt > 0 ? (static_cast<double>(accumulator_) / dt) : 0;
   Duration start_inter_ping_delay = inter_ping_delay_;
   GRPC_TRACE_LOG(bdp_estimator, INFO)

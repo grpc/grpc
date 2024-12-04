@@ -26,7 +26,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "re2/re2.h"
-
 #include "src/core/util/match.h"
 #include "src/core/util/matchers.h"
 
@@ -200,6 +199,7 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
   if (max_stream_duration.has_value()) {
     contents.push_back(max_stream_duration->ToString());
   }
+  if (auto_host_rewrite) contents.push_back("auto_host_rewrite=true");
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 

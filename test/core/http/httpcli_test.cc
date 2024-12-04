@@ -18,6 +18,14 @@
 
 #include "src/core/util/http_client/httpcli.h"
 
+#include <ares.h>
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+#include <gtest/gtest.h>
 #include <string.h>
 #include <sys/socket.h>
 
@@ -26,23 +34,12 @@
 #include <thread>
 #include <utility>
 
-#include <ares.h>
-#include <gtest/gtest.h>
-
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -196,8 +193,10 @@ TEST_F(HttpRequestTest, Get) {
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
   LOG(INFO) << "requesting from " << host;
   memset(&req, 0, sizeof(req));
-  auto uri = grpc_core::URI::Create("http", host, "/get", {} /* query params */,
-                                    "" /* fragment */);
+  auto uri = grpc_core::URI::Create(
+      "http", host, "/get",
+      /*query_parameter_pairs=*/{{"foo", "bar"}, {"baz", "quux"}},
+      /*fragment=*/"");
   CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
@@ -222,8 +221,10 @@ TEST_F(HttpRequestTest, Post) {
   memset(&req, 0, sizeof(req));
   req.body = const_cast<char*>("hello");
   req.body_length = 5;
-  auto uri = grpc_core::URI::Create("http", host, "/post",
-                                    {} /* query params */, "" /* fragment */);
+  auto uri = grpc_core::URI::Create(
+      "http", host, "/post",
+      /*query_parameter_pairs=*/{{"foo", "bar"}, {"mumble", "frotz"}},
+      /*fragment=*/"");
   CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Post(
@@ -375,7 +376,7 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
   // TCP connection setups.
   // Note that because the server is rejecting TCP connections, we
   // don't really need to cancel the HTTP requests in this test case
-  // in order for them proceeed i.e. in order for them to pass. The test
+  // in order for them proceed i.e. in order for them to pass. The test
   // is still beneficial though because it can exercise the same code paths
   // that would get taken if the HTTP request was cancelled while the TCP
   // connect attempt was actually hanging.

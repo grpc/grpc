@@ -3,10 +3,11 @@
  *     xds/core/v3/context_params.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_CORE_V3_CONTEXT_PARAMS_PROTO_UPB_H_
-#define XDS_CORE_V3_CONTEXT_PARAMS_PROTO_UPB_H_
+#ifndef XDS_CORE_V3_CONTEXT_PARAMS_PROTO_UPB_H__UPB_H_
+#define XDS_CORE_V3_CONTEXT_PARAMS_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -73,22 +74,26 @@ UPB_INLINE size_t xds_core_v3_ContextParams_params_size(const xds_core_v3_Contex
 }
 UPB_INLINE bool xds_core_v3_ContextParams_params_get(const xds_core_v3_ContextParams* msg, upb_StringView key, upb_StringView* val) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams__ParamsEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Get(map, &key, 0, val, 0);
 }
 UPB_INLINE const xds_core_v3_ContextParams_ParamsEntry* xds_core_v3_ContextParams_params_next(const xds_core_v3_ContextParams* msg, size_t* iter) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams__ParamsEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return NULL;
   return (const xds_core_v3_ContextParams_ParamsEntry*)_upb_map_next(map, iter);
 }
 UPB_INLINE const upb_Map* _xds_core_v3_ContextParams_params_upb_map(xds_core_v3_ContextParams* msg) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams__ParamsEntry_msg_init);
   return upb_Message_GetMap(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_Map* _xds_core_v3_ContextParams_params_mutable_upb_map(xds_core_v3_ContextParams* msg, upb_Arena* a) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams__ParamsEntry_msg_init);
   return _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg), &field, 0, 0, a);
 }
 
@@ -100,6 +105,7 @@ UPB_INLINE void xds_core_v3_ContextParams_params_clear(xds_core_v3_ContextParams
 }
 UPB_INLINE bool xds_core_v3_ContextParams_params_set(xds_core_v3_ContextParams* msg, upb_StringView key, upb_StringView val, upb_Arena* a) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams__ParamsEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg),
                                                     &field, 0, 0, a);
   return _upb_Map_Insert(map, &key, 0, &val, 0, a) !=
@@ -113,6 +119,7 @@ UPB_INLINE bool xds_core_v3_ContextParams_params_delete(xds_core_v3_ContextParam
 }
 UPB_INLINE xds_core_v3_ContextParams_ParamsEntry* xds_core_v3_ContextParams_params_nextmutable(xds_core_v3_ContextParams* msg, size_t* iter) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams__ParamsEntry_msg_init);
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return NULL;
   return (xds_core_v3_ContextParams_ParamsEntry*)_upb_map_next(map, iter);
@@ -141,4 +148,4 @@ UPB_INLINE void xds_core_v3_ContextParams_ParamsEntry_set_value(xds_core_v3_Cont
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_CORE_V3_CONTEXT_PARAMS_PROTO_UPB_H_ */
+#endif  /* XDS_CORE_V3_CONTEXT_PARAMS_PROTO_UPB_H__UPB_H_ */

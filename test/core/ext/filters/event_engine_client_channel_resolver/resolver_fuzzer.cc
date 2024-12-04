@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -25,10 +28,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -65,7 +64,7 @@ constexpr char g_grpc_config_prefix[] = "grpc_config=";
 absl::Status ErrorToAbslStatus(
     const event_engine_client_channel_resolver::Error& error) {
   // clamp error.code() in (0, 16]
-  return absl::Status(static_cast<absl::StatusCode>(error.code() % 16 + 1),
+  return absl::Status(static_cast<absl::StatusCode>((error.code() % 16) + 1),
                       error.message());
 }
 

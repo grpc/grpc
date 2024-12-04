@@ -14,6 +14,19 @@
 
 #include "src/core/lib/surface/client_call.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/call.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -29,21 +42,6 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/compression.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/call.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/status_flag.h"
@@ -164,7 +162,6 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
             "CancelWithError", [self = WeakRefAsSubclass<ClientCall>(),
                                 error = std::move(error)]() mutable {
               self->started_call_initiator_.Cancel(std::move(error));
-              return Empty{};
             });
         return;
       default:
@@ -186,6 +183,7 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
 
 template <typename Batch>
 void ClientCall::ScheduleCommittedBatch(Batch batch) {
+  GRPC_LATENT_SEE_INNER_SCOPE("ClientCall::ScheduleCommittedBatch");
   auto cur_state = call_state_.load(std::memory_order_acquire);
   while (true) {
     switch (cur_state) {
@@ -194,7 +192,9 @@ void ClientCall::ScheduleCommittedBatch(Batch batch) {
         auto pending = std::make_unique<UnorderedStart>();
         pending->start_pending_batch = [this,
                                         batch = std::move(batch)]() mutable {
-          started_call_initiator_.SpawnInfallible("batch", std::move(batch));
+          started_call_initiator_.SpawnInfallible(
+              "batch",
+              GRPC_LATENT_SEE_PROMISE("ClientCallBatch", std::move(batch)));
         };
         while (true) {
           pending->next = reinterpret_cast<UnorderedStart*>(cur_state);
@@ -214,7 +214,9 @@ void ClientCall::ScheduleCommittedBatch(Batch batch) {
         }
       }
       case kStarted:
-        started_call_initiator_.SpawnInfallible("batch", std::move(batch));
+        started_call_initiator_.SpawnInfallible(
+            "batch",
+            GRPC_LATENT_SEE_PROMISE("ClientCallBatch", std::move(batch)));
         return;
       case kCancelled:
         return;
@@ -222,7 +224,9 @@ void ClientCall::ScheduleCommittedBatch(Batch batch) {
   }
 }
 
-void ClientCall::StartCall(const grpc_op& send_initial_metadata_op) {
+Party::WakeupHold ClientCall::StartCall(
+    const grpc_op& send_initial_metadata_op) {
+  GRPC_LATENT_SEE_INNER_SCOPE("ClientCall::StartCall");
   auto cur_state = call_state_.load(std::memory_order_acquire);
   CToMetadata(send_initial_metadata_op.data.send_initial_metadata.metadata,
               send_initial_metadata_op.data.send_initial_metadata.count,
@@ -231,44 +235,51 @@ void ClientCall::StartCall(const grpc_op& send_initial_metadata_op) {
                                  *send_initial_metadata_);
   auto call = MakeCallPair(std::move(send_initial_metadata_), arena()->Ref());
   started_call_initiator_ = std::move(call.initiator);
-  while (true) {
-    GRPC_TRACE_LOG(call, INFO)
-        << DebugTag() << "StartCall " << GRPC_DUMP_ARGS(cur_state);
-    switch (cur_state) {
-      case kUnstarted:
-        if (call_state_.compare_exchange_strong(cur_state, kStarted,
-                                                std::memory_order_acq_rel,
-                                                std::memory_order_acquire)) {
-          call_destination_->StartCall(std::move(call.handler));
-          return;
-        }
-        break;
-      case kStarted:
-        Crash("StartCall called twice");  // probably we crash earlier...
-      case kCancelled:
-        return;
-      default: {  // UnorderedStart
-        if (call_state_.compare_exchange_strong(cur_state, kStarted,
-                                                std::memory_order_acq_rel,
-                                                std::memory_order_acquire)) {
-          call_destination_->StartCall(std::move(call.handler));
-          auto unordered_start = reinterpret_cast<UnorderedStart*>(cur_state);
-          while (unordered_start->next != nullptr) {
-            unordered_start->start_pending_batch();
-            auto next = unordered_start->next;
-            delete unordered_start;
-            unordered_start = next;
-          }
-          return;
-        }
-        break;
+  Party::WakeupHold wakeup_hold{started_call_initiator_.party()};
+  while (!StartCallMaybeUpdateState(cur_state, call.handler)) {
+  }
+  return wakeup_hold;
+}
+
+bool ClientCall::StartCallMaybeUpdateState(uintptr_t& cur_state,
+                                           UnstartedCallHandler& handler) {
+  GRPC_TRACE_LOG(call, INFO)
+      << DebugTag() << "StartCall " << GRPC_DUMP_ARGS(cur_state);
+  switch (cur_state) {
+    case kUnstarted:
+      if (call_state_.compare_exchange_strong(cur_state, kStarted,
+                                              std::memory_order_acq_rel,
+                                              std::memory_order_acquire)) {
+        call_destination_->StartCall(std::move(handler));
+        return true;
       }
+      return false;
+    case kStarted:
+      Crash("StartCall called twice");  // probably we crash earlier...
+    case kCancelled:
+      return true;
+    default: {  // UnorderedStart
+      if (call_state_.compare_exchange_strong(cur_state, kStarted,
+                                              std::memory_order_acq_rel,
+                                              std::memory_order_acquire)) {
+        call_destination_->StartCall(std::move(handler));
+        auto unordered_start = reinterpret_cast<UnorderedStart*>(cur_state);
+        while (unordered_start->next != nullptr) {
+          unordered_start->start_pending_batch();
+          auto next = unordered_start->next;
+          delete unordered_start;
+          unordered_start = next;
+        }
+        return true;
+      }
+      return false;
     }
   }
 }
 
 void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) {
+  GRPC_LATENT_SEE_INNER_SCOPE("ClientCall::CommitBatch");
   if (nops == 1 && ops[0].op == GRPC_OP_SEND_INITIAL_METADATA) {
     StartCall(ops[0]);
     EndOpImmediately(cq_, notify_tag, is_notify_tag_closure);
@@ -327,8 +338,9 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
   auto primary_ops = AllOk<StatusFlag>(
       TrySeq(std::move(send_message), std::move(send_close_from_client)),
       TrySeq(std::move(recv_initial_metadata), std::move(recv_message)));
+  Party::WakeupHold wakeup_hold;
   if (const grpc_op* op = op_index.op(GRPC_OP_SEND_INITIAL_METADATA)) {
-    StartCall(*op);
+    wakeup_hold = StartCall(*op);
   }
   if (const grpc_op* op = op_index.op(GRPC_OP_RECV_STATUS_ON_CLIENT)) {
     auto out_status = op->data.recv_status_on_client.status;

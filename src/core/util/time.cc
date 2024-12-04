@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/time.h"
+
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 
 #include <atomic>
 #include <chrono>
@@ -25,9 +26,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/time.h>
-
 #include "src/core/util/no_destruct.h"
 
 // IWYU pragma: no_include <ratio>
@@ -122,9 +120,9 @@ gpr_timespec MillisecondsAsTimespec(int64_t millis, gpr_clock_type clock_type) {
 int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
   CHECK(ts.clock_type == GPR_TIMESPAN);
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
-             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
-             static_cast<double>(GPR_NS_PER_SEC - 1) /
-                 static_cast<double>(GPR_NS_PER_SEC);
+             (static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS) +
+             (static_cast<double>(GPR_NS_PER_SEC - 1) /
+              static_cast<double>(GPR_NS_PER_SEC));
   if (x <= static_cast<double>(std::numeric_limits<int64_t>::min())) {
     return std::numeric_limits<int64_t>::min();
   }
@@ -137,7 +135,7 @@ int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
 int64_t TimespanToMillisRoundDown(gpr_timespec ts) {
   CHECK(ts.clock_type == GPR_TIMESPAN);
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
-             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
+             (static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS);
   if (x <= static_cast<double>(std::numeric_limits<int64_t>::min())) {
     return std::numeric_limits<int64_t>::min();
   }

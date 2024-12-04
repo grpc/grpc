@@ -16,6 +16,8 @@
 
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
 
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -38,11 +40,6 @@
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/message/map.h"
-
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -55,6 +52,7 @@
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/xds_client/xds_client.h"
+#include "upb/message/map.h"
 
 namespace grpc_core {
 
@@ -81,6 +79,39 @@ Json ParseInt64RangeToJson(const envoy_type_v3_Int64Range* range) {
   return Json::FromObject(
       {{"start", Json::FromNumber(envoy_type_v3_Int64Range_start(range))},
        {"end", Json::FromNumber(envoy_type_v3_Int64Range_end(range))}});
+}
+
+Json ParseStringMatcherToJson(
+    const envoy_type_matcher_v3_StringMatcher* matcher,
+    ValidationErrors* errors) {
+  Json::Object json;
+  if (envoy_type_matcher_v3_StringMatcher_has_exact(matcher)) {
+    json.emplace("exact",
+                 Json::FromString(UpbStringToStdString(
+                     envoy_type_matcher_v3_StringMatcher_exact(matcher))));
+  } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(matcher)) {
+    json.emplace("prefix",
+                 Json::FromString(UpbStringToStdString(
+                     envoy_type_matcher_v3_StringMatcher_prefix(matcher))));
+  } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(matcher)) {
+    json.emplace("suffix",
+                 Json::FromString(UpbStringToStdString(
+                     envoy_type_matcher_v3_StringMatcher_suffix(matcher))));
+  } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(matcher)) {
+    json.emplace("safeRegex",
+                 ParseRegexMatcherToJson(
+                     envoy_type_matcher_v3_StringMatcher_safe_regex(matcher)));
+  } else if (envoy_type_matcher_v3_StringMatcher_has_contains(matcher)) {
+    json.emplace("contains",
+                 Json::FromString(UpbStringToStdString(
+                     envoy_type_matcher_v3_StringMatcher_contains(matcher))));
+  } else {
+    errors->AddError("invalid match pattern");
+  }
+  json.emplace(
+      "ignoreCase",
+      Json::FromBool(envoy_type_matcher_v3_StringMatcher_ignore_case(matcher)));
+  return Json::FromObject(std::move(json));
 }
 
 Json ParseHeaderMatcherToJson(const envoy_config_route_v3_HeaderMatcher* header,
@@ -132,6 +163,11 @@ Json ParseHeaderMatcherToJson(const envoy_config_route_v3_HeaderMatcher* header,
         "containsMatch",
         Json::FromString(UpbStringToStdString(
             envoy_config_route_v3_HeaderMatcher_contains_match(header))));
+  } else if (envoy_config_route_v3_HeaderMatcher_has_string_match(header)) {
+    header_json.emplace(
+        "stringMatch",
+        ParseStringMatcherToJson(
+            envoy_config_route_v3_HeaderMatcher_string_match(header), errors));
   } else {
     errors->AddError("invalid route header matcher specified");
   }
@@ -139,39 +175,6 @@ Json ParseHeaderMatcherToJson(const envoy_config_route_v3_HeaderMatcher* header,
       "invertMatch",
       Json::FromBool(envoy_config_route_v3_HeaderMatcher_invert_match(header)));
   return Json::FromObject(std::move(header_json));
-}
-
-Json ParseStringMatcherToJson(
-    const envoy_type_matcher_v3_StringMatcher* matcher,
-    ValidationErrors* errors) {
-  Json::Object json;
-  if (envoy_type_matcher_v3_StringMatcher_has_exact(matcher)) {
-    json.emplace("exact",
-                 Json::FromString(UpbStringToStdString(
-                     envoy_type_matcher_v3_StringMatcher_exact(matcher))));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(matcher)) {
-    json.emplace("prefix",
-                 Json::FromString(UpbStringToStdString(
-                     envoy_type_matcher_v3_StringMatcher_prefix(matcher))));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(matcher)) {
-    json.emplace("suffix",
-                 Json::FromString(UpbStringToStdString(
-                     envoy_type_matcher_v3_StringMatcher_suffix(matcher))));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(matcher)) {
-    json.emplace("safeRegex",
-                 ParseRegexMatcherToJson(
-                     envoy_type_matcher_v3_StringMatcher_safe_regex(matcher)));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_contains(matcher)) {
-    json.emplace("contains",
-                 Json::FromString(UpbStringToStdString(
-                     envoy_type_matcher_v3_StringMatcher_contains(matcher))));
-  } else {
-    errors->AddError("invalid match pattern");
-  }
-  json.emplace(
-      "ignoreCase",
-      Json::FromBool(envoy_type_matcher_v3_StringMatcher_ignore_case(matcher)));
-  return Json::FromObject(std::move(json));
 }
 
 Json ParsePathMatcherToJson(const envoy_type_matcher_v3_PathMatcher* matcher,

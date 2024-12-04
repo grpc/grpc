@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/matchers.h"
+
+#include <grpc/support/port_platform.h>
 
 #include <utility>
 
@@ -178,6 +178,13 @@ absl::StatusOr<HeaderMatcher> HeaderMatcher::Create(
   } else {
     return HeaderMatcher(name, present_match, invert_match);
   }
+}
+
+HeaderMatcher HeaderMatcher::CreateFromStringMatcher(absl::string_view name,
+                                                     StringMatcher matcher,
+                                                     bool invert_match) {
+  HeaderMatcher::Type type = static_cast<HeaderMatcher::Type>(matcher.type());
+  return HeaderMatcher(name, type, std::move(matcher), invert_match);
 }
 
 HeaderMatcher::HeaderMatcher(absl::string_view name, Type type,

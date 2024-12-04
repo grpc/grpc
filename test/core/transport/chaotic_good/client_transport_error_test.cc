@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/status.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -28,16 +34,8 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/slice.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/activity.h"
@@ -188,8 +186,8 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
   EXPECT_CALL(*control_endpoint.endpoint, Read).WillOnce(Return(false));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
-      event_engine(), HPackParser(), HPackCompressor());
+      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
+      MakeChannelArgs(), event_engine());
   auto call = MakeCall(TestInitialMetadata());
   transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
@@ -204,17 +202,17 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
-              return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
             [&on_done](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(),
                         GRPC_STATUS_UNAVAILABLE);
               on_done.Call();
-              return Empty{};
             });
       });
   // Wait until ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  transport.reset();
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
@@ -232,8 +230,8 @@ TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
           }));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
-      event_engine(), HPackParser(), HPackCompressor());
+      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
+      MakeChannelArgs(), event_engine());
   auto call = MakeCall(TestInitialMetadata());
   transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
@@ -248,17 +246,17 @@ TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
-              return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
             [&on_done](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(),
                         GRPC_STATUS_UNAVAILABLE);
               on_done.Call();
-              return Empty{};
             });
       });
   // Wait until ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  transport.reset();
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
@@ -284,8 +282,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
   EXPECT_CALL(*control_endpoint.endpoint, Read).WillOnce(Return(false));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
-      event_engine(), HPackParser(), HPackCompressor());
+      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
+      MakeChannelArgs(), event_engine());
   auto call1 = MakeCall(TestInitialMetadata());
   transport->StartCall(call1.handler.StartCall());
   auto call2 = MakeCall(TestInitialMetadata());
@@ -308,14 +306,12 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
-              return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
             [&on_done1](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(),
                         GRPC_STATUS_UNAVAILABLE);
               on_done1.Call();
-              return Empty{};
             });
       });
   call2.initiator.SpawnInfallible(
@@ -324,17 +320,17 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
-              return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
             [&on_done2](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(),
                         GRPC_STATUS_UNAVAILABLE);
               on_done2.Call();
-              return Empty{};
             });
       });
   // Wait until ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  transport.reset();
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
@@ -352,8 +348,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
           }));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
-      event_engine(), HPackParser(), HPackCompressor());
+      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
+      MakeChannelArgs(), event_engine());
   auto call1 = MakeCall(TestInitialMetadata());
   transport->StartCall(call1.handler.StartCall());
   auto call2 = MakeCall(TestInitialMetadata());
@@ -376,14 +372,12 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
-              return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
             [&on_done1](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(),
                         GRPC_STATUS_UNAVAILABLE);
               on_done1.Call();
-              return Empty{};
             });
       });
   call2.initiator.SpawnInfallible(
@@ -392,17 +386,17 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
-              return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
             [&on_done2](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(),
                         GRPC_STATUS_UNAVAILABLE);
               on_done2.Call();
-              return Empty{};
             });
       });
   // Wait until ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  transport.reset();
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }

@@ -58,8 +58,8 @@ void TokenFetcherCredentials::Token::AddTokenToClientInitialMetadata(
 //
 
 TokenFetcherCredentials::FetchState::BackoffTimer::BackoffTimer(
-    RefCountedPtr<FetchState> fetch_state)
-    : fetch_state_(std::move(fetch_state)) {
+    RefCountedPtr<FetchState> fetch_state, absl::Status status)
+    : fetch_state_(std::move(fetch_state)), status_(status) {
   const Duration delay = fetch_state_->backoff_.NextAttemptDelay();
   GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
       << "[TokenFetcherCredentials " << fetch_state_->creds_.get()
@@ -100,24 +100,13 @@ void TokenFetcherCredentials::FetchState::BackoffTimer::OnTimer() {
       << "[TokenFetcherCredentials " << fetch_state_->creds_.get()
       << "]: fetch_state=" << fetch_state_.get() << " backoff_timer=" << this
       << ": backoff timer fired";
-  if (fetch_state_->queued_calls_.empty()) {
-    // If there are no pending calls when the timer fires, then orphan
-    // the FetchState object.  Note that this drops the backoff state,
-    // but that's probably okay, because if we didn't have any pending
-    // calls during the backoff period, we probably won't see any
-    // immediately now either.
-    GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-        << "[TokenFetcherCredentials " << fetch_state_->creds_.get()
-        << "]: fetch_state=" << fetch_state_.get() << " backoff_timer=" << this
-        << ": no pending calls, clearing state";
-    fetch_state_->creds_->fetch_state_.reset();
-  } else {
-    // If there are pending calls, then start a new fetch attempt.
-    GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-        << "[TokenFetcherCredentials " << fetch_state_->creds_.get()
-        << "]: fetch_state=" << fetch_state_.get() << " backoff_timer=" << this
-        << ": starting new fetch attempt";
-    fetch_state_->StartFetchAttempt();
+  auto* self_ptr =
+      absl::get_if<OrphanablePtr<BackoffTimer>>(&fetch_state_->state_);
+  // This condition should always be true, but check to be defensive.
+  if (self_ptr != nullptr && self_ptr->get() == this) {
+    // Reset pointer in fetch_state_, so that subsequent RPCs know that
+    // we're no longer in backoff and they can trigger a new fetch.
+    self_ptr->reset();
   }
 }
 
@@ -143,6 +132,14 @@ void TokenFetcherCredentials::FetchState::Orphan() {
   // Cancels fetch or backoff timer, if any.
   state_ = Shutdown{};
   Unref();
+}
+
+absl::Status TokenFetcherCredentials::FetchState::status() const {
+  auto* backoff_ptr = absl::get_if<OrphanablePtr<BackoffTimer>>(&state_);
+  if (backoff_ptr == nullptr || *backoff_ptr == nullptr) {
+    return absl::OkStatus();
+  }
+  return (*backoff_ptr)->status();
 }
 
 void TokenFetcherCredentials::FetchState::StartFetchAttempt() {
@@ -182,7 +179,8 @@ void TokenFetcherCredentials::FetchState::TokenFetchComplete(
         << "]: fetch_state=" << this
         << ": token fetch failed: " << token.status();
     // If failed, start backoff timer.
-    state_ = OrphanablePtr<BackoffTimer>(new BackoffTimer(Ref()));
+    state_ =
+        OrphanablePtr<BackoffTimer>(new BackoffTimer(Ref(), token.status()));
   }
   ResumeQueuedCalls(std::move(token));
 }
@@ -204,7 +202,6 @@ void TokenFetcherCredentials::FetchState::ResumeQueuedCalls(
 RefCountedPtr<TokenFetcherCredentials::QueuedCall>
 TokenFetcherCredentials::FetchState::QueueCall(
     ClientMetadataHandle initial_metadata) {
-  // Add call to pending list.
   auto queued_call = MakeRefCounted<QueuedCall>();
   queued_call->waker = GetContext<Activity>()->MakeNonOwningWaker();
   queued_call->pollent = GetContext<grpc_polling_entity>();
@@ -212,6 +209,11 @@ TokenFetcherCredentials::FetchState::QueueCall(
       queued_call->pollent, grpc_polling_entity_pollset_set(&creds_->pollent_));
   queued_call->md = std::move(initial_metadata);
   queued_calls_.insert(queued_call);
+  // If backoff has expired since the last attempt, trigger a new one.
+  auto* backoff_ptr = absl::get_if<OrphanablePtr<BackoffTimer>>(&state_);
+  if (backoff_ptr != nullptr && backoff_ptr->get() == nullptr) {
+    StartFetchAttempt();
+  }
   return queued_call;
 }
 
@@ -266,6 +268,11 @@ TokenFetcherCredentials::GetRequestMetadata(
           << " using cached token";
       token_->AddTokenToClientInitialMetadata(*initial_metadata);
       return Immediate(std::move(initial_metadata));
+    }
+    // If we're in backoff, fail the call.
+    if (fetch_state_ != nullptr) {
+      absl::Status status = fetch_state_->status();
+      if (!status.ok()) return Immediate(std::move(status));
     }
     // If we don't have a cached token, this call will need to be queued.
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)

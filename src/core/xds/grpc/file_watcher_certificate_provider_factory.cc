@@ -18,6 +18,9 @@
 
 #include "src/core/xds/grpc/file_watcher_certificate_provider_factory.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
+
 #include <algorithm>
 #include <map>
 #include <memory>
@@ -26,11 +29,7 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc_core {

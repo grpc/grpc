@@ -16,17 +16,17 @@
 //
 //
 
+#include <grpc/status.h>
+
 #include <memory>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
 #include "src/core/util/time.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/end2end/fixtures/h2_tls_common.h"
 
 namespace grpc_core {
 namespace {
@@ -103,6 +103,13 @@ CORE_END2END_TEST(Http2Test, ServerStreamingEmptyStream) {
 }
 
 CORE_END2END_TEST(Http2Test, ServerStreaming10Messages) {
+  // TODO(yashykt): Remove this once b/376283636 is fixed.
+  ConfigVars::Overrides overrides;
+  overrides.default_ssl_roots_file_path = CA_CERT_PATH;
+  overrides.trace =
+      "call,channel,client_channel,client_channel_call,client_channel_lb_call,"
+      "http";
+  ConfigVars::SetOverrides(overrides);
   ServerStreaming(*this, 10);
 }
 

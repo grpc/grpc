@@ -18,6 +18,12 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+
 #include <memory>
 #include <string>
 
@@ -29,13 +35,6 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -696,7 +695,7 @@ INSTANTIATE_TEST_SUITE_P(
                  "makes "
                  "it text.\nUseful for storing files.\n",
                  0},
-                // Third entry should be unprobable (it's no longer in the
+                // Third entry should be improbable (it's no longer in the
                 // table!)
                 {"c0", absl::InternalError("Invalid HPACK index received"),
                  kFailureIsConnectionError},
@@ -754,7 +753,7 @@ INSTANTIATE_TEST_SUITE_P(
                  "makes "
                  "it text.\nUseful for storing files.\n",
                  0},
-                // Third entry should be unprobable (it's no longer in the
+                // Third entry should be improbable (it's no longer in the
                 // table!)
                 {"c0", absl::InternalError("Invalid HPACK index received"),
                  kFailureIsConnectionError},

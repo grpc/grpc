@@ -1103,7 +1103,7 @@ actions {
   }
 }
 actions {
-  delte_allocator {
+  delete_allocator {
   }
 }
 actions {

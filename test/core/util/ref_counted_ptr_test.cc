@@ -23,7 +23,6 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/log/check.h"
 #include "gtest/gtest.h"
-
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/ref_counted.h"
 #include "test/core/test_util/test_config.h"
@@ -140,7 +139,7 @@ TEST(RefCountedPtr, ResetFromNullToNull) {
   EXPECT_EQ(nullptr, foo.get());
 }
 
-TEST(RefCountedPtr, DerefernceOperators) {
+TEST(RefCountedPtr, DereferenceOperators) {
   RefCountedPtr<Foo> foo(new Foo());
   foo->value();
   Foo& foo_ref = *foo;
@@ -389,7 +388,7 @@ TEST(WeakRefCountedPtr, ResetFromNullToNull) {
   EXPECT_EQ(nullptr, bar.get());
 }
 
-TEST(WeakRefCountedPtr, DerefernceOperators) {
+TEST(WeakRefCountedPtr, DereferenceOperators) {
   RefCountedPtr<Bar> bar_strong(new Bar());
   WeakRefCountedPtr<Bar> bar = bar_strong->WeakRef();
   bar->value();

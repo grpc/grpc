@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <stdlib.h>
 
 #include <memory>
@@ -25,9 +26,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -255,7 +253,7 @@ TEST(DebugStringBuilderTest, TestAllRedacted) {
   int i = 0;
   for (std::string& curr_row : redacted_output) {
     std::string redacted_str = absl::StrCat(
-        allow_list_keys[i++].size(), " bytes redacted by allow listing.");
+        allow_list_keys[i++].size(), " bytes redacted for security reasons.");
     EXPECT_EQ(absl::StrContains(curr_row, redacted_str), true);
   }
 }

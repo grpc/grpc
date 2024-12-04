@@ -15,8 +15,9 @@
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_cc_proto_library",
+    "grpc_internal_proto_library",
     "grpc_package",
-    "grpc_proto_library",
 )
 
 grpc_package(name = "test/core/call/yodel")
@@ -72,13 +73,17 @@ grpc_cc_library(
     ],
 )
 
-grpc_proto_library(
+grpc_internal_proto_library(
     name = "fuzzer_proto",
     srcs = ["fuzzer.proto"],
-    has_services = False,
-    visibility = ["//test:__subpackages__"],
     deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
         "//test/core/test_util:fuzz_config_vars_proto",
     ],
+)
+
+grpc_cc_proto_library(
+    name = "fuzzer_cc_proto",
+    visibility = ["//test:__subpackages__"],
+    deps = ["fuzzer_proto"],
 )

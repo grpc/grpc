@@ -13,10 +13,10 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/ares_resolver.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <string>
 #include <vector>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -42,6 +42,7 @@
 #include "src/core/lib/event_engine/nameser.h"  // IWYU pragma: keep
 #endif
 
+#include <grpc/event_engine/event_engine.h>
 #include <string.h>
 
 #include <algorithm>
@@ -59,12 +60,9 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/time_util.h"
@@ -836,7 +834,6 @@ bool ShouldUseAresDnsResolver() {
 
 absl::Status AresInit() {
   if (ShouldUseAresDnsResolver()) {
-    address_sorting_init();
     // ares_library_init and ares_library_cleanup are currently no-op except
     // under Windows. Calling them may cause race conditions when other parts of
     // the binary calls these functions concurrently.
@@ -852,7 +849,6 @@ absl::Status AresInit() {
 }
 void AresShutdown() {
   if (ShouldUseAresDnsResolver()) {
-    address_sorting_shutdown();
     // ares_library_init and ares_library_cleanup are currently no-op except
     // under Windows. Calling them may cause race conditions when other parts of
     // the binary calls these functions concurrently.

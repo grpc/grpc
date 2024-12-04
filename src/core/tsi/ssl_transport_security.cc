@@ -18,12 +18,11 @@
 
 #include "src/core/tsi/ssl_transport_security.h"
 
+#include <grpc/support/port_platform.h>
 #include <limits.h>
 #include <string.h>
 
 #include <cstdlib>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/surface/init.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -38,9 +37,12 @@
 #include <sys/socket.h>
 #endif
 
-#include <memory>
-#include <string>
-
+#include <grpc/grpc_crl_provider.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/thd_id.h>
 #include <openssl/bio.h>
 #include <openssl/crypto.h>  // For OPENSSL_free
 #include <openssl/engine.h>
@@ -50,19 +52,14 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include <memory>
+#include <string>
+
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc_crl_provider.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/thd_id.h>
-
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
@@ -1659,11 +1656,18 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
       default: {
         char err_str[256];
         ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
-        LOG(ERROR) << "Handshake failed with fatal error "
-                   << grpc_core::SslErrorString(ssl_result) << ": " << err_str;
+        long verify_result = SSL_get_verify_result(impl->ssl);
+        std::string verify_result_str;
+        if (verify_result != X509_V_OK) {
+          const char* verify_err = X509_verify_cert_error_string(verify_result);
+          verify_result_str = absl::StrCat(": ", verify_err);
+        }
+        LOG(INFO) << "Handshake failed with error "
+                  << grpc_core::SslErrorString(ssl_result) << ": " << err_str
+                  << verify_result_str;
         if (error != nullptr) {
           *error = absl::StrCat(grpc_core::SslErrorString(ssl_result), ": ",
-                                err_str);
+                                err_str, verify_result_str);
         }
         impl->result = TSI_PROTOCOL_FAILURE;
         return impl->result;
@@ -1713,7 +1717,7 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
     if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
-  // Atempt to read all of the bytes in SSL's read BIO. These bytes should
+  // Attempt to read all of the bytes in SSL's read BIO. These bytes should
   // contain application data records that were appended to a handshake record
   // containing the ClientFinished or ServerFinished message.
   size_t bytes_in_ssl = BIO_pending(SSL_get_rbio(impl->ssl));

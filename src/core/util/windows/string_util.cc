@@ -24,17 +24,15 @@
 
 // Some platforms (namely msys) need wchar to be included BEFORE
 // anything else, especially strsafe.h.
-#include <wchar.h>
-
+#include <grpc/support/alloc.h>
+#include <grpc/support/log_windows.h>
+#include <grpc/support/string_util.h>
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <strsafe.h>
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log_windows.h>
-#include <grpc/support/string_util.h>
+#include <wchar.h>
 
 #include "src/core/util/string.h"
 #include "src/core/util/tchar.h"

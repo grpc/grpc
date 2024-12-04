@@ -15,15 +15,14 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_JOIN_H
 #define GRPC_SRC_CORE_LIB_PROMISE_JOIN_H
 
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <tuple>
 
 #include "absl/meta/type_traits.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/detail/join_state.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/map.h"
 
 namespace grpc_core {
@@ -76,14 +75,49 @@ struct WrapInTuple {
 /// Combinator to run all promises to completion, and return a tuple
 /// of their results.
 template <typename... Promise>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Join<Promise...> Join(
-    Promise... promises) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Join<Promise...>
+Join(Promise... promises) {
   return promise_detail::Join<Promise...>(std::move(promises)...);
 }
 
 template <typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Join(F promise) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Join(F promise) {
   return Map(std::move(promise), promise_detail::WrapInTuple{});
+}
+
+template <typename Iter, typename FactoryFn>
+inline auto JoinIter(Iter begin, Iter end, FactoryFn factory_fn) {
+  using Factory =
+      promise_detail::RepeatedPromiseFactory<decltype(*begin), FactoryFn>;
+  Factory factory(std::move(factory_fn));
+  using Promise = typename Factory::Promise;
+  using Result = typename Promise::Result;
+  using State = absl::variant<Promise, Result>;
+  std::vector<State> state;
+  for (Iter it = begin; it != end; ++it) {
+    state.emplace_back(factory.Make(*it));
+  }
+  return [state = std::move(state)]() mutable -> Poll<std::vector<Result>> {
+    bool still_working = false;
+    for (auto& s : state) {
+      if (auto* promise = absl::get_if<Promise>(&s)) {
+        auto p = (*promise)();
+        if (auto* r = p.value_if_ready()) {
+          s.template emplace<Result>(std::move(*r));
+        } else {
+          still_working = true;
+        }
+      }
+    }
+    if (!still_working) {
+      std::vector<Result> output;
+      for (auto& s : state) {
+        output.emplace_back(std::move(absl::get<Result>(s)));
+      }
+      return output;
+    }
+    return Pending{};
+  };
 }
 
 }  // namespace grpc_core

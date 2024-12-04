@@ -88,6 +88,7 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 import _parallel_compile_patch
 import _spawn_patch
 import grpc_core_dependencies
+import python_version
 
 import commands
 import grpc_version
@@ -95,19 +96,21 @@ import grpc_version
 _parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
 
+
 LICENSE = "Apache License 2.0"
 
-CLASSIFIERS = [
-    "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: Apache Software License",
-]
+CLASSIFIERS = (
+    [
+        "Development Status :: 5 - Production/Stable",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+    ]
+    + [
+        f"Programming Language :: Python :: {x}"
+        for x in python_version.SUPPORTED_PYTHON_VERSIONS
+    ]
+    + ["License :: OSI Approved :: Apache Software License"]
+)
 
 
 def _env_bool_value(env_name, default):
@@ -122,7 +125,7 @@ BUILD_WITH_BORING_SSL_ASM = _env_bool_value(
 # Export this environment variable to override the platform variant that will
 # be chosen for boringssl assembly optimizations. This option is useful when
 # crosscompiling and the host platform as obtained by sysconfig.get_platform()
-# doesn't match the platform we are targetting.
+# doesn't match the platform we are targeting.
 # Example value: "linux-aarch64"
 BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM = os.environ.get(
     "GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM", ""
@@ -232,6 +235,21 @@ def check_linker_need_libatomic():
     cpp_test.communicate(input=code_test)
     return cpp_test.returncode == 0
 
+
+# When building extensions for macOS on a system running macOS 10.14 or newer,
+# make sure they target macOS 10.14 or newer to use C++17 stdlib properly.
+# This overrides the default behavior of distutils, which targets the macOS
+# version Python was built on. You can further customize the target macOS
+# version by setting the MACOSX_DEPLOYMENT_TARGET environment variable before
+# running setup.py.
+if sys.platform == "darwin":
+    if "MACOSX_DEPLOYMENT_TARGET" not in os.environ:
+        target_ver = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
+        if target_ver == "" or tuple(int(p) for p in target_ver.split(".")) < (
+            10,
+            14,
+        ):
+            os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.14"
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
@@ -596,7 +614,7 @@ setuptools.setup(
     packages=list(PACKAGES),
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
-    python_requires=">=3.8",
+    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,

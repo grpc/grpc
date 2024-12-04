@@ -16,10 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/http_client/httpcli.h"
 
+#include <grpc/grpc.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <limits.h>
 
 #include <string>
@@ -29,18 +31,13 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/grpc.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -82,8 +79,9 @@ OrphanablePtr<HttpRequest> HttpRequest::Get(
   }
   std::string name =
       absl::StrFormat("HTTP:GET:%s:%s", uri.authority(), uri.path());
-  const grpc_slice request_text = grpc_httpcli_format_get_request(
-      request, uri.authority().c_str(), uri.path().c_str());
+  const grpc_slice request_text =
+      grpc_httpcli_format_get_request(request, uri.authority().c_str(),
+                                      uri.EncodedPathAndQueryParams().c_str());
   return MakeOrphanable<HttpRequest>(
       std::move(uri), request_text, response, deadline, channel_args, on_done,
       pollent, name.c_str(), std::move(test_only_generate_response),
@@ -106,8 +104,9 @@ OrphanablePtr<HttpRequest> HttpRequest::Post(
   }
   std::string name =
       absl::StrFormat("HTTP:POST:%s:%s", uri.authority(), uri.path());
-  const grpc_slice request_text = grpc_httpcli_format_post_request(
-      request, uri.authority().c_str(), uri.path().c_str());
+  const grpc_slice request_text =
+      grpc_httpcli_format_post_request(request, uri.authority().c_str(),
+                                       uri.EncodedPathAndQueryParams().c_str());
   return MakeOrphanable<HttpRequest>(
       std::move(uri), request_text, response, deadline, channel_args, on_done,
       pollent, name.c_str(), std::move(test_only_generate_response),
@@ -130,8 +129,9 @@ OrphanablePtr<HttpRequest> HttpRequest::Put(
   }
   std::string name =
       absl::StrFormat("HTTP:PUT:%s:%s", uri.authority(), uri.path());
-  const grpc_slice request_text = grpc_httpcli_format_put_request(
-      request, uri.authority().c_str(), uri.path().c_str());
+  const grpc_slice request_text =
+      grpc_httpcli_format_put_request(request, uri.authority().c_str(),
+                                      uri.EncodedPathAndQueryParams().c_str());
   return MakeOrphanable<HttpRequest>(
       std::move(uri), request_text, response, deadline, channel_args, on_done,
       pollent, name.c_str(), std::move(test_only_generate_response),
@@ -244,6 +244,8 @@ void HttpRequest::AppendError(grpc_error_handle error) {
 
 void HttpRequest::OnReadInternal(grpc_error_handle error) {
   for (size_t i = 0; i < incoming_.count; i++) {
+    GRPC_TRACE_LOG(http1, INFO)
+        << "HTTP response data: " << StringViewFromSlice(incoming_.slices[i]);
     if (GRPC_SLICE_LENGTH(incoming_.slices[i])) {
       have_read_byte_ = 1;
       grpc_error_handle err =
@@ -278,6 +280,8 @@ void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(
 }
 
 void HttpRequest::StartWrite() {
+  GRPC_TRACE_LOG(http1, INFO)
+      << "Sending HTTP1 request: " << StringViewFromSlice(request_text_);
   CSliceRef(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write

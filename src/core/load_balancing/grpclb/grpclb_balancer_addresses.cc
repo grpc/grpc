@@ -16,11 +16,10 @@
 
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <utility>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/useful.h"

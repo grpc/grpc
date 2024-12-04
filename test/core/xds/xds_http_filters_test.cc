@@ -14,28 +14,42 @@
 // limitations under the License.
 //
 
-#include <string>
-#include <utility>
-#include <vector>
-
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/wrappers.pb.h>
+#include <grpc/grpc.h>
+#include <grpc/status.h>
+#include <grpc/support/json.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
+
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
 #include "absl/types/variant.h"
+#include "envoy/config/core/v3/address.pb.h"
+#include "envoy/config/core/v3/base.pb.h"
+#include "envoy/config/core/v3/extension.pb.h"
+#include "envoy/config/rbac/v3/rbac.pb.h"
+#include "envoy/config/route/v3/route.pb.h"
+#include "envoy/extensions/filters/common/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.pb.h"
+#include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "envoy/extensions/filters/http/stateful_session/v3/stateful_session.pb.h"
+#include "envoy/extensions/http/stateful_session/cookie/v3/cookie.pb.h"
+#include "envoy/type/http/v3/cookie.pb.h"
+#include "envoy/type/matcher/v3/path.pb.h"
+#include "envoy/type/matcher/v3/regex.pb.h"
+#include "envoy/type/matcher/v3/string.pb.h"
+#include "envoy/type/v3/percent.pb.h"
+#include "envoy/type/v3/range.pb.h"
 #include "gtest/gtest.h"
-#include "upb/mem/arena.hpp"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-#include <grpc/support/json.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
-
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
@@ -52,27 +66,11 @@
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/xds_client/xds_client.h"
-#include "src/proto/grpc/testing/xds/v3/address.pb.h"
-#include "src/proto/grpc/testing/xds/v3/cookie.pb.h"
-#include "src/proto/grpc/testing/xds/v3/extension.pb.h"
-#include "src/proto/grpc/testing/xds/v3/fault.pb.h"
-#include "src/proto/grpc/testing/xds/v3/fault_common.pb.h"
-#include "src/proto/grpc/testing/xds/v3/gcp_authn.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h"
-#include "src/proto/grpc/testing/xds/v3/metadata.pb.h"
-#include "src/proto/grpc/testing/xds/v3/path.pb.h"
-#include "src/proto/grpc/testing/xds/v3/percent.pb.h"
-#include "src/proto/grpc/testing/xds/v3/range.pb.h"
-#include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
-#include "src/proto/grpc/testing/xds/v3/regex.pb.h"
-#include "src/proto/grpc/testing/xds/v3/route.pb.h"
-#include "src/proto/grpc/testing/xds/v3/router.pb.h"
-#include "src/proto/grpc/testing/xds/v3/stateful_session.pb.h"
-#include "src/proto/grpc/testing/xds/v3/stateful_session_cookie.pb.h"
-#include "src/proto/grpc/testing/xds/v3/string.pb.h"
-#include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"
+#include "xds/type/v3/typed_struct.pb.h"
 
 // IWYU pragma: no_include <google/protobuf/message.h>
 
@@ -1576,25 +1574,7 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeZero) {
             "field:http_filter.value["
             "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig]"
             ".cache_config.cache_size "
-            "error:must be in the range (0, INT64_MAX)]")
-      << status;
-}
-
-TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeTooBig) {
-  GcpAuthnFilterConfig proto;
-  proto.mutable_cache_config()->mutable_cache_size()->set_value(INT64_MAX);
-  XdsExtension extension = MakeXdsExtension(proto);
-  auto config = filter_->GenerateFilterConfig("langley", decode_context_,
-                                              std::move(extension), &errors_);
-  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
-                                       "errors validating filter config");
-  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(status.message(),
-            "errors validating filter config: ["
-            "field:http_filter.value["
-            "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig]"
-            ".cache_config.cache_size "
-            "error:must be in the range (0, INT64_MAX)]")
+            "error:must be greater than 0]")
       << status;
 }
 

@@ -16,6 +16,7 @@
 //
 //
 
+#include <grpc/status.h>
 #include <stdint.h>
 
 #include <memory>
@@ -23,13 +24,10 @@
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"

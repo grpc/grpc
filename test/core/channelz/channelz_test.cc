@@ -18,6 +18,14 @@
 
 #include "src/core/channelz/channelz.h"
 
+#include <grpc/credentials.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
+#include <grpc/support/time.h>
 #include <stdlib.h>
 
 #include <algorithm>
@@ -29,16 +37,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
-
-#include <grpc/credentials.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/json.h>
-#include <grpc/support/time.h>
-
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -474,9 +472,13 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
   ExecCtx exec_ctx;
   ChannelFixture channel_with_uuid1;
-  { ServerFixture channel_with_uuid2; }
+  {
+    ServerFixture channel_with_uuid2;
+  }
   ChannelFixture channel_with_uuid3;
-  { ServerFixture server_with_uuid4; }
+  {
+    ServerFixture server_with_uuid4;
+  }
   ChannelFixture channel_with_uuid5;
   // Current state of list: [1, NULL, 3, NULL, 5]
   std::string json_str = ChannelzRegistry::GetTopChannels(2);

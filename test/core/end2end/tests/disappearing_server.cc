@@ -16,18 +16,16 @@
 //
 //
 
+#include <grpc/status.h>
+
 #include <memory>
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
-#ifndef GPR_WINDOWS  // b/148110727 for more details
 namespace grpc_core {
 
 static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
@@ -58,7 +56,7 @@ static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
   test.Step();
   // Please refer https://github.com/grpc/grpc/issues/21221 for additional
   // details.
-  // TODO(yashykt@) - The following line should be removeable after C-Core
+  // TODO(yashykt@) - The following line should be removable after C-Core
   // correctly handles GOAWAY frames. Internal Reference b/135458602. If this
   // test remains flaky even after this, an alternative fix would be to send a
   // request when the server is in the shut down state.
@@ -78,4 +76,3 @@ CORE_END2END_TEST(CoreClientChannelTest, DisappearingServer) {
 }
 
 }  // namespace grpc_core
-#endif  // GPR_WINDOWS

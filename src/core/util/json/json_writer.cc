@@ -17,7 +17,6 @@
 //
 
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -27,7 +26,6 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-
 #include "src/core/util/json/json.h"
 
 namespace grpc_core {
@@ -37,7 +35,7 @@ namespace {
 // The idea of the writer is basically symmetrical of the reader. While the
 // reader emits various calls to your code, the writer takes basically the
 // same calls and emit json out of it. It doesn't try to make any check on
-// the order of the calls you do on it. Meaning you can theorically force
+// the order of the calls you do on it. Meaning you can theoretically force
 // it to generate invalid json.
 //
 // Also, unlike the reader, the writer expects UTF-8 encoded input strings.

@@ -16,6 +16,9 @@
  *
  */
 
+#include <grpcpp/ext/csm_observability.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/support/string_ref.h>
 #include <sys/types.h>
 
 #include <chrono>
@@ -32,10 +35,6 @@
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 
-#include <grpcpp/ext/csm_observability.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/support/string_ref.h>
-
 ABSL_FLAG(std::string, target, "xds:///helloworld:50051", "Target string");
 ABSL_FLAG(std::string, prometheus_endpoint, "localhost:9464",
           "Prometheus exporter endpoint");
@@ -46,6 +45,7 @@ absl::StatusOr<grpc::CsmObservability> InitializeObservability() {
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   // default was "localhost:9464" which causes connection issue across GKE pods
   opts.url = "0.0.0.0:9464";
+  opts.without_otel_scope = false;
   auto prometheus_exporter =
       opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
   auto meter_provider =

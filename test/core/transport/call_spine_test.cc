@@ -14,6 +14,8 @@
 
 #include "src/core/lib/transport/call_spine.h"
 
+#include <grpc/grpc.h>
+
 #include <atomic>
 #include <memory>
 #include <queue>
@@ -21,9 +23,6 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/call/yodel/yodel_test.h"
@@ -90,23 +89,22 @@ void CallSpineTest::UnaryRequest(CallInitiator initiator, CallHandler handler) {
                   ContentTypeMetadata::kApplicationGrpc);
         return initiator.PullMessage();
       },
-      [initiator](ValueOrFailure<absl::optional<MessageHandle>> msg) mutable {
+      [initiator](ServerToClientNextMessage msg) mutable {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(),
                   "why hello neighbor");
         return initiator.PullMessage();
       },
-      [initiator](ValueOrFailure<absl::optional<MessageHandle>> msg) mutable {
+      [initiator](ServerToClientNextMessage msg) mutable {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_value());
+        EXPECT_FALSE(msg.has_value());
         return initiator.PullServerTrailingMetadata();
       },
       [initiator](ValueOrFailure<ServerMetadataHandle> md) mutable {
         EXPECT_TRUE(md.ok());
         EXPECT_EQ(*md.value()->get_pointer(GrpcStatusMetadata()),
                   GRPC_STATUS_UNIMPLEMENTED);
-        return Empty{};
       });
   SpawnTestSeq(
       handler, "handler",
@@ -117,16 +115,15 @@ void CallSpineTest::UnaryRequest(CallInitiator initiator, CallHandler handler) {
                   kTestPath);
         return handler.PullMessage();
       },
-      [handler](ValueOrFailure<absl::optional<MessageHandle>> msg) mutable {
+      [handler](ClientToServerNextMessage msg) mutable {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                  "hello world");
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(), "hello world");
         return handler.PullMessage();
       },
-      [handler](ValueOrFailure<absl::optional<MessageHandle>> msg) mutable {
+      [handler](ClientToServerNextMessage msg) mutable {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_value());
+        EXPECT_FALSE(msg.has_value());
         auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
         return handler.PushServerInitialMetadata(std::move(md));
@@ -141,7 +138,6 @@ void CallSpineTest::UnaryRequest(CallInitiator initiator, CallHandler handler) {
         auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
-        return Empty{};
       });
 }
 
@@ -163,7 +159,6 @@ CALL_SPINE_TEST(UnaryRequestThroughForwardCall) {
         auto call2 = MakeCall(std::move(md.value()));
         ForwardCall(handler, call2.initiator);
         UnaryRequest(initiator, call2.handler.StartCall());
-        return Empty{};
       });
   WaitForAllPendingWork();
 }
@@ -182,7 +177,6 @@ CALL_SPINE_TEST(UnaryRequestThroughForwardCallWithServerTrailingMetadataHook) {
         ForwardCall(handler, call2.initiator,
                     [&got_md](ServerMetadata&) { got_md = true; });
         UnaryRequest(initiator, call2.handler.StartCall());
-        return Empty{};
       });
   WaitForAllPendingWork();
   EXPECT_TRUE(got_md);

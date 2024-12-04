@@ -17,6 +17,8 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TOKEN_FETCHER_TOKEN_FETCHER_CREDENTIALS_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TOKEN_FETCHER_TOKEN_FETCHER_CREDENTIALS_H
 
+#include <grpc/event_engine/event_engine.h>
+
 #include <atomic>
 #include <memory>
 #include <utility>
@@ -25,9 +27,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -112,13 +111,16 @@ class TokenFetcherCredentials : public grpc_call_credentials {
     // annotations.
     void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
+    // Returns non-OK when we're in backoff.
+    absl::Status status() const;
+
     RefCountedPtr<QueuedCall> QueueCall(ClientMetadataHandle initial_metadata)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&TokenFetcherCredentials::mu_);
 
    private:
     class BackoffTimer : public InternallyRefCounted<BackoffTimer> {
      public:
-      explicit BackoffTimer(RefCountedPtr<FetchState> fetch_state)
+      BackoffTimer(RefCountedPtr<FetchState> fetch_state, absl::Status status)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&TokenFetcherCredentials::mu_);
 
       // Disabling thread safety annotations, since Orphan() is called
@@ -126,10 +128,13 @@ class TokenFetcherCredentials : public grpc_call_credentials {
       // annotations.
       void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
+      absl::Status status() const { return status_; }
+
      private:
       void OnTimer();
 
       RefCountedPtr<FetchState> fetch_state_;
+      const absl::Status status_;
       absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
           timer_handle_ ABSL_GUARDED_BY(&TokenFetcherCredentials::mu_);
     };

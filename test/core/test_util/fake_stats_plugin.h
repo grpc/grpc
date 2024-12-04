@@ -28,7 +28,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
-
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/metrics.h"
@@ -697,8 +696,14 @@ class GlobalInstrumentsRegistryTestPeer {
 class GlobalStatsPluginRegistryTestPeer {
  public:
   static void ResetGlobalStatsPluginRegistry() {
-    MutexLock lock(&*GlobalStatsPluginRegistry::mutex_);
-    GlobalStatsPluginRegistry::plugins_->clear();
+    GlobalStatsPluginRegistry::GlobalStatsPluginNode* node =
+        GlobalStatsPluginRegistry::plugins_.exchange(nullptr,
+                                                     std::memory_order_acq_rel);
+    while (node != nullptr) {
+      GlobalStatsPluginRegistry::GlobalStatsPluginNode* next = node->next;
+      delete node;
+      node = next;
+    }
   }
 };
 

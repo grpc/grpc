@@ -15,14 +15,14 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_LOOP_H
 #define GRPC_SRC_CORE_LIB_PROMISE_LOOP_H
 
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
-
-#include <grpc/support/port_platform.h>
-
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/construct_destruct.h"
@@ -101,6 +101,8 @@ class Loop {
   Loop& operator=(const Loop& loop) = delete;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
+    GRPC_TRACE_LOG(promise_primitives, INFO)
+        << "loop[" << this << "] begin poll started=" << started_;
     if (!started_) {
       started_ = true;
       Construct(&promise_, factory_.Make());
@@ -114,14 +116,20 @@ class Loop {
         //  from our factory.
         auto lc = LoopTraits<PromiseResult>::ToLoopCtl(std::move(*p));
         if (absl::holds_alternative<Continue>(lc)) {
+          GRPC_TRACE_LOG(promise_primitives, INFO)
+              << "loop[" << this << "] iteration complete, continue";
           Destruct(&promise_);
           Construct(&promise_, factory_.Make());
           continue;
         }
+        GRPC_TRACE_LOG(promise_primitives, INFO)
+            << "loop[" << this << "] iteration complete, return";
         //  - otherwise there's our result... return it out.
         return absl::get<Result>(std::move(lc));
       } else {
         // Otherwise the inner promise was pending, so we are pending.
+        GRPC_TRACE_LOG(promise_primitives, INFO)
+            << "loop[" << this << "] pending";
         return Pending();
       }
     }
@@ -141,7 +149,7 @@ class Loop {
 // Expects F returns LoopCtl<T> - if it's Continue, then run the loop again -
 // otherwise yield the returned value as the result of the loop.
 template <typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Loop<F> Loop(F f) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Loop<F> Loop(F f) {
   return promise_detail::Loop<F>(std::move(f));
 }
 

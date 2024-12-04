@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
 
 licenses(["notice"])
 
@@ -263,11 +263,6 @@ grpc_cc_test(
     ],
 )
 
-sh_library(
-    name = "fuzzer_one_entry_runner",
-    srcs = ["fuzzer_one_entry_runner.sh"],
-)
-
 grpc_cc_library(
     name = "stack_tracer",
     srcs = [
@@ -453,10 +448,14 @@ grpc_cc_library(
     ],
 )
 
-grpc_proto_library(
+grpc_internal_proto_library(
     name = "fuzz_config_vars_proto",
     srcs = ["fuzz_config_vars.proto"],
-    has_services = False,
+)
+
+grpc_cc_proto_library(
+    name = "fuzz_config_vars_cc_proto",
+    deps = ["fuzz_config_vars_proto"],
 )
 
 grpc_cc_library(
@@ -465,8 +464,8 @@ grpc_cc_library(
     hdrs = ["fuzz_config_vars.h"],
     external_deps = ["absl/types:optional"],
     deps = [
+        "fuzz_config_vars_cc_proto",
         "fuzz_config_vars_helpers",
-        "fuzz_config_vars_proto",
         "//:config_vars",
         "//:gpr_platform",
     ],
@@ -499,10 +498,14 @@ grpc_cc_library(
     ],
 )
 
-grpc_proto_library(
+grpc_internal_proto_library(
     name = "fuzzing_channel_args_proto",
     srcs = ["fuzzing_channel_args.proto"],
-    has_services = False,
+)
+
+grpc_cc_proto_library(
+    name = "fuzzing_channel_args_cc_proto",
+    deps = ["fuzzing_channel_args_proto"],
 )
 
 grpc_cc_library(
@@ -510,7 +513,7 @@ grpc_cc_library(
     srcs = ["fuzzing_channel_args.cc"],
     hdrs = ["fuzzing_channel_args.h"],
     deps = [
-        "fuzzing_channel_args_proto",
+        "fuzzing_channel_args_cc_proto",
         "//:gpr_platform",
         "//:ref_counted_ptr",
         "//src/core:channel_args",

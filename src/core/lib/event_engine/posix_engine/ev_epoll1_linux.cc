@@ -13,6 +13,10 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 #include <stdint.h>
 
 #include <atomic>
@@ -23,12 +27,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/iomgr/port.h"
@@ -358,7 +356,7 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
   CHECK_GE(g_epoll_set_.epfd, 0);
   GRPC_TRACE_LOG(event_engine_poller, INFO)
       << "grpc epoll fd: " << g_epoll_set_.epfd;
-  struct epoll_event ev {};
+  struct epoll_event ev{};
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLET);
   ev.data.ptr = wakeup_fd_.get();
   CHECK(epoll_ctl(g_epoll_set_.epfd, EPOLL_CTL_ADD, wakeup_fd_->ReadFd(),

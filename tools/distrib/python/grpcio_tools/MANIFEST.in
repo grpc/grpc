@@ -1,10 +1,12 @@
 include _parallel_compile_patch.py
 include _spawn_patch.py
 include grpc_version.py
+include python_version.py
 include protoc_deps.py
 include protoc_lib_deps.py
 include README.rst
 include grpc_tools/grpc_version.py
+include grpc_tools/python_version.py
 graft grpc_tools
 graft grpc_root
 graft third_party

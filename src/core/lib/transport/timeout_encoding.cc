@@ -18,13 +18,13 @@
 
 #include "src/core/lib/transport/timeout_encoding.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
+
 #include <limits>
 
 #include "absl/base/attributes.h"
 #include "absl/log/check.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
 
 namespace grpc_core {
 
@@ -258,12 +258,12 @@ absl::optional<Duration> ParseTimeout(const Slice& text) {
   Duration timeout;
   switch (*p) {
     case 'n':
-      timeout =
-          Duration::Milliseconds(x / GPR_NS_PER_MS + (x % GPR_NS_PER_MS != 0));
+      timeout = Duration::Milliseconds((x / GPR_NS_PER_MS) +
+                                       (x % GPR_NS_PER_MS != 0));
       break;
     case 'u':
-      timeout =
-          Duration::Milliseconds(x / GPR_US_PER_MS + (x % GPR_US_PER_MS != 0));
+      timeout = Duration::Milliseconds((x / GPR_US_PER_MS) +
+                                       (x % GPR_US_PER_MS != 0));
       break;
     case 'm':
       timeout = Duration::Milliseconds(x);

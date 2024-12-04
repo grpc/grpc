@@ -12,10 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/json.h>
+#include <grpc/support/metrics.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <limits.h>
 
@@ -38,16 +45,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/json.h>
-#include <grpc/support/metrics.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/client_channel/config_selector.h"
@@ -56,11 +53,11 @@
 #include "src/core/client_channel/local_subchannel_pool.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -215,7 +212,7 @@ class ClientChannel::SubchannelWrapper
 //
 // This class handles things like hopping into the WorkSerializer
 // before passing notifications to the LB policy and propagating
-// keepalive information betwen subchannels.
+// keepalive information between subchannels.
 class ClientChannel::SubchannelWrapper::WatcherWrapper
     : public Subchannel::ConnectivityStateWatcherInterface {
  public:
@@ -263,7 +260,7 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         << subchannel_wrapper_.get() << " subchannel "
         << subchannel_wrapper_->subchannel_.get()
         << " watcher=" << watcher_.get()
-        << "state=" << ConnectivityStateName(state) << " status=" << status;
+        << " state=" << ConnectivityStateName(state) << " status=" << status;
     absl::optional<absl::Cord> keepalive_throttling =
         status.GetPayload(kKeepaliveThrottlingKey);
     if (keepalive_throttling.has_value()) {
@@ -1279,8 +1276,12 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
     config_selector =
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);
   }
+  // Modify channel args.
+  ChannelArgs new_args = args.SetObject(this).SetObject(saved_service_config_);
   // Construct filter stack.
-  InterceptionChainBuilder builder(args.SetObject(this));
+  auto new_blackboard = MakeRefCounted<Blackboard>();
+  InterceptionChainBuilder builder(new_args, blackboard_.get(),
+                                   new_blackboard.get());
   if (idle_timeout_ != Duration::Zero()) {
     builder.AddOnServerTrailingMetadata([this](ServerMetadata&) {
       if (idle_state_.DecreaseCallCount()) StartIdleTimer();
@@ -1300,6 +1301,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
   }
   // Create call destination.
   auto top_of_stack_call_destination = builder.Build(call_destination_);
+  blackboard_ = std::move(new_blackboard);
   // Send result to data plane.
   if (!top_of_stack_call_destination.ok()) {
     resolver_data_for_calls_.Set(MaybeRewriteIllegalStatusCode(

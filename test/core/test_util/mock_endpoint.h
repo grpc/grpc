@@ -19,10 +19,10 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_MOCK_ENDPOINT_H
 #define GRPC_TEST_CORE_TEST_UTIL_MOCK_ENDPOINT_H
 
-#include <memory>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
+
+#include <memory>
 
 #include "src/core/lib/iomgr/endpoint.h"
 
@@ -31,7 +31,7 @@ namespace experimental {
 
 // Internal controller object for mock endpoint operations.
 //
-// This helps avoid shared ownership issus. The endpoint itself may destroyed
+// This helps avoid shared ownership issues. The endpoint itself may destroyed
 // while a fuzzer is still attempting to use it (e.g., the transport is closed,
 // and a fuzzer still wants to schedule reads).
 class MockEndpointController

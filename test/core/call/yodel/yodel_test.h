@@ -15,14 +15,13 @@
 #ifndef GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
 #define GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -361,6 +360,35 @@ class YodelTest : public ::testing::Test {
           return action;
         })
         .Start(std::move(actions)...);
+  }
+
+  class NoContext {
+   public:
+    template <typename PromiseFactory>
+    void SpawnInfallible(absl::string_view name,
+                         PromiseFactory promise_factory) {
+      party_->Spawn(
+          name,
+          [party = party_,
+           promise_factory = std::move(promise_factory)]() mutable {
+            promise_detail::OncePromiseFactory<void, PromiseFactory> factory(
+                std::move(promise_factory));
+            return [party, underlying = factory.Make()]() mutable {
+              return underlying();
+            };
+          },
+          [](Empty) {});
+    }
+
+   private:
+    RefCountedPtr<Party> party_ =
+        Party::Make(SimpleArenaAllocator()->MakeArena());
+  };
+
+  template <typename... Actions>
+  void SpawnTestSeqWithoutContext(
+      yodel_detail::NameAndLocation name_and_location, Actions... actions) {
+    SpawnTestSeq(NoContext{}, name_and_location, std::move(actions)...);
   }
 
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {

@@ -14,10 +14,16 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_filter.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <limits.h>
 
@@ -41,15 +47,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/json.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -62,12 +59,12 @@
 #include "src/core/client_channel/retry_filter.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -631,7 +628,7 @@ class ClientChannelFilter::SubchannelWrapper final
   //
   // This class handles things like hopping into the WorkSerializer
   // before passing notifications to the LB policy and propagating
-  // keepalive information betwen subchannels.
+  // keepalive information between subchannels.
   class WatcherWrapper final
       : public Subchannel::ConnectivityStateWatcherInterface {
    public:
@@ -1498,6 +1495,7 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
     config_selector =
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);
   }
+  // Modify channel args.
   ChannelArgs new_args = args.SetObject(this).SetObject(service_config);
   bool enable_retries =
       !new_args.WantMinimalStack() &&
@@ -1510,9 +1508,11 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
   } else {
     filters.push_back(&DynamicTerminationFilter::kFilterVtable);
   }
-  RefCountedPtr<DynamicFilters> dynamic_filters =
-      DynamicFilters::Create(new_args, std::move(filters));
+  auto new_blackboard = MakeRefCounted<Blackboard>();
+  RefCountedPtr<DynamicFilters> dynamic_filters = DynamicFilters::Create(
+      new_args, std::move(filters), blackboard_.get(), new_blackboard.get());
   CHECK(dynamic_filters != nullptr);
+  blackboard_ = std::move(new_blackboard);
   // Grab data plane lock to update service config.
   //
   // We defer unreffing the old values (and deallocating memory) until
@@ -2496,7 +2496,7 @@ void ClientChannelFilter::LoadBalancedCall::
   grpc_polling_entity_del_from_pollset_set(pollent(),
                                            chand_->interested_parties_);
   // Note: There's no need to actually remove the call from the queue
-  // here, beacuse that will be done in either
+  // here, because that will be done in either
   // LbQueuedCallCanceller::CancelLocked() or
   // in ClientChannelFilter::UpdateStateAndPickerLocked().
 }

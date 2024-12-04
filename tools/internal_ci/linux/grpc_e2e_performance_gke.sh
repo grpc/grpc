@@ -127,13 +127,13 @@ declare -A useLanguage=(
   [go]=1
   [java]=1
   [node]=1
+  [python]=1
   [ruby]=1
 )
 
 # Disable specific languages.
 declare -a disabledLanguages=(
   # Add a language here to disable it.
-  dotnet
 )
 for language in "${disabledLanguages[@]}"; do
   unset "useLanguage[${language}]"

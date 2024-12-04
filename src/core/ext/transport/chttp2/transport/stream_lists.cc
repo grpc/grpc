@@ -16,11 +16,12 @@
 //
 //
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "src/core/ext/transport/chttp2/transport/stream_lists.h"
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/debug/trace.h"

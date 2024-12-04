@@ -17,6 +17,7 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <cstdint>
@@ -24,9 +25,6 @@
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/util/useful.h"
@@ -44,6 +42,7 @@ class Http2Settings {
     kMaxHeaderListSizeWireId = 6,
     kGrpcAllowTrueBinaryMetadataWireId = 65027,
     kGrpcPreferredReceiveCryptoFrameSizeWireId = 65028,
+    kGrpcAllowSecurityFrameWireId = 65029,
   };
 
   void Diff(bool is_first_send, const Http2Settings& old,
@@ -62,6 +61,7 @@ class Http2Settings {
   bool allow_true_binary_metadata() const {
     return allow_true_binary_metadata_;
   }
+  bool allow_security_frame() const { return allow_security_frame_; }
 
   void SetHeaderTableSize(uint32_t x) { header_table_size_ = x; }
   void SetMaxConcurrentStreams(uint32_t x) { max_concurrent_streams_ = x; }
@@ -81,6 +81,7 @@ class Http2Settings {
         Clamp(x, min_preferred_receive_crypto_message_size(),
               max_preferred_receive_crypto_message_size());
   }
+  void SetAllowSecurityFrame(bool x) { allow_security_frame_ = x; }
 
   static absl::string_view header_table_size_name() {
     return "HEADER_TABLE_SIZE";
@@ -102,6 +103,9 @@ class Http2Settings {
   static absl::string_view preferred_receive_crypto_message_size_name() {
     return "GRPC_PREFERRED_RECEIVE_MESSAGE_SIZE";
   }
+  static absl::string_view allow_security_frame_name() {
+    return "GRPC_ALLOW_SECURITY_FRAME";
+  }
 
   static uint32_t max_initial_window_size() { return 2147483647u; }
   static uint32_t max_max_frame_size() { return 16777215u; }
@@ -122,7 +126,8 @@ class Http2Settings {
            preferred_receive_crypto_message_size_ ==
                rhs.preferred_receive_crypto_message_size_ &&
            enable_push_ == rhs.enable_push_ &&
-           allow_true_binary_metadata_ == rhs.allow_true_binary_metadata_;
+           allow_true_binary_metadata_ == rhs.allow_true_binary_metadata_ &&
+           allow_security_frame_ == rhs.allow_security_frame_;
   }
 
   bool operator!=(const Http2Settings& rhs) const { return !operator==(rhs); }
@@ -136,6 +141,7 @@ class Http2Settings {
   uint32_t preferred_receive_crypto_message_size_ = 0u;
   bool enable_push_ = true;
   bool allow_true_binary_metadata_ = false;
+  bool allow_security_frame_ = false;
 };
 
 class Http2SettingsManager {

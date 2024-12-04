@@ -16,7 +16,6 @@
 #define GRPC_SRC_CORE_UTIL_MATCHERS_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <memory>
@@ -115,6 +114,11 @@ class HeaderMatcher {
                                               bool present_match = false,
                                               bool invert_match = false,
                                               bool case_sensitive = true);
+
+  // Creates a HeaderMatcher from an existing StringMatcher instance.
+  static HeaderMatcher CreateFromStringMatcher(absl::string_view name,
+                                               StringMatcher matcher,
+                                               bool invert_match);
 
   HeaderMatcher() = default;
   HeaderMatcher(const HeaderMatcher& other);

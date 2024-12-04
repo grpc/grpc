@@ -13,12 +13,10 @@
 // limitations under the License.
 
 #include <benchmark/benchmark.h>
+#include <grpc/grpc.h>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -42,14 +40,14 @@ class ChaoticGoodTraits {
         MakePassthroughEndpoint(3, 4, true);
     auto client = MakeOrphanable<chaotic_good::ChaoticGoodClientTransport>(
         PromiseEndpoint(std::move(control.client), SliceBuffer()),
-        PromiseEndpoint(std::move(data.client), SliceBuffer()), channel_args,
-        grpc_event_engine::experimental::GetDefaultEventEngine(), HPackParser(),
-        HPackCompressor());
+        chaotic_good::OneDataEndpoint(
+            PromiseEndpoint(std::move(data.client), SliceBuffer())),
+        channel_args, grpc_event_engine::experimental::GetDefaultEventEngine());
     auto server = MakeOrphanable<chaotic_good::ChaoticGoodServerTransport>(
         channel_args, PromiseEndpoint(std::move(control.server), SliceBuffer()),
-        PromiseEndpoint(std::move(data.server), SliceBuffer()),
-        grpc_event_engine::experimental::GetDefaultEventEngine(), HPackParser(),
-        HPackCompressor());
+        chaotic_good::OneDataEndpoint(
+            PromiseEndpoint(std::move(data.server), SliceBuffer())),
+        grpc_event_engine::experimental::GetDefaultEventEngine());
     return {std::move(client), std::move(server)};
   }
 

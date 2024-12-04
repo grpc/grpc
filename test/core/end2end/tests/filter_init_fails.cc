@@ -16,6 +16,8 @@
 //
 //
 
+#include <grpc/status.h>
+
 #include <memory>
 #include <utility>
 
@@ -23,13 +25,10 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
@@ -83,7 +82,7 @@ const grpc_channel_filter test_filter = {
     // However, we can't add it at the very end, because either the
     // client_channel filter or connected_channel filter must be the
     // last one.
-    // Filter ordering code falls back to lexical ordering in the absense of
+    // Filter ordering code falls back to lexical ordering in the absence of
     // other dependencies, so name this appropriately.
     GRPC_UNIQUE_TYPE_NAME_HERE("zzzzzz_filter_init_fails")};
 

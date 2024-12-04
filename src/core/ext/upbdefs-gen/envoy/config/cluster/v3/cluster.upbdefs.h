@@ -3,10 +3,11 @@
  *     envoy/config/cluster/v3/cluster.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_CLUSTER_V3_CLUSTER_PROTO_UPBDEFS_H_
-#define ENVOY_CONFIG_CLUSTER_V3_CLUSTER_PROTO_UPBDEFS_H_
+#ifndef ENVOY_CONFIG_CLUSTER_V3_CLUSTER_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_CONFIG_CLUSTER_V3_CLUSTER_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -149,4 +150,4 @@ UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_TrackClusterStats_getms
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_CLUSTER_V3_CLUSTER_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_CONFIG_CLUSTER_V3_CLUSTER_PROTO_UPB_H__UPBDEFS_H_ */

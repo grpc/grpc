@@ -15,6 +15,11 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_TRANSPORT_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -37,18 +42,9 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -81,10 +77,9 @@ class ChaoticGoodServerTransport final : public ServerTransport {
  public:
   ChaoticGoodServerTransport(
       const ChannelArgs& args, PromiseEndpoint control_endpoint,
-      PromiseEndpoint data_endpoint,
+      std::vector<PromiseEndpoint> data_endpoints,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine,
-      HPackParser hpack_parser, HPackCompressor hpack_encoder);
+          event_engine);
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }
@@ -110,14 +105,10 @@ class ChaoticGoodServerTransport final : public ServerTransport {
                                       CallInitiator call_initiator);
   auto SendCallBody(uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
                     CallInitiator call_initiator);
-  static auto SendFragment(ServerFragmentFrame frame,
-                           MpscSender<ServerFrame> outgoing_frames,
-                           CallInitiator call_initiator);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
-  auto ReadOneFrame(ChaoticGoodTransport& transport);
-  auto TransportWriteLoop(RefCountedPtr<ChaoticGoodTransport> transport);
+  auto ReadOneFrame(RefCountedPtr<ChaoticGoodTransport> transport);
   // Read different parts of the server frame from control/data endpoints
   // based on frame header.
   // Resolves to a StatusOr<tuple<SliceBuffer, SliceBuffer>>
@@ -129,10 +120,19 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto DeserializeAndPushFragmentToExistingCall(
       FrameHeader frame_header, BufferPair buffers,
       ChaoticGoodTransport& transport);
-  auto MaybePushFragmentIntoCall(absl::optional<CallInitiator> call_initiator,
-                                 absl::Status error, ClientFragmentFrame frame);
-  auto PushFragmentIntoCall(CallInitiator call_initiator,
-                            ClientFragmentFrame frame);
+  absl::Status NewStream(ChaoticGoodTransport& transport,
+                         const FrameHeader& header,
+                         SliceBuffer initial_metadata_payload);
+  template <typename T>
+  auto DispatchFrame(RefCountedPtr<ChaoticGoodTransport> transport,
+                     IncomingFrame frame);
+  auto PushFrameIntoCall(CallInitiator call_initiator, MessageFrame frame);
+  auto PushFrameIntoCall(CallInitiator call_initiator, ClientEndOfStream frame);
+  auto SendFrame(ServerFrame frame, MpscSender<ServerFrame> outgoing_frames,
+                 CallInitiator call_initiator);
+  auto SendFrameAcked(ServerFrame frame,
+                      MpscSender<ServerFrame> outgoing_frames,
+                      CallInitiator call_initiator);
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
@@ -140,14 +140,12 @@ class ChaoticGoodServerTransport final : public ServerTransport {
       event_engine_;
   InterActivityLatch<void> got_acceptor_;
   MpscReceiver<ServerFrame> outgoing_frames_;
-  // Assigned aligned bytes from setting frame.
-  size_t aligned_bytes_ = 64;
   Mutex mu_;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
+  bool aborted_with_error_ ABSL_GUARDED_BY(mu_) = false;
   uint32_t last_seen_new_stream_id_ = 0;
-  ActivityPtr writer_ ABSL_GUARDED_BY(mu_);
-  ActivityPtr reader_ ABSL_GUARDED_BY(mu_);
+  RefCountedPtr<Party> party_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
       "chaotic_good_server", GRPC_CHANNEL_READY};
 };

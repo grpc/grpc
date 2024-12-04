@@ -384,6 +384,23 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "local_security_connector_test",
+    srcs = ["local_security_connector_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:channel_args",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
     name = "grpc_tls_credentials_options_test",
     srcs = ["grpc_tls_credentials_options_test.cc"],
     data = [
@@ -631,8 +648,8 @@ grpc_cc_test(
         "//src/core:grpc_crl_provider",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
-        "//test/core/test_util:fuzz_config_vars_proto",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/test_util:fuzz_config_vars_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/core/tsi:transport_security_test_lib",
     ],

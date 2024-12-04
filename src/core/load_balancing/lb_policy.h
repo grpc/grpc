@@ -17,6 +17,11 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_LB_POLICY_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_LB_POLICY_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -31,13 +36,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -86,7 +84,7 @@ namespace grpc_core {
 ///   - A SubchannelPicker, which handles the data plane work of
 ///     determining which subchannel a given call should be sent on.
 
-/// LoadBalacingPolicy API.
+/// LoadBalancingPolicy API.
 ///
 /// Note: All methods with a "Locked" suffix must be called from the
 /// work_serializer passed to the constructor.

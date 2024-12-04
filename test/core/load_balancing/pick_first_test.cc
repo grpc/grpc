@@ -16,6 +16,8 @@
 
 #include "src/core/load_balancing/pick_first/pick_first.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -33,10 +35,6 @@
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -78,7 +76,7 @@ class PickFirstTest : public LoadBalancingPolicyTest {
   }
 
   // Gets order the addresses are being picked. Return type is void so
-  // assertions can be used
+  // assertions can be used.
   void GetOrderAddressesArePicked(
       absl::Span<const absl::string_view> addresses,
       std::vector<absl::string_view>* out_address_order) {
@@ -1201,6 +1199,72 @@ TEST_F(PickFirstTest, AddressUpdateRetainsSelectedAddress) {
     EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[0]);
   }
   EXPECT_FALSE(subchannel2->ConnectionRequested());
+}
+
+// DO NOT USE!
+//
+// A test class that overrides the FuzzingEventEngine to make timer
+// cancellation always fail.  This is used to simulate cases where, at
+// the moment that the timer is cancelled, the timer has already fired
+// but the timer callback has not yet run in the WorkSerializer.
+//
+// TODO(roth): This is a really ugly hack.  As part of changing these
+// tests to use the FuzzingEventEngine exclusively, we should instead
+// find a way to tick the FuzzingEventEngine to the right point so that
+// we don't need this ugliness.
+class PickFirstNoCancelTimerTest : public PickFirstTest {
+ protected:
+  class FuzzingEventEngineWithoutTimerCancellation : public FuzzingEventEngine {
+   public:
+    using FuzzingEventEngine::FuzzingEventEngine;
+
+    bool Cancel(TaskHandle) override { return false; }
+  };
+
+  std::shared_ptr<FuzzingEventEngine> MakeFuzzingEventEngine() override {
+    return std::make_shared<FuzzingEventEngineWithoutTimerCancellation>(
+        grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+        fuzzing_event_engine::Actions());
+  }
+};
+
+// This exercizes a bug seen in the wild that caused a crash.  For
+// details, see https://github.com/grpc/grpc/pull/38144.
+TEST_F(PickFirstNoCancelTimerTest, SubchannelNotificationAfterShutdown) {
+  // Send an update containing one address.
+  constexpr std::array<absl::string_view, 2> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  // LB policy should have created a subchannel for each address.
+  auto* subchannel = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel, nullptr);
+  auto* subchannel2 = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel2, nullptr);
+  // When the LB policy receives the first subchannel's initial connectivity
+  // state notification (IDLE), it will request a connection.
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports CONNECTING.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // Now shut down the LB policy.
+  // This will cancel the Happy Eyeballs timer, but since we're using a
+  // FuzzingEventEngine that fails timer cancellations, it simulates the
+  // case where the timer has already fired but the timer callback has
+  // not yet run inside the WorkSerializer.
+  lb_policy_.reset();
+  // Now the subchannel reports READY.  Before the bug fix, this caused
+  // us to select the subchannel instead of ignoring the notification.
+  // With the bug fix, this update should never actually be delivered to
+  // the LB policy, since it will have already shut down the subchannel.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  // Now trigger the Happy Eyeballs timer to fire.
+  IncrementTimeBy(Duration::Milliseconds(250));
+  // Now the subchannel reports IDLE.  Before the bug fix, this
+  // triggered a crash.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
 }
 
 TEST_F(PickFirstTest, WithShuffle) {

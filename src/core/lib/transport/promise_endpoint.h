@@ -15,6 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -29,13 +34,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -72,6 +70,7 @@ class PromiseEndpoint {
   // `Write()` before the previous write finishes. Doing that results in
   // undefined behavior.
   auto Write(SliceBuffer data) {
+    GRPC_LATENT_SEE_PARENT_SCOPE("GRPC:Write");
     // Start write and assert previous write finishes.
     auto prev = write_state_->state.exchange(WriteState::kWriting,
                                              std::memory_order_relaxed);
@@ -106,24 +105,25 @@ class PromiseEndpoint {
             return absl::OkStatus();
           };
         },
-        [this]() {
-          return [write_state = write_state_]() -> Poll<absl::Status> {
-            // If current write isn't finished return `Pending()`, else
-            // return write result.
-            WriteState::State expected = WriteState::kWritten;
-            if (write_state->state.compare_exchange_strong(
-                    expected, WriteState::kIdle, std::memory_order_acquire,
-                    std::memory_order_relaxed)) {
-              // State was Written, and we changed it to Idle. We can return
-              // the result.
-              return std::move(write_state->result);
-            }
-            // State was not Written; since we're polling it must be
-            // Writing. Assert that and return Pending.
-            CHECK(expected == WriteState::kWriting);
-            return Pending();
-          };
-        });
+        GRPC_LATENT_SEE_PROMISE(
+            "DelayedWrite", ([this]() {
+              return [write_state = write_state_]() -> Poll<absl::Status> {
+                // If current write isn't finished return `Pending()`, else
+                // return write result.
+                WriteState::State expected = WriteState::kWritten;
+                if (write_state->state.compare_exchange_strong(
+                        expected, WriteState::kIdle, std::memory_order_acquire,
+                        std::memory_order_relaxed)) {
+                  // State was Written, and we changed it to Idle. We can return
+                  // the result.
+                  return std::move(write_state->result);
+                }
+                // State was not Written; since we're polling it must be
+                // Writing. Assert that and return Pending.
+                CHECK(expected == WriteState::kWriting);
+                return Pending();
+              };
+            })));
   }
 
   // Returns a promise that resolves to `SliceBuffer` with
@@ -133,6 +133,7 @@ class PromiseEndpoint {
   // `Read()` before the previous read finishes. Doing that results in
   // undefined behavior.
   auto Read(size_t num_bytes) {
+    GRPC_LATENT_SEE_PARENT_SCOPE("GRPC:Read");
     // Assert previous read finishes.
     CHECK(!read_state_->complete.load(std::memory_order_relaxed));
     // Should not have pending reads.
@@ -174,25 +175,27 @@ class PromiseEndpoint {
             return std::move(ret);
           };
         },
-        [this, num_bytes]() {
-          return [read_state = read_state_,
-                  num_bytes]() -> Poll<absl::StatusOr<SliceBuffer>> {
-            if (!read_state->complete.load(std::memory_order_acquire)) {
-              return Pending();
-            }
-            // If read succeeds, return `SliceBuffer` with `num_bytes` bytes.
-            if (read_state->result.ok()) {
-              SliceBuffer ret;
-              grpc_slice_buffer_move_first_no_inline(
-                  read_state->buffer.c_slice_buffer(), num_bytes,
-                  ret.c_slice_buffer());
-              read_state->complete.store(false, std::memory_order_relaxed);
-              return std::move(ret);
-            }
-            read_state->complete.store(false, std::memory_order_relaxed);
-            return std::move(read_state->result);
-          };
-        });
+        GRPC_LATENT_SEE_PROMISE(
+            "DelayedRead", ([this, num_bytes]() {
+              return [read_state = read_state_,
+                      num_bytes]() -> Poll<absl::StatusOr<SliceBuffer>> {
+                if (!read_state->complete.load(std::memory_order_acquire)) {
+                  return Pending();
+                }
+                // If read succeeds, return `SliceBuffer` with `num_bytes`
+                // bytes.
+                if (read_state->result.ok()) {
+                  SliceBuffer ret;
+                  grpc_slice_buffer_move_first_no_inline(
+                      read_state->buffer.c_slice_buffer(), num_bytes,
+                      ret.c_slice_buffer());
+                  read_state->complete.store(false, std::memory_order_relaxed);
+                  return std::move(ret);
+                }
+                read_state->complete.store(false, std::memory_order_relaxed);
+                return std::move(read_state->result);
+              };
+            })));
   }
 
   // Returns a promise that resolves to `Slice` with at least
@@ -256,6 +259,11 @@ class PromiseEndpoint {
   GetPeerAddress() const;
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
   GetLocalAddress() const;
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+  GetEventEngineEndpoint() const {
+    return endpoint_;
+  }
 
  private:
   std::shared_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>

@@ -12,24 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+#include <gmock/gmock.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/status.h>
+#include <gtest/gtest.h>
+
 #include <memory>
 #include <string>
 #include <string_view>
 #include <type_traits>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/cleanup/cleanup.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
-
-#include <grpcpp/create_channel.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/status.h>
-
-#include "src/core/lib/config/config_vars.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "src/core/config/config_vars.h"
+#include "src/proto/grpc/testing/echo.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"

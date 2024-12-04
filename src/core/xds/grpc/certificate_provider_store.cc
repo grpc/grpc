@@ -18,13 +18,12 @@
 
 #include "src/core/xds/grpc/certificate_provider_store.h"
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/config/core_configuration.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
 namespace grpc_core {

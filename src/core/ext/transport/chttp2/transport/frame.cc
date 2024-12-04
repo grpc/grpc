@@ -14,6 +14,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <cstdint>
@@ -22,9 +23,6 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/crash.h"
 
 namespace grpc_core {
@@ -40,6 +38,7 @@ constexpr uint8_t kFrameTypePing = 6;
 constexpr uint8_t kFrameTypeGoaway = 7;
 constexpr uint8_t kFrameTypeWindowUpdate = 8;
 constexpr uint8_t kFrameTypePushPromise = 5;
+constexpr uint8_t kFrameTypeSecurity = 200;
 
 constexpr uint8_t kFlagEndStream = 1;
 constexpr uint8_t kFlagAck = 1;
@@ -124,6 +123,7 @@ class SerializeExtraBytesRequired {
   size_t operator()(const Http2PingFrame&) { return 8; }
   size_t operator()(const Http2GoawayFrame&) { return 8; }
   size_t operator()(const Http2WindowUpdateFrame&) { return 4; }
+  size_t operator()(const Http2SecurityFrame&) { return 0; }
   size_t operator()(const Http2UnknownFrame&) { Crash("unreachable"); }
 };
 
@@ -218,6 +218,15 @@ class SerializeHeaderAndPayload {
         hdr_and_payload.begin());
     Write4b(frame.increment, hdr_and_payload.begin() + kFrameHeaderSize);
     out_.AppendIndexed(Slice(std::move(hdr_and_payload)));
+  }
+
+  void operator()(Http2SecurityFrame& frame) {
+    auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
+    Http2FrameHeader{static_cast<uint32_t>(frame.payload.Length()),
+                     kFrameTypeSecurity, 0, 0}
+        .Serialize(hdr.begin());
+    out_.AppendIndexed(Slice(std::move(hdr)));
+    out_.TakeAndAppend(frame.payload);
   }
 
   void operator()(Http2UnknownFrame&) { Crash("unreachable"); }
@@ -417,6 +426,11 @@ absl::StatusOr<Http2WindowUpdateFrame> ParseWindowUpdateFrame(
   return Http2WindowUpdateFrame{hdr.stream_id, Read4b(buffer)};
 }
 
+absl::StatusOr<Http2SecurityFrame> ParseSecurityFrame(
+    const Http2FrameHeader& /*hdr*/, SliceBuffer& payload) {
+  return Http2SecurityFrame{std::move(payload)};
+}
+
 }  // namespace
 
 void Http2FrameHeader::Serialize(uint8_t* output) const {
@@ -449,6 +463,8 @@ std::string Http2FrameTypeString(uint8_t frame_type) {
       return "WINDOW_UPDATE";
     case kFrameTypePing:
       return "PING";
+    case kFrameTypeSecurity:
+      return "SECURITY";
   }
   return absl::StrCat("UNKNOWN(", frame_type, ")");
 }
@@ -497,6 +513,8 @@ absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
       return absl::InternalError(
           "push promise not supported (and SETTINGS_ENABLE_PUSH explicitly "
           "disabled).");
+    case kFrameTypeSecurity:
+      return ParseSecurityFrame(hdr, payload);
     default:
       return Http2UnknownFrame{};
   }

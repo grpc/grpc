@@ -14,6 +14,7 @@
 
 #include "src/core/lib/transport/metadata_batch.h"
 
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
@@ -25,9 +26,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
@@ -43,11 +41,20 @@ void DebugStringBuilder::AddAfterRedaction(absl::string_view key,
   if (IsAllowListed(key)) {
     Add(key, value);
   } else {
-    Add(key, absl::StrCat(value.size(), " bytes redacted by allow listing."));
+    // If the type of metadata is not in the allow list, we want to prevent it
+    // from getting logged. Custom metadata types may have sensitive information
+    // that should never be logged. Programatically, we have no way to know
+    // which data is sensitive and which is not. So we redact all values which
+    // are not in the allow list.
+    Add(key,
+        absl::StrCat(value.size(), " bytes redacted for security reasons."));
   }
 }
 
 bool DebugStringBuilder::IsAllowListed(const absl::string_view key) const {
+  // We have intentionally not allowed for any way to add to the allow list at
+  // run time, (using a flag or some other setting) because such workarounds
+  // may lead to security issues.
   static const absl::NoDestructor<absl::flat_hash_set<std::string>> allow_list(
       [] {
         absl::flat_hash_set<std::string> allow_list;
@@ -76,8 +83,8 @@ bool DebugStringBuilder::IsAllowListed(const absl::string_view key) const {
         allow_list.insert(std::string(LbTokenMetadata::key()));
         allow_list.insert(std::string(TeMetadata::key()));
         allow_list.insert(std::string(UserAgentMetadata::key()));
+        allow_list.insert(std::string(W3CTraceParentMetadata::key()));
         allow_list.insert(std::string(XEnvoyPeerMetadata::key()));
-
         // go/keep-sorted end
         // go/keep-sorted start
         allow_list.insert(std::string(GrpcCallWasCancelled::DebugKey()));

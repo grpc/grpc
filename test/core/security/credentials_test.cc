@@ -18,21 +18,7 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-#include <stdlib.h>
-#include <string.h>
-
-#include <string>
-
 #include <gmock/gmock.h>
-#include <openssl/rsa.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_replace.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -40,7 +26,18 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include <openssl/rsa.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include <string>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_replace.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -2589,8 +2586,9 @@ TEST_F(TokenFetcherCredentialsTest, Expires30SecondsEarly) {
 TEST_F(TokenFetcherCredentialsTest, FetchFails) {
   const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
   ExecCtx exec_ctx;
-  creds_->AddResult(kExpectedError);
   // First request will trigger a fetch, which will fail.
+  LOG(INFO) << "Sending first RPC.";
+  creds_->AddResult(kExpectedError);
   auto state = RequestMetadataState::NewInstance(kExpectedError, "",
                                                  /*expect_delay=*/true);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
@@ -2598,22 +2596,25 @@ TEST_F(TokenFetcherCredentialsTest, FetchFails) {
   EXPECT_EQ(creds_->num_fetches(), 1);
   while (!run_after_duration_.has_value()) event_engine_->Tick();
   // Make sure backoff was set for the right period.
-  // This is 1 second (initial backoff) minus 1ms for the tick needed above.
   EXPECT_EQ(run_after_duration_, std::chrono::seconds(1));
   run_after_duration_.reset();
-  // Start a new call now, which will be queued and then eventually
-  // resumed when the next fetch happens.
+  // Start a new call now, which will fail because we're in backoff.
+  LOG(INFO) << "Sending second RPC.";
   state = RequestMetadataState::NewInstance(
-      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
+      kExpectedError, "authorization: foo", /*expect_delay=*/false);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  // Tick until the next fetch starts.
-  creds_->AddResult(MakeToken("foo"));
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Tick until backoff expires.
+  LOG(INFO) << "Waiting for backoff.";
   event_engine_->TickUntilIdle();
-  EXPECT_EQ(creds_->num_fetches(), 2);
-  // A call started now should use the new cached data.
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Starting another call should trigger a new fetch, which will
+  // succeed this time.
+  LOG(INFO) << "Sending third RPC.";
+  creds_->AddResult(MakeToken("foo"));
   state = RequestMetadataState::NewInstance(
-      absl::OkStatus(), "authorization: foo", /*expect_delay=*/false);
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   EXPECT_EQ(creds_->num_fetches(), 2);
@@ -2622,8 +2623,9 @@ TEST_F(TokenFetcherCredentialsTest, FetchFails) {
 TEST_F(TokenFetcherCredentialsTest, Backoff) {
   const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
   ExecCtx exec_ctx;
-  creds_->AddResult(kExpectedError);
   // First request will trigger a fetch, which will fail.
+  LOG(INFO) << "Sending first RPC.";
+  creds_->AddResult(kExpectedError);
   auto state = RequestMetadataState::NewInstance(kExpectedError, "",
                                                  /*expect_delay=*/true);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
@@ -2633,59 +2635,53 @@ TEST_F(TokenFetcherCredentialsTest, Backoff) {
   // Make sure backoff was set for the right period.
   EXPECT_EQ(run_after_duration_, std::chrono::seconds(1));
   run_after_duration_.reset();
-  // Start a new call now, which will be queued and then eventually
-  // resumed when the next fetch happens.
+  // Start a new call now, which will fail because we're in backoff.
+  LOG(INFO) << "Sending second RPC.";
+  state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                            /*expect_delay=*/false);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Tick until backoff expires.
+  LOG(INFO) << "Waiting for backoff.";
+  event_engine_->TickUntilIdle();
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Starting another call should trigger a new fetch, which will again fail.
+  LOG(INFO) << "Sending third RPC.";
+  creds_->AddResult(kExpectedError);
   state = RequestMetadataState::NewInstance(kExpectedError, "",
                                             /*expect_delay=*/true);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  // Tick until the next fetch fails and the backoff timer starts again.
-  creds_->AddResult(kExpectedError);
-  while (!run_after_duration_.has_value()) event_engine_->Tick();
   EXPECT_EQ(creds_->num_fetches(), 2);
-  // The backoff time should be longer now.  We account for jitter here.
+  while (!run_after_duration_.has_value()) event_engine_->Tick();
+  // The backoff time should be longer now.
   EXPECT_EQ(run_after_duration_, std::chrono::milliseconds(1600))
       << "actual: " << run_after_duration_->count();
   run_after_duration_.reset();
-  // Start another new call to trigger another new fetch once the
-  // backoff expires.
+  // Start a new call now, which will fail because we're in backoff.
+  LOG(INFO) << "Sending fourth RPC.";
+  state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                            /*expect_delay=*/false);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 2);
+  // Tick until backoff expires.
+  LOG(INFO) << "Waiting for backoff.";
+  event_engine_->TickUntilIdle();
+  EXPECT_EQ(creds_->num_fetches(), 2);
+  // Starting another call should trigger a new fetch, which will again fail.
+  LOG(INFO) << "Sending fifth RPC.";
+  creds_->AddResult(kExpectedError);
   state = RequestMetadataState::NewInstance(kExpectedError, "",
                                             /*expect_delay=*/true);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  // Tick until the next fetch starts.
-  creds_->AddResult(kExpectedError);
-  while (!run_after_duration_.has_value()) event_engine_->Tick();
   EXPECT_EQ(creds_->num_fetches(), 3);
-  // Check backoff time again.
+  while (!run_after_duration_.has_value()) event_engine_->Tick();
+  // The backoff time should be longer now.
   EXPECT_EQ(run_after_duration_, std::chrono::milliseconds(2560))
       << "actual: " << run_after_duration_->count();
-}
-
-TEST_F(TokenFetcherCredentialsTest, FetchNotStartedAfterBackoffWithoutRpc) {
-  const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
-  ExecCtx exec_ctx;
-  creds_->AddResult(kExpectedError);
-  // First request will trigger a fetch, which will fail.
-  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
-                                                 /*expect_delay=*/true);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  EXPECT_EQ(creds_->num_fetches(), 1);
-  while (!run_after_duration_.has_value()) event_engine_->Tick();
-  // Make sure backoff was set for the right period.
-  EXPECT_EQ(run_after_duration_, std::chrono::seconds(1));
-  run_after_duration_.reset();
-  // Tick until the backoff expires.  No new fetch should be started.
-  event_engine_->TickUntilIdle();
-  EXPECT_EQ(creds_->num_fetches(), 1);
-  // Now start a new request, which will trigger a new fetch.
-  creds_->AddResult(MakeToken("foo"));
-  state = RequestMetadataState::NewInstance(
-      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  EXPECT_EQ(creds_->num_fetches(), 2);
 }
 
 TEST_F(TokenFetcherCredentialsTest, ShutdownWhileBackoffTimerPending) {

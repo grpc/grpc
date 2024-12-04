@@ -20,7 +20,6 @@
 
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -83,7 +82,7 @@ TEST(ChannelInitTest, OneClientFilter) {
 }
 
 TEST(ChannelInitTest, DefaultLexicalOrdering) {
-  // ChannelInit defaults to lexical ordering in the absense of other
+  // ChannelInit defaults to lexical ordering in the absence of other
   // constraints, to ensure that a stable ordering is produced between builds.
   ChannelInit::Builder b;
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo"));

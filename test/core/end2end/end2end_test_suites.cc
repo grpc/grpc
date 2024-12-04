@@ -12,6 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/compression.h>
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -33,18 +43,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/compression.h>
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/time.h>
-
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -518,11 +516,12 @@ class FixtureWithTracing final : public CoreTestFixture {
   std::unique_ptr<CoreTestFixture> fixture_;
 };
 
-class ChaoticGoodFixture final : public CoreTestFixture {
+class ChaoticGoodFixture : public CoreTestFixture {
  public:
-  explicit ChaoticGoodFixture(std::string localaddr = JoinHostPort(
+  explicit ChaoticGoodFixture(int data_connections = 1,
+                              std::string localaddr = JoinHostPort(
                                   "localhost", grpc_pick_unused_port_or_die()))
-      : localaddr_(std::move(localaddr)) {}
+      : data_connections_(data_connections), localaddr_(std::move(localaddr)) {}
 
  protected:
   const std::string& localaddr() const { return localaddr_; }
@@ -531,7 +530,11 @@ class ChaoticGoodFixture final : public CoreTestFixture {
   grpc_server* MakeServer(
       const ChannelArgs& args, grpc_completion_queue* cq,
       absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
-    auto* server = grpc_server_create(args.ToC().get(), nullptr);
+    auto* server = grpc_server_create(
+        args.Set(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS, data_connections_)
+            .ToC()
+            .get(),
+        nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
     CHECK(grpc_server_add_chaotic_good_port(server, localaddr_.c_str()));
     pre_server_start(server);
@@ -547,7 +550,18 @@ class ChaoticGoodFixture final : public CoreTestFixture {
     return client;
   }
 
+  int data_connections_;
   std::string localaddr_;
+};
+
+class ChaoticGoodSingleConnectionFixture final : public ChaoticGoodFixture {
+ public:
+  ChaoticGoodSingleConnectionFixture() : ChaoticGoodFixture(1) {}
+};
+
+class ChaoticGoodManyConnectionFixture final : public ChaoticGoodFixture {
+ public:
+  ChaoticGoodManyConnectionFixture() : ChaoticGoodFixture(16) {}
 };
 
 #ifdef GRPC_POSIX_WAKEUP_FD
@@ -568,7 +582,7 @@ class InsecureFixtureWithPipeForWakeupFd : public InsecureFixture {
 // Returns the temp directory to create uds in this test.
 std::string GetTempDir() {
 #ifdef GPR_WINDOWS
-  // Windows temp dir usually exceeds uds max paht length,
+  // Windows temp dir usually exceeds uds max path length,
   // so we create a short dir for this test.
   // TODO: find a better solution.
   std::string temp_dir = "C:/tmp/";
@@ -637,12 +651,14 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
                 UDS);
           }},
 #endif
+
       CoreTestConfiguration{"Chttp2FullstackLocalIpv4",
                             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
                                 FEATURE_MASK_IS_HTTP2 |
                                 FEATURE_MASK_DO_NOT_FUZZ |
-                                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
+                                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
+                                FEATURE_MASK_IS_LOCAL_TCP_CREDS,
                             nullptr,
                             [](const ChannelArgs& /*client_args*/,
                                const ChannelArgs& /*server_args*/) {
@@ -655,7 +671,8 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
                                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
                                 FEATURE_MASK_IS_HTTP2 |
                                 FEATURE_MASK_DO_NOT_FUZZ |
-                                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
+                                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
+                                FEATURE_MASK_IS_LOCAL_TCP_CREDS,
                             nullptr,
                             [](const ChannelArgs& /*client_args*/,
                                const ChannelArgs& /*server_args*/) {
@@ -983,6 +1000,7 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
             return std::make_unique<InsecureFixtureWithPipeForWakeupFd>();
           }},
 #endif
+#ifndef GPR_WINDOWS
       CoreTestConfiguration{"ChaoticGoodFullStack",
                             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                                 FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
@@ -992,7 +1010,9 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
                             [](const ChannelArgs& /*client_args*/,
                                const ChannelArgs& /*server_args*/) {
                               return std::make_unique<ChaoticGoodFixture>();
-                            }}};
+                            }},
+#endif
+  };
 }
 
 std::vector<CoreTestConfiguration> AllConfigs() {
@@ -1020,7 +1040,7 @@ class ConfigQuery {
     enforce_features_ |= features;
     return *this;
   }
-  // Envorce that the returned configurations do not have the given features.
+  // Enforce that the returned configurations do not have the given features.
   ConfigQuery& ExcludeFeatures(uint32_t features) {
     exclude_features_ |= features;
     return *this;

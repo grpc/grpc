@@ -18,6 +18,7 @@
 
 #include "src/core/util/http_client/parser.h"
 
+#include <grpc/support/alloc.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -26,9 +27,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/alloc.h>
-
 #include "src/core/util/useful.h"
 #include "test/core/test_util/slice_splitter.h"
 #include "test/core/test_util/test_config.h"
@@ -319,8 +317,8 @@ TEST(ParserTest, MainTest) {
 
     char* tmp1 =
         static_cast<char*>(gpr_malloc(2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH));
-    memset(tmp1, 'a', 2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH - 1);
-    tmp1[2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH - 1] = 0;
+    memset(tmp1, 'a', (2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH) - 1);
+    tmp1[(2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH) - 1] = 0;
     std::string tmp2 =
         absl::StrFormat("HTTP/1.0 200 OK\r\nxyz: %s\r\n\r\n", tmp1);
     gpr_free(tmp1);

@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
 #define GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -28,9 +29,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -205,7 +203,7 @@ class Activity : public Orphanable {
   // - assert that there is a current activity (and catch bugs if there's not)
   // - indicate to thread safety analysis that the current activity is indeed
   //   locked
-  // - back up that assertation with a runtime check in debug builds (it's
+  // - back up that assertion with a runtime check in debug builds (it's
   //   prohibitively expensive in non-debug builds)
   static Activity* current() { return g_current_activity_; }
 

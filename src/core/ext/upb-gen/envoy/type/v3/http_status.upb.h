@@ -3,10 +3,11 @@
  *     envoy/type/v3/http_status.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_V3_HTTP_STATUS_PROTO_UPB_H_
-#define ENVOY_TYPE_V3_HTTP_STATUS_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_V3_HTTP_STATUS_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_V3_HTTP_STATUS_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -147,4 +148,4 @@ UPB_INLINE void envoy_type_v3_HttpStatus_set_code(envoy_type_v3_HttpStatus *msg,
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_V3_HTTP_STATUS_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_V3_HTTP_STATUS_PROTO_UPB_H__UPB_H_ */

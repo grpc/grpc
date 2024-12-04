@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/retry_filter_legacy_call_data.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <memory>
@@ -25,7 +24,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/retry_service_config.h"
 #include "src/core/client_channel/retry_throttle.h"
@@ -1270,6 +1268,7 @@ void RetryFilter::LegacyCallData::CallAttempt::BatchData::OnComplete(
   }
   if (batch_data->batch_.send_message) {
     ++call_attempt->completed_send_message_count_;
+    call_attempt->send_message_.Clear();
   }
   if (batch_data->batch_.send_trailing_metadata) {
     call_attempt->completed_send_trailing_metadata_ = true;
@@ -1350,7 +1349,8 @@ void RetryFilter::LegacyCallData::CallAttempt::BatchData::
       calld->send_messages_[call_attempt_->started_send_message_count_];
   ++call_attempt_->started_send_message_count_;
   batch_.send_message = true;
-  batch_.payload->send_message.send_message = cache.slices;
+  call_attempt_->send_message_ = cache.slices->Copy();
+  batch_.payload->send_message.send_message = &call_attempt_->send_message_;
   batch_.payload->send_message.flags = cache.flags;
 }
 

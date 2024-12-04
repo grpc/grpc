@@ -18,6 +18,10 @@
 
 #include "src/cpp/ext/otel/otel_plugin.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpcpp/ext/otel_plugin.h>
+#include <grpcpp/version_info.h>
+
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -29,14 +33,9 @@
 #include "opentelemetry/nostd/shared_ptr.h"
 #include "opentelemetry/nostd/unique_ptr.h"
 #include "opentelemetry/nostd/variant.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpcpp/ext/otel_plugin.h>
-#include <grpcpp/version_info.h>
-
 #include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/match.h"

@@ -17,8 +17,9 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_SUBCHANNEL_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_SUBCHANNEL_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <functional>
@@ -27,10 +28,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/connectivity_state.h>
-
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"

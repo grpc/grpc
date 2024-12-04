@@ -14,15 +14,14 @@
 
 #include "src/core/lib/promise/mpsc.h"
 
+#include <grpc/support/log.h>
+
 #include <memory>
 #include <string>
 
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/promise.h"
 #include "test/core/promise/poll_matcher.h"
@@ -87,6 +86,19 @@ TEST(MpscTest, SendOneThingInstantly) {
   MpscReceiver<Payload> receiver(1);
   MpscSender<Payload> sender = receiver.MakeSender();
   EXPECT_THAT(sender.Send(MakePayload(1))(), IsReady(true));
+}
+
+TEST(MpscTest, SendAckedOneThingWaitsForRead) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  MpscReceiver<Payload> receiver(1);
+  MpscSender<Payload> sender = receiver.MakeSender();
+  auto send = sender.SendAcked(MakePayload(1));
+  EXPECT_THAT(send(), IsPending());
+  EXPECT_CALL(activity, WakeupRequested());
+  EXPECT_THAT(receiver.Next()(), IsReady());
+  EXPECT_THAT(send(), IsReady(true));
+  activity.Deactivate();
 }
 
 TEST(MpscTest, SendOneThingInstantlyAndReceiveInstantly) {
@@ -177,6 +189,18 @@ TEST(MpscTest, ImmediateSendWorks) {
   EXPECT_THAT(receiver.Next()(), IsReady(MakePayload(7)));
   auto receive2 = receiver.Next();
   EXPECT_THAT(receive2(), IsPending());
+  activity.Deactivate();
+}
+
+TEST(MpscTest, CloseFailsNext) {
+  StrictMock<MockActivity> activity;
+  MpscReceiver<Payload> receiver(1);
+  activity.Activate();
+  auto next = receiver.Next();
+  EXPECT_THAT(next(), IsPending());
+  EXPECT_CALL(activity, WakeupRequested());
+  receiver.MarkClosed();
+  EXPECT_THAT(next(), IsReady(Failure{}));
   activity.Deactivate();
 }
 

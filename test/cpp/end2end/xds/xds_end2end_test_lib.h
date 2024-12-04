@@ -16,22 +16,7 @@
 #ifndef GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
 #define GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
 
-#include <memory>
-#include <set>
-#include <string>
-#include <thread>
-#include <vector>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
@@ -39,20 +24,33 @@
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/xds_server_builder.h>
+#include <gtest/gtest.h>
 
+#include <memory>
+#include <set>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "envoy/config/rbac/v3/rbac.pb.h"
+#include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/cpp/server/secure_server_credentials.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
-#include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
+#include "src/proto/grpc/testing/echo.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 #include "test/cpp/end2end/xds/xds_utils.h"
+#include "xds/data/orca/v3/orca_load_report.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -304,6 +302,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
         if (request->has_param() && request->param().has_backend_metrics()) {
           const auto& request_metrics = request->param().backend_metrics();
           auto* recorder = context->ExperimentalGetCallMetricRecorder();
+          if (request_metrics.cpu_utilization() != 0) {
+            recorder->RecordCpuUtilizationMetric(
+                request_metrics.cpu_utilization());
+          }
+          if (request_metrics.mem_utilization() != 0) {
+            recorder->RecordMemoryUtilizationMetric(
+                request_metrics.mem_utilization());
+          }
+          if (request_metrics.application_utilization() != 0) {
+            recorder->RecordApplicationUtilizationMetric(
+                request_metrics.application_utilization());
+          }
           for (const auto& p : request_metrics.named_metrics()) {
             char* key = static_cast<char*>(
                 grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));

@@ -15,12 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_MAP_H
 #define GRPC_SRC_CORE_LIB_PROMISE_MAP_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <tuple>
 #include <utility>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
@@ -32,8 +31,20 @@ namespace promise_detail {
 // Implementation of mapping combinator - use this via the free function below!
 // Promise is the type of promise to poll on, Fn is a function that takes the
 // result of Promise and maps it to some new type.
+template <typename Promise, typename Fn, typename SfinaeVoid = void>
+class Map;
+
 template <typename Promise, typename Fn>
-class Map {
+class Map<Promise, Fn,
+          absl::enable_if_t<!std::is_void<
+#if (defined(__cpp_lib_is_invocable) && __cpp_lib_is_invocable >= 201703L) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
+              std::invoke_result_t<Fn, typename PromiseLike<Promise>::Result>
+#else
+              typename std::result_of<Fn(
+                  typename PromiseLike<Promise>::Result)>::type
+#endif
+              >::value>> {
  public:
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Promise promise, Fn fn)
       : promise_(std::move(promise)), fn_(std::move(fn)) {}
@@ -62,14 +73,53 @@ class Map {
   Fn fn_;
 };
 
+template <typename Promise, typename Fn>
+class Map<Promise, Fn,
+          absl::enable_if_t<std::is_void<
+#if (defined(__cpp_lib_is_invocable) && __cpp_lib_is_invocable >= 201703L) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
+              std::invoke_result_t<Fn, typename PromiseLike<Promise>::Result>
+#else
+              typename std::result_of<Fn(
+                  typename PromiseLike<Promise>::Result)>::type
+#endif
+              >::value>> {
+ public:
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Promise promise, Fn fn)
+      : promise_(std::move(promise)), fn_(std::move(fn)) {}
+
+  Map(const Map&) = delete;
+  Map& operator=(const Map&) = delete;
+  // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
+  Map(Map&& other) = default;
+  // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
+  Map& operator=(Map&& other) = default;
+
+  using PromiseResult = typename PromiseLike<Promise>::Result;
+  using Result = Empty;
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
+    Poll<PromiseResult> r = promise_();
+    if (auto* p = r.value_if_ready()) {
+      fn_(std::move(*p));
+      return Empty{};
+    }
+    return Pending();
+  }
+
+ private:
+  PromiseLike<Promise> promise_;
+  Fn fn_;
+};
+
 }  // namespace promise_detail
 
 // Mapping combinator.
 // Takes a promise, and a synchronous function to mutate its result, and
 // returns a promise.
 template <typename Promise, typename Fn>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Map<Promise, Fn> Map(
-    Promise promise, Fn fn) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Map<Promise, Fn>
+Map(Promise promise, Fn fn) {
   return promise_detail::Map<Promise, Fn>(std::move(promise), std::move(fn));
 }
 
@@ -77,10 +127,10 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Map<Promise, Fn> Map(
 // and a bool indicating whether there was ever a Pending{} value observed from
 // polling.
 template <typename Promise>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto CheckDelayed(Promise promise) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto CheckDelayed(Promise promise) {
   using P = promise_detail::PromiseLike<Promise>;
   return [delayed = false, promise = P(std::move(promise))]() mutable
-         -> Poll<std::tuple<typename P::Result, bool>> {
+             -> Poll<std::tuple<typename P::Result, bool>> {
     auto r = promise();
     if (r.pending()) {
       delayed = true;

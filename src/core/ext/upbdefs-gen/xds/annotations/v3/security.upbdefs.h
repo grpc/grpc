@@ -3,10 +3,11 @@
  *     xds/annotations/v3/security.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_ANNOTATIONS_V3_SECURITY_PROTO_UPBDEFS_H_
-#define XDS_ANNOTATIONS_V3_SECURITY_PROTO_UPBDEFS_H_
+#ifndef XDS_ANNOTATIONS_V3_SECURITY_PROTO_UPB_H__UPBDEFS_H_
+#define XDS_ANNOTATIONS_V3_SECURITY_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -29,4 +30,4 @@ UPB_INLINE const upb_MessageDef *xds_annotations_v3_FieldSecurityAnnotation_getm
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_ANNOTATIONS_V3_SECURITY_PROTO_UPBDEFS_H_ */
+#endif  /* XDS_ANNOTATIONS_V3_SECURITY_PROTO_UPB_H__UPBDEFS_H_ */

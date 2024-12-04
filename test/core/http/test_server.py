@@ -59,13 +59,13 @@ class Handler(BaseHTTPRequestHandler):
         )
 
     def do_GET(self):
-        if self.path == "/get":
+        if self.path == "/get?foo=bar&baz=quux":
             self.good()
 
     def do_POST(self):
         content_len = self.headers.get("content-length")
         content = self.rfile.read(int(content_len)).decode("ascii")
-        if self.path == "/post" and content == "hello":
+        if self.path == "/post?foo=bar&mumble=frotz" and content == "hello":
             self.good()
 
 

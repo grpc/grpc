@@ -3,10 +3,11 @@
  *     envoy/config/accesslog/v3/accesslog.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -18,21 +19,37 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__accesslog__v3__AccessLog_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__AccessLog_msg_init_ptr;
 extern const upb_MiniTable envoy__config__accesslog__v3__AccessLogFilter_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__AccessLogFilter_msg_init_ptr;
 extern const upb_MiniTable envoy__config__accesslog__v3__ComparisonFilter_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__ComparisonFilter_msg_init_ptr;
 extern const upb_MiniTable envoy__config__accesslog__v3__StatusCodeFilter_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__StatusCodeFilter_msg_init_ptr;
 extern const upb_MiniTable envoy__config__accesslog__v3__DurationFilter_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__DurationFilter_msg_init_ptr;
 extern const upb_MiniTable envoy__config__accesslog__v3__NotHealthCheckFilter_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__NotHealthCheckFilter_msg_init_ptr;
 extern const upb_MiniTable envoy__config__accesslog__v3__TraceableFilter_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__TraceableFilter_msg_init_ptr;
 extern const upb_MiniTable envoy__config__accesslog__v3__RuntimeFilter_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__RuntimeFilter_msg_init_ptr;
 extern const upb_MiniTable envoy__config__accesslog__v3__AndFilter_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__AndFilter_msg_init_ptr;
 extern const upb_MiniTable envoy__config__accesslog__v3__OrFilter_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__OrFilter_msg_init_ptr;
 extern const upb_MiniTable envoy__config__accesslog__v3__HeaderFilter_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__HeaderFilter_msg_init_ptr;
 extern const upb_MiniTable envoy__config__accesslog__v3__ResponseFlagFilter_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__ResponseFlagFilter_msg_init_ptr;
 extern const upb_MiniTable envoy__config__accesslog__v3__GrpcStatusFilter_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__GrpcStatusFilter_msg_init_ptr;
 extern const upb_MiniTable envoy__config__accesslog__v3__MetadataFilter_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__MetadataFilter_msg_init_ptr;
 extern const upb_MiniTable envoy__config__accesslog__v3__LogTypeFilter_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__LogTypeFilter_msg_init_ptr;
 extern const upb_MiniTable envoy__config__accesslog__v3__ExtensionFilter_msg_init;
+extern const upb_MiniTable* envoy__config__accesslog__v3__ExtensionFilter_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_accesslog_v3_accesslog_proto_upb_file_layout;
 
@@ -42,4 +59,4 @@ extern const upb_MiniTableFile envoy_config_accesslog_v3_accesslog_proto_upb_fil
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H__UPB_MINITABLE_H_ */

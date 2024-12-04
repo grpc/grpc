@@ -18,6 +18,14 @@
 
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 #include <stdint.h>
 
 #include <string>
@@ -29,21 +37,12 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_registry.h"
@@ -51,7 +50,6 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -250,8 +248,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
       ChannelArgs args) {
     auto* channel_credentials = args.GetObject<grpc_channel_credentials>();
     if (channel_credentials == nullptr) {
-      return absl::InternalError(
-          "channel credentials missing for secure channel");
+      return absl::InternalError("channel credentials missing for channel");
     }
     // Make sure security connector does not already exist in args.
     if (args.Contains(GRPC_ARG_SECURITY_CONNECTOR)) {
@@ -271,8 +268,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
                 /*call_creds=*/nullptr, authority->c_str(), &args);
     if (subchannel_security_connector == nullptr) {
       return absl::InternalError(absl::StrFormat(
-          "Failed to create secure subchannel for secure name '%s'",
-          *authority));
+          "Failed to create subchannel for secure name '%s'", *authority));
     }
     return args.SetObject(std::move(subchannel_security_connector));
   }
@@ -301,7 +297,7 @@ void FactoryInit() {
 
 }  // namespace
 
-// Create a secure client channel:
+// Create a client channel:
 //   Asynchronously: - resolve target
 //                   - connect to it (trying alternatives as presented)
 //                   - perform handshakes
@@ -310,8 +306,8 @@ grpc_channel* grpc_channel_create(const char* target,
                                   const grpc_channel_args* c_args) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_secure_channel_create(target=" << target
-      << ", creds=" << (void*)creds << ", args=" << (void*)c_args << ")";
+      << "grpc_channel_create(target=" << target << ", creds=" << (void*)creds
+      << ", args=" << (void*)c_args << ")";
   grpc_channel* channel = nullptr;
   grpc_error_handle error;
   if (creds != nullptr) {
@@ -340,7 +336,7 @@ grpc_channel* grpc_channel_create(const char* target,
       status = static_cast<grpc_status_code>(integer);
     }
     channel = grpc_lame_client_channel_create(
-        target, status, "Failed to create secure client channel");
+        target, status, "Failed to create client channel");
   }
   return channel;
 }

@@ -14,6 +14,8 @@
 
 #include "src/core/lib/promise/sleep.h"
 
+#include <grpc/grpc.h>
+
 #include <chrono>
 #include <cstddef>
 #include <memory>
@@ -23,9 +25,6 @@
 #include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -180,7 +179,7 @@ TEST(Sleep, StressTest) {
   for (size_t i = 0; i < kNumActivities / 2; i++) {
     notifications[i]->WaitForNotification();
     activities[i].reset();
-    activities[i + kNumActivities / 2].reset();
+    activities[i + (kNumActivities / 2)].reset();
     exec_ctx.Flush();
   }
 }

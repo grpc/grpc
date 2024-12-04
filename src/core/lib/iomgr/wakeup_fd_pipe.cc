@@ -27,7 +27,6 @@
 #include <unistd.h>
 
 #include "absl/log/log.h"
-
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/wakeup_fd_pipe.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
@@ -99,4 +98,4 @@ const grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable = {
     pipe_init, pipe_consume, pipe_wakeup, pipe_destroy,
     pipe_check_availability};
 
-#endif  // GPR_POSIX_WAKUP_FD
+#endif  // GRPC_POSIX_WAKEUP_FD

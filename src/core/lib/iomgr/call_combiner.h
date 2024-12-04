@@ -19,14 +19,12 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H
 #define GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H
 
+#include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/atm.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/dynamic_annotations.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -82,7 +80,7 @@ class CallCombiner {
   ///
   /// The closure will be scheduled in the following cases:
   /// - If Cancel() was called prior to registering the closure, it will be
-  ///   scheduled immediately with the cancelation error.
+  ///   scheduled immediately with the cancellation error.
   /// - If Cancel() is called after registering the closure, the closure will
   ///   be scheduled with the cancellation error.
   /// - If SetNotifyOnCancel() is called again to register a new cancellation

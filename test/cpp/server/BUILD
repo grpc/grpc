@@ -27,7 +27,7 @@ grpc_cc_test(
     tags = ["no_windows"],
     deps = [
         "//:grpc++_unsecure",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:grpc_test_util_unsecure",
@@ -43,7 +43,7 @@ grpc_cc_test(
     tags = ["no_windows"],
     deps = [
         "//:grpc++_unsecure",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:grpc_test_util_unsecure",
     ],
@@ -58,7 +58,7 @@ grpc_cc_test(
     tags = ["no_windows"],
     deps = [
         "//:grpc++_unsecure",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:grpc_test_util_unsecure",
     ],
@@ -108,5 +108,23 @@ grpc_cc_test(
         "//:grpc++",
         "//:grpc++_authorization_provider",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "orca_service_test",
+    srcs = ["orca_service_test.cc"],
+    external_deps = [
+        "absl/time",
+        "gtest",
+    ],
+    deps = [
+        "//:grpc++",
+        "//:grpcpp_backend_metric_recorder",
+        "//:grpcpp_call_metric_recorder",
+        "//:grpcpp_orca_service",
+        "//src/core:notification",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_util",
     ],
 )

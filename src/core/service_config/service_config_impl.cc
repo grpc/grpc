@@ -16,6 +16,7 @@
 
 #include "src/core/service_config/service_config_impl.h"
 
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <string>
@@ -25,10 +26,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/service_config/service_config_parser.h"

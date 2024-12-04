@@ -18,6 +18,12 @@
 
 #include "test/core/end2end/cq_verifier.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
@@ -36,14 +42,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/surface/event_string.h"
 #include "src/core/util/crash.h"
@@ -349,7 +347,11 @@ grpc_event CqVerifier::Step(gpr_timespec deadline) {
       if (r.type != GRPC_QUEUE_TIMEOUT) return r;
       auto now = gpr_now(deadline.clock_type);
       if (gpr_time_cmp(deadline, now) < 0) break;
-      step_fn_(Timestamp::FromTimespecRoundDown(deadline) - Timestamp::Now());
+      // Add a millisecond to ensure we overshoot the cq timeout if nothing is
+      // happening. Not doing so can lead to infinite loops in some tests.
+      // TODO(ctiller): see if there's a cleaner way to resolve this.
+      step_fn_(Timestamp::FromTimespecRoundDown(deadline) +
+               Duration::Milliseconds(1) - Timestamp::Now());
     }
     return grpc_event{GRPC_QUEUE_TIMEOUT, 0, nullptr};
   }

@@ -14,6 +14,8 @@
 
 #include "test/core/end2end/end2end_test_fuzzer.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <gtest/gtest.h>
 #include <stdio.h>
 
 #include <algorithm>
@@ -24,13 +26,8 @@
 #include <utility>
 #include <vector>
 
-#include <gtest/gtest.h>
-
 #include "absl/log/check.h"
-
-#include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

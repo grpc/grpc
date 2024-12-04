@@ -16,6 +16,8 @@
 
 #include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
 
+#include <grpc/support/json.h>
+
 #include <string>
 #include <utility>
 
@@ -24,9 +26,6 @@
 #include "absl/types/variant.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
-
-#include <grpc/support/json.h>
-
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -70,9 +69,9 @@ Json::Object ValidateFilterConfig(
           envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_cache_size(
               cache_config))
           .value_or(10);
-  if (cache_size == 0 || cache_size >= INT64_MAX) {
+  if (cache_size == 0) {
     ValidationErrors::ScopedField field(errors, ".cache_config.cache_size");
-    errors->AddError("must be in the range (0, INT64_MAX)");
+    errors->AddError("must be greater than 0");
   }
   config["cache_size"] = Json::FromNumber(cache_size);
   return config;

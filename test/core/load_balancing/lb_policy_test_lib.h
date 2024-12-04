@@ -17,6 +17,10 @@
 #ifndef GRPC_TEST_CORE_LOAD_BALANCING_LB_POLICY_TEST_LIB_H
 #define GRPC_TEST_CORE_LOAD_BALANCING_LB_POLICY_TEST_LIB_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -48,20 +52,15 @@
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -97,6 +96,8 @@ namespace testing {
 class LoadBalancingPolicyTest : public ::testing::Test {
  protected:
   using EventEngine = grpc_event_engine::experimental::EventEngine;
+  using FuzzingEventEngine =
+      grpc_event_engine::experimental::FuzzingEventEngine;
 
   using CallAttributes =
       std::vector<ServiceConfigCallData::CallAttributeInterface*>;
@@ -585,7 +586,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       MutexLock lock(&mu_);
       StateUpdate update{
           state, status,
-          MakeRefCounted<PickerWrapper>(test_, std::move(picker))};
+          IsWorkSerializerDispatchEnabled()
+              ? std::move(picker)
+              : MakeRefCounted<PickerWrapper>(test_, std::move(picker))};
       LOG(INFO) << "enqueuing state update from LB policy: "
                 << update.ToString();
       queue_.push_back(std::move(update));
@@ -748,10 +751,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   void SetUp() override {
     // Order is important here: Fuzzing EE needs to be created before
     // grpc_init().
-    fuzzing_ee_ =
-        std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
-            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-            fuzzing_event_engine::Actions());
+    fuzzing_ee_ = MakeFuzzingEventEngine();
     grpc_timer_manager_set_start_threaded(false);
     grpc_init();
     if (intercept_timers_) {
@@ -777,19 +777,27 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     WaitForWorkSerializerToFlush();
     work_serializer_.reset();
     exec_ctx.Flush();
-    // Note: Can't safely trigger this from inside the FakeHelper dtor,
-    // because if there is a picker in the queue that is holding a ref
-    // to the LB policy, that will prevent the LB policy from being
-    // destroyed, and therefore the FakeHelper will not be destroyed.
-    // (This will cause an ASAN failure, but it will not display the
-    // queued events, so the failure will be harder to diagnose.)
-    helper_->ExpectQueueEmpty();
-    lb_policy_.reset();
+    if (lb_policy_ != nullptr) {
+      // Note: Can't safely trigger this from inside the FakeHelper dtor,
+      // because if there is a picker in the queue that is holding a ref
+      // to the LB policy, that will prevent the LB policy from being
+      // destroyed, and therefore the FakeHelper will not be destroyed.
+      // (This will cause an ASAN failure, but it will not display the
+      // queued events, so the failure will be harder to diagnose.)
+      helper_->ExpectQueueEmpty();
+      lb_policy_.reset();
+    }
     grpc_event_engine::experimental::WaitForSingleOwner(
         std::move(timer_intercepting_ee_));
     fuzzing_ee_->TickUntilIdle();
     grpc_event_engine::experimental::WaitForSingleOwner(std::move(fuzzing_ee_));
     grpc_shutdown_blocking();
+  }
+
+  virtual std::shared_ptr<FuzzingEventEngine> MakeFuzzingEventEngine() {
+    return std::make_shared<FuzzingEventEngine>(
+        grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+        fuzzing_event_engine::Actions());
   }
 
   LoadBalancingPolicy* lb_policy() const {
@@ -1537,8 +1545,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     timer_callbacks_.erase(it);
   }
 
-  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
-      fuzzing_ee_;
+  std::shared_ptr<FuzzingEventEngine> fuzzing_ee_;
   std::shared_ptr<WorkSerializer> work_serializer_;
   FakeHelper* helper_ = nullptr;
   std::map<SubchannelKey, SubchannelState> subchannel_pool_;

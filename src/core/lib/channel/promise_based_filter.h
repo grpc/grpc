@@ -19,6 +19,9 @@
 // promise-style. Most of this will be removed once the promises conversion is
 // completed.
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -37,11 +40,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -81,15 +80,23 @@ class ChannelFilter {
    public:
     Args() : Args(nullptr, nullptr) {}
     Args(grpc_channel_stack* channel_stack,
-         grpc_channel_element* channel_element)
-        : impl_(ChannelStackBased{channel_stack, channel_element}) {}
+         grpc_channel_element* channel_element,
+         const Blackboard* old_blackboard = nullptr,
+         Blackboard* new_blackboard = nullptr)
+        : impl_(ChannelStackBased{channel_stack, channel_element}),
+          old_blackboard_(old_blackboard),
+          new_blackboard_(new_blackboard) {}
     // While we're moving to call-v3 we need to have access to
     // grpc_channel_stack & friends here. That means that we can't rely on this
     // type signature from interception_chain.h, which means that we need a way
     // of constructing this object without naming it ===> implicit construction.
     // TODO(ctiller): remove this once we're fully on call-v3
     // NOLINTNEXTLINE(google-explicit-constructor)
-    Args(size_t instance_id) : impl_(V3Based{instance_id}) {}
+    Args(size_t instance_id, const Blackboard* old_blackboard = nullptr,
+         Blackboard* new_blackboard = nullptr)
+        : impl_(V3Based{instance_id}),
+          old_blackboard_(old_blackboard),
+          new_blackboard_(new_blackboard) {}
 
     ABSL_DEPRECATED("Direct access to channel stack is deprecated")
     grpc_channel_stack* channel_stack() const {
@@ -113,6 +120,21 @@ class ChannelFilter {
           [](const V3Based& v3) { return v3.instance_id; });
     }
 
+    // If a filter state object of type T exists for key from a previous
+    // filter stack, retains it for the new filter stack we're constructing.
+    // Otherwise, invokes create_func() to create a new filter state
+    // object for the new filter stack.  Returns the new filter state object.
+    template <typename T>
+    RefCountedPtr<T> GetOrCreateState(
+        const std::string& key,
+        absl::FunctionRef<RefCountedPtr<T>()> create_func) {
+      RefCountedPtr<T> state;
+      if (old_blackboard_ != nullptr) state = old_blackboard_->Get<T>(key);
+      if (state == nullptr) state = create_func();
+      if (new_blackboard_ != nullptr) new_blackboard_->Set(key, state);
+      return state;
+    }
+
    private:
     friend class ChannelFilter;
 
@@ -127,6 +149,9 @@ class ChannelFilter {
 
     using Impl = absl::variant<ChannelStackBased, V3Based>;
     Impl impl_;
+
+    const Blackboard* old_blackboard_ = nullptr;
+    Blackboard* new_blackboard_ = nullptr;
   };
 
   // Perform post-initialization step (if any).
@@ -154,7 +179,7 @@ class ChannelFilter {
 
 namespace promise_filter_detail {
 
-// Determine if a list of interceptors has any that need to asyncronously error
+// Determine if a list of interceptors has any that need to asynchronously error
 // the promise. If so, we need to allocate a latch for the generated promise for
 // the original promise stack polyfill code that's generated.
 
@@ -949,7 +974,9 @@ class BaseCallData : public Activity, private Wakeable {
 
   class Flusher : public latent_see::InnerScope {
    public:
-    explicit Flusher(BaseCallData* call);
+    explicit Flusher(BaseCallData* call,
+                     latent_see::Metadata* desc = GRPC_LATENT_SEE_METADATA(
+                         "PromiseBasedFilter::Flusher"));
     // Calls closures, schedules batches, relinquishes call combiner.
     ~Flusher();
 
@@ -1475,7 +1502,7 @@ class ServerCallData : public BaseCallData {
   //   - return a wrapper around PollTrailingMetadata as the promise.
   ArenaPromise<ServerMetadataHandle> MakeNextPromise(CallArgs call_args);
   // Wrapper to make it look like we're calling the next filter as a promise.
-  // All polls: await sending the trailing metadata, then foward it down the
+  // All polls: await sending the trailing metadata, then forward it down the
   // stack.
   Poll<ServerMetadataHandle> PollTrailingMetadata();
   static void RecvInitialMetadataReadyCallback(void* arg,
@@ -1620,8 +1647,10 @@ struct ChannelFilterWithFlagsMethods {
   static absl::Status InitChannelElem(grpc_channel_element* elem,
                                       grpc_channel_element_args* args) {
     CHECK(args->is_last == ((kFlags & kFilterIsLast) != 0));
-    auto status = F::Create(args->channel_args,
-                            ChannelFilter::Args(args->channel_stack, elem));
+    auto status = F::Create(
+        args->channel_args,
+        ChannelFilter::Args(args->channel_stack, elem, args->old_blackboard,
+                            args->new_blackboard));
     if (!status.ok()) {
       new (elem->channel_data) F*(nullptr);
       return absl_status_to_grpc_error(status.status());

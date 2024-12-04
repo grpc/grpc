@@ -14,10 +14,9 @@
 
 #include "src/core/lib/transport/call_spine.h"
 
-#include "absl/functional/any_invocable.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/functional/any_invocable.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -46,10 +45,8 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                 call_initiator.SpawnInfallible("finish-downstream-ok",
                                                [call_initiator]() mutable {
                                                  call_initiator.FinishSends();
-                                                 return Empty{};
                                                });
               }
-              return Empty{};
             });
       });
   call_handler.SpawnInfallible(
@@ -112,9 +109,7 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                   "recv_trailing",
                   [call_handler, md = std::move(md)]() mutable {
                     call_handler.PushServerTrailingMetadata(std::move(md));
-                    return Empty{};
                   });
-              return Empty{};
             });
       });
 }

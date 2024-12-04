@@ -19,16 +19,15 @@
 #ifndef GRPC_SRC_CORE_HANDSHAKER_HTTP_CONNECT_HTTP_PROXY_MAPPER_H
 #define GRPC_SRC_CORE_HANDSHAKER_HTTP_CONNECT_HTTP_PROXY_MAPPER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <string>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/proxy_mapper.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {

@@ -18,6 +18,7 @@
 
 #include "src/core/resolver/fake/fake_resolver.h"
 
+#include <grpc/grpc.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -34,12 +35,9 @@
 #include "absl/strings/str_format.h"
 #include "absl/synchronization/notification.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -110,7 +108,7 @@ class FakeResolverTest : public ::testing::Test {
     EndpointAddressesList addresses;
     for (size_t i = 0; i < num_addresses; ++i) {
       std::string uri_string = absl::StrFormat(
-          "ipv4:127.0.0.1:100%" PRIuPTR, test_counter * num_addresses + i);
+          "ipv4:127.0.0.1:100%" PRIuPTR, (test_counter * num_addresses) + i);
       absl::StatusOr<URI> uri = URI::Parse(uri_string);
       EXPECT_TRUE(uri.ok());
       grpc_resolved_address address;

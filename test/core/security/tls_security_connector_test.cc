@@ -18,20 +18,17 @@
 
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
-#include <stdlib.h>
-#include <string.h>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/credentials.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include <gtest/gtest.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include "absl/log/check.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
