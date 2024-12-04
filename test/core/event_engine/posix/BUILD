@@ -293,6 +293,8 @@ grpc_cc_test(
     ],
     uses_event_engine = False,
     deps = [
+        ":posix_engine_test_utils",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
     ],
 )

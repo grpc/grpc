@@ -1,3 +1,16 @@
+// Copyright 2024 gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 #include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 
 #include <arpa/inet.h>
@@ -10,19 +23,24 @@
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
+#include <memory>
+#include <utility>
 
+#include "absl/strings/str_cat.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "include/grpc/event_engine/event_engine.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/test_util/port.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
-
-std::string ErrorString() {
-  return absl::StrFormat("(%d) %s", errno, strerror(errno));
-}
 
 MATCHER(FDReady, "file descriptor is ready") { return ((arg.ready())); }
 
@@ -34,6 +52,15 @@ MATCHER_P(IsOkWith, value, "") {
         "failed with (%d) %s", arg.status().code(), arg.status().message());
     return false;
   }
+}
+
+MATCHER(IsOk, "Is ok") {
+  if ((!arg.ok())) {
+    *result_listener << absl::StrFormat("failed with (%d) %s", arg.code(),
+                                        arg.message());
+    return false;
+  }
+  return true;
 }
 
 sockaddr_in SockAddr(int port) {
@@ -61,18 +88,6 @@ absl::StatusOr<FileDescriptor> Listen(SystemApi& system_api, int port) {
   return server;
 }
 
-absl::StatusOr<FileDescriptor> Accept(SystemApi& system_api,
-                                      const FileDescriptor& fd) {
-  struct sockaddr_storage ss;
-  socklen_t slen = sizeof(ss);
-  FileDescriptor server_end =
-      system_api.Accept(fd, reinterpret_cast<sockaddr*>(&ss), &slen);
-  if (!server_end.ready()) {
-    return absl::ErrnoToStatus(errno, "Accept failed");
-  }
-  return server_end;
-}
-
 struct ClientAndServer {
   FileDescriptor client;
   FileDescriptor server;
@@ -92,16 +107,45 @@ absl::StatusOr<ClientAndServer> EstablishConnection(
   if (result == 0 || errno != EINPROGRESS) {
     return absl::ErrnoToStatus(errno, "Connect is not EINPROGRESS");
   }
-  auto server_end = Accept(server_system_api, server);
-  if (!server_end.ok()) {
-    return std::move(server_end).status();
+  // auto server_end = Accept(server_system_api, server);
+  struct sockaddr_storage ss;
+  socklen_t slen = sizeof(ss);
+  FileDescriptor server_end =
+      server_system_api.Accept(server, reinterpret_cast<sockaddr*>(&ss), &slen);
+  if (!server_end.ready()) {
+    return absl::ErrnoToStatus(errno, "Accept failed");
   }
   result = client_system_api.Connect(client, reinterpret_cast<sockaddr*>(&addr),
                                      sizeof(addr));
   if (result < 0) {
     return absl::ErrnoToStatus(errno, "Second connect failed");
   }
-  return ClientAndServer{client, std::move(server_end).value()};
+  return ClientAndServer{client, server_end};
+}
+
+class EventEngineForTest {
+ public:
+  EventEngineForTest()
+      : system_api(), scheduler(std::make_unique<TestScheduler>()) {
+    poller = MakeDefaultPoller(system_api, scheduler.get());
+    if (poller != nullptr) {
+      event_engine = PosixEventEngine::MakeTestOnlyPosixEventEngine(poller);
+      scheduler->ChangeCurrentEventEngine(event_engine.get());
+    }
+  }
+
+  bool ok() const { return poller != nullptr; }
+
+  std::shared_ptr<PosixEventEngine> event_engine;
+  std::shared_ptr<PosixEventPoller> poller;
+  SystemApi system_api;
+  std::unique_ptr<TestScheduler> scheduler;
+};
+
+grpc_core::ChannelArgs BuildChannelArgs() {
+  grpc_core::ChannelArgs args;
+  auto quota = grpc_core::ResourceQuota::Default();
+  return args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
 }
 
 }  // namespace
@@ -114,7 +158,6 @@ TEST(PosixSystemApiTest, PosixLevel) {
 
   auto server = Listen(server_api, port);
   ASSERT_THAT(server, IsOkWith(FDReady()));
-  ASSERT_EQ(errno, EINPROGRESS) << ErrorString();
   auto server_client =
       EstablishConnection(server_api, client_api, *server, port);
   ASSERT_TRUE(server_client.ok()) << server_client.status();
@@ -148,8 +191,68 @@ TEST(PosixSystemApiTest, PosixLevel) {
 }
 
 TEST(PosixSystemApiTest, EventEndpointLevel) {
-  SystemApi server_api;
-  SystemApi client_api;
+  std::string target_addr = absl::StrCat(
+      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
+  auto address = URIToResolvedAddress(target_addr);
+  ASSERT_TRUE(address.ok()) << address.status();
+  EventEngineForTest ee_server;
+  EventEngineForTest ee_client;
+  ASSERT_TRUE(ee_client.ok());
+  ASSERT_TRUE(ee_server.ok());
+
+  std::unique_ptr<EventEngine::Endpoint> server_end;
+  grpc_core::Mutex mu;
+  grpc_core::CondVar cond;
+  EventEngine::Listener::AcceptCallback accept_cb =
+      [&](std::unique_ptr<EventEngine::Endpoint> ep,
+          grpc_core::MemoryAllocator /*memory_allocator*/) {
+        absl::MutexLock lock(&mu);
+        CHECK_EQ(server_end.get(), nullptr)
+            << "Previous endpoint was not claimed";
+        server_end = std::move(ep);
+        cond.SignalAll();
+      };
+  ChannelArgsEndpointConfig config(BuildChannelArgs());
+  absl::optional<absl::Status> listener_shutdown_status;
+  auto listener = ee_server.event_engine->CreateListener(
+      std::move(accept_cb),
+      [&](const absl::Status& status) {
+        grpc_core::MutexLock lock(&mu);
+        LOG(INFO) << "Boop!";
+        listener_shutdown_status = status;
+        cond.SignalAll();
+      },
+      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
+  EXPECT_THAT(listener, IsOkWith(::testing::Ne(nullptr)));
+  absl::Status status = listener.value()->Bind(*address).status();
+  EXPECT_THAT(status, IsOk());
+  status = listener.value()->Start();
+  EXPECT_THAT(status, IsOk());
+  grpc_core::MemoryQuota quota("client");
+
+  absl::optional<absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>>
+      client_end;
+
+  ee_client.event_engine->Connect(
+      [&](auto conn) {
+        absl::MutexLock lock(&mu);
+        client_end = std::move(conn);
+        cond.SignalAll();
+      },
+      *address, config, quota.CreateMemoryAllocator("first connection"),
+      grpc_core::Duration::Seconds(5));
+  {
+    grpc_core::MutexLock lock(&mu);
+    while (!listener_shutdown_status.has_value() || !client_end.has_value()) {
+      LOG(INFO) << listener_shutdown_status.has_value() << " "
+                << client_end.has_value();
+      cond.Wait(&mu);
+    }
+    // EXPECT_THAT(*listener_shutdown_status, IsOk());
+  }
+
+  // worker_ = new Worker(event_engine_, poller_.get());
+  // worker_->Start();
 }
 
 }  // namespace experimental

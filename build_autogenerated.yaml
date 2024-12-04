@@ -15735,6 +15735,20 @@ targets:
   platforms:
   - linux
   - posix
+- name: posix_system_api_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/posix/posix_system_api_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: pre_stop_hook_server_test
   gtest: true
   build: test
