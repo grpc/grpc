@@ -286,6 +286,13 @@ void RetryInterceptor::Attempt::Start() {
     return TrySeq(
         self->reader_.PullClientInitialMetadata(),
         [self](ClientMetadataHandle metadata) {
+          int num_attempts_completed = self->call_->num_attempts_completed();
+          if (GPR_UNLIKELY(num_attempts_completed > 0)) {
+            metadata->Set(GrpcPreviousRpcAttemptsMetadata(),
+                          num_attempts_completed);
+          } else {
+            metadata->Remove(GrpcPreviousRpcAttemptsMetadata());
+          }
           self->initiator_ = self->call_->interceptor()->MakeChildCall(
               std::move(metadata), self->call_->call_handler()->arena()->Ref());
           self->initiator_.SpawnGuarded(

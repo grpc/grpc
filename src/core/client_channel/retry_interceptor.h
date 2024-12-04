@@ -55,6 +55,7 @@ class RetryInterceptor : public Interceptor {
     absl::optional<Duration> ShouldRetry(
         const ServerMetadata& md,
         absl::FunctionRef<std::string()> lazy_attempt_debug_string);
+    int num_attempts_completed() const { return num_attempts_completed_; }
 
     std::string DebugTag();
 
