@@ -66,7 +66,7 @@ class RetryInterceptor : public Interceptor {
     CallHandler call_handler_;
     RefCountedPtr<RetryInterceptor> interceptor_;
     RefCountedPtr<Attempt> current_attempt_;
-    const internal::RetryMethodConfig* retry_policy_ = nullptr;
+    const internal::RetryMethodConfig* const retry_policy_;
     RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data_;
     int num_attempts_completed_ = 0;
   };
@@ -93,7 +93,10 @@ class RetryInterceptor : public Interceptor {
     CallInitiator initiator_;
   };
 
+  const internal::RetryMethodConfig* GetRetryPolicy();
+
   const size_t per_rpc_retry_buffer_size_;
+  const size_t service_config_parser_index_;
 };
 
 }  // namespace grpc_core

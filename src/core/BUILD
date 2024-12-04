@@ -3528,6 +3528,7 @@ grpc_cc_library(
         "cancel_callback",
         "filter_args",
         "for_each",
+        "grpc_service_config",
         "interception_chain",
         "map",
         "request_buffer",

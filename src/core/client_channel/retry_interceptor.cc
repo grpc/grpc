@@ -18,6 +18,7 @@
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/sleep.h"
+#include "src/core/service_config/service_config_call_data.h"
 
 namespace grpc_core {
 
@@ -36,7 +37,9 @@ size_t GetMaxPerRpcRetryBufferSize(const ChannelArgs& args) {
 // RetryInterceptor
 
 RetryInterceptor::RetryInterceptor(const ChannelArgs& args)
-    : per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)) {}
+    : per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)),
+      service_config_parser_index_(
+          internal::RetryServiceConfigParser::ParserIndex()) {}
 
 void RetryInterceptor::InterceptCall(
     UnstartedCallHandler unstarted_call_handler) {
@@ -48,13 +51,21 @@ void RetryInterceptor::InterceptCall(
   call->Start();
 }
 
+const internal::RetryMethodConfig* RetryInterceptor::GetRetryPolicy() {
+  auto* svc_cfg_call_data = GetContext<ServiceConfigCallData>();
+  if (svc_cfg_call_data == nullptr) return nullptr;
+  return static_cast<const internal::RetryMethodConfig*>(
+      svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index_));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // RetryInterceptor::Call
 
 RetryInterceptor::Call::Call(RefCountedPtr<RetryInterceptor> interceptor,
                              CallHandler call_handler)
     : call_handler_(std::move(call_handler)),
-      interceptor_(std::move(interceptor)) {
+      interceptor_(std::move(interceptor)),
+      retry_policy_(interceptor_->GetRetryPolicy()) {
   GRPC_TRACE_LOG(retry, INFO) << DebugTag() << " retry call created";
 }
 
@@ -120,7 +131,11 @@ absl::optional<Duration> RetryInterceptor::Call::ShouldRetry(
     const ServerMetadata& md,
     absl::FunctionRef<std::string()> lazy_attempt_debug_string) {
   // If no retry policy, don't retry.
-  if (retry_policy_ == nullptr) return absl::nullopt;
+  if (retry_policy_ == nullptr) {
+    GRPC_TRACE_LOG(retry, INFO)
+        << lazy_attempt_debug_string() << " no retry policy";
+    return absl::nullopt;
+  }
   const auto status = md.get(GrpcStatusMetadata());
   if (status.has_value()) {
     if (GPR_LIKELY(*status == GRPC_STATUS_OK)) {
@@ -128,7 +143,7 @@ absl::optional<Duration> RetryInterceptor::Call::ShouldRetry(
         retry_throttle_data_->RecordSuccess();
       }
       GRPC_TRACE_LOG(retry, INFO)
-          << lazy_attempt_debug_string() << ": call succeeded";
+          << lazy_attempt_debug_string() << " call succeeded";
       return absl::nullopt;
     }
     // Status is not OK.  Check whether the status is retryable.
@@ -149,37 +164,35 @@ absl::optional<Duration> RetryInterceptor::Call::ShouldRetry(
   if (retry_throttle_data_ != nullptr &&
       !retry_throttle_data_->RecordFailure()) {
     GRPC_TRACE_LOG(retry, INFO)
-        << lazy_attempt_debug_string() << ": retries throttled";
+        << lazy_attempt_debug_string() << " retries throttled";
     return absl::nullopt;
   }
   // Check whether the call is committed.
   if (request_buffer_.committed()) {
     GRPC_TRACE_LOG(retry, INFO)
-        << lazy_attempt_debug_string() << ": retries already committed";
+        << lazy_attempt_debug_string() << " retries already committed";
     return absl::nullopt;
   }
   // Check whether we have retries remaining.
   ++num_attempts_completed_;
   if (num_attempts_completed_ >= retry_policy_->max_attempts()) {
     GRPC_TRACE_LOG(retry, INFO)
-        << lazy_attempt_debug_string() << ": exceeded "
+        << lazy_attempt_debug_string() << " exceeded "
         << retry_policy_->max_attempts() << " retry attempts";
     return absl::nullopt;
   }
   // Check server push-back.
-  auto server_pushback = md.get(GrpcRetryPushbackMsMetadata());
-  if (server_pushback.has_value()) {
-    if (*server_pushback < Duration::Zero()) {
-      GRPC_TRACE_LOG(retry, INFO) << lazy_attempt_debug_string()
-                                  << ": not retrying due to server push-back";
-      return absl::nullopt;
-    } else {
-      GRPC_TRACE_LOG(retry, INFO)
-          << lazy_attempt_debug_string() << ": server push-back: retry in "
-          << server_pushback->millis() << " ms";
-    }
+  auto server_pushback =
+      md.get(GrpcRetryPushbackMsMetadata()).value_or(Duration::Zero());
+  if (server_pushback < Duration::Zero()) {
+    GRPC_TRACE_LOG(retry, INFO) << lazy_attempt_debug_string()
+                                << " not retrying due to server push-back";
+    return absl::nullopt;
   }
   // We should retry.
+  GRPC_TRACE_LOG(retry, INFO)
+      << lazy_attempt_debug_string() << " server push-back: retry in "
+      << server_pushback;
   return server_pushback;
 }
 
