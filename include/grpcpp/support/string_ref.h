@@ -101,10 +101,12 @@ class string_ref {
     return 0;
   }
 
+  [[deprecated("Use grpc::StartsWith() instead.")]]
   bool starts_with(string_ref x) const {
     return length_ >= x.length_ && (memcmp(data_, x.data_, x.length_) == 0);
   }
 
+  [[deprecated("Use grpc::EndsWith() instead.")]]
   bool ends_with(string_ref x) const {
     return length_ >= x.length_ &&
            (memcmp(data_ + (length_ - x.length_), x.data_, x.length_) == 0);
@@ -141,6 +143,17 @@ inline bool operator>=(string_ref x, string_ref y) { return x.compare(y) >= 0; }
 
 inline std::ostream& operator<<(std::ostream& out, const string_ref& string) {
   return out << std::string(string.begin(), string.end());
+}
+
+inline bool StartsWith(string_ref text, string_ref prefix) noexcept {
+  return text.length() >= prefix.length() &&
+         (memcmp(text.data(), prefix.data(), prefix.length()) == 0);
+}
+
+inline bool EndsWith(string_ref text, string_ref suffix) noexcept {
+  return text.length() >= suffix.length() &&
+         (memcmp(text.data() + (text.length() - suffix.length()), suffix.data(),
+                 suffix.length()) == 0);
 }
 
 }  // namespace grpc

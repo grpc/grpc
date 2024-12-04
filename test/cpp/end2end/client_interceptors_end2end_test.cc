@@ -127,8 +127,8 @@ class HijackingInterceptor : public experimental::Interceptor {
       bool found = false;
       // Check that we received the metadata as an echo
       for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+        found = grpc::StartsWith(pair.first, "testkey") &&
+                grpc::StartsWith(pair.second, "testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
@@ -248,8 +248,8 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
       bool found = false;
       // Check that we received the metadata as an echo
       for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+        found = grpc::StartsWith(pair.first, "testkey") &&
+                grpc::StartsWith(pair.second, "testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
@@ -472,8 +472,8 @@ class ServerStreamingRpcHijackingInterceptor
       bool found = false;
       // Check that we received the metadata as an echo
       for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+        found = grpc::StartsWith(pair.first, "testkey") &&
+                grpc::StartsWith(pair.second, "testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
@@ -620,8 +620,8 @@ class LoggingInterceptor : public experimental::Interceptor {
       bool found = false;
       // Check that we received the metadata as an echo
       for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+        found = grpc::StartsWith(pair.first, "testkey") &&
+                grpc::StartsWith(pair.second, "testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
