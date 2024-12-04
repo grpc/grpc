@@ -86,7 +86,7 @@ Status EchoTestServiceImpl::Echo(ServerContext* context,
       context->client_metadata();
   for (const auto& kv : metadata) {
     // Skip all binary headers.
-    if (kv.first.ends_with("-bin")) {
+    if (grpc::EndsWith(kv.first, "-bin")) {
       continue;
     }
     absl::StrAppend(&s, kRequestHeader, "=", StringRefToStringView(kv.first),

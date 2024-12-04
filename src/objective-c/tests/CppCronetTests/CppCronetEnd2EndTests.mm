@@ -153,7 +153,7 @@ using std::chrono::system_clock;
   XCTAssertTrue(s.ok());
   const auto& trailing_metadata = context.GetServerTrailingMetadata();
   auto iter = trailing_metadata.find("user-agent");
-  XCTAssert(iter->second.starts_with("custom_prefix grpc-c++"));
+  grpc::StartsWith(XCTAssert(iter->second, "custom_prefix grpc-c++"));
 }
 
 - (void)testMultipleRPCs {

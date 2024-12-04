@@ -21,6 +21,9 @@
 
 namespace grpc {
 
+#if GRPC_STRING_REF_IS_ABSL_STRING_VIEW
+#else
 const size_t string_ref::npos = static_cast<size_t>(-1);
+#endif
 
 }  // namespace grpc

@@ -829,7 +829,7 @@ TEST_P(End2endTest, SimpleRpcWithCustomUserAgentPrefix) {
   auto iter = trailing_metadata.find("user-agent");
   EXPECT_TRUE(iter != trailing_metadata.end());
   std::string expected_prefix = user_agent_prefix_ + " grpc-c++/";
-  EXPECT_TRUE(iter->second.starts_with(expected_prefix)) << iter->second;
+  EXPECT_TRUE(grpc::StartsWith(iter->second, expected_prefix)) << iter->second;
 }
 
 TEST_P(End2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {

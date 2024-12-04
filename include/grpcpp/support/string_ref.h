@@ -27,7 +27,18 @@
 #include <iostream>
 #include <iterator>
 
+#if GRPC_STRING_REF_IS_ABSL_STRING_VIEW
+#include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
+#endif
+
 namespace grpc {
+
+#if GRPC_STRING_REF_IS_ABSL_STRING_VIEW
+using string_ref = absl::string_view;
+using absl::EndsWith;
+using absl::StartsWith;
+#else
 
 /// This class is a non owning reference to a string.
 ///
@@ -101,6 +112,7 @@ class string_ref {
     return 0;
   }
 
+  /*
   bool starts_with(string_ref x) const {
     return length_ >= x.length_ && (memcmp(data_, x.data_, x.length_) == 0);
   }
@@ -109,6 +121,7 @@ class string_ref {
     return length_ >= x.length_ &&
            (memcmp(data_ + (length_ - x.length_), x.data_, x.length_) == 0);
   }
+  */
 
   size_t find(string_ref s) const {
     auto it = std::search(cbegin(), cend(), s.cbegin(), s.cend());
@@ -142,6 +155,19 @@ inline bool operator>=(string_ref x, string_ref y) { return x.compare(y) >= 0; }
 inline std::ostream& operator<<(std::ostream& out, const string_ref& string) {
   return out << std::string(string.begin(), string.end());
 }
+
+inline bool StartsWith(string_ref text, string_ref prefix) noexcept {
+  return text.length() >= prefix.length() &&
+         (memcmp(text.data(), prefix.data(), prefix.length()) == 0);
+}
+
+inline bool EndsWith(string_ref text, string_ref suffix) noexcept {
+  return text.length() >= suffix.length() &&
+         (memcmp(text.data() + (text.length() - suffix.length()), suffix.data(),
+                 suffix.length()) == 0);
+}
+
+#endif
 
 }  // namespace grpc
 

@@ -21,6 +21,8 @@
 
 #include <string>
 
+#define GRPC_STRING_REF_IS_ABSL_STRING_VIEW 1
+
 /// The following macros are deprecated and appear only for users
 /// with PB files generated using gRPC 1.0.x plugins. They should
 /// not be used in new code

@@ -125,7 +125,8 @@ class BackendServiceImpl : public BackendService {
     // using GRPC_ARG_GRPCLB_CHANNEL_ARGS.
     auto it = context->client_metadata().find("user-agent");
     if (it != context->client_metadata().end()) {
-      EXPECT_FALSE(it->second.starts_with(kGrpclbSpecificUserAgentString));
+      EXPECT_FALSE(
+          grpc::StartsWith(it->second, kGrpclbSpecificUserAgentString));
     }
     // Backend should receive the call credentials metadata.
     auto call_credentials_entry =
