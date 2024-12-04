@@ -56,6 +56,8 @@ class RetryInterceptor : public Interceptor {
         const ServerMetadata& md,
         absl::FunctionRef<std::string()> lazy_attempt_debug_string);
 
+    std::string DebugTag();
+
    private:
     void MaybeCommit(size_t buffered);
     auto ClientToBuffer();
@@ -78,6 +80,8 @@ class RetryInterceptor : public Interceptor {
     void Cancel();
     void Commit();
     RequestBuffer::Reader* reader() { return &reader_; }
+
+    std::string DebugTag() const;
 
    private:
     auto ServerToClient();

@@ -54,12 +54,17 @@ void RetryInterceptor::InterceptCall(
 RetryInterceptor::Call::Call(RefCountedPtr<RetryInterceptor> interceptor,
                              CallHandler call_handler)
     : call_handler_(std::move(call_handler)),
-      interceptor_(std::move(interceptor)) {}
+      interceptor_(std::move(interceptor)) {
+  GRPC_TRACE_LOG(retry, INFO) << DebugTag() << " retry call created";
+}
 
 auto RetryInterceptor::Call::ClientToBuffer() {
   return TrySeq(
       call_handler_.PullClientInitialMetadata(),
       [self = Ref()](ClientMetadataHandle metadata) mutable {
+        GRPC_TRACE_LOG(retry, INFO)
+            << self->DebugTag()
+            << " got client initial metadata: " << metadata->DebugString();
         return self->request_buffer_.PushClientInitialMetadata(
             std::move(metadata));
       },
@@ -67,6 +72,9 @@ auto RetryInterceptor::Call::ClientToBuffer() {
         self->MaybeCommit(buffered);
         return ForEach(OutgoingMessages(self->call_handler_),
                        [self](MessageHandle message) {
+                         GRPC_TRACE_LOG(retry, INFO)
+                             << self->DebugTag() << " got client message "
+                             << message->DebugString();
                          return TrySeq(self->request_buffer_.PushMessage(
                                            std::move(message)),
                                        [self](size_t buffered) {
@@ -101,6 +109,8 @@ void RetryInterceptor::Call::StartAttempt() {
 }
 
 void RetryInterceptor::Call::MaybeCommit(size_t buffered) {
+  GRPC_TRACE_LOG(retry, INFO) << DebugTag() << " buffered:" << buffered << "/"
+                              << interceptor_->per_rpc_retry_buffer_size_;
   if (buffered >= interceptor_->per_rpc_retry_buffer_size_) {
     current_attempt_->Commit();
   }
@@ -173,54 +183,69 @@ absl::optional<Duration> RetryInterceptor::Call::ShouldRetry(
   return server_pushback;
 }
 
+std::string RetryInterceptor::Call::DebugTag() {
+  return absl::StrFormat("%s call:%p", Activity::current()->DebugTag(), this);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // RetryInterceptor::Attempt
 
 RetryInterceptor::Attempt::Attempt(RefCountedPtr<Call> call)
-    : reader_(call->request_buffer()), call_(std::move(call)) {}
+    : reader_(call->request_buffer()), call_(std::move(call)) {
+  GRPC_TRACE_LOG(retry, INFO) << DebugTag() << " retry attempt created";
+}
 
 auto RetryInterceptor::Attempt::ServerToClientGotInitialMetadata(
     ServerMetadataHandle md) {
+  GRPC_TRACE_LOG(retry, INFO)
+      << DebugTag() << " get server initial metadata " << md->DebugString();
   Commit();
   call_->call_handler()->SpawnPushServerInitialMetadata(std::move(md));
   return Seq(
       ForEach(OutgoingMessages(&initiator_),
               [call = call_](MessageHandle message) {
+                GRPC_TRACE_LOG(retry, INFO)
+                    << call->DebugTag() << " got server message "
+                    << message->DebugString();
                 return call->call_handler()->SpawnPushMessage(
                     std::move(message));
               }),
       initiator_.PullServerTrailingMetadata(),
       [call = call_](ServerMetadataHandle md) {
+        GRPC_TRACE_LOG(retry, INFO)
+            << call->DebugTag()
+            << " got server trailing metadata: " << md->DebugString();
         call->call_handler()->SpawnPushServerTrailingMetadata(std::move(md));
         return absl::OkStatus();
       });
 }
 
 auto RetryInterceptor::Attempt::ServerToClientGotTrailersOnlyResponse() {
-  return Seq(initiator_.PullServerTrailingMetadata(),
-             [self = Ref()](ServerMetadataHandle md) {
-               auto pushback = self->call_->ShouldRetry(
-                   *md, [self = self.get()]() -> std::string {
-                     return absl::StrFormat("call:%s attempt:%p",
-                                            Activity::current()->DebugTag(),
-                                            self);
-                   });
-               return If(
-                   pushback.has_value(),
-                   [self, pushback]() {
-                     return Map(Sleep(*pushback),
-                                [call = self->call_](absl::Status) {
-                                  call->StartAttempt();
-                                  return absl::OkStatus();
-                                });
-                   },
-                   [self, md = std::move(md)]() mutable {
-                     self->Commit();
-                     self->call_->call_handler()
-                         ->SpawnPushServerTrailingMetadata(std::move(md));
-                     return absl::OkStatus();
-                   });
-             });
+  GRPC_TRACE_LOG(retry, INFO) << DebugTag() << " got trailers only response";
+  return Seq(
+      initiator_.PullServerTrailingMetadata(),
+      [self = Ref()](ServerMetadataHandle md) {
+        GRPC_TRACE_LOG(retry, INFO)
+            << self->DebugTag()
+            << " got server trailing metadata: " << md->DebugString();
+        auto pushback = self->call_->ShouldRetry(
+            *md,
+            [self = self.get()]() -> std::string { return self->DebugTag(); });
+        return If(
+            pushback.has_value(),
+            [self, pushback]() {
+              return Map(Sleep(*pushback), [call = self->call_](absl::Status) {
+                call->StartAttempt();
+                return absl::OkStatus();
+              });
+            },
+            [self, md = std::move(md)]() mutable {
+              self->Commit();
+              self->call_->call_handler()->SpawnPushServerTrailingMetadata(
+                  std::move(md));
+              return absl::OkStatus();
+            });
+      });
 }
 
 auto RetryInterceptor::Attempt::ServerToClient() {
@@ -261,5 +286,9 @@ void RetryInterceptor::Attempt::Start() {
 }
 
 void RetryInterceptor::Attempt::Cancel() { initiator_.SpawnCancel(); }
+
+std::string RetryInterceptor::Attempt::DebugTag() const {
+  return absl::StrFormat("%s attempt:%p", call_->DebugTag(), this);
+}
 
 }  // namespace grpc_core
