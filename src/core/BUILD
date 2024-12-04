@@ -3959,11 +3959,11 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "tdigest",
-    hdrs = [
-        "util/tdigest.h",
-    ],
     srcs = [
         "util/tdigest.cc",
+    ],
+    hdrs = [
+        "util/tdigest.h",
     ],
     external_deps = [
         "absl/strings",
