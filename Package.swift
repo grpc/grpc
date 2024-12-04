@@ -2197,6 +2197,7 @@ let package = Package(
         "third_party/upb/upb/reflection/def_type.c",
         "third_party/upb/upb/reflection/def_type.h",
         "third_party/upb/upb/reflection/desc_state.c",
+        "third_party/upb/upb/reflection/descriptor_bootstrap.h",
         "third_party/upb/upb/reflection/enum_def.c",
         "third_party/upb/upb/reflection/enum_def.h",
         "third_party/upb/upb/reflection/enum_reserved_range.c",

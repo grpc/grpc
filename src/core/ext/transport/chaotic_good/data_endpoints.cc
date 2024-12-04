@@ -219,7 +219,6 @@ DataEndpoints::DataEndpoints(
                              input_queues](absl::StatusOr<SliceBuffer> buffer) {
                               input_queues->CompleteRead(ticket,
                                                          std::move(buffer));
-                              return Empty{};
                             });
                       });
                 },

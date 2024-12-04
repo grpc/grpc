@@ -3264,6 +3264,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/reflection/def_type.c )
   s.files += %w( third_party/upb/upb/reflection/def_type.h )
   s.files += %w( third_party/upb/upb/reflection/desc_state.c )
+  s.files += %w( third_party/upb/upb/reflection/descriptor_bootstrap.h )
   s.files += %w( third_party/upb/upb/reflection/enum_def.c )
   s.files += %w( third_party/upb/upb/reflection/enum_def.h )
   s.files += %w( third_party/upb/upb/reflection/enum_reserved_range.c )

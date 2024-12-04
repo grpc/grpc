@@ -70,7 +70,6 @@ TRANSPORT_TEST(ManyUnaryRequests) {
           EXPECT_TRUE(md.ok());
           EXPECT_EQ(*md.value()->get_pointer(GrpcStatusMetadata()),
                     GRPC_STATUS_UNIMPLEMENTED);
-          return Empty{};
         });
   }
   for (int i = 0; i < kNumRequests; i++) {
@@ -115,7 +114,6 @@ TRANSPORT_TEST(ManyUnaryRequests) {
           auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
           md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
           handler.PushServerTrailingMetadata(std::move(md));
-          return Empty{};
         });
   }
   WaitForAllPendingWork();

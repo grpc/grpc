@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPB_H_
-#define ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPB_H_
+#ifndef ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPB_H__UPB_H_
+#define ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -2276,4 +2276,4 @@ UPB_INLINE void envoy_service_discovery_v3_Resource_CacheControl_set_do_not_cach
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPB_H_ */
+#endif  /* ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPB_H__UPB_H_ */

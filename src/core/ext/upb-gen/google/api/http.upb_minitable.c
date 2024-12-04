@@ -14,7 +14,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal google_api_Http_submsgs[1] = {
+static const upb_MiniTableSubInternal google_api_Http__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &google__api__HttpRule_msg_init_ptr},
 };
 
@@ -24,7 +24,7 @@ static const upb_MiniTableField google_api_Http__fields[2] = {
 };
 
 const upb_MiniTable google__api__Http_msg_init = {
-  &google_api_Http_submsgs[0],
+  &google_api_Http__submsgs[0],
   &google_api_Http__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -39,7 +39,7 @@ const upb_MiniTable google__api__Http_msg_init = {
 };
 
 const upb_MiniTable* google__api__Http_msg_init_ptr = &google__api__Http_msg_init;
-static const upb_MiniTableSubInternal google_api_HttpRule_submsgs[2] = {
+static const upb_MiniTableSubInternal google_api_HttpRule__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &google__api__CustomHttpPattern_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__api__HttpRule_msg_init_ptr},
 };
@@ -58,7 +58,7 @@ static const upb_MiniTableField google_api_HttpRule__fields[10] = {
 };
 
 const upb_MiniTable google__api__HttpRule_msg_init = {
-  &google_api_HttpRule_submsgs[0],
+  &google_api_HttpRule__submsgs[0],
   &google_api_HttpRule__fields[0],
   UPB_SIZE(48, 88), 10, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED

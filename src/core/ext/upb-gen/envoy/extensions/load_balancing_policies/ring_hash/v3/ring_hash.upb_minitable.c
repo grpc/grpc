@@ -19,7 +19,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_submsgs[5] = {
+static const upb_MiniTableSubInternal envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash__submsgs[5] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
@@ -38,7 +38,7 @@ static const upb_MiniTableField envoy_extensions_load_balancing_policies_ring_ha
 };
 
 const upb_MiniTable envoy__extensions__load_0balancing_0policies__ring_0hash__v3__RingHash_msg_init = {
-  &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_submsgs[0],
+  &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash__submsgs[0],
   &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash__fields[0],
   UPB_SIZE(40, 64), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED

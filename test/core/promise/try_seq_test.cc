@@ -195,7 +195,6 @@ TEST(TrySeqContainer, Ok) {
                            [&expect](const std::unique_ptr<int>& i, Empty) {
                              EXPECT_EQ(*i, expect);
                              ++expect;
-                             return Empty{};
                            });
   EXPECT_THAT(p(), IsReady());
   EXPECT_EQ(expect, 4);

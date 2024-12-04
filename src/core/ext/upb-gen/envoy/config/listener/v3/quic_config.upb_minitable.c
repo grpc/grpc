@@ -23,7 +23,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_config_listener_v3_QuicProtocolOptions_submsgs[11] = {
+static const upb_MiniTableSubInternal envoy_config_listener_v3_QuicProtocolOptions__submsgs[11] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__QuicProtocolOptions_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
@@ -52,7 +52,7 @@ static const upb_MiniTableField envoy_config_listener_v3_QuicProtocolOptions__fi
 };
 
 const upb_MiniTable envoy__config__listener__v3__QuicProtocolOptions_msg_init = {
-  &envoy_config_listener_v3_QuicProtocolOptions_submsgs[0],
+  &envoy_config_listener_v3_QuicProtocolOptions__submsgs[0],
   &envoy_config_listener_v3_QuicProtocolOptions__fields[0],
   UPB_SIZE(56, 104), 11, kUpb_ExtMode_NonExtendable, 11, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED

@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef SRC_PROTO_GRPC_GCP_HANDSHAKER_PROTO_UPB_H_
-#define SRC_PROTO_GRPC_GCP_HANDSHAKER_PROTO_UPB_H_
+#ifndef SRC_PROTO_GRPC_GCP_HANDSHAKER_PROTO_UPB_H__UPB_H_
+#define SRC_PROTO_GRPC_GCP_HANDSHAKER_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -1773,4 +1773,4 @@ UPB_INLINE struct grpc_gcp_HandshakerStatus* grpc_gcp_HandshakerResp_mutable_sta
 
 #include "upb/port/undef.inc"
 
-#endif  /* SRC_PROTO_GRPC_GCP_HANDSHAKER_PROTO_UPB_H_ */
+#endif  /* SRC_PROTO_GRPC_GCP_HANDSHAKER_PROTO_UPB_H__UPB_H_ */
