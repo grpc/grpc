@@ -16,6 +16,8 @@
 #define RETRY_INTERCEPTOR_H
 
 #include "src/core/call/request_buffer.h"
+#include "src/core/client_channel/retry_service_config.h"
+#include "src/core/client_channel/retry_throttle.h"
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/transport/interception_chain.h"
 
@@ -23,9 +25,11 @@ namespace grpc_core {
 
 class RetryInterceptor : public Interceptor {
  public:
-  static RefCountedPtr<RetryInterceptor> Create(const ChannelArgs&,
+  explicit RetryInterceptor(const ChannelArgs& args);
+
+  static RefCountedPtr<RetryInterceptor> Create(const ChannelArgs& args,
                                                 const FilterArgs&) {
-    return MakeRefCounted<RetryInterceptor>();
+    return MakeRefCounted<RetryInterceptor>(args);
   }
 
   void Orphaned() override {}
@@ -48,7 +52,9 @@ class RetryInterceptor : public Interceptor {
     RetryInterceptor* interceptor() { return interceptor_.get(); }
     // if nullopt --> commit & don't retry
     // if duration --> retry after duration
-    absl::optional<Duration> ShouldRetry(const ServerMetadata& md);
+    absl::optional<Duration> ShouldRetry(
+        const ServerMetadata& md,
+        absl::FunctionRef<std::string()> lazy_attempt_debug_string);
 
    private:
     void MaybeCommit(size_t buffered);
@@ -58,6 +64,9 @@ class RetryInterceptor : public Interceptor {
     CallHandler call_handler_;
     RefCountedPtr<RetryInterceptor> interceptor_;
     RefCountedPtr<Attempt> current_attempt_;
+    const internal::RetryMethodConfig* retry_policy_ = nullptr;
+    RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data_;
+    int num_attempts_completed_ = 0;
   };
 
   class Attempt
@@ -80,7 +89,7 @@ class RetryInterceptor : public Interceptor {
     CallInitiator initiator_;
   };
 
-  size_t MaxBuffered() const;
+  const size_t per_rpc_retry_buffer_size_;
 };
 
 }  // namespace grpc_core

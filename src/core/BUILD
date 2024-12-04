@@ -3531,6 +3531,8 @@ grpc_cc_library(
         "interception_chain",
         "map",
         "request_buffer",
+        "retry_service_config",
+        "retry_throttle",
         "sleep",
     ],
 )
@@ -8553,6 +8555,7 @@ grpc_cc_library(
         "metadata",
         "ref_counted",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 

@@ -105,6 +105,11 @@ class RequestBuffer {
   // reader. All other readers will see failure.
   void Commit(Reader* winner);
 
+  bool committed() const {
+    MutexLock lock(&mu_);
+    return winner_ != nullptr;
+  }
+
  private:
   // Buffering state: we're collecting metadata and messages.
   struct Buffering {
@@ -168,7 +173,7 @@ class RequestBuffer {
     readers_.erase(reader);
   }
 
-  Mutex mu_;
+  mutable Mutex mu_;
   Reader* winner_ ABSL_GUARDED_BY(mu_){nullptr};
   State state_ ABSL_GUARDED_BY(mu_){Buffering{}};
   // TODO(ctiller): change this to an intrusively linked list to avoid

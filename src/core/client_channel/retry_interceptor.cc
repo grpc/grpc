@@ -21,8 +21,22 @@
 
 namespace grpc_core {
 
+namespace {
+size_t GetMaxPerRpcRetryBufferSize(const ChannelArgs& args) {
+  // By default, we buffer 256 KiB per RPC for retries.
+  // TODO(roth): Do we have any data to suggest a better value?
+  static constexpr int kDefaultPerRpcRetryBufferSize = (256 << 10);
+  return Clamp(args.GetInt(GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE)
+                   .value_or(kDefaultPerRpcRetryBufferSize),
+               0, INT_MAX);
+}
+}  // namespace
+
 ////////////////////////////////////////////////////////////////////////////////
 // RetryInterceptor
+
+RetryInterceptor::RetryInterceptor(const ChannelArgs& args)
+    : per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)) {}
 
 void RetryInterceptor::InterceptCall(
     UnstartedCallHandler unstarted_call_handler) {
@@ -87,9 +101,76 @@ void RetryInterceptor::Call::StartAttempt() {
 }
 
 void RetryInterceptor::Call::MaybeCommit(size_t buffered) {
-  if (buffered >= interceptor_->MaxBuffered()) {
+  if (buffered >= interceptor_->per_rpc_retry_buffer_size_) {
     current_attempt_->Commit();
   }
+}
+
+absl::optional<Duration> RetryInterceptor::Call::ShouldRetry(
+    const ServerMetadata& md,
+    absl::FunctionRef<std::string()> lazy_attempt_debug_string) {
+  // If no retry policy, don't retry.
+  if (retry_policy_ == nullptr) return absl::nullopt;
+  const auto status = md.get(GrpcStatusMetadata());
+  if (status.has_value()) {
+    if (GPR_LIKELY(*status == GRPC_STATUS_OK)) {
+      if (retry_throttle_data_ != nullptr) {
+        retry_throttle_data_->RecordSuccess();
+      }
+      GRPC_TRACE_LOG(retry, INFO)
+          << lazy_attempt_debug_string() << ": call succeeded";
+      return absl::nullopt;
+    }
+    // Status is not OK.  Check whether the status is retryable.
+    if (!retry_policy_->retryable_status_codes().Contains(*status)) {
+      GRPC_TRACE_LOG(retry, INFO) << lazy_attempt_debug_string() << ": status "
+                                  << grpc_status_code_to_string(*status)
+                                  << " not configured as retryable";
+      return absl::nullopt;
+    }
+  }
+  // Record the failure and check whether retries are throttled.
+  // Note that it's important for this check to come after the status
+  // code check above, since we should only record failures whose statuses
+  // match the configured retryable status codes, so that we don't count
+  // things like failures due to malformed requests (INVALID_ARGUMENT).
+  // Conversely, it's important for this to come before the remaining
+  // checks, so that we don't fail to record failures due to other factors.
+  if (retry_throttle_data_ != nullptr &&
+      !retry_throttle_data_->RecordFailure()) {
+    GRPC_TRACE_LOG(retry, INFO)
+        << lazy_attempt_debug_string() << ": retries throttled";
+    return absl::nullopt;
+  }
+  // Check whether the call is committed.
+  if (request_buffer_.committed()) {
+    GRPC_TRACE_LOG(retry, INFO)
+        << lazy_attempt_debug_string() << ": retries already committed";
+    return absl::nullopt;
+  }
+  // Check whether we have retries remaining.
+  ++num_attempts_completed_;
+  if (num_attempts_completed_ >= retry_policy_->max_attempts()) {
+    GRPC_TRACE_LOG(retry, INFO)
+        << lazy_attempt_debug_string() << ": exceeded "
+        << retry_policy_->max_attempts() << " retry attempts";
+    return absl::nullopt;
+  }
+  // Check server push-back.
+  auto server_pushback = md.get(GrpcRetryPushbackMsMetadata());
+  if (server_pushback.has_value()) {
+    if (*server_pushback < Duration::Zero()) {
+      GRPC_TRACE_LOG(retry, INFO) << lazy_attempt_debug_string()
+                                  << ": not retrying due to server push-back";
+      return absl::nullopt;
+    } else {
+      GRPC_TRACE_LOG(retry, INFO)
+          << lazy_attempt_debug_string() << ": server push-back: retry in "
+          << server_pushback->millis() << " ms";
+    }
+  }
+  // We should retry.
+  return server_pushback;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -118,7 +199,12 @@ auto RetryInterceptor::Attempt::ServerToClientGotInitialMetadata(
 auto RetryInterceptor::Attempt::ServerToClientGotTrailersOnlyResponse() {
   return Seq(initiator_.PullServerTrailingMetadata(),
              [self = Ref()](ServerMetadataHandle md) {
-               auto pushback = self->call_->ShouldRetry(*md);
+               auto pushback = self->call_->ShouldRetry(
+                   *md, [self = self.get()]() -> std::string {
+                     return absl::StrFormat("call:%s attempt:%p",
+                                            Activity::current()->DebugTag(),
+                                            self);
+                   });
                return If(
                    pushback.has_value(),
                    [self, pushback]() {
@@ -173,5 +259,7 @@ void RetryInterceptor::Attempt::Start() {
         });
   });
 }
+
+void RetryInterceptor::Attempt::Cancel() { initiator_.SpawnCancel(); }
 
 }  // namespace grpc_core

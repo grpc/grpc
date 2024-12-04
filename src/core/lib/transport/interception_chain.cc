@@ -18,6 +18,7 @@
 
 #include <cstddef>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/call_spine.h"
