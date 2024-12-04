@@ -73,6 +73,7 @@ RUN apt-get update && apt-get install -y \
   python3-pip \
   python3-setuptools \
   python3-yaml \
+  python3-mako \
   && apt-get clean
 
 # use pinned version of pip to avoid sudden breakages
@@ -133,6 +134,8 @@ RUN mkdir /var/local/jenkins
 
 # Required by XDS interop test harness.
 RUN python3 -m pip install virtualenv==16.7.9
+
+RUN if [ -f ./generate_artifacts.sh ]; then ./generate_artifacts.sh; fi
 
 
 # Define the default command.

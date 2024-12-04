@@ -36,5 +36,7 @@
       rm -rf /tmp/openssl-1.0.2u*
   ENV OPENSSL_ROOT_DIR=/usr/local/ssl
 
+  <%include file="../../generate_artifacts.include"/>
+
   # Define the default command.
   CMD ["bash"]
