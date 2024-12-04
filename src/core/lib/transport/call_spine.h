@@ -241,6 +241,26 @@ class CallSpine final : public Party {
         });
   }
 
+  void AddChildCall(RefCountedPtr<CallSpine> child_call) {
+    child_calls_.push_back(std::move(child_call));
+    if (child_calls_.size() == 1) {
+      SpawnInfallible("check_cancellation",
+                      [self = RefAsSubclass<CallSpine>()]() mutable {
+                        auto was_cancelled = self->WasCancelled();
+                        return Map(std::move(was_cancelled),
+                                   [self = std::move(self)](bool cancelled) {
+                                     if (cancelled) {
+                                       for (auto& child : self->child_calls_) {
+                                         child->SpawnPushServerTrailingMetadata(
+                                             CancelledServerMetadataFromStatus(
+                                                 absl::CancelledError()));
+                                       }
+                                     }
+                                   });
+                      });
+    }
+  }
+
  private:
   friend class Arena;
   CallSpine(ClientMetadataHandle client_initial_metadata,
@@ -251,7 +271,11 @@ class CallSpine final : public Party {
   // Call filters/pipes part of the spine
   CallFilters call_filters_;
   absl::AnyInvocable<void(bool)> on_done_{nullptr};
+  // Call spines that should be cancelled if this spine is cancelled
+  absl::InlinedVector<RefCountedPtr<CallSpine>, 3> child_calls_;
 };
+
+class CallHandler;
 
 class CallInitiator {
  public:
@@ -335,6 +359,7 @@ class CallInitiator {
   Party* party() { return spine_.get(); }
 
  private:
+  friend class CallHandler;
   RefCountedPtr<CallSpine> spine_;
 };
 
@@ -410,6 +435,11 @@ class CallHandler {
   template <typename PromiseFactory>
   auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
     return spine_->SpawnWaitable(name, std::move(promise_factory));
+  }
+
+  void AddChildCall(const CallInitiator& initiator) {
+    CHECK(initiator.spine_ != nullptr);
+    spine_->AddChildCall(initiator.spine_);
   }
 
   Arena* arena() { return spine_->arena(); }

@@ -26,6 +26,7 @@ namespace grpc_core {
 void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                  absl::AnyInvocable<void(ServerMetadata&)>
                      on_server_trailing_metadata_from_initiator) {
+  call_handler.AddChildCall(call_initiator);
   // Read messages from handler into initiator.
   call_handler.SpawnInfallible("read_messages", [call_handler,
                                                  call_initiator]() mutable {
@@ -41,14 +42,6 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                  }
                });
   });
-  call_handler.SpawnInfallible(
-      "check_cancellation", [call_handler, call_initiator]() mutable {
-        return Map(call_handler.WasCancelled(),
-                   [call_initiator =
-                        std::move(call_initiator)](bool cancelled) mutable {
-                     if (cancelled) call_initiator.SpawnCancel();
-                   });
-      });
   call_initiator.SpawnInfallible(
       "read_the_things",
       [call_initiator, call_handler,

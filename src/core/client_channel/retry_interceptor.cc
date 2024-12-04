@@ -295,6 +295,7 @@ void RetryInterceptor::Attempt::Start() {
           }
           self->initiator_ = self->call_->interceptor()->MakeChildCall(
               std::move(metadata), self->call_->call_handler()->arena()->Ref());
+          self->call_->call_handler()->AddChildCall(self->initiator_);
           self->initiator_.SpawnGuarded(
               "server_to_client", [self]() { return self->ServerToClient(); });
           return ForEach(
