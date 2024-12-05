@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -739,12 +740,26 @@ PosixEventEngine::CreatePosixListener(
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
+absl::Status PosixEventEngine::HandlePreFork() {
+  grpc_core::MutexLock lock(&fork_mutex_);
+  auto poller = poller_manager_->Poller();
+  if (poller != nullptr) {
+    return poller->PrepareForkNew();
+  }
+  return absl::OkStatus();
+}
+
 absl::Status PosixEventEngine::HandleForkInChild() {
+  grpc_core::MutexLock lock(&fork_mutex_);
   auto status = GetSystemApi()->AdvanceGeneration();
-  if (status.ok()) {
+  if (!status.ok()) {
     return status;
   }
-  return poller_manager_->Poller()->RestartOnFork();
+  status = poller_manager_->Poller()->RestartOnFork();
+  if (!status.ok()) {
+    return status;
+  }
+  return absl::OkStatus();
 }
 
 }  // namespace experimental

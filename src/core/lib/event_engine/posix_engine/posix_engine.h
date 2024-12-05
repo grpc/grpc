@@ -212,6 +212,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
   SystemApi* GetSystemApi() { return &system_api_; }
+  absl::Status HandlePreFork();
   absl::Status HandleForkInChild();
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -264,6 +265,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   std::shared_ptr<PosixEnginePollerManager> poller_manager_;
 #endif  // GRPC_POSIX_SOCKET_TCP
   SystemApi system_api_;
+  grpc_core::Mutex fork_mutex_;
 };
 
 }  // namespace experimental

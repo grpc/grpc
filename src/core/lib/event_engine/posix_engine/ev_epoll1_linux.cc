@@ -20,6 +20,7 @@
 #include <stdint.h>
 
 #include <atomic>
+#include <cstdlib>
 #include <memory>
 
 #include "absl/log/check.h"
@@ -572,7 +573,17 @@ void Epoll1Poller::PostforkParent() {}
 // TODO(vigneshbabu): implement
 void Epoll1Poller::PostforkChild() {}
 
-absl::Status Epoll1Poller::RestartOnFork() { return absl::OkStatus(); }
+absl::Status Epoll1Poller::PrepareForkNew() {
+  bool in_fork = false;
+  CHECK(in_fork_.compare_exchange_weak(in_fork, true));
+  return absl::OkStatus();
+}
+
+absl::Status Epoll1Poller::RestartOnFork() {
+  bool in_fork = true;
+  CHECK(in_fork_.compare_exchange_weak(in_fork, false));
+  return absl::OkStatus();
+}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

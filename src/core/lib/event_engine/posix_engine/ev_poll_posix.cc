@@ -342,6 +342,7 @@ bool InitPollPollerPosix(SystemApi& system_api) {
 EventHandle* PollPoller::CreateHandle(FileDescriptor fd,
                                       absl::string_view /*name*/,
                                       bool track_err) {
+  CHECK(!in_fork_.load());
   // Avoid unused-parameter warning for debug-only parameter
   (void)track_err;
   DCHECK(track_err == false);
@@ -349,6 +350,7 @@ EventHandle* PollPoller::CreateHandle(FileDescriptor fd,
   ForkFdListAddHandle(handle);
   // We need to send a kick to the thread executing Work(..) so that it can
   // add this new Fd into the list of Fds to poll.
+  LOG(INFO) << "Kicking";
   KickExternal(false);
   return handle;
 }
@@ -580,7 +582,7 @@ void PollPoller::KickExternal(bool ext) {
   was_kicked_ = true;
   was_kicked_ext_ = ext;
   auto status = wakeup_fd_->Wakeup();
-  CHECK(status.ok()) << status;
+  CHECK(status.ok()) << status << " " << wakeup_fd_.get();
 }
 
 void PollPoller::Kick() { KickExternal(true); }
@@ -635,6 +637,7 @@ PollPoller::~PollPoller() {
 Poller::WorkResult PollPoller::Work(
     EventEngine::Duration timeout,
     absl::FunctionRef<void()> schedule_poll_again) {
+  CHECK(!in_fork_.load());
   // Avoid malloc for small number of elements.
   enum { inline_elements = 96 };
   struct pollfd pollfd_space[inline_elements];
@@ -829,11 +832,20 @@ void PollPoller::PostforkParent() {}
 // TODO(vigneshbabu): implement
 void PollPoller::PostforkChild() {}
 
-absl::Status PollPoller::RestartOnFork() {
+absl::Status PollPoller::PrepareForkNew() {
   LOG(INFO) << "Restarting!";
+  bool in_fork = false;
+  CHECK(in_fork_.compare_exchange_strong(in_fork, true));
+  return absl::OkStatus();
+}
+
+absl::Status PollPoller::RestartOnFork() {
   auto new_wakeup_fd = wakeup_fd_->Restart();
   if (!new_wakeup_fd.ok()) return std::move(new_wakeup_fd).status();
   wakeup_fd_ = std::move(new_wakeup_fd).value();
+  bool in_fork = true;
+  CHECK(in_fork_.compare_exchange_strong(in_fork, false));
+  LOG(INFO) << "Restarted! " << wakeup_fd_.get();
   return absl::OkStatus();
 }
 

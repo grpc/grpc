@@ -17,6 +17,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <list>
 #include <memory>
 #include <string>
@@ -74,6 +75,7 @@ class Epoll1Poller : public PosixEventPoller {
   void PostforkParent() override;
   void PostforkChild() override;
 
+  absl::Status PrepareForkNew() override;
   absl::Status RestartOnFork() override;
 
   void Close();
@@ -132,6 +134,7 @@ class Epoll1Poller : public PosixEventPoller {
   std::unique_ptr<WakeupFd> wakeup_fd_;
   bool closed_;
   SystemApi* system_api_;
+  std::atomic_bool in_fork_{false};
 };
 
 // Return an instance of a epoll1 based poller tied to the specified event

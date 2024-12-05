@@ -38,6 +38,7 @@
 #include "absl/time/time.h"
 #include "examples/protos/helloworld.grpc.pb.h"
 #include "examples/protos/helloworld.pb.h"
+#include "gmock/gmock.h"
 #include "include/grpc/event_engine/event_engine.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -180,11 +181,11 @@ TEST(PosixSystemApiTest, PosixLevel) {
   EXPECT_THAT(absl::MakeSpan(rcv).first(buf.size()),
               ::testing::ElementsAreArray(buf));
   // Client "forks"
-  client_api.AdvanceGeneration();
+  EXPECT_THAT(client_api.AdvanceGeneration(), IsOk());
   ASSERT_EQ(client_api.Write(server_client->client, buf.data(), buf.size())
                 .status()
                 .code(),
-            absl::StatusCode::kInvalidArgument);
+            absl::StatusCode::kNotFound);
   // Send using the new connection
   server_client = EstablishConnection(server_api, client_api, *server, port);
   ASSERT_TRUE(server_client.ok()) << server_client.status();
@@ -304,7 +305,7 @@ TEST(PosixSystemApiTest, FullGrpc) {
   }
   auto cleanup = absl::MakeCleanup([pid]() { ShutdownChild(pid); });
   // Give the child time to start up
-  absl::SleepFor(absl::Milliseconds(50));
+  absl::SleepFor(absl::Milliseconds(1000));
   std::string target = absl::StrCat("localhost:", port);
   auto channel =
       grpc::CreateChannel(target, grpc::InsecureChannelCredentials());
@@ -319,6 +320,7 @@ TEST(PosixSystemApiTest, FullGrpc) {
   EXPECT_EQ(response.message(), "Hello system_api_test");
   auto ee = GetDefaultEventEngine();
   PosixEventEngine* posix_ee = static_cast<PosixEventEngine*>(ee.get());
+  ASSERT_THAT(posix_ee->HandlePreFork(), IsOk());
   ASSERT_THAT(posix_ee->HandleForkInChild(), IsOk());
   request.set_name("trying after shutdown");
   grpc::ClientContext ctx2;
