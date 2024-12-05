@@ -1468,8 +1468,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                                 SourceLocation location = SourceLocation()) {
     if (duration.has_value()) {
       fuzzing_ee_->SetRunAfterDurationCallback(
-          [expected = *duration, location = location](
-              EventEngine::Duration duration) {
+          [expected = *duration,
+           location = location](EventEngine::Duration duration) {
             EXPECT_EQ(duration, expected)
                 << "Expected: " << expected.count()
                 << "ns\n  Actual: " << duration.count() << "ns\n"
