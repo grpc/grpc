@@ -25,6 +25,7 @@ namespace {
 
 constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
 constexpr double kMaxCompression = 1e6;
+constexpr double kPi = 3.14159265358979323846;
 
 // Returns the minimum of compression and kMaxCompression.
 double BoundedCompression(double compression) {
@@ -98,12 +99,12 @@ void TDigest::Merge(const TDigest& that) {
 }
 
 double TDigest::QuantileToCentroid(double quantile) const {
-  return compression_ * (std::asin(2 * quantile - 1) + M_PI / 2) / M_PI;
+  return compression_ * (std::asin(2 * quantile - 1) + kPi / 2) / kPi;
 }
 
 double TDigest::CentroidToQuantile(double centroid) const {
   centroid = std::min(centroid, compression_);
-  return (sin(centroid * M_PI / compression_ - M_PI / 2) + 1) / 2;
+  return (sin(centroid * kPi / compression_ - kPi / 2) + 1) / 2;
 }
 
 // TODO(ysseung): Maybe try bi-directional merge to lower 1p error rate. Error
