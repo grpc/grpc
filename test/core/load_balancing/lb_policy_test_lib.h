@@ -305,10 +305,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     // Sets the connectivity state for this subchannel.  The updated state
     // will be reported to all associated SubchannelInterface objects.
-    void SetConnectivityState(grpc_connectivity_state state,
-                              const absl::Status& status = absl::OkStatus(),
-                              bool validate_state_transition = true,
-                              SourceLocation location = SourceLocation()) {
+    void SetConnectivityState(
+        grpc_connectivity_state state,
+        const absl::Status& status = absl::OkStatus(),
+        bool validate_state_transition = true,
+        absl::AnyInvocable<void()> run_before_flush = nullptr,
+        SourceLocation location = SourceLocation()) {
       ExecCtx exec_ctx;
       if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         EXPECT_FALSE(status.ok())
@@ -336,6 +338,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             // SetState() enqueued the connectivity state notifications for
             // the subchannel, so we add another callback to the queue to be
             // executed after that state notifications has been delivered.
+            if (run_before_flush != nullptr) run_before_flush();
             LOG(INFO) << "Waiting for state notifications to be delivered";
             test_->work_serializer_->Run(
                 [&]() {
@@ -709,7 +712,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   void SetUp() override {
     // Order is important here: Fuzzing EE needs to be created before
     // grpc_init().
-    fuzzing_ee_ = MakeFuzzingEventEngine();
+    fuzzing_ee_ = std::make_shared<FuzzingEventEngine>(
+        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
     grpc_timer_manager_set_start_threaded(false);
     grpc_init();
     work_serializer_ = std::make_shared<WorkSerializer>(fuzzing_ee_);
@@ -744,11 +748,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     fuzzing_ee_->TickUntilIdle();
     grpc_event_engine::experimental::WaitForSingleOwner(std::move(fuzzing_ee_));
     grpc_shutdown_blocking();
-  }
-
-  virtual std::shared_ptr<FuzzingEventEngine> MakeFuzzingEventEngine() {
-    return std::make_shared<FuzzingEventEngine>(
-        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
   }
 
   LoadBalancingPolicy* lb_policy() const {
@@ -1456,13 +1455,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     LOG(INFO) << "WorkSerializer flush complete";
   }
 
-  void IncrementTimeBy(Duration duration) {
+  void IncrementTimeBy(Duration duration, bool flush_work_serializer = true) {
     ExecCtx exec_ctx;
     LOG(INFO) << "Incrementing time by " << duration;
     fuzzing_ee_->TickForDuration(duration);
     LOG(INFO) << "Done incrementing time";
     // Flush WorkSerializer, in case the timer callback enqueued anything.
-    WaitForWorkSerializerToFlush();
+    if (flush_work_serializer) WaitForWorkSerializerToFlush();
   }
 
   void SetExpectedTimerDuration(absl::optional<EventEngine::Duration> duration,
