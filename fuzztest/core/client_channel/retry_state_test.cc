@@ -377,5 +377,4 @@ FUZZ_TEST(MyTestSuite, NeverExceedMaxBackoff)
 
 }  // namespace
 }  // namespace retry_detail
-
 }  // namespace grpc_core
