@@ -66,7 +66,8 @@ RetryInterceptor::Call::Call(RefCountedPtr<RetryInterceptor> interceptor,
     : call_handler_(std::move(call_handler)),
       interceptor_(std::move(interceptor)),
       retry_policy_(interceptor_->GetRetryPolicy()) {
-  GRPC_TRACE_LOG(retry, INFO) << DebugTag() << " retry call created";
+  GRPC_TRACE_LOG(retry, INFO)
+      << DebugTag() << " retry call created: " << *retry_policy_;
 }
 
 auto RetryInterceptor::Call::ClientToBuffer() {
