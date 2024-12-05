@@ -999,6 +999,7 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
             return std::make_unique<InsecureFixtureWithPipeForWakeupFd>();
           }},
 #endif
+#ifndef GPR_WINDOWS
       CoreTestConfiguration{"ChaoticGoodFullStack",
                             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                                 FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
@@ -1007,7 +1008,9 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
                             [](const ChannelArgs& /*client_args*/,
                                const ChannelArgs& /*server_args*/) {
                               return std::make_unique<ChaoticGoodFixture>();
-                            }}};
+                            }},
+#endif
+  };
 }
 
 std::vector<CoreTestConfiguration> AllConfigs() {

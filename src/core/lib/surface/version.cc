@@ -22,6 +22,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-const char* grpc_version_string(void) { return "44.1.0"; }
+const char* grpc_version_string(void) { return "44.2.0"; }
 
 const char* grpc_g_stands_for(void) { return "gridiron"; }
