@@ -23,7 +23,7 @@ let package = Package(
   ],
 
   dependencies: [
-    .package(url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20240116.1"..<"0.20240117.0"),
+    .package(url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20240722.0"..<"0.20240723.0"),
     .package(url: "https://github.com/firebase/boringssl-SwiftPM.git", "0.32.0"..<"0.33.0"),
   ],
 
@@ -2063,6 +2063,11 @@ let package = Package(
         "src/core/xds/xds_client/xds_resource_type.h",
         "src/core/xds/xds_client/xds_resource_type_impl.h",
         "src/core/xds/xds_client/xds_transport.h",
+        "third_party/address_sorting/address_sorting.c",
+        "third_party/address_sorting/address_sorting_internal.h",
+        "third_party/address_sorting/address_sorting_posix.c",
+        "third_party/address_sorting/address_sorting_windows.c",
+        "third_party/address_sorting/include/address_sorting/address_sorting.h",
         "third_party/re2/re2/bitmap256.h",
         "third_party/re2/re2/bitstate.cc",
         "third_party/re2/re2/compile.cc",
@@ -2267,6 +2272,7 @@ let package = Package(
         .headerSearchPath("third_party/upb/"),
         .headerSearchPath("third_party/utf8_range/"),
         .headerSearchPath("third_party/xxhash/"),
+        .headerSearchPath("third_party/address_sorting/include/"),
         .headerSearchPath("src/core/ext/upb-gen/"),
         .headerSearchPath("src/core/ext/upbdefs-gen/"),
         .define("GRPC_ARES", to: "0"),

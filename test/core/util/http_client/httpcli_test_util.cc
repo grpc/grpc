@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "test/core/http/httpcli_test_util.h"
+#include "test/core/util/http_client/httpcli_test_util.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
@@ -48,9 +48,9 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
   size_t last_slash = me.rfind('/');
   if (last_slash != me.npos) {
     absl::string_view dirname = me.substr(0, last_slash);
-    if (absl::EndsWith(dirname, "/http")) {
-      // Bazel paths will end in "test/core/http".
-      root = absl::StrCat(dirname, "/../../..");
+    if (absl::EndsWith(dirname, "/http_client")) {
+      // Bazel paths will end in "test/core/util/http_client".
+      root = absl::StrCat(dirname, "/../../../..");
     } else {
       // Cmake paths will be "cmake/build".
       root = absl::StrCat(dirname, "/../..");
@@ -67,8 +67,9 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
     args.push_back(argv[1]);
   } else {
     python_wrapper_path =
-        absl::StrCat(root, "/test/core/http/python_wrapper.sh");
-    test_server_path = absl::StrCat(root, "/test/core/http/test_server.py");
+        absl::StrCat(root, "/test/core/util/http_client/python_wrapper.sh");
+    test_server_path =
+        absl::StrCat(root, "/test/core/util/http_client/test_server.py");
     args.push_back(python_wrapper_path.c_str());
     args.push_back(test_server_path.c_str());
   }

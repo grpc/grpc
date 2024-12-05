@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.69.0-dev")
-set(gRPC_CORE_VERSION     "44.1.0")
+set(PACKAGE_VERSION       "1.70.0-dev")
+set(gRPC_CORE_VERSION     "44.2.0")
 set(gRPC_CORE_SOVERSION   "44")
-set(gRPC_CPP_VERSION      "1.69.0-dev")
-set(gRPC_CPP_SOVERSION    "1.69")
+set(gRPC_CPP_VERSION      "1.70.0-dev")
+set(gRPC_CPP_SOVERSION    "1.70")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -16151,7 +16151,6 @@ add_executable(format_request_test
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
-  test/core/http/format_request_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
@@ -16161,6 +16160,7 @@ add_executable(format_request_test
   test/core/test_util/resolve_localhost_ip46.cc
   test/core/test_util/slice_splitter.cc
   test/core/test_util/tracer_util.cc
+  test/core/util/http_client/format_request_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -19265,9 +19265,9 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(httpcli_test
-    test/core/http/httpcli_test.cc
-    test/core/http/httpcli_test_util.cc
     test/core/test_util/fake_udp_and_tcp_server.cc
+    test/core/util/http_client/httpcli_test.cc
+    test/core/util/http_client/httpcli_test_util.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -19312,9 +19312,9 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(httpscli_test
-    test/core/http/httpcli_test_util.cc
-    test/core/http/httpscli_test.cc
     test/core/test_util/fake_udp_and_tcp_server.cc
+    test/core/util/http_client/httpcli_test_util.cc
+    test/core/util/http_client/httpscli_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -20326,7 +20326,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(json_object_loader_test
-  test/core/json/json_object_loader_test.cc
+  test/core/util/json/json_object_loader_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20368,7 +20368,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(json_test
-  test/core/json/json_test.cc
+  test/core/util/json/json_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -23523,7 +23523,6 @@ add_executable(parser_test
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
-  test/core/http/parser_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
@@ -23533,6 +23532,7 @@ add_executable(parser_test
   test/core/test_util/resolve_localhost_ip46.cc
   test/core/test_util/slice_splitter.cc
   test/core/test_util/tracer_util.cc
+  test/core/util/http_client/parser_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
