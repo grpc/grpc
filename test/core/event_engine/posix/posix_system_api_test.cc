@@ -274,6 +274,7 @@ absl::Status ExecServer(int port) {
   char kExecutable[] = "examples/cpp/helloworld/greeter_server";
   std::string port_arg = absl::StrCat("--port=", port);
   std::vector<char> v = {port_arg.begin(), port_arg.end()};
+  v.push_back('\0');
   char* const args[] = {kExecutable, v.data(), nullptr};
   if (execve(kExecutable, args, nullptr) < 0) {
     return absl::ErrnoToStatus(errno, "execve");
