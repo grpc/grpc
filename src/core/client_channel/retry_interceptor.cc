@@ -33,13 +33,133 @@ size_t GetMaxPerRpcRetryBufferSize(const ChannelArgs& args) {
 }
 }  // namespace
 
+namespace retry_detail {
+
+absl::optional<Duration> RetryState::ShouldRetry(
+    const ServerMetadata& md, bool committed,
+    absl::FunctionRef<std::string()> lazy_attempt_debug_string) {
+  // If no retry policy, don't retry.
+  if (retry_policy_ == nullptr) {
+    GRPC_TRACE_LOG(retry, INFO)
+        << lazy_attempt_debug_string() << " no retry policy";
+    return absl::nullopt;
+  }
+  const auto status = md.get(GrpcStatusMetadata());
+  if (status.has_value()) {
+    if (GPR_LIKELY(*status == GRPC_STATUS_OK)) {
+      if (retry_throttle_data_ != nullptr) {
+        retry_throttle_data_->RecordSuccess();
+      }
+      GRPC_TRACE_LOG(retry, INFO)
+          << lazy_attempt_debug_string() << " call succeeded";
+      return absl::nullopt;
+    }
+    // Status is not OK.  Check whether the status is retryable.
+    if (!retry_policy_->retryable_status_codes().Contains(*status)) {
+      GRPC_TRACE_LOG(retry, INFO) << lazy_attempt_debug_string() << ": status "
+                                  << grpc_status_code_to_string(*status)
+                                  << " not configured as retryable";
+      return absl::nullopt;
+    }
+  }
+  // Record the failure and check whether retries are throttled.
+  // Note that it's important for this check to come after the status
+  // code check above, since we should only record failures whose statuses
+  // match the configured retryable status codes, so that we don't count
+  // things like failures due to malformed requests (INVALID_ARGUMENT).
+  // Conversely, it's important for this to come before the remaining
+  // checks, so that we don't fail to record failures due to other factors.
+  if (retry_throttle_data_ != nullptr &&
+      !retry_throttle_data_->RecordFailure()) {
+    GRPC_TRACE_LOG(retry, INFO)
+        << lazy_attempt_debug_string() << " retries throttled";
+    return absl::nullopt;
+  }
+  // Check whether the call is committed.
+  if (committed) {
+    GRPC_TRACE_LOG(retry, INFO)
+        << lazy_attempt_debug_string() << " retries already committed";
+    return absl::nullopt;
+  }
+  // Check whether we have retries remaining.
+  ++num_attempts_completed_;
+  if (num_attempts_completed_ >= retry_policy_->max_attempts()) {
+    GRPC_TRACE_LOG(retry, INFO)
+        << lazy_attempt_debug_string() << " exceeded "
+        << retry_policy_->max_attempts() << " retry attempts";
+    return absl::nullopt;
+  }
+  // Check server push-back.
+  const auto server_pushback = md.get(GrpcRetryPushbackMsMetadata());
+  if (server_pushback.has_value() && server_pushback < Duration::Zero()) {
+    GRPC_TRACE_LOG(retry, INFO) << lazy_attempt_debug_string()
+                                << " not retrying due to server push-back";
+    return absl::nullopt;
+  }
+  // We should retry.
+  Duration next_attempt_timeout;
+  if (server_pushback.has_value()) {
+    CHECK_GE(*server_pushback, Duration::Zero());
+    next_attempt_timeout = *server_pushback;
+    retry_backoff_.Reset();
+  } else {
+    next_attempt_timeout = retry_backoff_.NextAttemptDelay();
+  }
+  GRPC_TRACE_LOG(retry, INFO)
+      << lazy_attempt_debug_string() << " server push-back: retry in "
+      << next_attempt_timeout;
+  return next_attempt_timeout;
+}
+
+absl::StatusOr<RefCountedPtr<internal::ServerRetryThrottleData>>
+ServerRetryThrottleDataFromChannelArgs(const ChannelArgs& args) {
+  // Get retry throttling parameters from service config.
+  auto* service_config = args.GetObject<ServiceConfig>();
+  if (service_config == nullptr) return nullptr;
+  const auto* config = static_cast<const internal::RetryGlobalConfig*>(
+      service_config->GetGlobalParsedConfig(
+          internal::RetryServiceConfigParser::ParserIndex()));
+  if (config == nullptr) return nullptr;
+  // Get server name from target URI.
+  auto server_uri = args.GetString(GRPC_ARG_SERVER_URI);
+  if (!server_uri.has_value()) {
+    return GRPC_ERROR_CREATE(
+        "server URI channel arg missing or wrong type in client channel "
+        "filter");
+  }
+  absl::StatusOr<URI> uri = URI::Parse(*server_uri);
+  if (!uri.ok() || uri->path().empty()) {
+    return GRPC_ERROR_CREATE("could not extract server name from target URI");
+  }
+  std::string server_name(absl::StripPrefix(uri->path(), "/"));
+  // Get throttling config for server_name.
+  return internal::ServerRetryThrottleMap::Get()->GetDataForServer(
+      server_name, config->max_milli_tokens(), config->milli_token_ratio());
+}
+
+}  // namespace retry_detail
+
 ////////////////////////////////////////////////////////////////////////////////
 // RetryInterceptor
 
-RetryInterceptor::RetryInterceptor(const ChannelArgs& args)
+absl::StatusOr<RefCountedPtr<RetryInterceptor>> RetryInterceptor::Create(
+    const ChannelArgs& args, const FilterArgs&) {
+  auto retry_throttle_data =
+      retry_detail::ServerRetryThrottleDataFromChannelArgs(args);
+  if (!retry_throttle_data.ok()) {
+    return retry_throttle_data.status();
+  }
+  return MakeRefCounted<RetryInterceptor>(args,
+                                          std::move(*retry_throttle_data));
+}
+
+RetryInterceptor::RetryInterceptor(
+    const ChannelArgs& args,
+    RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data)
     : per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)),
       service_config_parser_index_(
-          internal::RetryServiceConfigParser::ParserIndex()) {}
+          internal::RetryServiceConfigParser::ParserIndex()),
+      retry_throttle_data_(std::move(retry_throttle_data)) {}
 
 void RetryInterceptor::InterceptCall(
     UnstartedCallHandler unstarted_call_handler) {
@@ -65,9 +185,10 @@ RetryInterceptor::Call::Call(RefCountedPtr<RetryInterceptor> interceptor,
                              CallHandler call_handler)
     : call_handler_(std::move(call_handler)),
       interceptor_(std::move(interceptor)),
-      retry_policy_(interceptor_->GetRetryPolicy()) {
+      retry_state_(interceptor_->GetRetryPolicy(),
+                   interceptor_->retry_throttle_data_) {
   GRPC_TRACE_LOG(retry, INFO)
-      << DebugTag() << " retry call created: " << *retry_policy_;
+      << DebugTag() << " retry call created: " << retry_state_;
 }
 
 auto RetryInterceptor::Call::ClientToBuffer() {
@@ -126,75 +247,6 @@ void RetryInterceptor::Call::MaybeCommit(size_t buffered) {
   if (buffered >= interceptor_->per_rpc_retry_buffer_size_) {
     current_attempt_->Commit();
   }
-}
-
-absl::optional<Duration> RetryInterceptor::Call::ShouldRetry(
-    const ServerMetadata& md,
-    absl::FunctionRef<std::string()> lazy_attempt_debug_string) {
-  // If no retry policy, don't retry.
-  if (retry_policy_ == nullptr) {
-    GRPC_TRACE_LOG(retry, INFO)
-        << lazy_attempt_debug_string() << " no retry policy";
-    return absl::nullopt;
-  }
-  const auto status = md.get(GrpcStatusMetadata());
-  if (status.has_value()) {
-    if (GPR_LIKELY(*status == GRPC_STATUS_OK)) {
-      if (retry_throttle_data_ != nullptr) {
-        retry_throttle_data_->RecordSuccess();
-      }
-      GRPC_TRACE_LOG(retry, INFO)
-          << lazy_attempt_debug_string() << " call succeeded";
-      return absl::nullopt;
-    }
-    // Status is not OK.  Check whether the status is retryable.
-    if (!retry_policy_->retryable_status_codes().Contains(*status)) {
-      GRPC_TRACE_LOG(retry, INFO) << lazy_attempt_debug_string() << ": status "
-                                  << grpc_status_code_to_string(*status)
-                                  << " not configured as retryable";
-      return absl::nullopt;
-    }
-  }
-  // Record the failure and check whether retries are throttled.
-  // Note that it's important for this check to come after the status
-  // code check above, since we should only record failures whose statuses
-  // match the configured retryable status codes, so that we don't count
-  // things like failures due to malformed requests (INVALID_ARGUMENT).
-  // Conversely, it's important for this to come before the remaining
-  // checks, so that we don't fail to record failures due to other factors.
-  if (retry_throttle_data_ != nullptr &&
-      !retry_throttle_data_->RecordFailure()) {
-    GRPC_TRACE_LOG(retry, INFO)
-        << lazy_attempt_debug_string() << " retries throttled";
-    return absl::nullopt;
-  }
-  // Check whether the call is committed.
-  if (request_buffer_.committed()) {
-    GRPC_TRACE_LOG(retry, INFO)
-        << lazy_attempt_debug_string() << " retries already committed";
-    return absl::nullopt;
-  }
-  // Check whether we have retries remaining.
-  ++num_attempts_completed_;
-  if (num_attempts_completed_ >= retry_policy_->max_attempts()) {
-    GRPC_TRACE_LOG(retry, INFO)
-        << lazy_attempt_debug_string() << " exceeded "
-        << retry_policy_->max_attempts() << " retry attempts";
-    return absl::nullopt;
-  }
-  // Check server push-back.
-  auto server_pushback =
-      md.get(GrpcRetryPushbackMsMetadata()).value_or(Duration::Zero());
-  if (server_pushback < Duration::Zero()) {
-    GRPC_TRACE_LOG(retry, INFO) << lazy_attempt_debug_string()
-                                << " not retrying due to server push-back";
-    return absl::nullopt;
-  }
-  // We should retry.
-  GRPC_TRACE_LOG(retry, INFO)
-      << lazy_attempt_debug_string() << " server push-back: retry in "
-      << server_pushback;
-  return server_pushback;
 }
 
 std::string RetryInterceptor::Call::DebugTag() {

@@ -3535,6 +3535,7 @@ grpc_cc_library(
         "retry_service_config",
         "retry_throttle",
         "sleep",
+        "//:backoff",
     ],
 )
 
