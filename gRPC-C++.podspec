@@ -269,7 +269,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/types/variant', abseil_version
     ss.dependency 'abseil/utility/utility', abseil_version
 
-    ss.source_files = 'src/core/channelz/channel_trace.h',
+    ss.source_files = 'src/core/call/request_buffer.h',
+                      'src/core/channelz/channel_trace.h',
                       'src/core/channelz/channelz.h',
                       'src/core/channelz/channelz_registry.h',
                       'src/core/client_channel/backup_poller.h',
@@ -288,6 +289,7 @@ Pod::Spec.new do |s|
                       'src/core/client_channel/local_subchannel_pool.h',
                       'src/core/client_channel/retry_filter.h',
                       'src/core/client_channel/retry_filter_legacy_call_data.h',
+                      'src/core/client_channel/retry_interceptor.h',
                       'src/core/client_channel/retry_service_config.h',
                       'src/core/client_channel/retry_throttle.h',
                       'src/core/client_channel/subchannel.h',
@@ -839,6 +841,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h',
                       'src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h',
                       'src/core/filter/blackboard.h',
+                      'src/core/filter/filter_args.h',
                       'src/core/handshaker/endpoint_info/endpoint_info_handshaker.h',
                       'src/core/handshaker/handshaker.h',
                       'src/core/handshaker/handshaker_factory.h',
@@ -1027,6 +1030,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/status_flag.h',
                       'src/core/lib/promise/try_join.h',
                       'src/core/lib/promise/try_seq.h',
+                      'src/core/lib/promise/wait_set.h',
                       'src/core/lib/resource_quota/api.h',
                       'src/core/lib/resource_quota/arena.h',
                       'src/core/lib/resource_quota/connection_quota.h',
@@ -1562,7 +1566,8 @@ Pod::Spec.new do |s|
                       'third_party/zlib/zlib.h',
                       'third_party/zlib/zutil.h'
 
-    ss.private_header_files = 'src/core/channelz/channel_trace.h',
+    ss.private_header_files = 'src/core/call/request_buffer.h',
+                              'src/core/channelz/channel_trace.h',
                               'src/core/channelz/channelz.h',
                               'src/core/channelz/channelz_registry.h',
                               'src/core/client_channel/backup_poller.h',
@@ -1581,6 +1586,7 @@ Pod::Spec.new do |s|
                               'src/core/client_channel/local_subchannel_pool.h',
                               'src/core/client_channel/retry_filter.h',
                               'src/core/client_channel/retry_filter_legacy_call_data.h',
+                              'src/core/client_channel/retry_interceptor.h',
                               'src/core/client_channel/retry_service_config.h',
                               'src/core/client_channel/retry_throttle.h',
                               'src/core/client_channel/subchannel.h',
@@ -2132,6 +2138,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h',
                               'src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h',
                               'src/core/filter/blackboard.h',
+                              'src/core/filter/filter_args.h',
                               'src/core/handshaker/endpoint_info/endpoint_info_handshaker.h',
                               'src/core/handshaker/handshaker.h',
                               'src/core/handshaker/handshaker_factory.h',
@@ -2320,6 +2327,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/status_flag.h',
                               'src/core/lib/promise/try_join.h',
                               'src/core/lib/promise/try_seq.h',
+                              'src/core/lib/promise/wait_set.h',
                               'src/core/lib/resource_quota/api.h',
                               'src/core/lib/resource_quota/arena.h',
                               'src/core/lib/resource_quota/connection_quota.h',

@@ -220,6 +220,7 @@ libs:
   - include/grpc/support/time.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/call/request_buffer.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -239,6 +240,7 @@ libs:
   - src/core/client_channel/local_subchannel_pool.h
   - src/core/client_channel/retry_filter.h
   - src/core/client_channel/retry_filter_legacy_call_data.h
+  - src/core/client_channel/retry_interceptor.h
   - src/core/client_channel/retry_service_config.h
   - src/core/client_channel/retry_throttle.h
   - src/core/client_channel/subchannel.h
@@ -788,6 +790,7 @@ libs:
   - src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h
   - src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h
   - src/core/filter/blackboard.h
+  - src/core/filter/filter_args.h
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
   - src/core/handshaker/handshaker.h
   - src/core/handshaker/handshaker_factory.h
@@ -975,6 +978,7 @@ libs:
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
@@ -1280,6 +1284,7 @@ libs:
   - third_party/upb/upb/generated_code_support.h
   - third_party/xxhash/xxhash.h
   src:
+  - src/core/call/request_buffer.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -1297,6 +1302,7 @@ libs:
   - src/core/client_channel/local_subchannel_pool.cc
   - src/core/client_channel/retry_filter.cc
   - src/core/client_channel/retry_filter_legacy_call_data.cc
+  - src/core/client_channel/retry_interceptor.cc
   - src/core/client_channel/retry_service_config.cc
   - src/core/client_channel/retry_throttle.cc
   - src/core/client_channel/subchannel.cc
@@ -2267,6 +2273,7 @@ libs:
   - include/grpc/support/time.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/call/request_buffer.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -2286,6 +2293,7 @@ libs:
   - src/core/client_channel/local_subchannel_pool.h
   - src/core/client_channel/retry_filter.h
   - src/core/client_channel/retry_filter_legacy_call_data.h
+  - src/core/client_channel/retry_interceptor.h
   - src/core/client_channel/retry_service_config.h
   - src/core/client_channel/retry_throttle.h
   - src/core/client_channel/subchannel.h
@@ -2378,6 +2386,7 @@ libs:
   - src/core/ext/upb-gen/xds/service/orca/v3/orca.upb.h
   - src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.h
   - src/core/filter/blackboard.h
+  - src/core/filter/filter_args.h
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
   - src/core/handshaker/handshaker.h
   - src/core/handshaker/handshaker_factory.h
@@ -2564,6 +2573,7 @@ libs:
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
@@ -2755,6 +2765,7 @@ libs:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/call/request_buffer.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -2772,6 +2783,7 @@ libs:
   - src/core/client_channel/local_subchannel_pool.cc
   - src/core/client_channel/retry_filter.cc
   - src/core/client_channel/retry_filter_legacy_call_data.cc
+  - src/core/client_channel/retry_interceptor.cc
   - src/core/client_channel/retry_service_config.cc
   - src/core/client_channel/retry_throttle.cc
   - src/core/client_channel/subchannel.cc
@@ -4459,6 +4471,7 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/filter/blackboard.h
+  - src/core/filter/filter_args.h
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
   - src/core/handshaker/handshaker.h
   - src/core/handshaker/handshaker_factory.h
@@ -5991,7 +6004,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -6240,7 +6252,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -6455,7 +6466,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -6708,7 +6718,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -6866,6 +6875,7 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/filter/blackboard.h
+  - src/core/filter/filter_args.h
   - src/core/handshaker/handshaker_factory.h
   - src/core/handshaker/handshaker_registry.h
   - src/core/handshaker/proxy_mapper.h
@@ -7448,7 +7458,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -7534,7 +7543,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -7621,7 +7629,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -7707,7 +7714,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -7810,7 +7816,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -8000,7 +8005,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -8087,7 +8091,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -8675,7 +8678,6 @@ targets:
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/yodel/yodel_test.h
   - test/core/event_engine/event_engine_test_utils.h
@@ -9160,7 +9162,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -9357,7 +9358,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -9572,7 +9572,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -9772,7 +9771,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -9899,7 +9897,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -10073,7 +10070,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -10632,7 +10628,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -10718,7 +10713,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -10822,7 +10816,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -11394,7 +11387,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -11616,7 +11608,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -12210,7 +12201,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -12427,7 +12417,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -12609,7 +12598,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -12863,7 +12851,6 @@ targets:
   headers:
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/wait_set.h
   src:
   - test/core/promise/inter_activity_latch_test.cc
   deps:
@@ -13117,7 +13104,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -13346,7 +13332,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -13444,7 +13429,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -13928,7 +13912,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -14014,7 +13997,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -14100,7 +14082,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -14186,7 +14167,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -14521,7 +14501,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -14619,7 +14598,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -14705,7 +14683,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -15100,7 +15077,6 @@ targets:
   language: c++
   headers:
   - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/wait_set.h
   src:
   - test/core/promise/party_test.cc
   deps:
@@ -15138,7 +15114,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -15398,7 +15373,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -15514,7 +15488,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -16101,7 +16074,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -16385,7 +16357,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -16653,7 +16624,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -16739,7 +16709,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -16977,7 +16946,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -17074,7 +17042,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -17160,7 +17127,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -17246,7 +17212,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -17332,7 +17297,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -17418,7 +17382,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -17504,7 +17467,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -17590,7 +17552,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -17676,7 +17637,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -17762,7 +17722,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -17848,7 +17807,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -17934,7 +17892,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -18020,7 +17977,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -18106,7 +18062,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -18192,7 +18147,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -18278,7 +18232,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -18364,7 +18317,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -18450,7 +18402,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -18536,7 +18487,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -18622,7 +18572,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -18708,7 +18657,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -18794,7 +18742,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -18880,7 +18827,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -18966,7 +18912,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -19063,7 +19008,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -19149,7 +19093,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -19235,7 +19178,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -19321,7 +19263,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -19418,7 +19359,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -19504,7 +19444,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -19590,7 +19529,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -19676,7 +19614,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -19762,7 +19699,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -19848,7 +19784,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -19934,7 +19869,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -20423,7 +20357,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -20603,7 +20536,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -20759,7 +20691,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -20845,7 +20776,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -20950,7 +20880,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -21036,7 +20965,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -21136,7 +21064,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -21519,7 +21446,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -21911,7 +21837,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -22182,7 +22107,6 @@ targets:
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/yodel/yodel_test.h
   - test/core/event_engine/event_engine_test_utils.h
@@ -22296,7 +22220,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - src/cpp/ext/chaotic_good.h
   src:
@@ -22517,7 +22440,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -22776,7 +22698,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -23210,7 +23131,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -23296,7 +23216,6 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
