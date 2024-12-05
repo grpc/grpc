@@ -366,8 +366,8 @@ absl::Status TDigest::FromString(absl::string_view string) {
   }
 
   // Parse min/max/sum/count.
-  double min, max, sum;
-  int64_t count;
+  double min = 0.0, max = 0.0, sum = 0.0;
+  int64_t count = 0;
   if (iter == tokens.end() || !absl::SimpleAtod(*iter, &min) ||
       ++iter == tokens.end() || !absl::SimpleAtod(*iter, &max) ||
       ++iter == tokens.end() || !absl::SimpleAtod(*iter, &sum) ||
