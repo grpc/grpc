@@ -50,6 +50,24 @@ TEST(BackOffTest, ConstantBackOff) {
   EXPECT_EQ(backoff.NextAttemptDelay(), kInitialBackoff);
 }
 
+TEST(BackOffTest, InitialBackoffCappedByMaxBackoff) {
+  const auto kInitialBackoff = Duration::Seconds(2);
+  const auto kMaxBackoff = Duration::Seconds(1);
+  const double kMultiplier = 1.0;
+  const double kJitter = 0.0;
+  BackOff::Options options;
+  options.set_initial_backoff(kInitialBackoff)
+      .set_multiplier(kMultiplier)
+      .set_jitter(kJitter)
+      .set_max_backoff(kMaxBackoff);
+  BackOff backoff(options);
+  EXPECT_EQ(backoff.NextAttemptDelay(), kMaxBackoff);
+  EXPECT_EQ(backoff.NextAttemptDelay(), kMaxBackoff);
+  EXPECT_EQ(backoff.NextAttemptDelay(), kMaxBackoff);
+  EXPECT_EQ(backoff.NextAttemptDelay(), kMaxBackoff);
+  EXPECT_EQ(backoff.NextAttemptDelay(), kMaxBackoff);
+}
+
 TEST(BackOffTest, NoJitterBackOff) {
   const auto kInitialBackoff = Duration::Milliseconds(2);
   const double kMultiplier = 2.0;

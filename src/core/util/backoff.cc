@@ -30,9 +30,9 @@ Duration BackOff::NextAttemptDelay() {
   if (initial_) {
     initial_ = false;
   } else {
-    current_backoff_ = std::min(current_backoff_ * options_.multiplier(),
-                                options_.max_backoff());
+    current_backoff_ = current_backoff_ * options_.multiplier();
   }
+  current_backoff_ = std::min(current_backoff_, options_.max_backoff());
   const double jitter =
       absl::Uniform(rand_gen_, 1 - options_.jitter(), 1 + options_.jitter());
   return current_backoff_ * jitter;
