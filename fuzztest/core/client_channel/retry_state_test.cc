@@ -14,6 +14,8 @@
 
 // Test to verify Fuzztest integration
 
+#include <sys/types.h>
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -29,6 +31,8 @@ using fuzztest::Arbitrary;
 using fuzztest::ElementOf;
 using fuzztest::InRange;
 using fuzztest::InRegexp;
+using fuzztest::Just;
+using fuzztest::OneOf;
 using fuzztest::OptionalOf;
 using fuzztest::PairOf;
 using fuzztest::VariantOf;
@@ -172,6 +176,20 @@ auto AnySuccessfulMetadata() {
   return ServerMetadataWithStatus(ElementOf({GRPC_STATUS_OK}));
 }
 
+auto SomeServerThrottleData() {
+  return fuzztest::Map(
+      [](uintptr_t max_milli_tokens, uintptr_t milli_token_ratio) {
+        return MakeRefCounted<internal::ServerRetryThrottleData>(
+            max_milli_tokens, milli_token_ratio, nullptr);
+      },
+      Arbitrary<uintptr_t>(), Arbitrary<uintptr_t>());
+}
+
+auto AnyServerThrottleData() {
+  return OneOf(Just(RefCountedPtr<internal::ServerRetryThrottleData>()),
+               SomeServerThrottleData());
+}
+
 // Helper to get the debug tag passed to ShouldRetry correct
 std::string FuzzerDebugTag() { return "fuzzer"; }
 
@@ -270,27 +288,31 @@ void NoPolicyNeverRetries(std::vector<ServerMetadataHandle> md,
 FUZZ_TEST(MyTestSuite, NoPolicyNeverRetries)
     .WithDomains(VectorOf(AnyServerMetadata()), Arbitrary<bool>());
 
-void SuccessfulRequestsNeverRetry(internal::RetryMethodConfig policy,
-                                  ServerMetadataHandle md, bool committed) {
-  RetryState retry_state(&policy, nullptr);
+void SuccessfulRequestsNeverRetry(
+    internal::RetryMethodConfig policy, ServerMetadataHandle md, bool committed,
+    RefCountedPtr<internal::ServerRetryThrottleData> throttle_data) {
+  RetryState retry_state(&policy, throttle_data);
   EXPECT_EQ(retry_state.ShouldRetry(*md, committed, FuzzerDebugTag),
             absl::nullopt);
 }
 FUZZ_TEST(MyTestSuite, SuccessfulRequestsNeverRetry)
     .WithDomains(AnyRetryMethodConfig(), AnySuccessfulMetadata(),
-                 Arbitrary<bool>());
+                 Arbitrary<bool>(), AnyServerThrottleData());
 
-void CommittedRequestsNeverRetry(internal::RetryMethodConfig policy,
-                                 ServerMetadataHandle md) {
-  RetryState retry_state(&policy, nullptr);
+void CommittedRequestsNeverRetry(
+    internal::RetryMethodConfig policy, ServerMetadataHandle md,
+    RefCountedPtr<internal::ServerRetryThrottleData> throttle_data) {
+  RetryState retry_state(&policy, throttle_data);
   EXPECT_EQ(retry_state.ShouldRetry(*md, true, FuzzerDebugTag), absl::nullopt);
 }
 FUZZ_TEST(MyTestSuite, CommittedRequestsNeverRetry)
-    .WithDomains(AnyRetryMethodConfig(), AnyServerMetadata());
+    .WithDomains(AnyRetryMethodConfig(), AnyServerMetadata(),
+                 AnyServerThrottleData());
 
-void NonRetryableRequestsNeverRetry(internal::RetryMethodConfig policy,
-                                    ServerMetadataHandle md, bool committed) {
-  RetryState retry_state(&policy, nullptr);
+void NonRetryableRequestsNeverRetry(
+    internal::RetryMethodConfig policy, ServerMetadataHandle md, bool committed,
+    RefCountedPtr<internal::ServerRetryThrottleData> throttle_data) {
+  RetryState retry_state(&policy, throttle_data);
   EXPECT_EQ(retry_state.ShouldRetry(*md, committed, FuzzerDebugTag),
             absl::nullopt);
 }
@@ -298,11 +320,12 @@ FUZZ_TEST(MyTestSuite, NonRetryableRequestsNeverRetry)
     .WithDomains(
         RetryMethodConfigWithRetryableStatusCodes({GRPC_STATUS_ABORTED}),
         ServerMetadataWithStatus(AnyStatusExcept(GRPC_STATUS_ABORTED)),
-        Arbitrary<bool>());
+        Arbitrary<bool>(), AnyServerThrottleData());
 
-void NeverExceedMaxAttempts(internal::RetryMethodConfig policy,
-                            std::vector<ServerMetadataHandle> md,
-                            bool committed_at_end) {
+void NeverExceedMaxAttempts(
+    internal::RetryMethodConfig policy, std::vector<ServerMetadataHandle> md,
+    bool committed_at_end,
+    RefCountedPtr<internal::ServerRetryThrottleData> throttle_data) {
   RetryState retry_state(&policy, nullptr);
   int attempts_completed = 0;
   for (auto it = md.begin(); it != md.end(); ++it) {
@@ -317,10 +340,11 @@ void NeverExceedMaxAttempts(internal::RetryMethodConfig policy,
 FUZZ_TEST(MyTestSuite, NeverExceedMaxAttempts)
     .WithDomains(AnyRetryMethodConfig(),
                  VectorOf(AnyServerMetadata()).WithMaxSize(7),
-                 Arbitrary<bool>());
+                 Arbitrary<bool>(), AnyServerThrottleData());
 
-void NeverRetryNegativePushback(internal::RetryMethodConfig policy,
-                                ServerMetadataHandle md, bool committed) {
+void NeverRetryNegativePushback(
+    internal::RetryMethodConfig policy, ServerMetadataHandle md, bool committed,
+    RefCountedPtr<internal::ServerRetryThrottleData> throttle_data) {
   RetryState retry_state(&policy, nullptr);
   EXPECT_EQ(retry_state.ShouldRetry(*md, committed, FuzzerDebugTag),
             absl::nullopt);
@@ -328,10 +352,11 @@ void NeverRetryNegativePushback(internal::RetryMethodConfig policy,
 FUZZ_TEST(MyTestSuite, NeverRetryNegativePushback)
     .WithDomains(AnyRetryMethodConfig(),
                  ServerMetadataWithPushback(NegativeDuration()),
-                 Arbitrary<bool>());
+                 Arbitrary<bool>(), AnyServerThrottleData());
 
-void NeverExceedMaxBackoff(internal::RetryMethodConfig policy,
-                           std::vector<ServerMetadataHandle> mds) {
+void NeverExceedMaxBackoff(
+    internal::RetryMethodConfig policy, std::vector<ServerMetadataHandle> mds,
+    RefCountedPtr<internal::ServerRetryThrottleData> throttle_data) {
   RetryState retry_state(&policy, nullptr);
   for (const auto& md : mds) {
     auto delay = retry_state.ShouldRetry(*md, false, FuzzerDebugTag);
@@ -347,7 +372,8 @@ void NeverExceedMaxBackoff(internal::RetryMethodConfig policy,
   }
 }
 FUZZ_TEST(MyTestSuite, NeverExceedMaxBackoff)
-    .WithDomains(AnyRetryMethodConfig(), VectorOf(AnyServerMetadata()));
+    .WithDomains(AnyRetryMethodConfig(), VectorOf(AnyServerMetadata()),
+                 AnyServerThrottleData());
 
 }  // namespace
 }  // namespace retry_detail
