@@ -572,6 +572,8 @@ void Epoll1Poller::PostforkParent() {}
 // TODO(vigneshbabu): implement
 void Epoll1Poller::PostforkChild() {}
 
+absl::Status Epoll1Poller::RestartOnFork() { return absl::OkStatus(); }
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

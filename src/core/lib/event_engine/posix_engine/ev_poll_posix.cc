@@ -579,7 +579,8 @@ void PollPoller::KickExternal(bool ext) {
   }
   was_kicked_ = true;
   was_kicked_ext_ = ext;
-  CHECK(wakeup_fd_->Wakeup().ok());
+  auto status = wakeup_fd_->Wakeup();
+  CHECK(status.ok()) << status;
 }
 
 void PollPoller::Kick() { KickExternal(true); }
@@ -827,6 +828,14 @@ void PollPoller::PrepareFork() { Kick(); }
 void PollPoller::PostforkParent() {}
 // TODO(vigneshbabu): implement
 void PollPoller::PostforkChild() {}
+
+absl::Status PollPoller::RestartOnFork() {
+  LOG(INFO) << "Restarting!";
+  auto new_wakeup_fd = wakeup_fd_->Restart();
+  if (!new_wakeup_fd.ok()) return std::move(new_wakeup_fd).status();
+  wakeup_fd_ = std::move(new_wakeup_fd).value();
+  return absl::OkStatus();
+}
 
 void PollPoller::Close() {
   grpc_core::MutexLock lock(&mu_);

@@ -739,5 +739,13 @@ PosixEventEngine::CreatePosixListener(
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
+absl::Status PosixEventEngine::HandleForkInChild() {
+  auto status = GetSystemApi()->AdvanceGeneration();
+  if (status.ok()) {
+    return status;
+  }
+  return poller_manager_->Poller()->RestartOnFork();
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine

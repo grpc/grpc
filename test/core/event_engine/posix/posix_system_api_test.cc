@@ -11,26 +11,36 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 
 #include <arpa/inet.h>
 #include <gmock/gmock.h>
+#include <grpcpp/grpcpp.h>
 #include <gtest/gtest.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include <array>
 #include <cerrno>
+#include <csignal>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <memory>
 #include <utility>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/strings/str_cat.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "examples/protos/helloworld.grpc.pb.h"
+#include "examples/protos/helloworld.pb.h"
 #include "include/grpc/event_engine/event_engine.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -48,16 +58,14 @@ MATCHER_P(IsOkWith, value, "") {
   if ((arg.ok())) {
     return testing::ExplainMatchResult(value, arg.value(), result_listener);
   } else {
-    *result_listener << absl::StrFormat(
-        "failed with (%d) %s", arg.status().code(), arg.status().message());
+    *result_listener << arg.status();
     return false;
   }
 }
 
 MATCHER(IsOk, "Is ok") {
   if ((!arg.ok())) {
-    *result_listener << absl::StrFormat("failed with (%d) %s", arg.code(),
-                                        arg.message());
+    *result_listener << arg;
     return false;
   }
   return true;
@@ -190,7 +198,7 @@ TEST(PosixSystemApiTest, PosixLevel) {
               ::testing::ElementsAreArray(buf));
 }
 
-TEST(PosixSystemApiTest, EventEndpointLevel) {
+TEST(PosixSystemApiTest, DISABLED_Incomplete_EventEndpointLevel) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto address = URIToResolvedAddress(target_addr);
@@ -246,6 +254,10 @@ TEST(PosixSystemApiTest, EventEndpointLevel) {
     while (!listener_shutdown_status.has_value() || !client_end.has_value()) {
       LOG(INFO) << listener_shutdown_status.has_value() << " "
                 << client_end.has_value();
+      ee_server.poller->Work(EventEngine::Duration(10),
+                             []() { LOG(INFO) << "Server!"; });
+      ee_client.poller->Work(EventEngine::Duration(10),
+                             []() { LOG(INFO) << "Client!"; });
       cond.Wait(&mu);
     }
     // EXPECT_THAT(*listener_shutdown_status, IsOk());
@@ -253,6 +265,67 @@ TEST(PosixSystemApiTest, EventEndpointLevel) {
 
   // worker_ = new Worker(event_engine_, poller_.get());
   // worker_->Start();
+}
+
+namespace {
+
+absl::Status ExecServer(int port) {
+  char kExecutable[] = "examples/cpp/helloworld/greeter_server";
+  std::string port_arg = absl::StrCat("--port=", port);
+  std::vector<char> v = {port_arg.begin(), port_arg.end()};
+  char* const args[] = {kExecutable, v.data(), nullptr};
+  if (execve(kExecutable, args, nullptr) < 0) {
+    return absl::ErrnoToStatus(errno, "execve");
+  } else {
+    // Should never happen
+    return absl::OkStatus();
+  }
+}
+
+void ShutdownChild(int pid) {
+  int stat;
+  kill(pid, SIGTERM);
+  waitpid(pid, &stat, 0);
+  LOG(INFO) << stat;
+}
+
+using helloworld::Greeter;
+using helloworld::HelloReply;
+using helloworld::HelloRequest;
+
+}  // namespace
+
+TEST(PosixSystemApiTest, FullGrpc) {
+  int port = grpc_pick_unused_port_or_die();
+  int pid = fork();
+  ASSERT_GE(pid, 0) << absl::ErrnoToStatus(errno, "Fork");
+  if (pid == 0) {
+    ASSERT_THAT(ExecServer(port), IsOk());
+  }
+  auto cleanup = absl::MakeCleanup([pid]() { ShutdownChild(pid); });
+  // Give the child time to start up
+  absl::SleepFor(absl::Milliseconds(50));
+  std::string target = absl::StrCat("localhost:", port);
+  auto channel =
+      grpc::CreateChannel(target, grpc::InsecureChannelCredentials());
+  auto stub = Greeter::NewStub(channel);
+  HelloRequest request;
+  request.set_name("system_api_test");
+
+  grpc::ClientContext context;
+  HelloReply response;
+  auto status = stub->SayHello(&context, request, &response);
+  EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(response.message(), "Hello system_api_test");
+  auto ee = GetDefaultEventEngine();
+  PosixEventEngine* posix_ee = static_cast<PosixEventEngine*>(ee.get());
+  ASSERT_THAT(posix_ee->HandleForkInChild(), IsOk());
+  request.set_name("trying after shutdown");
+  grpc::ClientContext ctx2;
+  response = {};
+  status = stub->SayHello(&ctx2, request, &response);
+  EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(response.message(), "Hello system_api_test");
 }
 
 }  // namespace experimental

@@ -58,6 +58,8 @@ class PollPoller : public PosixEventPoller,
   void PostforkParent() override;
   void PostforkChild() override;
 
+  absl::Status RestartOnFork() override;
+
   void Close();
 
   SystemApi* GetSystemApi() const override { return system_api_; }

@@ -63,11 +63,14 @@ absl::Status EventFdWakeupFd::ConsumeWakeup() {
 }
 
 absl::Status EventFdWakeupFd::Wakeup() {
-  int err;
+  absl::StatusOr<int> err;
   do {
     err = system_api_->EventFdWrite(ReadFd(), 1);
-  } while (err < 0 && errno == EINTR);
-  if (err < 0) {
+    if (!err.ok()) {
+      return std::move(err).status();
+    }
+  } while (*err < 0 && errno == EINTR);
+  if (*err < 0) {
     return absl::Status(
         absl::StatusCode::kInternal,
         absl::StrCat("eventfd_write: ", grpc_core::StrError(errno)));
@@ -79,6 +82,10 @@ EventFdWakeupFd::~EventFdWakeupFd() {
   if (ReadFd().ready()) {
     system_api_->Close(ReadFd());
   }
+}
+
+absl::StatusOr<std::unique_ptr<WakeupFd>> EventFdWakeupFd::Restart() {
+  return CreateEventFdWakeupFd(*system_api_);
 }
 
 bool EventFdWakeupFd::IsSupported(SystemApi& system_api) {

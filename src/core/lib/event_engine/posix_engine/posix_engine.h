@@ -212,6 +212,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
   SystemApi* GetSystemApi() { return &system_api_; }
+  absl::Status HandleForkInChild();
 
 #ifdef GRPC_POSIX_SOCKET_TCP
   // The posix EventEngine returned by this method would have a shared ownership

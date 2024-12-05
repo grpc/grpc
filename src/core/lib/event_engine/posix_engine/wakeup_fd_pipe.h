@@ -32,6 +32,7 @@ class PipeWakeupFd : public WakeupFd {
   ~PipeWakeupFd() override;
   absl::Status ConsumeWakeup() override;
   absl::Status Wakeup() override;
+  absl::StatusOr<std::unique_ptr<WakeupFd>> Restart() override;
   static absl::StatusOr<std::unique_ptr<WakeupFd>> CreatePipeWakeupFd(
       SystemApi& system_api);
   static bool IsSupported(SystemApi& system_api);

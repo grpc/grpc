@@ -59,7 +59,7 @@ class SystemApi {
 
   ~SystemApi();
 
-  void AdvanceGeneration();
+  absl::Status AdvanceGeneration();
 
   FileDescriptor Accept(FileDescriptor sockfd, struct sockaddr* addr,
                         socklen_t* addrlen);
@@ -85,7 +85,7 @@ class SystemApi {
               socklen_t addrlen) const;
 #ifdef GRPC_LINUX_EPOLL
   long EventFdRead(FileDescriptor fd, uint64_t* value) const;
-  long EventFdWrite(FileDescriptor fd, uint64_t value) const;
+  absl::StatusOr<int> EventFdWrite(FileDescriptor fd, uint64_t value) const;
   int EpollCtl(FileDescriptor epfd, int op, FileDescriptor fd,
                struct epoll_event* event) const;
   int EpollWait(FileDescriptor epfd, struct epoll_event* events, int maxevents,
@@ -183,7 +183,7 @@ class SystemApi {
     {
       absl::MutexLock lock(&mu_);
       if (fds_.find(fd.fd()) == fds_.end()) {
-        return absl::InvalidArgumentError("File descriptor was closed");
+        return absl::NotFoundError("Unknown file descriptor");
       }
       native_fd = fd.fd();
     }

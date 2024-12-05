@@ -15739,11 +15739,17 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/posix/posix_engine_test_utils.h
   src:
+  - examples/protos/helloworld.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/posix/posix_engine_test_utils.cc
   - test/core/event_engine/posix/posix_system_api_test.cc
   deps:
   - gtest
+  - grpc++
   - grpc_test_util
   platforms:
   - linux

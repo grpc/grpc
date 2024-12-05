@@ -124,7 +124,7 @@ FileDescriptor SystemApi::Accept4(
 
 #endif  // GRPC_LINUX_SOCKETUTILS
 
-void SystemApi::AdvanceGeneration() {
+absl::Status SystemApi::AdvanceGeneration() {
   std::unordered_set<int> fds;
   {
     absl::MutexLock lock(&mu_);
@@ -133,6 +133,7 @@ void SystemApi::AdvanceGeneration() {
   for (int fd : fds) {
     close(fd);
   }
+  return absl::OkStatus();
 }
 
 FileDescriptor SystemApi::RegisterFileDescriptor(int fd) {
@@ -670,8 +671,10 @@ FileDescriptor SystemApi::EventFd(unsigned int initval, int flags) {
   return AdoptExternalFd(eventfd(initval, flags));
 }
 
-long SystemApi::EventFdWrite(FileDescriptor fd, uint64_t value) const {
-  return eventfd_write(fd.fd(), value);
+absl::StatusOr<int> SystemApi::EventFdWrite(FileDescriptor fd,
+                                            uint64_t value) const {
+  return WithFd(fd,
+                [value](int fd) -> long { return eventfd_write(fd, value); });
 }
 
 #endif  // GRPC_LINUX_EVENTFD

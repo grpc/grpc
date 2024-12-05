@@ -105,6 +105,7 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller,
   // 3. Call Shutdown() on the poller.
   virtual void Shutdown() = 0;
   virtual SystemApi* GetSystemApi() const = 0;
+  virtual absl::Status RestartOnFork() = 0;
   ~PosixEventPoller() override = default;
 };
 

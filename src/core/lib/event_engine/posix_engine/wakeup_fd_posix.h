@@ -44,6 +44,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
 #include "absl/status/status.h"
 #include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 
@@ -55,6 +57,8 @@ class WakeupFd {
   virtual absl::Status ConsumeWakeup() = 0;
   virtual absl::Status Wakeup() = 0;
   virtual ~WakeupFd() = default;
+
+  virtual absl::StatusOr<std::unique_ptr<WakeupFd>> Restart() = 0;
 
   FileDescriptor ReadFd() { return read_fd_; }
   FileDescriptor WriteFd() { return write_fd_; }
