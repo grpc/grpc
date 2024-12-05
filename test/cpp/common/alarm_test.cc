@@ -18,6 +18,7 @@
 
 #include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
+#include <grpcpp/impl/sync.h>
 #include <gtest/gtest.h>
 
 #include <condition_variable>
@@ -440,18 +441,26 @@ TEST(AlarmTest, UnsetDestruction) {
 
 TEST(AlarmTest, CallbackSetInCallback) {
   auto c = std::make_shared<Completion>();
-  Alarm alarm;
-  alarm.Set(
-      std::chrono::system_clock::now() + std::chrono::seconds(1), [&](bool ok) {
-        EXPECT_TRUE(ok);
-        alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(1),
-                  [&](bool ok) {
-                    EXPECT_TRUE(ok);
-                    std::lock_guard<std::mutex> l(c->mu);
-                    c->completed = true;
-                    c->cv.notify_one();
-                  });
-      });
+  struct GuardedAlarm {
+    grpc::internal::Mutex mu;
+    Alarm alarm ABSL_GUARDED_BY(mu);
+  } ga;
+  {
+    grpc::internal::MutexLock l(&ga.mu);
+    ga.alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(1),
+                 [&](bool ok) {
+                   EXPECT_TRUE(ok);
+                   grpc::internal::MutexLock l(&ga.mu);
+                   ga.alarm.Set(std::chrono::system_clock::now() +
+                                    std::chrono::seconds(1),
+                                [&](bool ok) {
+                                  EXPECT_TRUE(ok);
+                                  std::lock_guard<std::mutex> l(c->mu);
+                                  c->completed = true;
+                                  c->cv.notify_one();
+                                });
+                 });
+  }
   std::unique_lock<std::mutex> l(c->mu);
   EXPECT_TRUE(c->cv.wait_until(
       l, std::chrono::system_clock::now() + std::chrono::seconds(20),
