@@ -35,6 +35,26 @@ size_t GetMaxPerRpcRetryBufferSize(const ChannelArgs& args) {
 
 namespace retry_detail {
 
+RetryState::RetryState(
+    const internal::RetryMethodConfig* retry_policy,
+    RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data)
+    : retry_policy_(retry_policy),
+      retry_throttle_data_(std::move(retry_throttle_data)),
+      retry_backoff_(
+          BackOff::Options()
+              .set_initial_backoff(retry_policy_ == nullptr
+                                       ? Duration::Zero()
+                                       : retry_policy_->initial_backoff())
+              .set_multiplier(retry_policy_ == nullptr
+                                  ? 0
+                                  : retry_policy_->backoff_multiplier())
+              // This value was picked arbitrarily.  It can be changed if
+              // there is any even moderately compelling reason to do so.
+              .set_jitter(0.2)
+              .set_max_backoff(retry_policy_ == nullptr
+                                   ? Duration::Zero()
+                                   : retry_policy_->max_backoff())) {}
+
 absl::optional<Duration> RetryState::ShouldRetry(
     const ServerMetadata& md, bool committed,
     absl::FunctionRef<std::string()> lazy_attempt_debug_string) {
