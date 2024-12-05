@@ -57,8 +57,7 @@ namespace {
 class PickFirstTest : public LoadBalancingPolicyTest {
  protected:
   explicit PickFirstTest(ChannelArgs channel_args = ChannelArgs())
-      : LoadBalancingPolicyTest("pick_first", channel_args,
-                                /*intercept_timers=*/true) {}
+      : LoadBalancingPolicyTest("pick_first", channel_args) {}
 
   void SetUp() override {
     LoadBalancingPolicyTest::SetUp();
@@ -539,8 +538,6 @@ TEST_F(PickFirstTest, HappyEyeballs) {
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
-  RunTimerCallback();
-  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the second subchannel.
   EXPECT_TRUE(subchannel2->ConnectionRequested());
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -595,8 +592,6 @@ TEST_F(PickFirstTest, HappyEyeballsCompletesWithoutSuccess) {
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
-  RunTimerCallback();
-  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the second subchannel.
   EXPECT_TRUE(subchannel2->ConnectionRequested());
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -715,8 +710,6 @@ TEST_F(PickFirstTest,
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
-  RunTimerCallback();
-  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the second subchannel.
   EXPECT_TRUE(subchannel2->ConnectionRequested());
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -798,8 +791,6 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   EXPECT_FALSE(subchannel_ipv6_2->ConnectionRequested());
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
-  RunTimerCallback();
-  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the first IPv6
   // subchannel.
   EXPECT_TRUE(subchannel_ipv6_1->ConnectionRequested());
@@ -813,8 +804,6 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   EXPECT_FALSE(subchannel_ipv6_2->ConnectionRequested());
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
-  RunTimerCallback();
-  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the second IPv4
   // subchannel.
   EXPECT_TRUE(subchannel_ipv4_2->ConnectionRequested());
@@ -827,8 +816,6 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   EXPECT_FALSE(subchannel_ipv6_2->ConnectionRequested());
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
-  RunTimerCallback();
-  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the second IPv6
   // subchannel.
   EXPECT_TRUE(subchannel_ipv6_2->ConnectionRequested());
@@ -840,8 +827,6 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   EXPECT_FALSE(subchannel_ipv4_4->ConnectionRequested());
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
-  RunTimerCallback();
-  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the third IPv4
   // subchannel.
   EXPECT_TRUE(subchannel_ipv4_3->ConnectionRequested());
@@ -852,8 +837,6 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   EXPECT_FALSE(subchannel_ipv4_4->ConnectionRequested());
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
-  RunTimerCallback();
-  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the fourth IPv4
   // subchannel.
   EXPECT_TRUE(subchannel_ipv4_4->ConnectionRequested());
@@ -900,8 +883,6 @@ TEST_F(PickFirstTest,
   EXPECT_FALSE(subchannel_ipv4_4->ConnectionRequested());
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
-  RunTimerCallback();
-  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the first IPv4
   // subchannel.
   EXPECT_TRUE(subchannel_ipv4_1->ConnectionRequested());
@@ -915,8 +896,6 @@ TEST_F(PickFirstTest,
   EXPECT_FALSE(subchannel_ipv4_4->ConnectionRequested());
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
-  RunTimerCallback();
-  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the second IPv6
   // subchannel.
   EXPECT_TRUE(subchannel_ipv6_2->ConnectionRequested());
@@ -929,8 +908,6 @@ TEST_F(PickFirstTest,
   EXPECT_FALSE(subchannel_ipv4_4->ConnectionRequested());
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
-  RunTimerCallback();
-  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the second IPv4
   // subchannel.
   EXPECT_TRUE(subchannel_ipv4_2->ConnectionRequested());
@@ -942,8 +919,6 @@ TEST_F(PickFirstTest,
   EXPECT_FALSE(subchannel_ipv4_4->ConnectionRequested());
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
-  RunTimerCallback();
-  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the third IPv4
   // subchannel.
   EXPECT_TRUE(subchannel_ipv4_3->ConnectionRequested());
@@ -954,8 +929,6 @@ TEST_F(PickFirstTest,
   EXPECT_FALSE(subchannel_ipv4_4->ConnectionRequested());
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
-  RunTimerCallback();
-  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the fourth IPv4
   // subchannel.
   EXPECT_TRUE(subchannel_ipv4_4->ConnectionRequested());
@@ -1212,6 +1185,7 @@ TEST_F(PickFirstTest, AddressUpdateRetainsSelectedAddress) {
 // tests to use the FuzzingEventEngine exclusively, we should instead
 // find a way to tick the FuzzingEventEngine to the right point so that
 // we don't need this ugliness.
+// FIXME: remove now???
 class PickFirstNoCancelTimerTest : public PickFirstTest {
  protected:
   class FuzzingEventEngineWithoutTimerCancellation : public FuzzingEventEngine {
@@ -1223,8 +1197,7 @@ class PickFirstNoCancelTimerTest : public PickFirstTest {
 
   std::shared_ptr<FuzzingEventEngine> MakeFuzzingEventEngine() override {
     return std::make_shared<FuzzingEventEngineWithoutTimerCancellation>(
-        grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-        fuzzing_event_engine::Actions());
+        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
   }
 };
 

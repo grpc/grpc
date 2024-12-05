@@ -40,7 +40,6 @@ grpc_cc_library(
         "//src/core:lb_policy",
         "//src/core:subchannel_interface",
         "//src/core:subchannel_pool_interface",
-        "//test/core/event_engine:delegating_event_engine",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine",
     ],

@@ -15000,7 +15000,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/delegating_event_engine.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/load_balancing/lb_policy_test_lib.h
@@ -15280,7 +15279,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/delegating_event_engine.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/load_balancing/lb_policy_test_lib.h
@@ -20007,7 +20005,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/delegating_event_engine.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/load_balancing/lb_policy_test_lib.h
@@ -20070,7 +20067,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/delegating_event_engine.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/load_balancing/lb_policy_test_lib.h
@@ -22084,7 +22080,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/delegating_event_engine.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/cmdline.h
@@ -23104,7 +23099,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/delegating_event_engine.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/load_balancing/lb_policy_test_lib.h
@@ -26154,7 +26148,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/delegating_event_engine.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/load_balancing/lb_policy_test_lib.h

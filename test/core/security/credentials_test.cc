@@ -72,15 +72,12 @@
 #include "src/core/util/tmpfile.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
-#include "test/core/event_engine/delegating_event_engine.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 
-using grpc_event_engine::experimental::DelegatingEventEngine;
-using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::FuzzingEventEngine;
 using internal::grpc_flush_cached_google_default_credentials;
 using internal::set_gce_tenancy_checker_for_testing;
@@ -2459,28 +2456,12 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
     std::atomic<size_t> num_fetches_{0};
   };
 
-  class EventEngineWrapper : public DelegatingEventEngine {
-   public:
-    explicit EventEngineWrapper(TokenFetcherCredentialsTest* test)
-        : DelegatingEventEngine(test->event_engine_), test_(test) {}
-
-    TaskHandle RunAfter(Duration when,
-                        absl::AnyInvocable<void()> callback) override {
-      test_->run_after_duration_ = when;
-      return wrapped_ee()->RunAfter(when, std::move(callback));
-    }
-
-   private:
-    TokenFetcherCredentialsTest* test_;
-  };
-
   void SetUp() override {
     event_engine_ = std::make_shared<FuzzingEventEngine>(
         FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
-    ee_wrapper_ = std::make_shared<EventEngineWrapper>(this);
     grpc_timer_manager_set_start_threaded(false);
     grpc_init();
-    creds_ = MakeRefCounted<TestTokenFetcherCredentials>(ee_wrapper_);
+    creds_ = MakeRefCounted<TestTokenFetcherCredentials>(event_engine_);
   }
 
   void TearDown() override {
@@ -2488,7 +2469,6 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
     creds_.reset();
-    grpc_event_engine::experimental::WaitForSingleOwner(std::move(ee_wrapper_));
     grpc_event_engine::experimental::WaitForSingleOwner(
         std::move(event_engine_));
     grpc_shutdown_blocking();
@@ -2501,9 +2481,7 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
   }
 
   std::shared_ptr<FuzzingEventEngine> event_engine_;
-  std::shared_ptr<EventEngineWrapper> ee_wrapper_;
   RefCountedPtr<TestTokenFetcherCredentials> creds_;
-  absl::optional<EventEngine::Duration> run_after_duration_;
 };
 
 TEST_F(TokenFetcherCredentialsTest, Basic) {
@@ -2585,6 +2563,11 @@ TEST_F(TokenFetcherCredentialsTest, Expires30SecondsEarly) {
 
 TEST_F(TokenFetcherCredentialsTest, FetchFails) {
   const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
+  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
+  event_engine_->SetRunAfterDurationCallback(
+      [&](FuzzingEventEngine::Duration duration) {
+        run_after_duration = duration;
+      });
   ExecCtx exec_ctx;
   // First request will trigger a fetch, which will fail.
   LOG(INFO) << "Sending first RPC.";
@@ -2594,10 +2577,10 @@ TEST_F(TokenFetcherCredentialsTest, FetchFails) {
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   EXPECT_EQ(creds_->num_fetches(), 1);
-  while (!run_after_duration_.has_value()) event_engine_->Tick();
+  while (!run_after_duration.has_value()) event_engine_->Tick();
   // Make sure backoff was set for the right period.
-  EXPECT_EQ(run_after_duration_, std::chrono::seconds(1));
-  run_after_duration_.reset();
+  EXPECT_EQ(run_after_duration, std::chrono::seconds(1));
+  run_after_duration.reset();
   // Start a new call now, which will fail because we're in backoff.
   LOG(INFO) << "Sending second RPC.";
   state = RequestMetadataState::NewInstance(
@@ -2622,6 +2605,11 @@ TEST_F(TokenFetcherCredentialsTest, FetchFails) {
 
 TEST_F(TokenFetcherCredentialsTest, Backoff) {
   const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
+  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
+  event_engine_->SetRunAfterDurationCallback(
+      [&](FuzzingEventEngine::Duration duration) {
+        run_after_duration = duration;
+      });
   ExecCtx exec_ctx;
   // First request will trigger a fetch, which will fail.
   LOG(INFO) << "Sending first RPC.";
@@ -2631,10 +2619,10 @@ TEST_F(TokenFetcherCredentialsTest, Backoff) {
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   EXPECT_EQ(creds_->num_fetches(), 1);
-  while (!run_after_duration_.has_value()) event_engine_->Tick();
+  while (!run_after_duration.has_value()) event_engine_->Tick();
   // Make sure backoff was set for the right period.
-  EXPECT_EQ(run_after_duration_, std::chrono::seconds(1));
-  run_after_duration_.reset();
+  EXPECT_EQ(run_after_duration, std::chrono::seconds(1));
+  run_after_duration.reset();
   // Start a new call now, which will fail because we're in backoff.
   LOG(INFO) << "Sending second RPC.";
   state = RequestMetadataState::NewInstance(kExpectedError, "",
@@ -2654,11 +2642,11 @@ TEST_F(TokenFetcherCredentialsTest, Backoff) {
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   EXPECT_EQ(creds_->num_fetches(), 2);
-  while (!run_after_duration_.has_value()) event_engine_->Tick();
+  while (!run_after_duration.has_value()) event_engine_->Tick();
   // The backoff time should be longer now.
-  EXPECT_EQ(run_after_duration_, std::chrono::milliseconds(1600))
-      << "actual: " << run_after_duration_->count();
-  run_after_duration_.reset();
+  EXPECT_EQ(run_after_duration, std::chrono::milliseconds(1600))
+      << "actual: " << run_after_duration->count();
+  run_after_duration.reset();
   // Start a new call now, which will fail because we're in backoff.
   LOG(INFO) << "Sending fourth RPC.";
   state = RequestMetadataState::NewInstance(kExpectedError, "",
@@ -2678,14 +2666,19 @@ TEST_F(TokenFetcherCredentialsTest, Backoff) {
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   EXPECT_EQ(creds_->num_fetches(), 3);
-  while (!run_after_duration_.has_value()) event_engine_->Tick();
+  while (!run_after_duration.has_value()) event_engine_->Tick();
   // The backoff time should be longer now.
-  EXPECT_EQ(run_after_duration_, std::chrono::milliseconds(2560))
-      << "actual: " << run_after_duration_->count();
+  EXPECT_EQ(run_after_duration, std::chrono::milliseconds(2560))
+      << "actual: " << run_after_duration->count();
 }
 
 TEST_F(TokenFetcherCredentialsTest, ShutdownWhileBackoffTimerPending) {
   const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
+  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
+  event_engine_->SetRunAfterDurationCallback(
+      [&](FuzzingEventEngine::Duration duration) {
+        run_after_duration = duration;
+      });
   ExecCtx exec_ctx;
   creds_->AddResult(kExpectedError);
   // First request will trigger a fetch, which will fail.
@@ -2694,10 +2687,10 @@ TEST_F(TokenFetcherCredentialsTest, ShutdownWhileBackoffTimerPending) {
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   EXPECT_EQ(creds_->num_fetches(), 1);
-  while (!run_after_duration_.has_value()) event_engine_->Tick();
+  while (!run_after_duration.has_value()) event_engine_->Tick();
   // Make sure backoff was set for the right period.
-  EXPECT_EQ(run_after_duration_, std::chrono::seconds(1));
-  run_after_duration_.reset();
+  EXPECT_EQ(run_after_duration, std::chrono::seconds(1));
+  run_after_duration.reset();
   // Do nothing else.  Make sure the creds shut down correctly.
 }
 

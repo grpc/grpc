@@ -52,8 +52,7 @@ namespace {
 class XdsOverrideHostTest : public LoadBalancingPolicyTest {
  protected:
   XdsOverrideHostTest()
-      : LoadBalancingPolicyTest("xds_override_host_experimental", ChannelArgs(),
-                                /*intercept_timers=*/true) {}
+      : LoadBalancingPolicyTest("xds_override_host_experimental") {}
 
   static RefCountedPtr<const XdsConfig> MakeXdsConfig(
       absl::Span<const absl::string_view> override_host_statuses = {"UNKNOWN",
@@ -634,7 +633,7 @@ TEST_F(XdsOverrideHostTest,
 TEST_F(XdsOverrideHostTest, IdleTimer) {
   std::vector<grpc_event_engine::experimental::EventEngine::Duration>
       timer_durations;
-  SetRunAfterDurationCallback(
+  fuzzing_ee_->SetRunAfterDurationCallback(
       [&timer_durations](
           grpc_event_engine::experimental::EventEngine::Duration duration) {
         timer_durations.push_back(duration);
@@ -668,12 +667,8 @@ TEST_F(XdsOverrideHostTest, IdleTimer) {
                                 {"UNKNOWN", "HEALTHY", "DRAINING"},
                                 Duration::Minutes(1));
   // The update should cause the timer to be reset for the next
-  // expiration time.  There will be a bit of sub-second time skew here
-  // due to the FuzzingEventEngine incrementing time while it runs
-  // WorkSerializer callbacks.
-  EXPECT_THAT(timer_durations, ::testing::ElementsAre(::testing::AllOf(
-                                   ::testing::Le(std::chrono::seconds(55)),
-                                   ::testing::Ge(std::chrono::seconds(54)))));
+  // expiration time.
+  EXPECT_THAT(timer_durations, ::testing::ElementsAre(Duration::Seconds(55)));
   timer_durations.clear();
   picker = ExpectState(GRPC_CHANNEL_READY);
   // Make sure subchannels get orphaned in the WorkSerializer.
@@ -694,29 +689,21 @@ TEST_F(XdsOverrideHostTest, IdleTimer) {
   // Trigger the timer.  Both subchannels have gotten an override pick more
   // recently than the timer was scheduled, so neither one will be unreffed.
   IncrementTimeBy(Duration::Seconds(55));
-  RunTimerCallback();
   EXPECT_EQ(subchannel1->NumWatchers(), 1);
   EXPECT_EQ(subchannel2->NumWatchers(), 1);
-  // The timer will be reset for 5 seconds.  Note that there's no timer
-  // skew due to FuzzingEventEngine here, because 5s is the minimum
-  // duration for the timer.
-  EXPECT_THAT(timer_durations, ::testing::ElementsAre(std::chrono::seconds(5)));
+  // The timer will be reset for 5 seconds.
+  EXPECT_THAT(timer_durations, ::testing::ElementsAre(Duration::Seconds(5)));
   timer_durations.clear();
   // Send another override pick for endpoint 1.
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   // Trigger the timer again.  This time, it should unref endpoint 2 but
   // keep endpoint 1.
   IncrementTimeBy(Duration::Seconds(5));
-  RunTimerCallback();
   EXPECT_EQ(subchannel1->NumWatchers(), 1);
   EXPECT_EQ(subchannel2->NumWatchers(), 0);
   // The timer should now be set for 55 seconds, which is how long it
-  // will be until endpoint 1 should be unreffed.  There will be a bit of
-  // sub-second time skew here due to the FuzzingEventEngine incrementing
-  // time while it runs WorkSerializer callbacks.
-  EXPECT_THAT(timer_durations, ::testing::ElementsAre(::testing::AllOf(
-                                   ::testing::Le(std::chrono::seconds(55)),
-                                   ::testing::Ge(std::chrono::seconds(54)))));
+  // will be until endpoint 1 should be unreffed.
+  EXPECT_THAT(timer_durations, ::testing::ElementsAre(Duration::Seconds(55)));
 }
 
 }  // namespace

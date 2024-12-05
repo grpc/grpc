@@ -78,6 +78,10 @@ class FuzzingEventEngine : public EventEngine {
   // Tick for some duration
   void TickForDuration(Duration d) ABSL_LOCKS_EXCLUDED(mu_);
 
+  // Sets a callback to be invoked any time RunAfter() is called.
+  // Allows tests to verify the specified duration.
+  void SetRunAfterDurationCallback(absl::AnyInvocable<void(Duration)> callback);
+
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
       absl::AnyInvocable<void(absl::Status)> on_shutdown,
@@ -358,6 +362,10 @@ class FuzzingEventEngine : public EventEngine {
   Duration exponential_gate_time_increment_ ABSL_GUARDED_BY(mu_) =
       std::chrono::milliseconds(1);
   intptr_t current_tick_ ABSL_GUARDED_BY(now_mu_) = 0;
+
+  grpc_core::Mutex run_after_duration_callback_mu_;
+  absl::AnyInvocable<void(Duration)> run_after_duration_callback_
+      ABSL_GUARDED_BY(run_after_duration_callback_mu_);
 };
 
 class ThreadedFuzzingEventEngine : public FuzzingEventEngine {

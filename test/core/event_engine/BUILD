@@ -181,18 +181,6 @@ grpc_cc_library(
     deps = ["//:event_engine_base_hdrs"],
 )
 
-grpc_cc_library(
-    name = "delegating_event_engine",
-    testonly = True,
-    hdrs = ["delegating_event_engine.h"],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/status",
-        "absl/status:statusor",
-    ],
-    deps = ["//:event_engine_base_hdrs"],
-)
-
 grpc_cc_test(
     name = "tcp_socket_utils_test",
     srcs = ["tcp_socket_utils_test.cc"],

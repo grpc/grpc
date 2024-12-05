@@ -241,6 +241,12 @@ void FuzzingEventEngine::TickUntil(Time t) {
 
 void FuzzingEventEngine::TickForDuration(Duration d) { TickUntil(Now() + d); }
 
+void FuzzingEventEngine::SetRunAfterDurationCallback(
+    absl::AnyInvocable<void(Duration)> callback) {
+  grpc_core::MutexLock lock(&run_after_duration_callback_mu_);
+  run_after_duration_callback_ = std::move(callback);
+}
+
 FuzzingEventEngine::Time FuzzingEventEngine::Now() {
   grpc_core::MutexLock lock(&*now_mu_);
   return now_;
@@ -597,6 +603,12 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
 
 EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
     Duration when, absl::AnyInvocable<void()> closure) {
+  {
+    grpc_core::MutexLock lock(&run_after_duration_callback_mu_);
+    if (run_after_duration_callback_ != nullptr) {
+      run_after_duration_callback_(when);
+    }
+  }
   grpc_core::MutexLock lock(&*mu_);
   // (b/258949216): Cap it to one year to avoid integer overflow errors.
   return RunAfterLocked(RunType::kRunAfter, std::min(when, kOneYear),
