@@ -211,6 +211,7 @@ swift_boringssl_package:
   - boringssl
 swift_package:
   deps:
+  - address_sorting
   - grpc
   - grpc_authorization_provider
   - gpr
