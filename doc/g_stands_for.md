@@ -68,4 +68,4 @@
 - 1.66 'g' stands for ['gladiator'](https://github.com/grpc/grpc/tree/v1.66.x)
 - 1.67 'g' stands for ['gesundheit'](https://github.com/grpc/grpc/tree/v1.67.x)
 - 1.68 'g' stands for ['groovy'](https://github.com/grpc/grpc/tree/v1.68.x)
-- 1.69 'g' stands for ['gridiron'](https://github.com/grpc/grpc/tree/master)
+- 1.69 'g' stands for ['gridiron'](https://github.com/grpc/grpc/tree/v1.69.x)
