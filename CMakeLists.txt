@@ -2210,6 +2210,7 @@ endif()
 
 
 add_library(grpc
+  src/core/call/request_buffer.cc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
@@ -2227,6 +2228,7 @@ add_library(grpc
   src/core/client_channel/local_subchannel_pool.cc
   src/core/client_channel/retry_filter.cc
   src/core/client_channel/retry_filter_legacy_call_data.cc
+  src/core/client_channel/retry_interceptor.cc
   src/core/client_channel/retry_service_config.cc
   src/core/client_channel/retry_throttle.cc
   src/core/client_channel/subchannel.cc
@@ -3330,6 +3332,7 @@ endif()
 endif()
 
 add_library(grpc_unsecure
+  src/core/call/request_buffer.cc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
@@ -3347,6 +3350,7 @@ add_library(grpc_unsecure
   src/core/client_channel/local_subchannel_pool.cc
   src/core/client_channel/retry_filter.cc
   src/core/client_channel/retry_filter_legacy_call_data.cc
+  src/core/client_channel/retry_interceptor.cc
   src/core/client_channel/retry_service_config.cc
   src/core/client_channel/retry_throttle.cc
   src/core/client_channel/subchannel.cc
