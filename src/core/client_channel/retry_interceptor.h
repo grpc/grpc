@@ -43,9 +43,12 @@ class RetryState {
 
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const RetryState& state) {
-    sink.Append(absl::StrCat("policy:{", *state.retry_policy_, "} throttle:",
-                             state.retry_throttle_data_ != nullptr,
-                             " attempts:", state.num_attempts_completed_));
+    sink.Append(absl::StrCat(
+        "policy:{",
+        state.retry_policy_ != nullptr ? absl::StrCat(*state.retry_policy_)
+                                       : "none",
+        "} throttle:", state.retry_throttle_data_ != nullptr,
+        " attempts:", state.num_attempts_completed_));
   }
 
  private:

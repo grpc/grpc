@@ -275,6 +275,15 @@ auto RetryMethodConfigWithRetryableStatusCodes(
       InRange(1e-12, 10.0));
 }
 
+void Printable(absl::optional<internal::RetryMethodConfig> policy,
+               RefCountedPtr<internal::ServerRetryThrottleData> throttle_data) {
+  RetryState retry_state(policy.has_value() ? &*policy : nullptr,
+                         throttle_data);
+  std::ignore = absl::StrCat(retry_state);
+}
+FUZZ_TEST(MyTestSuite, Printable)
+    .WithDomains(OptionalOf(AnyRetryMethodConfig()), AnyServerThrottleData());
+
 void NoPolicyNeverRetries(std::vector<ServerMetadataHandle> md,
                           bool committed_at_end) {
   RetryState retry_state(nullptr, nullptr);

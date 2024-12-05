@@ -192,7 +192,7 @@ void RetryInterceptor::InterceptCall(
 }
 
 const internal::RetryMethodConfig* RetryInterceptor::GetRetryPolicy() {
-  auto* svc_cfg_call_data = GetContext<ServiceConfigCallData>();
+  auto* svc_cfg_call_data = MaybeGetContext<ServiceConfigCallData>();
   if (svc_cfg_call_data == nullptr) return nullptr;
   return static_cast<const internal::RetryMethodConfig*>(
       svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index_));
