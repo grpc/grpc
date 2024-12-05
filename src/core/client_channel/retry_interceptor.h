@@ -92,7 +92,8 @@ class RetryInterceptor : public Interceptor {
  private:
   class Attempt;
 
-  class Call : public RefCounted<Call, NonPolymorphicRefCount, UnrefCallDtor> {
+  class Call final
+      : public RefCounted<Call, NonPolymorphicRefCount, UnrefCallDtor> {
    public:
     Call(RefCountedPtr<RetryInterceptor> interceptor, CallHandler call_handler);
 
@@ -113,6 +114,9 @@ class RetryInterceptor : public Interceptor {
     int num_attempts_completed() const {
       return retry_state_.num_attempts_completed();
     }
+    void RemoveAttempt(Attempt* attempt) {
+      if (current_attempt_ == attempt) current_attempt_ = nullptr;
+    }
 
     std::string DebugTag();
 
@@ -123,14 +127,15 @@ class RetryInterceptor : public Interceptor {
     RequestBuffer request_buffer_;
     CallHandler call_handler_;
     RefCountedPtr<RetryInterceptor> interceptor_;
-    RefCountedPtr<Attempt> current_attempt_;
+    Attempt* current_attempt_ = nullptr;
     retry_detail::RetryState retry_state_;
   };
 
-  class Attempt
+  class Attempt final
       : public RefCounted<Attempt, NonPolymorphicRefCount, UnrefCallDtor> {
    public:
     explicit Attempt(RefCountedPtr<Call> call);
+    ~Attempt();
 
     void Start();
     void Cancel();

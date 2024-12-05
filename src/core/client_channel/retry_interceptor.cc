@@ -237,8 +237,9 @@ void RetryInterceptor::Call::StartAttempt() {
   if (current_attempt_ != nullptr) {
     current_attempt_->Cancel();
   }
-  current_attempt_ = call_handler_.arena()->MakeRefCounted<Attempt>(Ref());
-  current_attempt_->Start();
+  auto current_attempt = call_handler_.arena()->MakeRefCounted<Attempt>(Ref());
+  current_attempt_ = current_attempt.get();
+  current_attempt->Start();
 }
 
 void RetryInterceptor::Call::MaybeCommit(size_t buffered) {
@@ -260,6 +261,8 @@ RetryInterceptor::Attempt::Attempt(RefCountedPtr<Call> call)
     : reader_(call->request_buffer()), call_(std::move(call)) {
   GRPC_TRACE_LOG(retry, INFO) << DebugTag() << " retry attempt created";
 }
+
+RetryInterceptor::Attempt::~Attempt() { call_->RemoveAttempt(this); }
 
 auto RetryInterceptor::Attempt::ServerToClientGotInitialMetadata(
     ServerMetadataHandle md) {
