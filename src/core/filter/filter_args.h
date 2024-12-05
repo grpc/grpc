@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_FILTER_ARGS_H
-#define GRPC_SRC_CORE_LIB_TRANSPORT_FILTER_ARGS_H
+#ifndef GRPC_SRC_CORE_FILTER_FILTER_ARGS_H
+#define GRPC_SRC_CORE_FILTER_FILTER_ARGS_H
 
 #include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -109,4 +109,4 @@ class FilterArgs {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_FILTER_ARGS_H
+#endif  // GRPC_SRC_CORE_FILTER_FILTER_ARGS_H
