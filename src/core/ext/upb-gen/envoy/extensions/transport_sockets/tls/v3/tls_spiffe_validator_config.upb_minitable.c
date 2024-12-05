@@ -17,7 +17,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__SPIFFECertValidatorConfig__TrustDomain_msg_init_ptr},
 };
 
@@ -26,7 +26,7 @@ static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_SPIFFE
 };
 
 const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__SPIFFECertValidatorConfig_msg_init = {
-  &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_submsgs[0],
+  &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig__submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -39,7 +39,7 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__SPIFFECertVa
 };
 
 const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__SPIFFECertValidatorConfig_msg_init_ptr = &envoy__extensions__transport_0sockets__tls__v3__SPIFFECertValidatorConfig_msg_init;
-static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
 };
 
@@ -49,7 +49,7 @@ static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_SPIFFE
 };
 
 const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__SPIFFECertValidatorConfig__TrustDomain_msg_init = {
-  &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_submsgs[0],
+  &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain__submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED

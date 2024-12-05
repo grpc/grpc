@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_TRACE_V3_XRAY_PROTO_UPB_H_
-#define ENVOY_CONFIG_TRACE_V3_XRAY_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_TRACE_V3_XRAY_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_TRACE_V3_XRAY_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -270,4 +270,4 @@ UPB_INLINE struct google_protobuf_Struct* envoy_config_trace_v3_XRayConfig_Segme
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_TRACE_V3_XRAY_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_TRACE_V3_XRAY_PROTO_UPB_H__UPB_H_ */

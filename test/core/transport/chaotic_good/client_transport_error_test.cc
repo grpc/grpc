@@ -204,14 +204,12 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
-              return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
             [&on_done](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(),
                         GRPC_STATUS_UNAVAILABLE);
               on_done.Call();
-              return Empty{};
             });
       });
   // Wait until ClientTransport's internal activities to finish.
@@ -250,14 +248,12 @@ TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
-              return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
             [&on_done](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(),
                         GRPC_STATUS_UNAVAILABLE);
               on_done.Call();
-              return Empty{};
             });
       });
   // Wait until ClientTransport's internal activities to finish.
@@ -312,14 +308,12 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
-              return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
             [&on_done1](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(),
                         GRPC_STATUS_UNAVAILABLE);
               on_done1.Call();
-              return Empty{};
             });
       });
   call2.initiator.SpawnInfallible(
@@ -328,14 +322,12 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
-              return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
             [&on_done2](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(),
                         GRPC_STATUS_UNAVAILABLE);
               on_done2.Call();
-              return Empty{};
             });
       });
   // Wait until ClientTransport's internal activities to finish.
@@ -382,14 +374,12 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
-              return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
             [&on_done1](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(),
                         GRPC_STATUS_UNAVAILABLE);
               on_done1.Call();
-              return Empty{};
             });
       });
   call2.initiator.SpawnInfallible(
@@ -398,14 +388,12 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
-              return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
             [&on_done2](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(),
                         GRPC_STATUS_UNAVAILABLE);
               on_done2.Call();
-              return Empty{};
             });
       });
   // Wait until ClientTransport's internal activities to finish.

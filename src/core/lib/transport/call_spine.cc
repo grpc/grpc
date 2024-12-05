@@ -45,10 +45,8 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                 call_initiator.SpawnInfallible("finish-downstream-ok",
                                                [call_initiator]() mutable {
                                                  call_initiator.FinishSends();
-                                                 return Empty{};
                                                });
               }
-              return Empty{};
             });
       });
   call_handler.SpawnInfallible(
@@ -111,9 +109,7 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                   "recv_trailing",
                   [call_handler, md = std::move(md)]() mutable {
                     call_handler.PushServerTrailingMetadata(std::move(md));
-                    return Empty{};
                   });
-              return Empty{};
             });
       });
 }

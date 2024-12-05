@@ -53,7 +53,13 @@ class PayloadChunker {
     if (remaining > max_chunk_size_) {
       auto take = max_chunk_size_;
       if (remaining / 2 < max_chunk_size_) {
+        // If there's very little remaining, then we make the last two chunks
+        // about equal sized to make later load balancing a little easier to
+        // reason about (nobody likes a teeny tiny straggler).
         take = remaining / 2;
+        // But we try to keep alignment rounded lengths for the first chunk.
+        // This way we don't accidentally split things up such that padding is
+        // needed (and potentially then copying elsewhere).
         if (alignment_ != 0 && take % alignment_ != 0) {
           take += alignment_ - (take % alignment_);
           if (take > max_chunk_size_) take = max_chunk_size_;

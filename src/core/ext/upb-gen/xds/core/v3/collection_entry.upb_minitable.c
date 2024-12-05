@@ -18,7 +18,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal xds_core_v3_CollectionEntry_submsgs[2] = {
+static const upb_MiniTableSubInternal xds_core_v3_CollectionEntry__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &xds__core__v3__ResourceLocator_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &xds__core__v3__CollectionEntry__InlineEntry_msg_init_ptr},
 };
@@ -29,7 +29,7 @@ static const upb_MiniTableField xds_core_v3_CollectionEntry__fields[2] = {
 };
 
 const upb_MiniTable xds__core__v3__CollectionEntry_msg_init = {
-  &xds_core_v3_CollectionEntry_submsgs[0],
+  &xds_core_v3_CollectionEntry__submsgs[0],
   &xds_core_v3_CollectionEntry__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -44,7 +44,7 @@ const upb_MiniTable xds__core__v3__CollectionEntry_msg_init = {
 };
 
 const upb_MiniTable* xds__core__v3__CollectionEntry_msg_init_ptr = &xds__core__v3__CollectionEntry_msg_init;
-static const upb_MiniTableSubInternal xds_core_v3_CollectionEntry_InlineEntry_submsgs[1] = {
+static const upb_MiniTableSubInternal xds_core_v3_CollectionEntry_InlineEntry__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
@@ -55,7 +55,7 @@ static const upb_MiniTableField xds_core_v3_CollectionEntry_InlineEntry__fields[
 };
 
 const upb_MiniTable xds__core__v3__CollectionEntry__InlineEntry_msg_init = {
-  &xds_core_v3_CollectionEntry_InlineEntry_submsgs[0],
+  &xds_core_v3_CollectionEntry_InlineEntry__submsgs[0],
   &xds_core_v3_CollectionEntry_InlineEntry__fields[0],
   UPB_SIZE(32, 56), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED

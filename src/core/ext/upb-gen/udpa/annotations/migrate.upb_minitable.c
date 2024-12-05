@@ -76,35 +76,35 @@ const upb_MiniTable udpa__annotations__FileMigrateAnnotation_msg_init = {
 const upb_MiniTable* udpa__annotations__FileMigrateAnnotation_msg_init_ptr = &udpa__annotations__FileMigrateAnnotation_msg_init;
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension udpa_annotations_message_migrate_ext = {
-  {171962766, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {171962766, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   &google__protobuf__MessageOptions_msg_init,
   {.UPB_PRIVATE(submsg) = &udpa__annotations__MigrateAnnotation_msg_init},
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension udpa_annotations_field_migrate_ext = {
-  {171962766, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {171962766, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   &google__protobuf__FieldOptions_msg_init,
   {.UPB_PRIVATE(submsg) = &udpa__annotations__FieldMigrateAnnotation_msg_init},
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension udpa_annotations_enum_migrate_ext = {
-  {171962766, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {171962766, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   &google__protobuf__EnumOptions_msg_init,
   {.UPB_PRIVATE(submsg) = &udpa__annotations__MigrateAnnotation_msg_init},
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension udpa_annotations_enum_value_migrate_ext = {
-  {171962766, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {171962766, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   &google__protobuf__EnumValueOptions_msg_init,
   {.UPB_PRIVATE(submsg) = &udpa__annotations__MigrateAnnotation_msg_init},
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension udpa_annotations_file_migrate_ext = {
-  {171962766, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {171962766, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   &google__protobuf__FileOptions_msg_init,
   {.UPB_PRIVATE(submsg) = &udpa__annotations__FileMigrateAnnotation_msg_init},
 

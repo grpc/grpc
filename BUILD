@@ -212,11 +212,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gridiron"  # @unused
+g_stands_for = "genius"  # @unused
 
-core_version = "44.1.0"  # @unused
+core_version = "44.2.0"  # @unused
 
-version = "1.69.0-dev"  # @unused
+version = "1.70.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -2343,7 +2343,6 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
-        "backoff",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
@@ -2436,7 +2435,6 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
-        "backoff",
         "channel_arg_names",
         "channel_stack_builder",
         "config",

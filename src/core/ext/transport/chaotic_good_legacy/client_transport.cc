@@ -246,7 +246,6 @@ void ChaoticGoodClientTransport::AbortWithError() {
     call_handler.SpawnInfallible("cancel", [call_handler]() mutable {
       call_handler.PushServerTrailingMetadata(ServerMetadataFromStatus(
           absl::UnavailableError("Transport closed.")));
-      return Empty{};
     });
   }
 }

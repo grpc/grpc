@@ -288,25 +288,27 @@ class XdsClientTest : public ::testing::Test {
       absl::optional<ResourceAndReadDelayHandle> WaitForNextResourceAndHandle(
           SourceLocation location = SourceLocation()) {
         while (true) {
-          event_engine_->Tick();
-          MutexLock lock(&mu_);
-          if (queue_.empty()) {
+          {
+            MutexLock lock(&mu_);
+            if (!queue_.empty()) {
+              Event& event = queue_.front();
+              if (!absl::holds_alternative<ResourceAndReadDelayHandle>(event)) {
+                EXPECT_TRUE(false)
+                    << "got unexpected event "
+                    << (absl::holds_alternative<absl::Status>(event)
+                            ? "error"
+                            : "does-not-exist")
+                    << " at " << location.file() << ":" << location.line();
+                return absl::nullopt;
+              }
+              auto resource_and_handle =
+                  std::move(absl::get<ResourceAndReadDelayHandle>(event));
+              queue_.pop_front();
+              return resource_and_handle;
+            }
             if (event_engine_->IsIdle()) return absl::nullopt;
-            continue;
           }
-          Event& event = queue_.front();
-          if (!absl::holds_alternative<ResourceAndReadDelayHandle>(event)) {
-            EXPECT_TRUE(false)
-                << "got unexpected event "
-                << (absl::holds_alternative<absl::Status>(event)
-                        ? "error"
-                        : "does-not-exist")
-                << " at " << location.file() << ":" << location.line();
-            return absl::nullopt;
-          }
-          auto foo = std::move(absl::get<ResourceAndReadDelayHandle>(event));
-          queue_.pop_front();
-          return foo;
+          event_engine_->Tick();
         }
       }
 
@@ -322,47 +324,51 @@ class XdsClientTest : public ::testing::Test {
       absl::optional<absl::Status> WaitForNextError(
           SourceLocation location = SourceLocation()) {
         while (true) {
-          event_engine_->Tick();
-          MutexLock lock(&mu_);
-          if (queue_.empty()) {
+          {
+            MutexLock lock(&mu_);
+            if (!queue_.empty()) {
+              Event& event = queue_.front();
+              if (!absl::holds_alternative<absl::Status>(event)) {
+                EXPECT_TRUE(false)
+                    << "got unexpected event "
+                    << (absl::holds_alternative<ResourceAndReadDelayHandle>(
+                            event)
+                            ? "resource"
+                            : "does-not-exist")
+                    << " at " << location.file() << ":" << location.line();
+                return absl::nullopt;
+              }
+              absl::Status error = std::move(absl::get<absl::Status>(event));
+              queue_.pop_front();
+              return std::move(error);
+            }
             if (event_engine_->IsIdle()) return absl::nullopt;
-            continue;
           }
-          Event& event = queue_.front();
-          if (!absl::holds_alternative<absl::Status>(event)) {
-            EXPECT_TRUE(false)
-                << "got unexpected event "
-                << (absl::holds_alternative<ResourceAndReadDelayHandle>(event)
-                        ? "resource"
-                        : "does-not-exist")
-                << " at " << location.file() << ":" << location.line();
-            return absl::nullopt;
-          }
-          absl::Status error = std::move(absl::get<absl::Status>(event));
-          queue_.pop_front();
-          return std::move(error);
+          event_engine_->Tick();
         }
       }
 
       bool WaitForDoesNotExist(SourceLocation location = SourceLocation()) {
         while (true) {
-          event_engine_->Tick();
-          MutexLock lock(&mu_);
-          if (queue_.empty()) {
+          {
+            MutexLock lock(&mu_);
+            if (!queue_.empty()) {
+              Event& event = queue_.front();
+              if (!absl::holds_alternative<DoesNotExist>(event)) {
+                EXPECT_TRUE(false)
+                    << "got unexpected event "
+                    << (absl::holds_alternative<absl::Status>(event)
+                            ? "error"
+                            : "resource")
+                    << " at " << location.file() << ":" << location.line();
+                return false;
+              }
+              queue_.pop_front();
+              return true;
+            }
             if (event_engine_->IsIdle()) return false;
-            continue;
           }
-          Event& event = queue_.front();
-          if (!absl::holds_alternative<DoesNotExist>(event)) {
-            EXPECT_TRUE(false)
-                << "got unexpected event "
-                << (absl::holds_alternative<absl::Status>(event) ? "error"
-                                                                 : "resource")
-                << " at " << location.file() << ":" << location.line();
-            return false;
-          }
-          queue_.pop_front();
-          return true;
+          event_engine_->Tick();
         }
       }
 
@@ -650,23 +656,27 @@ class XdsClientTest : public ::testing::Test {
         ::testing::Matcher<ServerFailureMap> server_failures_matcher,
         SourceLocation location = SourceLocation()) {
       while (true) {
-        event_engine_->Tick();
-        MutexLock lock(&mu_);
-        if (::testing::Matches(resource_updates_valid_matcher)(
-                resource_updates_valid_) &&
-            ::testing::Matches(resource_updates_invalid_matcher)(
-                resource_updates_invalid_) &&
-            ::testing::Matches(server_failures_matcher)(server_failures_)) {
-          return true;
+        {
+          MutexLock lock(&mu_);
+          if (::testing::Matches(resource_updates_valid_matcher)(
+                  resource_updates_valid_) &&
+              ::testing::Matches(resource_updates_invalid_matcher)(
+                  resource_updates_invalid_) &&
+              ::testing::Matches(server_failures_matcher)(server_failures_)) {
+            return true;
+          }
+          if (event_engine_->IsIdle()) {
+            EXPECT_THAT(resource_updates_valid_, resource_updates_valid_matcher)
+                << location.file() << ":" << location.line();
+            EXPECT_THAT(resource_updates_invalid_,
+                        resource_updates_invalid_matcher)
+                << location.file() << ":" << location.line();
+            EXPECT_THAT(server_failures_, server_failures_matcher)
+                << location.file() << ":" << location.line();
+            return false;
+          }
         }
-        if (!event_engine_->IsIdle()) continue;
-        EXPECT_THAT(resource_updates_valid_, resource_updates_valid_matcher)
-            << location.file() << ":" << location.line();
-        EXPECT_THAT(resource_updates_invalid_, resource_updates_invalid_matcher)
-            << location.file() << ":" << location.line();
-        EXPECT_THAT(server_failures_, server_failures_matcher)
-            << location.file() << ":" << location.line();
-        return false;
+        event_engine_->Tick();
       }
     }
 

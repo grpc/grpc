@@ -22,7 +22,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_config_endpoint_v3_UpstreamLocalityStats_submsgs[6] = {
+static const upb_MiniTableSubInternal envoy_config_endpoint_v3_UpstreamLocalityStats__submsgs[6] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Locality_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__EndpointLoadMetricStats_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__UpstreamEndpointStats_msg_init_ptr},
@@ -49,7 +49,7 @@ static const upb_MiniTableField envoy_config_endpoint_v3_UpstreamLocalityStats__
 };
 
 const upb_MiniTable envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init = {
-  &envoy_config_endpoint_v3_UpstreamLocalityStats_submsgs[0],
+  &envoy_config_endpoint_v3_UpstreamLocalityStats__submsgs[0],
   &envoy_config_endpoint_v3_UpstreamLocalityStats__fields[0],
   UPB_SIZE(96, 120), 14, kUpb_ExtMode_NonExtendable, 14, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -76,7 +76,7 @@ const upb_MiniTable envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init 
 };
 
 const upb_MiniTable* envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init_ptr = &envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init;
-static const upb_MiniTableSubInternal envoy_config_endpoint_v3_UpstreamEndpointStats_submsgs[3] = {
+static const upb_MiniTableSubInternal envoy_config_endpoint_v3_UpstreamEndpointStats__submsgs[3] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__EndpointLoadMetricStats_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
@@ -93,7 +93,7 @@ static const upb_MiniTableField envoy_config_endpoint_v3_UpstreamEndpointStats__
 };
 
 const upb_MiniTable envoy__config__endpoint__v3__UpstreamEndpointStats_msg_init = {
-  &envoy_config_endpoint_v3_UpstreamEndpointStats_submsgs[0],
+  &envoy_config_endpoint_v3_UpstreamEndpointStats__submsgs[0],
   &envoy_config_endpoint_v3_UpstreamEndpointStats__fields[0],
   UPB_SIZE(56, 72), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -155,7 +155,7 @@ const upb_MiniTable envoy__config__endpoint__v3__UnnamedEndpointLoadMetricStats_
 };
 
 const upb_MiniTable* envoy__config__endpoint__v3__UnnamedEndpointLoadMetricStats_msg_init_ptr = &envoy__config__endpoint__v3__UnnamedEndpointLoadMetricStats_msg_init;
-static const upb_MiniTableSubInternal envoy_config_endpoint_v3_ClusterStats_submsgs[3] = {
+static const upb_MiniTableSubInternal envoy_config_endpoint_v3_ClusterStats__submsgs[3] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__ClusterStats__DroppedRequests_msg_init_ptr},
@@ -171,7 +171,7 @@ static const upb_MiniTableField envoy_config_endpoint_v3_ClusterStats__fields[6]
 };
 
 const upb_MiniTable envoy__config__endpoint__v3__ClusterStats_msg_init = {
-  &envoy_config_endpoint_v3_ClusterStats_submsgs[0],
+  &envoy_config_endpoint_v3_ClusterStats__submsgs[0],
   &envoy_config_endpoint_v3_ClusterStats__fields[0],
   UPB_SIZE(48, 80), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED

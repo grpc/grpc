@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_CORE_V3_PROTOCOL_PROTO_UPB_H_
-#define ENVOY_CONFIG_CORE_V3_PROTOCOL_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_CORE_V3_PROTOCOL_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_CORE_V3_PROTOCOL_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -2503,4 +2503,4 @@ UPB_INLINE void envoy_config_core_v3_SchemeHeaderTransformation_set_match_upstre
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_CORE_V3_PROTOCOL_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_CORE_V3_PROTOCOL_PROTO_UPB_H__UPB_H_ */

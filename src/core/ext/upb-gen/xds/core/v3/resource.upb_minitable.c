@@ -17,7 +17,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal xds_core_v3_Resource_submsgs[2] = {
+static const upb_MiniTableSubInternal xds_core_v3_Resource__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &xds__core__v3__ResourceName_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
@@ -29,7 +29,7 @@ static const upb_MiniTableField xds_core_v3_Resource__fields[3] = {
 };
 
 const upb_MiniTable xds__core__v3__Resource_msg_init = {
-  &xds_core_v3_Resource_submsgs[0],
+  &xds_core_v3_Resource__submsgs[0],
   &xds_core_v3_Resource__fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
