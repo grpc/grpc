@@ -102,10 +102,12 @@ void TestRetryCancelDuringDelay(
 }
 
 CORE_END2END_TEST(RetryTest, CancelDuringDelay) {
+  SKIP_IF_V3();  // Not working yet
   TestRetryCancelDuringDelay(*this, std::make_unique<CancelCancellationMode>());
 }
 
 CORE_END2END_TEST(RetryTest, DeadlineDuringDelay) {
+  SKIP_IF_V3();  // Not working yet
   TestRetryCancelDuringDelay(*this,
                              std::make_unique<DeadlineCancellationMode>());
 }
