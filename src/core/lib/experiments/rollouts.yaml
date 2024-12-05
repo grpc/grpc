@@ -89,6 +89,8 @@
   default: true
 - name: pick_first_new
   default: true
+- name: prioritize_finished_requests
+  default: false
 - name: promise_based_client_call
   default:
     ios: broken
