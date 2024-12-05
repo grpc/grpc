@@ -57,6 +57,8 @@ namespace grpc_core {
 #ifdef GRPC_EXPERIMENTS_ARE_FINAL
 
 #if defined(GRPC_CFSTREAM)
+#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
+inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
@@ -96,6 +98,8 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsWorkSerializerDispatchEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
+#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
+inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
@@ -138,6 +142,8 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsWorkSerializerDispatchEnabled() { return true; }
 
 #else
+#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
+inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
@@ -182,6 +188,7 @@ inline bool IsWorkSerializerDispatchEnabled() { return true; }
 
 #else
 enum ExperimentIds {
+  kExperimentIdBackoffCapInitialAtMax,
   kExperimentIdCallTracerInTransport,
   kExperimentIdCanaryClientPrivacy,
   kExperimentIdChaoticGoodLegacyProtocol,
@@ -213,6 +220,10 @@ enum ExperimentIds {
   kExperimentIdWorkSerializerDispatch,
   kNumExperiments
 };
+#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
+inline bool IsBackoffCapInitialAtMaxEnabled() {
+  return IsExperimentEnabled<kExperimentIdBackoffCapInitialAtMax>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdCallTracerInTransport>();
