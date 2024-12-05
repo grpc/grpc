@@ -219,13 +219,15 @@ double TDigest::Cdf(double val) {
   }
 
   if (val < centroids_[0].mean) {
-    return LinearInterpolate(0.0, centroids_[0].count / count_ / 2.0,
-                             centroids_[0].mean - val, val - min_);
+    return LinearInterpolate(
+        0.0, static_cast<double>(centroids_[0].count) / count_ / 2.0,
+        centroids_[0].mean - val, val - min_);
   }
 
   if (val >= centroids_.back().mean) {
-    return LinearInterpolate(1.0 - centroids_.back().count / count_ / 2.0, 1,
-                             max_ - val, val - centroids_.back().mean);
+    return LinearInterpolate(
+        1.0 - static_cast<double>(centroids_.back().count) / count_ / 2.0, 1,
+        max_ - val, val - centroids_.back().mean);
   }
 
   double accum_count = centroids_[0].count / 2.0;
