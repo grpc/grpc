@@ -45,9 +45,9 @@ absl::Status PipeWakeupFd::Init(SystemApi& system_api) {
                         absl::StrCat("pipe: ", grpc_core::StrError(errno)));
   }
   auto pipefd = r.second;
-  auto status = system_api.SetSocketNonBlocking(pipefd[0]);
+  auto status = system_api.MakeNonBlocking(pipefd[0]);
   if (!status.ok()) return status;
-  status = system_api.SetSocketNonBlocking(pipefd[1]);
+  status = system_api.MakeNonBlocking(pipefd[1]);
   if (!status.ok()) return status;
   SetWakeupFds(pipefd[0], pipefd[1]);
   return absl::OkStatus();

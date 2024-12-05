@@ -2355,6 +2355,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/log:check",
         "absl/log:log",
         "absl/status",

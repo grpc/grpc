@@ -19,11 +19,13 @@
 
 #include <algorithm>
 #include <array>
+#include <cerrno>
 #include <unordered_set>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
 #include "src/core/lib/debug/trace.h"
@@ -609,20 +611,16 @@ std::pair<int, std::array<FileDescriptor, 2>> SystemApi::SocketPair(
   return {result, {AdoptExternalFd(fds[0]), AdoptExternalFd(fds[1])}};
 }
 
-absl::Status SystemApi::SetSocketNonBlocking(FileDescriptor fd) const {
+absl::Status SystemApi::MakeNonBlocking(FileDescriptor fd) const {
   int oldflags = Fcntl(fd, F_GETFL, 0);
   if (oldflags < 0) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
+    return absl::ErrnoToStatus(errno, "Reading flags");
   }
-
   oldflags |= O_NONBLOCK;
 
   if (Fcntl(fd, F_SETFL, oldflags) != 0) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
+    return absl::ErrnoToStatus(errno, "Setting flags");
   }
-
   return absl::OkStatus();
 }
 

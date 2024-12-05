@@ -21,6 +21,7 @@
 #include <sys/socket.h>
 
 #include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "src/core/util/crash.h"
 
@@ -35,13 +36,13 @@ using ResolvedAddress =
 FileDescriptor ConnectToServerOrDie(SystemApi& system_api,
                                     const ResolvedAddress& server_address) {
   int one = 1;
-  int flags;
 
   FileDescriptor client_fd = system_api.Socket(AF_INET6, SOCK_STREAM, 0);
   system_api.SetSockOpt(client_fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
-  // Make fd non-blocking.
-  flags = system_api.Fcntl(client_fd, F_GETFL, 0);
-  system_api.Fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
+  absl::Status status = system_api.MakeNonBlocking(client_fd);
+  if (!status.ok()) {
+    grpc_core::Crash(absl::StrCat(status));
+  }
 
   if (system_api.Connect(client_fd,
                          const_cast<struct sockaddr*>(server_address.address()),

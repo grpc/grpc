@@ -104,7 +104,6 @@ void CreateTestSocket(SystemApi* system_api, int port,
                       FileDescriptor* socket_fd, struct sockaddr_in6* sin) {
   int one = 1;
   int buffer_size_bytes = BUF_SIZE;
-  int flags;
 
   FileDescriptor fd = system_api->Socket(AF_INET6, SOCK_STREAM, 0);
   system_api->SetSockOpt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
@@ -113,8 +112,8 @@ void CreateTestSocket(SystemApi* system_api, int port,
   EXPECT_TRUE(SetSocketSendBuf(system_api, fd, buffer_size_bytes).ok());
   EXPECT_TRUE(SetSocketSendBuf(system_api, fd, buffer_size_bytes).ok());
   // Make fd non-blocking.
-  flags = system_api->Fcntl(fd, F_GETFL, 0);
-  EXPECT_EQ(system_api->Fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
+  auto status = system_api->MakeNonBlocking(fd);
+  ASSERT_TRUE(status.ok());
   *socket_fd = fd;
 
   // Use local address for test.
@@ -213,7 +212,6 @@ void ListenShutdownCb(server* sv) {
 // Called when a new TCP connection request arrives in the listening port.
 void ListenCb(server* sv, const absl::Status& status) {
   FileDescriptor fd;
-  int flags;
   session* se;
   struct sockaddr_storage ss;
   socklen_t slen = sizeof(ss);
@@ -240,8 +238,8 @@ void ListenCb(server* sv, const absl::Status& status) {
   }
   EXPECT_TRUE(fd.ready());
   EXPECT_LT(fd.fd(), FD_SETSIZE);
-  flags = system_api->Fcntl(fd, F_GETFL, 0);
-  system_api->Fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+  auto s = system_api->MakeNonBlocking(fd);
+  ASSERT_TRUE(s.ok());
   se = static_cast<session*>(gpr_malloc(sizeof(*se)));
   se->sv = sv;
   se->em_fd = g_event_poller->CreateHandle(fd, "listener", false);
@@ -462,7 +460,6 @@ void SecondReadCallback(FdChangeData* fdc, const absl::Status& /*status*/) {
 TEST_F(EventPollerTest, TestEventPollerHandleChange) {
   EventHandle* em_fd;
   FdChangeData a, b;
-  int flags;
   char data;
   ssize_t result;
   if (g_event_poller == nullptr) {
@@ -482,10 +479,10 @@ TEST_F(EventPollerTest, TestEventPollerHandleChange) {
 
   EXPECT_EQ(std::get<0>(code_sv), 0);
   auto sv = code_sv.second;
-  flags = system_api->Fcntl(sv[0], F_GETFL, 0);
-  EXPECT_EQ(system_api->Fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
-  flags = system_api->Fcntl(sv[1], F_GETFL, 0);
-  EXPECT_EQ(system_api->Fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
+  auto status = system_api->MakeNonBlocking(sv[0]);
+  ASSERT_TRUE(status.ok());
+  status = system_api->MakeNonBlocking(sv[1]);
+  ASSERT_TRUE(status.ok());
 
   em_fd =
       g_event_poller->CreateHandle(sv[0], "TestEventPollerHandleChange", false);

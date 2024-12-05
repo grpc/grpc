@@ -21,6 +21,7 @@
 #include <unordered_set>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/synchronization/mutex.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -91,7 +92,6 @@ class SystemApi {
   int EpollWait(FileDescriptor epfd, struct epoll_event* events, int maxevents,
                 int timeout) const;
 #endif  // GRPC_LINUX_EPOLL
-  int Fcntl(FileDescriptor fd, int op, int args) const;
   int GetSockOpt(FileDescriptor fd, int level, int optname, void* optval,
                  socklen_t* optlen) const;
   int GetSockName(FileDescriptor fd, struct sockaddr* addr,
@@ -153,7 +153,7 @@ class SystemApi {
   absl::StatusOr<std::string> LocalAddressString(FileDescriptor fd) const;
   // Return PeerAddress as string
   absl::StatusOr<std::string> PeerAddressString(FileDescriptor fd) const;
-  absl::Status SetSocketNonBlocking(FileDescriptor fd) const;
+  absl::Status MakeNonBlocking(FileDescriptor fd) const;
 
  private:
 #if GPR_LINUX == 1
@@ -171,6 +171,8 @@ class SystemApi {
 #define SOCKET_SUPPORTS_TCP_USER_TIMEOUT_DEFAULT (-1)
 #endif  // TCP_USER_TIMEOUT
 #endif  // GPR_LINUX == 1
+  int Fcntl(FileDescriptor fd, int op, int args) const;
+
   FileDescriptor RegisterFileDescriptor(int fd);
 
   template <typename Fn>
