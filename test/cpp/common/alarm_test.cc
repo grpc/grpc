@@ -438,6 +438,26 @@ TEST(AlarmTest, UnsetDestruction) {
   Alarm alarm;
 }
 
+TEST(AlarmTest, CallbackSetInCallback) {
+  auto c = std::make_shared<Completion>();
+  Alarm alarm;
+  alarm.Set(
+      std::chrono::system_clock::now() + std::chrono::seconds(1), [&](bool ok) {
+        EXPECT_TRUE(ok);
+        alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(1),
+                  [&](bool ok) {
+                    EXPECT_TRUE(ok);
+                    std::lock_guard<std::mutex> l(c->mu);
+                    c->completed = true;
+                    c->cv.notify_one();
+                  });
+      });
+  std::unique_lock<std::mutex> l(c->mu);
+  EXPECT_TRUE(c->cv.wait_until(
+      l, std::chrono::system_clock::now() + std::chrono::seconds(20),
+      [c] { return c->completed; }));
+}
+
 }  // namespace
 }  // namespace grpc
 
