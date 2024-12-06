@@ -30,6 +30,7 @@ namespace grpc_core {
 struct ClientAndServerTransportPair {
   OrphanablePtr<Transport> client;
   OrphanablePtr<Transport> server;
+  bool is_slow = false;
 };
 
 using TransportFixture = absl::AnyInvocable<ClientAndServerTransportPair(
@@ -59,7 +60,12 @@ class TransportTest : public YodelTest {
     std::queue<CallHandler> handlers_;
   };
 
-  void InitTest() override { transport_pair_ = fixture_(event_engine()); }
+  void InitTest() override {
+    transport_pair_ = fixture_(event_engine());
+    if (transport_pair_.is_slow) {
+      SetMaxRandomMessageSize(1024);
+    }
+  }
 
   void Shutdown() override {
     transport_pair_.client.reset();

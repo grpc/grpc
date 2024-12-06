@@ -91,6 +91,8 @@ ChannelArgs MakeChannelArgs() {
       .PreconditionChannelArgs(nullptr);
 }
 
+Config MakeConfig() { return Config(MakeChannelArgs()); }
+
 TEST_F(TransportTest, AddOneStream) {
   MockPromiseEndpoint control_endpoint(1000);
   MockPromiseEndpoint data_endpoint(1001);
@@ -119,7 +121,7 @@ TEST_F(TransportTest, AddOneStream) {
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
       OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      MakeChannelArgs(), event_engine());
+      MakeChannelArgs(), event_engine(), MakeConfig());
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
@@ -130,10 +132,9 @@ TEST_F(TransportTest, AddOneStream) {
       nullptr);
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kMessage, 0, 1, 1),
-       EventEngineSlice::FromCopiedString("0")},
+       EventEngineSlice::FromCopiedString("0"),
+       SerializedFrameHeader(FrameType::kClientEndOfStream, 0, 1, 0)},
       nullptr);
-  control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kClientEndOfStream, 0, 1, 0)}, nullptr);
   transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {
@@ -204,7 +205,7 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
       OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      MakeChannelArgs(), event_engine());
+      MakeChannelArgs(), event_engine(), MakeConfig());
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
@@ -215,14 +216,11 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       nullptr);
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kMessage, 0, 1, 1),
-       EventEngineSlice::FromCopiedString("0")},
+       EventEngineSlice::FromCopiedString("0"),
+       SerializedFrameHeader(FrameType::kMessage, 0, 1, 1),
+       EventEngineSlice::FromCopiedString("1"),
+       SerializedFrameHeader(FrameType::kClientEndOfStream, 0, 1, 0)},
       nullptr);
-  control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kMessage, 0, 1, 1),
-       EventEngineSlice::FromCopiedString("1")},
-      nullptr);
-  control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kClientEndOfStream, 0, 1, 0)}, nullptr);
   transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {

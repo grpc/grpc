@@ -34,6 +34,7 @@ class ChaoticGoodTraits {
     auto channel_args = CoreConfiguration::Get()
                             .channel_args_preconditioning()
                             .PreconditionChannelArgs(nullptr);
+    chaotic_good::Config config(channel_args);
     auto control = grpc_event_engine::experimental::PassthroughEndpoint::
         MakePassthroughEndpoint(1, 2, true);
     auto data = grpc_event_engine::experimental::PassthroughEndpoint::
@@ -42,12 +43,13 @@ class ChaoticGoodTraits {
         PromiseEndpoint(std::move(control.client), SliceBuffer()),
         chaotic_good::OneDataEndpoint(
             PromiseEndpoint(std::move(data.client), SliceBuffer())),
-        channel_args, grpc_event_engine::experimental::GetDefaultEventEngine());
+        channel_args, grpc_event_engine::experimental::GetDefaultEventEngine(),
+        config);
     auto server = MakeOrphanable<chaotic_good::ChaoticGoodServerTransport>(
         channel_args, PromiseEndpoint(std::move(control.server), SliceBuffer()),
         chaotic_good::OneDataEndpoint(
             PromiseEndpoint(std::move(data.server), SliceBuffer())),
-        grpc_event_engine::experimental::GetDefaultEventEngine());
+        grpc_event_engine::experimental::GetDefaultEventEngine(), config);
     return {std::move(client), std::move(server)};
   }
 

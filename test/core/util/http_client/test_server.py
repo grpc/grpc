@@ -24,14 +24,14 @@ import sys
 _PEM = os.path.abspath(
     os.path.join(
         os.path.dirname(sys.argv[0]),
-        "../../..",
+        "../../../..",
         "src/core/tsi/test_creds/server1.pem",
     )
 )
 _KEY = os.path.abspath(
     os.path.join(
         os.path.dirname(sys.argv[0]),
-        "../../..",
+        "../../../..",
         "src/core/tsi/test_creds/server1.key",
     )
 )

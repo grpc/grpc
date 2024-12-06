@@ -212,11 +212,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gridiron"  # @unused
+g_stands_for = "genius"  # @unused
 
 core_version = "44.2.0"  # @unused
 
-version = "1.69.0-dev"  # @unused
+version = "1.70.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -3386,6 +3386,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr_platform",
+        "//src/core:experiments",
         "//src/core:time",
     ],
 )
