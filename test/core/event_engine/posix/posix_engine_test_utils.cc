@@ -39,7 +39,7 @@ FileDescriptor ConnectToServerOrDie(SystemApi& system_api,
 
   FileDescriptor client_fd = system_api.Socket(AF_INET6, SOCK_STREAM, 0);
   system_api.SetSockOpt(client_fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
-  absl::Status status = system_api.MakeNonBlocking(client_fd);
+  absl::Status status = system_api.SetNonBlocking(client_fd, true);
   if (!status.ok()) {
     grpc_core::Crash(absl::StrCat(status));
   }

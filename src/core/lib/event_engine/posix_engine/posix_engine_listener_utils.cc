@@ -159,7 +159,7 @@ absl::Status PrepareSocket(SystemApi& system_api,
   }
 #endif
 
-  GRPC_RETURN_IF_ERROR(system_api.SetSocketNonBlocking(socket.sock, 1));
+  GRPC_RETURN_IF_ERROR(system_api.SetNonBlocking(socket.sock, 1));
   GRPC_RETURN_IF_ERROR(system_api.SetSocketCloexec(socket.sock, 1));
 
   if (socket.addr.address()->sa_family != AF_UNIX &&

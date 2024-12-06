@@ -153,8 +153,8 @@ TEST(TcpPosixSocketUtilsTest, SocketOptionsTest) {
     sock = system_api.Socket(AF_INET6, SOCK_STREAM, 0);
   }
   EXPECT_TRUE(sock.ready());
-  EXPECT_TRUE(system_api.SetSocketNonBlocking(sock, 1).ok());
-  EXPECT_TRUE(system_api.SetSocketNonBlocking(sock, 0).ok());
+  EXPECT_TRUE(system_api.SetNonBlocking(sock, 1).ok());
+  EXPECT_TRUE(system_api.SetNonBlocking(sock, 0).ok());
   EXPECT_TRUE(system_api.SetSocketCloexec(sock, 1).ok());
   EXPECT_TRUE(system_api.SetSocketCloexec(sock, 0).ok());
   EXPECT_TRUE(system_api.SetSocketReuseAddr(sock, 1).ok());

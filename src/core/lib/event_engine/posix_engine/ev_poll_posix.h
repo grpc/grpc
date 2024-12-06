@@ -17,7 +17,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
-#include <stdatomic.h>
 
 #include <memory>
 #include <string>

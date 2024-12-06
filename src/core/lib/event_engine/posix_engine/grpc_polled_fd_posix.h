@@ -177,7 +177,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     // clang-format on
     SystemApi* system_api = static_cast<SystemApi*>(system_api_ptr);
     FileDescriptor adopted = system_api->AdoptExternalFd(fd);
-    RETURN_IF_ERROR(system_api->SetSocketNonBlocking(adopted, 1));
+    RETURN_IF_ERROR(system_api->SetNonBlocking(adopted, 1));
     RETURN_IF_ERROR(system_api->SetSocketCloexec(adopted, 1));
     if (type == SOCK_STREAM) {
       RETURN_IF_ERROR(system_api->SetSocketLowLatency(adopted, 1));

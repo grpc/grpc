@@ -120,7 +120,7 @@ absl::Status PrepareTcpClientSocket(SystemApi& system_api, FileDescriptor fd,
       system_api.Close(fd);
     }
   });
-  GRPC_RETURN_IF_ERROR(system_api.SetSocketNonBlocking(fd, 1));
+  GRPC_RETURN_IF_ERROR(system_api.SetNonBlocking(fd, true));
   GRPC_RETURN_IF_ERROR(system_api.SetSocketCloexec(fd, 1));
   if (options.tcp_receive_buffer_size != options.kReadBufferSizeUnset) {
     GRPC_RETURN_IF_ERROR(

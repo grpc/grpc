@@ -112,7 +112,7 @@ void CreateTestSocket(SystemApi* system_api, int port,
   EXPECT_TRUE(SetSocketSendBuf(system_api, fd, buffer_size_bytes).ok());
   EXPECT_TRUE(SetSocketSendBuf(system_api, fd, buffer_size_bytes).ok());
   // Make fd non-blocking.
-  auto status = system_api->MakeNonBlocking(fd);
+  auto status = system_api->SetNonBlocking(fd, true);
   ASSERT_TRUE(status.ok());
   *socket_fd = fd;
 
@@ -238,7 +238,7 @@ void ListenCb(server* sv, const absl::Status& status) {
   }
   EXPECT_TRUE(fd.ready());
   EXPECT_LT(fd.fd(), FD_SETSIZE);
-  auto s = system_api->MakeNonBlocking(fd);
+  auto s = system_api->SetNonBlocking(fd, true);
   ASSERT_TRUE(s.ok());
   se = static_cast<session*>(gpr_malloc(sizeof(*se)));
   se->sv = sv;
@@ -479,9 +479,9 @@ TEST_F(EventPollerTest, TestEventPollerHandleChange) {
 
   EXPECT_EQ(std::get<0>(code_sv), 0);
   auto sv = code_sv.second;
-  auto status = system_api->MakeNonBlocking(sv[0]);
+  auto status = system_api->SetNonBlocking(sv[0], true);
   ASSERT_TRUE(status.ok());
-  status = system_api->MakeNonBlocking(sv[1]);
+  status = system_api->SetNonBlocking(sv[1], true);
   ASSERT_TRUE(status.ok());
 
   em_fd =

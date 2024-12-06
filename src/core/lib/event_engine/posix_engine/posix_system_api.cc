@@ -169,10 +169,6 @@ void SystemApi::Close(FileDescriptor fd) {
   }
 }
 
-int SystemApi::Fcntl(FileDescriptor fd, int op, int args) const {
-  return fcntl(fd.fd(), op, args);
-}
-
 int SystemApi::GetSockOpt(FileDescriptor fd, int level, int optname,
                           void* optval, socklen_t* optlen) const {
   return getsockopt(fd.fd(), level, optname, optval, optlen);
@@ -333,46 +329,43 @@ absl::Status SystemApi::SetSocketZeroCopy(FileDescriptor fd) const {
 }
 
 // Set a socket to non blocking mode
-absl::Status SystemApi::SetSocketNonBlocking(FileDescriptor fd,
-                                             int non_blocking) const {
-  int oldflags = Fcntl(fd, F_GETFL, 0);
-  if (oldflags < 0) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
-  }
-  if (non_blocking) {
-    oldflags |= O_NONBLOCK;
-  } else {
-    oldflags &= ~O_NONBLOCK;
-  }
-  if (Fcntl(fd, F_SETFL, oldflags) != 0) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
-  }
-  return absl::OkStatus();
+absl::Status SystemApi::SetNonBlocking(FileDescriptor fd,
+                                       bool non_blocking) const {
+  return WithFd(fd, [non_blocking](int fd) {
+    int oldflags = fcntl(fd, F_GETFL, 0);
+    if (oldflags < 0) {
+      return absl::ErrnoToStatus(errno, "Unable to get flags");
+    }
+    if (non_blocking) {
+      oldflags |= O_NONBLOCK;
+    } else {
+      oldflags &= ~O_NONBLOCK;
+    }
+    if (fcntl(fd, F_SETFL, oldflags) != 0) {
+      return absl::ErrnoToStatus(errno, "Unable to set flags");
+    }
+    return absl::OkStatus();
+  });
 }
 
 // Set a socket to close on exec
 absl::Status SystemApi::SetSocketCloexec(FileDescriptor fd,
                                          int close_on_exec) const {
-  int oldflags = Fcntl(fd, F_GETFD, 0);
-  if (oldflags < 0) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
-  }
-
-  if (close_on_exec) {
-    oldflags |= FD_CLOEXEC;
-  } else {
-    oldflags &= ~FD_CLOEXEC;
-  }
-
-  if (Fcntl(fd, F_SETFD, oldflags) != 0) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
-  }
-
-  return absl::OkStatus();
+  return WithFd(fd, [close_on_exec](int fd) {
+    int oldflags = fcntl(fd, F_GETFD, 0);
+    if (oldflags < 0) {
+      return absl::ErrnoToStatus(errno, "Unable to get flags");
+    }
+    if (close_on_exec) {
+      oldflags |= FD_CLOEXEC;
+    } else {
+      oldflags &= ~FD_CLOEXEC;
+    }
+    if (fcntl(fd, F_SETFD, oldflags) != 0) {
+      return absl::ErrnoToStatus(errno, "Unable to set flags");
+    }
+    return absl::OkStatus();
+  });
 }
 
 // Disable nagle algorithm
@@ -609,19 +602,6 @@ std::pair<int, std::array<FileDescriptor, 2>> SystemApi::SocketPair(
   std::array<int, 2> fds;
   int result = socketpair(domain, type, protocol, fds.data());
   return {result, {AdoptExternalFd(fds[0]), AdoptExternalFd(fds[1])}};
-}
-
-absl::Status SystemApi::MakeNonBlocking(FileDescriptor fd) const {
-  int oldflags = Fcntl(fd, F_GETFL, 0);
-  if (oldflags < 0) {
-    return absl::ErrnoToStatus(errno, "Reading flags");
-  }
-  oldflags |= O_NONBLOCK;
-
-  if (Fcntl(fd, F_SETFL, oldflags) != 0) {
-    return absl::ErrnoToStatus(errno, "Setting flags");
-  }
-  return absl::OkStatus();
 }
 
 #ifdef GRPC_LINUX_EPOLL

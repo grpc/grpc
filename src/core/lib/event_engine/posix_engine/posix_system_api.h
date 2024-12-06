@@ -21,7 +21,6 @@
 #include <unordered_set>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
 #include "absl/synchronization/mutex.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -117,7 +116,7 @@ class SystemApi {
   // Set socket to use zerocopy
   absl::Status SetSocketZeroCopy(FileDescriptor fd) const;
   // Set socket to non blocking mode
-  absl::Status SetSocketNonBlocking(FileDescriptor fd, int non_blocking) const;
+  absl::Status SetNonBlocking(FileDescriptor fd, bool non_blocking) const;
   // Set socket to close on exec
   absl::Status SetSocketCloexec(FileDescriptor fd, int close_on_exec) const;
   // Disable nagle algorithm
@@ -153,7 +152,6 @@ class SystemApi {
   absl::StatusOr<std::string> LocalAddressString(FileDescriptor fd) const;
   // Return PeerAddress as string
   absl::StatusOr<std::string> PeerAddressString(FileDescriptor fd) const;
-  absl::Status MakeNonBlocking(FileDescriptor fd) const;
 
  private:
 #if GPR_LINUX == 1
@@ -171,13 +169,27 @@ class SystemApi {
 #define SOCKET_SUPPORTS_TCP_USER_TIMEOUT_DEFAULT (-1)
 #endif  // TCP_USER_TIMEOUT
 #endif  // GPR_LINUX == 1
-  int Fcntl(FileDescriptor fd, int op, int args) const;
 
   FileDescriptor RegisterFileDescriptor(int fd);
 
+  template <typename R>
+  struct WithFdReturn {
+    using type = absl::StatusOr<R>;
+  };
+
+  template <>
+  struct WithFdReturn<absl::Status> {
+    using type = absl::Status;
+  };
+
+  template <typename R>
+  struct WithFdReturn<absl::StatusOr<R>> {
+    using type = absl::StatusOr<R>;
+  };
+
   template <typename Fn>
-  auto WithFd(const FileDescriptor& fd, const Fn& fn) const
-      -> absl::StatusOr<decltype(fn(0))> {
+  auto WithFd(const FileDescriptor& fd, const Fn& fn) const ->
+      typename WithFdReturn<decltype(fn(0))>::type {
     int native_fd;
     if (!fd.ready()) {
       return absl::InternalError("Invalid file descriptor");
