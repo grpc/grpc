@@ -439,7 +439,7 @@ TEST(AlarmTest, UnsetDestruction) {
 }
 
 TEST(AlarmTest, CallbackSetInCallback) {
-  auto c = std::make_shared<Completion>();
+  Completion c;
   std::mutex alarm_mu;
   Alarm alarm;
   {
@@ -452,14 +452,14 @@ TEST(AlarmTest, CallbackSetInCallback) {
                     std::chrono::system_clock::now() + std::chrono::seconds(1),
                     [&](bool ok) {
                       EXPECT_TRUE(ok);
-                      std::lock_guard<std::mutex> l(c->mu);
-                      c->completed = true;
-                      c->cv.notify_one();
+                      std::lock_guard<std::mutex> l(c.mu);
+                      c.completed = true;
+                      c.cv.notify_one();
                     });
               });
   }
-  std::unique_lock<std::mutex> l(c->mu);
-  c->cv.wait(l, [c] { return c->completed; });
+  std::unique_lock<std::mutex> l(c.mu);
+  c.cv.wait(l, [&] { return c.completed; });
 }
 
 }  // namespace
