@@ -16,6 +16,7 @@
 
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "fuzztest/fuzztest.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -23,6 +24,7 @@
 
 using fuzztest::ElementOf;
 using fuzztest::InRange;
+using fuzztest::PairOf;
 using fuzztest::StructOf;
 using fuzztest::VectorOf;
 
@@ -68,15 +70,25 @@ void ReverseWorks(Experiment a) {
 }
 FUZZ_TEST(AutoScaler, ReverseWorks).WithDomains(AnyExperiment());
 
-void ChooseWorstTailLatencyChoosesSomething(std::vector<Metrics> latencies) {
+void ChooseWorstTailLatencyChoosesSomething(
+    std::vector<std::pair<uint32_t, Metrics>> latencies_vec) {
+  absl::flat_hash_map<uint32_t, Metrics> latencies;
+  for (auto& latency : latencies_vec) {
+    latencies.emplace(latency.first, std::move(latency.second));
+  }
+  absl::flat_hash_set<uint32_t> keys;
+  for (auto& latency : latencies) {
+    keys.insert(latency.first);
+  }
   auto max = latencies.size();
   ASSERT_GE(max, 1);
   const auto choice = ChooseWorstTailLatency(std::move(latencies));
-  EXPECT_GE(choice, 0);
-  EXPECT_LT(choice, max);
+  EXPECT_EQ(keys.count(choice), 1)
+      << "choice=" << choice << " from [" << absl::StrJoin(keys, ",") << "]";
 }
 FUZZ_TEST(AutoScaler, ChooseWorstTailLatencyChoosesSomething)
-    .WithDomains(VectorOf(LatencyMetrics()).WithMinSize(1));
+    .WithDomains(VectorOf(PairOf(InRange<uint32_t>(1, 1000), LatencyMetrics()))
+                     .WithMinSize(1));
 
 void EvaluateOneSidedExperimentDoesntBarf(TDigest a, TDigest b) {
   bool median_better = b.Quantile(0.5) < a.Quantile(0.5);

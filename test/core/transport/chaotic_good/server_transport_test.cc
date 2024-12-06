@@ -33,6 +33,7 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -71,6 +72,14 @@ ServerMetadataHandle TestTrailingMetadata() {
   return md;
 }
 
+ChannelArgs MakeChannelArgs() {
+  return CoreConfiguration::Get()
+      .channel_args_preconditioning()
+      .PreconditionChannelArgs(nullptr);
+}
+
+Config MakeConfig() { return Config(MakeChannelArgs()); }
+
 class MockCallDestination : public UnstartedCallDestination {
  public:
   ~MockCallDestination() override = default;
@@ -85,12 +94,9 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
   auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
   EXPECT_CALL(*call_destination, Orphaned()).Times(1);
   auto transport = MakeOrphanable<ChaoticGoodServerTransport>(
-      CoreConfiguration::Get()
-          .channel_args_preconditioning()
-          .PreconditionChannelArgs(nullptr),
-      std::move(control_endpoint.promise_endpoint),
+      MakeChannelArgs(), std::move(control_endpoint.promise_endpoint),
       OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      event_engine());
+      event_engine(), MakeConfig());
   const auto server_initial_metadata =
       EncodeProto<chaotic_good_frame::ServerMetadata>("message: 'hello'");
   const auto server_trailing_metadata =
@@ -171,10 +177,8 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
                              server_initial_metadata.length()),
        server_initial_metadata.Copy(),
        SerializedFrameHeader(FrameType::kMessage, 0, 1, 8),
-       EventEngineSlice::FromCopiedString("87654321")},
-      nullptr);
-  control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kServerTrailingMetadata, 0, 1,
+       EventEngineSlice::FromCopiedString("87654321"),
+       SerializedFrameHeader(FrameType::kServerTrailingMetadata, 0, 1,
                              server_trailing_metadata.length()),
        server_trailing_metadata.Copy()},
       nullptr);

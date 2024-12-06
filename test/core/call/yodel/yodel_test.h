@@ -426,6 +426,10 @@ class YodelTest : public ::testing::Test {
     return state_->event_engine;
   }
 
+  void SetMaxRandomMessageSize(size_t max_random_message_size) {
+    max_random_message_size_ = max_random_message_size;
+  }
+
  private:
   class WatchDog;
   struct State {
@@ -452,6 +456,7 @@ class YodelTest : public ::testing::Test {
   fuzzing_event_engine::Actions actions_;
   std::unique_ptr<State> state_;
   std::queue<std::shared_ptr<yodel_detail::ActionState>> pending_actions_;
+  size_t max_random_message_size_ = 1024 * 1024;
 };
 
 }  // namespace grpc_core

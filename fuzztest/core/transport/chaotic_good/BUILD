@@ -24,3 +24,33 @@ grpc_fuzz_test(
     ],
     deps = ["//src/core:chaotic_good_auto_scaler"],
 )
+
+grpc_fuzz_test(
+    name = "config_test",
+    srcs = ["config_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:chaotic_good_config",
+        "//src/core:chaotic_good_frame_cc_proto",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "message_chunker_test",
+    srcs = ["message_chunker_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:chaotic_good_frame_cc_proto",
+        "//src/core:chaotic_good_message_chunker",
+        "//src/core:status_flag",
+        "//test/core/promise:poll_matcher",
+    ],
+)
