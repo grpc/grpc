@@ -105,6 +105,25 @@ class ServerInterface : public internal::CallHook {
   /// See \a ServerBuilder::AddCompletionQueue for details.
   void Shutdown() { ShutdownInternal(gpr_inf_future(GPR_CLOCK_MONOTONIC)); }
 
+  /// Non blocking shutdown. This function executes the step 1 described in
+  /// \a Shutdown call.
+  /// The function takes a \a CompetionQueue that is used exclusively for
+  /// shutting down the server. It returns a tag poinder that can be later used
+  /// to confirm the cancellation of pending requests.
+  void* BeginShutdown(grpc::CompletionQueue* cq) {
+    return BeginShutdownInternal(cq);
+  }
+
+  /// Completes shutdown after notification. This is step 3 described in the
+  /// \a Shutdown call. This function receives the same \a CopmpletionQueue that
+  /// has been used in \a BeginShutdown call. If graceful shutdown is expected,
+  /// this function should be called after the \a CompletionQueue has returned
+  /// the same tag pointer returned by \a BeginShutdown call. Otherwise, this
+  /// function can be used to forcefully shutdown the server.
+  void CompleteShutdown(grpc::CompletionQueue* cq) {
+    CompleteShutdownInternal(cq);
+  }
+
   /// Block waiting for all work to complete.
   ///
   /// \warning The server must be either shutting down or some other thread must
@@ -152,6 +171,10 @@ class ServerInterface : public internal::CallHook {
   virtual void Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) = 0;
 
   virtual void ShutdownInternal(gpr_timespec deadline) = 0;
+
+  virtual void* BeginShutdownInternal(CompletionQueue* cq) = 0;
+
+  virtual void CompleteShutdownInternal(CompletionQueue* cq) = 0;
 
   virtual int max_receive_message_size() const = 0;
 

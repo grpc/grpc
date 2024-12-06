@@ -251,6 +251,16 @@ class Server : public ServerInterface, private internal::GrpcLibrary {
   void ShutdownInternal(gpr_timespec deadline)
       ABSL_LOCKS_EXCLUDED(mu_) override;
 
+  virtual void* BeginShutdownInternal(CompletionQueue* cq)
+      ABSL_LOCKS_EXCLUDED(mu_) override;
+
+  virtual void* BeginShutdownInternalNoLock(CompletionQueue* cq);
+
+  virtual void CompleteShutdownInternal(CompletionQueue* cq)
+      ABSL_LOCKS_EXCLUDED(mu_) override;
+
+  virtual void CompleteShutdownInternalNoLock(CompletionQueue* cq);
+
   int max_receive_message_size() const override {
     return max_receive_message_size_;
   }
@@ -352,6 +362,9 @@ class Server : public ServerInterface, private internal::GrpcLibrary {
 
   // Interface to read or update server-wide metrics. Optional.
   experimental::ServerMetricRecorder* server_metric_recorder_ = nullptr;
+
+  // tag for non-blocking shutdown
+  std::unique_ptr<internal::CompletionQueueTag> shutdown_tag_;
 };
 
 }  // namespace grpc

@@ -1236,23 +1236,12 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
 }
 
 void Server::ShutdownInternal(gpr_timespec deadline) {
-  grpc::internal::MutexLock lock(&mu_);
-  if (shutdown_) {
-    return;
-  }
-
-  shutdown_ = true;
-
-  for (auto& acceptor : acceptors_) {
-    acceptor->Shutdown();
-  }
-
   /// The completion queue to use for server shutdown completion notification
   grpc::CompletionQueue shutdown_cq;
-  grpc::ShutdownTag shutdown_tag;  // Phony shutdown tag
-  grpc_server_shutdown_and_notify(server_, shutdown_cq.cq(), &shutdown_tag);
-
-  shutdown_cq.Shutdown();
+  grpc::internal::MutexLock lock(&mu_);
+  if (!BeginShutdownInternalNoLock(&shutdown_cq)) {
+    return;
+  }
 
   void* tag;
   bool ok;
@@ -1269,6 +1258,38 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
   // Else in case of SHUTDOWN or GOT_EVENT, it means that the server has
   // successfully shutdown
 
+  CompleteShutdownInternalNoLock(&shutdown_cq);
+}
+
+void* Server::BeginShutdownInternal(CompletionQueue* cq) {
+  grpc::internal::MutexLock lock(&mu_);
+  return Server::BeginShutdownInternalNoLock(cq);
+}
+
+void* Server::BeginShutdownInternalNoLock(CompletionQueue* cq) {
+  if (shutdown_) {
+    return nullptr;
+  }
+
+  shutdown_ = true;
+
+  for (auto& acceptor : acceptors_) {
+    acceptor->Shutdown();
+  }
+
+  shutdown_tag_.reset(new ShutdownTag());
+  grpc_server_shutdown_and_notify(server_, cq->cq(), shutdown_tag_.get());
+  cq->Shutdown();
+
+  return shutdown_tag_.get();
+}
+
+void Server::CompleteShutdownInternal(CompletionQueue* cq) {
+  grpc::internal::MutexLock lock(&mu_);
+  CompleteShutdownInternalNoLock(cq);
+}
+
+void Server::CompleteShutdownInternalNoLock(CompletionQueue* cq) {
   // Drop the shutdown ref and wait for all other refs to drop as well.
   UnrefAndWaitLocked();
 
@@ -1298,7 +1319,9 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
 
   // Drain the shutdown queue (if the previous call to AsyncNext() timed out
   // and we didn't remove the tag from the queue yet)
-  while (shutdown_cq.Next(&tag, &ok)) {
+  void* tag;
+  bool ok;
+  while (cq->Next(&tag, &ok)) {
     // Nothing to be done here. Just ignore ok and tag values
   }
 
