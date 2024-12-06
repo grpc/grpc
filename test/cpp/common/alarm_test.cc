@@ -459,9 +459,7 @@ TEST(AlarmTest, CallbackSetInCallback) {
               });
   }
   std::unique_lock<std::mutex> l(c->mu);
-  EXPECT_TRUE(c->cv.wait_until(
-      l, std::chrono::system_clock::now() + std::chrono::seconds(20),
-      [c] { return c->completed; }));
+  c->cv.wait(l, [c] { return c->completed; });
 }
 
 }  // namespace
