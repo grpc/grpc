@@ -3713,6 +3713,7 @@ grpc_cc_library(
         "//src/core:channel_fwd",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
+        "//src/core:client_channel_args",
         "//src/core:client_channel_backup_poller",
         "//src/core:client_channel_internal_header",
         "//src/core:client_channel_service_config",

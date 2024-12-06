@@ -3517,6 +3517,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "client_channel_args",
+    hdrs = [
+        "client_channel/client_channel_args.h",
+    ],
+)
+
+grpc_cc_library(
     name = "retry_interceptor",
     srcs = [
         "client_channel/retry_interceptor.cc",
@@ -3526,6 +3533,7 @@ grpc_cc_library(
     ],
     deps = [
         "cancel_callback",
+        "client_channel_args",
         "filter_args",
         "for_each",
         "grpc_service_config",
