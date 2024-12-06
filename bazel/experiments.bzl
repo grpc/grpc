@@ -35,6 +35,7 @@ EXPERIMENT_ENABLES = {
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "pick_first_new": "pick_first_new",
+    "prioritize_finished_requests": "prioritize_finished_requests",
     "promise_based_http2_client_transport": "promise_based_http2_client_transport",
     "promise_based_http2_server_transport": "promise_based_http2_server_transport",
     "promise_based_inproc_transport": "promise_based_inproc_transport",

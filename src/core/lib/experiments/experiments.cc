@@ -89,6 +89,10 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
+const char* const description_prioritize_finished_requests =
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
+const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -189,6 +193,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
+    {"prioritize_finished_requests", description_prioritize_finished_requests,
+     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
+     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -295,6 +302,10 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
+const char* const description_prioritize_finished_requests =
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
+const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -395,6 +406,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
+    {"prioritize_finished_requests", description_prioritize_finished_requests,
+     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
+     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -501,6 +515,10 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
+const char* const description_prioritize_finished_requests =
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
+const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -601,6 +619,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
+    {"prioritize_finished_requests", description_prioritize_finished_requests,
+     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
+     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
