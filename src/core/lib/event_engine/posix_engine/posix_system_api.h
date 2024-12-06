@@ -153,6 +153,12 @@ class SystemApi {
   // Return PeerAddress as string
   absl::StatusOr<std::string> PeerAddressString(FileDescriptor fd) const;
 
+  absl::Status PerformOperation(
+      const FileDescriptor& fd,
+      absl::FunctionRef<absl::Status(int)> operation) const {
+    return WithFd(fd, operation);
+  }
+
  private:
 #if GPR_LINUX == 1
 // For Linux, it will be detected to support TCP_USER_TIMEOUT
