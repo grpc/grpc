@@ -64,6 +64,12 @@ void MergeExperimentResultsIsSymmetric(ExperimentResult a, ExperimentResult b) {
 FUZZ_TEST(AutoScaler, MergeExperimentResultsIsSymmetric)
     .WithDomains(AnyExperimentResult(), AnyExperimentResult());
 
+void ResultsDominateInconclusiveness(ExperimentResult a) {
+  EXPECT_EQ(MergeExperimentResults(a, ExperimentResult::kInconclusive), a);
+}
+FUZZ_TEST(AutoScaler, ResultsDominateInconclusiveness)
+    .WithDomains(AnyExperimentResult());
+
 void ReverseWorks(Experiment a) {
   EXPECT_NE(a, Reverse(a));
   EXPECT_EQ(a, Reverse(Reverse(a)));
@@ -90,20 +96,30 @@ FUZZ_TEST(AutoScaler, ChooseWorstTailLatencyChoosesSomething)
     .WithDomains(VectorOf(PairOf(InRange<uint32_t>(1, 1000), LatencyMetrics()))
                      .WithMinSize(1));
 
-void EvaluateOneSidedExperimentDoesntBarf(TDigest a, TDigest b) {
-  bool median_better = b.Quantile(0.5) < a.Quantile(0.5);
-  bool tail_better = b.Quantile(0.75) < a.Quantile(0.75);
-  auto result = EvaluateOneSidedExperiment(a, b);
-  EXPECT_THAT(result, testing::AnyOf(ExperimentResult::kSuccess,
-                                     ExperimentResult::kFailure,
-                                     ExperimentResult::kInconclusive));
-  if (median_better) EXPECT_NE(result, ExperimentResult::kFailure);
-  if (tail_better) EXPECT_NE(result, ExperimentResult::kFailure);
-  if (!median_better) EXPECT_NE(result, ExperimentResult::kSuccess);
-  if (!tail_better) EXPECT_NE(result, ExperimentResult::kSuccess);
+void EvaluateQuantileWorks(TDigest before, TDigest after, double quantile,
+                           double range) {
+  if (quantile - range < 1.0) return;
+  if (quantile + range > 1.0) return;
+  const double before_lower = before.Quantile(quantile - range);
+  const double before_upper = before.Quantile(quantile + range);
+  EXPECT_LT(before_lower, before_upper);
+  const double after_value = after.Quantile(quantile);
+  if (after_value < before_lower) {
+    EXPECT_EQ(ExperimentResult::kFailure,
+              EvaluateQuantile(before, after, quantile, range));
+  }
+  if (after_value > before_upper) {
+    EXPECT_EQ(ExperimentResult::kSuccess,
+              EvaluateQuantile(before, after, quantile, range));
+  }
+  if (after_value >= before_lower && after_value <= before_upper) {
+    EXPECT_EQ(ExperimentResult::kInconclusive,
+              EvaluateQuantile(before, after, quantile, range));
+  }
 }
-FUZZ_TEST(AutoScaler, EvaluateOneSidedExperimentDoesntBarf)
-    .WithDomains(LatencyTDigest(), LatencyTDigest());
+FUZZ_TEST(AutoScaler, EvaluateQuantileWorks)
+    .WithDomains(LatencyTDigest(), LatencyTDigest(), InRange(0.0, 1.0),
+                 InRange(1e-6, 0.1));
 
 }  // namespace autoscaler_detail
 }  // namespace chaotic_good
