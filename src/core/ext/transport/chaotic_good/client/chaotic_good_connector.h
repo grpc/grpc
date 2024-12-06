@@ -25,6 +25,7 @@
 #include "absl/random/random.h"
 #include "absl/status/statusor.h"
 #include "src/core/client_channel/connector.h"
+#include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -79,6 +80,7 @@ class ChaoticGoodConnector : public SubchannelConnector {
   RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
   Mutex mu_;
   Args args_;
+  std::unique_ptr<chaotic_good::Config> config_;
   Result* result_ ABSL_GUARDED_BY(mu_);
   grpc_closure* notify_ ABSL_GUARDED_BY(mu_) = nullptr;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;

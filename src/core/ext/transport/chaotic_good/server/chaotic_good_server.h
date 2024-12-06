@@ -29,6 +29,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -123,6 +124,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     bool orphaned_ ABSL_GUARDED_BY(mu_) = false;
     PromiseEndpoint endpoint_;
     std::vector<std::string> connection_ids_;
+    Config config_;
     int32_t data_alignment_;
     absl::BitGen bitgen_;
   };
