@@ -40,6 +40,8 @@
 #
 # Supported platforms: ios, windows, posix
 
+- name: backoff_cap_initial_at_max
+  default: true
 - name: call_tracer_in_transport
   default: true
 - name: call_v3

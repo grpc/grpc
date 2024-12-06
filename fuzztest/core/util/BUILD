@@ -15,31 +15,13 @@
 load("//fuzztest:grpc_fuzz_test.bzl", "grpc_fuzz_test")
 
 grpc_fuzz_test(
-    name = "config_test",
-    srcs = ["config_test.cc"],
+    name = "tdigest_fuzztest",
+    srcs = ["tdigest_fuzztest.cc"],
     external_deps = [
+        "absl/types:variant",
         "fuzztest",
         "fuzztest_main",
         "gtest",
     ],
-    deps = [
-        "//src/core:chaotic_good_config",
-        "//src/core:chaotic_good_frame_cc_proto",
-    ],
-)
-
-grpc_fuzz_test(
-    name = "message_chunker_test",
-    srcs = ["message_chunker_test.cc"],
-    external_deps = [
-        "fuzztest",
-        "fuzztest_main",
-        "gtest",
-    ],
-    deps = [
-        "//src/core:chaotic_good_frame_cc_proto",
-        "//src/core:chaotic_good_message_chunker",
-        "//src/core:status_flag",
-        "//test/core/promise:poll_matcher",
-    ],
+    deps = ["//src/core:tdigest"],
 )
