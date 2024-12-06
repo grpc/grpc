@@ -548,7 +548,7 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
   Json xds_lb_policy;
   // TODO(roth): Remove this "if" condition after the 1.63 release.
   if (XdsAggregateClusterBackwardCompatibilityEnabled() &&
-           aggregate_cluster_resource != nullptr) {
+      aggregate_cluster_resource != nullptr) {
     xds_lb_policy =
         Json::FromArray(aggregate_cluster_resource->lb_policy_config);
   } else {
