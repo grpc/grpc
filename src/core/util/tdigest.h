@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TDIGEST_H
-#define TDIGEST_H
+#ifndef GRPC_SRC_CORE_UTIL_TDIGEST_H
+#define GRPC_SRC_CORE_UTIL_TDIGEST_H
 
 #include <cstddef>
 #include <cstdint>
@@ -44,10 +44,10 @@ namespace grpc_core {
 class TDigest final {
  public:
   TDigest(const TDigest&) = delete;
-  TDigest(TDigest&&) = default;
+  TDigest(TDigest&&) = delete;
 
   TDigest& operator=(const TDigest&) = delete;
-  TDigest& operator=(TDigest&&) = default;
+  TDigest& operator=(TDigest&&) = delete;
 
   // Creates a t-digest with the given compression factor (aka delta).
   //
@@ -194,4 +194,4 @@ class TDigest final {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_UTIL_TDIGEST_H

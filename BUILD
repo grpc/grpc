@@ -214,7 +214,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gridiron"  # @unused
 
-core_version = "44.1.0"  # @unused
+core_version = "44.2.0"  # @unused
 
 version = "1.69.0-dev"  # @unused
 

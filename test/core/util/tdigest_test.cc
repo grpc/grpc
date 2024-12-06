@@ -372,15 +372,14 @@ INSTANTIATE_TEST_SUITE_P(
     QuantilePrecisionTest, QuantilePrecisionTest,
     ::testing::Values(
         // Constant
-        (PrecisionTestParam){[]() { return ConstantSamples(100000, 10); },
-                             {{0.01, 0}, {0.5, 0}, {0.99, 0}}},
+        PrecisionTestParam{[]() { return ConstantSamples(100000, 10); },
+                           {{0.01, 0}, {0.5, 0}, {0.99, 0}}},
 
         // Continuous samples
-        (PrecisionTestParam){[]() { return NormalSamples(100000, 0, 5); },
-                             {{0.01, 0.5}, {0.5, 1}, {0.99, 0.5}}},
-        (PrecisionTestParam){
-            []() { return UniformSamples(100000, -5000, 5000); },
-            {{0.01, 20}, {0.5, 50}, {0.99, 20}}}));
+        PrecisionTestParam{[]() { return NormalSamples(100000, 0, 5); },
+                           {{0.01, 0.5}, {0.5, 1}, {0.99, 0.5}}},
+        PrecisionTestParam{[]() { return UniformSamples(100000, -5000, 5000); },
+                           {{0.01, 20}, {0.5, 50}, {0.99, 20}}}));
 
 class CdfPrecisionTest : public ::testing::TestWithParam<PrecisionTestParam> {
  public:
@@ -442,25 +441,24 @@ INSTANTIATE_TEST_SUITE_P(
     CdfPrecisionTest, CdfPrecisionTest,
     ::testing::Values(
         // Constant.
-        (PrecisionTestParam){[]() { return ConstantSamples(100000, 10); },
-                             {{9, 0}, {10, 0}, {11, 0}}},
+        PrecisionTestParam{[]() { return ConstantSamples(100000, 10); },
+                           {{9, 0}, {10, 0}, {11, 0}}},
 
         // Continuous samples.
-        (PrecisionTestParam){[]() { return NormalSamples(100000, 0, 5); },
-                             {{-10, 0.005}, {0.0, 0.005}, {10, 0.005}}},
-        (PrecisionTestParam){
-            []() { return UniformSamples(100000, -5000, 5000); },
-            {{-5000.1, 0},
-             {-4900, 0.005},
-             {0, 0.005},
-             {4900, 0.005},
-             {5000, 0}}},
+        PrecisionTestParam{[]() { return NormalSamples(100000, 0, 5); },
+                           {{-10, 0.005}, {0.0, 0.005}, {10, 0.005}}},
+        PrecisionTestParam{[]() { return UniformSamples(100000, -5000, 5000); },
+                           {{-5000.1, 0},
+                            {-4900, 0.005},
+                            {0, 0.005},
+                            {4900, 0.005},
+                            {5000, 0}}},
 
         // Dense and sparse samples.
-        (PrecisionTestParam){
+        PrecisionTestParam{
             []() { return UniformSamples<int>(100000, 0, 10); },
             {{-0.01, 0}, {0.01, 0.03}, {5.0, 0.05}, {9.99, 0.03}, {10, 0}}},
-        (PrecisionTestParam){
+        PrecisionTestParam{
             []() { return UniformSamples<int>(100000, -10000, 10000); },
             {{-10001, 0},
              {-9900, 0.005},
