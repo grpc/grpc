@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_admin/grpc_version.py.template`!!!
+load("//fuzztest:grpc_fuzz_test.bzl", "grpc_fuzz_test")
 
-VERSION = '1.70.0.dev0'
+grpc_fuzz_test(
+    name = "tdigest_fuzztest",
+    srcs = ["tdigest_fuzztest.cc"],
+    external_deps = [
+        "absl/types:variant",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:tdigest"],
+)

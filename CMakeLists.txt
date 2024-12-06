@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.69.0-dev")
+set(PACKAGE_VERSION       "1.70.0-dev")
 set(gRPC_CORE_VERSION     "44.2.0")
 set(gRPC_CORE_SOVERSION   "44")
-set(gRPC_CPP_VERSION      "1.69.0-dev")
-set(gRPC_CPP_SOVERSION    "1.69")
+set(gRPC_CPP_VERSION      "1.70.0-dev")
+set(gRPC_CPP_SOVERSION    "1.70")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -1835,6 +1835,7 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx tcp_server_posix_test)
   endif()
   add_dependencies(buildtests_cxx tcp_socket_utils_test)
+  add_dependencies(buildtests_cxx tdigest_test)
   add_dependencies(buildtests_cxx test_core_channelz_channelz_test)
   add_dependencies(buildtests_cxx test_core_end2end_channelz_test)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_heap_test)
@@ -16155,7 +16156,6 @@ add_executable(format_request_test
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
-  test/core/http/format_request_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
@@ -16165,6 +16165,7 @@ add_executable(format_request_test
   test/core/test_util/resolve_localhost_ip46.cc
   test/core/test_util/slice_splitter.cc
   test/core/test_util/tracer_util.cc
+  test/core/util/http_client/format_request_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -19269,9 +19270,9 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(httpcli_test
-    test/core/http/httpcli_test.cc
-    test/core/http/httpcli_test_util.cc
     test/core/test_util/fake_udp_and_tcp_server.cc
+    test/core/util/http_client/httpcli_test.cc
+    test/core/util/http_client/httpcli_test_util.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -19316,9 +19317,9 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(httpscli_test
-    test/core/http/httpcli_test_util.cc
-    test/core/http/httpscli_test.cc
     test/core/test_util/fake_udp_and_tcp_server.cc
+    test/core/util/http_client/httpcli_test_util.cc
+    test/core/util/http_client/httpscli_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -20330,7 +20331,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(json_object_loader_test
-  test/core/json/json_object_loader_test.cc
+  test/core/util/json/json_object_loader_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20372,7 +20373,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(json_test
-  test/core/json/json_test.cc
+  test/core/util/json/json_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -23527,7 +23528,6 @@ add_executable(parser_test
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
-  test/core/http/parser_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
@@ -23537,6 +23537,7 @@ add_executable(parser_test
   test/core/test_util/resolve_localhost_ip46.cc
   test/core/test_util/slice_splitter.cc
   test/core/test_util/tracer_util.cc
+  test/core/util/http_client/parser_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -33550,6 +33551,45 @@ target_link_libraries(tcp_socket_utils_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(tdigest_test
+  src/core/util/tdigest.cc
+  test/core/util/tdigest_test.cc
+)
+target_compile_features(tdigest_test PUBLIC cxx_std_14)
+target_include_directories(tdigest_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(tdigest_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::flat_hash_map
+  absl::check
+  absl::log
+  absl::random_random
+  absl::status
+  ${_gRPC_BENCHMARK_LIBRARIES}
 )
 
 

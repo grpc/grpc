@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.69.0-dev'
+  version = '1.70.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -73,7 +73,8 @@ Pod::Spec.new do |s|
   # root of the repo, third_party/** and two upb generated directories, and the system headers
   # search path (angled includes) to point to `include/`.
   s.pod_target_xcconfig = {
-    'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"',
+    'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"'\
+        ' "$(PODS_TARGET_SRCROOT)/third_party/address_sorting/include"',
     'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-gen"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-gen"'\
@@ -2185,6 +2186,11 @@ Pod::Spec.new do |s|
                       'src/core/xds/xds_client/xds_resource_type.h',
                       'src/core/xds/xds_client/xds_resource_type_impl.h',
                       'src/core/xds/xds_client/xds_transport.h',
+                      'third_party/address_sorting/address_sorting.c',
+                      'third_party/address_sorting/address_sorting_internal.h',
+                      'third_party/address_sorting/address_sorting_posix.c',
+                      'third_party/address_sorting/address_sorting_windows.c',
+                      'third_party/address_sorting/include/address_sorting/address_sorting.h',
                       'third_party/re2/re2/bitmap256.h',
                       'third_party/re2/re2/bitstate.cc',
                       'third_party/re2/re2/compile.cc',
@@ -3506,6 +3512,8 @@ Pod::Spec.new do |s|
                               'src/core/xds/xds_client/xds_resource_type.h',
                               'src/core/xds/xds_client/xds_resource_type_impl.h',
                               'src/core/xds/xds_client/xds_transport.h',
+                              'third_party/address_sorting/address_sorting_internal.h',
+                              'third_party/address_sorting/include/address_sorting/address_sorting.h',
                               'third_party/re2/re2/bitmap256.h',
                               'third_party/re2/re2/filtered_re2.h',
                               'third_party/re2/re2/pod_array.h',

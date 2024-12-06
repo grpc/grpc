@@ -24,4 +24,4 @@
 
 const char* grpc_version_string(void) { return "44.2.0"; }
 
-const char* grpc_g_stands_for(void) { return "gridiron"; }
+const char* grpc_g_stands_for(void) { return "genius"; }

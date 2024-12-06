@@ -11174,7 +11174,6 @@ targets:
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
-  - test/core/http/format_request_test.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
@@ -11184,6 +11183,7 @@ targets:
   - test/core/test_util/resolve_localhost_ip46.cc
   - test/core/test_util/slice_splitter.cc
   - test/core/test_util/tracer_util.cc
+  - test/core/util/http_client/format_request_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12669,12 +12669,12 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/http/httpcli_test_util.h
   - test/core/test_util/fake_udp_and_tcp_server.h
+  - test/core/util/http_client/httpcli_test_util.h
   src:
-  - test/core/http/httpcli_test.cc
-  - test/core/http/httpcli_test_util.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
+  - test/core/util/http_client/httpcli_test.cc
+  - test/core/util/http_client/httpcli_test_util.cc
   deps:
   - gtest
   - grpc++_test_util
@@ -12687,12 +12687,12 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/http/httpcli_test_util.h
   - test/core/test_util/fake_udp_and_tcp_server.h
+  - test/core/util/http_client/httpcli_test_util.h
   src:
-  - test/core/http/httpcli_test_util.cc
-  - test/core/http/httpscli_test.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
+  - test/core/util/http_client/httpcli_test_util.cc
+  - test/core/util/http_client/httpscli_test.cc
   deps:
   - gtest
   - grpc++_test_util
@@ -13225,7 +13225,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/json/json_object_loader_test.cc
+  - test/core/util/json/json_object_loader_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13236,7 +13236,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/json/json_test.cc
+  - test/core/util/json/json_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -15057,7 +15057,6 @@ targets:
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
-  - test/core/http/parser_test.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
@@ -15067,6 +15066,7 @@ targets:
   - test/core/test_util/resolve_localhost_ip46.cc
   - test/core/test_util/slice_splitter.cc
   - test/core/test_util/tracer_util.cc
+  - test/core/util/http_client/parser_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -21789,6 +21789,26 @@ targets:
   deps:
   - gtest
   - grpc
+  uses_polling: false
+- name: tdigest_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/tdigest.h
+  src:
+  - src/core/util/tdigest.cc
+  - test/core/util/tdigest_test.cc
+  deps:
+  - gtest
+  - absl/container:flat_hash_map
+  - absl/log:check
+  - absl/log:log
+  - absl/random:random
+  - absl/status:status
+  - benchmark
+  benchmark: true
+  defaults: benchmark
   uses_polling: false
 - name: test_core_channelz_channelz_test
   gtest: true
