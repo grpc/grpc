@@ -3386,6 +3386,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr_platform",
+        "//src/core:experiments",
         "//src/core:time",
     ],
 )
