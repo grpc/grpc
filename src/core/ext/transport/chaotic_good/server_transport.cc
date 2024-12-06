@@ -395,7 +395,6 @@ void ChaoticGoodServerTransport::AbortWithError() {
     auto& call = stream->call;
     call.SpawnInfallible("cancel", [stream = std::move(stream)]() mutable {
       stream->call.Cancel();
-      return Empty{};
     });
   }
 }
@@ -447,7 +446,6 @@ absl::Status ChaoticGoodServerTransport::NewStream(
           call.SpawnInfallible("cancel",
                                [stream = std::move(stream)]() mutable {
                                  stream->call.Cancel();
-                                 return Empty{};
                                });
         }
       });

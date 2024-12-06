@@ -63,10 +63,7 @@ DATA_ENDPOINTS_TEST(CanWrite) {
   SpawnTestSeqWithoutContext(
       "write",
       data_endpoints.Write(SliceBuffer(Slice::FromCopiedString("hello"))),
-      [](uint32_t id) {
-        EXPECT_EQ(id, 0);
-        return Empty{};
-      });
+      [](uint32_t id) { EXPECT_EQ(id, 0); });
   WaitForAllPendingWork();
 }
 
@@ -86,15 +83,9 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
   SpawnTestSeqWithoutContext(
       "write",
       data_endpoints.Write(SliceBuffer(Slice::FromCopiedString("hello"))),
-      [&write1_ep](uint32_t id) {
-        write1_ep = id;
-        return Empty{};
-      },
+      [&write1_ep](uint32_t id) { write1_ep = id; },
       data_endpoints.Write(SliceBuffer(Slice::FromCopiedString("world"))),
-      [&write2_ep](uint32_t id) {
-        write2_ep = id;
-        return Empty{};
-      });
+      [&write2_ep](uint32_t id) { write2_ep = id; });
   WaitForAllPendingWork();
   EXPECT_THAT(write1_ep, ::testing::AnyOf(0, 1));
   EXPECT_THAT(write2_ep, ::testing::AnyOf(0, 1));
@@ -116,7 +107,6 @@ DATA_ENDPOINTS_TEST(CanRead) {
                              [](absl::StatusOr<SliceBuffer> result) {
                                EXPECT_TRUE(result.ok());
                                EXPECT_EQ(result->JoinIntoString(), "hello");
-                               return Empty{};
                              });
   WaitForAllPendingWork();
 }

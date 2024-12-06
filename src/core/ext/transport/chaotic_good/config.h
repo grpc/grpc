@@ -166,6 +166,7 @@ class Config {
   uint32_t encode_alignment() const { return encode_alignment_; }
   uint32_t decode_alignment() const { return decode_alignment_; }
   uint32_t max_send_chunk_size() const { return max_send_chunk_size_; }
+  // TODO(ctiller): use this to verify that chunk limits are being observed.
   uint32_t max_recv_chunk_size() const { return max_recv_chunk_size_; }
   uint32_t inline_payload_size_threshold() const {
     return inline_payload_size_threshold_;

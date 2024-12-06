@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_TEST_CORE_HTTP_HTTPCLI_TEST_UTIL_H
-#define GRPC_TEST_CORE_HTTP_HTTPCLI_TEST_UTIL_H
+#ifndef GRPC_TEST_CORE_UTIL_HTTP_CLIENT_HTTPCLI_TEST_UTIL_H
+#define GRPC_TEST_CORE_UTIL_HTTP_CLIENT_HTTPCLI_TEST_UTIL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -35,4 +35,4 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
 }  // namespace testing
 }  // namespace grpc_core
 
-#endif  // GRPC_TEST_CORE_HTTP_HTTPCLI_TEST_UTIL_H
+#endif  // GRPC_TEST_CORE_UTIL_HTTP_CLIENT_HTTPCLI_TEST_UTIL_H

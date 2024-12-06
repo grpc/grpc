@@ -164,20 +164,17 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
                               ->get_pointer(HttpPathMetadata())
                               ->as_string_view(),
                           "/demo.Service/Step");
-                return Empty{};
               },
               [handler]() mutable { return handler.PullMessage(); },
               [](ClientToServerNextMessage msg) {
                 EXPECT_TRUE(msg.ok());
                 EXPECT_TRUE(msg.has_value());
                 EXPECT_EQ(msg.value().payload()->JoinIntoString(), "12345678");
-                return Empty{};
               },
               [handler]() mutable { return handler.PullMessage(); },
               [](ClientToServerNextMessage msg) {
                 EXPECT_TRUE(msg.ok());
                 EXPECT_FALSE(msg.has_value());
-                return Empty{};
               },
               [handler]() mutable {
                 return handler.PushServerInitialMetadata(TestInitialMetadata());
@@ -189,7 +186,6 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
               [handler, &on_done]() mutable {
                 handler.PushServerTrailingMetadata(TestTrailingMetadata());
                 on_done.Call();
-                return Empty{};
               });
         });
       }));

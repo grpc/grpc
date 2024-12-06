@@ -187,6 +187,22 @@ TEST(MemoryQuotaTest, AllMemoryQuotas) {
   EXPECT_EQ(gather(), std::set<std::string>({"m2"}));
 }
 
+TEST(MemoryQuotaTest, ContainerMemoryAccountedFor) {
+  MemoryQuota memory_quota("foo");
+  memory_quota.SetSize(1000000);
+  EXPECT_EQ(ContainerMemoryPressure(), 0.0);
+  auto owner = memory_quota.CreateMemoryOwner();
+  const double original_memory_pressure =
+      owner.GetPressureInfo().instantaneous_pressure;
+  EXPECT_LT(original_memory_pressure, 0.01);
+  SetContainerMemoryPressure(1.0);
+  EXPECT_EQ(owner.GetPressureInfo().instantaneous_pressure, 1.0);
+  SetContainerMemoryPressure(0.0);
+  EXPECT_EQ(owner.GetPressureInfo().instantaneous_pressure,
+            original_memory_pressure);
+  SetContainerMemoryPressure(0.0);
+}
+
 }  // namespace testing
 
 namespace memory_quota_detail {

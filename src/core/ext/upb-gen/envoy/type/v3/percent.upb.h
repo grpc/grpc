@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_V3_PERCENT_PROTO_UPB_H_
-#define ENVOY_TYPE_V3_PERCENT_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_V3_PERCENT_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_V3_PERCENT_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -165,4 +165,4 @@ UPB_INLINE void envoy_type_v3_FractionalPercent_set_denominator(envoy_type_v3_Fr
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_V3_PERCENT_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_V3_PERCENT_PROTO_UPB_H__UPB_H_ */

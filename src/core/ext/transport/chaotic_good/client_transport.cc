@@ -254,7 +254,6 @@ void ChaoticGoodClientTransport::AbortWithError() {
     call.SpawnInfallible("cancel", [stream = std::move(stream)]() mutable {
       stream->call.PushServerTrailingMetadata(ServerMetadataFromStatus(
           absl::UnavailableError("Transport closed.")));
-      return Empty{};
     });
   }
 }

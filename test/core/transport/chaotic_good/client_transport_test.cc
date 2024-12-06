@@ -174,20 +174,17 @@ TEST_F(TransportTest, AddOneStream) {
                             ->get_pointer(GrpcMessageMetadata())
                             ->as_string_view(),
                         "hello");
-              return Empty{};
             },
             [initiator]() mutable { return initiator.PullMessage(); },
             [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
               EXPECT_TRUE(msg.has_value());
               EXPECT_EQ(msg.value().payload()->JoinIntoString(), many_as);
-              return Empty{};
             },
             [initiator]() mutable { return initiator.PullMessage(); },
             [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
               EXPECT_FALSE(msg.has_value());
-              return Empty{};
             },
             [initiator]() mutable {
               return initiator.PullServerTrailingMetadata();
@@ -195,7 +192,6 @@ TEST_F(TransportTest, AddOneStream) {
             [&on_done](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(), GRPC_STATUS_OK);
               on_done.Call();
-              return Empty{};
             });
       });
   // Wait until ClientTransport's internal activities to finish.
@@ -262,33 +258,28 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
               EXPECT_TRUE(md.value().has_value());
-              return Empty{};
             },
             initiator.PullMessage(),
             [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
               EXPECT_TRUE(msg.has_value());
               EXPECT_EQ(msg.value().payload()->JoinIntoString(), "12345678");
-              return Empty{};
             },
             initiator.PullMessage(),
             [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
               EXPECT_TRUE(msg.has_value());
               EXPECT_EQ(msg.value().payload()->JoinIntoString(), "87654321");
-              return Empty{};
             },
             initiator.PullMessage(),
             [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
               EXPECT_FALSE(msg.has_value());
-              return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
             [&on_done](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(), GRPC_STATUS_OK);
               on_done.Call();
-              return Empty{};
             });
       });
   // Wait until ClientTransport's internal activities to finish.
