@@ -22179,6 +22179,26 @@ targets:
   - gtest
   - grpc
   uses_polling: false
+- name: tdigest_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/tdigest.h
+  src:
+  - src/core/util/tdigest.cc
+  - test/core/util/tdigest_test.cc
+  deps:
+  - gtest
+  - absl/container:flat_hash_map
+  - absl/log:check
+  - absl/log:log
+  - absl/random:random
+  - absl/status:status
+  - benchmark
+  benchmark: true
+  defaults: benchmark
+  uses_polling: false
 - name: test_core_channelz_channelz_test
   gtest: true
   build: test

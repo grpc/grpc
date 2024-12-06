@@ -17,6 +17,7 @@
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
 EXPERIMENT_ENABLES = {
+    "backoff_cap_initial_at_max": "backoff_cap_initial_at_max",
     "call_tracer_in_transport": "call_tracer_in_transport",
     "canary_client_privacy": "canary_client_privacy",
     "chaotic_good_legacy_protocol": "chaotic_good_legacy_protocol",

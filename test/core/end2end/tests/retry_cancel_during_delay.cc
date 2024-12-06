@@ -46,7 +46,7 @@ void TestRetryCancelDuringDelay(
           "    \"retryPolicy\": {\n"
           "      \"maxAttempts\": 3,\n"
           "      \"initialBackoff\": \"%ds\",\n"
-          "      \"maxBackoff\": \"120s\",\n"
+          "      \"maxBackoff\": \"1000s\",\n"
           "      \"backoffMultiplier\": 1.6,\n"
           "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
           "    }\n"

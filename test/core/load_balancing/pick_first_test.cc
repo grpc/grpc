@@ -482,7 +482,9 @@ TEST_F(PickFirstTest, ResolverUpdateBeforeLeavingIdle) {
         lb_policy()->ExitIdleLocked();
       },
       DEBUG_LOCATION);
-  notification.WaitForNotification();
+  while (!notification.HasBeenNotified()) {
+    fuzzing_ee_->Tick();
+  }
   // The LB policy should have created subchannels for the new addresses.
   auto* subchannel3 = FindSubchannel(kNewAddresses[0]);
   ASSERT_NE(subchannel3, nullptr);
@@ -1172,36 +1174,9 @@ TEST_F(PickFirstTest, AddressUpdateRetainsSelectedAddress) {
   EXPECT_FALSE(subchannel2->ConnectionRequested());
 }
 
-// DO NOT USE!
-//
-// A test class that overrides the FuzzingEventEngine to make timer
-// cancellation always fail.  This is used to simulate cases where, at
-// the moment that the timer is cancelled, the timer has already fired
-// but the timer callback has not yet run in the WorkSerializer.
-//
-// TODO(roth): This is a really ugly hack.  As part of changing these
-// tests to use the FuzzingEventEngine exclusively, we should instead
-// find a way to tick the FuzzingEventEngine to the right point so that
-// we don't need this ugliness.
-class PickFirstNoCancelTimerTest : public PickFirstTest {
- protected:
-  class FuzzingEventEngineWithoutTimerCancellation : public FuzzingEventEngine {
-   public:
-    using FuzzingEventEngine::FuzzingEventEngine;
-
-    bool Cancel(TaskHandle) override { return false; }
-  };
-
-  std::shared_ptr<FuzzingEventEngine> MakeFuzzingEventEngine() override {
-    return std::make_shared<FuzzingEventEngineWithoutTimerCancellation>(
-        grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-        fuzzing_event_engine::Actions());
-  }
-};
-
 // This exercizes a bug seen in the wild that caused a crash.  For
 // details, see https://github.com/grpc/grpc/pull/38144.
-TEST_F(PickFirstNoCancelTimerTest, SubchannelNotificationAfterShutdown) {
+TEST_F(PickFirstTest, SubchannelNotificationAfterShutdown) {
   // Send an update containing one address.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
@@ -1220,19 +1195,37 @@ TEST_F(PickFirstNoCancelTimerTest, SubchannelNotificationAfterShutdown) {
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate();
-  // Now shut down the LB policy.
-  // This will cancel the Happy Eyeballs timer, but since we're using a
-  // FuzzingEventEngine that fails timer cancellations, it simulates the
-  // case where the timer has already fired but the timer callback has
-  // not yet run inside the WorkSerializer.
-  lb_policy_.reset();
-  // Now the subchannel reports READY.  Before the bug fix, this caused
-  // us to select the subchannel instead of ignoring the notification.
-  // With the bug fix, this update should never actually be delivered to
-  // the LB policy, since it will have already shut down the subchannel.
-  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-  // Now trigger the Happy Eyeballs timer to fire.
-  IncrementTimeBy(Duration::Milliseconds(250));
+  // The following things happen in order:
+  // 1. We enqueue a READY notification for the subchannel in the
+  //    WorkSerializer, but do not yet execute it.
+  // 2. We enqueue the Happy Eyeballs timer callback in the
+  //    WorkSerializer, but do not yet execute it.
+  // 3. We shut down the LB policy.  This will try to cancel the Happy
+  //    Eyeballs timer, but since the timer has already fired,
+  //    cancellation will fail.
+  // 4. Now we drain the WorkSerializer queue.  The LB policy sees the READY
+  //    notification.  Before the bug fix, this caused us to select the
+  //    subchannel instead of ignoring the notification.  With the bug fix,
+  //    this update should never actually be delivered to the LB policy,
+  //    since it will have already shut down the subchannel.
+  // 5. The LB policy now sees the Happy Eyeballs timer callback.  This
+  //    is a no-op, because the LB policy has already been shut down,
+  //    but it will release the last ref to the subchannel list.
+  //
+  // To get the ordering right here, we need to do steps 2 and 3
+  // inside the WorkSerializer, after the READY notification has been
+  // enqueued but before we drain the WorkSerializer queue.
+  subchannel->SetConnectivityState(
+      GRPC_CHANNEL_READY, /*status=*/absl::OkStatus(),
+      /*validate_state_transition=*/true,
+      /*run_before_flush=*/[&]() {
+        // Step 2: Trigger the timer.  The callback will be enqueued in
+        // the WorkSerializer, but we don't drain it yet.
+        IncrementTimeBy(Duration::Milliseconds(250),
+                        /*flush_work_serializer=*/false);
+        // Step 3: Shut down the LB policy.
+        lb_policy_.reset();
+      });
   // Now the subchannel reports IDLE.  Before the bug fix, this
   // triggered a crash.
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
