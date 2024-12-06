@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef KOLMOGOROV_SMIRNOV_H
-#define KOLMOGOROV_SMIRNOV_H
+#ifndef GRPC_SRC_CORE_UTIL_KOLMOGOROV_SMIRNOV_H
+#define GRPC_SRC_CORE_UTIL_KOLMOGOROV_SMIRNOV_H
 
 #include "src/core/util/tdigest.h"
 
@@ -39,4 +39,4 @@ double KolmogorovSmirnovThreshold(double alpha, double a_count, double b_count);
 
 }  // namespace grpc_core
 
-#endif  // KOLMOGOROV_SMIRNOV_H
+#endif  // GRPC_SRC_CORE_UTIL_KOLMOGOROV_SMIRNOV_H
