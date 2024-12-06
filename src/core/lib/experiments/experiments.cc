@@ -87,8 +87,8 @@ const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_prioritize_finished_requests =
-    "Prioritize flushing out finished requests when resuming from transport "
-    "stalls.";
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
 const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
@@ -295,8 +295,8 @@ const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_prioritize_finished_requests =
-    "Prioritize flushing out finished requests when resuming from transport "
-    "stalls.";
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
 const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
@@ -503,8 +503,8 @@ const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_prioritize_finished_requests =
-    "Prioritize flushing out finished requests when resuming from transport "
-    "stalls.";
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
 const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
