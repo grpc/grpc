@@ -80,9 +80,10 @@ const Duration kConnectionDeadline = Duration::Seconds(120);
 using grpc_event_engine::experimental::EventEngine;
 
 ChaoticGoodServerListener::ChaoticGoodServerListener(
-    const ChannelArgs& args,
+    Server* server, const ChannelArgs& args,
     absl::AnyInvocable<std::string()> connection_id_generator)
-    : args_(args),
+    : server_(server),
+      args_(args),
       event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       data_connection_listener_(MakeRefCounted<DataConnectionListener>(
@@ -363,7 +364,18 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
   frame.SerializePayload(write_buffer);
   // ignore encoding errors: they will be logged separately already
-  return self->connection_->endpoint_.Write(std::move(write_buffer));
+  return TrySeq(
+      self->connection_->endpoint_.Write(std::move(write_buffer)), [self]() {
+        return self->connection_->listener_->server_->SetupTransport(
+            new ChaoticGoodServerTransport(
+                self->connection_->args(),
+                std::move(self->connection_->endpoint_),
+                std::move(absl::get<ControlConnection>(
+                              self->connection_->handshaking_state_->data_)
+                              .config),
+                self->connection_->listener_->data_connection_listener_),
+            nullptr, self->connection_->args(), nullptr);
+      });
 }
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
@@ -516,7 +528,7 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
   for (const auto& ee_addr : results.value()) {
     auto listener = grpc_core::MakeOrphanable<
         grpc_core::chaotic_good::ChaoticGoodServerListener>(
-        core_server->channel_args());
+        grpc_core::Server::FromC(server), core_server->channel_args());
     std::string addr_str =
         *grpc_event_engine::experimental::ResolvedAddressToString(ee_addr);
     GRPC_TRACE_LOG(chaotic_good, INFO) << "BIND: " << addr_str;

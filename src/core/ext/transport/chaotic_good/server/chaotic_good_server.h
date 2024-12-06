@@ -62,7 +62,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
   }
 
   explicit ChaoticGoodServerListener(
-      const ChannelArgs& args,
+      Server* server, const ChannelArgs& args,
       absl::AnyInvocable<std::string()> connection_id_generator =
           DefaultConnectionIDGenerator());
   ~ChaoticGoodServerListener() override;
@@ -185,6 +185,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
   };
 
  private:
+  Server* const server_;
   ChannelArgs args_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::unique_ptr<grpc_event_engine::experimental::EventEngine::Listener>

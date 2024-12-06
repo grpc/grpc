@@ -26,7 +26,7 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
               const grpc_core::ChannelArgs& channel_args) {
         grpc_core::ExecCtx exec_ctx;
         auto* listener = new grpc_core::chaotic_good::ChaoticGoodServerListener(
-            channel_args, [next = uint64_t(0)]() mutable {
+            server, channel_args, [next = uint64_t(0)]() mutable {
               return absl::StrCat(absl::Hex(next++));
             });
         auto port = listener->Bind(

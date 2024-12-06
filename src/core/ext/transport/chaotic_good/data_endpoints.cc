@@ -232,6 +232,7 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                    PendingConnection pending_connection, bool enable_tracing) {
   input_queues->AddEndpoint(id);
   auto arena = SimpleArenaAllocator(0)->MakeArena();
+  arena->SetContext(GetContext<grpc_event_engine::experimental::EventEngine>());
   party_ = Party::Make(arena);
   party_->Spawn(
       "write",
