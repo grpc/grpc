@@ -317,13 +317,13 @@ auto RetryInterceptor::Attempt::ServerToClientGotTrailersOnlyResponse() {
         GRPC_TRACE_LOG(retry, INFO)
             << self->DebugTag()
             << " got server trailing metadata: " << md->DebugString();
-        auto pushback = self->call_->ShouldRetry(
+        auto delay = self->call_->ShouldRetry(
             *md,
             [self = self.get()]() -> std::string { return self->DebugTag(); });
         return If(
-            pushback.has_value(),
-            [self, pushback]() {
-              return Map(Sleep(*pushback), [call = self->call_](absl::Status) {
+            delay.has_value(),
+            [self, delay]() {
+              return Map(Sleep(*delay), [call = self->call_](absl::Status) {
                 call->StartAttempt();
                 return absl::OkStatus();
               });

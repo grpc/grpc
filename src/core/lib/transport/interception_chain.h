@@ -115,6 +115,9 @@ class Interceptor : public UnstartedCallDestination {
   }
 
   // Hijack a call with custom initial metadata.
+  // TODO(ctiller): Evaluate whether this or hijack or some other in-between
+  // API is what we need here (I think we need 2 or 3 more fully worked through
+  // samples) and then reduce this surface to one API.
   CallInitiator MakeChildCall(ClientMetadataHandle metadata,
                               RefCountedPtr<Arena> arena);
 
