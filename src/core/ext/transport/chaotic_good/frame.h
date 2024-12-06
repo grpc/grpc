@@ -34,11 +34,6 @@
 namespace grpc_core {
 namespace chaotic_good {
 
-struct BufferPair {
-  SliceBuffer control;
-  SliceBuffer data;
-};
-
 class FrameInterface {
  public:
   virtual absl::Status Deserialize(const FrameHeader& header,
@@ -69,26 +64,98 @@ chaotic_good_frame::ServerMetadata ServerMetadataProtoFromGrpc(
 absl::StatusOr<ServerMetadataHandle> ServerMetadataGrpcFromProto(
     chaotic_good_frame::ServerMetadata& metadata);
 
-struct SettingsFrame final : public FrameInterface {
-  absl::Status Deserialize(const FrameHeader& header,
-                           SliceBuffer payload) override;
-  FrameHeader MakeHeader() const override;
-  void SerializePayload(SliceBuffer& payload) const override;
-  std::string ToString() const override;
+absl::Status ReadProto(SliceBuffer payload, google::protobuf::MessageLite& msg);
+void WriteProto(const google::protobuf::MessageLite& msg, SliceBuffer& output);
+uint32_t ProtoPayloadSize(const google::protobuf::MessageLite& msg);
+absl::Status ReadTransportProto(const FrameHeader& header, SliceBuffer payload,
+                                google::protobuf::MessageLite& body);
+absl::Status ReadStreamProto(const FrameHeader& header, SliceBuffer payload,
+                             google::protobuf::MessageLite& body,
+                             uint32_t& stream_id);
+absl::Status ReadEmptyFrame(const FrameHeader& header, uint32_t& stream_id);
 
-  chaotic_good_frame::Settings settings;
+// Generic implementation of a transport-bound frame (stream_id is zero always)
+// with a protobuf specified body.
+
+template <FrameType frame_type, typename Body>
+struct ProtoTransportFrame final : public FrameInterface {
+  absl::Status Deserialize(const FrameHeader& header,
+                           SliceBuffer payload) override {
+    DCHECK_EQ(header.type, frame_type);
+    return ReadTransportProto(header, std::move(payload), body);
+  }
+  FrameHeader MakeHeader() const override {
+    return FrameHeader{frame_type, 0, 0, ProtoPayloadSize(body)};
+  }
+  void SerializePayload(SliceBuffer& payload) const override {
+    WriteProto(body, payload);
+  }
+  std::string ToString() const override {
+    return absl::StrCat(FrameTypeString(frame_type), "{",
+                        body.ShortDebugString(), "}");
+  }
+
+  Body body;
 };
 
-struct ClientInitialMetadataFrame final : public FrameInterface {
+// Generic implementation of a stream-bound frame with a protobuf specified
+// body.
+template <FrameType frame_type, typename Body>
+struct ProtoStreamFrame final : public FrameInterface {
   absl::Status Deserialize(const FrameHeader& header,
-                           SliceBuffer payload) override;
-  FrameHeader MakeHeader() const override;
-  void SerializePayload(SliceBuffer& payload) const override;
-  std::string ToString() const override;
+                           SliceBuffer payload) override {
+    DCHECK_EQ(header.type, frame_type);
+    return ReadStreamProto(header, std::move(payload), body, stream_id);
+  }
+  FrameHeader MakeHeader() const override {
+    return FrameHeader{frame_type, 0, stream_id, ProtoPayloadSize(body)};
+  }
+  void SerializePayload(SliceBuffer& payload) const override {
+    DCHECK_NE(stream_id, 0u);
+    WriteProto(body, payload);
+  }
+  std::string ToString() const override {
+    return absl::StrCat(FrameTypeString(frame_type), "{@", stream_id, "; ",
+                        body.ShortDebugString(), "}");
+  }
+
+  Body body;
+  uint32_t stream_id;
+};
+
+// Generic implementation of an empty stream frame.
+template <FrameType frame_type>
+struct EmptyStreamFrame final : public FrameInterface {
+  EmptyStreamFrame() = default;
+  explicit EmptyStreamFrame(uint32_t stream_id) : stream_id(stream_id) {}
+  absl::Status Deserialize(const FrameHeader& header, SliceBuffer) override {
+    DCHECK_EQ(header.type, frame_type);
+    return ReadEmptyFrame(header, stream_id);
+  }
+  FrameHeader MakeHeader() const override {
+    return FrameHeader{frame_type, 0, stream_id, 0};
+  }
+  void SerializePayload(SliceBuffer&) const override {}
+  std::string ToString() const override { return FrameTypeString(frame_type); }
 
   uint32_t stream_id;
-  chaotic_good_frame::ClientMetadata headers;
 };
+
+using SettingsFrame =
+    ProtoTransportFrame<FrameType::kSettings, chaotic_good_frame::Settings>;
+using ClientInitialMetadataFrame =
+    ProtoStreamFrame<FrameType::kClientInitialMetadata,
+                     chaotic_good_frame::ClientMetadata>;
+using BeginMessageFrame = ProtoStreamFrame<FrameType::kBeginMessage,
+                                           chaotic_good_frame::BeginMessage>;
+using ClientEndOfStream = EmptyStreamFrame<FrameType::kClientEndOfStream>;
+using ServerInitialMetadataFrame =
+    ProtoStreamFrame<FrameType::kServerInitialMetadata,
+                     chaotic_good_frame::ServerMetadata>;
+using ServerTrailingMetadataFrame =
+    ProtoStreamFrame<FrameType::kServerTrailingMetadata,
+                     chaotic_good_frame::ServerMetadata>;
+using CancelFrame = EmptyStreamFrame<FrameType::kCancel>;
 
 struct MessageFrame final : public FrameInterface {
   absl::Status Deserialize(const FrameHeader& header,
@@ -101,7 +168,7 @@ struct MessageFrame final : public FrameInterface {
   MessageHandle message;
 };
 
-struct ClientEndOfStream final : public FrameInterface {
+struct MessageChunkFrame final : public FrameInterface {
   absl::Status Deserialize(const FrameHeader& header,
                            SliceBuffer payload) override;
   FrameHeader MakeHeader() const override;
@@ -109,47 +176,15 @@ struct ClientEndOfStream final : public FrameInterface {
   std::string ToString() const override;
 
   uint32_t stream_id;
+  SliceBuffer payload;
 };
 
-struct ServerInitialMetadataFrame final : public FrameInterface {
-  absl::Status Deserialize(const FrameHeader& header,
-                           SliceBuffer payload) override;
-  FrameHeader MakeHeader() const override;
-  void SerializePayload(SliceBuffer& payload) const override;
-  std::string ToString() const override;
-
-  uint32_t stream_id;
-  chaotic_good_frame::ServerMetadata headers;
-};
-
-struct ServerTrailingMetadataFrame final : public FrameInterface {
-  absl::Status Deserialize(const FrameHeader& header,
-                           SliceBuffer payload) override;
-  FrameHeader MakeHeader() const override;
-  void SerializePayload(SliceBuffer& payload) const override;
-  std::string ToString() const override;
-
-  uint32_t stream_id;
-  chaotic_good_frame::ServerMetadata trailers;
-};
-
-struct CancelFrame final : public FrameInterface {
-  CancelFrame() = default;
-  explicit CancelFrame(uint32_t stream_id) : stream_id(stream_id) {}
-
-  absl::Status Deserialize(const FrameHeader& header,
-                           SliceBuffer payload) override;
-  FrameHeader MakeHeader() const override;
-  void SerializePayload(SliceBuffer& payload) const override;
-  std::string ToString() const override;
-
-  uint32_t stream_id;
-};
-
-using ClientFrame = absl::variant<ClientInitialMetadataFrame, MessageFrame,
-                                  ClientEndOfStream, CancelFrame>;
-using ServerFrame = absl::variant<ServerInitialMetadataFrame, MessageFrame,
-                                  ServerTrailingMetadataFrame>;
+using ClientFrame =
+    absl::variant<ClientInitialMetadataFrame, MessageFrame, BeginMessageFrame,
+                  MessageChunkFrame, ClientEndOfStream, CancelFrame>;
+using ServerFrame =
+    absl::variant<ServerInitialMetadataFrame, MessageFrame, BeginMessageFrame,
+                  MessageChunkFrame, ServerTrailingMetadataFrame>;
 
 inline FrameInterface& GetFrameInterface(ClientFrame& frame) {
   return MatchMutable(
@@ -158,6 +193,8 @@ inline FrameInterface& GetFrameInterface(ClientFrame& frame) {
         return *frame;
       },
       [](MessageFrame* frame) -> FrameInterface& { return *frame; },
+      [](BeginMessageFrame* frame) -> FrameInterface& { return *frame; },
+      [](MessageChunkFrame* frame) -> FrameInterface& { return *frame; },
       [](ClientEndOfStream* frame) -> FrameInterface& { return *frame; },
       [](CancelFrame* frame) -> FrameInterface& { return *frame; });
 }
@@ -169,6 +206,8 @@ inline FrameInterface& GetFrameInterface(ServerFrame& frame) {
         return *frame;
       },
       [](MessageFrame* frame) -> FrameInterface& { return *frame; },
+      [](BeginMessageFrame* frame) -> FrameInterface& { return *frame; },
+      [](MessageChunkFrame* frame) -> FrameInterface& { return *frame; },
       [](ServerTrailingMetadataFrame* frame) -> FrameInterface& {
         return *frame;
       });

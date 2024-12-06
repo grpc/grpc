@@ -27,7 +27,10 @@ message Settings {
     bool data_channel = 2;
     // Requested alignment for the data channel
     // Client and server each send this with their preferences
-    uint32 alignment = 3;    
+    uint32 alignment = 3;
+    // Max chunk size allowed to be sent to a peer (0 or omitted: no limit)
+    // Sent on the control channel, applies to all messages.
+    uint32 max_chunk_size = 4;
 }
 
 message UnknownMetadata {
@@ -48,4 +51,8 @@ message ServerMetadata {
     optional bytes message = 2;
 
     repeated UnknownMetadata unknown_metadata = 100;
+}
+
+message BeginMessage {
+    uint64 length = 1;
 }

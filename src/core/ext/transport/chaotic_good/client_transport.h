@@ -37,8 +37,10 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
+#include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
+#include "src/core/ext/transport/chaotic_good/message_reassembly.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
@@ -65,10 +67,10 @@ class ChaoticGoodClientTransport final : public ClientTransport {
  public:
   ChaoticGoodClientTransport(
       PromiseEndpoint control_endpoint,
-      std::vector<PromiseEndpoint> data_endpoints,
-      const ChannelArgs& channel_args,
+      std::vector<PromiseEndpoint> data_endpoints, const ChannelArgs& args,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+          event_engine,
+      const Config& config);
   ~ChaoticGoodClientTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
@@ -84,10 +86,15 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   void AbortWithError();
 
  private:
-  using StreamMap = absl::flat_hash_map<uint32_t, CallHandler>;
+  struct Stream : public RefCounted<Stream> {
+    explicit Stream(CallHandler call) : call(std::move(call)) {}
+    CallHandler call;
+    MessageReassembly message_reassembly;
+  };
+  using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>;
 
   uint32_t MakeStream(CallHandler call_handler);
-  absl::optional<CallHandler> LookupStream(uint32_t stream_id);
+  RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
   auto OnTransportActivityDone(absl::string_view what);
   template <typename T>
@@ -96,10 +103,12 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   // Push one frame into a call
   auto PushFrameIntoCall(ServerInitialMetadataFrame frame,
-                         CallHandler call_handler);
-  auto PushFrameIntoCall(MessageFrame frame, CallHandler call_handler);
+                         RefCountedPtr<Stream> stream);
+  auto PushFrameIntoCall(MessageFrame frame, RefCountedPtr<Stream> stream);
   auto PushFrameIntoCall(ServerTrailingMetadataFrame frame,
-                         CallHandler call_handler);
+                         RefCountedPtr<Stream> stream);
+  auto PushFrameIntoCall(BeginMessageFrame frame, RefCountedPtr<Stream> stream);
+  auto PushFrameIntoCall(MessageChunkFrame frame, RefCountedPtr<Stream> stream);
 
   grpc_event_engine::experimental::MemoryAllocator allocator_;
   // Max buffer is set to 4, so that for stream writes each time it will queue
@@ -112,6 +121,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   RefCountedPtr<Party> party_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
       "chaotic_good_client", GRPC_CHANNEL_READY};
+  MessageChunker message_chunker_;
 };
 
 }  // namespace chaotic_good

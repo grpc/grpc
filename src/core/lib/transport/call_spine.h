@@ -105,6 +105,8 @@ class CallSpine final : public Party {
   }
 
   void PushServerTrailingMetadata(ServerMetadataHandle md) {
+    GRPC_TRACE_LOG(call_state, INFO)
+        << "[call_state] PushServerTrailingMetadata: " << md->DebugString();
     call_filters().PushServerTrailingMetadata(std::move(md));
   }
 
