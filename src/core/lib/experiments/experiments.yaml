@@ -50,25 +50,11 @@
   expiry: 2025/02/01
   owner: roth@google.com
   test_tags: []
-- name: canary_client_privacy
-  description:
-    If set, canary client privacy
-  expiry: 2024/12/01
-  owner: alishananda@google.com
-  test_tags: []
-  allow_in_fuzzing_config: false
 - name: chaotic_good_legacy_protocol
   description: If set, use the first version of the chaotic-good protocol when that protocol is enabled.
   expiry: 2025/01/15
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
-- name: client_privacy
-  description:
-    If set, client privacy
-  expiry: 2024/12/01
-  owner: alishananda@google.com
-  test_tags: []
-  allow_in_fuzzing_config: false
 - name: disable_buffer_hint_on_high_memory_pressure
   description:
     Disable buffer hint flag parsing in the transport under high memory pressure.
@@ -189,13 +175,6 @@
   expiry: 2025/03/01
   owner: vigneshbabu@google.com
   test_tags: []
-- name: server_privacy
-  description:
-    If set, server privacy
-  expiry: 2024/12/01
-  owner: alishananda@google.com
-  test_tags: []
-  allow_in_fuzzing_config: false
 - name: tcp_frame_size_tuning
   description:
     If set, enables TCP to use RPC size estimation made by higher layers.
