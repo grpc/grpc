@@ -25,3 +25,15 @@ grpc_fuzz_test(
     ],
     deps = ["//src/core:tdigest"],
 )
+
+grpc_fuzz_test(
+    name = "kolmogorov_smirnov_fuzztest",
+    srcs = ["kolmogorov_smirnov_fuzztest.cc"],
+    external_deps = [
+        "absl/types:variant",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:kolmogorov_smirnov"],
+)
