@@ -24,6 +24,9 @@
 namespace grpc_core {
 namespace chaotic_good {
 
+// Essentially this is the promise of one endpoint in the future, with the
+// addition of an id used for handshaking so that can be communicated around as
+// necessary.
 class PendingConnection {
  public:
   explicit PendingConnection(absl::string_view id,
