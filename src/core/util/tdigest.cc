@@ -385,7 +385,7 @@ absl::Status TDigest::FromString(absl::string_view string) {
   }
 
   // Parse centroids.
-  int64_t int_val;
+  int64_t int_val = 0;
 
   for (; iter != tokens.end(); ++iter) {
     const auto pos = iter->find_first_of(':');
