@@ -266,7 +266,7 @@ void RetryInterceptor::Call::MaybeCommit(size_t buffered) {
   GRPC_TRACE_LOG(retry, INFO) << DebugTag() << " buffered:" << buffered << "/"
                               << interceptor_->per_rpc_retry_buffer_size_;
   if (buffered >= interceptor_->per_rpc_retry_buffer_size_) {
-    current_attempt_->Commit();
+    std::ignore = current_attempt_->Commit();
   }
 }
 
@@ -288,25 +288,31 @@ auto RetryInterceptor::Attempt::ServerToClientGotInitialMetadata(
     ServerMetadataHandle md) {
   GRPC_TRACE_LOG(retry, INFO)
       << DebugTag() << " get server initial metadata " << md->DebugString();
-  Commit();
-  call_->call_handler()->SpawnPushServerInitialMetadata(std::move(md));
-  return Seq(
-      ForEach(OutgoingMessages(&initiator_),
-              [call = call_](MessageHandle message) {
-                GRPC_TRACE_LOG(retry, INFO)
-                    << call->DebugTag() << " got server message "
-                    << message->DebugString();
-                return call->call_handler()->SpawnPushMessage(
-                    std::move(message));
-              }),
-      initiator_.PullServerTrailingMetadata(),
-      [call = call_](ServerMetadataHandle md) {
-        GRPC_TRACE_LOG(retry, INFO)
-            << call->DebugTag()
-            << " got server trailing metadata: " << md->DebugString();
-        call->call_handler()->SpawnPushServerTrailingMetadata(std::move(md));
-        return absl::OkStatus();
-      });
+  const bool committed = Commit();
+  return If(
+      committed,
+      [&]() {
+        call_->call_handler()->SpawnPushServerInitialMetadata(std::move(md));
+        return Seq(ForEach(OutgoingMessages(&initiator_),
+                           [call = call_](MessageHandle message) {
+                             GRPC_TRACE_LOG(retry, INFO)
+                                 << call->DebugTag() << " got server message "
+                                 << message->DebugString();
+                             return call->call_handler()->SpawnPushMessage(
+                                 std::move(message));
+                           }),
+                   initiator_.PullServerTrailingMetadata(),
+                   [call = call_](ServerMetadataHandle md) {
+                     GRPC_TRACE_LOG(retry, INFO)
+                         << call->DebugTag()
+                         << " got server trailing metadata: "
+                         << md->DebugString();
+                     call->call_handler()->SpawnPushServerTrailingMetadata(
+                         std::move(md));
+                     return absl::OkStatus();
+                   });
+      },
+      [&]() { return []() { return absl::CancelledError(); }; });
 }
 
 auto RetryInterceptor::Attempt::ServerToClientGotTrailersOnlyResponse() {
@@ -329,7 +335,7 @@ auto RetryInterceptor::Attempt::ServerToClientGotTrailersOnlyResponse() {
               });
             },
             [self, md = std::move(md)]() mutable {
-              self->Commit();
+              if (!self->Commit()) return absl::CancelledError();
               self->call_->call_handler()->SpawnPushServerTrailingMetadata(
                   std::move(md));
               return absl::OkStatus();
@@ -353,8 +359,14 @@ auto RetryInterceptor::Attempt::ServerToClient() {
       });
 }
 
-void RetryInterceptor::Attempt::Commit() {
+bool RetryInterceptor::Attempt::Commit(SourceLocation whence) {
+  if (committed_) return true;
+  GRPC_TRACE_LOG(retry, INFO) << DebugTag() << " commit attempt from "
+                              << whence.file() << ":" << whence.line();
+  if (!call_->IsCurrentAttempt(this)) return false;
+  committed_ = true;
   call_->request_buffer()->Commit(reader());
+  return true;
 }
 
 auto RetryInterceptor::Attempt::ClientToServer() {

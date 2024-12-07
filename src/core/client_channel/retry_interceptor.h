@@ -102,6 +102,10 @@ class RetryInterceptor : public Interceptor {
     void RemoveAttempt(Attempt* attempt) {
       if (current_attempt_ == attempt) current_attempt_ = nullptr;
     }
+    bool IsCurrentAttempt(Attempt* attempt) {
+      CHECK(attempt != nullptr);
+      return current_attempt_ == attempt;
+    }
 
     std::string DebugTag();
 
@@ -124,7 +128,7 @@ class RetryInterceptor : public Interceptor {
 
     void Start();
     void Cancel();
-    void Commit();
+    GRPC_MUST_USE_RESULT bool Commit(SourceLocation whence = {});
     RequestBuffer::Reader* reader() { return &reader_; }
 
     std::string DebugTag() const;
@@ -138,6 +142,7 @@ class RetryInterceptor : public Interceptor {
     RequestBuffer::Reader reader_;
     RefCountedPtr<Call> call_;
     CallInitiator initiator_;
+    bool committed_ = false;
   };
 
   const internal::RetryMethodConfig* GetRetryPolicy();
