@@ -20,7 +20,7 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/strings/escaping.h"
-#include "pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
 #include "src/core/lib/event_engine/query_extensions.h"
