@@ -81,6 +81,7 @@ class ChaoticGoodTraits {
     chaotic_good::PendingConnection Connect(absl::string_view id) override {
       Crash("Connect not implemented");
     }
+    void Orphaned() override {}
   };
 
   class FakeServerConnectionFactory
@@ -89,6 +90,7 @@ class ChaoticGoodTraits {
     chaotic_good::PendingConnection RequestDataConnection() override {
       Crash("RequestDataConnection not implemented");
     }
+    void Orphaned() override {}
   };
 };
 GRPC_CALL_SPINE_BENCHMARK(TransportFixture<ChaoticGoodTraits>);

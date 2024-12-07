@@ -341,7 +341,6 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       outgoing_frames_(4),
       message_chunker_(config.MakeMessageChunker()) {
-  LOG(INFO) << "ChaoticGoodServerTransport: CREATE " << this;
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), config.TakePendingDataEndpoints(),
       event_engine_, config.MakeTransportOptions(), false);
@@ -358,10 +357,6 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
                 GRPC_LATENT_SEE_PROMISE("ServerTransportReadLoop",
                                         TransportReadLoop(transport)),
                 OnTransportActivityDone("reader"));
-}
-
-ChaoticGoodServerTransport::~ChaoticGoodServerTransport() {
-  LOG(INFO) << "ChaoticGoodServerTransport: DESTROY " << this;
 }
 
 void ChaoticGoodServerTransport::SetCallDestination(

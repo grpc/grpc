@@ -141,10 +141,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
         Duration connect_timeout,
         std::shared_ptr<grpc_event_engine::experimental::EventEngine>
             event_engine);
-    ~DataConnectionListener() override {
-      CHECK(shutdown_);
-      LOG(INFO) << "DataConnectionListener: DESTROY " << this;
-    }
+    ~DataConnectionListener() override { CHECK(shutdown_); }
 
     void Orphaned() override;
 

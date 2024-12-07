@@ -103,13 +103,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
         control_endpoint_(std::move(control_endpoint), event_engine_.get()),
         data_endpoints_(std::move(pending_data_endpoints), event_engine_.get(),
                         enable_tracing),
-        options_(options) {
-    LOG(INFO) << "ChaoticGoodTransport: CREATE " << this;
-  }
-
-  ~ChaoticGoodTransport() override {
-    LOG(INFO) << "ChaoticGoodTransport: DESTROY " << this;
-  }
+        options_(options) {}
 
   auto WriteFrame(const FrameInterface& frame) {
     FrameHeader header = frame.MakeHeader();

@@ -229,10 +229,11 @@ auto Endpoint::ReadLoop(uint32_t id, RefCountedPtr<InputQueues> input_queues,
 
 Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                    RefCountedPtr<InputQueues> input_queues,
-                   PendingConnection pending_connection, bool enable_tracing) {
+                   PendingConnection pending_connection, bool enable_tracing,
+                   grpc_event_engine::experimental::EventEngine* event_engine) {
   input_queues->AddEndpoint(id);
   auto arena = SimpleArenaAllocator(0)->MakeArena();
-  arena->SetContext(GetContext<grpc_event_engine::experimental::EventEngine>());
+  arena->SetContext(event_engine);
   party_ = Party::Make(arena);
   party_->Spawn(
       "write",
@@ -291,7 +292,8 @@ DataEndpoints::DataEndpoints(
   CHECK(event_engine != nullptr);
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(i, output_buffers_, input_queues_,
-                            std::move(endpoints_vec[i]), enable_tracing);
+                            std::move(endpoints_vec[i]), enable_tracing,
+                            event_engine);
   }
 }
 

@@ -171,7 +171,8 @@ class Endpoint final {
  public:
   Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
            RefCountedPtr<InputQueues> input_queues,
-           PendingConnection pending_connection, bool enable_tracing);
+           PendingConnection pending_connection, bool enable_tracing,
+           grpc_event_engine::experimental::EventEngine* event_engine);
 
  private:
   static auto WriteLoop(uint32_t id,

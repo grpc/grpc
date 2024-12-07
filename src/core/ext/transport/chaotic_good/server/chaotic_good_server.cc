@@ -90,13 +90,9 @@ ChaoticGoodServerListener::ChaoticGoodServerListener(
           std::move(connection_id_generator),
           args.GetDurationFromIntMillis(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
               .value_or(kConnectionDeadline),
-          event_engine_)) {
-  LOG(INFO) << "ChaoticGoodServerListener: CREATE " << this;
-}
+          event_engine_)) {}
 
 ChaoticGoodServerListener::~ChaoticGoodServerListener() {
-  LOG(INFO) << "ChaoticGoodServerListener: DESTROY " << this
-            << " dcl: " << data_connection_listener_.get();
   if (on_destroy_done_ != nullptr) {
     event_engine_->Run([on_destroy_done = on_destroy_done_]() {
       ExecCtx exec_ctx;
@@ -191,9 +187,7 @@ ChaoticGoodServerListener::DataConnectionListener::DataConnectionListener(
     : ServerConnectionFactory("DCL"),
       connection_id_generator_(std::move(connection_id_generator)),
       event_engine_(std::move(event_engine)),
-      connect_timeout_(connect_timeout) {
-  LOG(INFO) << "DataConnectionListener: CREATE " << this;
-}
+      connect_timeout_(connect_timeout) {}
 
 PendingConnection
 ChaoticGoodServerListener::DataConnectionListener::RequestDataConnection() {
