@@ -31,13 +31,6 @@ class AutoScalerTest : public YodelTest {
  protected:
   using YodelTest::YodelTest;
 
-  void SetUp() override {
-    auto subject = std::make_unique<FakeSubject>(this);
-    subject_ = subject.get();
-    auto_scaler_ = MakeRefCounted<chaotic_good::AutoScaler>(
-        std::move(subject), chaotic_good::AutoScaler::Options());
-  }
-
   class RunLoop {
    public:
     explicit RunLoop(AutoScalerTest* test) : test_(test) {
@@ -325,8 +318,11 @@ class AutoScalerTest : public YodelTest {
     });
   }
 
-  FakeSubject* subject_;
-  RefCountedPtr<chaotic_good::AutoScaler> auto_scaler_;
+  FakeSubject* subject_ = new FakeSubject(this);
+  RefCountedPtr<chaotic_good::AutoScaler> auto_scaler_ =
+      MakeRefCounted<chaotic_good::AutoScaler>(
+          std::unique_ptr<chaotic_good::AutoScaler::SubjectInterface>(subject_),
+          chaotic_good::AutoScaler::Options());
 };
 
 #define AUTO_SCALER_TEST(name) YODEL_TEST(AutoScalerTest, name)
