@@ -64,6 +64,7 @@ class ChaoticGoodConnector final : public SubchannelConnector {
         const ChannelArgs& args)
         : address_(address), args_(args) {}
     PendingConnection Connect(absl::string_view id) override;
+    void Orphaned() override {};
 
    private:
     grpc_event_engine::experimental::EventEngine::ResolvedAddress address_;

@@ -20,6 +20,7 @@
 #include "absl/status/statusor.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/dual_ref_counted.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -46,15 +47,15 @@ class PendingConnection {
   Promise<absl::StatusOr<PromiseEndpoint>> connector_;
 };
 
-class ServerConnectionFactory : public RefCounted<ServerConnectionFactory> {
+class ServerConnectionFactory : public DualRefCounted<ServerConnectionFactory> {
  public:
-  using RefCounted::RefCounted;
+  using DualRefCounted::DualRefCounted;
   virtual PendingConnection RequestDataConnection() = 0;
 };
 
-class ClientConnectionFactory : public RefCounted<ClientConnectionFactory> {
+class ClientConnectionFactory : public DualRefCounted<ClientConnectionFactory> {
  public:
-  using RefCounted::RefCounted;
+  using DualRefCounted::DualRefCounted;
   virtual PendingConnection Connect(absl::string_view id) = 0;
 };
 

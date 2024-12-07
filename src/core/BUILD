@@ -8175,16 +8175,11 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chaotic_good/pending_connection.h",
     ],
-    external_deps = ["absl/cleanup"],
+    external_deps = ["absl/status:statusor"],
     deps = [
-        "1999",
-        "event_engine_context",
-        "event_engine_tcp_socket_utils",
+        "dual_ref_counted",
         "grpc_promise_endpoint",
-        "inter_activity_latch",
-        "loop",
-        "try_seq",
-        "//:gpr",
+        "//:promise",
     ],
 )
 

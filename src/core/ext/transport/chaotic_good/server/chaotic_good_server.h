@@ -146,9 +146,10 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
       LOG(INFO) << "DataConnectionListener: DESTROY " << this;
     }
 
+    void Orphaned() override;
+
     PendingConnection RequestDataConnection() override;
     void FinishDataConnection(absl::string_view id, PromiseEndpoint endpoint);
-    void Shutdown();
     Duration connection_timeout() const { return connect_timeout_; }
 
    private:

@@ -97,7 +97,6 @@ ChaoticGoodServerListener::ChaoticGoodServerListener(
 ChaoticGoodServerListener::~ChaoticGoodServerListener() {
   LOG(INFO) << "ChaoticGoodServerListener: DESTROY " << this
             << " dcl: " << data_connection_listener_.get();
-  data_connection_listener_->Shutdown();
   if (on_destroy_done_ != nullptr) {
     event_engine_->Run([on_destroy_done = on_destroy_done_]() {
       ExecCtx exec_ctx;
@@ -212,7 +211,7 @@ ChaoticGoodServerListener::DataConnectionListener::RequestDataConnection() {
   auto latch = std::make_shared<PromiseEndpointLatch>();
   auto timeout_task = event_engine_->RunAfter(
       connect_timeout_,
-      [connection_id, self = RefAsSubclass<DataConnectionListener>()]() {
+      [connection_id, self = WeakRefAsSubclass<DataConnectionListener>()]() {
         self->ConnectionTimeout(connection_id);
       });
   pending_connections_.emplace(connection_id,
@@ -227,6 +226,7 @@ ChaoticGoodServerListener::DataConnectionListener::Extract(
   MutexLock lock(&mu_);
   auto ex = pending_connections_.extract(id);
   if (!ex.empty()) {
+    event_engine_->Cancel(ex.mapped().timeout);
     return std::move(ex.mapped().latch);
   }
   return nullptr;
@@ -248,7 +248,7 @@ void ChaoticGoodServerListener::DataConnectionListener::FinishDataConnection(
   }
 }
 
-void ChaoticGoodServerListener::DataConnectionListener::Shutdown() {
+void ChaoticGoodServerListener::DataConnectionListener::Orphaned() {
   absl::flat_hash_map<std::string, PendingConnectionInfo> pending_connections;
   {
     MutexLock lock(&mu_);
