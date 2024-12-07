@@ -173,6 +173,8 @@ class RequestBuffer {
     readers_.erase(reader);
   }
 
+  std::string DebugString(Reader* caller) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
   mutable Mutex mu_;
   Reader* winner_ ABSL_GUARDED_BY(mu_){nullptr};
   State state_ ABSL_GUARDED_BY(mu_){Buffering{}};

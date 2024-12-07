@@ -375,7 +375,7 @@ auto RetryInterceptor::Attempt::ClientToServer() {
             "server_to_client", [self]() { return self->ServerToClient(); });
         return ForEach(
             OutgoingMessages(&self->reader_), [self](MessageHandle message) {
-              return self->initiator_.PushMessage(std::move(message));
+              return self->initiator_.SpawnPushMessage(std::move(message));
             });
       });
 }

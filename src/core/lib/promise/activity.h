@@ -121,9 +121,14 @@ class Waker {
     return wakeable_and_arg_.ActivityDebugTag();
   }
 
-  std::string DebugString() {
+  std::string DebugString() const {
     return absl::StrFormat("Waker{%p, %d}", wakeable_and_arg_.wakeable,
                            wakeable_and_arg_.wakeup_mask);
+  }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const Waker& waker) {
+    sink.Append(waker.DebugString());
   }
 
   // This is for tests to assert that a waker is occupied or not.
@@ -166,6 +171,11 @@ class IntraActivityWaiter {
   void Wake();
 
   std::string DebugString() const;
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const IntraActivityWaiter& waker) {
+    sink.Append(waker.DebugString());
+  }
 
  private:
   WakeupMask wakeups_ = 0;

@@ -1677,12 +1677,15 @@ grpc_cc_library(
     hdrs = [
         "call/request_buffer.h",
     ],
-    external_deps = ["absl/types:optional"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
     deps = [
         "call_spine",
+        "match",
         "message",
         "metadata",
-        "wait_set",
     ],
 )
 
