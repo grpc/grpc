@@ -397,8 +397,8 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     if (pool_->IsShutdown()) {
       if (pool_->IsQuiesced()) break;
     } else {
-      lifeguard_should_shut_down_->WaitForNotificationWithTimeout(
-          absl::Milliseconds(backoff_.NextAttemptDelay().millis()));
+      if(lifeguard_should_shut_down_->WaitForNotificationWithTimeout(
+          absl::Milliseconds(backoff_.NextAttemptDelay().millis()))) break;
     }
     MaybeStartNewThread();
   }
