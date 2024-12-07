@@ -106,8 +106,8 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
-        "//test/core/call/yodel:yodel_test",
         "//src/core:chaotic_good_config",
+        "//test/core/call/yodel:yodel_test",
     ],
 )
 
