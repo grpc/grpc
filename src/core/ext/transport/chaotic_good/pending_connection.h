@@ -48,11 +48,13 @@ class PendingConnection {
 
 class ServerConnectionFactory : public RefCounted<ServerConnectionFactory> {
  public:
+  using RefCounted::RefCounted;
   virtual PendingConnection RequestDataConnection() = 0;
 };
 
 class ClientConnectionFactory : public RefCounted<ClientConnectionFactory> {
  public:
+  using RefCounted::RefCounted;
   virtual PendingConnection Connect(absl::string_view id) = 0;
 };
 

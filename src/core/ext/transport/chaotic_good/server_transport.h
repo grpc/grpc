@@ -80,7 +80,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
  public:
   ChaoticGoodServerTransport(const ChannelArgs& args,
                              PromiseEndpoint control_endpoint, Config config,
-                             RefCountedPtr<ServerConnectionFactory> listener);
+                             RefCountedPtr<ServerConnectionFactory>);
+  ~ChaoticGoodServerTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }

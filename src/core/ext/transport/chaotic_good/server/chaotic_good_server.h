@@ -141,7 +141,10 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
         Duration connect_timeout,
         std::shared_ptr<grpc_event_engine::experimental::EventEngine>
             event_engine);
-    ~DataConnectionListener() override { CHECK(shutdown_); }
+    ~DataConnectionListener() override {
+      CHECK(shutdown_);
+      LOG(INFO) << "DataConnectionListener: DESTROY " << this;
+    }
 
     PendingConnection RequestDataConnection() override;
     void FinishDataConnection(absl::string_view id, PromiseEndpoint endpoint);
