@@ -106,7 +106,7 @@ class AutoScaler : public RefCounted<AutoScaler> {
    public:
   };
 
-  AutoScaler(std::unique_ptr<SubjectInterface> subject, Options options)
+  AutoScaler(std::unique_ptr<SubjectInterface> subject, Options)
       : subject_(std::move(subject)) {}
 
   Promise<Empty> ControlLoop();
