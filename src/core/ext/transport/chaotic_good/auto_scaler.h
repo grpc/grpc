@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CHAOTIC_GOOD_AUTOSCALER_H
-#define CHAOTIC_GOOD_AUTOSCALER_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_AUTO_SCALER_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_AUTO_SCALER_H
 
 #include "absl/container/flat_hash_map.h"
 #include "src/core/lib/promise/promise.h"
@@ -153,4 +153,4 @@ class AutoScaler : public RefCounted<AutoScaler> {
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_AUTO_SCALER_H
