@@ -1710,6 +1710,9 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx retry_exceeds_buffer_size_in_delay_test)
   add_dependencies(buildtests_cxx retry_exceeds_buffer_size_in_initial_batch_test)
   add_dependencies(buildtests_cxx retry_exceeds_buffer_size_in_subsequent_batch_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx retry_interceptor_test)
+  endif()
   add_dependencies(buildtests_cxx retry_lb_drop_test)
   add_dependencies(buildtests_cxx retry_lb_fail_test)
   add_dependencies(buildtests_cxx retry_non_retriable_status_before_trailers_test)
@@ -27731,6 +27734,59 @@ target_link_libraries(retry_exceeds_buffer_size_in_subsequent_batch_test
 )
 
 
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(retry_interceptor_test
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    test/core/call/yodel/test_main.cc
+    test/core/call/yodel/yodel_test.cc
+    test/core/client_channel/retry_interceptor_test.cc
+    test/core/event_engine/event_engine_test_utils.cc
+    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(retry_interceptor_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
+  target_compile_features(retry_interceptor_test PUBLIC cxx_std_14)
+  target_include_directories(retry_interceptor_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(retry_interceptor_test
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    gtest
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    grpc_test_util
+  )
+
+
+endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
