@@ -130,6 +130,7 @@ class RetryInterceptor : public Interceptor {
     std::string DebugTag() const;
 
    private:
+    auto ClientToServer();
     auto ServerToClient();
     auto ServerToClientGotInitialMetadata(ServerMetadataHandle md);
     auto ServerToClientGotTrailersOnlyResponse();

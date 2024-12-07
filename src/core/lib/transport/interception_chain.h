@@ -90,6 +90,8 @@ class HijackedCall final {
 
 class Interceptor : public UnstartedCallDestination {
  public:
+  using UnstartedCallDestination::UnstartedCallDestination;
+
   void StartCall(UnstartedCallHandler unstarted_call_handler) final {
     unstarted_call_handler.AddCallStack(filter_stack_);
     InterceptCall(std::move(unstarted_call_handler));

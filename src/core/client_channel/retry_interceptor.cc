@@ -357,29 +357,32 @@ void RetryInterceptor::Attempt::Commit() {
   call_->request_buffer()->Commit(reader());
 }
 
+auto RetryInterceptor::Attempt::ClientToServer() {
+  return TrySeq(
+      reader_.PullClientInitialMetadata(),
+      [self = Ref()](ClientMetadataHandle metadata) {
+        int num_attempts_completed = self->call_->num_attempts_completed();
+        if (GPR_UNLIKELY(num_attempts_completed > 0)) {
+          metadata->Set(GrpcPreviousRpcAttemptsMetadata(),
+                        num_attempts_completed);
+        } else {
+          metadata->Remove(GrpcPreviousRpcAttemptsMetadata());
+        }
+        self->initiator_ = self->call_->interceptor()->MakeChildCall(
+            std::move(metadata), self->call_->call_handler()->arena()->Ref());
+        self->call_->call_handler()->AddChildCall(self->initiator_);
+        self->initiator_.SpawnGuarded(
+            "server_to_client", [self]() { return self->ServerToClient(); });
+        return ForEach(
+            OutgoingMessages(&self->reader_), [self](MessageHandle message) {
+              return self->initiator_.PushMessage(std::move(message));
+            });
+      });
+}
+
 void RetryInterceptor::Attempt::Start() {
-  call_->call_handler()->SpawnGuarded("buffer_to_server", [self = Ref()]() {
-    return TrySeq(
-        self->reader_.PullClientInitialMetadata(),
-        [self](ClientMetadataHandle metadata) {
-          int num_attempts_completed = self->call_->num_attempts_completed();
-          if (GPR_UNLIKELY(num_attempts_completed > 0)) {
-            metadata->Set(GrpcPreviousRpcAttemptsMetadata(),
-                          num_attempts_completed);
-          } else {
-            metadata->Remove(GrpcPreviousRpcAttemptsMetadata());
-          }
-          self->initiator_ = self->call_->interceptor()->MakeChildCall(
-              std::move(metadata), self->call_->call_handler()->arena()->Ref());
-          self->call_->call_handler()->AddChildCall(self->initiator_);
-          self->initiator_.SpawnGuarded(
-              "server_to_client", [self]() { return self->ServerToClient(); });
-          return ForEach(
-              OutgoingMessages(&self->reader_), [self](MessageHandle message) {
-                return self->initiator_.PushMessage(std::move(message));
-              });
-        });
-  });
+  call_->call_handler()->SpawnGuardedUntilCallCompletes(
+      "buffer_to_server", [self = Ref()]() { return self->ClientToServer(); });
 }
 
 void RetryInterceptor::Attempt::Cancel() { initiator_.SpawnCancel(); }
