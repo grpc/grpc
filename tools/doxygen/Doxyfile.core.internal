@@ -903,6 +903,7 @@ src/core/client_channel/backup_poller.cc \
 src/core/client_channel/backup_poller.h \
 src/core/client_channel/client_channel.cc \
 src/core/client_channel/client_channel.h \
+src/core/client_channel/client_channel_args.h \
 src/core/client_channel/client_channel_factory.cc \
 src/core/client_channel/client_channel_factory.h \
 src/core/client_channel/client_channel_filter.cc \
@@ -2209,7 +2210,6 @@ src/core/lib/promise/sleep.h \
 src/core/lib/promise/status_flag.h \
 src/core/lib/promise/try_join.h \
 src/core/lib/promise/try_seq.h \
-src/core/lib/promise/wait_set.h \
 src/core/lib/resource_quota/api.cc \
 src/core/lib/resource_quota/api.h \
 src/core/lib/resource_quota/arena.cc \
