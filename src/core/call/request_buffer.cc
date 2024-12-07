@@ -132,7 +132,6 @@ RequestBuffer::Reader::PollPullClientInitialMetadata() {
 Poll<ValueOrFailure<absl::optional<MessageHandle>>>
 RequestBuffer::Reader::PollPullMessage() {
   ReleasableMutexLock lock(&buffer_->mu_);
-  LOG(INFO) << "PollPullMessage: " << buffer_->DebugString(this);
   if (buffer_->winner_ != nullptr && buffer_->winner_ != this) {
     error_ = absl::CancelledError("Another call was chosen");
     return Failure{};
@@ -201,7 +200,8 @@ std::string RequestBuffer::DebugString(Reader* caller)
                 absl::StrJoin(
                     buffered.messages, ",",
                     [](std::string* output, const MessageHandle& hdl) {
-                      absl::StrAppend(output, hdl->DebugString());
+                      absl::StrAppend(
+                          output, hdl != nullptr ? hdl->DebugString() : "null");
                     }),
                 "]");
           },
