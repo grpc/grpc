@@ -18,4 +18,4 @@
 // Channel arg key for server URI string.
 #define GRPC_ARG_SERVER_URI "grpc.server_uri"
 
-#endif
+#endif  // GRPC_SRC_CORE_CLIENT_CHANNEL_CLIENT_CHANNEL_ARGS_H

@@ -23,6 +23,8 @@ grpc_fuzz_test(
         "fuzztest_main",
         "gtest",
     ],
-    deps = ["//src/core:retry_interceptor",
-    "//src/core:json_reader"],
+    deps = [
+        "//src/core:json_reader",
+        "//src/core:retry_interceptor",
+    ],
 )

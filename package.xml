@@ -118,6 +118,7 @@
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/client_channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_filter.cc" role="src" />
@@ -1417,7 +1418,6 @@
     <file baseinstalldir="/" name="src/core/lib/promise/status_flag.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/try_join.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/try_seq.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/wait_set.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.cc" role="src" />
