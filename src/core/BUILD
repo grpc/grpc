@@ -689,6 +689,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "map",
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
     language = "c++",
     public_hdrs = ["lib/promise/map.h"],
     deps = [
