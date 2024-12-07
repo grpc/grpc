@@ -72,8 +72,8 @@ grpc_yodel_simple_test(
     ],
     deps = [
         "//src/core:chaotic_good_auto_scaler",
-        "//test/core/call/yodel:yodel_test",
         "//src/core:inter_activity_latch",
+        "//test/core/call/yodel:yodel_test",
     ],
 )
 
