@@ -30,6 +30,7 @@ load(
 licenses(["reciprocal"])
 
 package(
+    default_applicable_licenses = [":license"],
     default_visibility = ["//visibility:public"],
     features = [
         "-parse_headers",
