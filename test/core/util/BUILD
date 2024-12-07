@@ -20,7 +20,6 @@ load(
     "grpc_fuzzer",
     "grpc_proto_fuzzer",
 )
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
