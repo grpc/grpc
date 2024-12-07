@@ -96,7 +96,7 @@ class AutoScalerTest : public YodelTest {
                               size_t samples = 1000) {
     absl::BitGen gen;
     TDigest digest(chaotic_good::AutoScaler::Metrics::compression());
-    for (int i = 0; i < samples; i++) {
+    for (size_t i = 0; i < samples; i++) {
       digest.Add(absl::Gaussian<double>(gen, median, stddev));
     }
     return digest;
@@ -118,10 +118,10 @@ class AutoScalerTest : public YodelTest {
 
     virtual void AddConnection() { Crash("unexpected AddConnection"); }
     virtual void RemoveConnection() { Crash("unexpected RemoveConnection"); }
-    virtual void ParkConnection(uint32_t id) {
+    virtual void ParkConnection(uint32_t) {
       Crash("unexpected ParkConnection");
     }
-    virtual void UnparkConnection(uint32_t id) {
+    virtual void UnparkConnection(uint32_t) {
       Crash("unexpected UnparkConnection");
     }
     virtual chaotic_good::AutoScaler::Metrics MeasureOverallLatency() {
