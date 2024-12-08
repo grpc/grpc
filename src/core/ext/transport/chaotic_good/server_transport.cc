@@ -304,7 +304,7 @@ auto ChaoticGoodServerTransport::ReadOneFrame(
                   LOG_EVERY_N_SEC(INFO, 10)
                       << "Bad frame type: "
                       << incoming_frame.header().ToString();
-                  return absl::OkStatus();
+                  return ImmediateOkStatus();
                 }));
           },
           []() -> LoopCtl<absl::Status> { return Continue{}; }));
