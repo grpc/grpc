@@ -97,6 +97,7 @@ class MockEndpoint
 class MockClientConnectionFactory : public ClientConnectionFactory {
  public:
   MOCK_METHOD(PendingConnection, Connect, (absl::string_view), (override));
+  void Orphaned() final {}
 };
 
 struct MockPromiseEndpoint {

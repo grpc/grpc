@@ -60,6 +60,7 @@ namespace testing {
 class MockClientConnectionFactory : public ClientConnectionFactory {
  public:
   MOCK_METHOD(PendingConnection, Connect, (absl::string_view), (override));
+  void Orphaned() final {}
 };
 
 ClientMetadataHandle TestInitialMetadata() {

@@ -105,6 +105,7 @@ class MockCallDestination : public UnstartedCallDestination {
 class MockServerConnectionFactory : public ServerConnectionFactory {
  public:
   MOCK_METHOD(PendingConnection, RequestDataConnection, (), (override));
+  void Orphaned() final {}
 };
 
 TEST_F(TransportTest, ReadAndWriteOneMessage) {
