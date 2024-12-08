@@ -110,6 +110,9 @@ class CallState {
   // Return true if server trailing metadata has been pushed *and* that push was
   // a cancellation.
   bool WasCancelledPushed() const;
+  // Resolves after server trailing metadata has been pushed, regardless of
+  // whether the call was cancelled.
+  Poll<Empty> PollServerTrailingMetadataWasPushed();
 
   /////////////////////////////////////////////////////////////////////////////
   // Debug
@@ -1052,6 +1055,24 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool CallState::WasCancelledPushed()
     case ServerTrailingMetadataState::kPushedCancel:
     case ServerTrailingMetadataState::kPulledCancel:
       return true;
+  }
+  Crash("Unreachable");
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<Empty>
+CallState::PollServerTrailingMetadataWasPushed() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] PollWasCancelled: "
+      << GRPC_DUMP_ARGS(this, server_trailing_metadata_state_);
+  switch (server_trailing_metadata_state_) {
+    case ServerTrailingMetadataState::kNotPushed: {
+      return server_trailing_metadata_waiter_.pending();
+    }
+    case ServerTrailingMetadataState::kPushed:
+    case ServerTrailingMetadataState::kPushedCancel:
+    case ServerTrailingMetadataState::kPulled:
+    case ServerTrailingMetadataState::kPulledCancel:
+      return Empty{};
   }
   Crash("Unreachable");
 }

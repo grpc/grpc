@@ -143,11 +143,11 @@ class CallSpine final : public Party {
   template <typename StatusType>
   void CancelIfFailed(const StatusType& r) {
     if (!IsStatusOk(r)) {
-      auto md = StatusCast<ServerMetadataHandle>(r);
-      md->Set(GrpcCallWasCancelled(), true);
-      PushServerTrailingMetadata(std::move(md));
+      Cancel();
     }
   }
+
+  void Cancel() { call_filters().Cancel(); }
 
   // Spawn a promise that returns Empty{} and save some boilerplate handling
   // that detail.
@@ -243,23 +243,27 @@ class CallSpine final : public Party {
         });
   }
 
+  void SpawnCancel() {
+    SpawnInfallible("cancel", [self = RefAsSubclass<CallSpine>()]() {
+      self->call_filters().Cancel();
+    });
+  }
+
   void AddChildCall(RefCountedPtr<CallSpine> child_call) {
     child_calls_.push_back(std::move(child_call));
     if (child_calls_.size() == 1) {
-      SpawnInfallible("check_cancellation",
-                      [self = RefAsSubclass<CallSpine>()]() mutable {
-                        auto was_cancelled = self->WasCancelled();
-                        return Map(std::move(was_cancelled),
-                                   [self = std::move(self)](bool cancelled) {
-                                     if (cancelled) {
-                                       for (auto& child : self->child_calls_) {
-                                         child->SpawnPushServerTrailingMetadata(
-                                             CancelledServerMetadataFromStatus(
-                                                 absl::CancelledError()));
-                                       }
-                                     }
-                                   });
-                      });
+      SpawnInfallible(
+          "check_cancellation", [self = RefAsSubclass<CallSpine>()]() mutable {
+            auto was_completed =
+                self->call_filters().ServerTrailingMetadataWasPushed();
+            return Map(std::move(was_completed),
+                       [self = std::move(self)](Empty) {
+                         for (auto& child : self->child_calls_) {
+                           child->SpawnCancel();
+                         }
+                         return Empty{};
+                       });
+          });
     }
   }
 
@@ -314,19 +318,23 @@ class CallInitiator {
     return spine_->PullServerTrailingMetadata();
   }
 
-  void Cancel(absl::Status error = absl::CancelledError()) {
+  void Cancel(absl::Status error) {
     CHECK(!error.ok());
     auto status = ServerMetadataFromStatus(error);
     status->Set(GrpcCallWasCancelled(), true);
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
-  void SpawnCancel(absl::Status error = absl::CancelledError()) {
+  void SpawnCancel(absl::Status error) {
     CHECK(!error.ok());
     auto status = ServerMetadataFromStatus(error);
     status->Set(GrpcCallWasCancelled(), true);
     spine_->SpawnPushServerTrailingMetadata(std::move(status));
   }
+
+  void Cancel() { spine_->Cancel(); }
+
+  void SpawnCancel() { spine_->SpawnCancel(); }
 
   GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
     return spine_->OnDone(std::move(fn));
