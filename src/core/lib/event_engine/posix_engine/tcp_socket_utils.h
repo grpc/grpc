@@ -16,7 +16,6 @@
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
 
 #include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
@@ -28,6 +27,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -59,7 +59,6 @@ struct PosixTcpOptions {
   static constexpr size_t kDefaultSendBytesThreshold = 16 * 1024;
   // Let the system decide the proper buffer size.
   static constexpr int kReadBufferSizeUnset = -1;
-  static constexpr int kDscpNotSet = -1;
   int tcp_read_chunk_size = kDefaultReadChunkSize;
   int tcp_min_read_chunk_size = kDefaultMinReadChunksize;
   int tcp_max_read_chunk_size = kDefaultMaxReadChunksize;
@@ -71,7 +70,7 @@ struct PosixTcpOptions {
   int keep_alive_timeout_ms = 0;
   bool expand_wildcard_addrs = false;
   bool allow_reuse_port = false;
-  int dscp = kDscpNotSet;
+  int dscp = SystemApi::kDscpNotSet;
   grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota;
   struct grpc_socket_mutator* socket_mutator = nullptr;
   grpc_event_engine::experimental::MemoryAllocatorFactory*
@@ -147,6 +146,7 @@ struct PosixTcpOptions {
 };
 
 PosixTcpOptions TcpOptionsFromEndpointConfig(
+    const SystemApi& system_api,
     const grpc_event_engine::experimental::EndpointConfig& config);
 
 // a wrapper for accept or accept4
@@ -160,80 +160,27 @@ void UnlinkIfUnixDomainSocket(
 
 class PosixSocketWrapper {
  public:
-  explicit PosixSocketWrapper(int fd) : fd_(fd) { CHECK_GT(fd_, 0); }
+  PosixSocketWrapper() = default;
 
-  PosixSocketWrapper() : fd_(-1) {};
+  explicit PosixSocketWrapper(FileDescriptor fd) : fd_(fd) {
+    CHECK(fd_.ready());
+  }
 
   ~PosixSocketWrapper() = default;
 
-  // Instruct the kernel to wait for specified number of bytes to be received on
-  // the socket before generating an interrupt for packet receive. If the call
-  // succeeds, it returns the number of bytes (wait threshold) that was actually
-  // set.
-  absl::StatusOr<int> SetSocketRcvLowat(int bytes);
-
-  // Set socket to use zerocopy
-  absl::Status SetSocketZeroCopy();
-
-  // Set socket to non blocking mode
-  absl::Status SetSocketNonBlocking(int non_blocking);
-
-  // Set socket to close on exec
-  absl::Status SetSocketCloexec(int close_on_exec);
-
-  // Set socket to reuse old addresses
-  absl::Status SetSocketReuseAddr(int reuse);
-
-  // Disable nagle algorithm
-  absl::Status SetSocketLowLatency(int low_latency);
-
-  // Set SO_REUSEPORT
-  absl::Status SetSocketReusePort(int reuse);
-
-  // Set Differentiated Services Code Point (DSCP)
-  absl::Status SetSocketDscp(int dscp);
-
-  // Override default Tcp user timeout values if necessary.
-  void TrySetSocketTcpUserTimeout(const PosixTcpOptions& options,
-                                  bool is_client);
-
-  // Tries to set SO_NOSIGPIPE if available on this platform.
-  // If SO_NO_SIGPIPE is not available, returns not OK status.
-  absl::Status SetSocketNoSigpipeIfPossible();
-
-  // Tries to set IP_PKTINFO if available on this platform. If IP_PKTINFO is not
-  // available, returns not OK status.
-  absl::Status SetSocketIpPktInfoIfPossible();
-
-  // Tries to set IPV6_RECVPKTINFO if available on this platform. If
-  // IPV6_RECVPKTINFO is not available, returns not OK status.
-  absl::Status SetSocketIpv6RecvPktInfoIfPossible();
-
-  // Tries to set the socket's send buffer to given size.
-  absl::Status SetSocketSndBuf(int buffer_size_bytes);
-
-  // Tries to set the socket's receive buffer to given size.
-  absl::Status SetSocketRcvBuf(int buffer_size_bytes);
-
-  // Tries to set the socket using a grpc_socket_mutator
-  absl::Status SetSocketMutator(grpc_fd_usage usage,
-                                grpc_socket_mutator* mutator);
-
-  // Extracts the first socket mutator from config if any and applies on the fd.
-  absl::Status ApplySocketMutatorInOptions(grpc_fd_usage usage,
-                                           const PosixTcpOptions& options);
-
   // Return LocalAddress as EventEngine::ResolvedAddress
-  absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress();
+  absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress(
+      const SystemApi& system_api);
 
   // Return PeerAddress as EventEngine::ResolvedAddress
-  absl::StatusOr<EventEngine::ResolvedAddress> PeerAddress();
+  absl::StatusOr<EventEngine::ResolvedAddress> PeerAddress(
+      const SystemApi& system_api);
 
   // Return LocalAddress as string
-  absl::StatusOr<std::string> LocalAddressString();
+  absl::StatusOr<std::string> LocalAddressString(const SystemApi& system_api);
 
   // Return PeerAddress as string
-  absl::StatusOr<std::string> PeerAddressString();
+  absl::StatusOr<std::string> PeerAddressString(const SystemApi& system_api);
 
   // An enum to keep track of IPv4/IPv6 socket modes.
 
@@ -253,17 +200,9 @@ class PosixSocketWrapper {
   };
 
   // Returns the underlying file-descriptor.
-  int Fd() const { return fd_; }
+  FileDescriptor Fd() const { return fd_; }
 
   // Static methods
-
-  // Configure default values for tcp user timeout to be used by client
-  // and server side sockets.
-  static void ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
-                                             bool is_client);
-
-  // Return true if SO_REUSEPORT is supported
-  static bool IsSocketReusePortSupported();
 
   // Returns true if this system can create AF_INET6 sockets bound to ::1.
   // The value is probed once, and cached for the life of the process.
@@ -289,7 +228,9 @@ class PosixSocketWrapper {
 
   // The dsmode output indicates which address family was actually created.
   static absl::StatusOr<PosixSocketWrapper> CreateDualStackSocket(
-      std::function<int(int /*domain*/, int /*type*/, int /*protocol*/)>
+      const SystemApi& posix_apis,
+      std::function<FileDescriptor(int /*domain*/, int /*type*/,
+                                   int /*protocol*/)>
           socket_factory,
       const experimental::EventEngine::ResolvedAddress& addr, int type,
       int protocol, DSMode& dsmode);
@@ -309,19 +250,27 @@ class PosixSocketWrapper {
   //
   static absl::StatusOr<PosixSocketCreateResult>
   CreateAndPrepareTcpClientSocket(
-      const PosixTcpOptions& options,
+      const SystemApi& posix_apis, const PosixTcpOptions& options,
       const EventEngine::ResolvedAddress& target_addr);
 
  private:
-  int fd_;
+  FileDescriptor fd_;
 };
 
 struct PosixSocketWrapper::PosixSocketCreateResult {
-  PosixSocketWrapper sock;
+  FileDescriptor sock;
   EventEngine::ResolvedAddress mapped_target_addr;
 };
 
 bool SetSocketDualStack(int fd);
+
+// Tries to set the socket using a grpc_socket_mutator
+absl::Status SetSocketMutator(FileDescriptor fd, grpc_fd_usage usage,
+                              grpc_socket_mutator* mutator);
+
+// Extracts the first socket mutator from config if any and applies on the fd.
+absl::Status ApplySocketMutatorInOptions(FileDescriptor fd, grpc_fd_usage usage,
+                                         const PosixTcpOptions& options);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

@@ -38,8 +38,8 @@ class PollEventHandle;
 class PollPoller : public PosixEventPoller,
                    public std::enable_shared_from_this<PollPoller> {
  public:
-  explicit PollPoller(Scheduler* scheduler);
-  PollPoller(Scheduler* scheduler, bool use_phony_poll);
+  PollPoller(Scheduler* scheduler, SystemApi* system_api,
+             bool use_phony_poll = false);
   EventHandle* CreateHandle(int fd, absl::string_view name,
                             bool track_err) override;
   Poller::WorkResult Work(
@@ -58,6 +58,8 @@ class PollPoller : public PosixEventPoller,
   void PostforkChild() override;
 
   void Close();
+
+  SystemApi* GetSystemApi() const override { return system_api_; }
 
  private:
   void KickExternal(bool ext);
@@ -82,6 +84,7 @@ class PollPoller : public PosixEventPoller,
   PollEventHandle* poll_handles_list_head_ ABSL_GUARDED_BY(mu_) = nullptr;
   std::unique_ptr<WakeupFd> wakeup_fd_;
   bool closed_ ABSL_GUARDED_BY(mu_);
+  SystemApi* system_api_;
 };
 
 // Return an instance of a poll based poller tied to the specified scheduler.
@@ -89,6 +92,7 @@ class PollPoller : public PosixEventPoller,
 // non-polling and any attempt to schedule a blocking poll will result in a
 // crash failure.
 std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
+                                           SystemApi* system_api,
                                            bool use_phony_poll);
 
 }  // namespace experimental

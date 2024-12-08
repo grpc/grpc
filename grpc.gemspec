@@ -1201,6 +1201,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/posix_engine/posix_engine_listener.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h )
+  s.files += %w( src/core/lib/event_engine/posix_engine/posix_system_api.cc )
+  s.files += %w( src/core/lib/event_engine/posix_engine/posix_system_api.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/tcp_socket_utils.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/timer.cc )
