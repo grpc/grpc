@@ -364,7 +364,7 @@ class YodelTest : public ::testing::Test {
 
   class NoContext {
    public:
-    NoContext(grpc_event_engine::experimental::EventEngine* ee) {
+    explicit NoContext(grpc_event_engine::experimental::EventEngine* ee) {
       auto arena = SimpleArenaAllocator()->MakeArena();
       arena->SetContext(ee);
       party_ = Party::Make(std::move(arena));
