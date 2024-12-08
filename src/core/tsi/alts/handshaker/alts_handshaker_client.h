@@ -42,9 +42,6 @@
 ///
 class AltsHandshakerClient {
  public:
-  // TODO (What is this constant used for?)
-  constexpr size_t kAltsAes128GcmRekeyKeyLength = 44;
-
   // Main struct for ALTS TSI handshaker.
   struct alts_tsi_handshaker;
 
@@ -157,6 +154,15 @@ class AltsHandshakerClient {
   //
   // Exposed for testing purposes only.
   size_t MaxNumberOfConcurrentHandshakes();
+
+ private:
+  constexpr size_t kAltsAes128GcmRekeyKeyLength = 44;
+  constexpr int kHandshakerClientOpNum = 4;
+  constexpr char kMaxConcurrentStreamsEnvironmentVariable[] =
+      "GRPC_ALTS_MAX_CONCURRENT_HANDSHAKES";
+
+  struct recv_message_result;
+  struct alts_grpc_handshaker_client;
 };
 
 #endif  // GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H
