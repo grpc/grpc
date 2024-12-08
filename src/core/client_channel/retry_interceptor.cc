@@ -278,7 +278,7 @@ std::string RetryInterceptor::Call::DebugTag() {
 // RetryInterceptor::Attempt
 
 RetryInterceptor::Attempt::Attempt(RefCountedPtr<Call> call)
-    : reader_(call->request_buffer()), call_(std::move(call)) {
+    : call_(std::move(call)), reader_(call_->request_buffer()) {
   GRPC_TRACE_LOG(retry, INFO) << DebugTag() << " retry attempt created";
 }
 
