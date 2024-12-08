@@ -40,23 +40,14 @@
 
 #define TSI_ALTS_INITIAL_BUFFER_SIZE 256
 
-const int kHandshakerClientOpNum = 4;
-const char kMaxConcurrentStreamsEnvironmentVariable[] =
-    "GRPC_ALTS_MAX_CONCURRENT_HANDSHAKES";
-
-struct alts_handshaker_client {
-  const alts_handshaker_client_vtable* vtable;
-};
-
-struct recv_message_result {
+AltsHandshakerClient::recv_message_result {
   tsi_result status;
   const unsigned char* bytes_to_send;
   size_t bytes_to_send_size;
   tsi_handshaker_result* result;
 };
 
-typedef struct alts_grpc_handshaker_client {
-  alts_handshaker_client base;
+AltsHandshakerClient::alts_grpc_handshaker_client {
   // One ref is held by the entity that created this handshaker_client, and
   // another ref is held by the pending RECEIVE_STATUS_ON_CLIENT op.
   gpr_refcount refs;
@@ -113,7 +104,7 @@ typedef struct alts_grpc_handshaker_client {
   size_t max_frame_size;
   // If non-null, will be populated with an error string upon error.
   std::string* error;
-} alts_grpc_handshaker_client;
+}
 
 static void handshaker_client_send_buffer_destroy(
     alts_grpc_handshaker_client* client) {
@@ -903,7 +894,7 @@ tsi_result alts_handshaker_client_start_server(alts_handshaker_client* client,
   return TSI_INVALID_ARGUMENT;
 }
 
-tsi_result alts_handshaker_client_next(alts_handshaker_client* client,
+tsi_result AltsHandshakerClient::alts_handshaker_client_next(alts_handshaker_client* client,
                                        grpc_slice* bytes_received) {
   if (client != nullptr && client->vtable != nullptr &&
       client->vtable->next != nullptr) {
@@ -913,14 +904,14 @@ tsi_result alts_handshaker_client_next(alts_handshaker_client* client,
   return TSI_INVALID_ARGUMENT;
 }
 
-void alts_handshaker_client_shutdown(alts_handshaker_client* client) {
+void AltsHandshakerClient::alts_handshaker_client_shutdown(alts_handshaker_client* client) {
   if (client != nullptr && client->vtable != nullptr &&
       client->vtable->shutdown != nullptr) {
     client->vtable->shutdown(client);
   }
 }
 
-void alts_handshaker_client_destroy(alts_handshaker_client* c) {
+void AltsHandshakerClient::alts_handshaker_client_destroy(alts_handshaker_client* c) {
   if (c != nullptr) {
     alts_grpc_handshaker_client* client =
         reinterpret_cast<alts_grpc_handshaker_client*>(c);
@@ -928,7 +919,7 @@ void alts_handshaker_client_destroy(alts_handshaker_client* c) {
   }
 }
 
-size_t MaxNumberOfConcurrentHandshakes() {
+size_t AltsHandshakerClient::MaxNumberOfConcurrentHandshakes() {
   size_t max_concurrent_handshakes = 100;
   absl::optional<std::string> env_var_max_concurrent_handshakes =
       grpc_core::GetEnv(kMaxConcurrentStreamsEnvironmentVariable);
