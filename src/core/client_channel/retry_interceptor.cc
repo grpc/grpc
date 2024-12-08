@@ -223,18 +223,18 @@ auto RetryInterceptor::Call::ClientToBuffer() {
       },
       [self = Ref()](size_t buffered) {
         self->MaybeCommit(buffered);
-        return ForEach(MessagesFrom(self->call_handler_),
-                       [self](MessageHandle message) {
-                         GRPC_TRACE_LOG(retry, INFO)
-                             << self->DebugTag() << " got client message "
-                             << message->DebugString();
-                         return TrySeq(self->request_buffer_.PushMessage(
-                                           std::move(message)),
-                                       [self](size_t buffered) {
-                                         self->MaybeCommit(buffered);
-                                         return absl::OkStatus();
-                                       });
-                       });
+        return ForEach(
+            MessagesFrom(self->call_handler_), [self](MessageHandle message) {
+              GRPC_TRACE_LOG(retry, INFO)
+                  << self->DebugTag() << " got client message "
+                  << message->DebugString();
+              return TrySeq(
+                  self->request_buffer_.PushMessage(std::move(message)),
+                  [self](size_t buffered) {
+                    self->MaybeCommit(buffered);
+                    return absl::OkStatus();
+                  });
+            });
       });
 }
 
