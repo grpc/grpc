@@ -364,6 +364,12 @@ class YodelTest : public ::testing::Test {
 
   class NoContext {
    public:
+    NoContext(grpc_event_engine::experimental::EventEngine* ee) {
+      auto arena = SimpleArenaAllocator()->MakeArena();
+      arena->SetContext(ee);
+      party_ = Party::Make(std::move(arena));
+    }
+
     template <typename PromiseFactory>
     void SpawnInfallible(absl::string_view name,
                          PromiseFactory promise_factory) {
@@ -381,14 +387,14 @@ class YodelTest : public ::testing::Test {
     }
 
    private:
-    RefCountedPtr<Party> party_ =
-        Party::Make(SimpleArenaAllocator()->MakeArena());
+    RefCountedPtr<Party> party_;
   };
 
   template <typename... Actions>
   void SpawnTestSeqWithoutContext(
       yodel_detail::NameAndLocation name_and_location, Actions... actions) {
-    SpawnTestSeq(NoContext{}, name_and_location, std::move(actions)...);
+    SpawnTestSeq(NoContext{event_engine().get()}, name_and_location,
+                 std::move(actions)...);
   }
 
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
