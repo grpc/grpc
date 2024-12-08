@@ -293,7 +293,7 @@ auto RetryInterceptor::Attempt::ServerToClientGotInitialMetadata(
       committed,
       [&]() {
         call_->call_handler()->SpawnPushServerInitialMetadata(std::move(md));
-        return Seq(ForEach(MessagesFrom(&initiator_),
+        return Seq(ForEach(MessagesFrom(initiator_),
                            [call = call_](MessageHandle message) {
                              GRPC_TRACE_LOG(retry, INFO)
                                  << call->DebugTag() << " got server message "
