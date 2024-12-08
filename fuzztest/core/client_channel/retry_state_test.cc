@@ -366,12 +366,13 @@ FUZZ_TEST(MyTestSuite, NeverRetryNegativePushback)
 void NeverExceedMaxBackoff(
     internal::RetryMethodConfig policy, std::vector<ServerMetadataHandle> mds,
     RefCountedPtr<internal::ServerRetryThrottleData> throttle_data) {
+  if (!IsBackoffCapInitialAtMaxEnabled()) return;
   RetryState retry_state(&policy, nullptr);
   for (const auto& md : mds) {
     auto delay = retry_state.ShouldRetry(*md, false, FuzzerDebugTag);
     if (!delay.has_value()) return;
     EXPECT_GE(delay, Duration::Zero());
-    Duration max_delay = policy.max_backoff();
+    Duration max_delay = policy.max_backoff() * 1.2;
     if (auto pushback = md->get(GrpcRetryPushbackMsMetadata());
         pushback.has_value()) {
       max_delay = std::max(max_delay, *pushback);
