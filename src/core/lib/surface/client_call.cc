@@ -348,12 +348,12 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
     auto out_error_string = op->data.recv_status_on_client.error_string;
     auto out_trailing_metadata =
         op->data.recv_status_on_client.trailing_metadata;
-    auto make_read_trailing_metadata = [this, out_status, out_status_details,
-                                        out_error_string,
+    auto make_read_trailing_metadata = [self = WeakRef(), out_status,
+                                        out_status_details, out_error_string,
                                         out_trailing_metadata]() {
-      return Map(started_call_initiator_.PullServerTrailingMetadata(),
-                 [self = Ref(), out_status, out_status_details,
-                  out_error_string, out_trailing_metadata](
+      return Map(self->started_call_initiator_.PullServerTrailingMetadata(),
+                 [self, out_status, out_status_details, out_error_string,
+                  out_trailing_metadata](
                      ServerMetadataHandle server_trailing_metadata) {
                    self->OnReceivedStatus(std::move(server_trailing_metadata),
                                           out_status, out_status_details,
