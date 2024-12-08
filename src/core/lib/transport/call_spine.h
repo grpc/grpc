@@ -527,7 +527,7 @@ CallInitiatorAndHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata, RefCountedPtr<Arena> arena);
 
 template <typename CallHalf>
-auto OutgoingMessages(CallHalf h) {
+auto MessagesFrom(CallHalf h) {
   struct Wrapper {
     CallHalf h;
     auto Next() { return h.PullMessage(); }
@@ -536,7 +536,7 @@ auto OutgoingMessages(CallHalf h) {
 }
 
 template <typename CallHalf>
-auto OutgoingMessages(CallHalf* h) {
+auto MessagesFrom(CallHalf* h) {
   struct Wrapper {
     CallHalf* h;
     auto Next() { return h->PullMessage(); }

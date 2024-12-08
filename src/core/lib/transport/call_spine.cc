@@ -30,7 +30,7 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
   // Read messages from handler into initiator.
   call_handler.SpawnInfallible("read_messages", [call_handler,
                                                  call_initiator]() mutable {
-    return Seq(ForEach(OutgoingMessages(call_handler),
+    return Seq(ForEach(MessagesFrom(call_handler),
                        [call_initiator](MessageHandle msg) mutable {
                          // Need to spawn a job into the initiator's activity to
                          // push the message in.
@@ -60,7 +60,7 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                                call_handler.SpawnPushServerInitialMetadata(
                                    std::move(*md));
                                return ForEach(
-                                   OutgoingMessages(call_initiator),
+                                   MessagesFrom(call_initiator),
                                    [call_handler](MessageHandle msg) mutable {
                                      return call_handler.SpawnPushMessage(
                                          std::move(msg));

@@ -223,7 +223,7 @@ auto RetryInterceptor::Call::ClientToBuffer() {
       },
       [self = Ref()](size_t buffered) {
         self->MaybeCommit(buffered);
-        return ForEach(OutgoingMessages(self->call_handler_),
+        return ForEach(MessagesFrom(self->call_handler_),
                        [self](MessageHandle message) {
                          GRPC_TRACE_LOG(retry, INFO)
                              << self->DebugTag() << " got client message "
@@ -293,7 +293,7 @@ auto RetryInterceptor::Attempt::ServerToClientGotInitialMetadata(
       committed,
       [&]() {
         call_->call_handler()->SpawnPushServerInitialMetadata(std::move(md));
-        return Seq(ForEach(OutgoingMessages(&initiator_),
+        return Seq(ForEach(MessagesFrom(&initiator_),
                            [call = call_](MessageHandle message) {
                              GRPC_TRACE_LOG(retry, INFO)
                                  << call->DebugTag() << " got server message "
@@ -386,7 +386,7 @@ auto RetryInterceptor::Attempt::ClientToServer() {
         self->initiator_.SpawnGuarded(
             "server_to_client", [self]() { return self->ServerToClient(); });
         return ForEach(
-            OutgoingMessages(&self->reader_), [self](MessageHandle message) {
+            MessagesFrom(&self->reader_), [self](MessageHandle message) {
               return self->initiator_.SpawnPushMessage(std::move(message));
             });
       });
