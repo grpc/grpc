@@ -50,6 +50,15 @@ struct FuzzerChannelArgs {
   }
 };
 
+class FakeClientConnectionFactory
+    : public chaotic_good::ClientConnectionFactory {
+ public:
+  chaotic_good::PendingConnection Connect(absl::string_view id) override {
+    Crash("Connect not implemented");
+  }
+  void Orphaned() override {}
+};
+
 void ConfigTest(FuzzerChannelArgs client_args_input,
                 FuzzerChannelArgs server_args_input) {
   // Create channel args
@@ -62,14 +71,16 @@ void ConfigTest(FuzzerChannelArgs client_args_input,
   VLOG(2) << "server_config: " << server_config;
   // Perform handshake
   chaotic_good_frame::Settings client_settings;
-  client_config.PrepareOutgoingSettings(client_settings);
+  client_config.PrepareClientOutgoingSettings(client_settings);
   VLOG(2) << "client settings: " << client_settings.ShortDebugString();
-  CHECK_OK(server_config.ReceiveIncomingSettings(client_settings));
+  CHECK_OK(server_config.ReceiveClientIncomingSettings(client_settings));
   VLOG(2) << "server_config': " << server_config;
   chaotic_good_frame::Settings server_settings;
-  server_config.PrepareOutgoingSettings(server_settings);
+  server_config.PrepareServerOutgoingSettings(server_settings);
   VLOG(2) << "server settings: " << server_settings.ShortDebugString();
-  CHECK_OK(client_config.ReceiveIncomingSettings(server_settings));
+  FakeClientConnectionFactory fake_factory;
+  CHECK_OK(client_config.ReceiveServerIncomingSettings(server_settings,
+                                                       fake_factory));
   VLOG(2) << "client_config': " << client_config;
   // Generate results
   const chaotic_good::ChaoticGoodTransport::Options client_options =

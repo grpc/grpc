@@ -49,6 +49,29 @@ TEST(CheckDelayedTest, SeesDelayed) {
   EXPECT_THAT(x(), IsReady(std::make_tuple(42, true)));
 }
 
+TEST(MapError, DoesntMapOk) {
+  auto fail_on_call = [](const absl::Status&) {
+    LOG(FATAL) << "should never be called";
+    return absl::InternalError("unreachable");
+  };
+  promise_detail::MapError<decltype(fail_on_call)> map_on_error(
+      std::move(fail_on_call));
+  EXPECT_EQ(absl::OkStatus(), map_on_error(absl::OkStatus()));
+}
+
+TEST(MapError, CanMapError) {
+  auto map_call = [](const absl::Status& status) {
+    EXPECT_EQ(status.code(), absl::StatusCode::kInternal);
+    EXPECT_EQ(status.message(), "hello");
+    return absl::UnavailableError("world");
+  };
+  promise_detail::MapError<decltype(map_call)> map_on_error(
+      std::move(map_call));
+  auto mapped = map_on_error(absl::InternalError("hello"));
+  EXPECT_EQ(mapped.code(), absl::StatusCode::kUnavailable);
+  EXPECT_EQ(mapped.message(), "world");
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

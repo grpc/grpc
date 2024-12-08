@@ -95,13 +95,14 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
 
   ChaoticGoodTransport(
       PromiseEndpoint control_endpoint,
-      std::vector<PromiseEndpoint> data_endpoints,
+      std::vector<PendingConnection> pending_data_endpoints,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
-      Options options)
+      Options options, bool enable_tracing)
       : event_engine_(std::move(event_engine)),
         control_endpoint_(std::move(control_endpoint), event_engine_.get()),
-        data_endpoints_(std::move(data_endpoints), event_engine_.get()),
+        data_endpoints_(std::move(pending_data_endpoints), event_engine_.get(),
+                        enable_tracing),
         options_(options) {}
 
   auto WriteFrame(const FrameInterface& frame) {
