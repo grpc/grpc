@@ -260,7 +260,7 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
               if (enable_tracing) {
                 auto* epte = grpc_event_engine::experimental::QueryExtension<
                     grpc_event_engine::experimental::TcpTraceExtension>(
-                    ep.GetEventEngineEndpoint().get());
+                    endpoint->GetEventEngineEndpoint().get());
                 if (epte != nullptr) epte->InitializeAndReturnTcpTracer();
               }
               auto read_party = Party::Make(std::move(arena));
