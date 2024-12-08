@@ -42,6 +42,9 @@
 ///
 class AltsHandshakerClient {
  public:
+  explicit AltsHandshakerClient();
+  ~AltsHandshakerClient();
+
   // Main struct for ALTS TSI handshaker.
   struct alts_tsi_handshaker;
 
@@ -155,12 +158,12 @@ class AltsHandshakerClient {
   // Exposed for testing purposes only.
   size_t MaxNumberOfConcurrentHandshakes();
 
- private:
   constexpr size_t kAltsAes128GcmRekeyKeyLength = 44;
   constexpr int kHandshakerClientOpNum = 4;
   constexpr char kMaxConcurrentStreamsEnvironmentVariable[] =
       "GRPC_ALTS_MAX_CONCURRENT_HANDSHAKES";
 
+ private:
   struct recv_message_result;
   struct alts_grpc_handshaker_client;
 };

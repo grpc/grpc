@@ -48,7 +48,6 @@ AltsHandshakerClient::recv_message_result {
 };
 
 AltsHandshakerClient::alts_grpc_handshaker_client {
-  alts_handshaker_client base;
   // One ref is held by the entity that created this handshaker_client, and
   // another ref is held by the pending RECEIVE_STATUS_ON_CLIENT op.
   gpr_refcount refs;
@@ -105,7 +104,7 @@ AltsHandshakerClient::alts_grpc_handshaker_client {
   size_t max_frame_size;
   // If non-null, will be populated with an error string upon error.
   std::string* error;
-} alts_grpc_handshaker_client;
+}
 
 static void handshaker_client_send_buffer_destroy(
     alts_grpc_handshaker_client* client) {
