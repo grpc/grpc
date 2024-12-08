@@ -208,7 +208,7 @@ auto ChaoticGoodClientTransport::OnTransportActivityDone(
 
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
     const ChannelArgs& args, PromiseEndpoint control_endpoint, Config config,
-    RefCountedPtr<ClientConnectionFactory> connector)
+    RefCountedPtr<ClientConnectionFactory>)
     : allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
