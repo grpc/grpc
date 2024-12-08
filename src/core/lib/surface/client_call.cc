@@ -351,39 +351,16 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
     auto make_read_trailing_metadata = [this, out_status, out_status_details,
                                         out_error_string,
                                         out_trailing_metadata]() {
-      return Map(
-          started_call_initiator_.PullServerTrailingMetadata(),
-          [this, out_status, out_status_details, out_error_string,
-           out_trailing_metadata](
-              ServerMetadataHandle server_trailing_metadata) {
-            saw_trailing_metadata_.store(true, std::memory_order_relaxed);
-            ResetDeadline();
-            GRPC_TRACE_LOG(call, INFO)
-                << DebugTag() << "RecvStatusOnClient "
-                << server_trailing_metadata->DebugString();
-            const auto status =
-                server_trailing_metadata->get(GrpcStatusMetadata())
-                    .value_or(GRPC_STATUS_UNKNOWN);
-            *out_status = status;
-            Slice message_slice;
-            if (Slice* message = server_trailing_metadata->get_pointer(
-                    GrpcMessageMetadata())) {
-              message_slice = message->Ref();
-            }
-            *out_status_details = message_slice.TakeCSlice();
-            if (out_error_string != nullptr) {
-              if (status != GRPC_STATUS_OK) {
-                *out_error_string = gpr_strdup(
-                    MakeErrorString(server_trailing_metadata.get()).c_str());
-              } else {
-                *out_error_string = nullptr;
-              }
-            }
-            PublishMetadataArray(server_trailing_metadata.get(),
-                                 out_trailing_metadata, true);
-            received_trailing_metadata_ = std::move(server_trailing_metadata);
-            return Success{};
-          });
+      return Map(started_call_initiator_.PullServerTrailingMetadata(),
+                 [self = Ref(), out_status, out_status_details,
+                  out_error_string, out_trailing_metadata](
+                     ServerMetadataHandle server_trailing_metadata) {
+                   self->OnReceivedStatus(std::move(server_trailing_metadata),
+                                          out_status, out_status_details,
+                                          out_error_string,
+                                          out_trailing_metadata);
+                   return Success{};
+                 });
     };
     ScheduleCommittedBatch(InfallibleBatch(
         std::move(primary_ops),
@@ -406,6 +383,37 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
     ScheduleCommittedBatch(FallibleBatch(
         std::move(primary_ops), is_notify_tag_closure, notify_tag, cq_));
   }
+}
+
+void ClientCall::OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
+                                  grpc_status_code* out_status,
+                                  grpc_slice* out_status_details,
+                                  const char** out_error_string,
+                                  grpc_metadata_array* out_trailing_metadata) {
+  saw_trailing_metadata_.store(true, std::memory_order_relaxed);
+  ResetDeadline();
+  GRPC_TRACE_LOG(call, INFO) << DebugTag() << "RecvStatusOnClient "
+                             << server_trailing_metadata->DebugString();
+  const auto status = server_trailing_metadata->get(GrpcStatusMetadata())
+                          .value_or(GRPC_STATUS_UNKNOWN);
+  *out_status = status;
+  Slice message_slice;
+  if (Slice* message =
+          server_trailing_metadata->get_pointer(GrpcMessageMetadata())) {
+    message_slice = message->Ref();
+  }
+  *out_status_details = message_slice.TakeCSlice();
+  if (out_error_string != nullptr) {
+    if (status != GRPC_STATUS_OK) {
+      *out_error_string =
+          gpr_strdup(MakeErrorString(server_trailing_metadata.get()).c_str());
+    } else {
+      *out_error_string = nullptr;
+    }
+  }
+  PublishMetadataArray(server_trailing_metadata.get(), out_trailing_metadata,
+                       true);
+  received_trailing_metadata_ = std::move(server_trailing_metadata);
 }
 
 char* ClientCall::GetPeer() {
