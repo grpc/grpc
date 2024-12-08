@@ -364,7 +364,6 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   frame.MakeHeader().Serialize(
       write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
   frame.SerializePayload(write_buffer);
-  // ignore encoding errors: they will be logged separately already
   return TrySeq(
       self->connection_->endpoint_.Write(std::move(write_buffer)), [self]() {
         return self->connection_->listener_->server_->SetupTransport(
