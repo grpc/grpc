@@ -41,6 +41,8 @@ ExperimentResult EvaluateQuantile(TDigest& before, TDigest& after,
   const double before_lower = before.Quantile(quantile - range);
   const double before_upper = before.Quantile(quantile + range);
   const double after_value = after.Quantile(quantile);
+  LOG(INFO) << "EQ: "
+            << GRPC_DUMP_ARGS(before_lower, before_upper, after_value);
   if (after_value < before_lower) return ExperimentResult::kSuccess;
   if (after_value > before_upper) return ExperimentResult::kFailure;
   return ExperimentResult::kInconclusive;
@@ -216,8 +218,8 @@ Promise<AutoScaler::ExperimentResult> AutoScaler::PerformExperiment(
             << latency.server_latency.Quantile(0.75);
         const auto result = autoscaler_detail::EvaluateExperiment(
             self->active_experiment_->latency_before, latency);
-        GRPC_TRACE_LOG(chaotic_good, INFO)
-            << "CG_AUTOSCALER: experiment result " << result;
+        GRPC_TRACE_LOG(chaotic_good, INFO) << "CG_AUTOSCALER: experiment "
+                                           << direction << " result " << result;
         const uint32_t connection =
             self->active_experiment_->affected_connection;
         self->active_experiment_.reset();

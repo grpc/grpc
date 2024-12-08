@@ -51,15 +51,20 @@ class AutoScalerTest : public YodelTest {
       test_->WaitForAllPendingWork();
     }
 
-    void ExpectAddConnection() {
+    void ExpectAddConnection(SourceLocation whence = {}) {
+      LOG(INFO) << whence << " ExpectAddConnection";
       test_->TickUntilDone(test_->subject_->Expect<ExpectedAddConnection>());
     }
 
-    void ExpectRemoveConnection() {
+    void ExpectRemoveConnection(SourceLocation whence = {}) {
+      LOG(INFO) << whence << " ExpectRemoveConnection";
       test_->TickUntilDone(test_->subject_->Expect<ExpectedRemoveConnection>());
     }
 
-    void ExpectMeasureOverallLatency(TDigest client, TDigest server) {
+    void ExpectMeasureOverallLatency(TDigest client, TDigest server,
+                                     SourceLocation whence = {}) {
+      LOG(INFO) << whence << " ExpectMeasureOverallLatency:\nclient: "
+                << client.Quantile(0.5) << "\nserver: " << server.Quantile(0.5);
       test_->TickUntilDone(
           test_->subject_->Expect<ExpectedMeasureOverallLatency>(
               std::move(client), std::move(server)));
@@ -67,17 +72,21 @@ class AutoScalerTest : public YodelTest {
 
     void ExpectMeasurePerConnectionLatency(
         absl::flat_hash_map<uint32_t, chaotic_good::AutoScaler::Metrics>
-            metrics) {
+            metrics,
+        SourceLocation whence = {}) {
+      LOG(INFO) << whence << " ExpectMeasurePerConnectionLatency";
       test_->TickUntilDone(
           test_->subject_->Expect<ExpectedMeasurePerConnectionLatency>(
               std::move(metrics)));
     }
 
-    void ExpectParkConnection(uint32_t id) {
+    void ExpectParkConnection(uint32_t id, SourceLocation whence = {}) {
+      LOG(INFO) << whence << " ExpectParkConnection " << id;
       test_->TickUntilDone(test_->subject_->Expect<ExpectedParkConnection>(id));
     }
 
-    void ExpectUnparkConnection(uint32_t id) {
+    void ExpectUnparkConnection(uint32_t id, SourceLocation whence = {}) {
+      LOG(INFO) << whence << " ExpectUnparkConnection " << id;
       test_->TickUntilDone(
           test_->subject_->Expect<ExpectedUnparkConnection>(id));
     }
@@ -212,24 +221,24 @@ class AutoScalerTest : public YodelTest {
     }
     Promise<Empty> RemoveConnection(uint32_t id) override {
       return Seq(WaitExpected(), [this, id](std::unique_ptr<ExpectedOp> op) {
-        CHECK_EQ(connections_[id].state, ConnectionState::kActive);
         op->RemoveConnection();
+        CHECK_EQ(connections_[id].state, ConnectionState::kActive);
         connections_[id].state = ConnectionState::kRemoved;
         return Empty{};
       });
     }
     Promise<Empty> ParkConnection(uint32_t id) override {
       return Seq(WaitExpected(), [this, id](std::unique_ptr<ExpectedOp> op) {
-        CHECK_EQ(connections_[id].state, ConnectionState::kActive);
         op->ParkConnection(id);
+        CHECK_EQ(connections_[id].state, ConnectionState::kActive);
         connections_[id].state = ConnectionState::kParked;
         return Empty{};
       });
     }
     Promise<Empty> UnparkConnection(uint32_t id) override {
       return Seq(WaitExpected(), [this, id](std::unique_ptr<ExpectedOp> op) {
-        CHECK_EQ(connections_[id].state, ConnectionState::kParked);
         op->UnparkConnection(id);
+        CHECK_EQ(connections_[id].state, ConnectionState::kParked);
         connections_[id].state = ConnectionState::kActive;
         return Empty{};
       });
@@ -330,44 +339,37 @@ class AutoScalerTest : public YodelTest {
 AUTO_SCALER_TEST(NoOp) { RunLoop run_loop(this); }
 
 AUTO_SCALER_TEST(Run) {
+  auto very_low = []() { return RandomDigest(100, 10, 100000); };
+  auto low = []() { return RandomDigest(300, 10, 100000); };
+  auto medium = []() { return RandomDigest(500, 10, 100000); };
+  auto high = []() { return RandomDigest(700, 10, 100000); };
+
   RunLoop run_loop(this);
-  run_loop.ExpectMeasureOverallLatency(RandomDigest(100, 10),
-                                       RandomDigest(100, 10));
+  run_loop.ExpectMeasureOverallLatency(medium(), medium());
   run_loop.ExpectAddConnection();
-  run_loop.ExpectMeasureOverallLatency(RandomDigest(70, 10),
-                                       RandomDigest(100, 10));
-  run_loop.ExpectMeasureOverallLatency(RandomDigest(70, 10),
-                                       RandomDigest(100, 10));
+  run_loop.ExpectMeasureOverallLatency(low(), medium());
+  run_loop.ExpectMeasureOverallLatency(low(), medium());
   run_loop.ExpectAddConnection();
-  run_loop.ExpectMeasureOverallLatency(RandomDigest(70, 10),
-                                       RandomDigest(100, 10));
+  run_loop.ExpectMeasureOverallLatency(low(), medium());
   run_loop.ExpectRemoveConnection();
-  run_loop.ExpectMeasureOverallLatency(RandomDigest(70, 10),
-                                       RandomDigest(100, 10));
+  run_loop.ExpectMeasureOverallLatency(low(), medium());
   run_loop.ExpectAddConnection();
-  run_loop.ExpectMeasureOverallLatency(RandomDigest(50, 10),
-                                       RandomDigest(100, 10));
-  run_loop.ExpectMeasureOverallLatency(RandomDigest(70, 10),
-                                       RandomDigest(120, 10));
+  run_loop.ExpectMeasureOverallLatency(very_low(), medium());
+  run_loop.ExpectMeasureOverallLatency(low(), medium());
   run_loop.ExpectAddConnection();
-  run_loop.ExpectMeasureOverallLatency(RandomDigest(150, 10),
-                                       RandomDigest(150, 10));
+  run_loop.ExpectMeasureOverallLatency(high(), high());
   run_loop.ExpectRemoveConnection();
-  run_loop.ExpectMeasureOverallLatency(RandomDigest(70, 10),
-                                       RandomDigest(120, 10));
+  run_loop.ExpectMeasureOverallLatency(medium(), high());
   auto connections = run_loop.ListActiveConnections();
   EXPECT_EQ(connections.size(), 2);
   absl::flat_hash_map<uint32_t, chaotic_good::AutoScaler::Metrics> metrics;
   metrics.emplace(connections[0],
-                  chaotic_good::AutoScaler::Metrics{RandomDigest(70, 10),
-                                                    RandomDigest(100, 10)});
+                  chaotic_good::AutoScaler::Metrics{low(), low()});
   metrics.emplace(connections[1],
-                  chaotic_good::AutoScaler::Metrics{RandomDigest(120, 10),
-                                                    RandomDigest(100, 10)});
+                  chaotic_good::AutoScaler::Metrics{high(), high()});
   run_loop.ExpectMeasurePerConnectionLatency(std::move(metrics));
   run_loop.ExpectParkConnection(connections[1]);
-  run_loop.ExpectMeasureOverallLatency(RandomDigest(90, 10),
-                                       RandomDigest(150, 10));
+  run_loop.ExpectMeasureOverallLatency(medium(), high());
   run_loop.ExpectUnparkConnection(connections[1]);
 }
 
