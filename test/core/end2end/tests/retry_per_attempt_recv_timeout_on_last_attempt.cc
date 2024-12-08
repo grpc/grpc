@@ -34,6 +34,7 @@ namespace {
 // - 1 retry allowed for ABORTED status
 // - both attempts do not receive a response until after perAttemptRecvTimeout
 CORE_END2END_TEST(RetryTest, RetryPerAttemptRecvTimeoutOnLastAttempt) {
+  SKIP_IF_V3();  // Not working yet
   InitServer(ChannelArgs());
   InitClient(
       ChannelArgs()

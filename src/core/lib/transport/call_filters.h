@@ -1811,6 +1811,8 @@ class CallFilters {
   // If no server initial metadata has been sent, implies
   // NoServerInitialMetadata() called.
   void PushServerTrailingMetadata(ServerMetadataHandle md);
+  // Optimized path to push cancellation onto the call
+  void Cancel();
   // Client: Fetch server trailing metadata
   // Returns a promise that resolves to ServerMetadataHandle
   GRPC_MUST_USE_RESULT auto PullServerTrailingMetadata() {
@@ -1836,6 +1838,12 @@ class CallFilters {
   // errors.
   GRPC_MUST_USE_RESULT auto WasCancelled() {
     return [this]() { return call_state_.PollWasCancelled(); };
+  }
+  // Client & server: wait for server trailing metadata to be available, and
+  // resolve to empty when it is.
+  GRPC_MUST_USE_RESULT auto ServerTrailingMetadataWasPushed() {
+    return
+        [this]() { return call_state_.PollServerTrailingMetadataWasPushed(); };
   }
   // Client & server: returns true if server trailing metadata has been pushed
   // *and* contained a cancellation, false otherwise.

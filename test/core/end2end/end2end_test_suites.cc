@@ -552,7 +552,6 @@ class ChaoticGoodFixture : public CoreTestFixture {
         localaddr_.c_str(),
         args.Set(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE, chunk_size_)
             .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE, chunk_size_)
-            .Set(GRPC_ARG_ENABLE_RETRIES, false)
             .ToC()
             .get());
     return client;
@@ -1017,7 +1016,6 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
 #ifndef GPR_WINDOWS
       CoreTestConfiguration{"ChaoticGoodFullStack",
                             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
                                 FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
                                 FEATURE_MASK_IS_CALL_V3,
                             nullptr,

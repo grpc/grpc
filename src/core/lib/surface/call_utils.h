@@ -273,6 +273,8 @@ class BatchOpIndex {
     return idxs_[op_type] == 255 ? nullptr : &ops_[idxs_[op_type]];
   }
 
+  bool has_op(grpc_op_type op_type) const { return idxs_[op_type] != 255; }
+
  private:
   const grpc_op* const ops_;
   std::array<uint8_t, 8> idxs_{255, 255, 255, 255, 255, 255, 255, 255};

@@ -35,6 +35,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/client_channel/client_channel_args.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/dynamic_filters.h"
@@ -77,9 +78,6 @@
 //
 // Calls on a disconnected client channel are queued until a connection is
 // established.
-
-// Channel arg key for server URI string.
-#define GRPC_ARG_SERVER_URI "grpc.server_uri"
 
 // Max number of batches that can be pending on a call at any given
 // time.  This includes one batch for each of the following ops:

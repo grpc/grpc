@@ -69,6 +69,19 @@ class RetryMethodConfig final : public ServiceConfigParser::ParsedConfig {
   void JsonPostLoad(const Json& json, const JsonArgs& args,
                     ValidationErrors* errors);
 
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const RetryMethodConfig& config) {
+    sink.Append(absl::StrCat(
+        "max_attempts:", config.max_attempts_, " initial_backoff:",
+        config.initial_backoff_, " max_backoff:", config.max_backoff_,
+        " backoff_multiplier:", config.backoff_multiplier_,
+        " retryable_status_codes:", config.retryable_status_codes_.ToString(),
+        " per_attempt_recv_timeout:",
+        config.per_attempt_recv_timeout_.has_value()
+            ? absl::StrCat(*config.per_attempt_recv_timeout_)
+            : "none"));
+  }
+
  private:
   int max_attempts_ = 0;
   Duration initial_backoff_;

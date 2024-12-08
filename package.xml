@@ -106,6 +106,8 @@
     <file baseinstalldir="/" name="include/grpc/support/thd_id.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/time.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/workaround_list.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/request_buffer.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/call/request_buffer.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channel_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channel_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channelz.cc" role="src" />
@@ -116,6 +118,7 @@
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/client_channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_filter.cc" role="src" />
@@ -142,6 +145,8 @@
     <file baseinstalldir="/" name="src/core/client_channel/retry_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/retry_filter_legacy_call_data.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/retry_filter_legacy_call_data.h" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/retry_interceptor.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/retry_interceptor.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/retry_service_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/retry_service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/retry_throttle.cc" role="src" />
@@ -1076,6 +1081,7 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/blackboard.cc" role="src" />
     <file baseinstalldir="/" name="src/core/filter/blackboard.h" role="src" />
+    <file baseinstalldir="/" name="src/core/filter/filter_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/endpoint_info/endpoint_info_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/handshaker.cc" role="src" />

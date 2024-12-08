@@ -101,6 +101,7 @@ void RegisterDropPolicy(CoreConfiguration::Builder* builder) {
 // - 1 retry allowed for UNAVAILABLE status
 // - first attempt returns UNAVAILABLE due to LB drop but does not retry
 CORE_END2END_TEST(RetryTest, RetryLbDrop) {
+  SKIP_IF_V3();  // Not working yet
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     RegisterTestPickArgsLoadBalancingPolicy(
         builder,

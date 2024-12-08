@@ -326,7 +326,7 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
             return send_fragment(std::move(frame));
           },
           // Continuously send client frame with client to server messages.
-          ForEach(OutgoingMessages(call_handler), std::move(send_message)),
+          ForEach(MessagesFrom(call_handler), std::move(send_message)),
           [send_fragment]() mutable {
             ClientEndOfStream frame;
             return send_fragment(std::move(frame));

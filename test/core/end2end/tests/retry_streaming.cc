@@ -45,6 +45,7 @@ namespace {
 // C-core API, and therefore we have no way to inject the commit at the
 // right point.
 CORE_END2END_TEST(RetryTest, RetryStreaming) {
+  SKIP_IF_V3();  // Not working yet
   InitServer(ChannelArgs());
   InitClient(
       ChannelArgs()

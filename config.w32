@@ -6,6 +6,7 @@ ARG_WITH("grpc", "grpc support", "no");
 if (PHP_GRPC != "no") {
 
   EXTENSION("grpc",
+    "src\\core\\call\\request_buffer.cc " +
     "src\\core\\channelz\\channel_trace.cc " +
     "src\\core\\channelz\\channelz.cc " +
     "src\\core\\channelz\\channelz_registry.cc " +
@@ -23,6 +24,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\client_channel\\local_subchannel_pool.cc " +
     "src\\core\\client_channel\\retry_filter.cc " +
     "src\\core\\client_channel\\retry_filter_legacy_call_data.cc " +
+    "src\\core\\client_channel\\retry_interceptor.cc " +
     "src\\core\\client_channel\\retry_service_config.cc " +
     "src\\core\\client_channel\\retry_throttle.cc " +
     "src\\core\\client_channel\\subchannel.cc " +
@@ -1406,6 +1408,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\call");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\channelz");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\client_channel");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\config");

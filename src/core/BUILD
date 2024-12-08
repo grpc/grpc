@@ -1677,12 +1677,15 @@ grpc_cc_library(
     hdrs = [
         "call/request_buffer.h",
     ],
-    external_deps = ["absl/types:optional"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
     deps = [
         "call_spine",
+        "match",
         "message",
         "metadata",
-        "wait_set",
     ],
 )
 
@@ -3397,6 +3400,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "filter_args",
+    hdrs = [
+        "filter/filter_args.h",
+    ],
+    deps = [
+        "blackboard",
+        "channel_fwd",
+        "match",
+    ],
+)
+
+grpc_cc_library(
     name = "subchannel_connector",
     hdrs = [
         "client_channel/connector.h",
@@ -3501,6 +3516,37 @@ grpc_cc_library(
         "//:config",
         "//:gpr_platform",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "client_channel_args",
+    hdrs = [
+        "client_channel/client_channel_args.h",
+    ],
+)
+
+grpc_cc_library(
+    name = "retry_interceptor",
+    srcs = [
+        "client_channel/retry_interceptor.cc",
+    ],
+    hdrs = [
+        "client_channel/retry_interceptor.h",
+    ],
+    deps = [
+        "cancel_callback",
+        "client_channel_args",
+        "filter_args",
+        "for_each",
+        "grpc_service_config",
+        "interception_chain",
+        "map",
+        "request_buffer",
+        "retry_service_config",
+        "retry_throttle",
+        "sleep",
+        "//:backoff",
     ],
 )
 
@@ -8579,6 +8625,7 @@ grpc_cc_library(
         "metadata",
         "ref_counted",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 

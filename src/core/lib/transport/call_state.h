@@ -110,6 +110,9 @@ class CallState {
   // Return true if server trailing metadata has been pushed *and* that push was
   // a cancellation.
   bool WasCancelledPushed() const;
+  // Resolves after server trailing metadata has been pushed, regardless of
+  // whether the call was cancelled.
+  Poll<Empty> PollServerTrailingMetadataWasPushed();
 
   /////////////////////////////////////////////////////////////////////////////
   // Debug
@@ -357,7 +360,8 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
 CallState::BeginPushClientToServerMessage() {
   GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] BeginPushClientToServerMessage: "
-      << GRPC_DUMP_ARGS(this, client_to_server_push_state_);
+      << GRPC_DUMP_ARGS(this, client_to_server_push_state_,
+                        client_to_server_push_waiter_);
   switch (client_to_server_push_state_) {
     case ClientToServerPushState::kIdle:
       client_to_server_push_state_ = ClientToServerPushState::kPushedMessage;
@@ -640,7 +644,7 @@ CallState::PushServerTrailingMetadata(bool cancel) {
       << GRPC_DUMP_ARGS(this, cancel, server_trailing_metadata_state_,
                         server_to_client_push_state_,
                         client_to_server_push_state_,
-                        server_trailing_metadata_waiter_.DebugString());
+                        server_trailing_metadata_waiter_);
   if (server_trailing_metadata_state_ !=
       ServerTrailingMetadataState::kNotPushed) {
     return false;
@@ -945,10 +949,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<Empty>
 CallState::PollServerTrailingMetadataAvailable() {
   GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] PollServerTrailingMetadataAvailable: "
-      << GRPC_DUMP_ARGS(this, server_to_client_pull_state_,
-                        server_to_client_push_state_,
-                        server_trailing_metadata_state_,
-                        server_trailing_metadata_waiter_.DebugString());
+      << GRPC_DUMP_ARGS(
+             this, server_to_client_pull_state_, server_to_client_push_state_,
+             server_trailing_metadata_state_, server_trailing_metadata_waiter_);
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kProcessingServerInitialMetadata:
     case ServerToClientPullState::kProcessingServerToClientMessage:
@@ -1052,6 +1055,24 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool CallState::WasCancelledPushed()
     case ServerTrailingMetadataState::kPushedCancel:
     case ServerTrailingMetadataState::kPulledCancel:
       return true;
+  }
+  Crash("Unreachable");
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<Empty>
+CallState::PollServerTrailingMetadataWasPushed() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] PollWasCancelled: "
+      << GRPC_DUMP_ARGS(this, server_trailing_metadata_state_);
+  switch (server_trailing_metadata_state_) {
+    case ServerTrailingMetadataState::kNotPushed: {
+      return server_trailing_metadata_waiter_.pending();
+    }
+    case ServerTrailingMetadataState::kPushed:
+    case ServerTrailingMetadataState::kPushedCancel:
+    case ServerTrailingMetadataState::kPulled:
+    case ServerTrailingMetadataState::kPulledCancel:
+      return Empty{};
   }
   Crash("Unreachable");
 }
