@@ -139,8 +139,8 @@ class RetryInterceptor : public Interceptor {
     auto ServerToClientGotInitialMetadata(ServerMetadataHandle md);
     auto ServerToClientGotTrailersOnlyResponse();
 
-    RequestBuffer::Reader reader_;
     RefCountedPtr<Call> call_;
+    RequestBuffer::Reader reader_;
     CallInitiator initiator_;
     bool committed_ = false;
   };
