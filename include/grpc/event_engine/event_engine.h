@@ -14,6 +14,7 @@
 #ifndef GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 #define GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 
+#include <fcntl.h>
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/extensible.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -22,6 +23,10 @@
 #include <grpc/support/port_platform.h>
 
 #include <vector>
+
+#ifdef GRPC_LINUX_EPOLL
+#include <sys/epoll.h>
+#endif
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
@@ -160,6 +165,53 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
    private:
     char address_[MAX_SIZE_BYTES] = {};
     socklen_t size_ = 0;
+  };
+
+  class FileDescriptor {
+   public:
+    static FileDescriptor MakeEventFd(int initval, int flags);
+    //     return absl::Status(absl::StatusCode::kInternal,
+    // absl::StrCat("pipe: ", grpc_core::StrError(errno)));
+    static FileDescriptor FromIomgr(int fd);
+    static FileDescriptor FromAresSocket(int ares_socket);
+    static int socketpair(int domain, int type, int protocol,
+                          absl::Span<FileDescriptor> sv);
+
+    FileDescriptor() = default;
+    FileDescriptor(const FileDescriptor& other) = default;
+
+    // Id is based on fd but is not fd. IO will fail.
+    int id() const { return ~fd_; }
+    // int fd() const { return fd_; }
+    bool ready() const { return fd_ > 0; }
+    void close() const;
+    bool epoll_ctl(int op, EventEngine::FileDescriptor epfd, void* event) const;
+    int getsockopt(int level, int optname, void* optval,
+                   socklen_t* optlen) const;
+    int setsockopt(int level, int optname, const void* optval,
+                   socklen_t optlen) const;
+    int ioctl(int op, void* arg);
+    int fcntl(int op, int args);
+    void invalidate() { fd_ = -1; }
+    int getsockname(struct sockaddr* addr, socklen_t* addrlen);
+    int getpeername(struct sockaddr* addr, socklen_t* addrlen);
+    ssize_t read(void* buf, size_t nbyte);
+#ifdef GRPC_LINUX_EPOLL
+    int epoll_ctl(int op, int fd, struct epoll_event* event);
+#endif
+    EventEngine::FileDescriptor accept(struct sockaddr* address,
+                                       socklen_t* address_len);
+    ssize_t write(const void* buf, size_t nbyte);
+    int connect(const struct sockaddr* addr, socklen_t addrlen);
+
+    bool grpc_socket_mutator_mutate_fd(void* mutator, int usage);
+    int file_descriptor_for_polling() const;
+    int file_descriptor_for_iomgr() const;
+
+   private:
+    explicit FileDescriptor(int fd) : fd_(fd) {}
+
+    int fd_ = -1;
   };
 
   /// One end of a connection between a gRPC client and server. Endpoints are

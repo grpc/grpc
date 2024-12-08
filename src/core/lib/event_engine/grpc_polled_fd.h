@@ -20,6 +20,8 @@
 
 #include <memory>
 
+#include "src/core/lib/event_engine/extensions/system_api.h"
+
 #if GRPC_ARES == 1
 
 #include <ares.h>
@@ -80,7 +82,8 @@ class GrpcPolledFdFactory {
   virtual std::unique_ptr<GrpcPolledFd> NewGrpcPolledFdLocked(
       ares_socket_t as) = 0;
   // Optionally configures the ares channel after creation
-  virtual void ConfigureAresChannelLocked(ares_channel channel) = 0;
+  virtual void ConfigureAresChannelLocked(const SystemApi& api,
+                                          ares_channel channel) = 0;
 };
 
 }  // namespace experimental

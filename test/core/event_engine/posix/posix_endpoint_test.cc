@@ -112,14 +112,16 @@ std::list<Connection> CreateConnectedEndpoints(
 
   // Create client socket and connect to the target address.
   for (int i = 0; i < num_connections; ++i) {
-    int client_fd = ConnectToServerOrDie(*resolved_addr);
+    EventEngine::FileDescriptor client_fd =
+        ConnectToServerOrDie(*resolved_addr);
     EventHandle* handle =
         poller.CreateHandle(client_fd, "test", poller.CanTrackErrors());
     EXPECT_NE(handle, nullptr);
     server_signal->WaitForNotification();
     EXPECT_NE(server_endpoint, nullptr);
     ++g_num_active_connections;
-    PosixTcpOptions options = TcpOptionsFromEndpointConfig(config);
+    PosixTcpOptions options =
+        TcpOptionsFromEndpointConfig(*poller.GetSystemApi(), config);
     connections.push_back(Connection{
         CreatePosixEndpoint(
             handle,
@@ -198,7 +200,7 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
         std::make_unique<grpc_event_engine::experimental::TestScheduler>(
             posix_ee_.get());
     EXPECT_NE(scheduler_, nullptr);
-    poller_ = MakeDefaultPoller(scheduler_.get());
+    poller_ = MakeDefaultPoller(&system_api_, scheduler_.get());
     posix_ee_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(poller_);
     EXPECT_NE(posix_ee_, nullptr);
     scheduler_->ChangeCurrentEventEngine(posix_ee_.get());
@@ -229,6 +231,7 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
   std::unique_ptr<TestScheduler> scheduler_;
   std::shared_ptr<EventEngine> posix_ee_;
   std::shared_ptr<EventEngine> oracle_ee_;
+  PosixSystemApi system_api_;
 };
 
 TEST_P(PosixEndpointTest, ConnectExchangeBidiDataTransferTest) {
