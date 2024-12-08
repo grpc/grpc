@@ -1,4 +1,4 @@
-# Copyright 2023 gRPC authors.
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,17 @@
 # limitations under the License.
 
 load("//fuzztest:grpc_fuzz_test.bzl", "grpc_fuzz_test")
+
+grpc_fuzz_test(
+    name = "auto_scaler_fuzztest",
+    srcs = ["auto_scaler_fuzztest.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:chaotic_good_auto_scaler"],
+)
 
 grpc_fuzz_test(
     name = "config_test",

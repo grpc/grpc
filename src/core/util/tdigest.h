@@ -44,10 +44,10 @@ namespace grpc_core {
 class TDigest final {
  public:
   TDigest(const TDigest&) = delete;
-  TDigest(TDigest&&) = delete;
+  TDigest(TDigest&&) = default;
 
   TDigest& operator=(const TDigest&) = delete;
-  TDigest& operator=(TDigest&&) = delete;
+  TDigest& operator=(TDigest&&) = default;
 
   // Creates a t-digest with the given compression factor (aka delta).
   //
