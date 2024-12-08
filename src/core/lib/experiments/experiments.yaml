@@ -40,6 +40,11 @@
 
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
+- name: backoff_cap_initial_at_max
+  description: Backoff library applies max_backoff even on initial_backoff.
+  expiry: 2025/03/01
+  owner: roth@google.com
+  test_tags: []
 - name: call_tracer_in_transport
   description: Transport directly passes byte counts to CallTracer.
   expiry: 2025/02/01
@@ -141,6 +146,12 @@
   expiry: 2025/03/01
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
+- name: prioritize_finished_requests
+  description: Prioritize flushing out finished requests over other in-flight
+    requests during transport writes.
+  expiry: 2025/03/01
+  owner: vigneshbabu@google.com
+  test_tags: []
 - name: promise_based_http2_client_transport
   description:
     Use promises for the http2 client transport. We have kept client and
