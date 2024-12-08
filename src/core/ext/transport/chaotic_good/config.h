@@ -91,7 +91,7 @@ class Config {
   }
 
   void PrepareClientOutgoingSettings(chaotic_good_frame::Settings& settings) {
-    CHECK_EQ(pending_data_endpoints_.size(), 0);
+    CHECK_EQ(pending_data_endpoints_.size(), 0u);
     PrepareOutgoingSettings(settings);
   }
 

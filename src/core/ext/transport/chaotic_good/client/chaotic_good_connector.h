@@ -49,7 +49,7 @@ namespace chaotic_good {
 class ChaoticGoodConnector final : public SubchannelConnector {
  public:
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;
-  void Shutdown(grpc_error_handle error) override {
+  void Shutdown(grpc_error_handle) override {
     ActivityPtr connect_activity;
     MutexLock lock(&mu_);
     is_shutdown_ = true;
