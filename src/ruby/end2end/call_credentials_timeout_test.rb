@@ -156,7 +156,7 @@ user callback every time that it was invoked, but it did not match the expected 
 in #{jwt_aud_uri_failure_values.size} invocations. This suggests that either:
 a) the expected jwt_aud_uri value is incorrect
 b) there is some corruption of the jwt_aud_uri argument
-Here are are the values of the jwt_aud_uri parameter that were passed to the call
+Here are the values of the jwt_aud_uri parameter that were passed to the call
 creds user callback that did not match #{expected_jwt_aud_uri}:
 #{jwt_aud_uri_failure_values}"
     end
