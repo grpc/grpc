@@ -107,6 +107,8 @@ class StaticDataCertificateProvider final
   UniqueTypeName type() const override;
 
   absl::Status ValidateCredentials() const;
+  absl::Status ValidatePemKeyCertPairList() const;
+  absl::Status ValidateRootCertificates() const;
 
  private:
   struct WatcherInfo {
@@ -148,6 +150,8 @@ class FileWatcherCertificateProvider final
   UniqueTypeName type() const override;
 
   absl::Status ValidateCredentials() const;
+  absl::Status ValidatePemKeyCertPairList() const;
+  absl::Status ValidateRootCertificates() const;
 
   int64_t TestOnlyGetRefreshIntervalSecond() const;
 
