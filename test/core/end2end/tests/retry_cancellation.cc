@@ -94,10 +94,12 @@ void TestRetryCancellation(CoreEnd2endTest& test,
 }
 
 CORE_END2END_TEST(RetryTest, RetryCancellation) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   TestRetryCancellation(*this, std::make_unique<CancelCancellationMode>());
 }
 
 CORE_END2END_TEST(RetryTest, RetryDeadline) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   TestRetryCancellation(*this, std::make_unique<DeadlineCancellationMode>());
 }
 
