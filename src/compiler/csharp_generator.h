@@ -25,7 +25,7 @@ namespace grpc_csharp_generator {
 
 std::string GetServices(const grpc::protobuf::FileDescriptor* file,
                         bool generate_client, bool generate_server,
-                        bool internal_access);
+                        bool internal_access, bool enable_nrt);
 
 }  // namespace grpc_csharp_generator
 
