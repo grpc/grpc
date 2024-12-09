@@ -41,6 +41,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_SUBST(GRPC_SHARED_LIBADD)
 
   PHP_NEW_EXTENSION(grpc,
+    src/core/call/request_buffer.cc \
     src/core/channelz/channel_trace.cc \
     src/core/channelz/channelz.cc \
     src/core/channelz/channelz_registry.cc \
@@ -58,6 +59,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/client_channel/local_subchannel_pool.cc \
     src/core/client_channel/retry_filter.cc \
     src/core/client_channel/retry_filter_legacy_call_data.cc \
+    src/core/client_channel/retry_interceptor.cc \
     src/core/client_channel/retry_service_config.cc \
     src/core/client_channel/retry_throttle.cc \
     src/core/client_channel/subchannel.cc \
@@ -1414,6 +1416,7 @@ if test "$PHP_GRPC" != "no"; then
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
     -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.70.0dev\""')
 
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/config)

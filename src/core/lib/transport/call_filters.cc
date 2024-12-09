@@ -79,10 +79,7 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
   GRPC_TRACE_VLOG(promise_primitives, 2)
           .AtLocation(but_where.file(), but_where.line())
       << "Cancelling due to failed pipe operation: " << DebugString();
-  auto status =
-      ServerMetadataFromStatus(GRPC_STATUS_CANCELLED, "Failed pipe operation");
-  status->Set(GrpcCallWasCancelled(), true);
-  PushServerTrailingMetadata(std::move(status));
+  Cancel();
 }
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
@@ -94,6 +91,15 @@ void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
   if (call_state_.PushServerTrailingMetadata(
           md->get(GrpcCallWasCancelled()).value_or(false))) {
     push_server_trailing_metadata_ = std::move(md);
+  }
+}
+
+void CallFilters::Cancel() {
+  GRPC_TRACE_LOG(call, INFO) << GetContext<Activity>()->DebugTag() << " Cancel["
+                             << this << "]: into " << DebugString();
+  if (call_state_.PushServerTrailingMetadata(true)) {
+    push_server_trailing_metadata_ =
+        CancelledServerMetadataFromStatus(GRPC_STATUS_CANCELLED);
   }
 }
 

@@ -220,11 +220,13 @@ libs:
   - include/grpc/support/time.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/call/request_buffer.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/client_channel.h
+  - src/core/client_channel/client_channel_args.h
   - src/core/client_channel/client_channel_factory.h
   - src/core/client_channel/client_channel_filter.h
   - src/core/client_channel/client_channel_internal.h
@@ -239,6 +241,7 @@ libs:
   - src/core/client_channel/local_subchannel_pool.h
   - src/core/client_channel/retry_filter.h
   - src/core/client_channel/retry_filter_legacy_call_data.h
+  - src/core/client_channel/retry_interceptor.h
   - src/core/client_channel/retry_service_config.h
   - src/core/client_channel/retry_throttle.h
   - src/core/client_channel/subchannel.h
@@ -788,6 +791,7 @@ libs:
   - src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h
   - src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h
   - src/core/filter/blackboard.h
+  - src/core/filter/filter_args.h
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
   - src/core/handshaker/handshaker.h
   - src/core/handshaker/handshaker_factory.h
@@ -1280,6 +1284,7 @@ libs:
   - third_party/upb/upb/generated_code_support.h
   - third_party/xxhash/xxhash.h
   src:
+  - src/core/call/request_buffer.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -1297,6 +1302,7 @@ libs:
   - src/core/client_channel/local_subchannel_pool.cc
   - src/core/client_channel/retry_filter.cc
   - src/core/client_channel/retry_filter_legacy_call_data.cc
+  - src/core/client_channel/retry_interceptor.cc
   - src/core/client_channel/retry_service_config.cc
   - src/core/client_channel/retry_throttle.cc
   - src/core/client_channel/subchannel.cc
@@ -2267,11 +2273,13 @@ libs:
   - include/grpc/support/time.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/call/request_buffer.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/client_channel.h
+  - src/core/client_channel/client_channel_args.h
   - src/core/client_channel/client_channel_factory.h
   - src/core/client_channel/client_channel_filter.h
   - src/core/client_channel/client_channel_internal.h
@@ -2286,6 +2294,7 @@ libs:
   - src/core/client_channel/local_subchannel_pool.h
   - src/core/client_channel/retry_filter.h
   - src/core/client_channel/retry_filter_legacy_call_data.h
+  - src/core/client_channel/retry_interceptor.h
   - src/core/client_channel/retry_service_config.h
   - src/core/client_channel/retry_throttle.h
   - src/core/client_channel/subchannel.h
@@ -2378,6 +2387,7 @@ libs:
   - src/core/ext/upb-gen/xds/service/orca/v3/orca.upb.h
   - src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.h
   - src/core/filter/blackboard.h
+  - src/core/filter/filter_args.h
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
   - src/core/handshaker/handshaker.h
   - src/core/handshaker/handshaker_factory.h
@@ -2755,6 +2765,7 @@ libs:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/call/request_buffer.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -2772,6 +2783,7 @@ libs:
   - src/core/client_channel/local_subchannel_pool.cc
   - src/core/client_channel/retry_filter.cc
   - src/core/client_channel/retry_filter_legacy_call_data.cc
+  - src/core/client_channel/retry_interceptor.cc
   - src/core/client_channel/retry_service_config.cc
   - src/core/client_channel/retry_throttle.cc
   - src/core/client_channel/subchannel.cc
@@ -4459,6 +4471,7 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/filter/blackboard.h
+  - src/core/filter/filter_args.h
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
   - src/core/handshaker/handshaker.h
   - src/core/handshaker/handshaker_factory.h
@@ -6878,6 +6891,7 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/filter/blackboard.h
+  - src/core/filter/filter_args.h
   - src/core/handshaker/handshaker_factory.h
   - src/core/handshaker/handshaker_registry.h
   - src/core/handshaker/proxy_mapper.h
@@ -16681,7 +16695,6 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -16723,7 +16736,9 @@ targets:
   - src/core/util/if_list.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/packed_table.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
@@ -17944,6 +17959,29 @@ targets:
   - grpc_unsecure
   - protobuf
   - grpc_test_util
+- name: retry_interceptor_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/call/yodel/yodel_test.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/call/yodel/test_main.cc
+  - test/core/call/yodel/yodel_test.cc
+  - test/core/client_channel/retry_interceptor_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: retry_lb_drop_test
   gtest: true
   build: test
