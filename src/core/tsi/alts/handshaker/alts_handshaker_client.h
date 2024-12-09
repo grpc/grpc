@@ -201,11 +201,9 @@ class AltsHandshakerClient {
   struct recv_message_result;
   struct alts_grpc_handshaker_client;
   static constexpr size_t kAltsAes128GcmRekeyKeyLength = 44;
-
-  // TODO Is this even used anywhere?
-  constexpr char kMaxConcurrentStreamsEnvironmentVariable[] =
+  static constexpr char kMaxConcurrentStreamsEnvironmentVariable[] =
       "GRPC_ALTS_MAX_CONCURRENT_HANDSHAKES";
-  constexpr int kHandshakerClientOpNum = 4;
+  static constexpr int kHandshakerClientOpNum = 4;
 };
 
 #endif  // GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H
