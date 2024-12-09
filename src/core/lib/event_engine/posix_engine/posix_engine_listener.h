@@ -141,7 +141,13 @@ class PosixEngineListenerImpl
       acceptors_.push_back(new AsyncConnectionAcceptor(
           listener_->engine_, listener_->shared_from_this(), socket));
       if (on_append_) {
-        on_append_(socket.sock.fd());
+        auto locked_sock =
+            listener_->poller_->GetSystemApi()->Lock(socket.sock);
+        if (locked_sock.ok()) {
+          on_append_(locked_sock->fd());
+        } else {
+          on_append_(std::move(locked_sock).status());
+        }
       }
     }
 

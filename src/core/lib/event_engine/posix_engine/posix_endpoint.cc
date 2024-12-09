@@ -28,6 +28,7 @@
 #include <cstdlib>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
@@ -99,11 +100,15 @@ ssize_t TcpSend(const SystemApi& api, FileDescriptor fd,
                 const struct msghdr* msg, int* saved_errno,
                 int additional_flags = 0) {
   GRPC_LATENT_SEE_PARENT_SCOPE("TcpSend");
-  ssize_t sent_length;
+  absl::StatusOr<ssize_t> sent_length;
   do {
     sent_length = api.SendMsg(fd, msg, SENDMSG_FLAGS | additional_flags);
-  } while (sent_length < 0 && (*saved_errno = errno) == EINTR);
-  return sent_length;
+  } while (sent_length.ok() && *sent_length < 0 &&
+           (*saved_errno = errno) == EINTR);
+  if (!sent_length.ok()) {
+    LOG(ERROR) << sent_length.status();
+  }
+  return *sent_length;
 }
 
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -275,7 +280,7 @@ void PosixEndpointImpl::FinishEstimate() {
 
 absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) const {
   grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kFd,
-                          handle_->WrappedFd().fd());
+                          handle_->WrappedFd().debug_fd());
   grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kRpcStatus,
                           GRPC_STATUS_UNAVAILABLE);
   return src_error;
@@ -287,7 +292,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
-  ssize_t read_bytes;
+  absl::StatusOr<ssize_t> read_bytes;
   size_t total_read_bytes = 0;
   size_t iov_len = std::min<size_t>(MAX_READ_IOVEC, incoming_buffer_->Count());
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -328,9 +333,9 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 
     do {
       read_bytes = get_system_api()->RecvMsg(fd_, &msg, 0);
-    } while (read_bytes < 0 && errno == EINTR);
+    } while (read_bytes.ok() && *read_bytes < 0 && errno == EINTR);
 
-    if (read_bytes < 0 && errno == EAGAIN) {
+    if (read_bytes.ok() && *read_bytes < 0 && errno == EAGAIN) {
       // NB: After calling call_read_cb a parallel call of the read handler may
       // be running.
       if (total_read_bytes > 0) {
@@ -343,14 +348,16 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 
     // We have read something in previous reads. We need to deliver those bytes
     // to the upper layer.
-    if (read_bytes <= 0 && total_read_bytes >= 1) {
+    if (read_bytes.value_or(-1) <= 0 && total_read_bytes >= 1) {
       break;
     }
 
-    if (read_bytes <= 0) {
+    if (read_bytes.value_or(-1) <= 0) {
       // 0 read size ==> end of stream
       incoming_buffer_->Clear();
-      if (read_bytes == 0) {
+      if (!read_bytes.ok()) {
+        status = TcpAnnotateError(std::move(read_bytes).status());
+      } else if (*read_bytes == 0) {
         status = TcpAnnotateError(absl::InternalError("Socket closed"));
       } else {
         status = TcpAnnotateError(absl::InternalError(
@@ -359,8 +366,9 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       return true;
     }
 
-    AddToEstimate(static_cast<size_t>(read_bytes));
-    DCHECK((size_t)read_bytes <= incoming_buffer_->Length() - total_read_bytes);
+    AddToEstimate(static_cast<size_t>(*read_bytes));
+    DCHECK((size_t)*read_bytes <=
+           incoming_buffer_->Length() - total_read_bytes);
 
 #ifdef GRPC_HAVE_TCP_INQ
     if (inq_capable_) {
@@ -376,14 +384,14 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     }
 #endif  // GRPC_HAVE_TCP_INQ
 
-    total_read_bytes += read_bytes;
+    total_read_bytes += *read_bytes;
     if (inq_ == 0 || total_read_bytes == incoming_buffer_->Length()) {
       break;
     }
 
     // We had a partial read, and still have space to read more data. So, adjust
     // IOVs and try to read more.
-    size_t remaining = read_bytes;
+    size_t remaining = *read_bytes;
     size_t j = 0;
     for (size_t i = 0; i < iov_len; i++) {
       if (remaining >= iov[i].iov_len) {
@@ -502,12 +510,13 @@ void PosixEndpointImpl::UpdateRcvLowat() {
   if (set_rcvlowat_ == remaining) {
     return;
   }
-  int result = get_system_api()->SetSockOpt(fd_, SOL_SOCKET, SO_RCVLOWAT,
-                                            &remaining, sizeof(remaining));
-  if (result == 0) {
-    set_rcvlowat_ = result;
+  auto result =
+      get_system_api()->SetSockOpt(fd_, SOL_SOCKET, SO_RCVLOWAT, &remaining,
+                                   sizeof(remaining), "Update SO_RCVLOWAT");
+  if (result.ok()) {
+    set_rcvlowat_ = 0;
   } else {
-    PLOG(ERROR) << "ERROR in SO_RCVLOWAT";
+    LOG(ERROR) << "ERROR in SO_RCVLOWAT: " << result;
   }
 }
 
@@ -698,17 +707,16 @@ bool PosixEndpointImpl::ProcessErrors() {
     struct cmsghdr align;
   } aligned_buf;
   msg.msg_control = aligned_buf.rbuf;
-  int r, saved_errno;
+  absl::StatusOr<int> r;
+  int saved_errno;
   while (true) {
     msg.msg_controllen = sizeof(aligned_buf.rbuf);
     do {
       r = get_system_api()->RecvMsg(fd_, &msg, MSG_ERRQUEUE);
       saved_errno = errno;
-    } while (r < 0 && saved_errno == EINTR);
+    } while (r.ok() && *r < 0 && saved_errno == EINTR);
 
-    if (r < 0 && saved_errno == EAGAIN) {
-      return processed_err;  // No more errors to process
-    } else if (r < 0) {
+    if (r.value_or(-1) < 0) {
       return processed_err;
     }
     if (GPR_UNLIKELY((msg.msg_flags & MSG_CTRUNC) != 0)) {
@@ -841,8 +849,11 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
   const SystemApi* system_api = get_system_api();
   if (!socket_ts_enabled_) {
     uint32_t opt = kTimestampingSocketOptions;
-    if (system_api->SetSockOpt(fd_, SOL_SOCKET, SO_TIMESTAMPING,
-                               static_cast<void*>(&opt), sizeof(opt)) != 0) {
+    if (!system_api
+             ->SetSockOpt(fd_, SOL_SOCKET, SO_TIMESTAMPING,
+                          static_cast<void*>(&opt), sizeof(opt),
+                          "Set SO_TIMESTAMPING")
+             .ok()) {
       return false;
     }
     bytes_counter_ = -1;

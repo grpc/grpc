@@ -46,6 +46,9 @@ ABSL_ATTRIBUTE_TRIVIAL_ABI class FileDescriptor {
   bool ready() const { return fd_ > 0; }
   void invalidate() { fd_ = -1; }
 
+  // Not meant to use to access FD for I/O. Only used for debug logging.
+  int debug_fd() const { return fd_; }
+
  private:
   friend class LockedFd;
   int fd() const { return fd_; }

@@ -25,6 +25,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
+#include "posix_system_api.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
 #include "src/core/util/useful.h"
@@ -99,7 +100,7 @@ FileDescriptor CreateSocket(
     int saved_errno = errno;
     LOG_EVERY_N_SEC(ERROR, 10)
         << "socket(" << family << ", " << type << ", " << protocol
-        << ") returned " << res.fd() << " with error: |"
+        << ") returned " << res.debug_fd() << " with error: |"
         << grpc_core::StrError(errno)
         << "|. This process might not have a sufficient file descriptor limit "
            "for the number of connections grpc wants to open (which is "
@@ -151,8 +152,10 @@ absl::Status PrepareTcpClientSocket(SystemApi& system_api, FileDescriptor fd,
 
 bool SetSocketDualStack(const SystemApi& posix_apis, FileDescriptor fd) {
   const int off = 0;
-  return 0 == posix_apis.SetSockOpt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off,
-                                    sizeof(off));
+  return posix_apis
+      .SetSockOpt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off),
+                  "set dual stack")
+      .ok();
 }
 
 #endif  // GRPC_SET_SOCKET_DUALSTACK_CUSTOM
@@ -255,9 +258,12 @@ void UnlinkIfUnixDomainSocket(
 
 // Set a socket using a grpc_socket_mutator
 absl::Status SetSocketMutator(FileDescriptor fd, grpc_fd_usage usage,
-                              grpc_socket_mutator* mutator) {
+                              grpc_socket_mutator* mutator,
+                              const SystemApi* system_api) {
   CHECK(mutator);
-  if (!grpc_socket_mutator_mutate_fd(mutator, fd.fd(), usage)) {
+  auto locked_fd = system_api->Lock(fd);
+  if (!locked_fd.ok() ||
+      !grpc_socket_mutator_mutate_fd(mutator, locked_fd->fd(), usage)) {
     return absl::Status(absl::StatusCode::kInternal,
                         "grpc_socket_mutator failed.");
   }

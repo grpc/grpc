@@ -22,6 +22,7 @@
 
 #include <cstring>
 #include <string>
+#include <utility>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
@@ -69,14 +70,24 @@ absl::StatusOr<int> GetUnusedPort(SystemApi& system_api) {
   if (dsmode == DSMode::DSMODE_IPV4) {
     wild = ResolvedAddressMakeWild4(0);
   }
-  if (system_api.Bind(*sock, wild.address(), wild.size()) != 0) {
+  auto operation_result = system_api.Bind(*sock, wild.address(), wild.size());
+  if (!operation_result.ok()) {
+    system_api.Close(*sock);
+    return std::move(operation_result).status();
+  }
+  if (*operation_result != 0) {
     system_api.Close(*sock);
     return absl::FailedPreconditionError(
         absl::StrCat("bind(GetUnusedPort): ", std::strerror(errno)));
   }
   socklen_t len = wild.size();
-  if (system_api.GetSockName(*sock, const_cast<sockaddr*>(wild.address()),
-                             &len) != 0) {
+  operation_result = system_api.GetSockName(
+      *sock, const_cast<sockaddr*>(wild.address()), &len);
+  if (!operation_result.ok()) {
+    system_api.Close(*sock);
+    return std::move(operation_result).status();
+  }
+  if (*operation_result != 0) {
     system_api.Close(*sock);
     return absl::FailedPreconditionError(
         absl::StrCat("getsockname(GetUnusedPort): ", std::strerror(errno)));
@@ -174,8 +185,11 @@ absl::Status PrepareSocket(SystemApi& system_api,
   GRPC_RETURN_IF_ERROR(system_api.SetSocketNoSigpipeIfPossible(socket.sock));
   GRPC_RETURN_IF_ERROR(ApplySocketMutatorInOptions(
       socket.sock, GRPC_FD_SERVER_LISTENER_USAGE, options));
-
-  if (system_api.Bind(fd, socket.addr.address(), socket.addr.size()) < 0) {
+  auto result = system_api.Bind(fd, socket.addr.address(), socket.addr.size());
+  if (!result.ok()) {
+    return std::move(result).status();
+  }
+  if (*result < 0) {
     auto sockaddr_str = ResolvedAddressToString(socket.addr);
     if (!sockaddr_str.ok()) {
       LOG(ERROR) << "Could not convert sockaddr to string: "
@@ -187,15 +201,21 @@ absl::Status PrepareSocket(SystemApi& system_api,
         absl::StrCat("Error in bind for address '", *sockaddr_str,
                      "': ", std::strerror(errno)));
   }
-
-  if (system_api.Listen(fd, GetMaxAcceptQueueSize()) < 0) {
+  result = system_api.Listen(fd, GetMaxAcceptQueueSize());
+  if (!result.ok()) {
+    return std::move(result).status();
+  }
+  if (*result < 0) {
     return absl::FailedPreconditionError(
         absl::StrCat("Error in listen: ", std::strerror(errno)));
   }
   socklen_t len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-
-  if (system_api.GetSockName(fd, const_cast<sockaddr*>(sockname_temp.address()),
-                             &len) < 0) {
+  result = system_api.GetSockName(
+      fd, const_cast<sockaddr*>(sockname_temp.address()), &len);
+  if (!result.ok()) {
+    return std::move(result).status();
+  }
+  if (*result < 0) {
     return absl::FailedPreconditionError(
         absl::StrCat("Error in getsockname: ", std::strerror(errno)));
   }

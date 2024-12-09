@@ -496,6 +496,8 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
       absl::AnyInvocable<void(absl::StatusOr<FileDescriptor> release_fd)>
           on_release_fd);
 
+  PosixEventPoller* poller() const { return poller_; }
+
  private:
   void UpdateRcvLowat() ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
   void HandleWrite(absl::Status status);
@@ -635,18 +637,32 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
     return impl_->GetLocalAddress();
   }
 
-  int GetWrappedFd() override { return impl_->GetWrappedFd().fd(); }
+  int GetWrappedFd() override {
+    // This will go away with iomgr.
+    auto locked_fd =
+        impl_->poller()->GetSystemApi()->Lock(impl_->GetWrappedFd());
+    if (!locked_fd.ok()) {
+      return -1;
+    }
+    return locked_fd->fd();
+  }
 
   bool CanTrackErrors() override { return impl_->CanTrackErrors(); }
 
   void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
                     on_release_fd) override {
     if (!shutdown_.exchange(true, std::memory_order_acq_rel)) {
+      PosixEventPoller* poller = impl_->poller();
       impl_->MaybeShutdown(absl::FailedPreconditionError("Endpoint closing"),
-                           [on_release = std::move(on_release_fd)](
-                               absl::StatusOr<FileDescriptor> fd) mutable {
+                           [on_release = std::move(on_release_fd),
+                            poller](absl::StatusOr<FileDescriptor> fd) mutable {
                              if (fd.ok()) {
-                               on_release(fd->fd());
+                               auto locked_fd =
+                                   poller->GetSystemApi()->Lock(*fd);
+                               if (!locked_fd.ok()) {
+                                 on_release(std::move(locked_fd).status());
+                               }
+                               on_release(locked_fd->fd());
                              } else {
                                on_release(std::move(fd).status());
                              }

@@ -38,18 +38,27 @@ FileDescriptor ConnectToServerOrDie(SystemApi& system_api,
   int one = 1;
 
   FileDescriptor client_fd = system_api.Socket(AF_INET6, SOCK_STREAM, 0);
-  system_api.SetSockOpt(client_fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+  (void)system_api.SetSockOpt(client_fd, SOL_SOCKET, SO_REUSEADDR, &one,
+                              sizeof(one), "test");
   absl::Status status = system_api.SetNonBlocking(client_fd, true);
   if (!status.ok()) {
     grpc_core::Crash(absl::StrCat(status));
   }
-
-  if (system_api.Connect(client_fd,
-                         const_cast<struct sockaddr*>(server_address.address()),
-                         server_address.size()) == -1) {
+  // Ok for test to let FD escape, they don't fork
+  auto locked_client_fd = system_api.Lock(client_fd);
+  if (!locked_client_fd.ok()) {
+    grpc_core::Crash(absl::StrCat(locked_client_fd.status()));
+  }
+  auto connect_result = system_api.Connect(
+      client_fd, const_cast<struct sockaddr*>(server_address.address()),
+      server_address.size());
+  if (!connect_result.ok()) {
+    grpc_core::Crash(absl::StrCat(connect_result.status()));
+  }
+  if (*connect_result == -1) {
     if (errno == EINPROGRESS) {
       struct pollfd pfd;
-      pfd.fd = client_fd.fd();
+      pfd.fd = locked_client_fd->fd();
       pfd.events = POLLOUT;
       pfd.revents = 0;
       if (poll(&pfd, 1, -1) == -1) {
