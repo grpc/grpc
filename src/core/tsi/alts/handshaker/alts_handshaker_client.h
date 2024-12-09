@@ -158,11 +158,6 @@ class AltsHandshakerClient {
   // Exposed for testing purposes only.
   static size_t MaxNumberOfConcurrentHandshakes();
 
-  constexpr size_t kAltsAes128GcmRekeyKeyLength = 44;
-  constexpr int kHandshakerClientOpNum = 4;
-  constexpr char kMaxConcurrentStreamsEnvironmentVariable[] =
-      "GRPC_ALTS_MAX_CONCURRENT_HANDSHAKES";
-
  private:
   static void handshaker_client_send_buffer_destroy(
       alts_grpc_handshaker_client* client);
@@ -205,6 +200,12 @@ class AltsHandshakerClient {
 
   struct recv_message_result;
   struct alts_grpc_handshaker_client;
+  static constexpr size_t kAltsAes128GcmRekeyKeyLength = 44;
+
+  // TODO Is this even used anywhere?
+  constexpr char kMaxConcurrentStreamsEnvironmentVariable[] =
+      "GRPC_ALTS_MAX_CONCURRENT_HANDSHAKES";
+  constexpr int kHandshakerClientOpNum = 4;
 };
 
 #endif  // GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H
