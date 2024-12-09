@@ -123,8 +123,8 @@ void OnConnect(absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint,
       OrphanablePtr<grpc_endpoint>(
           grpc_event_engine_endpoint_create(std::move(*endpoint))),
       channel_args, deadline, nullptr /* acceptor */,
-      [result_latch =
-           std::move(result_latch)](absl::StatusOr<HandshakerArgs*> result) {
+      [result_latch = std::move(result_latch),
+       handshake_mgr](absl::StatusOr<HandshakerArgs*> result) {
         result_latch->Set(ResultFromHandshake(std::move(result)));
       });
 }

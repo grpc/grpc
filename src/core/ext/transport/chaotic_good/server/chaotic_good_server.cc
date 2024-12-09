@@ -184,8 +184,7 @@ ChaoticGoodServerListener::DataConnectionListener::DataConnectionListener(
     absl::AnyInvocable<std::string()> connection_id_generator,
     Duration connect_timeout,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
-    : ServerConnectionFactory("DCL"),
-      connection_id_generator_(std::move(connection_id_generator)),
+    : connection_id_generator_(std::move(connection_id_generator)),
       event_engine_(std::move(event_engine)),
       connect_timeout_(connect_timeout) {}
 
@@ -370,9 +369,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             new ChaoticGoodServerTransport(
                 self->connection_->args(),
                 std::move(self->connection_->endpoint_),
-                std::move(absl::get<ControlConnection>(
-                              self->connection_->handshaking_state_->data_)
-                              .config),
+                std::move(absl::get<ControlConnection>(self->data_).config),
                 self->connection_->listener_->data_connection_listener_),
             nullptr, self->connection_->args(), nullptr);
       });
