@@ -22,6 +22,8 @@
 
 namespace grpc_core {
 
+RequestBuffer::RequestBuffer() : state_(absl::in_place_type_t<Buffering>()) {}
+
 ValueOrFailure<size_t> RequestBuffer::PushClientInitialMetadata(
     ClientMetadataHandle md) {
   MutexLock lock(&mu_);

@@ -85,6 +85,8 @@ class RequestBuffer {
     Waker pull_waker_;
   };
 
+  RequestBuffer();
+
   // Push ClientInitialMetadata into the buffer.
   // This is instantaneous, and returns success with the amount of data
   // buffered, or failure.
@@ -178,7 +180,7 @@ class RequestBuffer {
 
   mutable Mutex mu_;
   Reader* winner_ ABSL_GUARDED_BY(mu_){nullptr};
-  State state_ ABSL_GUARDED_BY(mu_){Buffering{}};
+  State state_ ABSL_GUARDED_BY(mu_);
   // TODO(ctiller): change this to an intrusively linked list to avoid
   // allocations.
   absl::flat_hash_set<Reader*> readers_ ABSL_GUARDED_BY(mu_);
