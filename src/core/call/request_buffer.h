@@ -115,7 +115,7 @@ class RequestBuffer {
  private:
   // Buffering state: we're collecting metadata and messages.
   struct Buffering {
-    Buffering() = default;
+    Buffering();
     // Initial metadata, or nullptr if not yet received.
     ClientMetadataHandle initial_metadata;
     // Buffered messages.
