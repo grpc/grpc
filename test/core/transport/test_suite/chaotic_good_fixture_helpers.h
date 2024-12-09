@@ -52,7 +52,7 @@ EndpointPair CreateEndpointPair(
 class FakeClientConnectionFactory final
     : public chaotic_good::ClientConnectionFactory {
  public:
-  chaotic_good::PendingConnection Connect(absl::string_view id) override {
+  chaotic_good::PendingConnection Connect(absl::string_view) override {
     Crash("Connect not implemented");
   }
   void Orphaned() override {}
