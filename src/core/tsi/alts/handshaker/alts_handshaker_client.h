@@ -156,7 +156,7 @@ class AltsHandshakerClient {
   // Returns the max number of concurrent handshakes that are permitted.
   //
   // Exposed for testing purposes only.
-  size_t MaxNumberOfConcurrentHandshakes();
+  static size_t MaxNumberOfConcurrentHandshakes();
 
   constexpr size_t kAltsAes128GcmRekeyKeyLength = 44;
   constexpr int kHandshakerClientOpNum = 4;
