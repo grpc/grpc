@@ -48,7 +48,7 @@
 - name: canary_client_privacy
   description:
     If set, canary client privacy
-  expiry: 2024/12/01
+  expiry: 2025/01/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -60,7 +60,7 @@
 - name: client_privacy
   description:
     If set, client privacy
-  expiry: 2024/12/01
+  expiry: 2025/01/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -181,7 +181,7 @@
 - name: server_privacy
   description:
     If set, server privacy
-  expiry: 2024/12/01
+  expiry: 2025/01/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
