@@ -692,11 +692,6 @@ static void handshaker_client_destruct(alts_handshaker_client* c) {
   }
 }
 
-static const alts_handshaker_client_vtable vtable = {
-    handshaker_client_start_client, handshaker_client_start_server,
-    handshaker_client_next, handshaker_client_shutdown,
-    handshaker_client_destruct};
-
 alts_handshaker_client* alts_grpc_handshaker_client_create(
     alts_tsi_handshaker* handshaker, grpc_channel* channel,
     const char* handshaker_service_url, grpc_pollset_set* interested_parties,

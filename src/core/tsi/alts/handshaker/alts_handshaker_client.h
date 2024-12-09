@@ -164,6 +164,45 @@ class AltsHandshakerClient {
       "GRPC_ALTS_MAX_CONCURRENT_HANDSHAKES";
 
  private:
+  static void handshaker_client_send_buffer_destroy(
+      alts_grpc_handshaker_client* client);
+  static bool is_handshake_finished_properly(grpc_gcp_HandshakerResp* resp);
+  static void alts_grpc_handshaker_client_unref(
+      alts_grpc_handshaker_client* client);
+  static void maybe_complete_tsi_next(
+      alts_grpc_handshaker_client* client, bool receive_status_finished,
+      recv_message_result* pending_recv_message_result);
+  static void handle_response_done(alts_grpc_handshaker_client* client,
+                                   tsi_result status, std::string error,
+                                   const unsigned char* bytes_to_send,
+                                   size_t bytes_to_send_size,
+                                   tsi_handshaker_result* result);
+  static tsi_result continue_make_grpc_call(alts_grpc_handshaker_client* client,
+                                            bool is_start);
+  static tsi_result make_grpc_call(alts_handshaker_client* c, bool is_start);
+  static void on_status_received(void* arg, grpc_error_handle error);
+  static grpc_byte_buffer* get_serialized_handshaker_req(
+      grpc_gcp_HandshakerReq* req, upb_Arena* arena);
+  static grpc_byte_buffer* get_serialized_start_client(
+      alts_handshaker_client* c);
+  static tsi_result handshaker_client_start_client(alts_handshaker_client* c);
+  static grpc_byte_buffer* get_serialized_start_server(
+      alts_handshaker_client* c, grpc_slice* bytes_received);
+  static tsi_result handshaker_client_start_server(alts_handshaker_client* c,
+                                                   grpc_slice* bytes_received);
+  static grpc_byte_buffer* get_serialized_next(grpc_slice* bytes_received);
+  static tsi_result handshaker_client_next(alts_handshaker_client* c,
+                                           grpc_slice* bytes_received);
+  static void handshaker_client_shutdown(alts_handshaker_client* c);
+  static void handshaker_call_unref(void* arg, grpc_error_handle /* error */);
+  static void handshaker_client_destruct(alts_handshaker_client* c);
+
+  void alts_handshaker_client_handle_response(alts_handshaker_client* c,
+                                              bool is_ok);
+  void DoHandshakeQueuesInit(void);
+  void RequestHandshake(alts_grpc_handshaker_client* client, bool is_client);
+  void HandshakeDone(bool is_client);
+
   struct recv_message_result;
   struct alts_grpc_handshaker_client;
 };
