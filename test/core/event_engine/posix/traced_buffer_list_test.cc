@@ -83,7 +83,8 @@ TEST(BufferListTest, TestShutdownFlushesList) {
   int verifier_called[NUM_ELEM];
   for (auto i = 0; i < NUM_ELEM; i++) {
     verifier_called[i] = 0;
-    traced_buffers.AddNewEntry(i, 0, static_cast<void*>(&verifier_called[i]));
+    traced_buffers.AddNewEntry(i, EventEngine::FileDescriptor(),
+                               static_cast<void*>(&verifier_called[i]));
   }
   traced_buffers.Shutdown(nullptr, absl::OkStatus());
   for (auto i = 0; i < NUM_ELEM; i++) {
@@ -113,7 +114,8 @@ TEST(BufferListTest, TestVerifierCalledOnAck) {
       });
   TracedBufferList traced_buffers;
   int verifier_called = 0;
-  traced_buffers.AddNewEntry(213, 0, &verifier_called);
+  traced_buffers.AddNewEntry(213, EventEngine::FileDescriptor(),
+                             &verifier_called);
   traced_buffers.ProcessTimestamp(&serr, nullptr, &tss);
   ASSERT_EQ(verifier_called, 1);
   ASSERT_TRUE(traced_buffers.Size() == 0);
@@ -133,7 +135,8 @@ TEST(BufferListTest, TestProcessTimestampAfterShutdown) {
   TracedBufferList traced_buffers;
   int verifier_called = 0;
 
-  traced_buffers.AddNewEntry(213, 0, &verifier_called);
+  traced_buffers.AddNewEntry(213, EventEngine::FileDescriptor(),
+                             &verifier_called);
   ASSERT_TRUE(traced_buffers.Size() == 1);
   traced_buffers.Shutdown(nullptr, absl::OkStatus());
   ASSERT_TRUE(traced_buffers.Size() == 0);
@@ -166,9 +169,9 @@ TEST(BufferListTest, TestLongPendingAckForOneTracedBuffer) {
   gpr_atm_rel_store(&verifier_called[2], static_cast<gpr_atm>(0));
 
   //  Add 3 traced buffers
-  tb_list.AddNewEntry(1, 0, &verifier_called[0]);
-  tb_list.AddNewEntry(2, 0, &verifier_called[1]);
-  tb_list.AddNewEntry(3, 0, &verifier_called[2]);
+  tb_list.AddNewEntry(1, EventEngine::FileDescriptor(), &verifier_called[0]);
+  tb_list.AddNewEntry(2, EventEngine::FileDescriptor(), &verifier_called[1]);
+  tb_list.AddNewEntry(3, EventEngine::FileDescriptor(), &verifier_called[2]);
 
   AdvanceClockMillis(kMaxPendingAckMillis);
   tss.ts[0].tv_sec = g_now.tv_sec;
@@ -256,7 +259,8 @@ TEST(BufferListTest, TestLongPendingAckForSomeTracedBuffers) {
     serr[i].ee_data = i + 1;
     serr[i].ee_info = SCM_TSTAMP_ACK;
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
-    tb_list.AddNewEntry(i + 1, 0, &verifier_called[i]);
+    tb_list.AddNewEntry(i + 1, EventEngine::FileDescriptor(),
+                        &verifier_called[i]);
   }
   int elapsed_time_millis = 0;
   int increment_millis = (2 * kMaxPendingAckMillis) / 10;
