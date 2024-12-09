@@ -50,11 +50,14 @@ absl::Status EventFdWakeupFd::Init() {
 
 absl::Status EventFdWakeupFd::ConsumeWakeup() {
   eventfd_t value;
-  int err;
+  absl::StatusOr<int> err;
   do {
     err = system_api_->EventFdRead(ReadFd(), &value);
-  } while (err < 0 && errno == EINTR);
-  if (err < 0 && errno != EAGAIN) {
+  } while (err.ok() && *err < 0 && errno == EINTR);
+  if (!err.ok()) {
+    return std::move(err).status();
+  }
+  if (*err < 0 && errno != EAGAIN) {
     return absl::Status(
         absl::StatusCode::kInternal,
         absl::StrCat("eventfd_read: ", grpc_core::StrError(errno)));

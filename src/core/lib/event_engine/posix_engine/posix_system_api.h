@@ -18,36 +18,54 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include <array>
+#include <atomic>
+#include <type_traits>
 #include <unordered_set>
+#include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/synchronization/mutex.h"
+#include "absl/status/status.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/sync.h"
 
 #ifdef GRPC_LINUX_EPOLL
 #include <sys/epoll.h>
 #endif  // GRPC_LINUX_EPOLL
 
-#include <array>
-#include <atomic>
-#include <utility>
-
-#include "absl/status/status.h"
-
 namespace grpc_event_engine {
 namespace experimental {
 
-class FileDescriptor {
+class LockedFd;
+
+ABSL_ATTRIBUTE_TRIVIAL_ABI class FileDescriptor {
  public:
   FileDescriptor() = default;
   explicit FileDescriptor(int fd) : fd_(fd) {}
 
   bool ready() const { return fd_ > 0; }
   void invalidate() { fd_ = -1; }
-  int fd() const { return fd_; }
 
  private:
+  friend class LockedFd;
+  int fd() const { return fd_; }
+
   int fd_ = -1;
+};
+
+class SystemApi;
+
+// FD that is locked for use in this thread
+class LockedFd {
+ public:
+  explicit LockedFd(FileDescriptor fd, const SystemApi& system_api);
+  ~LockedFd();
+
+  int fd() const { return fd_.fd(); }
+
+ private:
+  FileDescriptor fd_;
+  const SystemApi* system_api_;
 };
 
 class SystemApi {
@@ -61,14 +79,16 @@ class SystemApi {
 
   absl::Status AdvanceGeneration();
 
-  FileDescriptor Accept(FileDescriptor sockfd, struct sockaddr* addr,
-                        socklen_t* addrlen);
-  FileDescriptor Accept4(
+  absl::StatusOr<FileDescriptor> Accept(FileDescriptor sockfd,
+                                        struct sockaddr* addr,
+                                        socklen_t* addrlen);
+  absl::StatusOr<FileDescriptor> Accept4(
       FileDescriptor sockfd,
       grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
       int nonblock, int cloexec);
-  FileDescriptor Accept4(FileDescriptor sockfd, struct sockaddr* addr,
-                         socklen_t* addrlen, int flags);
+  absl::StatusOr<FileDescriptor> Accept4(FileDescriptor sockfd,
+                                         struct sockaddr* addr,
+                                         socklen_t* addrlen, int flags);
   FileDescriptor AdoptExternalFd(int fd);
   FileDescriptor Socket(int domain, int type, int protocol);
   FileDescriptor EventFd(unsigned int initval, int flags);
@@ -78,34 +98,37 @@ class SystemApi {
   std::pair<int, std::array<FileDescriptor, 2>> SocketPair(int domain, int type,
                                                            int protocol);
 
-  int Bind(FileDescriptor fd, const struct sockaddr* addr,
-           socklen_t addrlen) const;
+  absl::StatusOr<int> Bind(FileDescriptor fd, const struct sockaddr* addr,
+                           socklen_t addrlen) const;
   void Close(FileDescriptor fd);
-  int Connect(FileDescriptor sockfd, const struct sockaddr* addr,
-              socklen_t addrlen) const;
+  absl::StatusOr<int> Connect(FileDescriptor sockfd,
+                              const struct sockaddr* addr,
+                              socklen_t addrlen) const;
 #ifdef GRPC_LINUX_EPOLL
-  long EventFdRead(FileDescriptor fd, uint64_t* value) const;
+  absl::StatusOr<long> EventFdRead(FileDescriptor fd, uint64_t* value) const;
   absl::StatusOr<int> EventFdWrite(FileDescriptor fd, uint64_t value) const;
-  int EpollCtl(FileDescriptor epfd, int op, FileDescriptor fd,
-               struct epoll_event* event) const;
-  int EpollWait(FileDescriptor epfd, struct epoll_event* events, int maxevents,
-                int timeout) const;
+  absl::StatusOr<int> EpollCtl(FileDescriptor epfd, int op, FileDescriptor fd,
+                               struct epoll_event* event) const;
+  absl::StatusOr<int> EpollWait(FileDescriptor epfd, struct epoll_event* events,
+                                int maxevents, int timeout) const;
 #endif  // GRPC_LINUX_EPOLL
-  int GetSockOpt(FileDescriptor fd, int level, int optname, void* optval,
-                 socklen_t* optlen) const;
-  int GetSockName(FileDescriptor fd, struct sockaddr* addr,
-                  socklen_t* addrlen) const;
-  int GetPeerName(FileDescriptor fd, struct sockaddr* addr,
-                  socklen_t* addrlen) const;
-  int Ioctl(FileDescriptor fd, int request, void* extras) const;
-  int Listen(FileDescriptor fd, int backlog) const;
-  long RecvMsg(FileDescriptor fd, struct msghdr* msg, int flags) const;
-  long Read(FileDescriptor fd, void* buf, size_t count) const;
-  long SendMsg(FileDescriptor fd, const struct msghdr* message,
-               int flags) const;
-  int SetSockOpt(FileDescriptor fd, int level, int optname, const void* optval,
-                 socklen_t optlen) const;
-  int Shutdown(FileDescriptor sockfd, int how) const;
+  absl::StatusOr<int> GetSockOpt(FileDescriptor fd, int level, int optname,
+                                 void* optval, socklen_t* optlen) const;
+  absl::StatusOr<int> GetSockName(FileDescriptor fd, struct sockaddr* addr,
+                                  socklen_t* addrlen) const;
+  absl::StatusOr<int> GetPeerName(FileDescriptor fd, struct sockaddr* addr,
+                                  socklen_t* addrlen) const;
+  absl::StatusOr<int> Ioctl(FileDescriptor fd, int request, void* extras) const;
+  absl::StatusOr<int> Listen(FileDescriptor fd, int backlog) const;
+  absl::StatusOr<long> RecvMsg(FileDescriptor fd, struct msghdr* msg,
+                               int flags) const;
+  absl::StatusOr<long> Read(FileDescriptor fd, void* buf, size_t count) const;
+  absl::StatusOr<long> SendMsg(FileDescriptor fd, const struct msghdr* message,
+                               int flags) const;
+  absl::Status SetSockOpt(FileDescriptor fd, int level, int optname,
+                          const void* optval, socklen_t optlen,
+                          absl::string_view label) const;
+  absl::StatusOr<int> Shutdown(FileDescriptor sockfd, int how) const;
   absl::StatusOr<long> Write(FileDescriptor fd, const void* buf,
                              size_t count) const;
 
@@ -159,6 +182,8 @@ class SystemApi {
     return WithFd(fd, operation);
   }
 
+  absl::StatusOr<LockedFd> Lock(FileDescriptor fd) const;
+
  private:
 #if GPR_LINUX == 1
 // For Linux, it will be detected to support TCP_USER_TIMEOUT
@@ -181,33 +206,55 @@ class SystemApi {
   template <typename R>
   struct WithFdReturn {
     using type = absl::StatusOr<R>;
+
+    template <typename Fn>
+    static type invoke(const Fn fn, int fd) {
+      return fn(fd);
+    }
   };
 
   template <>
   struct WithFdReturn<absl::Status> {
     using type = absl::Status;
+
+    template <typename Fn>
+    static type invoke(const Fn fn, int fd) {
+      return fn(fd);
+    }
   };
 
   template <typename R>
   struct WithFdReturn<absl::StatusOr<R>> {
     using type = absl::StatusOr<R>;
+
+    template <typename Fn>
+    static type invoke(const Fn fn, int fd) {
+      return fn(fd);
+    }
+  };
+
+  template <>
+  struct WithFdReturn<void> {
+    using type = absl::Status;
+
+    template <typename Fn>
+    static type invoke(const Fn fn, int fd) {
+      fn(fd);
+      return absl::OkStatus();
+    }
   };
 
   template <typename Fn>
   auto WithFd(const FileDescriptor& fd, const Fn& fn) const ->
       typename WithFdReturn<decltype(fn(0))>::type {
-    int native_fd;
     if (!fd.ready()) {
       return absl::InternalError("Invalid file descriptor");
     }
-    {
-      absl::MutexLock lock(&mu_);
-      if (fds_.find(fd.fd()) == fds_.end()) {
-        return absl::NotFoundError("Unknown file descriptor");
-      }
-      native_fd = fd.fd();
+    auto locked_fd = Lock(fd);
+    if (!locked_fd.ok()) {
+      return std::move(locked_fd).status();
     }
-    return fn(native_fd);
+    return WithFdReturn<decltype(fn(0))>::invoke(fn, locked_fd->fd());
   }
 
   // Whether the socket supports TCP_USER_TIMEOUT option.
@@ -215,7 +262,7 @@ class SystemApi {
   mutable std::atomic<int> g_socket_supports_tcp_user_timeout = {
       SOCKET_SUPPORTS_TCP_USER_TIMEOUT_DEFAULT};
   std::unordered_set<int> fds_ ABSL_GUARDED_BY(&mu_);
-  mutable absl::Mutex mu_;
+  mutable grpc_core::Mutex mu_;
 
   // The default values for TCP_USER_TIMEOUT are currently configured to be in
   // line with the default values of KEEPALIVE_TIMEOUT as proposed in

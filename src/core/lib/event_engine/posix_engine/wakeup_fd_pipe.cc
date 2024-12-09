@@ -55,12 +55,15 @@ absl::Status PipeWakeupFd::Init(SystemApi& system_api) {
 
 absl::Status PipeWakeupFd::ConsumeWakeup() {
   char buf[128];
-  ssize_t r;
+  absl::StatusOr<ssize_t> r;
 
   for (;;) {
     r = system_api_->Read(ReadFd(), buf, sizeof(buf));
-    if (r > 0) continue;
-    if (r == 0) return absl::OkStatus();
+    if (!r.ok()) {
+      return std::move(r).status();
+    }
+    if (*r > 0) continue;
+    if (*r == 0) return absl::OkStatus();
     switch (errno) {
       case EAGAIN:
         return absl::OkStatus();

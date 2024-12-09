@@ -25,6 +25,7 @@
 #include <list>
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/any_invocable.h"
@@ -306,7 +307,7 @@ void ResetEventManagerOnFork() {
   }
   CHECK_NE(system_api, nullptr);
   while (fork_fd_list_head != nullptr) {
-    close(fork_fd_list_head->WrappedFd().fd());
+    system_api->Close(fork_fd_list_head->WrappedFd());
     PollEventHandle* next = fork_fd_list_head->ForkFdListPos().next;
     fork_fd_list_head->ForceRemoveHandleFromPoller();
     delete fork_fd_list_head;
@@ -382,7 +383,7 @@ void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done,
     }
     // signal read/write closed to OS so that future operations fail.
     if (!released_) {
-      poller_->GetSystemApi()->Shutdown(fd_, SHUT_RDWR);
+      (void)poller_->GetSystemApi()->Shutdown(fd_, SHUT_RDWR);
     }
     if (!IsWatched()) {
       CloseFd();
@@ -648,6 +649,10 @@ Poller::WorkResult PollPoller::Work(
   int timeout_ms =
       static_cast<int>(grpc_event_engine::experimental::Milliseconds(timeout));
   mu_.Lock();
+  absl::StatusOr<LockedFd> locked_wakeup =
+      system_api_->Lock(wakeup_fd_->ReadFd());
+  CHECK(locked_wakeup.ok()) << locked_wakeup.status();
+  int wakeup_fd = locked_wakeup.ok() ? locked_wakeup->fd() : -1;
   // Start polling, and keep doing so while we're being asked to
   // re-evaluate our pollers (this allows poll() based pollers to
   // ensure they don't miss wakeups).
@@ -656,6 +661,7 @@ Poller::WorkResult PollPoller::Work(
     size_t i;
     nfds_t pfd_count;
     struct pollfd* pfds;
+    std::vector<absl::StatusOr<LockedFd>> locked_fds;
     PollEventHandle** watchers;
     // Estimate start time for a poll iteration.
     grpc_core::Timestamp start = grpc_core::Timestamp::FromTimespecRoundDown(
@@ -672,9 +678,8 @@ Poller::WorkResult PollPoller::Work(
           static_cast<void*>((static_cast<char*>(buf) + pfd_size)));
       pfds = static_cast<struct pollfd*>(buf);
     }
-
     pfd_count = 1;
-    pfds[0].fd = wakeup_fd_->ReadFd().fd();
+    pfds[0].fd = wakeup_fd;
     pfds[0].events = POLLIN;
     pfds[0].revents = 0;
     PollEventHandle* head = poll_handles_list_head_;
@@ -686,7 +691,11 @@ Poller::WorkResult PollPoller::Work(
         // poll handle list for the poller under the poller lock.
         CHECK(!head->IsOrphaned());
         if (!head->IsPollhup()) {
-          pfds[pfd_count].fd = head->WrappedFd().fd();
+          locked_fds.push_back(system_api_->Lock(head->WrappedFd()));
+          if (!locked_fds.back().ok()) {
+            continue;
+          }
+          pfds[pfd_count].fd = locked_fds.back()->fd();
           watchers[pfd_count] = head;
           // BeginPollLocked takes a ref of the handle. It also marks the
           // fd as Watched with an appropriate watch_mask. The watch_mask

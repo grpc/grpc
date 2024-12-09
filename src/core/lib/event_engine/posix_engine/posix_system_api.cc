@@ -104,12 +104,16 @@ close_and_error:
 
 #elif GRPC_LINUX_SOCKETUTILS
 
-FileDescriptor SystemApi::Accept4(FileDescriptor sockfd, struct sockaddr* addr,
-                                  socklen_t* addrlen, int flags) {
-  return RegisterFileDescriptor(accept4(sockfd.fd(), addr, addrlen, flags));
+absl::StatusOr<FileDescriptor> SystemApi::Accept4(FileDescriptor sockfd,
+                                                  struct sockaddr* addr,
+                                                  socklen_t* addrlen,
+                                                  int flags) {
+  return WithFd(sockfd, [=](int fd) {
+    return RegisterFileDescriptor(accept4(fd, addr, addrlen, flags));
+  });
 }
 
-FileDescriptor SystemApi::Accept4(
+absl::StatusOr<FileDescriptor> SystemApi::Accept4(
     FileDescriptor sockfd,
     grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
     int nonblock, int cloexec) {
@@ -118,7 +122,7 @@ FileDescriptor SystemApi::Accept4(
   flags |= cloexec ? SOCK_CLOEXEC : 0;
   EventEngine::ResolvedAddress peer_addr;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  FileDescriptor ret =
+  absl::StatusOr<FileDescriptor> ret =
       Accept4(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len, flags);
   addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
   return ret;
@@ -144,9 +148,12 @@ FileDescriptor SystemApi::RegisterFileDescriptor(int fd) {
   return FileDescriptor(fd);
 }
 
-FileDescriptor SystemApi::Accept(FileDescriptor sockfd, struct sockaddr* addr,
-                                 socklen_t* addrlen) {
-  return RegisterFileDescriptor(accept(sockfd.fd(), addr, addrlen));
+absl::StatusOr<FileDescriptor> SystemApi::Accept(FileDescriptor sockfd,
+                                                 struct sockaddr* addr,
+                                                 socklen_t* addrlen) {
+  return WithFd(sockfd, [=](int fd) {
+    return RegisterFileDescriptor(accept(fd, addr, addrlen));
+  });
 }
 
 FileDescriptor SystemApi::AdoptExternalFd(int fd) {
@@ -157,50 +164,69 @@ FileDescriptor SystemApi::Socket(int domain, int type, int protocol) {
   return RegisterFileDescriptor(socket(domain, type, protocol));
 }
 
-int SystemApi::Bind(FileDescriptor fd, const struct sockaddr* addr,
-                    socklen_t addrlen) const {
-  return bind(fd.fd(), addr, addrlen);
+absl::StatusOr<int> SystemApi::Bind(FileDescriptor fd,
+                                    const struct sockaddr* addr,
+                                    socklen_t addrlen) const {
+  return WithFd(fd, [=](int fd) { return bind(fd, addr, addrlen); });
 }
 
 void SystemApi::Close(FileDescriptor fd) {
+  auto locked_fd = Lock(fd);
+  if (!locked_fd.ok()) {
+    return;
+  }
   absl::MutexLock lock(&mu_);
-  if (fds_.erase(fd.fd()) > 0) {
-    close(fd.fd());
+  if (fds_.erase(locked_fd->fd()) > 0) {
+    close(locked_fd->fd());
   }
 }
 
-int SystemApi::GetSockOpt(FileDescriptor fd, int level, int optname,
-                          void* optval, socklen_t* optlen) const {
-  return getsockopt(fd.fd(), level, optname, optval, optlen);
+absl::StatusOr<int> SystemApi::GetSockOpt(FileDescriptor fd, int level,
+                                          int optname, void* optval,
+                                          socklen_t* optlen) const {
+  return WithFd(fd, [=](int fd) {
+    return getsockopt(fd, level, optname, optval, optlen);
+  });
 }
 
-int SystemApi::GetSockName(FileDescriptor fd, struct sockaddr* addr,
-                           socklen_t* addrlen) const {
-  return getsockname(fd.fd(), addr, addrlen);
+absl::StatusOr<int> SystemApi::GetSockName(FileDescriptor fd,
+                                           struct sockaddr* addr,
+                                           socklen_t* addrlen) const {
+  return WithFd(fd, [=](int fd) { return getsockname(fd, addr, addrlen); });
 }
 
-int SystemApi::GetPeerName(FileDescriptor fd, struct sockaddr* addr,
-                           socklen_t* addrlen) const {
-  return getpeername(fd.fd(), addr, addrlen);
+absl::StatusOr<int> SystemApi::GetPeerName(FileDescriptor fd,
+                                           struct sockaddr* addr,
+                                           socklen_t* addrlen) const {
+  return WithFd(fd, [=](int fd) { return getpeername(fd, addr, addrlen); });
 }
 
-int SystemApi::Listen(FileDescriptor fd, int backlog) const {
-  return listen(fd.fd(), backlog);
+absl::StatusOr<int> SystemApi::Listen(FileDescriptor fd, int backlog) const {
+  return WithFd(fd, [=](int fd) { return listen(fd, backlog); });
 }
 
-long SystemApi::RecvMsg(FileDescriptor fd, struct msghdr* msg,
-                        int flags) const {
-  return recvmsg(fd.fd(), msg, flags);
+absl::StatusOr<long> SystemApi::RecvMsg(FileDescriptor fd, struct msghdr* msg,
+                                        int flags) const {
+  return WithFd(fd, [=](int fd) { return recvmsg(fd, msg, flags); });
 }
 
-long SystemApi::SendMsg(FileDescriptor fd, const struct msghdr* message,
-                        int flags) const {
-  return sendmsg(fd.fd(), message, flags);
+absl::StatusOr<long> SystemApi::SendMsg(FileDescriptor fd,
+                                        const struct msghdr* message,
+                                        int flags) const {
+  return WithFd(fd, [=](int fd) { return sendmsg(fd, message, flags); });
 }
 
-int SystemApi::SetSockOpt(FileDescriptor fd, int level, int optname,
-                          const void* optval, socklen_t optlen) const {
-  return setsockopt(fd.fd(), level, optname, optval, optlen);
+absl::Status SystemApi::SetSockOpt(FileDescriptor fd, int level, int optname,
+                                   const void* optval, socklen_t optlen,
+                                   absl::string_view label) const {
+  return WithFd(fd, [=](int fd) {
+    int result = setsockopt(fd, level, optname, optval, optlen);
+    if (result == 0) {
+      return absl::OkStatus();
+    } else {
+      return absl::ErrnoToStatus(errno, label);
+    }
+  });
 }
 
 absl::Status SystemApi::SetSocketNoSigpipeIfPossible(FileDescriptor fd) const {
@@ -251,19 +277,20 @@ bool SystemApi::IsSocketReusePortSupported() const {
 
 // set a socket to reuse old ports
 absl::Status SystemApi::SetSocketReusePort(FileDescriptor fd, int reuse) const {
+  return WithFd(fd, [=](int fd) -> absl::Status {
 #ifndef SO_REUSEPORT
-  return absl::Status(absl::StatusCode::kInternal,
-                      "SO_REUSEPORT unavailable on compiling system");
+    return absl::Status(absl::StatusCode::kInternal,
+                        "SO_REUSEPORT unavailable on compiling system");
 #else
   int val = (reuse != 0);
   int newval;
   socklen_t intlen = sizeof(newval);
-  if (0 != SetSockOpt(fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val))) {
+  if (0 != setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val))) {
     return absl::Status(
         absl::StatusCode::kInternal,
         absl::StrCat("setsockopt(SO_REUSEPORT): ", grpc_core::StrError(errno)));
   }
-  if (0 != GetSockOpt(fd, SOL_SOCKET, SO_REUSEPORT, &newval, &intlen)) {
+  if (0 != getsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &newval, &intlen)) {
     return absl::Status(
         absl::StatusCode::kInternal,
         absl::StrCat("getsockopt(SO_REUSEPORT): ", grpc_core::StrError(errno)));
@@ -272,15 +299,19 @@ absl::Status SystemApi::SetSocketReusePort(FileDescriptor fd, int reuse) const {
     return absl::Status(absl::StatusCode::kInternal,
                         "Failed to set SO_REUSEPORT");
   }
-
   return absl::OkStatus();
 #endif
+  });
 }
 
 // Set Differentiated Services Code Point (DSCP)
 absl::Status SystemApi::SetSocketDscp(FileDescriptor fd, int dscp) const {
   if (dscp == kDscpNotSet) {
     return absl::OkStatus();
+  }
+  auto locked_fd = Lock(fd);
+  if (!locked_fd.ok()) {
+    return std::move(locked_fd).status();
   }
   // The TOS/TrafficClass byte consists of following bits:
   // | 7 6 5 4 3 2 | 1 0 |
@@ -289,19 +320,21 @@ absl::Status SystemApi::SetSocketDscp(FileDescriptor fd, int dscp) const {
   int val;
   socklen_t intlen = sizeof(val);
   // Get ECN bits from current IP_TOS value unless IPv6 only
-  if (0 == GetSockOpt(fd, IPPROTO_IP, IP_TOS, &val, &intlen)) {
+  if (0 == getsockopt(locked_fd->fd(), IPPROTO_IP, IP_TOS, &val, &intlen)) {
     newval |= (val & 0x3);
-    if (0 != SetSockOpt(fd, IPPROTO_IP, IP_TOS, &newval, sizeof(newval))) {
+    if (0 != setsockopt(locked_fd->fd(), IPPROTO_IP, IP_TOS, &newval,
+                        sizeof(newval))) {
       return absl::Status(
           absl::StatusCode::kInternal,
           absl::StrCat("setsockopt(IP_TOS): ", grpc_core::StrError(errno)));
     }
   }
   // Get ECN from current Traffic Class value if IPv6 is available
-  if (0 == GetSockOpt(fd, IPPROTO_IPV6, IPV6_TCLASS, &val, &intlen)) {
+  if (0 ==
+      getsockopt(locked_fd->fd(), IPPROTO_IPV6, IPV6_TCLASS, &val, &intlen)) {
     newval |= (val & 0x3);
-    if (0 !=
-        SetSockOpt(fd, IPPROTO_IPV6, IPV6_TCLASS, &newval, sizeof(newval))) {
+    if (0 != setsockopt(locked_fd->fd(), IPPROTO_IPV6, IPV6_TCLASS, &newval,
+                        sizeof(newval))) {
       return absl::Status(absl::StatusCode::kInternal,
                           absl::StrCat("setsockopt(IPV6_TCLASS): ",
                                        grpc_core::StrError(errno)));
@@ -312,20 +345,22 @@ absl::Status SystemApi::SetSocketDscp(FileDescriptor fd, int dscp) const {
 
 // Set a socket to use zerocopy
 absl::Status SystemApi::SetSocketZeroCopy(FileDescriptor fd) const {
+  return WithFd(fd, [](int fd) -> absl::Status {
 #ifdef GRPC_LINUX_ERRQUEUE
-  const int enable = 1;
-  auto err = SetSockOpt(fd, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
-  if (err != 0) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_ZEROCOPY): ", grpc_core::StrError(errno)));
-  }
-  return absl::OkStatus();
+    const int enable = 1;
+    auto err = setsockopt(fd, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
+    if (err != 0) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          absl::StrCat("setsockopt(SO_ZEROCOPY): ",
+                                       grpc_core::StrError(errno)));
+    }
+    return absl::OkStatus();
 #else
   return absl::Status(absl::StatusCode::kInternal,
                       absl::StrCat("setsockopt(SO_ZEROCOPY): ",
                                    grpc_core::StrError(ENOSYS).c_str()));
 #endif
+  });
 }
 
 // Set a socket to non blocking mode
@@ -371,94 +406,106 @@ absl::Status SystemApi::SetSocketCloexec(FileDescriptor fd,
 // Disable nagle algorithm
 absl::Status SystemApi::SetSocketLowLatency(FileDescriptor fd,
                                             int low_latency) const {
-  int val = (low_latency != 0);
-  int newval;
-  socklen_t intlen = sizeof(newval);
-  if (0 != SetSockOpt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val))) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(TCP_NODELAY): ", grpc_core::StrError(errno)));
-  }
-  if (0 != GetSockOpt(fd, IPPROTO_TCP, TCP_NODELAY, &newval, &intlen)) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("getsockopt(TCP_NODELAY): ", grpc_core::StrError(errno)));
-  }
-  if ((newval != 0) != val) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        "Failed to set TCP_NODELAY");
-  }
-  return absl::OkStatus();
+  return WithFd(fd, [low_latency](int fd) {
+    int val = (low_latency != 0);
+    int newval;
+    socklen_t intlen = sizeof(newval);
+    if (0 != setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val))) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          absl::StrCat("setsockopt(TCP_NODELAY): ",
+                                       grpc_core::StrError(errno)));
+    }
+    if (0 != getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &newval, &intlen)) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          absl::StrCat("getsockopt(TCP_NODELAY): ",
+                                       grpc_core::StrError(errno)));
+    }
+    if ((newval != 0) != val) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          "Failed to set TCP_NODELAY");
+    }
+    return absl::OkStatus();
+  });
 }
 
 // set a socket to reuse old addresses
 absl::Status SystemApi::SetSocketReuseAddr(FileDescriptor fd, int reuse) const {
-  int val = (reuse != 0);
-  int newval;
-  socklen_t intlen = sizeof(newval);
-  if (0 != SetSockOpt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val))) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_REUSEADDR): ", grpc_core::StrError(errno)));
-  }
-  if (0 != GetSockOpt(fd, SOL_SOCKET, SO_REUSEADDR, &newval, &intlen)) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("getsockopt(SO_REUSEADDR): ", grpc_core::StrError(errno)));
-  }
-  if ((newval != 0) != val) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        "Failed to set SO_REUSEADDR");
-  }
-
-  return absl::OkStatus();
+  return WithFd(fd, [reuse](int fd) {
+    int val = (reuse != 0);
+    int newval;
+    socklen_t intlen = sizeof(newval);
+    if (0 != setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val))) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          absl::StrCat("setsockopt(SO_REUSEADDR): ",
+                                       grpc_core::StrError(errno)));
+    }
+    if (0 != getsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &newval, &intlen)) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          absl::StrCat("getsockopt(SO_REUSEADDR): ",
+                                       grpc_core::StrError(errno)));
+    }
+    if ((newval != 0) != val) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          "Failed to set SO_REUSEADDR");
+    }
+    return absl::OkStatus();
+  });
 }
 
 absl::Status SystemApi::SetSocketIpPktInfoIfPossible(FileDescriptor fd) const {
+  return WithFd(fd, [=](int fd) -> absl::Status {
 #ifdef GRPC_HAVE_IP_PKTINFO
-  int get_local_ip = 1;
-  if (0 != SetSockOpt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
-                      sizeof(get_local_ip))) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(IP_PKTINFO): ", grpc_core::StrError(errno)));
-  }
+    int get_local_ip = 1;
+    auto result = setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
+                             sizeof(get_local_ip));
+    if (result < 0) {
+      return absl::Status(
+          absl::StatusCode::kInternal,
+          absl::StrCat("setsockopt(IP_PKTINFO): ", grpc_core::StrError(errno)));
+    }
 #endif
-  return absl::OkStatus();
+    return absl::OkStatus();
+  });
 }
 
 absl::Status SystemApi::SetSocketIpv6RecvPktInfoIfPossible(
     FileDescriptor fd) const {
+  return WithFd(fd, [=](int fd) {
 #ifdef GRPC_HAVE_IPV6_RECVPKTINFO
-  int get_local_ip = 1;
-  if (0 != SetSockOpt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &get_local_ip,
-                      sizeof(get_local_ip))) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("setsockopt(IPV6_RECVPKTINFO): ",
-                                     grpc_core::StrError(errno)));
-  }
+    int get_local_ip = 1;
+    if (0 != setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &get_local_ip,
+                        sizeof(get_local_ip))) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          absl::StrCat("setsockopt(IPV6_RECVPKTINFO): ",
+                                       grpc_core::StrError(errno)));
+    }
 #endif
-  return absl::OkStatus();
+    return absl::OkStatus();
+  });
 }
 
 absl::Status SystemApi::SetSocketSndBuf(FileDescriptor fd,
                                         int buffer_size_bytes) const {
-  return 0 == SetSockOpt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
-                         sizeof(buffer_size_bytes))
-             ? absl::OkStatus()
-             : absl::Status(absl::StatusCode::kInternal,
-                            absl::StrCat("setsockopt(SO_SNDBUF): ",
-                                         grpc_core::StrError(errno)));
+  return WithFd(fd, [=](int fd) {
+    return 0 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
+                           sizeof(buffer_size_bytes))
+               ? absl::OkStatus()
+               : absl::Status(absl::StatusCode::kInternal,
+                              absl::StrCat("setsockopt(SO_SNDBUF): ",
+                                           grpc_core::StrError(errno)));
+  });
 }
 
 absl::Status SystemApi::SetSocketRcvBuf(FileDescriptor fd,
                                         int buffer_size_bytes) const {
-  return 0 == SetSockOpt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
-                         sizeof(buffer_size_bytes))
-             ? absl::OkStatus()
-             : absl::Status(absl::StatusCode::kInternal,
-                            absl::StrCat("setsockopt(SO_RCVBUF): ",
-                                         grpc_core::StrError(errno)));
+  return WithFd(fd, [=](int fd) {
+    return 0 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
+                           sizeof(buffer_size_bytes))
+               ? absl::OkStatus()
+               : absl::Status(absl::StatusCode::kInternal,
+                              absl::StrCat("setsockopt(SO_RCVBUF): ",
+                                           grpc_core::StrError(errno)));
+  });
 }
 
 // Set TCP_USER_TIMEOUT
@@ -480,43 +527,45 @@ void SystemApi::TrySetSocketTcpUserTimeout(FileDescriptor fd,
     timeout = keep_alive_timeout_ms;
   }
   if (enable) {
-    int newval;
-    socklen_t len = sizeof(newval);
-    // If this is the first time to use TCP_USER_TIMEOUT, try to check
-    // if it is available.
-    if (g_socket_supports_tcp_user_timeout.load() == 0) {
-      if (0 != GetSockOpt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-        // This log is intentionally not protected behind a flag, so that users
-        // know that TCP_USER_TIMEOUT is not being used.
-        GRPC_TRACE_LOG(tcp, INFO)
-            << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
-               "won't be used thereafter";
-        g_socket_supports_tcp_user_timeout.store(-1);
-      } else {
-        GRPC_TRACE_LOG(tcp, INFO)
-            << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
-               "used thereafter";
-        g_socket_supports_tcp_user_timeout.store(1);
+    (void)WithFd(fd, [=](int fd) {
+      int newval;
+      socklen_t len = sizeof(newval);
+      // If this is the first time to use TCP_USER_TIMEOUT, try to check
+      // if it is available.
+      if (g_socket_supports_tcp_user_timeout.load() == 0) {
+        if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
+          // This log is intentionally not protected behind a flag, so that
+          // users know that TCP_USER_TIMEOUT is not being used.
+          GRPC_TRACE_LOG(tcp, INFO)
+              << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
+                 "won't be used thereafter";
+          g_socket_supports_tcp_user_timeout.store(-1);
+        } else {
+          GRPC_TRACE_LOG(tcp, INFO)
+              << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
+                 "used thereafter";
+          g_socket_supports_tcp_user_timeout.store(1);
+        }
       }
-    }
-    if (g_socket_supports_tcp_user_timeout.load() > 0) {
-      if (0 != SetSockOpt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
-                          sizeof(timeout))) {
-        LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
-                   << grpc_core::StrError(errno);
-        return;
+      if (g_socket_supports_tcp_user_timeout.load() > 0) {
+        if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
+                            sizeof(timeout))) {
+          LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
+                     << grpc_core::StrError(errno);
+          return;
+        }
+        if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
+          LOG(ERROR) << "getsockopt(TCP_USER_TIMEOUT) "
+                     << grpc_core::StrError(errno);
+          return;
+        }
+        if (newval != timeout) {
+          // Do not fail on failing to set TCP_USER_TIMEOUT
+          LOG(ERROR) << "Failed to set TCP_USER_TIMEOUT";
+          return;
+        }
       }
-      if (0 != GetSockOpt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-        LOG(ERROR) << "getsockopt(TCP_USER_TIMEOUT) "
-                   << grpc_core::StrError(errno);
-        return;
-      }
-      if (newval != timeout) {
-        // Do not fail on failing to set TCP_USER_TIMEOUT
-        LOG(ERROR) << "Failed to set TCP_USER_TIMEOUT";
-        return;
-      }
-    }
+    });
   }
 }
 
@@ -539,7 +588,11 @@ absl::StatusOr<EventEngine::ResolvedAddress> SystemApi::LocalAddress(
     FileDescriptor fd) const {
   EventEngine::ResolvedAddress addr;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  if (GetSockName(fd, const_cast<sockaddr*>(addr.address()), &len) < 0) {
+  auto sock_name = GetSockName(fd, const_cast<sockaddr*>(addr.address()), &len);
+  if (!sock_name.ok()) {
+    return std::move(sock_name).status();
+  }
+  if (*sock_name < 0) {
     return absl::InternalError(
         absl::StrCat("getsockname:", grpc_core::StrError(errno)));
   }
@@ -548,13 +601,16 @@ absl::StatusOr<EventEngine::ResolvedAddress> SystemApi::LocalAddress(
 
 absl::StatusOr<EventEngine::ResolvedAddress> SystemApi::PeerAddress(
     FileDescriptor fd) const {
-  EventEngine::ResolvedAddress addr;
-  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  if (GetPeerName(fd, const_cast<sockaddr*>(addr.address()), &len) < 0) {
-    return absl::InternalError(
-        absl::StrCat("getpeername:", grpc_core::StrError(errno)));
-  }
-  return EventEngine::ResolvedAddress(addr.address(), len);
+  return WithFd(
+      fd, [=](int fd) -> absl::StatusOr<EventEngine::ResolvedAddress> {
+        EventEngine::ResolvedAddress addr;
+        socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+        if (getpeername(fd, const_cast<sockaddr*>(addr.address()), &len) < 0) {
+          return absl::InternalError(
+              absl::StrCat("getpeername:", grpc_core::StrError(errno)));
+        }
+        return EventEngine::ResolvedAddress(addr.address(), len);
+      });
 }
 
 absl::StatusOr<std::string> SystemApi::LocalAddressString(
@@ -575,21 +631,24 @@ absl::StatusOr<std::string> SystemApi::PeerAddressString(
   return ResolvedAddressToNormalizedString((*status));
 }
 
-int SystemApi::Shutdown(FileDescriptor sockfd, int how) const {
-  return shutdown(sockfd.fd(), how);
+absl::StatusOr<int> SystemApi::Shutdown(FileDescriptor sockfd, int how) const {
+  return WithFd(sockfd, [=](int fd) { return shutdown(fd, how); });
 }
 
-int SystemApi::Connect(FileDescriptor sockfd, const struct sockaddr* addr,
-                       socklen_t addrlen) const {
-  return connect(sockfd.fd(), addr, addrlen);
+absl::StatusOr<int> SystemApi::Connect(FileDescriptor sockfd,
+                                       const struct sockaddr* addr,
+                                       socklen_t addrlen) const {
+  return WithFd(sockfd, [=](int fd) { return connect(fd, addr, addrlen); });
 }
 
-int SystemApi::Ioctl(FileDescriptor fd, int request, void* extras) const {
-  return ioctl(fd.fd(), request, extras);
+absl::StatusOr<int> SystemApi::Ioctl(FileDescriptor fd, int request,
+                                     void* extras) const {
+  return WithFd(fd, [=](int fd) { return ioctl(fd, request, extras); });
 }
 
-long SystemApi::Read(FileDescriptor fd, void* buf, size_t count) const {
-  return read(fd.fd(), buf, count);
+absl::StatusOr<long> SystemApi::Read(FileDescriptor fd, void* buf,
+                                     size_t count) const {
+  return WithFd(fd, [=](int fd) { return read(fd, buf, count); });
 }
 
 absl::StatusOr<long> SystemApi::Write(FileDescriptor fd, const void* buf,
@@ -631,28 +690,38 @@ std::pair<int, std::array<FileDescriptor, 2>> SystemApi::Pipe() {
 }
 
 #ifdef GRPC_LINUX_EPOLL
-long SystemApi::EventFdRead(FileDescriptor fd, uint64_t* value) const {
-  return eventfd_read(fd.fd(), value);
+absl::StatusOr<long> SystemApi::EventFdRead(FileDescriptor fd,
+                                            uint64_t* value) const {
+  return WithFd(fd,
+                [value](int fd) -> long { return eventfd_read(fd, value); });
 }
 
-int SystemApi::EpollCtl(FileDescriptor epfd, int op, FileDescriptor fd,
-                        struct epoll_event* event) const {
-  return epoll_ctl(epfd.fd(), op, fd.fd(), event);
+absl::StatusOr<int> SystemApi::EpollCtl(FileDescriptor epfd, int op,
+                                        FileDescriptor fd,
+                                        struct epoll_event* event) const {
+  return WithFd(epfd, [=](int epfd) -> absl::StatusOr<int> {
+    absl::StatusOr<LockedFd> locked_fd = Lock(fd);
+    if (!locked_fd.ok()) {
+      return std::move(locked_fd).status();
+    }
+    return epoll_ctl(epfd, op, locked_fd->fd(), event);
+  });
 }
 
-int SystemApi::EpollWait(FileDescriptor epfd, struct epoll_event* events,
-                         int maxevents, int timeout) const {
-  return epoll_wait(epfd.fd(), events, maxevents, timeout);
+absl::StatusOr<int> SystemApi::EpollWait(FileDescriptor epfd,
+                                         struct epoll_event* events,
+                                         int maxevents, int timeout) const {
+  return WithFd(
+      epfd, [=](int fd) { return epoll_wait(fd, events, maxevents, timeout); });
 }
 
 FileDescriptor SystemApi::EventFd(unsigned int initval, int flags) {
-  return AdoptExternalFd(eventfd(initval, flags));
+  return RegisterFileDescriptor(eventfd(initval, flags));
 }
 
 absl::StatusOr<int> SystemApi::EventFdWrite(FileDescriptor fd,
                                             uint64_t value) const {
-  return WithFd(fd,
-                [value](int fd) -> long { return eventfd_write(fd, value); });
+  return WithFd(fd, [=](int fd) { return eventfd_write(fd, value); });
 }
 
 #endif  // GRPC_LINUX_EVENTFD
