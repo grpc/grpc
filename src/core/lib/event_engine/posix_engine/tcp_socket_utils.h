@@ -227,11 +227,13 @@ bool SetSocketDualStack(int fd);
 
 // Tries to set the socket using a grpc_socket_mutator
 absl::Status SetSocketMutator(FileDescriptor fd, grpc_fd_usage usage,
-                              grpc_socket_mutator* mutator);
+                              grpc_socket_mutator* mutator,
+                              const SystemApi* system_api);
 
 // Extracts the first socket mutator from config if any and applies on the fd.
 absl::Status ApplySocketMutatorInOptions(FileDescriptor fd, grpc_fd_usage usage,
-                                         const PosixTcpOptions& options);
+                                         const PosixTcpOptions& options,
+                                         const SystemApi* system_api);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

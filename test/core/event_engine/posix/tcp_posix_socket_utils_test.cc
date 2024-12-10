@@ -120,24 +120,28 @@ TEST(TcpPosixSocketUtilsTest, SocketMutatorTest) {
     mutator.option_value = IPTOS_LOWDELAY;
     EXPECT_TRUE(
         SetSocketMutator(sock, GRPC_FD_CLIENT_CONNECTION_USAGE,
-                         reinterpret_cast<grpc_socket_mutator*>(&mutator))
+                         reinterpret_cast<grpc_socket_mutator*>(&mutator),
+                         &system_api)
             .ok());
     mutator.option_value = IPTOS_THROUGHPUT;
     EXPECT_TRUE(
         SetSocketMutator(sock, GRPC_FD_CLIENT_CONNECTION_USAGE,
-                         reinterpret_cast<grpc_socket_mutator*>(&mutator))
+                         reinterpret_cast<grpc_socket_mutator*>(&mutator),
+                         &system_api)
             .ok());
 
     mutator.option_value = IPTOS_RELIABILITY;
     EXPECT_TRUE(
         SetSocketMutator(sock, GRPC_FD_CLIENT_CONNECTION_USAGE,
-                         reinterpret_cast<grpc_socket_mutator*>(&mutator))
+                         reinterpret_cast<grpc_socket_mutator*>(&mutator),
+                         &system_api)
             .ok());
 
     mutator.option_value = -1;
     EXPECT_FALSE(
         SetSocketMutator(sock, GRPC_FD_CLIENT_CONNECTION_USAGE,
-                         reinterpret_cast<grpc_socket_mutator*>(&mutator))
+                         reinterpret_cast<grpc_socket_mutator*>(&mutator),
+                         &system_api)
             .ok());
     system_api.Close(sock);
   };

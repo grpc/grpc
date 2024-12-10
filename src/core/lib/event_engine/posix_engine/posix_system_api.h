@@ -49,9 +49,10 @@ ABSL_ATTRIBUTE_TRIVIAL_ABI class FileDescriptor {
   // Not meant to use to access FD for I/O. Only used for debug logging.
   int debug_fd() const { return fd_; }
 
+  int fd() const { return fd_; }
+
  private:
   friend class LockedFd;
-  int fd() const { return fd_; }
 
   int fd_ = -1;
 };
@@ -61,13 +62,14 @@ class SystemApi;
 // FD that is locked for use in this thread
 class LockedFd {
  public:
-  explicit LockedFd(FileDescriptor fd, const SystemApi& system_api);
+  explicit LockedFd(int fd, const SystemApi& system_api)
+      : fd_(fd), system_api_(&system_api) {}
   ~LockedFd();
 
-  int fd() const { return fd_.fd(); }
+  int fd() const { return fd_; }
 
  private:
-  FileDescriptor fd_;
+  int fd_;
   const SystemApi* system_api_;
 };
 
@@ -81,6 +83,12 @@ class SystemApi {
   ~SystemApi();
 
   absl::Status AdvanceGeneration();
+
+  void ReaderLock() const ABSL_NO_THREAD_SAFETY_ANALYSIS { mu_.ReaderLock(); }
+
+  void ReaderUnlock() const ABSL_NO_THREAD_SAFETY_ANALYSIS {
+    mu_.ReaderUnlock();
+  }
 
   absl::StatusOr<FileDescriptor> Accept(FileDescriptor sockfd,
                                         struct sockaddr* addr,
@@ -204,7 +212,12 @@ class SystemApi {
 #endif  // TCP_USER_TIMEOUT
 #endif  // GPR_LINUX == 1
 
+  friend class LockedFd;
+
+  class ThreadLocalLocksState {};
+
   FileDescriptor RegisterFileDescriptor(int fd);
+  void Unlock(int fd) const;
 
   template <typename R>
   struct WithFdReturn {
@@ -250,9 +263,6 @@ class SystemApi {
   template <typename Fn>
   auto WithFd(const FileDescriptor& fd, const Fn& fn) const ->
       typename WithFdReturn<decltype(fn(0))>::type {
-    if (!fd.ready()) {
-      return absl::InternalError("Invalid file descriptor");
-    }
     auto locked_fd = Lock(fd);
     if (!locked_fd.ok()) {
       return std::move(locked_fd).status();

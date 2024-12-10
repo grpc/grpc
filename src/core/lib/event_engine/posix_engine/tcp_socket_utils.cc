@@ -137,7 +137,7 @@ absl::Status PrepareTcpClientSocket(SystemApi& system_api, FileDescriptor fd,
   }
   GRPC_RETURN_IF_ERROR(system_api.SetSocketNoSigpipeIfPossible(fd));
   GRPC_RETURN_IF_ERROR(ApplySocketMutatorInOptions(
-      fd, GRPC_FD_CLIENT_CONNECTION_USAGE, options));
+      fd, GRPC_FD_CLIENT_CONNECTION_USAGE, options, &system_api));
   // No errors. Set close_fd to false to ensure the socket is not closed.
   close_fd = false;
   return absl::OkStatus();
@@ -271,11 +271,12 @@ absl::Status SetSocketMutator(FileDescriptor fd, grpc_fd_usage usage,
 }
 
 absl::Status ApplySocketMutatorInOptions(FileDescriptor fd, grpc_fd_usage usage,
-                                         const PosixTcpOptions& options) {
+                                         const PosixTcpOptions& options,
+                                         const SystemApi* system_api) {
   if (options.socket_mutator == nullptr) {
     return absl::OkStatus();
   }
-  return SetSocketMutator(fd, usage, options.socket_mutator);
+  return SetSocketMutator(fd, usage, options.socket_mutator, system_api);
 }
 
 bool IsIpv6LoopbackAvailable() {

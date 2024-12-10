@@ -21,7 +21,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -123,7 +122,7 @@ void AsyncConnect::OnWritable(absl::Status status)
     ABSL_NO_THREAD_SAFETY_ANALYSIS {
   int so_error = 0;
   socklen_t so_error_size;
-  int err;
+  absl::StatusOr<int> err;
   int done;
   int consumed_refs = 1;
   EventHandle* fd;
@@ -190,8 +189,10 @@ void AsyncConnect::OnWritable(absl::Status status)
     so_error_size = sizeof(so_error);
     err = fd->Poller()->GetSystemApi()->GetSockOpt(
         fd->WrappedFd(), SOL_SOCKET, SO_ERROR, &so_error, &so_error_size);
-  } while (err < 0 && errno == EINTR);
-  if (err < 0) {
+  } while (err.ok() && *err < 0 && errno == EINTR);
+  if (!err.ok()) {
+    status = std::move(err).status();
+  } else if (*err < 0) {
     status = absl::FailedPreconditionError(
         absl::StrCat("getsockopt: ", std::strerror(errno)));
     return;
@@ -236,20 +237,16 @@ void AsyncConnect::OnWritable(absl::Status status)
       break;
   }
 }
-
 EventEngine::ConnectionHandle
 PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
     FileDescriptor fd, EventEngine::OnConnectCallback on_connect,
     const EventEngine::ResolvedAddress& addr,
     const PosixTcpOptions& tcp_options, MemoryAllocator memory_allocator,
     EventEngine::Duration timeout) {
-  int err;
-  int connect_errno;
+  absl::StatusOr<int> err;
   do {
     err = system_api_.Connect(fd, addr.address(), addr.size());
-  } while (err < 0 && errno == EINTR);
-  connect_errno = (err < 0) ? errno : 0;
-
+  } while (err.ok() && *err < 0 && errno == EINTR);
   auto addr_uri = ResolvedAddressToURI(addr);
   if (!addr_uri.ok()) {
     Run([on_connect = std::move(on_connect),
@@ -264,7 +261,7 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
   EventHandle* handle =
       poller->CreateHandle(fd, name, poller->CanTrackErrors());
 
-  if (connect_errno == 0) {
+  if (err.ok()) {
     // Connection already succeeded. Return 0 to discourage any cancellation
     // attempts.
     Run([on_connect = std::move(on_connect),
@@ -273,7 +270,9 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
              tcp_options)]() mutable { on_connect(std::move(ep)); });
     return EventEngine::ConnectionHandle::kInvalid;
   }
-  if (connect_errno != EWOULDBLOCK && connect_errno != EINPROGRESS) {
+  int connect_errno = err.value_or(-1);
+  if (err.ok() && connect_errno != EWOULDBLOCK &&
+      connect_errno != EINPROGRESS) {
     // Connection already failed. Return 0 to discourage any cancellation
     // attempts.
     handle->OrphanHandle(nullptr, nullptr, "tcp_client_connect_error");

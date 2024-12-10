@@ -209,7 +209,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     const SystemApi* system_api = handle_->Poller()->GetSystemApi();
     (void)system_api->SetSocketNoSigpipeIfPossible(*fd);
     auto result = ApplySocketMutatorInOptions(
-        *fd, GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
+        *fd, GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_, system_api);
     if (!result.ok()) {
       LOG(ERROR) << "Closing acceptor. Failed to apply socket mutator: "
                  << result;

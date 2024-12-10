@@ -263,10 +263,13 @@ int ServerStart(server* sv) {
 
   CreateTestSocket(system_api, port, &fd, &sin);
   addr_len = sizeof(sin);
-  EXPECT_EQ(system_api->Bind(fd, (struct sockaddr*)&sin, addr_len), 0);
-  EXPECT_EQ(system_api->GetSockName(fd, (struct sockaddr*)&sin, &addr_len), 0);
+  EXPECT_EQ(system_api->Bind(fd, (struct sockaddr*)&sin, addr_len).value_or(-1),
+            0);
+  EXPECT_EQ(system_api->GetSockName(fd, (struct sockaddr*)&sin, &addr_len)
+                .value_or(-1),
+            0);
   port = ntohs(sin.sin6_port);
-  EXPECT_EQ(system_api->Listen(fd, MAX_NUM_FD), 0);
+  EXPECT_EQ(system_api->Listen(fd, MAX_NUM_FD).value_or(-1), 0);
 
   sv->em_fd = g_event_poller->CreateHandle(fd, "server", false);
   sv->listen_closure = PosixEngineClosure::TestOnlyToClosure(
@@ -514,7 +517,7 @@ TEST_F(EventPollerTest, TestEventPollerHandleChange) {
 
   // And drain the socket so we can generate a new read edge
   result = system_api->Read(sv[0], &data, 1);
-  EXPECT_EQ(result, 1);
+  EXPECT_EQ(result.value_or(-1), 1) << result.status();
 
   // Now register a second callback with distinct change data, and do the same
   // thing again.

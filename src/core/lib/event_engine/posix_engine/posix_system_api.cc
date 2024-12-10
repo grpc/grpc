@@ -59,6 +59,32 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+namespace {
+class LocksState {
+ public:
+  void Lock(const SystemApi* system_api, int fd) {
+    if (++counters_[system_api] == 1) {
+      system_api->ReaderLock();
+    }
+    LOG_EVERY_N(INFO, 10) << "Locks: " << counters_[system_api];
+  }
+
+  void Unlock(const SystemApi* system_api, int fd) {
+    CHECK_GE(counters_[system_api], 0);
+    if (--counters_[system_api] == 0) {
+      system_api->ReaderUnlock();
+    }
+  }
+
+ private:
+  std::unordered_map<const SystemApi*, int> counters_;
+};
+
+thread_local LocksState locks_state;
+}  // namespace
+
+LockedFd::~LockedFd() { system_api_->Unlock(fd_); }
+
 SystemApi::~SystemApi() {
   absl::MutexLock lock(&mu_);
   for (int fd : fds_) {
@@ -66,6 +92,17 @@ SystemApi::~SystemApi() {
   }
   fds_.clear();
 }
+
+absl::StatusOr<LockedFd> SystemApi::Lock(FileDescriptor fd) const {
+  if (!fd.ready()) {
+    return absl::InternalError("Invalid file descriptor");
+  }
+  LockedFd locked_fd{fd.fd(), *this};
+  locks_state.Lock(this, locked_fd.fd());
+  return locked_fd;
+}
+
+void SystemApi::Unlock(int fd) const { locks_state.Unlock(this, fd); }
 
 #ifdef GRPC_POSIX_SOCKETUTILS
 

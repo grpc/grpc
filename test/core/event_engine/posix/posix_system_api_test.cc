@@ -87,10 +87,10 @@ absl::StatusOr<FileDescriptor> Listen(SystemApi& system_api, int port) {
   }
   sockaddr_in addr = SockAddr(port);
   sockaddr* sa = reinterpret_cast<sockaddr*>(&addr);
-  if (system_api.Bind(server, sa, sizeof(addr)) < 0) {
+  if (system_api.Bind(server, sa, sizeof(addr)).value_or(-1) < 0) {
     return absl::ErrnoToStatus(errno, "Bind to an address failed");
   }
-  if (system_api.Listen(server, 1) < 0) {
+  if (system_api.Listen(server, 1).value_or(-1) < 0) {
     return absl::ErrnoToStatus(errno, "Listen failed");
   };
   return server;
@@ -110,25 +110,25 @@ absl::StatusOr<ClientAndServer> EstablishConnection(
     return absl::ErrnoToStatus(errno, "Unable to create a client socket");
   }
   sockaddr_in addr = SockAddr(port);
-  int result = client_system_api.Connect(
+  auto result = client_system_api.Connect(
       client, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
-  if (result == 0 || errno != EINPROGRESS) {
+  if (!result.ok() || *result == 0 || errno != EINPROGRESS) {
     return absl::ErrnoToStatus(errno, "Connect is not EINPROGRESS");
   }
   // auto server_end = Accept(server_system_api, server);
   struct sockaddr_storage ss;
   socklen_t slen = sizeof(ss);
-  FileDescriptor server_end =
+  absl::StatusOr<FileDescriptor> server_end =
       server_system_api.Accept(server, reinterpret_cast<sockaddr*>(&ss), &slen);
-  if (!server_end.ready()) {
+  if (!server_end.ok() || !server_end->ready()) {
     return absl::ErrnoToStatus(errno, "Accept failed");
   }
   result = client_system_api.Connect(client, reinterpret_cast<sockaddr*>(&addr),
                                      sizeof(addr));
-  if (result < 0) {
+  if (!result.ok() || *result < 0) {
     return absl::ErrnoToStatus(errno, "Second connect failed");
   }
-  return ClientAndServer{client, server_end};
+  return ClientAndServer{client, *server_end};
 }
 
 class EventEngineForTest {
@@ -175,8 +175,8 @@ TEST(PosixSystemApiTest, PosixLevel) {
               IsOkWith(buf.size()));
   std::array<uint8_t, 20> rcv;
   rcv.fill(0);
-  ASSERT_EQ(server_api.Read(server_client->server, rcv.data(), rcv.size()),
-            buf.size());
+  ASSERT_THAT(server_api.Read(server_client->server, rcv.data(), rcv.size()),
+              IsOkWith(buf.size()));
   EXPECT_THAT(absl::MakeSpan(rcv).first(buf.size()),
               ::testing::ElementsAreArray(buf));
   // Client "forks"
@@ -192,8 +192,8 @@ TEST(PosixSystemApiTest, PosixLevel) {
               IsOkWith(buf.size()));
   // Make sure previous run does not leak here
   rcv.fill(0);
-  ASSERT_EQ(server_api.Read(server_client->server, rcv.data(), rcv.size()),
-            buf.size());
+  ASSERT_THAT(server_api.Read(server_client->server, rcv.data(), rcv.size()),
+              IsOkWith(buf.size()));
   EXPECT_THAT(absl::MakeSpan(rcv).first(buf.size()),
               ::testing::ElementsAreArray(buf));
 }

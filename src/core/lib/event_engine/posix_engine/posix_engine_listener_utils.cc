@@ -184,7 +184,7 @@ absl::Status PrepareSocket(SystemApi& system_api,
   }
   GRPC_RETURN_IF_ERROR(system_api.SetSocketNoSigpipeIfPossible(socket.sock));
   GRPC_RETURN_IF_ERROR(ApplySocketMutatorInOptions(
-      socket.sock, GRPC_FD_SERVER_LISTENER_USAGE, options));
+      socket.sock, GRPC_FD_SERVER_LISTENER_USAGE, options, &system_api));
   auto result = system_api.Bind(fd, socket.addr.address(), socket.addr.size());
   if (!result.ok()) {
     return std::move(result).status();
