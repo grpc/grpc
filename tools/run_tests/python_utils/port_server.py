@@ -14,8 +14,6 @@
 # limitations under the License.
 """Manage TCP ports for unit tests; started by run_tests.py"""
 
-from __future__ import print_function
-
 import argparse
 import hashlib
 import os
