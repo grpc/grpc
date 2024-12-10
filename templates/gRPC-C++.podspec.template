@@ -71,9 +71,9 @@
   def filter_grpcpp(files):
     return sorted([file for file in files if not file.startswith("include/grpc++")])
 
-  # ObjectiveC doesn't use c-ares so we don't need address_sorting and cares files at all.
+  # ObjectiveC doesn't use c-ares.
   # absl deps will be declared explicitly so we also don't need to include them.
-  grpc_full_deps = set(non_abseil_lib_and_transitive_deps("grpc")) - set({"address_sorting", "cares"})
+  grpc_full_deps = set(non_abseil_lib_and_transitive_deps("grpc")) - set({"cares"})
   grpc_private_headers = collect_files_for_libs(grpc_full_deps, ("headers", ))
 
   # grpc++ dependencies minus grpc and the libraries grpc itself depends on.
@@ -136,7 +136,8 @@
     s.header_dir = name
 
     s.pod_target_xcconfig = {
-      'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"',
+      'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/address_sorting/include"',
       'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-gen"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-gen"'${"\\"}
