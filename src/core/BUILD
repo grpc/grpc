@@ -692,6 +692,7 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     language = "c++",
     public_hdrs = ["lib/promise/map.h"],
@@ -8125,7 +8126,10 @@ grpc_cc_library(
         "chaotic_good_message_chunker",
         "chaotic_good_transport",
         "event_engine_extensions",
-    ],
+"chaotic_good_pending_connection"    ],
+    external_deps = [
+        "absl/container:flat_hash_set",
+    ]
 )
 
 grpc_cc_library(
