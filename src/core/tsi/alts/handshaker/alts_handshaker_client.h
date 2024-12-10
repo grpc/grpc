@@ -64,7 +64,7 @@ class AltsHandshakerClient {
   ///- cb: callback to be executed when tsi_handshaker_next API compltes.
   ///- user_data: argument passed to cb.
   ///- vtable_for_testing: ALTS handshaker client vtable instance used for
-  ///  testing purpose.
+  ///  testing purpose. ~~~~DEPRECIATED~~~~
   ///- is_client: a boolean value indicating if the created handshaker client is
   ///  used at the client (is_client = true) or server (is_client = false) side.
   ///- max_frame_size: Maximum frame size used by frame protector (User
@@ -92,7 +92,7 @@ class AltsHandshakerClient {
   static void alts_handshaker_client_shutdown(AltsHandshakerClient* client);
 
   ///
-  /// This method destroys an ALTS handshaker client.
+  ///  Dummy function. Manual destruction is no longer needed after unique_ptr 
   ///
   ///- client: an ALTS handshaker client instance.
   ///
@@ -102,6 +102,7 @@ class AltsHandshakerClient {
   /// This method schedules a client_start handshaker request to ALTS handshaker
   /// service.
   ///
+  ///- client: ALTS handshaker client instance.
   ///
   /// It returns TSI_OK on success and an error status code on failure.
   ///
@@ -111,6 +112,7 @@ class AltsHandshakerClient {
   /// This method schedules a server_start handshaker request to ALTS handshaker
   /// service.
   ///
+  ///- client: ALTS handshaker client instance.
   ///- bytes_received: bytes in out_frames returned from the peer's handshaker
   ///  response.
   ///
@@ -122,6 +124,7 @@ class AltsHandshakerClient {
   /// This method schedules a next handshaker request to ALTS handshaker
   /// service.
   ///
+  ///- client: ALTS handshaker client instance.
   ///- bytes_received: bytes in out_frames returned from the peer's handshaker
   ///  response.
   ///
@@ -134,6 +137,7 @@ class AltsHandshakerClient {
   /// service. Note that the only reason the API is exposed is that it is used
   /// in alts_shared_resources.cc.
   ///
+  ///- client: ALTS handshaker client instance.
   ///- is_ok: a boolean value indicating if the handshaker response is ok to
   /// read.
   ///
