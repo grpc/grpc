@@ -40,12 +40,8 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
    public:
     virtual ~Watcher() = default;
 
-    virtual void OnUpdate(RefCountedPtr<const XdsConfig> config) = 0;
-
-    // These methods are invoked when there is an error or
-    // does-not-exist on LDS or RDS only.
-    virtual void OnError(absl::string_view context, absl::Status status) = 0;
-    virtual void OnResourceDoesNotExist(std::string context) = 0;
+    virtual void OnUpdate(
+        absl::StatusOr<RefCountedPtr<const XdsConfig>> config) = 0;
   };
 
   class ClusterSubscription final : public DualRefCounted<ClusterSubscription> {
@@ -130,22 +126,23 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
   };
 
   // Event handlers.
-  void OnListenerUpdate(std::shared_ptr<const XdsListenerResource> listener);
+  void OnListenerUpdate(
+      absl::StatusOr<std::shared_ptr<const XdsListenerResource>> listener);
   void OnRouteConfigUpdate(
       const std::string& name,
-      std::shared_ptr<const XdsRouteConfigResource> route_config);
-  void OnError(std::string context, absl::Status status);
-  void OnResourceDoesNotExist(std::string context);
+      absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
+          route_config);
+  void OnAmbientError(std::string context, absl::Status status);
 
-  void OnClusterUpdate(const std::string& name,
-                       std::shared_ptr<const XdsClusterResource> cluster);
-  void OnClusterError(const std::string& name, absl::Status status);
-  void OnClusterDoesNotExist(const std::string& name);
+  void OnClusterUpdate(
+      const std::string& name,
+      absl::StatusOr<std::shared_ptr<const XdsClusterResource>> cluster);
+  void OnClusterAmbientError(const std::string& name, absl::Status status);
 
-  void OnEndpointUpdate(const std::string& name,
-                        std::shared_ptr<const XdsEndpointResource> endpoint);
-  void OnEndpointError(const std::string& name, absl::Status status);
-  void OnEndpointDoesNotExist(const std::string& name);
+  void OnEndpointUpdate(
+      const std::string& name,
+      absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> endpoint);
+  void OnEndpointAmbientError(const std::string& name, absl::Status status);
 
   void OnDnsResult(const std::string& dns_name, Resolver::Result result);
   void PopulateDnsUpdate(const std::string& dns_name, Resolver::Result result,
@@ -176,6 +173,8 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
   // Checks whether all necessary resources have been obtained, and if
   // so reports an update to the watcher.
   void MaybeReportUpdate();
+
+  void ReportError(absl::string_view context, absl::string_view error);
 
   // Parameters passed into ctor.
   RefCountedPtr<GrpcXdsClient> xds_client_;

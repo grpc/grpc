@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -71,14 +72,12 @@ class XdsClient : public DualRefCounted<XdsClient> {
   class ResourceWatcherInterface : public RefCounted<ResourceWatcherInterface> {
    public:
     virtual void OnGenericResourceChanged(
-        std::shared_ptr<const XdsResourceType::ResourceData> resource,
+        absl::StatusOr<std::shared_ptr<const XdsResourceType::ResourceData>>
+            resource,
         RefCountedPtr<ReadDelayHandle> read_delay_handle)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
-    virtual void OnError(absl::Status status,
-                         RefCountedPtr<ReadDelayHandle> read_delay_handle)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
-    virtual void OnResourceDoesNotExist(
-        RefCountedPtr<ReadDelayHandle> read_delay_handle)
+    virtual void OnAmbientError(
+        absl::Status status, RefCountedPtr<ReadDelayHandle> read_delay_handle)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
   };
 
@@ -253,9 +252,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
     absl::Status status_;
   };
 
+  using WatcherSet =
+      absl::flat_hash_set<RefCountedPtr<ResourceWatcherInterface>,
+                          RefCountedPtrHash<ResourceWatcherInterface>,
+                          RefCountedPtrEq<ResourceWatcherInterface>>;
+
   struct ResourceState {
-    std::map<ResourceWatcherInterface*, RefCountedPtr<ResourceWatcherInterface>>
-        watchers;
+    WatcherSet watchers;
     // The latest data seen for the resource.
     std::shared_ptr<const XdsResourceType::ResourceData> resource;
     XdsApi::ResourceMetadata meta;
@@ -268,15 +271,16 @@ class XdsClient : public DualRefCounted<XdsClient> {
         resource_map;
   };
 
-  // Sends an error notification to a specific set of watchers.
-  void NotifyWatchersOnErrorLocked(
-      const std::map<ResourceWatcherInterface*,
-                     RefCountedPtr<ResourceWatcherInterface>>& watchers,
-      absl::Status status, RefCountedPtr<ReadDelayHandle> read_delay_handle);
-  // Sends a resource-does-not-exist notification to a specific set of watchers.
-  void NotifyWatchersOnResourceDoesNotExist(
-      const std::map<ResourceWatcherInterface*,
-                     RefCountedPtr<ResourceWatcherInterface>>& watchers,
+  absl::Status AppendNodeToStatus(const absl::Status& status) const;
+
+  // Sends an OnResourceChanged() notification to a specific set of watchers.
+  void NotifyWatchersOnResourceChanged(
+      absl::StatusOr<std::shared_ptr<const XdsResourceType::ResourceData>>
+          resource,
+      WatcherSet watchers, RefCountedPtr<ReadDelayHandle> read_delay_handle);
+  // Sends an OnAmbientError() notification to a specific set of watchers.
+  void NotifyWatchersOnAmbientError(
+      absl::Status status, WatcherSet watchers,
       RefCountedPtr<ReadDelayHandle> read_delay_handle);
 
   void MaybeRegisterResourceTypeLocked(const XdsResourceType* resource_type)
@@ -323,8 +327,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   // Stores started watchers whose resource name was not parsed successfully,
   // waiting to be cancelled or reset in Orphan().
-  std::map<ResourceWatcherInterface*, RefCountedPtr<ResourceWatcherInterface>>
-      invalid_watchers_ ABSL_GUARDED_BY(mu_);
+  WatcherSet invalid_watchers_ ABSL_GUARDED_BY(mu_);
 
   bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
 };

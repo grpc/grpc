@@ -4342,6 +4342,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:flat_hash_set",
         "absl/cleanup",
         "absl/log:check",
         "absl/log:log",
