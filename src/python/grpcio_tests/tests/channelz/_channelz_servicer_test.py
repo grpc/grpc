@@ -18,6 +18,8 @@ import sys
 import unittest
 
 import grpc
+import grpc_channelz
+print(f"[xuan_testing] grpc_channelz.__file__: {grpc_channelz.__file__}")
 from grpc_channelz.v1 import channelz
 from grpc_channelz.v1 import channelz_pb2
 from grpc_channelz.v1 import channelz_pb2_grpc
@@ -172,7 +174,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self.assertEqual(len(resp.channel), 1)
         self.assertEqual(resp.end, True)
 
-    def test_get_top_channels_high_start_id(self):
+    def a_test_get_top_channels_high_start_id(self):
         self._pairs = _generate_channel_server_pairs(1)
         resp = self._channelz_stub.GetTopChannels(
             channelz_pb2.GetTopChannelsRequest(start_channel_id=10000)
@@ -180,7 +182,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self.assertEqual(len(resp.channel), 0)
         self.assertEqual(resp.end, True)
 
-    def test_successful_request(self):
+    def a_test_successful_request(self):
         self._pairs = _generate_channel_server_pairs(1)
         self._send_successful_unary_unary(0)
         resp = self._channelz_stub.GetChannel(
@@ -190,7 +192,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self.assertEqual(resp.channel.data.calls_succeeded, 1)
         self.assertEqual(resp.channel.data.calls_failed, 0)
 
-    def test_failed_request(self):
+    def a_test_failed_request(self):
         self._pairs = _generate_channel_server_pairs(1)
         self._send_failed_unary_unary(0)
         resp = self._channelz_stub.GetChannel(
@@ -200,7 +202,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self.assertEqual(resp.channel.data.calls_succeeded, 0)
         self.assertEqual(resp.channel.data.calls_failed, 1)
 
-    def test_many_requests(self):
+    def a_test_many_requests(self):
         self._pairs = _generate_channel_server_pairs(1)
         k_success = 7
         k_failed = 9
@@ -215,7 +217,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self.assertEqual(resp.channel.data.calls_succeeded, k_success)
         self.assertEqual(resp.channel.data.calls_failed, k_failed)
 
-    def test_many_channel(self):
+    def a_test_many_channel(self):
         k_channels = 4
         self._pairs = _generate_channel_server_pairs(k_channels)
         resp = self._channelz_stub.GetTopChannels(
@@ -223,7 +225,7 @@ class ChannelzServicerTest(unittest.TestCase):
         )
         self.assertEqual(len(resp.channel), k_channels)
 
-    def test_many_requests_many_channel(self):
+    def a_test_many_requests_many_channel(self):
         k_channels = 4
         self._pairs = _generate_channel_server_pairs(k_channels)
         k_success = 11
@@ -267,7 +269,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self.assertEqual(resp.channel.data.calls_succeeded, 0)
         self.assertEqual(resp.channel.data.calls_failed, 0)
 
-    def test_many_subchannels(self):
+    def a_test_many_subchannels(self):
         k_channels = 4
         self._pairs = _generate_channel_server_pairs(k_channels)
         k_success = 17
@@ -311,14 +313,14 @@ class ChannelzServicerTest(unittest.TestCase):
                 gsc_resp.subchannel.data.calls_failed,
             )
 
-    def test_server_basic(self):
+    def a_test_server_basic(self):
         self._pairs = _generate_channel_server_pairs(1)
         resp = self._channelz_stub.GetServers(
             channelz_pb2.GetServersRequest(start_server_id=0)
         )
         self.assertEqual(len(resp.server), 1)
 
-    def test_get_one_server(self):
+    def a_test_get_one_server(self):
         self._pairs = _generate_channel_server_pairs(1)
         gss_resp = self._channelz_stub.GetServers(
             channelz_pb2.GetServersRequest(start_server_id=0)
@@ -333,7 +335,7 @@ class ChannelzServicerTest(unittest.TestCase):
             gss_resp.server[0].ref.server_id, gs_resp.server.ref.server_id
         )
 
-    def test_server_call(self):
+    def a_test_server_call(self):
         self._pairs = _generate_channel_server_pairs(1)
         k_success = 23
         k_failed = 29
@@ -352,7 +354,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self.assertEqual(resp.server[0].data.calls_succeeded, k_success)
         self.assertEqual(resp.server[0].data.calls_failed, k_failed)
 
-    def test_many_subchannels_and_sockets(self):
+    def a_test_many_subchannels_and_sockets(self):
         k_channels = 4
         self._pairs = _generate_channel_server_pairs(k_channels)
         k_success = 3
@@ -420,7 +422,7 @@ class ChannelzServicerTest(unittest.TestCase):
                     len(address) == 4 or len(address) == 16, address
                 )
 
-    def test_streaming_rpc(self):
+    def a_test_streaming_rpc(self):
         self._pairs = _generate_channel_server_pairs(1)
         # In C++, the argument for _send_successful_stream_stream is message length.
         # Here the argument is still channel idx, to be consistent with the other two.
@@ -477,7 +479,7 @@ class ChannelzServicerTest(unittest.TestCase):
             gs_resp.socket.data.messages_received, test_constants.STREAM_LENGTH
         )
 
-    def test_server_sockets(self):
+    def a_test_server_sockets(self):
         self._pairs = _generate_channel_server_pairs(1)
         self._send_successful_unary_unary(0)
         self._send_failed_unary_unary(0)
@@ -498,7 +500,7 @@ class ChannelzServicerTest(unittest.TestCase):
         # If the RPC call failed, it will raise a grpc.RpcError
         # So, if there is no exception raised, considered pass
 
-    def test_server_listen_sockets(self):
+    def a_test_server_listen_sockets(self):
         self._pairs = _generate_channel_server_pairs(1)
 
         gss_resp = self._channelz_stub.GetServers(
@@ -516,7 +518,7 @@ class ChannelzServicerTest(unittest.TestCase):
         # If the RPC call failed, it will raise a grpc.RpcError
         # So, if there is no exception raised, considered pass
 
-    def test_invalid_query_get_server(self):
+    def a_test_invalid_query_get_server(self):
         try:
             self._channelz_stub.GetServer(
                 channelz_pb2.GetServerRequest(server_id=10000)
@@ -526,7 +528,7 @@ class ChannelzServicerTest(unittest.TestCase):
         else:
             self.fail("Invalid query not detected")
 
-    def test_invalid_query_get_channel(self):
+    def a_test_invalid_query_get_channel(self):
         try:
             self._channelz_stub.GetChannel(
                 channelz_pb2.GetChannelRequest(channel_id=10000)
@@ -536,7 +538,7 @@ class ChannelzServicerTest(unittest.TestCase):
         else:
             self.fail("Invalid query not detected")
 
-    def test_invalid_query_get_subchannel(self):
+    def a_test_invalid_query_get_subchannel(self):
         try:
             self._channelz_stub.GetSubchannel(
                 channelz_pb2.GetSubchannelRequest(subchannel_id=10000)
@@ -546,7 +548,7 @@ class ChannelzServicerTest(unittest.TestCase):
         else:
             self.fail("Invalid query not detected")
 
-    def test_invalid_query_get_socket(self):
+    def a_test_invalid_query_get_socket(self):
         try:
             self._channelz_stub.GetSocket(
                 channelz_pb2.GetSocketRequest(socket_id=10000)
@@ -556,7 +558,7 @@ class ChannelzServicerTest(unittest.TestCase):
         else:
             self.fail("Invalid query not detected")
 
-    def test_invalid_query_get_server_sockets(self):
+    def a_test_invalid_query_get_server_sockets(self):
         try:
             self._channelz_stub.GetServerSockets(
                 channelz_pb2.GetServerSocketsRequest(

@@ -15,6 +15,8 @@
 
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load("@rules_python//python:py_info.bzl", "PyInfo")
+load("@com_google_protobuf//bazel:py_proto_library.bzl", protobuf_py_proto_library = "py_proto_library")
+
 load(
     "//bazel:protobuf.bzl",
     "declare_out_files",
@@ -146,10 +148,14 @@ def _generate_py_impl(context):
 
     # Collect output PyInfo provider.
     imports = [context.label.package + "/" + i for i in context.attr.imports]
+    print("[xuan_testing] py_sources:")
+    print(py_sources)
     py_info = PyInfo(transitive_sources = depset(direct = py_sources), imports = depset(direct = imports))
     out_pyinfo = _merge_pyinfos([py_info, context.attr.deps[0][PyProtoInfo].py_info])
 
     runfiles = context.runfiles(files = out_pyinfo.transitive_sources.to_list()).merge(context.attr._protobuf_library[DefaultInfo].data_runfiles)
+    print("[xuan_testing] out_pyinfo:")
+    print(out_pyinfo)
     return [
         DefaultInfo(
             files = out_pyinfo.transitive_sources,
@@ -158,28 +164,30 @@ def _generate_py_impl(context):
         out_pyinfo,
     ]
 
-py_proto_library = rule(
-    attrs = {
-        "deps": attr.label_list(
-            mandatory = True,
-            allow_empty = False,
-            providers = [ProtoInfo],
-            aspects = [_gen_py_aspect],
-        ),
-        "_protoc": attr.label(
-            default = Label("@com_google_protobuf//:protoc"),
-            providers = ["files_to_run"],
-            executable = True,
-            cfg = "exec",
-        ),
-        "_protobuf_library": attr.label(
-            default = Label("@com_google_protobuf//:protobuf_python"),
-            providers = [PyInfo],
-        ),
-        "imports": attr.string_list(),
-    },
-    implementation = _generate_py_impl,
-)
+# py_proto_library = rule(
+#     attrs = {
+#         "deps": attr.label_list(
+#             mandatory = True,
+#             allow_empty = False,
+#             providers = [ProtoInfo],
+#             aspects = [_gen_py_aspect],
+#         ),
+#         "_protoc": attr.label(
+#             default = Label("@com_google_protobuf//:protoc"),
+#             providers = ["files_to_run"],
+#             executable = True,
+#             cfg = "exec",
+#         ),
+#         "_protobuf_library": attr.label(
+#             default = Label("@com_google_protobuf//:protobuf_python"),
+#             providers = [PyInfo],
+#         ),
+#         "imports": attr.string_list(),
+#     },
+#     implementation = _generate_py_impl,
+# )
+
+py_proto_library = protobuf_py_proto_library
 
 def _generate_pb2_grpc_src_impl(context):
     protos = protos_from_context(context)
