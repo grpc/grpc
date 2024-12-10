@@ -39,7 +39,6 @@
 #include "absl/time/time.h"
 #include "examples/protos/helloworld.grpc.pb.h"
 #include "examples/protos/helloworld.pb.h"
-#include "gmock/gmock.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
