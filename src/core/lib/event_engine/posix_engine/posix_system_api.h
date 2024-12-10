@@ -131,10 +131,18 @@ class SystemApi {
 
   absl::Status AdvanceGeneration();
 
-  void ReaderLock() const ABSL_NO_THREAD_SAFETY_ANALYSIS { mu_.ReaderLock(); }
+  void ReaderLock() const ABSL_NO_THREAD_SAFETY_ANALYSIS {
+    // Fork is not supported on Mac. This guard should be replaced accordingly.
+#ifdef GPR_ABSEIL_SYNC
+    mu_.ReaderLock();
+#endif
+  }
 
   void ReaderUnlock() const ABSL_NO_THREAD_SAFETY_ANALYSIS {
+    // Fork is not supported on Mac. This guard should be replaced accordingly.
+#ifdef GPR_ABSEIL_SYNC
     mu_.ReaderUnlock();
+#endif
   }
 
   absl::StatusOr<FileDescriptor> Accept(FileDescriptor sockfd,

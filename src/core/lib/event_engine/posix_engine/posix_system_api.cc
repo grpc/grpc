@@ -63,21 +63,15 @@ namespace {
 class LocksState {
  public:
   void Lock(const SystemApi* system_api, int fd) {
-#ifdef GPR_ABSEIL_SYNC
     if (++counters_[system_api] == 1) {
       system_api->ReaderLock();
     }
-    LOG_EVERY_N(INFO, 10) << "Locks: " << counters_[system_api];
-#endif
   }
 
   void Unlock(const SystemApi* system_api, int fd) {
-#ifdef GPR_ABSEIL_SYNC
-    CHECK_GE(counters_[system_api], 0);
     if (--counters_[system_api] == 0) {
       system_api->ReaderUnlock();
     }
-#endif
   }
 
  private:
