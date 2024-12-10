@@ -20,8 +20,8 @@ import socket
 
 import grpc
 from grpc_health.v1 import health
-from grpc_health.v1 import health_pb2
-from grpc_health.v1 import health_pb2_grpc
+import health_pb2
+import health_pb2_grpc
 from grpc_reflection.v1alpha import reflection
 import helloworld_pb2
 import helloworld_pb2_grpc

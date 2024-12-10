@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library", "grpc_internal_proto_library")
 
 licenses(["notice"])
 
@@ -27,6 +27,12 @@ grpc_package(
 grpc_proto_library(
     name = "reflection_proto",
     srcs = ["reflection.proto"],
+)
+
+grpc_internal_proto_library(
+    name = "reflection_proto_descriptor",
+    srcs = ["reflection.proto"],
+    strip_import_prefix = "/src/proto/grpc/reflection/v1alpha",
 )
 
 filegroup(

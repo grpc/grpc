@@ -20,8 +20,8 @@ import unittest
 
 import grpc
 import grpc_admin
-from grpc_channelz.v1 import channelz_pb2
-from grpc_channelz.v1 import channelz_pb2_grpc
+import channelz_pb2
+import channelz_pb2_grpc
 from grpc_csds import csds_pb2
 from grpc_csds import csds_pb2_grpc
 

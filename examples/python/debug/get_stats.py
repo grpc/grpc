@@ -21,8 +21,8 @@ import argparse
 import logging
 
 import grpc
-from grpc_channelz.v1 import channelz_pb2
-from grpc_channelz.v1 import channelz_pb2_grpc
+import channelz_pb2
+import channelz_pb2_grpc
 
 
 def run(addr):

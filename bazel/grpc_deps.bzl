@@ -67,7 +67,6 @@ def grpc_deps():
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
-                # "@com_github_grpc_grpc//third_party:py_proto_library.patch",
             ],
             patch_args = ["-p1"],
             repo_mapping = {

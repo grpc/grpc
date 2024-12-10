@@ -16,14 +16,19 @@
 from google.protobuf import json_format
 import grpc
 from grpc._cython import cygrpc
-import sys
-print(f"[xuan_testing] Import paths:")
-for path in sys.path:
-    print(path)
-import grpc_channelz.v1.channelz_pb2 as _channelz_pb2
-print(f"[xuan_testing] grpc_channelz.v1.channelz_pb2.__file__: {_channelz_pb2.__file__}")
-import grpc_channelz.v1.channelz_pb2_grpc as _channelz_pb2_grpc
+import channelz_pb2 as _channelz_pb2
+import channelz_pb2_grpc as _channelz_pb2_grpc
 
+import sys
+print(f"=============================================")
+print(f"[xuan_testing] Import paths in _servicer:")
+for path in sys.path:
+    if "com_google_protobuf" not in path:
+        print(path)
+print(f"---------------------------------------------")
+print(f"[xuan_testing] channelz_pb2.__file__: {_channelz_pb2.__file__}")
+print(f"[xuan_testing] _channelz_pb2_grpc.__file__: {_channelz_pb2_grpc.__file__}")
+print(f"---------------------------------------------")
 
 class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     """Servicer handling RPCs for service statuses."""

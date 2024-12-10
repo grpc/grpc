@@ -22,8 +22,8 @@ import unittest
 
 import grpc
 from grpc_health.v1 import health
-from grpc_health.v1 import health_pb2
-from grpc_health.v1 import health_pb2_grpc
+import health_pb2
+import health_pb2_grpc
 
 from tests.unit import test_common
 from tests.unit import thread_pool

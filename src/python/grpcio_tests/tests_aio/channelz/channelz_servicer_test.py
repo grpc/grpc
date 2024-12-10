@@ -20,8 +20,8 @@ import unittest
 import grpc
 from grpc.experimental import aio
 from grpc_channelz.v1 import channelz
-from grpc_channelz.v1 import channelz_pb2
-from grpc_channelz.v1 import channelz_pb2_grpc
+import channelz_pb2
+import channelz_pb2_grpc
 
 from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_base import AioTestBase

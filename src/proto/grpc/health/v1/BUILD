@@ -38,6 +38,12 @@ grpc_cc_grpc_library(
     deps = ["health_cc_proto"],
 )
 
+grpc_internal_proto_library(
+    name = "health_proto_descriptor",
+    srcs = ["health.proto"],
+    strip_import_prefix = "/src/proto/grpc/health/v1",
+)
+
 filegroup(
     name = "health_proto_file",
     srcs = [
