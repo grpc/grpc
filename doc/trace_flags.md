@@ -101,6 +101,7 @@ accomplished by invoking `bazel build --config=dbg <target>`
   - lb_policy_refcount - LB policy refcounting.
   - party_state - Coordination of activities related to a call.
   - pending_tags - Still-in-progress tags on completion queues. The `api` tracer must be enabled for this flag to have any effect.
+  - ph2 - Promise Based HTTP2 transport.
   - polling - The active polling engine.
   - polling_api - API calls to polling engine.
   - promise_primitives - Low-level primitives in the promise library.
