@@ -95,13 +95,6 @@ size_t AltsHandshakerClient::MaxNumberOfConcurrentHandshakes() {
   return max_concurrent_handshakes;
 }
 
-AltsHandshakerClient::recv_message_result {
-  tsi_result status;
-  const unsigned char* bytes_to_send;
-  size_t bytes_to_send_size;
-  tsi_handshaker_result* result;
-};
-
 //
 // Private
 //
@@ -680,6 +673,16 @@ void AltsHandshakerClient::handshaker_client_destruct() {
   }
 }
 
+AltsHandshakerClient::recv_message_result {
+  tsi_result status;
+  const unsigned char* bytes_to_send;
+  size_t bytes_to_send_size;
+  tsi_handshaker_result* result;
+};
+
+//
+// Test Code
+//
 namespace grpc_core {
 namespace internal {
 
