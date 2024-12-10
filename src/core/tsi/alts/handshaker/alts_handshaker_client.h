@@ -34,6 +34,10 @@
 #define ALTS_RECORD_PROTOCOL "ALTSRP_GCM_AES128_REKEY"
 #define ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING "lame"
 
+// A function that makes the grpc call to the handshaker service.
+typedef grpc_call_error (*alts_grpc_caller)(grpc_call* call, const grpc_op* ops,
+                                            size_t nops, grpc_closure* tag);
+
 ///
 /// A ALTS handshaker client interface. It is used to communicate with
 /// ALTS handshaker service by scheduling a handshaker request that could be one
@@ -85,14 +89,14 @@ class AltsHandshakerClient {
   ///
   ///- client: ALTS handshaker client instance.
   ///
-  void alts_handshaker_client_shutdown();
+  static void alts_handshaker_client_shutdown(AltsHandshakerClient* client);
 
   ///
   /// This method destroys an ALTS handshaker client.
   ///
   ///- client: an ALTS handshaker client instance.
   ///
-  void alts_handshaker_client_destroy();
+  static void alts_handshaker_client_destroy(AltsHandshakerClient* client);
 
   ///
   /// This method schedules a client_start handshaker request to ALTS handshaker
@@ -101,7 +105,7 @@ class AltsHandshakerClient {
   ///
   /// It returns TSI_OK on success and an error status code on failure.
   ///
-  tsi_result alts_handshaker_client_start_client();
+  static tsi_result alts_handshaker_client_start_client(AltsHandshakerClient* client);
 
   ///
   /// This method schedules a server_start handshaker request to ALTS handshaker
@@ -112,7 +116,7 @@ class AltsHandshakerClient {
   ///
   /// It returns TSI_OK on success and an error status code on failure.
   ///
-  tsi_result alts_handshaker_client_start_server(grpc_slice* bytes_received);
+  static tsi_result alts_handshaker_client_start_server(AltsHandshakerClient* client, grpc_slice* bytes_received);
 
   ///
   /// This method schedules a next handshaker request to ALTS handshaker
@@ -123,7 +127,7 @@ class AltsHandshakerClient {
   ///
   /// It returns TSI_OK on success and an error status code on failure.
   ///
-  tsi_result alts_handshaker_client_next(grpc_slice* bytes_received);
+  static tsi_result alts_handshaker_client_next(AltsHandshakerClient* client, grpc_slice* bytes_received);
 
   ///
   /// This method handles handshaker response returned from ALTS handshaker
@@ -133,19 +137,12 @@ class AltsHandshakerClient {
   ///- is_ok: a boolean value indicating if the handshaker response is ok to
   /// read.
   ///
-  void alts_handshaker_client_handle_response(bool is_ok);
-
-  // This method makes the grpc call to the handshaker service.
-  grpc_call_error (*alts_grpc_caller)(grpc_call* call, const grpc_op* ops,
-                                      size_t nops, grpc_closure* tag);
+  static void alts_handshaker_client_handle_response(AltsHandshakerClient* client, bool is_ok);
 
   // Returns the max number of concurrent handshakes that are permitted.
   //
   // Exposed for testing purposes only.
   static size_t MaxNumberOfConcurrentHandshakes();
-
-  // Main struct for ALTS TSI handshaker.
-  struct alts_tsi_handshaker;
 
  private:
   static constexpr size_t kAltsAes128GcmRekeyKeyLength = 44;
@@ -157,7 +154,6 @@ class AltsHandshakerClient {
   ~AltsHandshakerClient();
   void handshaker_client_send_buffer_destroy();
   static bool is_handshake_finished_properly(grpc_gcp_HandshakerResp* resp);
-  void alts_grpc_handshaker_client_unref();
   void maybe_complete_tsi_next(
       bool receive_status_finished,
       recv_message_result* pending_recv_message_result);

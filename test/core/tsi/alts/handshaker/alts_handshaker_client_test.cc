@@ -62,8 +62,8 @@ using grpc_core::internal::alts_handshaker_client_set_grpc_caller_for_testing;
 typedef struct alts_handshaker_client_test_config {
   grpc_channel* channel;
   grpc_completion_queue* cq;
-  alts_handshaker_client* client;
-  alts_handshaker_client* server;
+  AltsHandshakerClient* client;
+  AltsHandshakerClient* server;
   grpc_slice out_frame;
 } alts_handshaker_client_test_config;
 
@@ -104,7 +104,7 @@ static void validate_target_identities(
 /// Validate if grpc operation data is correctly populated with the fields of
 /// ALTS handshaker client.
 ///
-static bool validate_op(alts_handshaker_client* c, const grpc_op* op,
+static bool validate_op(AltsHandshakerClient c, const grpc_op* op,
                         size_t nops, bool is_start) {
   EXPECT_TRUE(c != nullptr && op != nullptr && nops != 0);
   bool ok = true;
@@ -176,8 +176,9 @@ static grpc_call_error check_client_start_success(grpc_call* /*call*/,
     return GRPC_CALL_OK;
   }
   upb::Arena arena;
-  alts_handshaker_client* client =
-      static_cast<alts_handshaker_client*>(closure->cb_arg);
+  AltsHandshakerClient* client =
+      static_cast<AltsHandshakerClient*
+  >(closure->cb_arg);
   EXPECT_EQ(alts_handshaker_client_get_closure_for_testing(client), closure);
   grpc_gcp_HandshakerReq* req = deserialize_handshaker_req(
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
@@ -228,8 +229,9 @@ static grpc_call_error check_server_start_success(grpc_call* /*call*/,
     return GRPC_CALL_OK;
   }
   upb::Arena arena;
-  alts_handshaker_client* client =
-      static_cast<alts_handshaker_client*>(closure->cb_arg);
+  AltsHandshakerClient* client =
+      static_cast<AltsHandshakerClient*
+  >(closure->cb_arg);
   EXPECT_EQ(alts_handshaker_client_get_closure_for_testing(client), closure);
   grpc_gcp_HandshakerReq* req = deserialize_handshaker_req(
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
@@ -268,8 +270,9 @@ static grpc_call_error check_next_success(grpc_call* /*call*/,
                                           const grpc_op* op, size_t nops,
                                           grpc_closure* closure) {
   upb::Arena arena;
-  alts_handshaker_client* client =
-      static_cast<alts_handshaker_client*>(closure->cb_arg);
+  AltsHandshakerClient* client =
+      static_cast<AltsHandshakerClient*
+  >(closure->cb_arg);
   EXPECT_EQ(alts_handshaker_client_get_closure_for_testing(client), closure);
   grpc_gcp_HandshakerReq* req = deserialize_handshaker_req(
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
