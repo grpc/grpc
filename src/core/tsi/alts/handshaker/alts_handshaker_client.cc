@@ -421,13 +421,13 @@ grpc_byte_buffer* AltsHandshakerClient::get_serialized_start_client() {
   grpc_gcp_RpcProtocolVersions* client_version =
       grpc_gcp_StartClientHandshakeReq_mutable_rpc_versions(start_client,
                                                             arena.ptr());
-  grpc_gcp_RpcProtocolVersions_assign_from_struct(
-      client_version, arena.ptr(), options->rpc_versions);
+  grpc_gcp_RpcProtocolVersions_assign_from_struct(client_version, arena.ptr(),
+                                                  options->rpc_versions);
   grpc_gcp_StartClientHandshakeReq_set_target_name(
-      start_client, upb_StringView_FromDataAndSize(
-                        reinterpret_cast<const char*>(
-                            GRPC_SLICE_START_PTR(target_name)),
-                        GRPC_SLICE_LENGTH(target_name)));
+      start_client,
+      upb_StringView_FromDataAndSize(
+          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(target_name)),
+          GRPC_SLICE_LENGTH(target_name)));
   target_service_account* ptr =
       (reinterpret_cast<grpc_alts_credentials_client_options*>(options))
           ->target_account_list_head;
