@@ -23,6 +23,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <list>
+#include <memory>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -40,12 +41,107 @@
 
 #define TSI_ALTS_INITIAL_BUFFER_SIZE 256
 
+//
+// Public
+//
+AltsHandshakerClient* AltsHandshakerClient::alts_grpc_handshaker_client_create(
+    alts_tsi_handshaker* handshaker, grpc_channel* channel,
+    const char* handshaker_service_url, grpc_pollset_set* interested_parties,
+    grpc_alts_credentials_options* options, const grpc_slice& target_name,
+    grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
+    void* user_data, alts_handshaker_client_vtable* vtable_for_testing,
+    bool is_client, size_t max_frame_size, std::string* error) {
+  if (channel == nullptr || handshaker_service_url == nullptr) {
+    LOG(ERROR) << "Invalid arguments to alts_handshaker_client_create()";
+    return nullptr;
+  }
+  std::unique_ptr<AltsHandshakerClient> client(new AltsHandshakerClient(
+      handshaker, channel, handshaker_service_url, interested_parties, options,
+      target_name, grpc_cb, cb, user_data, is_client, max_frame_size, error));
+  return client;
+}
+
+void AltsHandshakerClient::alts_handshaker_client_shutdown() { shutdown(this); }
+
+void AltsHandshakerClient::alts_handshaker_client_destroy() {
+  alts_grpc_handshaker_client_unref(this);
+}
+
+tsi_result AltsHandshakerClient::alts_handshaker_client_start_client() {
+  return client_start(this);
+}
+
+tsi_result AltsHandshakerClient::alts_handshaker_client_start_server(
+    grpc_slice* bytes_received) {
+  return server_start(this, bytes_received);
+}
+
+tsi_result AltsHandshakerClient::alts_handshaker_client_next(
+    grpc_slice* bytes_received) {
+  return next(this, bytes_received);
+}
+
+size_t AltsHandshakerClient::MaxNumberOfConcurrentHandshakes() {
+  size_t max_concurrent_handshakes = 100;
+  absl::optional<std::string> env_var_max_concurrent_handshakes =
+      grpc_core::GetEnv(kMaxConcurrentStreamsEnvironmentVariable);
+  if (env_var_max_concurrent_handshakes.has_value()) {
+    size_t effective_max_concurrent_handshakes = 100;
+    if (absl::SimpleAtoi(*env_var_max_concurrent_handshakes,
+                         &effective_max_concurrent_handshakes)) {
+      max_concurrent_handshakes = effective_max_concurrent_handshakes;
+    }
+  }
+  return max_concurrent_handshakes;
+}
+
 AltsHandshakerClient::recv_message_result {
   tsi_result status;
   const unsigned char* bytes_to_send;
   size_t bytes_to_send_size;
   tsi_handshaker_result* result;
 };
+
+//
+// Private
+//
+AltsHandshakerClient::AltsHandshakerClient(
+    alts_tsi_handshaker* handshaker, grpc_channel* channel,
+    const char* handshaker_service_url, grpc_pollset_set* interested_parties,
+    grpc_alts_credentials_options* options, const grpc_slice& target_name,
+    grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
+    void* user_data, bool is_client, size_t max_frame_size, std::string* error)
+    : refs(1),
+      handshaker(handshaker),
+      grpc_caller(grpc_call_start_batch_and_execute),
+      cb(cb),
+      user_data(user_data),
+      options(grpc_alts_credentials_options_copy(options)),
+      target_name(grpc_slice_copy(target_name)),
+      is_client(is_client),
+      recv_bytes(grpc_empty_slice()),
+      buffer_size(TSI_ALTS_INITIAL_BUFFER_SIZE);
+buffer(static_cast<unsigned char*>(gpr_zalloc(client->buffer_size))),
+    handshake_status_details(grpc_empty_slice()),
+    max_frame_size(max_frame_size), error(error),
+    call(strcmp(handshaker_service_url,
+                ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING) == 0
+             ? nullptr
+             : grpc_core::Channel::FromC(channel)->CreateCall(
+                   /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS,
+                   /*cq=*/nullptr, interested_parties,
+                   grpc_core::Slice::FromStaticString(ALTS_SERVICE_METHOD),
+                   /*authority=*/absl::nullopt,
+                   grpc_core::Timestamp::InfFuture(),
+                   /*registered_method=*/true)) {
+  grpc_metadata_array_init(recv_initial_metadata);
+  GRPC_CLOSURE_INIT(on_handshaker_service_resp_recv, grpc_cb, this,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(on_status_received, on_status_received, this,
+                    grpc_schedule_on_exec_ctx);
+}
+
+AltsHandshakerClient::~AltsHandshakerClient() {}
 
 void AltsHandshakerClient::handshaker_client_send_buffer_destroy() {
   grpc_byte_buffer_destroy(send_buffer);
@@ -584,54 +680,6 @@ void AltsHandshakerClient::handshaker_client_destruct() {
   }
 }
 
-alts_handshaker_client*
-AltsHandshakerClient::alts_grpc_handshaker_client_create(
-    alts_tsi_handshaker* handshaker, grpc_channel* channel,
-    const char* handshaker_service_url, grpc_pollset_set* interested_parties,
-    grpc_alts_credentials_options* options, const grpc_slice& target_name,
-    grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
-    void* user_data, alts_handshaker_client_vtable* vtable_for_testing,
-    bool is_client, size_t max_frame_size, std::string* error) {
-  if (channel == nullptr || handshaker_service_url == nullptr) {
-    LOG(ERROR) << "Invalid arguments to alts_handshaker_client_create()";
-    return nullptr;
-  }
-  alts_grpc_handshaker_client* client = new alts_grpc_handshaker_client();
-  memset(&client->base, 0, sizeof(client->base));
-  client->base.vtable =
-      vtable_for_testing == nullptr ? &vtable : vtable_for_testing;
-  gpr_ref_init(&client->refs, 1);
-  client->handshaker = handshaker;
-  client->grpc_caller = grpc_call_start_batch_and_execute;
-  grpc_metadata_array_init(&client->recv_initial_metadata);
-  client->cb = cb;
-  client->user_data = user_data;
-  client->options = grpc_alts_credentials_options_copy(options);
-  client->target_name = grpc_slice_copy(target_name);
-  client->is_client = is_client;
-  client->recv_bytes = grpc_empty_slice();
-  client->buffer_size = TSI_ALTS_INITIAL_BUFFER_SIZE;
-  client->buffer = static_cast<unsigned char*>(gpr_zalloc(client->buffer_size));
-  client->handshake_status_details = grpc_empty_slice();
-  client->max_frame_size = max_frame_size;
-  client->error = error;
-  client->call =
-      strcmp(handshaker_service_url, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING) ==
-              0
-          ? nullptr
-          : grpc_core::Channel::FromC(channel)->CreateCall(
-                /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS,
-                /*cq=*/nullptr, interested_parties,
-                grpc_core::Slice::FromStaticString(ALTS_SERVICE_METHOD),
-                /*authority=*/absl::nullopt, grpc_core::Timestamp::InfFuture(),
-                /*registered_method=*/true);
-  GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, grpc_cb, client,
-                    grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&client->on_status_received, on_status_received, client,
-                    grpc_schedule_on_exec_ctx);
-  return &client->base;
-}
-
 namespace grpc_core {
 namespace internal {
 
@@ -762,37 +810,3 @@ void alts_handshaker_client_on_status_received_for_testing(
 
 }  // namespace internal
 }  // namespace grpc_core
-
-tsi_result AltsHandshakerClient::alts_handshaker_client_start_client() {
-  return client_start(this);
-}
-
-tsi_result AltsHandshakerClient::alts_handshaker_client_start_server(
-    grpc_slice* bytes_received) {
-  return server_start(this, bytes_received);
-}
-
-tsi_result AltsHandshakerClient::alts_handshaker_client_next(
-    grpc_slice* bytes_received) {
-  return next(this, bytes_received);
-}
-
-void AltsHandshakerClient::alts_handshaker_client_shutdown() { shutdown(this); }
-
-void AltsHandshakerClient::alts_handshaker_client_destroy() {
-  alts_grpc_handshaker_client_unref(this);
-}
-
-size_t AltsHandshakerClient::MaxNumberOfConcurrentHandshakes() {
-  size_t max_concurrent_handshakes = 100;
-  absl::optional<std::string> env_var_max_concurrent_handshakes =
-      grpc_core::GetEnv(kMaxConcurrentStreamsEnvironmentVariable);
-  if (env_var_max_concurrent_handshakes.has_value()) {
-    size_t effective_max_concurrent_handshakes = 100;
-    if (absl::SimpleAtoi(*env_var_max_concurrent_handshakes,
-                         &effective_max_concurrent_handshakes)) {
-      max_concurrent_handshakes = effective_max_concurrent_handshakes;
-    }
-  }
-  return max_concurrent_handshakes;
-}

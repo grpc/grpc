@@ -42,64 +42,8 @@
 ///
 class AltsHandshakerClient {
  public:
-  explicit AltsHandshakerClient();
-  ~AltsHandshakerClient();
-
-  // Main struct for ALTS TSI handshaker.
-  struct alts_tsi_handshaker;
-
   ///
-  /// This method schedules a client_start handshaker request to ALTS handshaker
-  /// service.
-  ///
-  ///- client: ALTS handshaker client instance.
-  ///
-  /// It returns TSI_OK on success and an error status code on failure.
-  ///
-  tsi_result alts_handshaker_client_start_client();
-
-  ///
-  /// This method schedules a server_start handshaker request to ALTS handshaker
-  /// service.
-  ///
-  ///- client: ALTS handshaker client instance.
-  ///- bytes_received: bytes in out_frames returned from the peer's handshaker
-  ///  response.
-  ///
-  /// It returns TSI_OK on success and an error status code on failure.
-  ///
-  tsi_result alts_handshaker_client_start_server(grpc_slice* bytes_received);
-
-  ///
-  /// This method schedules a next handshaker request to ALTS handshaker
-  /// service.
-  ///
-  ///- client: ALTS handshaker client instance.
-  ///- bytes_received: bytes in out_frames returned from the peer's handshaker
-  ///  response.
-  ///
-  /// It returns TSI_OK on success and an error status code on failure.
-  ///
-  tsi_result alts_handshaker_client_next(grpc_slice* bytes_received);
-
-  ///
-  /// This method cancels previously scheduled, but yet executed handshaker
-  /// requests to ALTS handshaker service. After this operation, the handshake
-  /// will be shutdown, and no more handshaker requests will get scheduled.
-  ///
-  ///- client: ALTS handshaker client instance.
-  ///
-  void alts_handshaker_client_shutdown();
-
-  ///
-  /// This method destroys an ALTS handshaker client.
-  ///
-  ///- client: an ALTS handshaker client instance.
-  ///
-  void alts_handshaker_client_destroy();
-
-  ///
-  /// This method creates an ALTS handshaker client.
+  /// This factory method creates an ALTS handshaker client.
   ///
   ///- handshaker: ALTS TSI handshaker to which the created handshaker client
   ///  belongs to.
@@ -126,7 +70,7 @@ class AltsHandshakerClient {
   /// It returns the created ALTS handshaker client on success, and NULL
   /// on failure.
   ///
-  alts_handshaker_client* alts_grpc_handshaker_client_create(
+  static AltsHandshakerClient* alts_grpc_handshaker_client_create(
       alts_tsi_handshaker* handshaker, grpc_channel* channel,
       const char* handshaker_service_url, grpc_pollset_set* interested_parties,
       grpc_alts_credentials_options* options, const grpc_slice& target_name,
@@ -135,11 +79,57 @@ class AltsHandshakerClient {
       bool is_client, size_t max_frame_size, std::string* error);
 
   ///
+  /// This method cancels previously scheduled, but yet executed handshaker
+  /// requests to ALTS handshaker service. After this operation, the handshake
+  /// will be shutdown, and no more handshaker requests will get scheduled.
+  ///
+  ///- client: ALTS handshaker client instance.
+  ///
+  void alts_handshaker_client_shutdown();
+
+  ///
+  /// This method destroys an ALTS handshaker client.
+  ///
+  ///- client: an ALTS handshaker client instance.
+  ///
+  void alts_handshaker_client_destroy();
+
+  ///
+  /// This method schedules a client_start handshaker request to ALTS handshaker
+  /// service.
+  ///
+  ///
+  /// It returns TSI_OK on success and an error status code on failure.
+  ///
+  tsi_result alts_handshaker_client_start_client();
+
+  ///
+  /// This method schedules a server_start handshaker request to ALTS handshaker
+  /// service.
+  ///
+  ///- bytes_received: bytes in out_frames returned from the peer's handshaker
+  ///  response.
+  ///
+  /// It returns TSI_OK on success and an error status code on failure.
+  ///
+  tsi_result alts_handshaker_client_start_server(grpc_slice* bytes_received);
+
+  ///
+  /// This method schedules a next handshaker request to ALTS handshaker
+  /// service.
+  ///
+  ///- bytes_received: bytes in out_frames returned from the peer's handshaker
+  ///  response.
+  ///
+  /// It returns TSI_OK on success and an error status code on failure.
+  ///
+  tsi_result alts_handshaker_client_next(grpc_slice* bytes_received);
+
+  ///
   /// This method handles handshaker response returned from ALTS handshaker
   /// service. Note that the only reason the API is exposed is that it is used
   /// in alts_shared_resources.cc.
   ///
-  ///- client: an ALTS handshaker client instance.
   ///- is_ok: a boolean value indicating if the handshaker response is ok to
   /// read.
   ///
@@ -154,7 +144,17 @@ class AltsHandshakerClient {
   // Exposed for testing purposes only.
   static size_t MaxNumberOfConcurrentHandshakes();
 
+  // Main struct for ALTS TSI handshaker.
+  struct alts_tsi_handshaker;
+
  private:
+  static constexpr size_t kAltsAes128GcmRekeyKeyLength = 44;
+  static constexpr char kMaxConcurrentStreamsEnvironmentVariable[] =
+      "GRPC_ALTS_MAX_CONCURRENT_HANDSHAKES";
+  static constexpr int kHandshakerClientOpNum = 4;
+
+  AltsHandshakerClient();
+  ~AltsHandshakerClient();
   void handshaker_client_send_buffer_destroy();
   static bool is_handshake_finished_properly(grpc_gcp_HandshakerResp* resp);
   void alts_grpc_handshaker_client_unref();
@@ -179,13 +179,8 @@ class AltsHandshakerClient {
   void handshaker_client_shutdown();
   void handshaker_call_unref(void* arg, grpc_error_handle /* error */);
   void handshaker_client_destruct();
-
-  static constexpr size_t kAltsAes128GcmRekeyKeyLength = 44;
-  static constexpr char kMaxConcurrentStreamsEnvironmentVariable[] =
-      "GRPC_ALTS_MAX_CONCURRENT_HANDSHAKES";
-  static constexpr int kHandshakerClientOpNum = 4;
+  
   struct recv_message_result;
-
   // One ref is held by the entity that created this handshaker_client, and
   // another ref is held by the pending RECEIVE_STATUS_ON_CLIENT op.
   gpr_refcount refs;
