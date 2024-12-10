@@ -656,16 +656,16 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
       impl_->MaybeShutdown(absl::FailedPreconditionError("Endpoint closing"),
                            [on_release = std::move(on_release_fd),
                             poller](absl::StatusOr<FileDescriptor> fd) mutable {
-                             if (fd.ok()) {
-                               auto locked_fd =
-                                   poller->GetSystemApi()->Lock(*fd);
-                               if (!locked_fd.ok()) {
-                                 on_release(std::move(locked_fd).status());
-                               }
-                               on_release(locked_fd->fd());
-                             } else {
+                             if (!fd.ok()) {
                                on_release(std::move(fd).status());
+                               return;
                              }
+                             auto locked_fd = poller->GetSystemApi()->Lock(*fd);
+                             if (!locked_fd.ok()) {
+                               on_release(std::move(locked_fd).status());
+                               return;
+                             }
+                             on_release(locked_fd->fd());
                            });
     }
   }

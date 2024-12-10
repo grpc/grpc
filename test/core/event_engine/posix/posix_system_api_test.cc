@@ -204,7 +204,7 @@ TEST(PosixSystemApiTest, PosixLevel) {
               ::testing::ElementsAreArray(buf));
 }
 
-TEST(PosixSystemApiTest, DISABLED_Incomplete_EventEndpointLevel) {
+TEST(PosixSystemApiTest, DISABLED_IncompleteEventEndpointLevel) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto address = URIToResolvedAddress(target_addr);
