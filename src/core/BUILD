@@ -8120,16 +8120,17 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chaotic_good/config.h",
     ],
+    external_deps = [
+        "absl/container:flat_hash_set",
+    ],
     deps = [
         "channel_args",
         "chaotic_good_frame_cc_proto",
         "chaotic_good_message_chunker",
+        "chaotic_good_pending_connection",
         "chaotic_good_transport",
         "event_engine_extensions",
-"chaotic_good_pending_connection"    ],
-    external_deps = [
-        "absl/container:flat_hash_set",
-    ]
+    ],
 )
 
 grpc_cc_library(
