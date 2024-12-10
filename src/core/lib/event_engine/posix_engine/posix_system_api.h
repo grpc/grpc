@@ -36,6 +36,53 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+// Will need to be moved to implementation file, here to save time wrestling
+// compilers.
+namespace internal {
+
+template <typename R>
+struct WithFdReturn {
+  using type = absl::StatusOr<R>;
+
+  template <typename Fn>
+  static type invoke(const Fn fn, int fd) {
+    return fn(fd);
+  }
+};
+
+template <>
+struct WithFdReturn<absl::Status> {
+  using type = absl::Status;
+
+  template <typename Fn>
+  static type invoke(const Fn fn, int fd) {
+    return fn(fd);
+  }
+};
+
+template <typename R>
+struct WithFdReturn<absl::StatusOr<R>> {
+  using type = absl::StatusOr<R>;
+
+  template <typename Fn>
+  static type invoke(const Fn fn, int fd) {
+    return fn(fd);
+  }
+};
+
+template <>
+struct WithFdReturn<void> {
+  using type = absl::Status;
+
+  template <typename Fn>
+  static type invoke(const Fn fn, int fd) {
+    fn(fd);
+    return absl::OkStatus();
+  }
+};
+
+}  // namespace internal
+
 class LockedFd;
 
 ABSL_ATTRIBUTE_TRIVIAL_ABI class FileDescriptor {
@@ -219,55 +266,14 @@ class SystemApi {
   FileDescriptor RegisterFileDescriptor(int fd);
   void Unlock(int fd) const;
 
-  template <typename R>
-  struct WithFdReturn {
-    using type = absl::StatusOr<R>;
-
-    template <typename Fn>
-    static type invoke(const Fn fn, int fd) {
-      return fn(fd);
-    }
-  };
-
-  template <>
-  struct WithFdReturn<absl::Status> {
-    using type = absl::Status;
-
-    template <typename Fn>
-    static type invoke(const Fn fn, int fd) {
-      return fn(fd);
-    }
-  };
-
-  template <typename R>
-  struct WithFdReturn<absl::StatusOr<R>> {
-    using type = absl::StatusOr<R>;
-
-    template <typename Fn>
-    static type invoke(const Fn fn, int fd) {
-      return fn(fd);
-    }
-  };
-
-  template <>
-  struct WithFdReturn<void> {
-    using type = absl::Status;
-
-    template <typename Fn>
-    static type invoke(const Fn fn, int fd) {
-      fn(fd);
-      return absl::OkStatus();
-    }
-  };
-
   template <typename Fn>
   auto WithFd(const FileDescriptor& fd, const Fn& fn) const ->
-      typename WithFdReturn<decltype(fn(0))>::type {
+      typename internal::WithFdReturn<decltype(fn(0))>::type {
     auto locked_fd = Lock(fd);
     if (!locked_fd.ok()) {
       return std::move(locked_fd).status();
     }
-    return WithFdReturn<decltype(fn(0))>::invoke(fn, locked_fd->fd());
+    return internal::WithFdReturn<decltype(fn(0))>::invoke(fn, locked_fd->fd());
   }
 
   // Whether the socket supports TCP_USER_TIMEOUT option.

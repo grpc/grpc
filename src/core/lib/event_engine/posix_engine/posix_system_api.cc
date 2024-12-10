@@ -780,58 +780,58 @@ absl::StatusOr<int> SystemApi::EventFdWrite(FileDescriptor fd,
 namespace grpc_event_engine {
 namespace experimental {
 
-FileDescriptor SystemApi::AdoptExternalFd(int fd) const {
+FileDescriptor SystemApi::AdoptExternalFd(int fd) {
   grpc_core::Crash("unimplemented");
 }
 
-FileDescriptor SystemApi::Socket(int domain, int type, int protocol) const {
+FileDescriptor SystemApi::Socket(int domain, int type, int protocol) {
   grpc_core::Crash("unimplemented");
 }
 
-int SystemApi::Bind(FileDescriptor fd, const struct sockaddr* addr,
-                    socklen_t addrlen) const {
+absl::StatusOr<int> SystemApi::Bind(FileDescriptor fd,
+                                    const struct sockaddr* addr,
+                                    socklen_t addrlen) const {
   grpc_core::Crash("unimplemented");
 }
 
-void SystemApi::Close(FileDescriptor fd) const {
+void SystemApi::Close(FileDescriptor fd) { grpc_core::Crash("unimplemented"); }
+
+absl::StatusOr<int> SystemApi::GetSockOpt(FileDescriptor fd, int level,
+                                          int optname, void* optval,
+                                          socklen_t* optlen) const {
   grpc_core::Crash("unimplemented");
 }
 
-int SystemApi::Fcntl(FileDescriptor fd, int op, int args) const {
+absl::StatusOr<int> SystemApi::GetSockName(FileDescriptor fd,
+                                           struct sockaddr* addr,
+                                           socklen_t* addrlen) const {
   grpc_core::Crash("unimplemented");
 }
 
-int SystemApi::GetSockOpt(FileDescriptor fd, int level, int optname,
-                          void* optval, socklen_t* optlen) const {
+absl::StatusOr<int> SystemApi::GetPeerName(FileDescriptor fd,
+                                           struct sockaddr* addr,
+                                           socklen_t* addrlen) const {
   grpc_core::Crash("unimplemented");
 }
 
-int SystemApi::GetSockName(FileDescriptor fd, struct sockaddr* addr,
-                           socklen_t* addrlen) const {
+absl::StatusOr<int> SystemApi::Listen(FileDescriptor fd, int backlog) const {
   grpc_core::Crash("unimplemented");
 }
 
-int SystemApi::GetPeerName(FileDescriptor fd, struct sockaddr* addr,
-                           socklen_t* addrlen) const {
+absl::StatusOr<long> SystemApi::RecvMsg(FileDescriptor fd, struct msghdr* msg,
+                                        int flags) const {
   grpc_core::Crash("unimplemented");
 }
 
-int SystemApi::Listen(FileDescriptor fd, int backlog) const {
+absl::StatusOr<long> SystemApi::SendMsg(FileDescriptor fd,
+                                        const struct msghdr* message,
+                                        int flags) const {
   grpc_core::Crash("unimplemented");
 }
 
-long SystemApi::RecvMsg(FileDescriptor fd, struct msghdr* msg,
-                        int flags) const {
-  grpc_core::Crash("unimplemented");
-}
-
-long SystemApi::SendMsg(FileDescriptor fd, const struct msghdr* message,
-                        int flags) const {
-  grpc_core::Crash("unimplemented");
-}
-
-int SystemApi::SetSockOpt(FileDescriptor fd, int level, int optname,
-                          const void* optval, socklen_t optlen) const {
+absl::Status SystemApi::SetSockOpt(FileDescriptor fd, int level, int optname,
+                                   const void* optval, socklen_t optlen,
+                                   absl::string_view label) const {
   grpc_core::Crash("unimplemented");
 }
 
@@ -844,7 +844,7 @@ absl::Status SystemApi::SetSocketZeroCopy(FileDescriptor fd) const {
 }
 
 absl::Status SystemApi::SetSocketNonBlocking(FileDescriptor fd,
-                                             int non_blocking) const {
+                                             bool non_blocking) const {
   grpc_core::Crash("unimplemented");
 }
 
@@ -897,42 +897,49 @@ bool SystemApi::IsSocketReusePortSupported() const {
   grpc_core::Crash("unimplemented");
 }
 
-int SystemApi::Shutdown(FileDescriptor sockfd, int how) const {
+absl::StatusOr<int> SystemApi::Shutdown(FileDescriptor sockfd, int how) const {
   grpc_core::Crash("unimplemented");
 }
 
-int SystemApi::Connect(FileDescriptor sockfd, const struct sockaddr* addr,
-                       socklen_t addrlen) const {
+absl::StatusOr<int> SystemApi::Connect(FileDescriptor sockfd,
+                                       const struct sockaddr* addr,
+                                       socklen_t addrlen) const {
   grpc_core::Crash("unimplemented");
 }
 
-int SystemApi::Ioctl(FileDescriptor fd, int request, void* extras) const {
+absl::StatusOr<int> SystemApi::Ioctl(FileDescriptor fd, int request,
+                                     void* extras) const {
   grpc_core::Crash("unimplemented");
 }
 
-long SystemApi::Read(FileDescriptor fd, void* buf, size_t count) const {
+absl::StatusOr<long> SystemApi::Read(FileDescriptor fd, void* buf,
+                                     size_t count) const {
   grpc_core::Crash("unimplemented");
 }
 
-long SystemApi::Write(FileDescriptor fd, const void* buf, size_t count) const {
+absl::StatusOr<long> SystemApi::Write(FileDescriptor fd, const void* buf,
+                                      size_t count) const {
   grpc_core::Crash("unimplemented");
 }
 
 std::pair<int, std::array<FileDescriptor, 2>> SystemApi::SocketPair(
-    int domain, int type, int protocol) const {
+    int domain, int type, int protocol) {
   grpc_core::Crash("unimplemented");
 }
 
-long SystemApi::EventFdRead(FileDescriptor fd, uint64_t* value) const {
+absl::StatusOr<long> SystemApi::EventFdRead(FileDescriptor fd,
+                                            uint64_t* value) const {
   grpc_core::Crash("unimplemented");
 }
 
-long SystemApi::EventFdWrite(FileDescriptor fd, uint64_t value) const {
+absl::StatusOr<int> SystemApi::EventFdWrite(FileDescriptor fd,
+                                            uint64_t value) const {
   grpc_core::Crash("unimplemented");
 }
 
-int SystemApi::EpollCtl(FileDescriptor epfd, int op, FileDescriptor fd,
-                        struct epoll_event* event) const {
+absl::StatusOr<int> SystemApi::EpollCtl(FileDescriptor epfd, int op,
+                                        FileDescriptor fd,
+                                        struct epoll_event* event) const {
   grpc_core::Crash("unimplemented");
 }
 
