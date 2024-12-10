@@ -1136,8 +1136,10 @@ grpc_cc_library(
         "absl/log:log",
         "absl/log:absl_check",
         "absl/log:absl_log",
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:cord",
         "absl/synchronization",
     ],
     language = "c++",
@@ -2330,6 +2332,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:cord",
         "absl/strings:str_format",
         "absl/synchronization",
         "absl/memory",
@@ -2418,6 +2421,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:cord",
         "absl/synchronization",
         "absl/log:absl_check",
         "absl/log:absl_log",
@@ -4853,6 +4857,11 @@ grpc_cc_library(
         "grpc++_public_hdrs",
         "grpc_public_hdrs",
     ],
+    external_deps = [
+        "absl/status",
+        "absl/strings:cord",
+        "absl/strings:string_view",
+    ]
 )
 
 grpc_cc_library(
