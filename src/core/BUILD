@@ -7928,6 +7928,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chaotic_good_auto_scaler",
+    srcs = [
+        "ext/transport/chaotic_good/auto_scaler.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/auto_scaler.h",
+    ],
+    external_deps = ["absl/container:flat_hash_map"],
+    deps = [
+        "if",
+        "loop",
+        "map",
+        "ref_counted",
+        "seq",
+        "sleep",
+        "tdigest",
+        "time",
+        "//:promise",
+    ],
+)
+
+grpc_cc_library(
     name = "chaotic_good_frame_header",
     srcs = [
         "ext/transport/chaotic_good/frame_header.cc",
