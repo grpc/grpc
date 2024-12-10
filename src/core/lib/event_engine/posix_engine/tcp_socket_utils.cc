@@ -25,7 +25,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-#include "posix_system_api.h"
+#include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
 #include "src/core/util/useful.h"
