@@ -81,15 +81,18 @@ class ControlEndpoint {
   auto Write(SliceBuffer&& bytes) { return buffer_->Queue(std::move(bytes)); }
 
   // Read operations are simply passthroughs to the underlying promise endpoint.
-  auto ReadSlice(size_t length) { return endpoint_->ReadSlice(length); }
-  auto Read(size_t length) { return endpoint_->Read(length); }
+  auto ReadSlice(size_t length) {
+    return AddErrorPrefix("CONTROL_CHANNEL: ", endpoint_->ReadSlice(length));
+  }
+  auto Read(size_t length) {
+    return AddErrorPrefix("CONTROL_CHANNEL: ", endpoint_->Read(length));
+  }
   auto GetPeerAddress() const { return endpoint_->GetPeerAddress(); }
   auto GetLocalAddress() const { return endpoint_->GetLocalAddress(); }
 
  private:
   std::shared_ptr<PromiseEndpoint> endpoint_;
-  RefCountedPtr<Party> write_party_ =
-      Party::Make(SimpleArenaAllocator(0)->MakeArena());
+  RefCountedPtr<Party> write_party_;
   RefCountedPtr<Buffer> buffer_ = MakeRefCounted<Buffer>();
 };
 

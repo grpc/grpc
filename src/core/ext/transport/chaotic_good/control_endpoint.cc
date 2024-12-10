@@ -40,26 +40,31 @@ ControlEndpoint::ControlEndpoint(
     PromiseEndpoint endpoint,
     grpc_event_engine::experimental::EventEngine* event_engine)
     : endpoint_(std::make_shared<PromiseEndpoint>(std::move(endpoint))) {
+  auto arena = SimpleArenaAllocator(0)->MakeArena();
+  arena->SetContext(event_engine);
+  write_party_ = Party::Make(arena);
   CHECK(event_engine != nullptr);
   write_party_->arena()->SetContext(event_engine);
   write_party_->Spawn(
       "flush-control",
       GRPC_LATENT_SEE_PROMISE(
           "FlushLoop", Loop([endpoint = endpoint_, buffer = buffer_]() {
-            return TrySeq(
-                // Pull one set of buffered writes
-                buffer->Pull(),
-                // And write them
-                [endpoint, buffer = buffer.get()](SliceBuffer flushing) {
-                  GRPC_TRACE_LOG(chaotic_good, INFO)
-                      << "CHAOTIC_GOOD: Flush " << flushing.Length()
-                      << " bytes from " << buffer << " to "
-                      << ResolvedAddressToString(endpoint->GetPeerAddress())
-                             .value_or("<<unknown peer address>>");
-                  return endpoint->Write(std::move(flushing));
-                },
-                // Then repeat
-                []() -> LoopCtl<absl::Status> { return Continue{}; });
+            return AddErrorPrefix(
+                "CONTROL_CHANNEL: ",
+                TrySeq(
+                    // Pull one set of buffered writes
+                    buffer->Pull(),
+                    // And write them
+                    [endpoint, buffer = buffer.get()](SliceBuffer flushing) {
+                      GRPC_TRACE_LOG(chaotic_good, INFO)
+                          << "CHAOTIC_GOOD: Flush " << flushing.Length()
+                          << " bytes from " << buffer << " to "
+                          << ResolvedAddressToString(endpoint->GetPeerAddress())
+                                 .value_or("<<unknown peer address>>");
+                      return endpoint->Write(std::move(flushing));
+                    },
+                    // Then repeat
+                    []() -> LoopCtl<absl::Status> { return Continue{}; }));
           })),
       [](absl::Status) {});
 }

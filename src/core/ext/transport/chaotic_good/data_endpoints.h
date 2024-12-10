@@ -15,8 +15,10 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_DATA_ENDPOINTS_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_DATA_ENDPOINTS_H
 
+#include <atomic>
 #include <cstdint>
 
+#include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -26,9 +28,6 @@ namespace grpc_core {
 namespace chaotic_good {
 
 namespace data_endpoints_detail {
-struct Endpoints : public RefCounted<Endpoints> {
-  std::vector<PromiseEndpoint> endpoints;
-};
 
 // Buffered writes for one data endpoint
 class OutputBuffer {
@@ -50,8 +49,6 @@ class OutputBuffer {
 // The set of output buffers for all connected data endpoints
 class OutputBuffers : public RefCounted<OutputBuffers> {
  public:
-  explicit OutputBuffers(uint32_t num_connections);
-
   auto Write(SliceBuffer output_buffer) {
     return [output_buffer = std::move(output_buffer), this]() mutable {
       return PollWrite(output_buffer);
@@ -62,13 +59,20 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
     return [this, connection_id]() { return PollNext(connection_id); };
   }
 
+  void AddEndpoint(uint32_t connection_id);
+
+  uint32_t ReadyEndpoints() const {
+    return ready_endpoints_.load(std::memory_order_relaxed);
+  }
+
  private:
   Poll<uint32_t> PollWrite(SliceBuffer& output_buffer);
   Poll<SliceBuffer> PollNext(uint32_t connection_id);
 
   Mutex mu_;
-  std::vector<OutputBuffer> buffers_ ABSL_GUARDED_BY(mu_);
+  std::vector<absl::optional<OutputBuffer>> buffers_ ABSL_GUARDED_BY(mu_);
   Waker write_waker_ ABSL_GUARDED_BY(mu_);
+  std::atomic<uint32_t> ready_endpoints_{0};
 };
 
 class InputQueues : public RefCounted<InputQueues> {
@@ -132,7 +136,7 @@ class InputQueues : public RefCounted<InputQueues> {
     }
   };
 
-  explicit InputQueues(uint32_t num_connections);
+  explicit InputQueues();
 
   ReadTicket Read(uint32_t connection_id, size_t length) {
     return ReadTicket(CreateTicket(connection_id, length), Ref());
@@ -145,6 +149,8 @@ class InputQueues : public RefCounted<InputQueues> {
   void CompleteRead(uint64_t ticket, absl::StatusOr<SliceBuffer> buffer);
 
   void CancelTicket(uint64_t ticket);
+
+  void AddEndpoint(uint32_t connection_id);
 
  private:
   using ReadState = absl::variant<absl::StatusOr<SliceBuffer>, Waker>;
@@ -160,6 +166,24 @@ class InputQueues : public RefCounted<InputQueues> {
   absl::flat_hash_map<uint64_t, ReadState> outstanding_reads_
       ABSL_GUARDED_BY(mu_);
 };
+
+class Endpoint final {
+ public:
+  Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
+           RefCountedPtr<InputQueues> input_queues,
+           PendingConnection pending_connection, bool enable_tracing,
+           grpc_event_engine::experimental::EventEngine* event_engine);
+
+ private:
+  static auto WriteLoop(uint32_t id,
+                        RefCountedPtr<OutputBuffers> output_buffers,
+                        std::shared_ptr<PromiseEndpoint> endpoint);
+  static auto ReadLoop(uint32_t id, RefCountedPtr<InputQueues> input_queues,
+                       std::shared_ptr<PromiseEndpoint> endpoint);
+
+  RefCountedPtr<Party> party_;
+};
+
 }  // namespace data_endpoints_detail
 
 // Collection of data connections.
@@ -168,8 +192,9 @@ class DataEndpoints {
   using ReadTicket = data_endpoints_detail::InputQueues::ReadTicket;
 
   explicit DataEndpoints(
-      std::vector<PromiseEndpoint> endpoints,
-      grpc_event_engine::experimental::EventEngine* event_engine);
+      std::vector<PendingConnection> endpoints,
+      grpc_event_engine::experimental::EventEngine* event_engine,
+      bool enable_tracing);
 
   // Try to queue output_buffer against a data endpoint.
   // Returns a promise that resolves to the data endpoint connection id
@@ -185,12 +210,13 @@ class DataEndpoints {
     return input_queues_->Read(connection_id, length);
   }
 
-  bool empty() const { return parties_.empty(); }
+  bool empty() const { return output_buffers_->ReadyEndpoints() == 0; }
 
  private:
   RefCountedPtr<data_endpoints_detail::OutputBuffers> output_buffers_;
   RefCountedPtr<data_endpoints_detail::InputQueues> input_queues_;
-  std::vector<RefCountedPtr<Party>> parties_;
+  Mutex mu_;
+  std::vector<data_endpoints_detail::Endpoint> endpoints_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace chaotic_good

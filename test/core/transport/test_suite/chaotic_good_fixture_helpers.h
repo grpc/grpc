@@ -49,6 +49,24 @@ EndpointPair CreateEndpointPair(
     grpc_event_engine::experimental::FuzzingEventEngine* event_engine,
     ResourceQuota* resource_quota, int port);
 
+class FakeClientConnectionFactory final
+    : public chaotic_good::ClientConnectionFactory {
+ public:
+  chaotic_good::PendingConnection Connect(absl::string_view) override {
+    Crash("Connect not implemented");
+  }
+  void Orphaned() override {}
+};
+
+class FakeServerConnectionFactory final
+    : public chaotic_good::ServerConnectionFactory {
+ public:
+  chaotic_good::PendingConnection RequestDataConnection() override {
+    Crash("RequestDataConnection not implemented");
+  }
+  void Orphaned() override {}
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_TEST_CORE_TRANSPORT_TEST_SUITE_CHAOTIC_GOOD_FIXTURE_HELPERS_H

@@ -92,8 +92,7 @@ class ChaoticGoodServerTest : public ::testing::Test {
     args_.address = &resolved_addr_;
     args_.deadline = Timestamp::Now() + Duration::Seconds(5);
     args_.channel_args = channel_args();
-    connector_ = MakeRefCounted<ChaoticGoodConnector>(
-        grpc_event_engine::experimental::GetDefaultEventEngine());
+    connector_ = MakeRefCounted<ChaoticGoodConnector>();
   }
 
  protected:

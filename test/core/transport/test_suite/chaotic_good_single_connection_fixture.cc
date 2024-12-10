@@ -28,16 +28,18 @@ TRANSPORT_FIXTURE(ChaoticGoodSingleConnection) {
           .SetObject(
               std::static_pointer_cast<
                   grpc_event_engine::experimental::EventEngine>(event_engine));
+  chaotic_good::Config client_config(channel_args);
+  chaotic_good::Config server_config(channel_args);
   auto client_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodClientTransport>(
-          std::move(control_endpoints.client), std::vector<PromiseEndpoint>{},
-          ChannelArgs().SetObject(resource_quota), event_engine,
-          chaotic_good::Config(channel_args));
+          channel_args, std::move(control_endpoints.client),
+          std::move(client_config),
+          MakeRefCounted<FakeClientConnectionFactory>());
   auto server_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodServerTransport>(
           channel_args, std::move(control_endpoints.server),
-          std::vector<PromiseEndpoint>{}, event_engine,
-          chaotic_good::Config(channel_args));
+          std::move(server_config),
+          MakeRefCounted<FakeServerConnectionFactory>());
   return ClientAndServerTransportPair{std::move(client_transport),
                                       std::move(server_transport)};
 }
