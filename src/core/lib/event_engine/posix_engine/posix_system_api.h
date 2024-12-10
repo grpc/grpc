@@ -109,9 +109,11 @@ class SystemApi;
 // FD that is locked for use in this thread
 class LockedFd {
  public:
-  explicit LockedFd(int fd, const SystemApi& system_api)
-      : fd_(fd), system_api_(&system_api) {}
+  explicit LockedFd(int fd, const SystemApi& system_api);
   ~LockedFd();
+
+  LockedFd(const LockedFd& other) = delete;
+  LockedFd(LockedFd&& other) = default;
 
   int fd() const { return fd_; }
 

@@ -351,7 +351,6 @@ EventHandle* PollPoller::CreateHandle(FileDescriptor fd,
   ForkFdListAddHandle(handle);
   // We need to send a kick to the thread executing Work(..) so that it can
   // add this new Fd into the list of Fds to poll.
-  LOG(INFO) << "Kicking";
   KickExternal(false);
   return handle;
 }

@@ -66,9 +66,11 @@ class LocksState {
     if (++counters_[system_api] == 1) {
       system_api->ReaderLock();
     }
+    LOG_EVERY_N(INFO, 1) << "Locks: " << counters_[system_api];
   }
 
   void Unlock(const SystemApi* system_api, int fd) {
+    CHECK_GT(counters_[system_api], 0);
     if (--counters_[system_api] == 0) {
       system_api->ReaderUnlock();
     }
@@ -81,7 +83,12 @@ class LocksState {
 thread_local LocksState locks_state;
 }  // namespace
 
-LockedFd::~LockedFd() { system_api_->Unlock(fd_); }
+LockedFd::LockedFd(int fd, const SystemApi& system_api)
+    : fd_(fd), system_api_(&system_api) {
+  locks_state.Lock(system_api_, fd_);
+}
+
+LockedFd::~LockedFd() { locks_state.Unlock(system_api_, fd_); }
 
 SystemApi::~SystemApi() {
   absl::MutexLock lock(&mu_);
@@ -841,8 +848,8 @@ absl::Status SystemApi::SetSocketZeroCopy(FileDescriptor fd) const {
   grpc_core::Crash("unimplemented");
 }
 
-absl::Status SystemApi::SetSocketNonBlocking(FileDescriptor fd,
-                                             bool non_blocking) const {
+absl::Status SystemApi::SetNonBlocking(FileDescriptor fd,
+                                       bool non_blocking) const {
   grpc_core::Crash("unimplemented");
 }
 
@@ -924,6 +931,7 @@ std::pair<int, std::array<FileDescriptor, 2>> SystemApi::SocketPair(
     int domain, int type, int protocol) {
   grpc_core::Crash("unimplemented");
 }
+#ifdef GRPC_LINUX_EPOLL
 
 absl::StatusOr<long> SystemApi::EventFdRead(FileDescriptor fd,
                                             uint64_t* value) const {
@@ -935,11 +943,12 @@ absl::StatusOr<int> SystemApi::EventFdWrite(FileDescriptor fd,
   grpc_core::Crash("unimplemented");
 }
 
-absl::StatusOr<int> SystemApi::EpollCtl(FileDescriptor epfd, int op,
-                                        FileDescriptor fd,
-                                        struct epoll_event* event) const {
+absl::StatusOr<int> EpollCtl(FileDescriptor epfd, int op, FileDescriptor fd,
+                             struct epoll_event* event) const {
   grpc_core::Crash("unimplemented");
 }
+
+#endif  // GRPC_LINUX_EPOLL
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
