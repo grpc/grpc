@@ -34,6 +34,7 @@ namespace {
 // - first attempt gets ABORTED
 // - second attempt gets ABORTED but does not retry
 CORE_END2END_TEST(RetryTest, RetryTooManyAttempts) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
