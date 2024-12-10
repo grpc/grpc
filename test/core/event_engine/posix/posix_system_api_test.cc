@@ -39,6 +39,7 @@
 #include "absl/time/time.h"
 #include "examples/protos/helloworld.grpc.pb.h"
 #include "examples/protos/helloworld.pb.h"
+#include "gmock/gmock.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
@@ -80,10 +81,13 @@ sockaddr_in SockAddr(int port) {
 }
 
 absl::StatusOr<FileDescriptor> Listen(SystemApi& system_api, int port) {
-  FileDescriptor server =
-      system_api.Socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+  FileDescriptor server = system_api.Socket(AF_INET, SOCK_STREAM, 0);
   if (!server.ready()) {
     return absl::ErrnoToStatus(errno, "Failed to create a socket");
+  }
+  auto result = system_api.SetNonBlocking(server, true);
+  if (!result.ok()) {
+    return result;
   }
   sockaddr_in addr = SockAddr(port);
   sockaddr* sa = reinterpret_cast<sockaddr*>(&addr);
@@ -104,10 +108,13 @@ struct ClientAndServer {
 absl::StatusOr<ClientAndServer> EstablishConnection(
     SystemApi& server_system_api, SystemApi& client_system_api,
     const FileDescriptor& server, int port) {
-  FileDescriptor client =
-      client_system_api.Socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+  FileDescriptor client = client_system_api.Socket(AF_INET, SOCK_STREAM, 0);
   if (!client.ready()) {
     return absl::ErrnoToStatus(errno, "Unable to create a client socket");
+  }
+  auto nb_result = client_system_api.SetNonBlocking(client, true);
+  if (!nb_result.ok()) {
+    return nb_result;
   }
   sockaddr_in addr = SockAddr(port);
   auto result = client_system_api.Connect(

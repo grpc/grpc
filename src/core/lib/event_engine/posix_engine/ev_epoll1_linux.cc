@@ -27,6 +27,7 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
+#include "ev_epoll1_linux.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 #include "src/core/lib/event_engine/time_util.h"
@@ -618,7 +619,7 @@ using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Poller;
 
 Epoll1Poller::Epoll1Poller(Scheduler* /* engine */,
-                           const SystemApi& /* system_api */) {
+                           SystemApi& /* system_api */) {
   grpc_core::Crash("unimplemented");
 }
 
@@ -651,8 +652,8 @@ void Epoll1Poller::Kick() { grpc_core::Crash("unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
-std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(
-    Scheduler* /*scheduler*/, const SystemApi& /*system_api*/) {
+std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* /*scheduler*/,
+                                               SystemApi& /*system_api*/) {
   return nullptr;
 }
 
@@ -661,6 +662,10 @@ void Epoll1Poller::PrepareFork() {}
 void Epoll1Poller::PostforkParent() {}
 
 void Epoll1Poller::PostforkChild() {}
+
+absl::Status Epoll1Poller::RestartOnFork() {}
+
+absl::Status Epoll1Poller::PrepareForkNew() {}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

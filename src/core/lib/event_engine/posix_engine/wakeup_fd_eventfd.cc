@@ -123,9 +123,7 @@ absl::Status EventFdWakeupFd::ConsumeWakeup() {
 
 absl::Status EventFdWakeupFd::Wakeup() { grpc_core::Crash("unimplemented"); }
 
-bool EventFdWakeupFd::IsSupported(const SystemApi& /*system_api*/) {
-  return false;
-}
+bool EventFdWakeupFd::IsSupported(SystemApi& /*system_api*/) { return false; }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>>
 EventFdWakeupFd::CreateEventFdWakeupFd(SystemApi& /*system_api*/) {

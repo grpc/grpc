@@ -106,37 +106,39 @@ void SystemApi::Unlock(int fd) const { locks_state.Unlock(this, fd); }
 
 #ifdef GRPC_POSIX_SOCKETUTILS
 
-FileDescriptor SystemApi::Accept4(
+absl::StatusOr<FileDescriptor> SystemApi::Accept4(
     FileDescriptor sockfd,
     grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
-    int nonblock, int cloexec) const {
-  int flags;
+    int nonblock, int cloexec) {
   EventEngine::ResolvedAddress peer_addr;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  FileDescriptor fd =
+  absl::StatusOr<FileDescriptor> fd =
       Accept(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len);
-  if (fd.ready()) {
-    if (nonblock) {
-      flags = Fcntl(fd, F_GETFL, 0);
-      if (flags < 0) goto close_and_error;
-      if (Fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) {
-        goto close_and_error;
+  if (fd.ok() && fd->ready()) {
+    return WithFd(*fd, [&](int fd) -> FileDescriptor {
+      int flags;
+      if (nonblock) {
+        flags = fcntl(fd, F_GETFL, 0);
+        if (flags < 0) goto close_and_error;
+        if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) {
+          goto close_and_error;
+        }
       }
-    }
-    if (cloexec) {
-      flags = Fcntl(fd, F_GETFD, 0);
-      if (flags < 0) goto close_and_error;
-      if (Fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0) {
-        goto close_and_error;
+      if (cloexec) {
+        flags = fcntl(fd, F_GETFD, 0);
+        if (flags < 0) goto close_and_error;
+        if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0) {
+          goto close_and_error;
+        }
       }
-    }
+      addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
+      return FileDescriptor(fd);
+    close_and_error:
+      close(fd);
+      return FileDescriptor();
+    });
   }
-  addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
   return fd;
-
-close_and_error:
-  Close(fd);
-  return FileDescriptor();
 }
 
 #elif GRPC_LINUX_SOCKETUTILS
@@ -271,12 +273,17 @@ absl::Status SystemApi::SetSocketNoSigpipeIfPossible(FileDescriptor fd) const {
   int val = 1;
   int newval;
   socklen_t intlen = sizeof(newval);
-  if (0 != SetSockOpt(fd, SOL_SOCKET, SO_NOSIGPIPE, &val, sizeof(val))) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_NOSIGPIPE): ", grpc_core::StrError(errno)));
+  absl::Status result = SetSockOpt(fd, SOL_SOCKET, SO_NOSIGPIPE, &val,
+                                   sizeof(val), "Set SO_NOSIGPIPE");
+  if (!result.ok()) {
+    return result;
   }
-  if (0 != GetSockOpt(fd, SOL_SOCKET, SO_NOSIGPIPE, &newval, &intlen)) {
+  auto sockopt_result =
+      GetSockOpt(fd, SOL_SOCKET, SO_NOSIGPIPE, &newval, &intlen);
+  if (!sockopt_result.ok()) {
+    return std::move(sockopt_result).status();
+  }
+  if (0 != *sockopt_result) {
     return absl::Status(
         absl::StatusCode::kInternal,
         absl::StrCat("getsockopt(SO_NOSIGPIPE): ", grpc_core::StrError(errno)));
