@@ -25,11 +25,17 @@ from typing import DefaultDict, Dict, List, Mapping, Sequence, Set, Tuple
 
 import grpc
 from grpc_channelz.v1 import channelz
-import channelz_pb2
 from grpc_csm_observability import CsmOpenTelemetryPlugin
 from grpc_health.v1 import health as grpc_health
-import health_pb2
-import health_pb2_grpc
+import os
+if os.environ.get('BUILD_SYSTEM') == 'Bazel':
+    import health_pb2
+    import health_pb2_grpc
+    import channelz_pb2
+else:
+    from grpc_health.v1 import health_pb2
+    from grpc_health.v1 import health_pb2_grpc
+    from grpc_channelz.v1 import channelz_pb2
 from grpc_reflection.v1alpha import reflection
 from opentelemetry.exporter.prometheus import PrometheusMetricReader
 from opentelemetry.sdk.metrics import MeterProvider

@@ -16,7 +16,11 @@
 from typing import AsyncIterable
 
 import grpc
-import reflection_pb2 as _reflection_pb2
+import os
+if os.environ.get('BUILD_SYSTEM') == 'Bazel':
+    import reflection_pb2 as _reflection_pb2
+else:
+    from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
 from grpc_reflection.v1alpha._base import BaseReflectionServicer
 
 

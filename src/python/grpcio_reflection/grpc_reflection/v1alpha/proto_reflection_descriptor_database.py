@@ -23,14 +23,26 @@ from typing import Any, Dict, Iterable, List, Set
 from google.protobuf.descriptor_database import DescriptorDatabase
 from google.protobuf.descriptor_pb2 import FileDescriptorProto
 import grpc
-from reflection_pb2 import ExtensionNumberResponse
-from reflection_pb2 import ExtensionRequest
-from reflection_pb2 import FileDescriptorResponse
-from reflection_pb2 import ListServiceResponse
-from reflection_pb2 import ServerReflectionRequest
-from reflection_pb2 import ServerReflectionResponse
-from reflection_pb2 import ServiceResponse
-from reflection_pb2_grpc import ServerReflectionStub
+import os
+if os.environ.get('BUILD_SYSTEM') == 'Bazel':
+    from reflection_pb2 import ExtensionNumberResponse
+    from reflection_pb2 import ExtensionRequest
+    from reflection_pb2 import FileDescriptorResponse
+    from reflection_pb2 import ListServiceResponse
+    from reflection_pb2 import ServerReflectionRequest
+    from reflection_pb2 import ServerReflectionResponse
+    from reflection_pb2 import ServiceResponse
+    from reflection_pb2_grpc import ServerReflectionStub
+else:
+    from grpc_reflection.v1alpha.reflection_pb2 import ExtensionNumberResponse
+    from grpc_reflection.v1alpha.reflection_pb2 import ExtensionRequest
+    from grpc_reflection.v1alpha.reflection_pb2 import FileDescriptorResponse
+    from grpc_reflection.v1alpha.reflection_pb2 import ListServiceResponse
+    from grpc_reflection.v1alpha.reflection_pb2 import ServerReflectionRequest
+    from grpc_reflection.v1alpha.reflection_pb2 import ServerReflectionResponse
+    from grpc_reflection.v1alpha.reflection_pb2 import ServiceResponse
+    from grpc_reflection.v1alpha.reflection_pb2_grpc import ServerReflectionStub
+
 
 
 class ProtoReflectionDescriptorDatabase(DescriptorDatabase):

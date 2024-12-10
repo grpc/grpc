@@ -18,8 +18,13 @@ import collections
 from typing import MutableMapping
 
 import grpc
-import health_pb2 as _health_pb2
-import health_pb2_grpc as _health_pb2_grpc
+import os
+if os.environ.get('BUILD_SYSTEM') == 'Bazel':
+    import health_pb2 as _health_pb2
+    import health_pb2_grpc as _health_pb2_grpc
+else:
+    from grpc_health.v1 import health_pb2 as _health_pb2
+    from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
 
 
 class HealthServicer(_health_pb2_grpc.HealthServicer):

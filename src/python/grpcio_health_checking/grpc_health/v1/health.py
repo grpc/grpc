@@ -18,8 +18,13 @@ import sys
 import threading
 
 import grpc
-import health_pb2 as _health_pb2
-import health_pb2_grpc as _health_pb2_grpc
+import os
+if os.environ.get('BUILD_SYSTEM') == 'Bazel':
+    import health_pb2 as _health_pb2
+    import health_pb2_grpc as _health_pb2_grpc
+else:
+    from grpc_health.v1 import health_pb2 as _health_pb2
+    from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
 
 if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
     # Exposes AsyncHealthServicer as public API.

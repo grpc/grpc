@@ -17,8 +17,13 @@ import logging
 from time import sleep
 
 import grpc
-import health_pb2
-import health_pb2_grpc
+import os
+if os.environ.get('BUILD_SYSTEM') == 'Bazel':
+    import health_pb2
+    import health_pb2_grpc
+else:
+    from grpc_health.v1 import health_pb2
+    from grpc_health.v1 import health_pb2_grpc
 import helloworld_pb2
 import helloworld_pb2_grpc
 
