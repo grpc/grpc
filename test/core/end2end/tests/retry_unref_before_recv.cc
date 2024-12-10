@@ -32,6 +32,7 @@ namespace {
 // they complete.  This ensures that we don't drop callbacks or cause a
 // memory leak.
 CORE_END2END_TEST(RetryTest, UnrefBeforeRecv) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

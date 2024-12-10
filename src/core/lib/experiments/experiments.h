@@ -85,6 +85,7 @@ inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
+inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
@@ -130,6 +131,7 @@ inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
+inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
@@ -175,6 +177,7 @@ inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
+inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
@@ -213,6 +216,7 @@ enum ExperimentIds {
   kExperimentIdPromiseBasedHttp2ClientTransport,
   kExperimentIdPromiseBasedHttp2ServerTransport,
   kExperimentIdPromiseBasedInprocTransport,
+  kExperimentIdRetryInCallv3,
   kExperimentIdRqFastReject,
   kExperimentIdScheduleCancellationOverWrite,
   kExperimentIdServerPrivacy,
@@ -312,6 +316,10 @@ inline bool IsPromiseBasedHttp2ServerTransportEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_INPROC_TRANSPORT
 inline bool IsPromiseBasedInprocTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdPromiseBasedInprocTransport>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_RETRY_IN_CALLV3
+inline bool IsRetryInCallv3Enabled() {
+  return IsExperimentEnabled<kExperimentIdRetryInCallv3>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RQ_FAST_REJECT
 inline bool IsRqFastRejectEnabled() {

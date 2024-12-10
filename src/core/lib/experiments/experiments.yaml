@@ -177,6 +177,11 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
+- name: retry_in_callv3
+  description: Support retries with call-v3
+  expiry: 2025/06/06
+  owner: ctiller@google.com
+  test_tags: [core_end2end_test]
 - name: rq_fast_reject
   description:
     Resource quota rejects requests immediately (before allocating the request

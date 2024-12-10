@@ -37,6 +37,7 @@ namespace {
 // - first attempt returns ABORTED
 // - second attempt returns OK
 CORE_END2END_TEST(RetryTest, RetrySendInitialMetadataRefs) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
