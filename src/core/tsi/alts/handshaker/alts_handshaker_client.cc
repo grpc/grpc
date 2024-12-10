@@ -360,10 +360,8 @@ void HandshakeDone(bool is_client) {
 /// make a grpc call.
 ///
 tsi_result AltsHandshakerClient::make_grpc_call(bool is_start) {
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(this);
   if (is_start) {
-    RequestHandshake(client, client->is_client);
+    RequestHandshake(this, is_client);
     return TSI_OK;
   } else {
     return continue_make_grpc_call(client, is_start);
@@ -408,8 +406,6 @@ grpc_byte_buffer* AltsHandshakerClient::get_serialized_handshaker_req(
 
 // Create and populate a client_start handshaker request, then serialize it.
 grpc_byte_buffer* AltsHandshakerClient::get_serialized_start_client() {
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(this);
   upb::Arena arena;
   grpc_gcp_HandshakerReq* req = grpc_gcp_HandshakerReq_new(arena.ptr());
   grpc_gcp_StartClientHandshakeReq* start_client =
@@ -426,14 +422,14 @@ grpc_byte_buffer* AltsHandshakerClient::get_serialized_start_client() {
       grpc_gcp_StartClientHandshakeReq_mutable_rpc_versions(start_client,
                                                             arena.ptr());
   grpc_gcp_RpcProtocolVersions_assign_from_struct(
-      client_version, arena.ptr(), &client->options->rpc_versions);
+      client_version, arena.ptr(), options->rpc_versions);
   grpc_gcp_StartClientHandshakeReq_set_target_name(
       start_client, upb_StringView_FromDataAndSize(
                         reinterpret_cast<const char*>(
-                            GRPC_SLICE_START_PTR(client->target_name)),
-                        GRPC_SLICE_LENGTH(client->target_name)));
+                            GRPC_SLICE_START_PTR(target_name)),
+                        GRPC_SLICE_LENGTH(target_name)));
   target_service_account* ptr =
-      (reinterpret_cast<grpc_alts_credentials_client_options*>(client->options))
+      (reinterpret_cast<grpc_alts_credentials_client_options*>(options))
           ->target_account_list_head;
   while (ptr != nullptr) {
     grpc_gcp_Identity* target_identity =
@@ -444,7 +440,7 @@ grpc_byte_buffer* AltsHandshakerClient::get_serialized_start_client() {
     ptr = ptr->next;
   }
   grpc_gcp_StartClientHandshakeReq_set_max_frame_size(
-      start_client, static_cast<uint32_t>(client->max_frame_size));
+      start_client, static_cast<uint32_t>(max_frame_size));
   return get_serialized_handshaker_req(req, arena.ptr());
 }
 
