@@ -198,12 +198,12 @@ AresClientChannelDNSResolver::AresClientChannelDNSResolver(
     ResolverArgs args, Duration min_time_between_resolutions)
     : PollingResolver(std::move(args), min_time_between_resolutions,
                       BackOff::Options()
-                          .set_initial_backoff(Duration::Milliseconds(
-                              GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000))
+                          .set_initial_backoff(Duration::Seconds(
+                              GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS))
                           .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
                           .set_jitter(GRPC_DNS_RECONNECT_JITTER)
-                          .set_max_backoff(Duration::Milliseconds(
-                              GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
+                          .set_max_backoff(Duration::Seconds(
+                              GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS)),
                       &cares_resolver_trace),
       request_service_config_(
           !channel_args()
