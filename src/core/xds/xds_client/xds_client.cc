@@ -271,7 +271,7 @@ class XdsClient::XdsChannel::AdsCall final
           resource_seen_ = true;
           state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
           ads_call_->xds_client()->NotifyWatchersOnResourceChanged(
-              absl::UnavailableError("does not exist"), state.watchers,
+              absl::NotFoundError("does not exist"), state.watchers,
               ReadDelayHandle::NoWait());
         }
       }
@@ -829,7 +829,7 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
     resource_state.ignored_deletion = false;
   }
   // Update resource state based on whether the resource is valid.
-  absl::Status status = absl::UnavailableError(
+  absl::Status status = absl::InvalidArgumentError(
       absl::StrCat("invalid resource: ", decode_status.ToString()));
   if (!decode_status.ok()) {
     if (resource_state.resource == nullptr) {
@@ -1103,7 +1103,7 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
                 resource_state.meta.client_status =
                     XdsApi::ResourceMetadata::DOES_NOT_EXIST;
                 xds_client()->NotifyWatchersOnResourceChanged(
-                    absl::UnavailableError("does not exist"),
+                    absl::NotFoundError("does not exist"),
                     resource_state.watchers, read_delay_handle);
               }
             }
@@ -1284,7 +1284,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
   };
   auto resource_name = ParseXdsResourceName(name, type);
   if (!resource_name.ok()) {
-    fail(absl::UnavailableError(
+    fail(absl::InvalidArgumentError(
         absl::StrCat("Unable to parse resource name ", name)));
     return;
   }
@@ -1294,7 +1294,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     auto* authority =
         bootstrap_->LookupAuthority(std::string(resource_name->authority));
     if (authority == nullptr) {
-      fail(absl::UnavailableError(
+      fail(absl::FailedPreconditionError(
           absl::StrCat("authority \"", resource_name->authority,
                        "\" not present in bootstrap config")));
       return;
@@ -1372,7 +1372,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
         GRPC_TRACE_LOG(xds_client, INFO)
             << "[xds_client " << this
             << "] reporting cached does-not-exist for " << name;
-        absl::Status status = absl::UnavailableError("does not exist");
+        absl::Status status = absl::NotFoundError("does not exist");
         status = AppendNodeToStatus(status);
         work_serializer_.Schedule(
             [watcher, status = std::move(status)]()
@@ -1388,7 +1388,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
             << "] reporting cached validation failure for " << name << ": "
             << resource_state.meta.failed_details;
         std::string details = resource_state.meta.failed_details;
-        absl::Status status = absl::UnavailableError(absl::StrCat(
+        absl::Status status = absl::InvalidArgumentError(absl::StrCat(
             "invalid resource: ", resource_state.meta.failed_details));
         status = AppendNodeToStatus(status);
         work_serializer_.Schedule(

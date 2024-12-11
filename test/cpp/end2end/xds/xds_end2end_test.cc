@@ -1514,7 +1514,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
   backends_[0]->Start();
   ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
       grpc_core::LocalIpAndPort(backends_[0]->port()),
-      grpc::StatusCode::UNAVAILABLE));
+      grpc::StatusCode::INVALID_ARGUMENT));
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
@@ -1546,7 +1546,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   backends_[0]->Start();
   ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
       grpc_core::LocalIpAndPort(backends_[0]->port()),
-      grpc::StatusCode::UNAVAILABLE));
+      grpc::StatusCode::INVALID_ARGUMENT));
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
@@ -2126,7 +2126,8 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
       grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::NOT_FOUND,
-          "Requested route config does not exist");
+          "RDS resource unknown_server_route_config: does not exist "
+          "\\(node ID:xds_end2end_test\\)");
 }
 
 // TODO(yashykt): Once https://github.com/grpc/grpc/issues/24035 is fixed, we
