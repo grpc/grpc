@@ -2,6 +2,26 @@ workspace(name = "com_github_grpc_grpc")
 
 load("//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
 
+### Java
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "rules_java",
+    urls = [
+        "https://github.com/bazelbuild/rules_java/releases/download/8.6.2/rules_java-8.6.2.tar.gz",
+    ],
+    sha256 = "a64ab04616e76a448c2c2d8165d836f0d2fb0906200d0b7c7376f46dd62e59cc",
+)
+
+load("@rules_java//java:rules_java_deps.bzl", "rules_java_dependencies")
+rules_java_dependencies()
+
+load("@com_google_protobuf//bazel/private:proto_bazel_features.bzl", "proto_bazel_features")  # buildifier: disable=bzl-visibility
+proto_bazel_features(name = "proto_bazel_features")
+
+load("@rules_java//java:repositories.bzl", "rules_java_toolchains")
+rules_java_toolchains()
+### Java
+
 grpc_deps()
 
 grpc_test_only_deps()
@@ -31,26 +51,6 @@ http_archive(
     sha256 = "8150406605389ececb6da07cbcb509d5637a3ab9a24bc69b1101531367d89d74",
     urls = ["https://github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz"],
 )
-
-RULES_ANDROID_NDK_COMMIT = "010f4f17dd13a8baaaacc28ba6c8c2c75f54c68b"
-
-RULES_ANDROID_NDK_SHA = "2ab6a97748772f289331d75caaaee0593825935d1d9d982231a437fb8ab5a14d"
-
-http_archive(
-    name = "rules_android_ndk",
-    sha256 = RULES_ANDROID_NDK_SHA,
-    strip_prefix = "rules_android_ndk-%s" % RULES_ANDROID_NDK_COMMIT,
-    url = "https://github.com/bazelbuild/rules_android_ndk/archive/%s.zip" % RULES_ANDROID_NDK_COMMIT,
-)
-
-android_sdk_repository(
-    name = "androidsdk",
-    build_tools_version = "34.0.0",
-)
-
-load("@rules_android_ndk//:rules.bzl", "android_ndk_repository")
-
-android_ndk_repository(name = "androidndk")
 
 # Note that we intentionally avoid calling `register_toolchains("@androidndk//:all")`
 # here, because the toolchain rule fails when $ANDROID_NDK_HOME is not set.
@@ -156,3 +156,4 @@ bind(
 #    podspec_url = "https://raw.githubusercontent.com/CocoaPods/Specs/master/Specs/2/e/1/CronetFramework/0.0.5/CronetFramework.podspec.json",
 #    url = "https://storage.googleapis.com/grpc-precompiled-binaries/cronet/Cronet.framework-v0.0.5.zip",
 #)
+
