@@ -31,7 +31,6 @@ namespace grpc_core {
 
 template <typename T>
 T Clamp(T val, T min, T max) {
-  DCHECK_GE(max, min);
   if (val < min) return min;
   if (max < val) return max;
   return val;
