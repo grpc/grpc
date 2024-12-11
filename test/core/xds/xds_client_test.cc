@@ -1893,6 +1893,120 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
   EXPECT_TRUE(stream->IsOrphaned());
 }
 
+TEST_F(XdsClientTest,
+       ResourceValidationFailureForCachedResourceWithFailOnDataErrors) {
+  InitXdsClient(FakeXdsBootstrap::Builder().SetServers(
+      {FakeXdsBootstrap::FakeXdsServer(kDefaultXdsServerUrl, true)}));
+  // Start a watch for "foo1".
+  auto watcher = StartFooWatch("foo1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->HasEvent());
+  // XdsClient should have created an ADS stream.
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  // Send a response.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddFooResource(XdsFooResource("foo1", 6))
+          .Serialize());
+  // XdsClient should have delivered the response to the watcher.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Send an update containing an invalid resource.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("2")
+          .set_nonce("B")
+          .AddInvalidResource(XdsFooResourceType::Get()->type_url(),
+                              "{\"name\":\"foo1\",\"value\":[]}")
+          .Serialize());
+  // XdsClient should deliver an error to the watcher.
+  auto error = watcher->WaitForNextError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(error->message(),
+            "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
+            "[field:value error:is not a number] (node ID:xds_client_test)")
+      << *error;
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::_));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "nacked"),
+                  1)));
+  // XdsClient should NACK the update.
+  // Note that version_info is set to the previous version in this request,
+  // because there were no valid resources in it.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(
+      *request, XdsFooResourceType::Get()->type_url(),
+      /*version_info=*/"1", /*response_nonce=*/"B",
+      // error_detail=
+      absl::InvalidArgumentError(
+          "xDS response validation errors: ["
+          "resource index 0: foo1: INVALID_ARGUMENT: errors validating JSON: "
+          "[field:value error:is not a number]]"),
+      /*resource_names=*/{"foo1"});
+  // Start a second watcher for the same resource.  This should deliver
+  // the error to the watcher immediately.
+  auto watcher2 = StartFooWatch("foo1");
+  error = watcher2->WaitForNextError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(error->message(),
+            "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
+            "[field:value error:is not a number] (node ID:xds_client_test)")
+      << *error;
+  // Cancel watches.
+  CancelFooWatch(watcher.get(), "foo1");
+  CancelFooWatch(watcher2.get(), "foo1");
+  EXPECT_TRUE(stream->IsOrphaned());
+}
+
 TEST_F(XdsClientTest, WildcardCapableResponseWithEmptyResource) {
   InitXdsClient();
   // Start a watch for "wc1".

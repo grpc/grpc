@@ -796,8 +796,8 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
   if (authority_it == xds_client()->authority_state_map_.end()) {
     return;  // Skip resource -- we don't have a subscription for it.
   }
-  // Found authority, so look up type.
   AuthorityState& authority_state = authority_it->second;
+  // Found authority, so look up type.
   auto type_it = authority_state.resource_map.find(result_.type);
   if (type_it == authority_state.resource_map.end()) {
     return;  // Skip resource -- we don't have a subscription for it.
@@ -828,6 +828,14 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
   absl::Status status = absl::InvalidArgumentError(
       absl::StrCat("invalid resource: ", decode_status.ToString()));
   if (!decode_status.ok()) {
+    // If the fail_on_data_errors server feature is present, drop the
+    // existing cached resource, if any.
+    if (ads_call_->xds_channel()->server_.FailOnDataErrors()) {
+      resource_state.resource.reset();
+    }
+    // If there is no cached resource (either because we didn't have one
+    // or because we just dropped it due to fail_on_data_errors), then notify
+    // via OnResourceChanged(); otherwise, notify via OnAmbientError().
     if (resource_state.resource == nullptr) {
       xds_client()->NotifyWatchersOnResourceChanged(std::move(status),
                                                     resource_state.watchers,
