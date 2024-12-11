@@ -354,7 +354,7 @@ class ProtocArtifact:
                 )
             else:
                 environ["CXXFLAGS"] += (
-                    " -std=c++14 -stdlib=libc++ %s" % _MACOS_COMPAT_FLAG
+                    " -std=c++17 -stdlib=libc++ %s" % _MACOS_COMPAT_FLAG
                 )
                 return create_jobspec(
                     self.name,

@@ -7,14 +7,14 @@ common --enable_bzlmod=false
 # for platform-appropriate cxxopts
 common --enable_platform_specific_config
 
-build:windows --cxxopt='/std:c++14'
-build:windows --host_cxxopt='/std:c++14'
-build:linux   --cxxopt='-std=c++14'
-build:linux   --host_cxxopt='-std=c++14'
-build:macos   --cxxopt='-std=c++14'
-build:macos   --host_cxxopt='-std=c++14'
-build:freebsd   --cxxopt='-std=c++14'
-build:freebsd   --host_cxxopt='-std=c++14'
+build:windows --cxxopt='/std:c++17'
+build:windows --host_cxxopt='/std:c++17'
+build:linux   --cxxopt='-std=c++17'
+build:linux   --host_cxxopt='-std=c++17'
+build:macos   --cxxopt='-std=c++17'
+build:macos   --host_cxxopt='-std=c++17'
+build:freebsd   --cxxopt='-std=c++17'
+build:freebsd   --host_cxxopt='-std=c++17'
 
 # TODO(veblush): Remove these once upb is upgraded to 25.x or later
 build:linux --copt=-Wno-typedef-redefinition
