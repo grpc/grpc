@@ -341,9 +341,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "gpr_atm",
-    srcs = [
-        "util/atm.cc",
-    ],
     language = "c++",
     public_hdrs = [
         "//:include/grpc/support/atm.h",
@@ -3594,13 +3591,11 @@ grpc_cc_library(
     hdrs = [
         "client_channel/retry_throttle.h",
     ],
-    external_deps = [
-        "absl/base:core_headers",
-    ],
+    external_deps = ["absl/base:core_headers"],
     language = "c++",
     deps = [
-        "gpr_atm",
         "ref_counted",
+        "useful",
         "//:gpr",
         "//:ref_counted_ptr",
     ],
