@@ -384,7 +384,7 @@ class HandshakeQueue {
       // Start the handshake immediately.
       ++outstanding_handshakes_;
     }
-    continue_make_grpc_call(client, true /* is_start */);
+    client->continue_make_grpc_call(true /* is_start */);
   }
 
   void HandshakeDone() {
@@ -400,7 +400,7 @@ class HandshakeQueue {
       client = queued_handshakes_.front();
       queued_handshakes_.pop_front();
     }
-    continue_make_grpc_call(client, true /* is_start */);
+    client->continue_make_grpc_call(true /* is_start */);
   }
 
  private:
@@ -455,7 +455,7 @@ tsi_result AltsHandshakerClient::make_grpc_call(bool is_start) {
     RequestHandshake(this, is_client);
     return TSI_OK;
   } else {
-    return continue_make_grpc_call(client, is_start);
+    return continue_make_grpc_call(is_start);
   }
 }
 
@@ -588,7 +588,7 @@ tsi_result AltsHandshakerClient::handshaker_client_start_server(
     LOG(ERROR) << "Invalid arguments to handshaker_client_start_server()";
     return TSI_INVALID_ARGUMENT;
   }
-  grpc_byte_buffer* buffer = get_serialized_start_server(c, bytes_received);
+  grpc_byte_buffer* buffer = get_serialized_start_server(bytes_received);
   if (buffer == nullptr) {
     LOG(ERROR) << "get_serialized_start_server() failed";
     return TSI_INTERNAL_ERROR;
