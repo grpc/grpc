@@ -19,8 +19,13 @@ import unittest
 
 import grpc
 from grpc_channelz.v1 import channelz
-from grpc_channelz.v1 import channelz_pb2
-from grpc_channelz.v1 import channelz_pb2_grpc
+import os
+if os.environ.get('BUILD_SYSTEM') == 'Bazel':
+    import channelz_pb2
+    import channelz_pb2_grpc
+else:
+    from grpc_channelz.v1 import channelz_pb2
+    from grpc_channelz.v1 import channelz_pb2_grpc
 
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants

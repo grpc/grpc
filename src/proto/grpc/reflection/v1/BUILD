@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
 
 licenses(["notice"])
 
@@ -28,6 +29,13 @@ grpc_proto_library(
     name = "reflection_proto",
     srcs = ["reflection.proto"],
 )
+
+proto_library(
+    name = "reflection_proto_descriptor",
+    srcs = ["reflection.proto"],
+    strip_import_prefix = "/src/proto/grpc/reflection/v1",
+)
+
 
 filegroup(
     name = "reflection_proto_file",

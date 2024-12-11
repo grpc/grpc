@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
+
 proto_library(
     name = "my_proto",
     srcs = ["my.proto"],
