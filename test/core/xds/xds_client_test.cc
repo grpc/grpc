@@ -241,11 +241,6 @@ class XdsClientTest : public ::testing::Test {
             XdsTestResourceType<ResourceStruct, all_resources_required_in_sotw>,
             ResourceStruct> {
    public:
-    struct ResourceAndReadDelayHandle {
-      std::shared_ptr<const ResourceStruct> resource;
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle;
-    };
-
     // A watcher implementation that queues delivered watches.
     class Watcher : public XdsResourceTypeImpl<
                         XdsTestResourceType<ResourceStruct,
@@ -258,19 +253,7 @@ class XdsClientTest : public ::testing::Test {
       ~Watcher() override {
         MutexLock lock(&mu_);
         EXPECT_THAT(queue_, ::testing::IsEmpty())
-            << this << " "
-            << Match(
-                   queue_[0],
-                   [&](const ResourceAndReadDelayHandle& resource) {
-                     return absl::StrFormat("Resource %s",
-                                            resource.resource->name);
-                   },
-                   [&](const absl::Status& status) {
-                     return status.ToString();
-                   },
-                   [&](const DoesNotExist& /* tag */) -> std::string {
-                     return "<Does not exist>";
-                   });
+            << this << " " << queue_[0].ToString();
       }
 
       bool HasEvent() {
@@ -285,62 +268,85 @@ class XdsClientTest : public ::testing::Test {
         return !HasEvent();
       }
 
-      absl::optional<ResourceAndReadDelayHandle> WaitForNextResourceAndHandle(
-          SourceLocation location = SourceLocation()) {
-        while (true) {
-          {
-            MutexLock lock(&mu_);
-            if (!queue_.empty()) {
-              Event& event = queue_.front();
-              if (!absl::holds_alternative<ResourceAndReadDelayHandle>(event)) {
-                EXPECT_TRUE(false)
-                    << "got unexpected event "
-                    << (absl::holds_alternative<absl::Status>(event)
-                            ? "error"
-                            : "does-not-exist")
-                    << " at " << location.file() << ":" << location.line();
-                return absl::nullopt;
-              }
-              auto resource_and_handle =
-                  std::move(absl::get<ResourceAndReadDelayHandle>(event));
-              queue_.pop_front();
-              return resource_and_handle;
-            }
-            if (event_engine_->IsIdle()) return absl::nullopt;
-          }
-          event_engine_->Tick();
-        }
-      }
-
       std::shared_ptr<const ResourceStruct> WaitForNextResource(
           SourceLocation location = SourceLocation()) {
-        auto resource_and_handle = WaitForNextResourceAndHandle(location);
-        if (!resource_and_handle.has_value()) {
-          return nullptr;
-        }
-        return std::move(resource_and_handle->resource);
+        auto event = WaitForNextEvent();
+        if (!event.has_value()) return nullptr;
+        EXPECT_TRUE(event->resource.ok())
+            << "got unexpected error: " << event->ToString()
+            << " at " << location.file() << ":" << location.line();
+        if (!event->resource.ok()) return nullptr;
+        return std::move(*event->resource);
+      }
+
+      struct ResourceAndReadDelayHandle {
+        std::shared_ptr<const ResourceStruct> resource;
+        RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle;
+      };
+      absl::optional<ResourceAndReadDelayHandle> WaitForNextResourceAndHandle(
+          SourceLocation location = SourceLocation()) {
+        auto event = WaitForNextEvent();
+        if (!event.has_value()) return absl::nullopt;
+        EXPECT_FALSE(event->is_ambient)
+            << "got unexpected ambient error: " << event->ToString()
+            << " at " << location.file() << ":" << location.line();
+        if (event->is_ambient) return absl::nullopt;
+        EXPECT_TRUE(event->resource.ok())
+            << "got unexpected error: " << event->ToString()
+            << " at " << location.file() << ":" << location.line();
+        if (!event->resource.ok()) return absl::nullopt;
+        return ResourceAndReadDelayHandle{
+            std::move(*event->resource), std::move(event->read_delay_handle)};
       }
 
       absl::optional<absl::Status> WaitForNextError(
           SourceLocation location = SourceLocation()) {
+        return WaitForNextErrorInternal(/*expect_ambient=*/false, location);
+      }
+
+      absl::optional<absl::Status> WaitForNextAmbientError(
+          SourceLocation location = SourceLocation()) {
+        return WaitForNextErrorInternal(/*expect_ambient=*/true, location);
+      }
+
+      bool WaitForDoesNotExist(
+          SourceLocation location = SourceLocation()) {
+        auto status = WaitForNextError(location);
+        if (!status.has_value()) return false;
+        EXPECT_EQ(status->code(), absl::StatusCode::kNotFound)
+            << "unexpected status: " << *status
+            << " at " << location.file() << ":" << location.line();
+        return status->code() == absl::StatusCode::kNotFound;
+      }
+
+     private:
+      // An event delivered to the watcher.
+      // For OnResourceChanged(), resource may be either a status or a
+      // resource, and is_ambient will be false.
+      // For OnAmbientError(), resource will always be a status and
+      // is_ambient will be true.
+      struct Event {
+        absl::StatusOr<std::shared_ptr<const ResourceStruct>> resource;
+        RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle;
+        bool is_ambient = false;
+
+        std::string ToString() const {
+          return absl::StrCat(
+              "{resource=",
+              resource.ok() ? (*resource)->name : resource.status().ToString(),
+              ", read_delay_handle=", (read_delay_handle == nullptr),
+              ", is_ambient=", is_ambient, "}");
+        }
+      };
+
+      absl::optional<Event> WaitForNextEvent() {
         while (true) {
           {
             MutexLock lock(&mu_);
             if (!queue_.empty()) {
-              Event& event = queue_.front();
-              if (!absl::holds_alternative<absl::Status>(event)) {
-                EXPECT_TRUE(false)
-                    << "got unexpected event "
-                    << (absl::holds_alternative<ResourceAndReadDelayHandle>(
-                            event)
-                            ? "resource"
-                            : "does-not-exist")
-                    << " at " << location.file() << ":" << location.line();
-                return absl::nullopt;
-              }
-              absl::Status error = std::move(absl::get<absl::Status>(event));
+              Event event = std::move(queue_.front());
               queue_.pop_front();
-              return std::move(error);
+              return event;
             }
             if (event_engine_->IsIdle()) return absl::nullopt;
           }
@@ -348,57 +354,36 @@ class XdsClientTest : public ::testing::Test {
         }
       }
 
-      bool WaitForDoesNotExist(SourceLocation location = SourceLocation()) {
-        while (true) {
-          {
-            MutexLock lock(&mu_);
-            if (!queue_.empty()) {
-              Event& event = queue_.front();
-              if (!absl::holds_alternative<DoesNotExist>(event)) {
-                EXPECT_TRUE(false)
-                    << "got unexpected event "
-                    << (absl::holds_alternative<absl::Status>(event)
-                            ? "error"
-                            : "resource")
-                    << " at " << location.file() << ":" << location.line();
-                return false;
-              }
-              queue_.pop_front();
-              return true;
-            }
-            if (event_engine_->IsIdle()) return false;
-          }
-          event_engine_->Tick();
-        }
+      absl::optional<absl::Status> WaitForNextErrorInternal(
+          bool expect_ambient, SourceLocation location = SourceLocation()) {
+        auto event = WaitForNextEvent();
+        if (!event.has_value()) return absl::nullopt;
+        EXPECT_FALSE(event->resource.ok())
+            << "got unexpected resource: " << event->ToString()
+            << " at " << location.file() << ":" << location.line();
+        if (event->resource.ok()) return absl::nullopt;
+        EXPECT_EQ(event->is_ambient, expect_ambient)
+            << "event: " << event->ToString()
+            << " at " << location.file() << ":" << location.line();
+        return event->resource.status();
       }
 
-     private:
-      struct DoesNotExist {};
-      using Event =
-          absl::variant<ResourceAndReadDelayHandle, absl::Status, DoesNotExist>;
-
-      void OnResourceChanged(std::shared_ptr<const ResourceStruct> foo,
-                             RefCountedPtr<XdsClient::ReadDelayHandle>
-                                 read_delay_handle) override {
+      void OnResourceChanged(
+          absl::StatusOr<std::shared_ptr<const ResourceStruct>> resource,
+          RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle)
+          override {
         MutexLock lock(&mu_);
-        ResourceAndReadDelayHandle event_details = {
-            std::move(foo), std::move(read_delay_handle)};
-        queue_.emplace_back(std::move(event_details));
+        queue_.emplace_back(
+            Event{std::move(resource), std::move(read_delay_handle), false});
       }
 
-      void OnError(
+      void OnAmbientError(
           absl::Status status,
-          RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
+          RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle)
           override {
         MutexLock lock(&mu_);
-        queue_.push_back(std::move(status));
-      }
-
-      void OnResourceDoesNotExist(
-          RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
-          override {
-        MutexLock lock(&mu_);
-        queue_.push_back(DoesNotExist());
+        queue_.push_back(
+            Event{std::move(status), std::move(read_delay_handle), true});
       }
 
       std::shared_ptr<FuzzingEventEngine> event_engine_;
@@ -1509,7 +1494,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
   // XdsClient should deliver an error to the watcher.
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
-  EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
+  EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(error->message(),
             "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
             "[field:value error:is not a number] (node ID:xds_client_test)")
@@ -1546,7 +1531,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
   auto watcher2 = StartFooWatch("foo1");
   error = watcher2->WaitForNextError();
   ASSERT_TRUE(error.has_value());
-  EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
+  EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(error->message(),
             "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
             "[field:value error:is not a number] (node ID:xds_client_test)")
@@ -1710,14 +1695,14 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   // XdsClient should deliver an error to the watchers for foo1 and foo3.
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
-  EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
+  EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(error->message(),
             "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
             "[field:value error:is not a number] (node ID:xds_client_test)")
       << *error;
   error = watcher3->WaitForNextError();
   ASSERT_TRUE(error.has_value());
-  EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
+  EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(error->message(),
             "invalid resource: INVALID_ARGUMENT: JSON parsing failed: "
             "[JSON parse error at index 15] (node ID:xds_client_test)")
@@ -1854,9 +1839,9 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
                               "{\"name\":\"foo1\",\"value\":[]}")
           .Serialize());
   // XdsClient should deliver an error to the watcher.
-  auto error = watcher->WaitForNextError();
+  auto error = watcher->WaitForNextAmbientError();
   ASSERT_TRUE(error.has_value());
-  EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
+  EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(error->message(),
             "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
             "[field:value error:is not a number] (node ID:xds_client_test)")
@@ -3526,9 +3511,10 @@ TEST_F(XdsClientTest, FederationWithUnknownAuthority) {
   // Watcher should immediately get an error about the unknown authority.
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
-  EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
+  EXPECT_EQ(error->code(), absl::StatusCode::kFailedPrecondition);
   EXPECT_EQ(error->message(),
-            "authority \"xds.example.com\" not present in bootstrap config")
+            "authority \"xds.example.com\" not present in bootstrap config "
+            "(node ID:xds_client_test)")
       << *error;
 }
 
@@ -3540,8 +3526,10 @@ TEST_F(XdsClientTest, FederationWithUnparseableXdstpResourceName) {
   // Watcher should immediately get an error about the unknown authority.
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
-  EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
-  EXPECT_EQ(error->message(), "Unable to parse resource name xdstp://x")
+  EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(error->message(),
+            "Unable to parse resource name xdstp://x "
+            "(node ID:xds_client_test)")
       << *error;
 }
 
@@ -3725,7 +3713,7 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   TriggerConnectionFailure(authority_server,
                            absl::UnavailableError("connection failed"));
   // The watcher for the xdstp resource name should see the error.
-  auto error = watcher2->WaitForNextError();
+  auto error = watcher2->WaitForNextAmbientError();
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
   EXPECT_EQ(error->message(),
@@ -3900,7 +3888,7 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
   TriggerConnectionFailure(primary_server,
                            absl::UnavailableError("Server down"));
   // Result (local): The error is reported to the watcher.
-  auto error = watcher->WaitForNextError();
+  auto error = watcher->WaitForNextAmbientError();
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
   EXPECT_EQ(error->message(),
@@ -3939,7 +3927,7 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Result (local): New watcher gets the error from the channel state.
-  error = watcher_cached->WaitForNextError();
+  error = watcher_cached->WaitForNextAmbientError();
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->message(),
             "xDS channel for server default_xds_server: Server down (node "
