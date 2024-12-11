@@ -298,7 +298,7 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
     if (details.size > 0) {
       error = absl::StrCat("Status ", code, " from handshaker service: ",
                            absl::string_view(details.data, details.size));
-      LOG_EVERY_N(ERROR, 100) << error;
+      LOG(INFO) << error;
     }
   }
   // TODO(apolcyn): consider short ciruiting handle_response_done and
