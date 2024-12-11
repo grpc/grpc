@@ -87,7 +87,7 @@ void ServerRetryThrottleData::GetReplacementThrottleDataIfNeeded(
     ServerRetryThrottleData** throttle_data) {
   while (true) {
     ServerRetryThrottleData* new_throttle_data =
-        replacement_.load(std::memory_order_acquire);
+        (*throttle_data)->replacement_.load(std::memory_order_acquire);
     if (new_throttle_data == nullptr) return;
     *throttle_data = new_throttle_data;
   }
