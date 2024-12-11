@@ -774,7 +774,6 @@ CORE_SOURCE_FILES = [
     'src/core/tsi/transport_security.cc',
     'src/core/tsi/transport_security_grpc.cc',
     'src/core/util/alloc.cc',
-    'src/core/util/atm.cc',
     'src/core/util/backoff.cc',
     'src/core/util/crash.cc',
     'src/core/util/dump_args.cc',
