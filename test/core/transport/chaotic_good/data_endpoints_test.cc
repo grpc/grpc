@@ -43,12 +43,20 @@ class DataEndpointsTest : public YodelTest {
 
 #define DATA_ENDPOINTS_TEST(name) YODEL_TEST(DataEndpointsTest, name)
 
+template <typename... Args>
+std::vector<chaotic_good::PendingConnection> Endpoints(Args... args) {
+  std::vector<chaotic_good::PendingConnection> connections;
+  std::vector<int> this_is_just_here_to_get_the_statements_to_unpack = {
+      (connections.emplace_back(
+           chaotic_good::ImmediateConnection("foo", std::move(args))),
+       0)...};
+  return connections;
+}
+
 DATA_ENDPOINTS_TEST(CanWrite) {
   chaotic_good::testing::MockPromiseEndpoint ep(1234);
-  std::vector<PromiseEndpoint> endpoints;
-  endpoints.push_back(std::move(ep.promise_endpoint));
-  chaotic_good::DataEndpoints data_endpoints(std::move(endpoints),
-                                             event_engine().get());
+  chaotic_good::DataEndpoints data_endpoints(
+      Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), false);
   ep.ExpectWrite(
       {grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
       event_engine().get());
@@ -62,11 +70,10 @@ DATA_ENDPOINTS_TEST(CanWrite) {
 DATA_ENDPOINTS_TEST(CanMultiWrite) {
   chaotic_good::testing::MockPromiseEndpoint ep1(1234);
   chaotic_good::testing::MockPromiseEndpoint ep2(1235);
-  std::vector<PromiseEndpoint> endpoints;
-  endpoints.push_back(std::move(ep1.promise_endpoint));
-  endpoints.push_back(std::move(ep2.promise_endpoint));
-  chaotic_good::DataEndpoints data_endpoints(std::move(endpoints),
-                                             event_engine().get());
+  chaotic_good::DataEndpoints data_endpoints(
+      Endpoints(std::move(ep1.promise_endpoint),
+                std::move(ep2.promise_endpoint)),
+      event_engine().get(), false);
   SliceBuffer writes1;
   SliceBuffer writes2;
   ep1.CaptureWrites(writes1, event_engine().get());
@@ -91,10 +98,8 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
 
 DATA_ENDPOINTS_TEST(CanRead) {
   chaotic_good::testing::MockPromiseEndpoint ep(1234);
-  std::vector<PromiseEndpoint> endpoints;
-  endpoints.push_back(std::move(ep.promise_endpoint));
-  chaotic_good::DataEndpoints data_endpoints(std::move(endpoints),
-                                             event_engine().get());
+  chaotic_good::DataEndpoints data_endpoints(
+      Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), false);
   ep.ExpectRead(
       {grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
       event_engine().get());

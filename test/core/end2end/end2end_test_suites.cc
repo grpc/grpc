@@ -536,6 +536,7 @@ class ChaoticGoodFixture : public CoreTestFixture {
         args.Set(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS, data_connections_)
             .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE, chunk_size_)
             .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE, chunk_size_)
+            .Set(GRPC_ARG_ENABLE_RETRIES, IsRetryInCallv3Enabled())
             .ToC()
             .get(),
         nullptr);

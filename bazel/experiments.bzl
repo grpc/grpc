@@ -39,6 +39,7 @@ EXPERIMENT_ENABLES = {
     "promise_based_http2_client_transport": "promise_based_http2_client_transport",
     "promise_based_http2_server_transport": "promise_based_http2_server_transport",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
+    "retry_in_callv3": "retry_in_callv3",
     "rq_fast_reject": "rq_fast_reject",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_privacy": "server_privacy",
@@ -66,6 +67,7 @@ EXPERIMENTS = {
                 "chaotic_good_legacy_protocol",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
+                "retry_in_callv3",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -123,6 +125,7 @@ EXPERIMENTS = {
                 "chaotic_good_legacy_protocol",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
+                "retry_in_callv3",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -166,6 +169,7 @@ EXPERIMENTS = {
                 "chaotic_good_legacy_protocol",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
+                "retry_in_callv3",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",

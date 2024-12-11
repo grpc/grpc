@@ -689,6 +689,11 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "map",
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
     language = "c++",
     public_hdrs = ["lib/promise/map.h"],
     deps = [
@@ -4019,20 +4024,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = ["//:gpr_platform"],
-)
-
-grpc_cc_library(
-    name = "kolmogorov_smirnov",
-    srcs = [
-        "util/kolmogorov_smirnov.cc",
-    ],
-    hdrs = [
-        "util/kolmogorov_smirnov.h",
-    ],
-    external_deps = [
-    ],
-    language = "c++",
-    deps = ["tdigest"],
 )
 
 grpc_cc_library(
@@ -8175,10 +8166,14 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chaotic_good/config.h",
     ],
+    external_deps = [
+        "absl/container:flat_hash_set",
+    ],
     deps = [
         "channel_args",
         "chaotic_good_frame_cc_proto",
         "chaotic_good_message_chunker",
+        "chaotic_good_pending_connection",
         "chaotic_good_transport",
         "event_engine_extensions",
     ],
@@ -8231,6 +8226,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chaotic_good_pending_connection",
+    hdrs = [
+        "ext/transport/chaotic_good/pending_connection.h",
+    ],
+    external_deps = ["absl/status:statusor"],
+    deps = [
+        "dual_ref_counted",
+        "grpc_promise_endpoint",
+        "//:promise",
+    ],
+)
+
+grpc_cc_library(
     name = "chaotic_good_data_endpoints",
     srcs = [
         "ext/transport/chaotic_good/data_endpoints.cc",
@@ -8244,7 +8252,11 @@ grpc_cc_library(
     ],
     deps = [
         "1999",
+        "chaotic_good_pending_connection",
         "event_engine_context",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
+        "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
         "loop",
         "seq",
@@ -8267,6 +8279,7 @@ grpc_cc_library(
         "chaotic_good_data_endpoints",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
+        "chaotic_good_pending_connection",
         "event_engine_context",
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
@@ -8309,6 +8322,7 @@ grpc_cc_library(
         "chaotic_good_frame",
         "chaotic_good_frame_header",
         "chaotic_good_message_reassembly",
+        "chaotic_good_pending_connection",
         "chaotic_good_transport",
         "context",
         "event_engine_context",
@@ -8369,6 +8383,7 @@ grpc_cc_library(
         "chaotic_good_frame",
         "chaotic_good_frame_header",
         "chaotic_good_message_reassembly",
+        "chaotic_good_pending_connection",
         "chaotic_good_transport",
         "context",
         "default_event_engine",
@@ -8893,6 +8908,7 @@ grpc_cc_library(
         "chaotic_good_frame",
         "chaotic_good_frame_header",
         "chaotic_good_legacy_server",
+        "chaotic_good_pending_connection",
         "chaotic_good_server_transport",
         "chaotic_good_transport",
         "closure",

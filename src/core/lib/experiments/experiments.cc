@@ -108,6 +108,8 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_retry_in_callv3 = "Support retries with call-v3";
+const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_rq_fast_reject =
     "Resource quota rejects requests immediately (before allocating the "
     "request structure) under very high memory pressure.";
@@ -208,6 +210,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"retry_in_callv3", description_retry_in_callv3,
+     additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"rq_fast_reject", description_rq_fast_reject,
      additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
@@ -321,6 +325,8 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_retry_in_callv3 = "Support retries with call-v3";
+const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_rq_fast_reject =
     "Resource quota rejects requests immediately (before allocating the "
     "request structure) under very high memory pressure.";
@@ -421,6 +427,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"retry_in_callv3", description_retry_in_callv3,
+     additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"rq_fast_reject", description_rq_fast_reject,
      additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
@@ -534,6 +542,8 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_retry_in_callv3 = "Support retries with call-v3";
+const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_rq_fast_reject =
     "Resource quota rejects requests immediately (before allocating the "
     "request structure) under very high memory pressure.";
@@ -634,6 +644,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"retry_in_callv3", description_retry_in_callv3,
+     additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"rq_fast_reject", description_rq_fast_reject,
      additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
