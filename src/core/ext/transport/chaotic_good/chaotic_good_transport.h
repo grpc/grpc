@@ -160,7 +160,8 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           outgoing_frames.Next(),
           // Serialize and write it out.
           [self = self.get()](Frame client_frame) {
-            return self->WriteFrame(GetFrameInterface(client_frame));
+            return self->WriteFrame(
+                absl::ConvertVariantTo<FrameInterface&>(client_frame));
           },
           []() -> LoopCtl<absl::Status> {
             // The write failures will be caught in TrySeq and exit loop.
