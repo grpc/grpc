@@ -1270,8 +1270,8 @@ void XdsClient::WatchResource(const XdsResourceType* type,
       MaybeRegisterResourceTypeLocked(type);
       invalid_watchers_.insert(watcher);
     }
-    NotifyWatchersOnResourceChanged(
-        std::move(status), {watcher}, ReadDelayHandle::NoWait());
+    NotifyWatchersOnResourceChanged(std::move(status), {watcher},
+                                    ReadDelayHandle::NoWait());
   };
   auto resource_name = ParseXdsResourceName(name, type);
   if (!resource_name.ok()) {
@@ -1337,17 +1337,16 @@ void XdsClient::WatchResource(const XdsResourceType* type,
         GRPC_TRACE_LOG(xds_client, INFO)
             << "[xds_client " << this << "] returning cached listener data for "
             << name;
-        NotifyWatchersOnResourceChanged(
-            resource_state.resource, {watcher}, ReadDelayHandle::NoWait());
+        NotifyWatchersOnResourceChanged(resource_state.resource, {watcher},
+                                        ReadDelayHandle::NoWait());
         notified_watcher = true;
       } else if (resource_state.meta.client_status ==
                  XdsApi::ResourceMetadata::DOES_NOT_EXIST) {
         GRPC_TRACE_LOG(xds_client, INFO)
             << "[xds_client " << this
             << "] reporting cached does-not-exist for " << name;
-        NotifyWatchersOnResourceChanged(
-            absl::NotFoundError("does not exist"), {watcher},
-            ReadDelayHandle::NoWait());
+        NotifyWatchersOnResourceChanged(absl::NotFoundError("does not exist"),
+                                        {watcher}, ReadDelayHandle::NoWait());
         notified_watcher = true;
       } else if (resource_state.meta.client_status ==
                  XdsApi::ResourceMetadata::NACKED) {
@@ -1363,18 +1362,17 @@ void XdsClient::WatchResource(const XdsResourceType* type,
       }
     }
     // If the channel is not connected, report an error to the watcher.
-    absl::Status channel_status =
-        authority_state.xds_channels.back()->status();
+    absl::Status channel_status = authority_state.xds_channels.back()->status();
     if (!channel_status.ok()) {
       GRPC_TRACE_LOG(xds_client, INFO)
           << "[xds_client " << this << "] returning cached channel error for "
           << name << ": " << channel_status;
       if (notified_watcher) {
-        NotifyWatchersOnAmbientError(
-            std::move(channel_status), {watcher}, ReadDelayHandle::NoWait());
+        NotifyWatchersOnAmbientError(std::move(channel_status), {watcher},
+                                     ReadDelayHandle::NoWait());
       } else {
-        NotifyWatchersOnResourceChanged(
-            std::move(channel_status), {watcher}, ReadDelayHandle::NoWait());
+        NotifyWatchersOnResourceChanged(std::move(channel_status), {watcher},
+                                        ReadDelayHandle::NoWait());
       }
     }
   }

@@ -272,8 +272,8 @@ class XdsClientTest : public ::testing::Test {
         auto event = WaitForNextEvent();
         if (!event.has_value()) return nullptr;
         EXPECT_TRUE(event->resource.ok())
-            << "got unexpected error: " << event->ToString()
-            << " at " << location.file() << ":" << location.line();
+            << "got unexpected error: " << event->ToString() << " at "
+            << location.file() << ":" << location.line();
         if (!event->resource.ok()) return nullptr;
         return std::move(*event->resource);
       }
@@ -287,15 +287,15 @@ class XdsClientTest : public ::testing::Test {
         auto event = WaitForNextEvent();
         if (!event.has_value()) return absl::nullopt;
         EXPECT_FALSE(event->is_ambient)
-            << "got unexpected ambient error: " << event->ToString()
-            << " at " << location.file() << ":" << location.line();
+            << "got unexpected ambient error: " << event->ToString() << " at "
+            << location.file() << ":" << location.line();
         if (event->is_ambient) return absl::nullopt;
         EXPECT_TRUE(event->resource.ok())
-            << "got unexpected error: " << event->ToString()
-            << " at " << location.file() << ":" << location.line();
+            << "got unexpected error: " << event->ToString() << " at "
+            << location.file() << ":" << location.line();
         if (!event->resource.ok()) return absl::nullopt;
-        return ResourceAndReadDelayHandle{
-            std::move(*event->resource), std::move(event->read_delay_handle)};
+        return ResourceAndReadDelayHandle{std::move(*event->resource),
+                                          std::move(event->read_delay_handle)};
       }
 
       absl::optional<absl::Status> WaitForNextError(
@@ -308,13 +308,12 @@ class XdsClientTest : public ::testing::Test {
         return WaitForNextErrorInternal(/*expect_ambient=*/true, location);
       }
 
-      bool WaitForDoesNotExist(
-          SourceLocation location = SourceLocation()) {
+      bool WaitForDoesNotExist(SourceLocation location = SourceLocation()) {
         auto status = WaitForNextError(location);
         if (!status.has_value()) return false;
         EXPECT_EQ(status->code(), absl::StatusCode::kNotFound)
-            << "unexpected status: " << *status
-            << " at " << location.file() << ":" << location.line();
+            << "unexpected status: " << *status << " at " << location.file()
+            << ":" << location.line();
         return status->code() == absl::StatusCode::kNotFound;
       }
 
@@ -358,12 +357,12 @@ class XdsClientTest : public ::testing::Test {
         auto event = WaitForNextEvent();
         if (!event.has_value()) return absl::nullopt;
         EXPECT_FALSE(event->resource.ok())
-            << "got unexpected resource: " << event->ToString()
-            << " at " << location.file() << ":" << location.line();
+            << "got unexpected resource: " << event->ToString() << " at "
+            << location.file() << ":" << location.line();
         if (event->resource.ok()) return absl::nullopt;
         EXPECT_EQ(event->is_ambient, expect_ambient)
-            << "event: " << event->ToString()
-            << " at " << location.file() << ":" << location.line();
+            << "event: " << event->ToString() << " at " << location.file()
+            << ":" << location.line();
         return event->resource.status();
       }
 
@@ -376,10 +375,9 @@ class XdsClientTest : public ::testing::Test {
             Event{std::move(resource), std::move(read_delay_handle), false});
       }
 
-      void OnAmbientError(
-          absl::Status status,
-          RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle)
-          override {
+      void OnAmbientError(absl::Status status,
+                          RefCountedPtr<XdsClient::ReadDelayHandle>
+                              read_delay_handle) override {
         MutexLock lock(&mu_);
         queue_.push_back(
             Event{std::move(status), std::move(read_delay_handle), true});
