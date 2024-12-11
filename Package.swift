@@ -1846,7 +1846,6 @@ let package = Package(
         "src/core/tsi/transport_security_interface.h",
         "src/core/util/alloc.cc",
         "src/core/util/alloc.h",
-        "src/core/util/atm.cc",
         "src/core/util/atomic_utils.h",
         "src/core/util/avl.h",
         "src/core/util/backoff.cc",

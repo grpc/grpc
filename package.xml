@@ -1830,7 +1830,6 @@
     <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/alloc.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/atm.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/atomic_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/avl.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/backoff.cc" role="src" />

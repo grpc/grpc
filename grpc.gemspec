@@ -1848,7 +1848,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/tsi/transport_security_interface.h )
   s.files += %w( src/core/util/alloc.cc )
   s.files += %w( src/core/util/alloc.h )
-  s.files += %w( src/core/util/atm.cc )
   s.files += %w( src/core/util/atomic_utils.h )
   s.files += %w( src/core/util/avl.h )
   s.files += %w( src/core/util/backoff.cc )

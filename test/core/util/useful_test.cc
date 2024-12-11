@@ -54,20 +54,6 @@ TEST(UsefulTest, BitOps) {
   EXPECT_EQ(GetBit(bitset, 3), 0);
 }
 
-TEST(UsefulTest, SaturatingAdd) {
-  EXPECT_EQ(SaturatingAdd(0, 0), 0);
-  EXPECT_EQ(SaturatingAdd(0, 1), 1);
-  EXPECT_EQ(SaturatingAdd(1, 0), 1);
-  EXPECT_EQ(SaturatingAdd(1, 1), 2);
-  EXPECT_EQ(SaturatingAdd(std::numeric_limits<int64_t>::max(), 1),
-            std::numeric_limits<int64_t>::max());
-  EXPECT_EQ(SaturatingAdd(std::numeric_limits<int64_t>::max(),
-                          std::numeric_limits<int64_t>::max()),
-            std::numeric_limits<int64_t>::max());
-  EXPECT_EQ(SaturatingAdd(std::numeric_limits<int64_t>::min(), -1),
-            std::numeric_limits<int64_t>::min());
-}
-
 TEST(UsefulTest, RoundUpToPowerOf2) {
   EXPECT_EQ(RoundUpToPowerOf2(0), 0);
   EXPECT_EQ(RoundUpToPowerOf2(1), 1);
