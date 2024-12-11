@@ -487,8 +487,7 @@ void XdsDependencyManager::OnClusterUpdate(
                                      << "] received Cluster update: " << name;
   if (xds_client_ == nullptr) return;
   if (!cluster.ok()) {
-    cluster = absl::Status(
-        cluster.status().code(),
+    cluster = absl::UnavailableError(
         absl::StrCat("CDS resource ", name, ": ", cluster.status().message()));
   }
   auto it = cluster_watchers_.find(name);

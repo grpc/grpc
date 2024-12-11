@@ -918,7 +918,7 @@ TEST_P(XdsFederationTest, RdsResourceNameAuthorityUnknown) {
       status.error_message(),
       absl::StrCat("empty address list: RDS resource ", kNewRouteConfigName,
                    ": authority \"xds.unknown.com\" not present in "
-                   "bootstrap config"));
+                   "bootstrap config (node ID:xds_end2end_test)"));
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 
@@ -967,7 +967,7 @@ TEST_P(XdsFederationTest, CdsResourceNameAuthorityUnknown) {
   EXPECT_EQ(status.error_message(),
             absl::StrCat("CDS resource ", kNewClusterName,
                          ": authority \"xds.unknown.com\" not present in "
-                         "bootstrap config"));
+                         "bootstrap config (node ID:xds_end2end_test)"));
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 
@@ -1027,7 +1027,7 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
       "no children in weighted_target policy: EDS resource "
       "xdstp://xds.unknown.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
       "edsservice_name: authority \"xds.unknown.com\" not "
-      "present in bootstrap config");
+      "present in bootstrap config (node ID:xds_end2end_test)");
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 
