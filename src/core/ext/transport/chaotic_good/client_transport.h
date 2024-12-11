@@ -111,7 +111,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   grpc_event_engine::experimental::MemoryAllocator allocator_;
   // Max buffer is set to 4, so that for stream writes each time it will queue
   // at most 2 frames.
-  MpscReceiver<ClientFrame> outgoing_frames_;
+  MpscReceiver<Frame> outgoing_frames_;
   Mutex mu_;
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.

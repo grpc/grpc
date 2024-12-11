@@ -129,9 +129,9 @@ auto BooleanSuccessToTransportErrorCapturingInitiator(CallInitiator initiator) {
 }
 }  // namespace
 
-auto ChaoticGoodServerTransport::SendFrame(
-    ServerFrame frame, MpscSender<ServerFrame> outgoing_frames,
-    CallInitiator call_initiator) {
+auto ChaoticGoodServerTransport::SendFrame(Frame frame,
+                                           MpscSender<Frame> outgoing_frames,
+                                           CallInitiator call_initiator) {
   // Capture the call_initiator to ensure the underlying call spine is alive
   // until the outgoing_frames.Send promise completes.
   return Map(outgoing_frames.Send(std::move(frame)),
@@ -140,7 +140,7 @@ auto ChaoticGoodServerTransport::SendFrame(
 }
 
 auto ChaoticGoodServerTransport::SendFrameAcked(
-    ServerFrame frame, MpscSender<ServerFrame> outgoing_frames,
+    Frame frame, MpscSender<Frame> outgoing_frames,
     CallInitiator call_initiator) {
   // Capture the call_initiator to ensure the underlying call spine is alive
   // until the outgoing_frames.Send promise completes.
@@ -149,9 +149,9 @@ auto ChaoticGoodServerTransport::SendFrameAcked(
                  std::move(call_initiator)));
 }
 
-auto ChaoticGoodServerTransport::SendCallBody(
-    uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
-    CallInitiator call_initiator) {
+auto ChaoticGoodServerTransport::SendCallBody(uint32_t stream_id,
+                                              MpscSender<Frame> outgoing_frames,
+                                              CallInitiator call_initiator) {
   // Continuously send client frame with client to server messages.
   return ForEach(MessagesFrom(call_initiator),
                  [this, stream_id, outgoing_frames = std::move(outgoing_frames),
@@ -164,7 +164,7 @@ auto ChaoticGoodServerTransport::SendCallBody(
 }
 
 auto ChaoticGoodServerTransport::SendCallInitialMetadataAndBody(
-    uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
+    uint32_t stream_id, MpscSender<Frame> outgoing_frames,
     CallInitiator call_initiator) {
   return TrySeq(
       // Wait for initial metadata then send it out.

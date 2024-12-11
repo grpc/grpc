@@ -179,12 +179,10 @@ struct MessageChunkFrame final : public FrameInterface {
   SliceBuffer payload;
 };
 
-using ClientFrame =
-    absl::variant<ClientInitialMetadataFrame, MessageFrame, BeginMessageFrame,
+using Frame =
+    absl::variant<ClientInitialMetadataFrame, ServerInitialMetadataFrame,
+                  ServerTrailingMetadataFrame, MessageFrame, BeginMessageFrame,
                   MessageChunkFrame, ClientEndOfStream, CancelFrame>;
-using ServerFrame =
-    absl::variant<ServerInitialMetadataFrame, MessageFrame, BeginMessageFrame,
-                  MessageChunkFrame, ServerTrailingMetadataFrame>;
 
 }  // namespace chaotic_good
 }  // namespace grpc_core

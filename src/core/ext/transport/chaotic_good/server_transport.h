@@ -107,9 +107,9 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
   RefCountedPtr<Stream> ExtractStream(uint32_t stream_id);
   auto SendCallInitialMetadataAndBody(uint32_t stream_id,
-                                      MpscSender<ServerFrame> outgoing_frames,
+                                      MpscSender<Frame> outgoing_frames,
                                       CallInitiator call_initiator);
-  auto SendCallBody(uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
+  auto SendCallBody(uint32_t stream_id, MpscSender<Frame> outgoing_frames,
                     CallInitiator call_initiator);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
@@ -130,10 +130,9 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, ClientEndOfStream frame);
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, BeginMessageFrame frame);
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, MessageChunkFrame frame);
-  auto SendFrame(ServerFrame frame, MpscSender<ServerFrame> outgoing_frames,
+  auto SendFrame(Frame frame, MpscSender<Frame> outgoing_frames,
                  CallInitiator call_initiator);
-  auto SendFrameAcked(ServerFrame frame,
-                      MpscSender<ServerFrame> outgoing_frames,
+  auto SendFrameAcked(Frame frame, MpscSender<Frame> outgoing_frames,
                       CallInitiator call_initiator);
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
@@ -141,7 +140,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
   InterActivityLatch<void> got_acceptor_;
-  MpscReceiver<ServerFrame> outgoing_frames_;
+  MpscReceiver<Frame> outgoing_frames_;
   Mutex mu_;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
