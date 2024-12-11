@@ -147,8 +147,8 @@ class XdsDependencyManager::ClusterWatcher final
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<ClusterWatcher>(), status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
-          self->dependency_mgr_->OnClusterAmbientError(
-              self->name_, std::move(status));
+          self->dependency_mgr_->OnClusterAmbientError(self->name_,
+                                                       std::move(status));
         },
         DEBUG_LOCATION);
   }
@@ -188,8 +188,8 @@ class XdsDependencyManager::EndpointWatcher final
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<EndpointWatcher>(), status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
-          self->dependency_mgr_->OnEndpointAmbientError(
-              self->name_, std::move(status));
+          self->dependency_mgr_->OnEndpointAmbientError(self->name_,
+                                                        std::move(status));
         },
         DEBUG_LOCATION);
   }
@@ -516,12 +516,12 @@ void XdsDependencyManager::OnEndpointUpdate(
   if (it == endpoint_watchers_.end()) return;
   if (!endpoint.ok()) {
     it->second.update.endpoints.reset();
-    it->second.update.resolution_note = absl::StrCat(
-        "EDS resource ", name, ": ", endpoint.status().message());
+    it->second.update.resolution_note =
+        absl::StrCat("EDS resource ", name, ": ", endpoint.status().message());
   } else {
     if ((*endpoint)->priorities.empty()) {
-      it->second.update.resolution_note = absl::StrCat(
-          "EDS resource ", name, ": contains no localities");
+      it->second.update.resolution_note =
+          absl::StrCat("EDS resource ", name, ": contains no localities");
     } else {
       std::set<absl::string_view> empty_localities;
       for (const auto& priority : (*endpoint)->priorities) {
@@ -885,12 +885,11 @@ void XdsDependencyManager::MaybeReportUpdate() {
   watcher_->OnUpdate(std::move(config));
 }
 
-void XdsDependencyManager::ReportError(
-    absl::string_view resource_type, absl::string_view resource_name,
-    absl::string_view error) {
-  watcher_->OnUpdate(
-      absl::UnavailableError(absl::StrCat(
-          resource_type, " resource ", resource_name, ": ", error)));
+void XdsDependencyManager::ReportError(absl::string_view resource_type,
+                                       absl::string_view resource_name,
+                                       absl::string_view error) {
+  watcher_->OnUpdate(absl::UnavailableError(
+      absl::StrCat(resource_type, " resource ", resource_name, ": ", error)));
 }
 
 }  // namespace grpc_core

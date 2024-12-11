@@ -64,10 +64,9 @@ TEST_P(LdsTest, NotAnApiListener) {
   ServerHcmAccessor().Pack(hcm, &listener);
   balancer_->ads_service()->SetLdsResource(listener);
   // RPCs should fail.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: LDS resource ", kServerName,
-                   ": not an API listener"));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      absl::StrCat("empty address list: LDS resource ",
+                                   kServerName, ": not an API listener"));
   // We should have ACKed the LDS resource.
   const auto deadline =
       absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
@@ -430,8 +429,7 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       absl::StrCat(
           "empty address list: ",
-          (GetParam().enable_rds_testing() ? "RDS" : "LDS"),
-          " resource ",
+          (GetParam().enable_rds_testing() ? "RDS" : "LDS"), " resource ",
           (GetParam().enable_rds_testing() ? kDefaultRouteConfigurationName
                                            : kServerName),
           ": could not find VirtualHost for ", kServerName,

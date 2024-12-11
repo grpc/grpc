@@ -137,8 +137,8 @@ class XdsResolver final : public Resolver {
     explicit XdsWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
 
-    void OnUpdate(absl::StatusOr<RefCountedPtr<const XdsConfig>> config)
-        override {
+    void OnUpdate(
+        absl::StatusOr<RefCountedPtr<const XdsConfig>> config) override {
       resolver_->OnUpdate(std::move(config));
     }
 
@@ -1042,9 +1042,8 @@ void XdsResolver::GenerateResult() {
   auto route_config_data =
       RouteConfigData::Create(this, hcm.http_max_stream_duration);
   if (!route_config_data.ok()) {
-    GenerateErrorResult(
-        absl::StrCat("could not create ConfigSelector: ",
-                     route_config_data.status().message()));
+    GenerateErrorResult(absl::StrCat("could not create ConfigSelector: ",
+                                     route_config_data.status().message()));
     return;
   }
   auto config_selector = MakeRefCounted<XdsConfigSelector>(

@@ -615,8 +615,7 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::OnAmbientError(
-    absl::Status status,
-    RefCountedPtr<ReadDelayHandle> /*read_delay_handle*/) {
+    absl::Status status, RefCountedPtr<ReadDelayHandle> /*read_delay_handle*/) {
   LOG(ERROR) << "ListenerWatcher:" << this
              << " XdsClient reports ambient error: " << status << " for "
              << listening_address_
@@ -832,10 +831,10 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       }
     }
     if (!route_config.ok()) {
-      route_config = absl::Status(
-          route_config.status().code(),
-          absl::StrCat("RDS resource ", resource_name, ": ",
-                       route_config.status().message()));
+      route_config =
+          absl::Status(route_config.status().code(),
+                       absl::StrCat("RDS resource ", resource_name, ": ",
+                                    route_config.status().message()));
     }
     state.rds_update = std::move(route_config);
   }
@@ -846,12 +845,11 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   }
 }
 
-void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::OnAmbientError(
-    const std::string& resource_name, absl::Status status) {
+void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
+    OnAmbientError(const std::string& resource_name, absl::Status status) {
   LOG(ERROR) << "RouteConfigWatcher:" << this
              << " XdsClient reports ambient error: " << status << " for "
-             << resource_name
-             << "; ignoring in favor of existing resource";
+             << resource_name << "; ignoring in favor of existing resource";
 }
 
 const XdsListenerResource::FilterChainData* FindFilterChainDataForSourcePort(
@@ -1259,10 +1257,10 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
             rds_update) {
   MutexLock lock(&mu_);
   if (!rds_update.ok()) {
-    rds_update = absl::Status(
-        rds_update.status().code(),
-        absl::StrCat("RDS resource ", resource_name_, ": ",
-                     rds_update.status().message()));
+    rds_update =
+        absl::Status(rds_update.status().code(),
+                     absl::StrCat("RDS resource ", resource_name_, ": ",
+                                  rds_update.status().message()));
   }
   resource_ = std::move(rds_update);
   if (watcher_ == nullptr) {
@@ -1283,8 +1281,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         absl::Status status) {
   LOG(ERROR) << "RouteConfigWatcher:" << this
              << " XdsClient reports ambient error: " << status << " for "
-             << resource_name_
-             << "; ignoring in favor of existing resource";
+             << resource_name_ << "; ignoring in favor of existing resource";
 }
 
 }  // namespace

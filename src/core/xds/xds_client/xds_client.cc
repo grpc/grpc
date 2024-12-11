@@ -555,9 +555,8 @@ void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
     }
     for (const auto& t : a.second.resource_map) {  // type
       for (const auto& r : t.second) {             // resource id
-        auto& watchers = (r.second.resource == nullptr)
-                             ? watchers_uncached
-                             : watchers_cached;
+        auto& watchers = (r.second.resource == nullptr) ? watchers_uncached
+                                                        : watchers_cached;
         for (const auto& w : r.second.watchers) {  // watchers
           watchers.insert(w);
         }
@@ -833,13 +832,13 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
       absl::StrCat("invalid resource: ", decode_status.ToString()));
   if (!decode_status.ok()) {
     if (resource_state.resource == nullptr) {
-      xds_client()->NotifyWatchersOnResourceChanged(
-          std::move(status), resource_state.watchers,
-          result_.read_delay_handle);
+      xds_client()->NotifyWatchersOnResourceChanged(std::move(status),
+                                                    resource_state.watchers,
+                                                    result_.read_delay_handle);
     } else {
-      xds_client()->NotifyWatchersOnAmbientError(
-          std::move(status), resource_state.watchers,
-          result_.read_delay_handle);
+      xds_client()->NotifyWatchersOnAmbientError(std::move(status),
+                                                 resource_state.watchers,
+                                                 result_.read_delay_handle);
     }
     UpdateResourceMetadataNacked(result_.version, decode_status.ToString(),
                                  update_time_, &resource_state.meta);
@@ -862,9 +861,9 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
   resource_state.meta = CreateResourceMetadataAcked(
       std::string(serialized_resource), result_.version, update_time_);
   // Notify watchers.
-  xds_client()->NotifyWatchersOnResourceChanged(
-      resource_state.resource, resource_state.watchers,
-      result_.read_delay_handle);
+  xds_client()->NotifyWatchersOnResourceChanged(resource_state.resource,
+                                                resource_state.watchers,
+                                                result_.read_delay_handle);
 }
 
 void XdsClient::XdsChannel::AdsCall::AdsResponseParser::
@@ -1277,8 +1276,8 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     work_serializer_.Run(
         [watcher = std::move(watcher), status = std::move(status)]()
             ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
-              watcher->OnGenericResourceChanged(
-                  status, ReadDelayHandle::NoWait());
+              watcher->OnGenericResourceChanged(status,
+                                                ReadDelayHandle::NoWait());
             },
         DEBUG_LOCATION);
   };
@@ -1377,9 +1376,9 @@ void XdsClient::WatchResource(const XdsResourceType* type,
         work_serializer_.Schedule(
             [watcher, status = std::move(status)]()
                 ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) mutable {
-              watcher->OnGenericResourceChanged(
-                  std::move(status), ReadDelayHandle::NoWait());
-            },
+                  watcher->OnGenericResourceChanged(std::move(status),
+                                                    ReadDelayHandle::NoWait());
+                },
             DEBUG_LOCATION);
       } else if (resource_state.meta.client_status ==
                  XdsApi::ResourceMetadata::NACKED) {
@@ -1394,8 +1393,8 @@ void XdsClient::WatchResource(const XdsResourceType* type,
         work_serializer_.Schedule(
             [watcher, status = std::move(status)]()
                 ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) mutable {
-                  watcher->OnGenericResourceChanged(
-                      std::move(status), ReadDelayHandle::NoWait());
+                  watcher->OnGenericResourceChanged(std::move(status),
+                                                    ReadDelayHandle::NoWait());
                 },
             DEBUG_LOCATION);
       } else {
@@ -1540,9 +1539,8 @@ absl::Status XdsClient::AppendNodeToStatus(const absl::Status& status) const {
   const auto* node = bootstrap_->node();
   if (node == nullptr) return status;
   return absl::Status(
-      status.code(),
-      absl::StrCat(status.message(), " (node ID:", bootstrap_->node()->id(),
-                   ")"));
+      status.code(), absl::StrCat(status.message(),
+                                  " (node ID:", bootstrap_->node()->id(), ")"));
 }
 
 void XdsClient::NotifyWatchersOnResourceChanged(

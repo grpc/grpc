@@ -383,10 +383,9 @@ TEST_P(CdsDeletionTest, ClusterDeleted) {
   SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
     if (result.status.ok()) return true;  // Keep going.
     EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-    EXPECT_EQ(
-        absl::StrCat("CDS resource ", kDefaultClusterName,
-                     ": does not exist (node ID:xds_end2end_test)"),
-        result.status.error_message());
+    EXPECT_EQ(absl::StrCat("CDS resource ", kDefaultClusterName,
+                           ": does not exist (node ID:xds_end2end_test)"),
+              result.status.error_message());
     return false;
   });
   // Make sure we ACK'ed the update.

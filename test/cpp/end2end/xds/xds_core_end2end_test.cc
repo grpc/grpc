@@ -409,10 +409,9 @@ TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
   auto status =
       SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-  EXPECT_EQ(
-      status.error_message(),
-      absl::StrCat("empty address list: LDS resource ", kNewServerName,
-                   ": does not exist (node ID:xds_end2end_test)"));
+  EXPECT_EQ(status.error_message(),
+            absl::StrCat("empty address list: LDS resource ", kNewServerName,
+                         ": does not exist (node ID:xds_end2end_test)"));
 }
 
 TEST_P(TimeoutTest, RdsServerIgnoresRequest) {
@@ -472,8 +471,7 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
   EXPECT_EQ(
       status.error_message(),
-      absl::StrCat("empty address list: RDS resource ",
-                   kNewRouteConfigName,
+      absl::StrCat("empty address list: RDS resource ", kNewRouteConfigName,
                    ": does not exist (node ID:xds_end2end_test)"));
 }
 
@@ -515,10 +513,9 @@ TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
       [&](const RpcResult& result) {
         if (result.status.ok()) return true;  // Keep going.
         EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-        EXPECT_EQ(
-            absl::StrCat("CDS resource ", kNewClusterName,
-                         ": does not exist (node ID:xds_end2end_test)"),
-            result.status.error_message());
+        EXPECT_EQ(absl::StrCat("CDS resource ", kNewClusterName,
+                               ": does not exist (node ID:xds_end2end_test)"),
+                  result.status.error_message());
         return false;
       },
       /*timeout_ms=*/30000, RpcOptions().set_timeout_ms(4000));
@@ -917,12 +914,11 @@ TEST_P(XdsFederationTest, RdsResourceNameAuthorityUnknown) {
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
-  EXPECT_EQ(status.error_message(),
-            absl::StrCat(
-                "empty address list: RDS resource ",
-                kNewRouteConfigName,
-                ": authority \"xds.unknown.com\" not present in "
-                "bootstrap config"));
+  EXPECT_EQ(
+      status.error_message(),
+      absl::StrCat("empty address list: RDS resource ", kNewRouteConfigName,
+                   ": authority \"xds.unknown.com\" not present in "
+                   "bootstrap config"));
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 
