@@ -205,7 +205,7 @@ void AltsHandshakerClient::handle_response_done(
   p->bytes_to_send = bytes_to_send;
   p->bytes_to_send_size = bytes_to_send_size;
   p->result = result;
-  maybe_complete_tsi_next(client, false /* receive_status_finished */,
+  maybe_complete_tsi_next(false /* receive_status_finished */,
                           p /* pending_recv_message_result */);
 }
 
@@ -474,7 +474,7 @@ void AltsHandshakerClient::on_status_received(void* arg,
             << grpc_core::StatusToString(error) << "|";
     gpr_free(status_details);
   }
-  maybe_complete_tsi_next(client, true /* receive_status_finished */,
+  client->maybe_complete_tsi_next(true /* receive_status_finished */,
                           nullptr /* pending_recv_message_result */);
   HandshakeDone(client->is_client);
 }

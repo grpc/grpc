@@ -89,7 +89,7 @@ typedef enum {
   SERVER_NEXT,
 } alts_handshaker_response_type;
 
-static alts_handshaker_client* cb_event = nullptr;
+static AltsHandshakerClient* cb_event = nullptr;
 static notification caller_to_tsi_notification;
 static notification tsi_to_caller_notification;
 
@@ -507,7 +507,7 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   signal(&tsi_to_caller_notification);
 }
 
-static tsi_result mock_client_start(alts_handshaker_client* client) {
+static tsi_result mock_client_start(AltsHandshakerClient* client) {
   if (!should_handshaker_client_api_succeed) {
     return TSI_INTERNAL_ERROR;
   }
@@ -526,9 +526,9 @@ static tsi_result mock_client_start(alts_handshaker_client* client) {
   return TSI_OK;
 }
 
-static void mock_shutdown(alts_handshaker_client* /*self*/) {}
+static void mock_shutdown(AltsHandshakerClient* /*self*/) {}
 
-static tsi_result mock_server_start(alts_handshaker_client* client,
+static tsi_result mock_server_start(AltsHandshakerClient* client,
                                     grpc_slice* bytes_received) {
   if (!should_handshaker_client_api_succeed) {
     return TSI_INTERNAL_ERROR;
@@ -548,7 +548,7 @@ static tsi_result mock_server_start(alts_handshaker_client* client,
   return TSI_OK;
 }
 
-static tsi_result mock_next(alts_handshaker_client* client,
+static tsi_result mock_next(AltsHandshakerClient* client,
                             grpc_slice* bytes_received) {
   if (!should_handshaker_client_api_succeed) {
     return TSI_INTERNAL_ERROR;
@@ -581,7 +581,7 @@ static tsi_result mock_next(alts_handshaker_client* client,
   return TSI_OK;
 }
 
-static void mock_destruct(alts_handshaker_client* /*client*/) {}
+static void mock_destruct(AltsHandshakerClient* /*client*/) {}
 
 static alts_handshaker_client_vtable vtable = {mock_client_start,
                                                mock_server_start, mock_next,
@@ -788,7 +788,7 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseNullptrHandshaker) {
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   grpc_slice slice = grpc_empty_slice();
   grpc_byte_buffer* recv_buffer = grpc_raw_byte_buffer_create(&slice, 1);
-  alts_handshaker_client* client =
+  AltsHandshakerClient* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   // Check nullptr handshaker.
   alts_handshaker_client_set_fields_for_testing(
@@ -826,7 +826,7 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseNullptrRecvBytes) {
                       on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
-  alts_handshaker_client* client =
+  AltsHandshakerClient* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   // Check nullptr recv_bytes.
   alts_handshaker_client_set_fields_for_testing(
@@ -862,7 +862,7 @@ TEST(AltsTsiHandshakerTest,
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   grpc_slice slice = grpc_empty_slice();
   grpc_byte_buffer* recv_buffer = grpc_raw_byte_buffer_create(&slice, 1);
-  alts_handshaker_client* client =
+  AltsHandshakerClient* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   // Check failed grpc call made to handshaker service.
   alts_handshaker_client_set_fields_for_testing(
@@ -899,7 +899,7 @@ TEST(AltsTsiHandshakerTest,
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   grpc_slice slice = grpc_empty_slice();
   grpc_byte_buffer* recv_buffer = grpc_raw_byte_buffer_create(&slice, 1);
-  alts_handshaker_client* client =
+  AltsHandshakerClient* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   // Check failed recv message op from handshaker service.
   alts_handshaker_client_set_fields_for_testing(
@@ -944,7 +944,7 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseInvalidResp) {
                       on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
-  alts_handshaker_client* client =
+  AltsHandshakerClient* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   // Tests.
   grpc_byte_buffer* recv_buffer = generate_handshaker_response(INVALID);
@@ -1016,7 +1016,7 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseFailure) {
                       on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
-  alts_handshaker_client* client =
+  AltsHandshakerClient* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   // Tests.
   grpc_byte_buffer* recv_buffer = generate_handshaker_response(FAILED);
@@ -1057,7 +1057,7 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseAfterShutdown) {
                       on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
-  alts_handshaker_client* client =
+  AltsHandshakerClient* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   grpc_byte_buffer** recv_buffer_ptr =
       alts_handshaker_client_get_recv_buffer_addr_for_testing(client);

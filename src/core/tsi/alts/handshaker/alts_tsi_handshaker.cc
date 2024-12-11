@@ -60,7 +60,7 @@ struct alts_tsi_handshaker {
   // potential concurrency of tsi_handshaker_shutdown and
   // tsi_handshaker_next).
   grpc_core::Mutex mu;
-  alts_handshaker_client* client = nullptr;
+  AltsHandshakerClient* client = nullptr;
   // shutdown effectively follows base.handshake_shutdown,
   // but is synchronized by the mutex of this object.
   bool shutdown = false;
@@ -381,7 +381,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
 // gRPC provided callback used when gRPC thread model is applied.
 static void on_handshaker_service_resp_recv(void* arg,
                                             grpc_error_handle error) {
-  alts_handshaker_client* client = static_cast<alts_handshaker_client*>(arg);
+  AltsHandshakerClient* client = static_cast<AltsHandshakerClient*>(arg);
   if (client == nullptr) {
     LOG(ERROR) << "ALTS handshaker client is nullptr";
     return;
@@ -711,7 +711,7 @@ bool alts_tsi_handshaker_get_is_client_for_testing(
   return handshaker->is_client;
 }
 
-alts_handshaker_client* alts_tsi_handshaker_get_client_for_testing(
+AltsHandshakerClient* alts_tsi_handshaker_get_client_for_testing(
     alts_tsi_handshaker* handshaker) {
   return handshaker->client;
 }

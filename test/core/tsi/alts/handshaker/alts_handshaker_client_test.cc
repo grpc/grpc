@@ -104,7 +104,7 @@ static void validate_target_identities(
 /// Validate if grpc operation data is correctly populated with the fields of
 /// ALTS handshaker client.
 ///
-static bool validate_op(AltsHandshakerClient c, const grpc_op* op,
+static bool validate_op(AltsHandshakerClient* c, const grpc_op* op,
                         size_t nops, bool is_start) {
   EXPECT_TRUE(c != nullptr && op != nullptr && nops != 0);
   bool ok = true;
