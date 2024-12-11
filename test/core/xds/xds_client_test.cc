@@ -129,25 +129,25 @@ class XdsClientTest : public ::testing::Test {
      public:
       explicit FakeXdsServer(
           absl::string_view server_uri = kDefaultXdsServerUrl,
-          bool ignore_resource_deletion = false)
+          bool fail_on_data_errors = false)
           : server_uri_(server_uri),
-            ignore_resource_deletion_(ignore_resource_deletion) {}
+            fail_on_data_errors_(fail_on_data_errors) {}
       const std::string& server_uri() const override { return server_uri_; }
-      bool IgnoreResourceDeletion() const override {
-        return ignore_resource_deletion_;
+      bool FailOnDataErrors() const override {
+        return fail_on_data_errors_;
       }
       bool Equals(const XdsServer& other) const override {
         const auto& o = static_cast<const FakeXdsServer&>(other);
         return server_uri_ == o.server_uri_ &&
-               ignore_resource_deletion_ == o.ignore_resource_deletion_;
+               fail_on_data_errors_ == o.fail_on_data_errors_;
       }
       std::string Key() const override {
-        return absl::StrCat(server_uri_, "#", ignore_resource_deletion_);
+        return absl::StrCat(server_uri_, "#", fail_on_data_errors_);
       }
 
      private:
       std::string server_uri_;
-      bool ignore_resource_deletion_ = false;
+      bool fail_on_data_errors_ = false;
     };
 
     class FakeAuthority : public Authority {
@@ -1962,9 +1962,11 @@ TEST_F(XdsClientTest, WildcardCapableResponseWithEmptyResource) {
 
 // This tests resource removal triggered by the server when using a
 // resource type that requires all resources to be present in every
-// response, similar to LDS and CDS.
-TEST_F(XdsClientTest, ResourceDeletion) {
-  InitXdsClient();
+// response, similar to LDS and CDS.  It configures the
+// fail_on_data_errors server feature.
+TEST_F(XdsClientTest, ResourceDeletionWithFailOnDataErrors) {
+  InitXdsClient(FakeXdsBootstrap::Builder().SetServers(
+      {FakeXdsBootstrap::FakeXdsServer(kDefaultXdsServerUrl, true)}));
   // Start a watch for "wc1".
   auto watcher = StartWildcardCapableWatch("wc1");
   // Watcher should initially not see any resource reported.
@@ -2090,11 +2092,10 @@ TEST_F(XdsClientTest, ResourceDeletion) {
   EXPECT_TRUE(stream->IsOrphaned());
 }
 
-// This tests that when we ignore resource deletions from the server
-// when configured to do so.
-TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
-  InitXdsClient(FakeXdsBootstrap::Builder().SetServers(
-      {FakeXdsBootstrap::FakeXdsServer(kDefaultXdsServerUrl, true)}));
+// This tests that when we ignore resource deletions from the server by
+// default.
+TEST_F(XdsClientTest, ResourceDeletionIgnoredByDefault) {
+  InitXdsClient();
   // Start a watch for "wc1".
   auto watcher = StartWildcardCapableWatch("wc1");
   // Watcher should initially not see any resource reported.

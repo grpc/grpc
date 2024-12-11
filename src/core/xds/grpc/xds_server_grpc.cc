@@ -33,17 +33,17 @@ namespace grpc_core {
 
 namespace {
 
-constexpr absl::string_view kServerFeatureIgnoreResourceDeletion =
-    "ignore_resource_deletion";
+constexpr absl::string_view kServerFeatureFailOnDataErrors =
+    "fail_on_data_errors";
 
 constexpr absl::string_view kServerFeatureTrustedXdsServer =
     "trusted_xds_server";
 
 }  // namespace
 
-bool GrpcXdsServer::IgnoreResourceDeletion() const {
+bool GrpcXdsServer::FailOnDataErrors() const {
   return server_features_.find(std::string(
-             kServerFeatureIgnoreResourceDeletion)) != server_features_.end();
+             kServerFeatureFailOnDataErrors)) != server_features_.end();
 }
 
 bool GrpcXdsServer::TrustedXdsServer() const {
@@ -125,7 +125,7 @@ void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
         const Json::Array& array = it->second.array();
         for (const Json& feature_json : array) {
           if (feature_json.type() == Json::Type::kString &&
-              (feature_json.string() == kServerFeatureIgnoreResourceDeletion ||
+              (feature_json.string() == kServerFeatureFailOnDataErrors ||
                feature_json.string() == kServerFeatureTrustedXdsServer)) {
             server_features_.insert(feature_json.string());
           }

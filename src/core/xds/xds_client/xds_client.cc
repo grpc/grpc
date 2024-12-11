@@ -1083,7 +1083,7 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
               // that the resource does not exist.  For that case, we rely on
               // the request timeout instead.
               if (resource_state.resource == nullptr) continue;
-              if (xds_channel()->server_.IgnoreResourceDeletion()) {
+              if (!xds_channel()->server_.FailOnDataErrors()) {
                 if (!resource_state.ignored_deletion) {
                   LOG(ERROR)
                       << "[xds_client " << xds_client() << "] xds server "
