@@ -89,9 +89,10 @@ class LdsDeletionTest : public XdsEnd2endTest {
 INSTANTIATE_TEST_SUITE_P(XdsTest, LdsDeletionTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-// Tests that we go into TRANSIENT_FAILURE if the Listener is deleted.
-TEST_P(LdsDeletionTest, ListenerDeleted) {
-  InitClient();
+// Tests that we go into TRANSIENT_FAILURE if the Listener is deleted if
+// fail_on_data_errors is enabled.
+TEST_P(LdsDeletionTest, ListenerDeletedWithFailOnDataErrors) {
+  InitClient(MakeBootstrapBuilder().SetFailOnDataErrors());
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -114,9 +115,9 @@ TEST_P(LdsDeletionTest, ListenerDeleted) {
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that we ignore Listener deletions if configured to do so.
-TEST_P(LdsDeletionTest, ListenerDeletionIgnored) {
-  InitClient(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
+// Tests that we ignore Listener deletions by default.
+TEST_P(LdsDeletionTest, ListenerDeletionIgnoredByDefault) {
+  InitClient();
   CreateAndStartBackends(2);
   // Bring up client pointing to backend 0 and wait for it to connect.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});

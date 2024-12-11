@@ -53,7 +53,7 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-MATCHER_P4(EqXdsServer, name, creds_config_type, ignore_resource_deletion,
+MATCHER_P4(EqXdsServer, name, creds_config_type, fail_on_data_errors,
            trusted_xds_server, "equals XdsServer") {
   auto* server = static_cast<const GrpcXdsServer*>(arg);
   if (!::testing::ExplainMatchResult(::testing::Ne(nullptr), server,
@@ -63,8 +63,8 @@ MATCHER_P4(EqXdsServer, name, creds_config_type, ignore_resource_deletion,
   bool ok = ::testing::ExplainMatchResult(name, server->server_uri(),
                                           result_listener);
   ok |=
-      ::testing::ExplainMatchResult(server->IgnoreResourceDeletion(),
-                                    ignore_resource_deletion, result_listener);
+      ::testing::ExplainMatchResult(server->FailOnDataErrors(),
+                                    fail_on_data_errors, result_listener);
   ok |= ::testing::ExplainMatchResult(server->TrustedXdsServer(),
                                       trusted_xds_server, result_listener);
   auto creds_config = server->channel_creds_config();
@@ -107,7 +107,7 @@ TEST(XdsBootstrapTest, Basic) {
       "          ],"
       "          \"server_features\": ["
       "            \"xds_v3\","
-      "            \"ignore_resource_deletion\""
+      "            \"fail_on_data_errors\""
       "          ]"
       "        }"
       "      ]"
@@ -707,7 +707,7 @@ TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
       "      ],"
       "      \"ignore\": 0,"
       "      \"server_features\": ["
-      "        \"ignore_resource_deletion\","
+      "        \"fail_on_data_errors\","
       "        \"trusted_xds_server\""
       "      ]"
       "    }";

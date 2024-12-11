@@ -835,8 +835,8 @@ TEST_P(XdsEnabledServerTest, Basic) {
   WaitForBackend(DEBUG_LOCATION, 0);
 }
 
-TEST_P(XdsEnabledServerTest, ListenerDeletionIgnored) {
-  DoSetUp(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
+TEST_P(XdsEnabledServerTest, ListenerDeletionIgnoredByDefault) {
+  DoSetUp();
   backends_[0]->Start();
   ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
       grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
@@ -874,6 +874,36 @@ TEST_P(XdsEnabledServerTest, ListenerDeletionIgnored) {
   }
   // Make sure server is still serving.
   CheckRpcSendOk(DEBUG_LOCATION);
+}
+
+TEST_P(XdsEnabledServerTest, ListenerDeletionWithFailOnDataErrors) {
+  DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
+  backends_[0]->Start();
+  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Check that we ACKed.
+  // TODO(roth): There may be multiple entries in the resource state response
+  // queue, because the client doesn't necessarily subscribe to all resources
+  // in a single message, and the server currently (I suspect incorrectly?)
+  // thinks that each subscription message is an ACK.  So for now, we
+  // drain the entire LDS resource state response queue, ensuring that
+  // all responses are ACKs.  Need to look more closely at the protocol
+  // semantics here and make sure the server is doing the right thing,
+  // in which case we may be able to avoid this.
+  while (true) {
+    auto response_state = balancer_->ads_service()->lds_response_state();
+    if (!response_state.has_value()) break;
+    ASSERT_TRUE(response_state.has_value());
+    EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  }
+  // Now unset the resource.
+  balancer_->ads_service()->UnsetResource(
+      kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
+  // Server should stop serving.
+  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()),
+      grpc::StatusCode::NOT_FOUND));
 }
 
 // Testing just one example of an invalid resource here.

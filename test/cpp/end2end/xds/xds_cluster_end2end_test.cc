@@ -369,9 +369,10 @@ class CdsDeletionTest : public XdsEnd2endTest {
 INSTANTIATE_TEST_SUITE_P(XdsTest, CdsDeletionTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-// Tests that we go into TRANSIENT_FAILURE if the Cluster is deleted.
-TEST_P(CdsDeletionTest, ClusterDeleted) {
-  InitClient();
+// Tests that we go into TRANSIENT_FAILURE if the Cluster is deleted if
+// fail_on_data_errors is set.
+TEST_P(CdsDeletionTest, ClusterDeletedWithFailOnDataErrors) {
+  InitClient(MakeBootstrapBuilder().SetFailOnDataErrors());
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -394,9 +395,9 @@ TEST_P(CdsDeletionTest, ClusterDeleted) {
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that we ignore Cluster deletions if configured to do so.
-TEST_P(CdsDeletionTest, ClusterDeletionIgnored) {
-  InitClient(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
+// Tests that we ignore Cluster deletions by default.
+TEST_P(CdsDeletionTest, ClusterDeletionIgnoredByDefault) {
+  InitClient();
   CreateAndStartBackends(2);
   // Bring up client pointing to backend 0 and wait for it to connect.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
