@@ -21,6 +21,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <string>
@@ -98,7 +99,7 @@ bool ServerRetryThrottleData::RecordFailure() {
   ServerRetryThrottleData* throttle_data = this;
   GetReplacementThrottleDataIfNeeded(&throttle_data);
   // We decrement milli_tokens by 1000 (1 token) for each failure.
-  const intptr_t new_value = ClampedAdd<intptr_t>(
+  const uintptr_t new_value = ClampedAdd<intptr_t>(
       throttle_data->milli_tokens_, -1000, 0,
       std::min<uintptr_t>(throttle_data->max_milli_tokens_,
                           std::numeric_limits<intptr_t>::max()));
