@@ -373,10 +373,8 @@ TEST_P(TimeoutTest, LdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: ", kServerName,
-                   ": xDS envoy.config.listener.v3.Listener resource ",
-                   kServerName,
-                   " does not exist \\(node ID:xds_end2end_test\\)"),
+      absl::StrCat("empty address list: LDS resource ", kServerName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -384,10 +382,8 @@ TEST_P(TimeoutTest, LdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: ", kServerName,
-                   ": xDS envoy.config.listener.v3.Listener resource ",
-                   kServerName,
-                   " does not exist \\(node ID:xds_end2end_test\\)"),
+      absl::StrCat("empty address list: LDS resource ", kServerName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -415,20 +411,17 @@ TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
   EXPECT_EQ(
       status.error_message(),
-      absl::StrCat("empty address list: ", kNewServerName,
-                   ": xDS envoy.config.listener.v3.Listener resource ",
-                   kNewServerName,
-                   " does not exist (node ID:xds_end2end_test)"));
+      absl::StrCat("empty address list: LDS resource ", kNewServerName,
+                   ": does not exist (node ID:xds_end2end_test)"));
 }
 
 TEST_P(TimeoutTest, RdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kRdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: ", kDefaultRouteConfigurationName,
-                   ": xDS envoy.config.route.v3.RouteConfiguration resource ",
+      absl::StrCat("empty address list: RDS resource ",
                    kDefaultRouteConfigurationName,
-                   " does not exist \\(node ID:xds_end2end_test\\)"),
+                   ": does not exist \\(node ID:xds_end2end_test\\)"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -437,10 +430,9 @@ TEST_P(TimeoutTest, RdsResourceNotPresentInRequest) {
                                           kDefaultRouteConfigurationName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: ", kDefaultRouteConfigurationName,
-                   ": xDS envoy.config.route.v3.RouteConfiguration resource ",
+      absl::StrCat("empty address list: RDS resource ",
                    kDefaultRouteConfigurationName,
-                   " does not exist \\(node ID:xds_end2end_test\\)"),
+                   ": does not exist \\(node ID:xds_end2end_test\\)"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -480,20 +472,17 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
   EXPECT_EQ(
       status.error_message(),
-      absl::StrCat("empty address list: ", kNewRouteConfigName,
-                   ": xDS envoy.config.route.v3.RouteConfiguration resource ",
+      absl::StrCat("empty address list: RDS resource ",
                    kNewRouteConfigName,
-                   " does not exist (node ID:xds_end2end_test)"));
+                   ": does not exist (node ID:xds_end2end_test)"));
 }
 
 TEST_P(TimeoutTest, CdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat(kDefaultClusterName,
-                   ": xDS envoy.config.cluster.v3.Cluster resource ",
-                   kDefaultClusterName,
-                   " does not exist \\(node ID:xds_end2end_test\\)"),
+      absl::StrCat("CDS resource ", kDefaultClusterName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -501,10 +490,8 @@ TEST_P(TimeoutTest, CdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat(kDefaultClusterName,
-                   ": xDS envoy.config.cluster.v3.Cluster resource ",
-                   kDefaultClusterName,
-                   " does not exist \\(node ID:xds_end2end_test\\)"),
+      absl::StrCat("CDS resource ", kDefaultClusterName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -529,10 +516,8 @@ TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
         if (result.status.ok()) return true;  // Keep going.
         EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
         EXPECT_EQ(
-            absl::StrCat(kNewClusterName,
-                         ": xDS envoy.config.cluster.v3.Cluster resource ",
-                         kNewClusterName,
-                         " does not exist (node ID:xds_end2end_test)"),
+            absl::StrCat("CDS resource ", kNewClusterName,
+                         ": does not exist (node ID:xds_end2end_test)"),
             result.status.error_message());
         return false;
       },
@@ -543,9 +528,8 @@ TEST_P(TimeoutTest, EdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "no children in weighted_target policy: EDS resource eds_service_name: "
-      "xDS envoy.config.endpoint.v3.ClusterLoadAssignment resource "
-      "eds_service_name does not exist \\(node ID:xds_end2end_test\\)",
+      "no children in weighted_target policy: EDS resource "
+      "eds_service_name: does not exist \\(node ID:xds_end2end_test\\)",
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -554,9 +538,8 @@ TEST_P(TimeoutTest, EdsResourceNotPresentInRequest) {
   // by default.
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "no children in weighted_target policy: EDS resource eds_service_name: "
-      "xDS envoy.config.endpoint.v3.ClusterLoadAssignment resource "
-      "eds_service_name does not exist \\(node ID:xds_end2end_test\\)",
+      "no children in weighted_target policy: EDS resource "
+      "eds_service_name: does not exist \\(node ID:xds_end2end_test\\)",
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -587,11 +570,9 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
         if (result.status.ok()) return true;  // Keep going.
         EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
         EXPECT_EQ(result.status.error_message(),
-                  "no children in weighted_target policy: EDS resource "
-                  "eds_service_name_does_not_exist: xDS "
-                  "envoy.config.endpoint.v3.ClusterLoadAssignment resource "
-                  "eds_service_name_does_not_exist does not exist "
-                  "(node ID:xds_end2end_test)");
+                  "no children in weighted_target policy: "
+                  "EDS resource eds_service_name_does_not_exist: "
+                  "does not exist (node ID:xds_end2end_test)");
         return false;
       },
       /*timeout_ms=*/30000,
@@ -938,7 +919,7 @@ TEST_P(XdsFederationTest, RdsResourceNameAuthorityUnknown) {
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_EQ(status.error_message(),
             absl::StrCat(
-                "empty address list: ",
+                "empty address list: RDS resource ",
                 kNewRouteConfigName,
                 ": authority \"xds.unknown.com\" not present in "
                 "bootstrap config"));
@@ -988,7 +969,7 @@ TEST_P(XdsFederationTest, CdsResourceNameAuthorityUnknown) {
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_EQ(status.error_message(),
-            absl::StrCat(kNewClusterName,
+            absl::StrCat("CDS resource ", kNewClusterName,
                          ": authority \"xds.unknown.com\" not present in "
                          "bootstrap config"));
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));

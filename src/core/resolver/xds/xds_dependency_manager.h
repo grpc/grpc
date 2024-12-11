@@ -174,7 +174,8 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
   // so reports an update to the watcher.
   void MaybeReportUpdate();
 
-  void ReportError(absl::string_view context, absl::string_view error);
+  void ReportError(absl::string_view resource_type,
+                   absl::string_view resource_name, absl::string_view error);
 
   // Parameters passed into ctor.
   RefCountedPtr<GrpcXdsClient> xds_client_;

@@ -313,13 +313,14 @@ void XdsDependencyManager::OnListenerUpdate(
   if (xds_client_ == nullptr) return;
   if (!listener.ok()) {
     current_listener_.reset();
-    return ReportError(listener_resource_name_, listener.status().message());
+    return ReportError("LDS", listener_resource_name_,
+                       listener.status().message());
   }
   const auto* hcm = absl::get_if<XdsListenerResource::HttpConnectionManager>(
       &(*listener)->listener);
   if (hcm == nullptr) {
     current_listener_.reset();
-    return ReportError(listener_resource_name_, "not an API listener");
+    return ReportError("LDS", listener_resource_name_, "not an API listener");
   }
   current_listener_ = std::move(*listener);
   Match(
@@ -435,7 +436,8 @@ void XdsDependencyManager::OnRouteConfigUpdate(
   if (xds_client_ == nullptr) return;
   if (!route_config.ok()) {
     current_virtual_host_ = nullptr;
-    ReportError(route_config_name_.empty() ? listener_resource_name_
+    ReportError(route_config_name_.empty() ? "LDS" : "RDS",
+                route_config_name_.empty() ? listener_resource_name_
                                            : route_config_name_,
                 route_config.status().message());
     return;
@@ -453,7 +455,8 @@ void XdsDependencyManager::OnRouteConfigUpdate(
       data_plane_authority_);
   if (!vhost_index.has_value()) {
     current_virtual_host_ = nullptr;
-    ReportError(route_config_name_.empty() ? listener_resource_name_
+    ReportError(route_config_name_.empty() ? "LDS" : "RDS",
+                route_config_name_.empty() ? listener_resource_name_
                                            : route_config_name_,
                 absl::StrCat("could not find VirtualHost for ",
                              data_plane_authority_, " in RouteConfiguration"));
@@ -486,7 +489,7 @@ void XdsDependencyManager::OnClusterUpdate(
   if (!cluster.ok()) {
     cluster = absl::Status(
         cluster.status().code(),
-        absl::StrCat(name, ": ", cluster.status().message()));
+        absl::StrCat("CDS resource ", name, ": ", cluster.status().message()));
   }
   auto it = cluster_watchers_.find(name);
   if (it == cluster_watchers_.end()) return;
@@ -513,12 +516,12 @@ void XdsDependencyManager::OnEndpointUpdate(
   if (it == endpoint_watchers_.end()) return;
   if (!endpoint.ok()) {
     it->second.update.endpoints.reset();
-    it->second.update.resolution_note =
-        absl::StrCat("EDS resource ", name, ": ", endpoint.status().message());
+    it->second.update.resolution_note = absl::StrCat(
+        "EDS resource ", name, ": ", endpoint.status().message());
   } else {
     if ((*endpoint)->priorities.empty()) {
-      it->second.update.resolution_note =
-          absl::StrCat("EDS resource ", name, " contains no localities");
+      it->second.update.resolution_note = absl::StrCat(
+          "EDS resource ", name, ": contains no localities");
     } else {
       std::set<absl::string_view> empty_localities;
       for (const auto& priority : (*endpoint)->priorities) {
@@ -530,9 +533,9 @@ void XdsDependencyManager::OnEndpointUpdate(
         }
       }
       if (!empty_localities.empty()) {
-        it->second.update.resolution_note =
-            absl::StrCat("EDS resource ", name, " contains empty localities: [",
-                         absl::StrJoin(empty_localities, "; "), "]");
+        it->second.update.resolution_note = absl::StrCat(
+            "EDS resource ", name, ": contains empty localities: [",
+            absl::StrJoin(empty_localities, "; "), "]");
       }
     }
     it->second.update.endpoints = std::move(*endpoint);
@@ -882,10 +885,12 @@ void XdsDependencyManager::MaybeReportUpdate() {
   watcher_->OnUpdate(std::move(config));
 }
 
-void XdsDependencyManager::ReportError(absl::string_view context,
-                                       absl::string_view error) {
+void XdsDependencyManager::ReportError(
+    absl::string_view resource_type, absl::string_view resource_name,
+    absl::string_view error) {
   watcher_->OnUpdate(
-      absl::UnavailableError(absl::StrCat(context, ": ", error)));
+      absl::UnavailableError(absl::StrCat(
+          resource_type, " resource ", resource_name, ": ", error)));
 }
 
 }  // namespace grpc_core

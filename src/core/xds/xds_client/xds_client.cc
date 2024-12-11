@@ -271,10 +271,8 @@ class XdsClient::XdsChannel::AdsCall final
           resource_seen_ = true;
           state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
           ads_call_->xds_client()->NotifyWatchersOnResourceChanged(
-              absl::UnavailableError(
-                  absl::StrCat("xDS ", type_->type_url(), " resource ",
-                               resource_name, " does not exist")),
-              state.watchers, ReadDelayHandle::NoWait());
+              absl::UnavailableError("does not exist"), state.watchers,
+              ReadDelayHandle::NoWait());
         }
       }
       ads_call_->xds_client()->work_serializer_.DrainQueue();
@@ -1105,11 +1103,7 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
                 resource_state.meta.client_status =
                     XdsApi::ResourceMetadata::DOES_NOT_EXIST;
                 xds_client()->NotifyWatchersOnResourceChanged(
-                    absl::UnavailableError(absl::StrCat(
-                        "xDS ", result.type_url, " resource ",
-                        XdsClient::ConstructFullXdsResourceName(
-                            authority, result.type_url, resource_key),
-                        " does not exist")),
+                    absl::UnavailableError("does not exist"),
                     resource_state.watchers, read_delay_handle);
               }
             }
@@ -1378,8 +1372,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
         GRPC_TRACE_LOG(xds_client, INFO)
             << "[xds_client " << this
             << "] reporting cached does-not-exist for " << name;
-        absl::Status status = absl::UnavailableError(absl::StrCat(
-            "xDS ", type->type_url(), " resource ", name, " does not exist"));
+        absl::Status status = absl::UnavailableError("does not exist");
         status = AppendNodeToStatus(status);
         work_serializer_.Schedule(
             [watcher, status = std::move(status)]()
