@@ -392,7 +392,7 @@ static void on_handshaker_service_resp_recv(void* arg,
             << grpc_core::StatusToString(error);
     success = false;
   }
-  alts_handshaker_client_handle_response(client, success);
+  AltsHandshakerClient::alts_handshaker_client_handle_response(client, success);
 }
 
 // gRPC provided callback used when dedicatd CQ and thread are used.
@@ -427,7 +427,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
         handshaker->channel == nullptr
             ? grpc_alts_get_shared_resource_dedicated()->channel
             : handshaker->channel;
-    alts_handshaker_client* client = alts_grpc_handshaker_client_create(
+    AltsHandshakerCLient* client = AltsHandshakerCLient::alts_grpc_handshaker_client_create(
         handshaker, channel, handshaker->handshaker_service_url,
         handshaker->interested_parties, handshaker->options,
         handshaker->target_name, grpc_cb, cb, user_data,
@@ -464,8 +464,8 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
   if (!handshaker->has_sent_start_message) {
     handshaker->has_sent_start_message = true;
     ok = handshaker->is_client
-             ? alts_handshaker_client_start_client(handshaker->client)
-             : alts_handshaker_client_start_server(handshaker->client, &slice);
+             ? AltsHandshakerClient::alts_handshaker_client_start_client(handshaker->client)
+             : AltsHandshakerClient::alts_handshaker_client_start_server(handshaker->client, &slice);
     // It's unsafe for the current thread to access any state in handshaker
     // at this point, since alts_handshaker_client_start_client/server
     // have potentially just started an op batch on the handshake call.
@@ -474,7 +474,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
     // there is nothing taking ownership of this handshaker to prevent it
     // from being destroyed.
   } else {
-    ok = alts_handshaker_client_next(handshaker->client, &slice);
+    ok = AltsHandshakerClient::alts_handshaker_client_next(handshaker->client, &slice);
   }
   grpc_core::CSliceUnref(slice);
   return ok;
@@ -599,7 +599,7 @@ static void handshaker_shutdown(tsi_handshaker* self) {
     return;
   }
   if (handshaker->client != nullptr) {
-    alts_handshaker_client_shutdown(handshaker->client);
+    AltsHandshakerClient::alts_handshaker_client_shutdown(handshaker->client);
   }
   handshaker->shutdown = true;
 }
@@ -610,7 +610,7 @@ static void handshaker_destroy(tsi_handshaker* self) {
   }
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
-  alts_handshaker_client_destroy(handshaker->client);
+  AltsHandshakerClient::alts_handshaker_client_destroy(handshaker->client);
   grpc_core::CSliceUnref(handshaker->target_name);
   grpc_alts_credentials_options_destroy(handshaker->options);
   if (handshaker->channel != nullptr) {

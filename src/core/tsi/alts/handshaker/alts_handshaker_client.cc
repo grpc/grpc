@@ -593,7 +593,7 @@ tsi_result AltsHandshakerClient::handshaker_client_start_server(
     LOG(ERROR) << "get_serialized_start_server() failed";
     return TSI_INTERNAL_ERROR;
   }
-  handshaker_client_send_buffer_destroy(client);
+  handshaker_client_send_buffer_destroy();
   send_buffer = buffer;
   tsi_result result = make_grpc_call(true /* is_start */);
   if (result != TSI_OK) {
@@ -631,7 +631,7 @@ tsi_result AltsHandshakerClient::handshaker_client_next(
     LOG(ERROR) << "get_serialized_next() failed";
     return TSI_INTERNAL_ERROR;
   }
-  handshaker_client_send_buffer_destroy(client);
+  handshaker_client_send_buffer_destroy();
   send_buffer = buffer;
   tsi_result result = make_grpc_call(false /* is_start */);
   if (result != TSI_OK) {
