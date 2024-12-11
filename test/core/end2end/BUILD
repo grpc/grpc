@@ -389,7 +389,10 @@ grpc_core_end2end_test(name = "max_message_length")
 
 grpc_core_end2end_test(name = "negative_deadline")
 
-grpc_core_end2end_test(name = "no_logging")
+grpc_core_end2end_test(
+    name = "no_logging",
+    tags = ["nofuzzing"],
+)
 
 grpc_core_end2end_test(name = "no_op")
 
@@ -412,7 +415,10 @@ grpc_core_end2end_test(name = "request_with_payload")
 
 grpc_core_end2end_test(name = "resource_quota_server")
 
-grpc_core_end2end_test(name = "retry")
+grpc_core_end2end_test(
+    name = "retry",
+    tags = ["nofuzzing"],
+)
 
 grpc_core_end2end_test(name = "retry_cancel_after_first_attempt_starts")
 
@@ -420,11 +426,17 @@ grpc_core_end2end_test(name = "retry_cancel_during_delay")
 
 grpc_core_end2end_test(name = "retry_cancel_with_multiple_send_batches")
 
-grpc_core_end2end_test(name = "retry_cancellation")
+grpc_core_end2end_test(
+    name = "retry_cancellation",
+    tags = ["nofuzzing"],
+)
 
 grpc_core_end2end_test(name = "retry_disabled")
 
-grpc_core_end2end_test(name = "retry_exceeds_buffer_size_in_delay")
+grpc_core_end2end_test(
+    name = "retry_exceeds_buffer_size_in_delay",
+    tags = ["nofuzzing"],
+)
 
 grpc_core_end2end_test(name = "retry_exceeds_buffer_size_in_initial_batch")
 
@@ -438,9 +450,15 @@ grpc_core_end2end_test(name = "retry_non_retriable_status")
 
 grpc_core_end2end_test(name = "retry_non_retriable_status_before_trailers")
 
-grpc_core_end2end_test(name = "retry_per_attempt_recv_timeout")
+grpc_core_end2end_test(
+    name = "retry_per_attempt_recv_timeout",
+    tags = ["nofuzzing"],
+)
 
-grpc_core_end2end_test(name = "retry_per_attempt_recv_timeout_on_last_attempt")
+grpc_core_end2end_test(
+    name = "retry_per_attempt_recv_timeout_on_last_attempt",
+    tags = ["nofuzzing"],
+)
 
 grpc_core_end2end_test(name = "retry_recv_initial_metadata")
 
@@ -448,31 +466,58 @@ grpc_core_end2end_test(name = "retry_recv_message")
 
 grpc_core_end2end_test(name = "retry_recv_message_replay")
 
-grpc_core_end2end_test(name = "retry_recv_trailing_metadata_error")
+grpc_core_end2end_test(
+    name = "retry_recv_trailing_metadata_error",
+    tags = ["nofuzzing"],
+)
 
-grpc_core_end2end_test(name = "retry_send_initial_metadata_refs")
+grpc_core_end2end_test(
+    name = "retry_send_initial_metadata_refs",
+    tags = ["nofuzzing"],
+)
 
-grpc_core_end2end_test(name = "retry_send_op_fails")
+grpc_core_end2end_test(
+    name = "retry_send_op_fails",
+    tags = ["nofuzzing"],
+)
 
 grpc_core_end2end_test(name = "retry_send_recv_batch")
 
-grpc_core_end2end_test(name = "retry_server_pushback_delay")
+grpc_core_end2end_test(
+    name = "retry_server_pushback_delay",
+    tags = ["nofuzzing"],
+)
 
-grpc_core_end2end_test(name = "retry_server_pushback_disabled")
+grpc_core_end2end_test(
+    name = "retry_server_pushback_disabled",
+    tags = ["nofuzzing"],
+)
 
-grpc_core_end2end_test(name = "retry_streaming")
+grpc_core_end2end_test(
+    name = "retry_streaming",
+    tags = ["nofuzzing"],
+)
 
 grpc_core_end2end_test(name = "retry_streaming_after_commit")
 
-grpc_core_end2end_test(name = "retry_streaming_succeeds_before_replay_finished")
+grpc_core_end2end_test(
+    name = "retry_streaming_succeeds_before_replay_finished",
+    tags = ["nofuzzing"],
+)
 
 grpc_core_end2end_test(name = "retry_throttled")
 
-grpc_core_end2end_test(name = "retry_too_many_attempts")
+grpc_core_end2end_test(
+    name = "retry_too_many_attempts",
+    tags = ["nofuzzing"],
+)
 
 grpc_core_end2end_test(name = "retry_transparent_goaway")
 
-grpc_core_end2end_test(name = "retry_transparent_max_concurrent_streams")
+grpc_core_end2end_test(
+    name = "retry_transparent_max_concurrent_streams",
+    tags = ["nofuzzing"],
+)
 
 grpc_core_end2end_test(name = "retry_transparent_not_sent_on_wire")
 
