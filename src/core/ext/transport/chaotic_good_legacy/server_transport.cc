@@ -164,7 +164,7 @@ auto ChaoticGoodServerTransport::SendCallBody(
   // Continuously send client frame with client to server
   // messages.
   return ForEach(
-      OutgoingMessages(call_initiator),
+      MessagesFrom(call_initiator),
       // Capture the call_initator to ensure the underlying call
       // spine is alive until the SendFragment promise completes.
       [stream_id, outgoing_frames, call_initiator,

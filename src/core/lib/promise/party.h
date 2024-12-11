@@ -25,11 +25,10 @@
 #include <utility>
 
 #include "absl/base/attributes.h"
-#include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -39,8 +38,6 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/sync.h"
-#include "src/core/util/useful.h"
 
 namespace grpc_core {
 
@@ -179,13 +176,22 @@ class Party : public Activity, private Wakeable {
     return RefCountedPtr<Party>(this);
   }
 
+  template <typename T>
+  RefCountedPtr<T> RefAsSubclass() {
+    IncrementRefCount();
+    return RefCountedPtr<T>(DownCast<T*>(this));
+  }
+
   Arena* arena() { return arena_.get(); }
 
  protected:
   friend class Arena;
 
   // Derived types should be constructed upon `arena`.
-  explicit Party(RefCountedPtr<Arena> arena) : arena_(std::move(arena)) {}
+  explicit Party(RefCountedPtr<Arena> arena) : arena_(std::move(arena)) {
+    CHECK(arena_->GetContext<grpc_event_engine::experimental::EventEngine>() !=
+          nullptr);
+  }
   ~Party() override;
 
   // Main run loop. Must be locked.

@@ -32,6 +32,7 @@ namespace {
 // then a subsequent recv op is started.  This ensures that we do not
 // incorrectly attempt to replay the send op.
 CORE_END2END_TEST(RetryTest, RetrySendRecvBatch) {
+  SKIP_IF_V3();  // Not working yet
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

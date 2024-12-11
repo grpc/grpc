@@ -153,7 +153,7 @@ auto ChaoticGoodServerTransport::SendCallBody(
     uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
     CallInitiator call_initiator) {
   // Continuously send client frame with client to server messages.
-  return ForEach(OutgoingMessages(call_initiator),
+  return ForEach(MessagesFrom(call_initiator),
                  [this, stream_id, outgoing_frames = std::move(outgoing_frames),
                   call_initiator](MessageHandle message) mutable {
                    return Map(message_chunker_.Send(std::move(message),
@@ -304,7 +304,7 @@ auto ChaoticGoodServerTransport::ReadOneFrame(
                   LOG_EVERY_N_SEC(INFO, 10)
                       << "Bad frame type: "
                       << incoming_frame.header().ToString();
-                  return absl::OkStatus();
+                  return ImmediateOkStatus();
                 }));
           },
           []() -> LoopCtl<absl::Status> { return Continue{}; }));
@@ -330,24 +330,23 @@ auto ChaoticGoodServerTransport::OnTransportActivityDone(
 }
 
 ChaoticGoodServerTransport::ChaoticGoodServerTransport(
-    const ChannelArgs& args, PromiseEndpoint control_endpoint,
-    std::vector<PromiseEndpoint> data_endpoints,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
-    Config config)
+    const ChannelArgs& args, PromiseEndpoint control_endpoint, Config config,
+    RefCountedPtr<ServerConnectionFactory>)
     : call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
           args.GetObject<ResourceQuota>()
               ->memory_quota()
               ->CreateMemoryAllocator("chaotic-good"),
           1024)),
-      event_engine_(event_engine),
+      event_engine_(
+          args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       outgoing_frames_(4),
       message_chunker_(config.MakeMessageChunker()) {
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
-      std::move(control_endpoint), std::move(data_endpoints), event_engine,
-      config.MakeTransportOptions());
+      std::move(control_endpoint), config.TakePendingDataEndpoints(),
+      event_engine_, config.MakeTransportOptions(), false);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-      event_engine.get());
+      event_engine_.get());
   party_ = Party::Make(std::move(party_arena));
   party_->Spawn(
       "server-chaotic-writer",

@@ -139,6 +139,11 @@ class ClientCall final
                                  UnstartedCallHandler& handler);
 
   std::string DebugTag() { return absl::StrFormat("CLIENT_CALL[%p]: ", this); }
+  void OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
+                        grpc_status_code* out_status,
+                        grpc_slice* out_status_details,
+                        const char** out_error_string,
+                        grpc_metadata_array* out_trailing_metadata);
 
   // call_state_ is one of:
   // 1. kUnstarted - call has not yet been started

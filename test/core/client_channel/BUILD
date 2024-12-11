@@ -68,6 +68,19 @@ grpc_yodel_simple_test(
     ],
 )
 
+grpc_yodel_simple_test(
+    name = "retry_interceptor",
+    srcs = ["retry_interceptor_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:retry_interceptor",
+        "//test/core/call/yodel:yodel_test",
+    ],
+)
+
 grpc_cc_test(
     name = "retry_throttle_test",
     srcs = ["retry_throttle_test.cc"],

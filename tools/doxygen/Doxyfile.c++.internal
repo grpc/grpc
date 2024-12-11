@@ -1089,6 +1089,8 @@ include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
 include/grpcpp/version_info.h \
 include/grpcpp/xds_server_builder.h \
+src/core/call/request_buffer.cc \
+src/core/call/request_buffer.h \
 src/core/channelz/channel_trace.cc \
 src/core/channelz/channel_trace.h \
 src/core/channelz/channelz.cc \
@@ -1099,6 +1101,7 @@ src/core/client_channel/backup_poller.cc \
 src/core/client_channel/backup_poller.h \
 src/core/client_channel/client_channel.cc \
 src/core/client_channel/client_channel.h \
+src/core/client_channel/client_channel_args.h \
 src/core/client_channel/client_channel_factory.cc \
 src/core/client_channel/client_channel_factory.h \
 src/core/client_channel/client_channel_filter.cc \
@@ -1125,6 +1128,8 @@ src/core/client_channel/retry_filter.cc \
 src/core/client_channel/retry_filter.h \
 src/core/client_channel/retry_filter_legacy_call_data.cc \
 src/core/client_channel/retry_filter_legacy_call_data.h \
+src/core/client_channel/retry_interceptor.cc \
+src/core/client_channel/retry_interceptor.h \
 src/core/client_channel/retry_service_config.cc \
 src/core/client_channel/retry_service_config.h \
 src/core/client_channel/retry_throttle.cc \
@@ -2059,6 +2064,7 @@ src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
 src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h \
 src/core/filter/blackboard.cc \
 src/core/filter/blackboard.h \
+src/core/filter/filter_args.h \
 src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
 src/core/handshaker/endpoint_info/endpoint_info_handshaker.h \
 src/core/handshaker/handshaker.cc \
