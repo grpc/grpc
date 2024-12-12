@@ -899,7 +899,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       }
     }
     state.rds_update =
-        absl::NotFoundError("Requested route config does not exist");
+        absl::UnavailableError("Requested route config does not exist");
   }
   // Promote the filter chain match manager object if all the referenced
   // resources are fetched.
@@ -1342,7 +1342,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     DynamicXdsServerConfigSelectorProvider::OnResourceDoesNotExist() {
   MutexLock lock(&mu_);
-  resource_ = absl::NotFoundError("Requested route config does not exist");
+  resource_ = absl::UnavailableError("Requested route config does not exist");
   if (watcher_ == nullptr) {
     return;
   }
