@@ -2027,7 +2027,10 @@ TEST_P(XdsServerFilterChainMatchTest,
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
-using XdsServerRdsTest = XdsEnabledServerStatusNotificationTest;
+class XdsServerRdsTest : public XdsEnabledServerTest {
+ public:
+  void SetUp() override { DoSetUp(); }
+};
 
 TEST_P(XdsServerRdsTest, Basic) {
   StartBackend(0);
