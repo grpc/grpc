@@ -101,14 +101,10 @@ TEST_P(LdsDeletionTest, ListenerDeletedWithFailOnDataErrors) {
   // Unset LDS resource.
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
   // Wait for RPCs to start failing.
-  SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
-    if (result.status.ok()) return true;  // Keep going.
-    EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-    EXPECT_EQ(result.status.error_message(),
-              absl::StrCat("empty address list: LDS resource ", kServerName,
-                           ": does not exist (node ID:xds_end2end_test)"));
-    return false;
-  });
+  SendRpcsUntilFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("empty address list: LDS resource ", kServerName,
+                   ": does not exist (node ID:xds_end2end_test)"));
   // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->lds_response_state();
   ASSERT_TRUE(response_state.has_value());

@@ -508,16 +508,10 @@ TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
   balancer_->ads_service()->SetRdsResource(route_config);
   // New cluster times out.
   // May need to wait a bit for the change to propagate to the client.
-  SendRpcsUntil(
-      DEBUG_LOCATION,
-      [&](const RpcResult& result) {
-        if (result.status.ok()) return true;  // Keep going.
-        EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-        EXPECT_EQ(absl::StrCat("CDS resource ", kNewClusterName,
-                               ": does not exist (node ID:xds_end2end_test)"),
-                  result.status.error_message());
-        return false;
-      },
+  SendRpcsUntilFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("CDS resource ", kNewClusterName,
+                   ": does not exist (node ID:xds_end2end_test)"),
       /*timeout_ms=*/30000, RpcOptions().set_timeout_ms(4000));
 }
 
@@ -561,17 +555,11 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
   balancer_->ads_service()->SetRdsResource(route_config);
   // New EDS resource times out.
   // May need to wait a bit for the RDS change to propagate to the client.
-  SendRpcsUntil(
-      DEBUG_LOCATION,
-      [](const RpcResult& result) {
-        if (result.status.ok()) return true;  // Keep going.
-        EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-        EXPECT_EQ(result.status.error_message(),
-                  "no children in weighted_target policy: "
-                  "EDS resource eds_service_name_does_not_exist: "
-                  "does not exist (node ID:xds_end2end_test)");
-        return false;
-      },
+  SendRpcsUntilFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "no children in weighted_target policy: "
+      "EDS resource eds_service_name_does_not_exist: "
+      "does not exist (node ID:xds_end2end_test)",
       /*timeout_ms=*/30000,
       RpcOptions().set_rpc_method(METHOD_ECHO1).set_timeout_ms(4000));
 }
