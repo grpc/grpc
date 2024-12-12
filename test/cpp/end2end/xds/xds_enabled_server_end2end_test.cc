@@ -249,12 +249,11 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ServingStatus) {
 TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
   SetInvalidLdsUpdate();
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
-      grpc::StatusCode::UNAVAILABLE));
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      MakeConnectionFailureRegex(
-          "connections to all backends failing; last error: "));
+  ASSERT_TRUE(
+      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::UNAVAILABLE));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "));
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
@@ -279,12 +278,11 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
        NotServingStatusToServingStatusTransition) {
   SetInvalidLdsUpdate();
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
-      grpc::StatusCode::UNAVAILABLE));
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      MakeConnectionFailureRegex(
-          "connections to all backends failing; last error: "));
+  ASSERT_TRUE(
+      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::UNAVAILABLE));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "));
   // Send a valid LDS update to change to serving status
   SetValidLdsUpdate();
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
@@ -301,8 +299,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
   // Deleting the resource should result in a non-serving status.
   UnsetLdsUpdate();
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
-      grpc::StatusCode::NOT_FOUND));
+  ASSERT_TRUE(
+      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::NOT_FOUND));
   SendRpcsUntilFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       MakeConnectionFailureRegex(
@@ -318,8 +316,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
     CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
     // Deleting the resource will make the server start rejecting connections
     UnsetLdsUpdate();
-    ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
-        grpc::StatusCode::NOT_FOUND));
+    ASSERT_TRUE(
+        backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::NOT_FOUND));
     SendRpcsUntilFailure(
         DEBUG_LOCATION, StatusCode::UNAVAILABLE,
         MakeConnectionFailureRegex(
@@ -345,9 +343,9 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   ChannelArguments args;
   args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
   for (int i = 0; i < kNumChannels; i++) {
-    streaming_rpcs[i].channel = CreateCustomChannel(
-        grpc_core::LocalIpUri(backends_[0]->port()),
-        InsecureChannelCredentials(), args);
+    streaming_rpcs[i].channel =
+        CreateCustomChannel(grpc_core::LocalIpUri(backends_[0]->port()),
+                            InsecureChannelCredentials(), args);
     streaming_rpcs[i].stub =
         grpc::testing::EchoTestService::NewStub(streaming_rpcs[i].channel);
     streaming_rpcs[i].context.set_wait_for_ready(true);
@@ -359,8 +357,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   }
   // Deleting the resource will make the server start rejecting connections
   UnsetLdsUpdate();
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
-      grpc::StatusCode::NOT_FOUND));
+  ASSERT_TRUE(
+      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::NOT_FOUND));
   SendRpcsUntilFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       MakeConnectionFailureRegex(
@@ -403,9 +401,9 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   ChannelArguments args;
   args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
   for (int i = 0; i < kNumChannels; i++) {
-    streaming_rpcs[i].channel = CreateCustomChannel(
-        grpc_core::LocalIpUri(backends_[0]->port()),
-        InsecureChannelCredentials(), args);
+    streaming_rpcs[i].channel =
+        CreateCustomChannel(grpc_core::LocalIpUri(backends_[0]->port()),
+                            InsecureChannelCredentials(), args);
     streaming_rpcs[i].stub =
         grpc::testing::EchoTestService::NewStub(streaming_rpcs[i].channel);
     streaming_rpcs[i].context.set_wait_for_ready(true);
@@ -762,7 +760,9 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add another filter chain with no source port mentioned whose route
   // config has a route with an unsupported action.
   auto hcm = GetHttpConnectionManager(listener);
-  hcm.mutable_route_config()->mutable_virtual_hosts(0)->mutable_routes(0)
+  hcm.mutable_route_config()
+      ->mutable_virtual_hosts(0)
+      ->mutable_routes(0)
       ->mutable_redirect();
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);

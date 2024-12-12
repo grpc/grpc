@@ -234,10 +234,10 @@ TEST_P(XdsGcpAuthnEnd2endTest, CacheRetainedAcrossXdsUpdates) {
       balancer_.get(), BuildListenerWithGcpAuthnFilter(), route_config);
   // Send RPCs with the header "foo" and wait for them to start failing.
   // When they do, we know that the client has seen the update.
-  SendRpcsUntilFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "Matching route has inappropriate action",
-      /*timeout_ms=*/15000, RpcOptions().set_metadata({{"foo", "bar"}}));
+  SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                       "Matching route has inappropriate action",
+                       /*timeout_ms=*/15000,
+                       RpcOptions().set_metadata({{"foo", "bar"}}));
   // Now send an RPC without the header, which will go through the new
   // instance of the GCP auth filter.
   CheckRpcSendOk(DEBUG_LOCATION);
