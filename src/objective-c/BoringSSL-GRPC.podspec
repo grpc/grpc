@@ -136,7 +136,7 @@ Pod::Spec.new do |s|
                       # We have to include fiat because spake25519 depends on it
                       'src/third_party/fiat/*.{h,c,cc}',
                       # Include the err_data.c pre-generated in boringssl's master-with-bazel branch
-                      'src/gen/crypto/err_data.c'
+                      'src/gen/crypto/err_data.cc'
 
     ss.private_header_files = 'src/ssl/*.h',
                               'src/ssl/**/*.h',
