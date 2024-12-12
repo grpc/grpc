@@ -87,16 +87,14 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerTest,
 TEST_P(XdsEnabledServerTest, Basic) {
   DoSetUp();
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   WaitForBackend(DEBUG_LOCATION, 0);
 }
 
 TEST_P(XdsEnabledServerTest, ListenerDeletionIgnored) {
   DoSetUp(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   WaitForBackend(DEBUG_LOCATION, 0);
   // Check that we ACKed.
   // TODO(roth): There may be multiple entries in the resource state response
@@ -164,8 +162,7 @@ TEST_P(XdsEnabledServerTest, NonTcpListener) {
   ClientHcmAccessor().Pack(hcm, &listener);
   balancer_->ads_service()->SetLdsResource(listener);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()),
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
       grpc::StatusCode::FAILED_PRECONDITION));
 }
 
@@ -181,8 +178,7 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()),
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
       grpc::StatusCode::FAILED_PRECONDITION));
 }
 
