@@ -339,6 +339,8 @@ class XdsSecurityTest : public XdsEnd2endTest {
   // after propagation, this new configuration is used for connections. If \a
   // identity_instance_name and \a root_instance_name are both empty,
   // connections are expected to use fallback credentials.
+  // TODO(yashykt): The core of this logic should be inlined into the
+  // individual tests instead of being in this helper function.
   void UpdateAndVerifyXdsSecurityConfiguration(
       absl::string_view root_instance_name,
       absl::string_view root_certificate_name,
@@ -866,6 +868,13 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
                                                default_server_route_config_);
   }
 
+  // TODO(yashykt): These methods to create channels should be
+  // integrated into the framework, probably by just constructing the
+  // credentials and then passing them to XdsEnd2endTest::CreateChannel().
+  // It may also be helpful to add methods to the framework to construct
+  // these creds types, similar to
+  // XdsEnd2endTest::CreateTlsChannelCredentials().
+
   std::shared_ptr<grpc::Channel> CreateMtlsChannel() {
     ChannelArguments args;
     // Override target name for host name check
@@ -931,6 +940,10 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     return CreateCustomChannel(uri, InsecureChannelCredentials(), args);
   }
 
+  // TODO(yashykt): The core of this logic should be inlined into the
+  // individual tests instead of being in this helper function.  This
+  // can probably be replaced with something like
+  // XdsEnd2endTest::SendRpcsUntil().
   void SendRpc(
       absl::FunctionRef<std::shared_ptr<grpc::Channel>()> channel_creator,
       const RpcOptions& rpc_options,
@@ -1045,8 +1058,7 @@ TEST_P(XdsServerSecurityTest,
                                              backends_[0]->port(),
                                              default_server_route_config_);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateTlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           {});
@@ -1056,8 +1068,7 @@ TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
   g_fake1_cert_data_map->Set({});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateMtlsChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
@@ -1068,8 +1079,7 @@ TEST_P(XdsServerSecurityTest, TestMtls) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateMtlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           client_authenticated_identity_);
@@ -1080,8 +1090,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootPluginUpdate) {
   g_fake2_cert_data_map->Set({{"", {bad_root_cert_, bad_identity_pair_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateMtlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           client_authenticated_identity_);
@@ -1097,8 +1106,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityPluginUpdate) {
   g_fake2_cert_data_map->Set({{"", {root_cert_, identity_pair_2_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateMtlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           client_authenticated_identity_);
@@ -1114,8 +1122,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithBothPluginsUpdated) {
                               {"", {bad_root_cert_, bad_identity_pair_}}});
   SetLdsUpdate("fake_plugin2", "", "fake_plugin2", "", true);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateMtlsChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeTlsHandshakeFailureRegex(
@@ -1135,8 +1142,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootCertificateNameUpdate) {
                               {"bad", {bad_root_cert_, bad_identity_pair_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateMtlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           client_authenticated_identity_);
@@ -1152,8 +1158,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityCertificateNameUpdate) {
                               {"good", {root_cert_, identity_pair_2_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateMtlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           client_authenticated_identity_);
@@ -1168,8 +1173,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithBothCertificateNamesUpdated) {
                               {"good", {root_cert_, identity_pair_2_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateMtlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           client_authenticated_identity_);
@@ -1183,8 +1187,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsNotRequiringButProvidingClientCerts) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateMtlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           client_authenticated_identity_);
@@ -1194,8 +1197,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsNotRequiringAndNotProvidingClientCerts) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateTlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           {});
@@ -1205,8 +1207,7 @@ TEST_P(XdsServerSecurityTest, TestTls) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateTlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           {});
@@ -1217,8 +1218,7 @@ TEST_P(XdsServerSecurityTest, TestTlsWithIdentityPluginUpdate) {
   g_fake2_cert_data_map->Set({{"", {root_cert_, identity_pair_2_}}});
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateTlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           {});
@@ -1233,8 +1233,7 @@ TEST_P(XdsServerSecurityTest, TestTlsWithIdentityCertificateNameUpdate) {
                               {"good", {root_cert_, identity_pair_2_}}});
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateTlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           {});
@@ -1248,8 +1247,7 @@ TEST_P(XdsServerSecurityTest, TestFallback) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("", "", "", "", false);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {});
 }
@@ -1258,8 +1256,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsToTls) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateTlsChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
@@ -1274,8 +1271,7 @@ TEST_P(XdsServerSecurityTest, TestTlsToMtls) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateTlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           {});
@@ -1290,8 +1286,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsToFallback) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateMtlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           client_authenticated_identity_);
@@ -1304,8 +1299,7 @@ TEST_P(XdsServerSecurityTest, TestFallbackToMtls) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("", "", "", "", false);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
@@ -1318,8 +1312,7 @@ TEST_P(XdsServerSecurityTest, TestTlsToFallback) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateTlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           {});
@@ -1332,8 +1325,7 @@ TEST_P(XdsServerSecurityTest, TestFallbackToTls) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("", "", "", "", false);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {});
   SetLdsUpdate("", "", "fake_plugin1", "", false);
@@ -1427,8 +1419,7 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(XdsRbacTest, AbsentRbacPolicy) {
   SetServerRbacPolicy(RBAC());
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // An absent RBAC policy leads to all RPCs being accepted.
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {});
@@ -1440,8 +1431,7 @@ TEST_P(XdsRbacTest, LogAction) {
   rules->set_action(RBAC_Action_LOG);
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // A Log action is identical to no rbac policy being configured.
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {});
@@ -1502,8 +1492,7 @@ TEST_P(XdsRbacTestWithRouteOverrideAlwaysPresent, EmptyRBACPerRouteOverride) {
   SetServerListenerNameAndRouteConfiguration(
       balancer_.get(), listener, backends_[0]->port(), route_config);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {});
 }
@@ -1544,8 +1533,7 @@ TEST_P(XdsRbacTestWithRouteOverrideAlwaysPresent,
   SetServerListenerNameAndRouteConfiguration(
       balancer_.get(), listener, backends_[0]->port(), route_config);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {});
 }
@@ -1607,8 +1595,7 @@ TEST_P(XdsRbacTestWithActionPermutations, EmptyRbacPolicy) {
   rbac.mutable_rules()->set_action(GetParam().rbac_action());
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // An empty RBAC policy leads to all RPCs being rejected.
   SendRpc(
       [this]() { return CreateInsecureChannel(); },
@@ -1627,8 +1614,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAnyPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -1650,8 +1636,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPolicies) {
   SetServerRbacPolicies(default_server_listener_,
                         {always_allow, rbac, always_allow});
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -1671,8 +1656,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPostPermissionAnyPrincipal) {
   SetServerRbacPolicy(rbac);
   backends_[0]->set_allow_put_requests(true);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // All RPCs use POST method by default
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
@@ -1701,8 +1685,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   SetServerRbacPolicy(rbac);
   backends_[0]->set_allow_put_requests(true);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // All RPCs use POST method by default
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
@@ -1727,8 +1710,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodGetPermissionAnyPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // Test that an RPC with a POST method gets rejected
   SendRpc(
       [this]() { return CreateInsecureChannel(); },
@@ -1752,8 +1734,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPutPermissionAnyPrincipal) {
   SetServerRbacPolicy(rbac);
   backends_[0]->set_allow_put_requests(true);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // Test that an RPC with a POST method gets rejected
   SendRpc(
       [this]() { return CreateInsecureChannel(); },
@@ -1779,8 +1760,7 @@ TEST_P(XdsRbacTestWithActionPermutations, UrlPathPermissionAnyPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -1813,8 +1793,7 @@ TEST_P(XdsRbacTestWithActionPermutations, DestinationIpPermissionAnyPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -1846,8 +1825,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -1874,8 +1852,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MetadataPermissionAnyPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc(
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
@@ -1903,8 +1880,7 @@ TEST_P(XdsRbacTestWithActionPermutations, ReqServerNamePermissionAnyPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc(
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
@@ -1933,8 +1909,7 @@ TEST_P(XdsRbacTestWithActionPermutations, NotRulePermissionAnyPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -1963,8 +1938,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AndRulePermissionAnyPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -1993,8 +1967,7 @@ TEST_P(XdsRbacTestWithActionPermutations, OrRulePermissionAnyPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -2024,8 +1997,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPostPrincipal) {
   SetServerRbacPolicy(rbac);
   backends_[0]->set_allow_put_requests(true);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // All RPCs use POST method by default
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
@@ -2050,8 +2022,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodGetPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // Test that an RPC with a POST method gets rejected
   SendRpc(
       [this]() { return CreateInsecureChannel(); },
@@ -2075,8 +2046,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPutPrincipal) {
   SetServerRbacPolicy(rbac);
   backends_[0]->set_allow_put_requests(true);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // Test that an RPC with a PUT method gets accepted
   SendRpc(
       [this]() { return CreateInsecureChannel(/*use_put_requests=*/true); },
@@ -2102,8 +2072,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionUrlPathPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -2137,8 +2106,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -2172,8 +2140,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionRemoteIpPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -2222,8 +2189,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAuthenticatedPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(listener, rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateMtlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           client_authenticated_identity_,
@@ -2241,8 +2207,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMetadataPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc(
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
@@ -2273,8 +2238,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionNotIdPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -2304,8 +2268,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAndIdPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -2336,8 +2299,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionOrIdPrincipal) {
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -2370,8 +2332,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   audit_logger->mutable_typed_config()->PackFrom(typed_struct);
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // An empty RBAC policy leads to all RPCs being rejected.
   SendRpc(
       [this]() { return CreateInsecureChannel(); },
@@ -2413,8 +2374,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   SetServerRbacPolicies(default_server_listener_,
                         {always_allow, rbac, always_allow});
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -2460,8 +2420,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPoliciesWithAuditOnDeny) {
   SetServerRbacPolicies(default_server_listener_,
                         {always_allow, rbac, always_allow});
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -2509,8 +2468,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   SetServerRbacPolicies(default_server_listener_,
                         {always_allow, rbac, always_allow});
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -2598,8 +2556,7 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations,
   audit_logger->mutable_typed_config()->PackFrom(typed_struct);
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
@@ -2631,8 +2588,7 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations, MultipleLoggers) {
   test_logger->mutable_typed_config()->PackFrom(typed_struct);
   SetServerRbacPolicy(rbac);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   auto action = GetParam().rbac_action();
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},

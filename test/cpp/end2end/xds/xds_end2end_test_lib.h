@@ -210,6 +210,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   class ServerThread {
    public:
     // A status notifier for xDS-enabled servers.
+    //
+    // TODO(yashykt): This notifier records the most recent state seen
+    // for every URI and then lets the caller wait until the status for
+    // that URI is the expected one.  If we are expecting an update that
+    // has the same status as the previous one, then we really have no
+    // way of knowing whether the second update has actually been sent.
+    // A better approach here would be to queue the updates received by
+    // the notifier and then have a method to get the next update from
+    // the queue, if any.
+    // Also, we should change the callers to check not just the status
+    // but also the corresponding error message, so that we can verify
+    // that we're emitting useful error messages for our users.
     class XdsServingStatusNotifier
         : public grpc::XdsServerServingStatusNotifierInterface {
      public:
