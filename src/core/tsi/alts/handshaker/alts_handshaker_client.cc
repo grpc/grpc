@@ -44,7 +44,7 @@
 //
 // Public
 //
-AltsHandshakerClient* AltsHandshakerClient::alts_grpc_handshaker_client_create(
+AltsHandshakerClient* AltsHandshakerClient::CreateNewAltsHandshakerClient(
     alts_tsi_handshaker* handshaker, grpc_channel* channel,
     const char* handshaker_service_url, grpc_pollset_set* interested_parties,
     grpc_alts_credentials_options* options, const grpc_slice& target_name,
@@ -61,7 +61,7 @@ AltsHandshakerClient* AltsHandshakerClient::alts_grpc_handshaker_client_create(
   return client;
 }
 
-void AltsHandshakerClient::alts_handshaker_client_shutdown(
+void AltsHandshakerClient::Shutdown(
     AltsHandshakerClient* client) {
   if (client != nullptr) {
     shutdown(client);
@@ -73,7 +73,7 @@ void AltsHandshakerClient::alts_handshaker_client_destroy(
   // Empty dummy function. Remove later. Unique_Ptr doesn't need deletion logic.
 }
 
-tsi_result AltsHandshakerClient::alts_handshaker_client_start_client(
+tsi_result AltsHandshakerClient::StartClient(
     AltsHandshakerClient* client) {
   if (client != nullptr) {
     return client_start(client);
@@ -82,7 +82,7 @@ tsi_result AltsHandshakerClient::alts_handshaker_client_start_client(
   return TSI_INVALID_ARGUMENT;
 }
 
-tsi_result AltsHandshakerClient::alts_handshaker_client_start_server(
+tsi_result AltsHandshakerClient::StartServer(
     AltsHandshakerClient* client, grpc_slice* bytes_received) {
   if (client != nullptr) {
     return server_start(client, bytes_received);
@@ -91,13 +91,119 @@ tsi_result AltsHandshakerClient::alts_handshaker_client_start_server(
   return TSI_INVALID_ARGUMENT;
 }
 
-tsi_result AltsHandshakerClient::alts_handshaker_client_next(
+tsi_result AltsHandshakerClient::Next(
     AltsHandshakerClient* client, grpc_slice* bytes_received) {
   if (client != nullptr) {
     return next(client, bytes_received);
   }
   LOG(ERROR) << "client has not been initialized properly";
   return TSI_INVALID_ARGUMENT;
+}
+void AltsHandshakerClient::HandleResponse(AltsHandshakerClient* client, bool is_ok) {
+  grpc_byte_buffer* recv_buffer = recv_buffer;
+  alts_tsi_handshaker* handshaker = handshaker;
+  // Invalid input check.
+  if (cb == nullptr) {
+    LOG(ERROR) << "cb is nullptr in alts_tsi_handshaker_handle_response()";
+    return;
+  }
+  if (handshaker == nullptr) {
+    LOG(ERROR)
+        << "handshaker is nullptr in alts_tsi_handshaker_handle_response()";
+    handle_response_done(
+        TSI_INTERNAL_ERROR,
+        "handshaker is nullptr in alts_tsi_handshaker_handle_response()",
+        nullptr, 0, nullptr);
+    return;
+  }
+  // TSI handshake has been shutdown.
+  if (alts_tsi_handshaker_has_shutdown(handshaker)) {
+    VLOG(2) << "TSI handshake shutdown";
+    handle_response_done(TSI_HANDSHAKE_SHUTDOWN, "TSI handshake shutdown",
+                         nullptr, 0, nullptr);
+    return;
+  }
+  // Check for failed grpc read.
+  if (!is_ok || inject_read_failure) {
+    VLOG(2) << "read failed on grpc call to handshaker service";
+    handle_response_done(TSI_INTERNAL_ERROR,
+                         "read failed on grpc call to handshaker service",
+                         nullptr, 0, nullptr);
+    return;
+  }
+  if (recv_buffer == nullptr) {
+    VLOG(2)
+        << "recv_buffer is nullptr in alts_tsi_handshaker_handle_response()";
+    handle_response_done(
+        TSI_INTERNAL_ERROR,
+        "recv_buffer is nullptr in alts_tsi_handshaker_handle_response()",
+        nullptr, 0, nullptr);
+    return;
+  }
+  upb::Arena arena;
+  grpc_gcp_HandshakerResp* resp =
+      alts_tsi_utils_deserialize_response(recv_buffer, arena.ptr());
+  grpc_byte_buffer_destroy(recv_buffer);
+  recv_buffer = nullptr;
+  // Invalid handshaker response check.
+  if (resp == nullptr) {
+    LOG(ERROR) << "alts_tsi_utils_deserialize_response() failed";
+    handle_response_done(TSI_DATA_CORRUPTED,
+                         "alts_tsi_utils_deserialize_response() failed",
+                         nullptr, 0, nullptr);
+    return;
+  }
+  const grpc_gcp_HandshakerStatus* resp_status =
+      grpc_gcp_HandshakerResp_status(resp);
+  if (resp_status == nullptr) {
+    LOG(ERROR) << "No status in HandshakerResp";
+    handle_response_done(TSI_DATA_CORRUPTED, "No status in HandshakerResp",
+                         nullptr, 0, nullptr);
+    return;
+  }
+  upb_StringView out_frames = grpc_gcp_HandshakerResp_out_frames(resp);
+  unsigned char* bytes_to_send = nullptr;
+  size_t bytes_to_send_size = 0;
+  if (out_frames.size > 0) {
+    bytes_to_send_size = out_frames.size;
+    while (bytes_to_send_size > buffer_size) {
+      buffer_size *= 2;
+      buffer = static_cast<unsigned char*>(gpr_realloc(buffer, buffer_size));
+    }
+    memcpy(buffer, out_frames.data, bytes_to_send_size);
+    bytes_to_send = buffer;
+  }
+  tsi_handshaker_result* result = nullptr;
+  if (is_handshake_finished_properly(resp)) {
+    tsi_result status =
+        alts_tsi_handshaker_result_create(resp, is_client, &result);
+    if (status != TSI_OK) {
+      LOG(ERROR) << "alts_tsi_handshaker_result_create() failed";
+      handle_response_done(status, "alts_tsi_handshaker_result_create() failed",
+                           nullptr, 0, nullptr);
+      return;
+    }
+    alts_tsi_handshaker_result_set_unused_bytes(
+        result, recv_bytes, grpc_gcp_HandshakerResp_bytes_consumed(resp));
+  }
+  grpc_status_code code = static_cast<grpc_status_code>(
+      grpc_gcp_HandshakerStatus_code(resp_status));
+  std::string error;
+  if (code != GRPC_STATUS_OK) {
+    upb_StringView details = grpc_gcp_HandshakerStatus_details(resp_status);
+    if (details.size > 0) {
+      error = absl::StrCat("Status ", code, " from handshaker service: ",
+                           absl::string_view(details.data, details.size));
+      LOG(ERROR) << error;
+    }
+  }
+  // TODO(apolcyn): consider short ciruiting handle_response_done and
+  // invoking the TSI callback directly if we aren't done yet, if
+  // handle_response_done's allocation per message received causes
+  // a performance issue.
+  handle_response_done(alts_tsi_utils_convert_to_tsi_result(code),
+                       std::move(error), bytes_to_send, bytes_to_send_size,
+                       result);
 }
 
 size_t AltsHandshakerClient::MaxNumberOfConcurrentHandshakes() {
@@ -221,113 +327,6 @@ void AltsHandshakerClient::handle_response_done(
   p->result = result;
   maybe_complete_tsi_next(false /* receive_status_finished */,
                           p /* pending_recv_message_result */);
-}
-
-void AltsHandshakerClient::alts_handshaker_client_handle_response(bool is_ok) {
-  grpc_byte_buffer* recv_buffer = recv_buffer;
-  alts_tsi_handshaker* handshaker = handshaker;
-  // Invalid input check.
-  if (cb == nullptr) {
-    LOG(ERROR) << "cb is nullptr in alts_tsi_handshaker_handle_response()";
-    return;
-  }
-  if (handshaker == nullptr) {
-    LOG(ERROR)
-        << "handshaker is nullptr in alts_tsi_handshaker_handle_response()";
-    handle_response_done(
-        TSI_INTERNAL_ERROR,
-        "handshaker is nullptr in alts_tsi_handshaker_handle_response()",
-        nullptr, 0, nullptr);
-    return;
-  }
-  // TSI handshake has been shutdown.
-  if (alts_tsi_handshaker_has_shutdown(handshaker)) {
-    VLOG(2) << "TSI handshake shutdown";
-    handle_response_done(TSI_HANDSHAKE_SHUTDOWN, "TSI handshake shutdown",
-                         nullptr, 0, nullptr);
-    return;
-  }
-  // Check for failed grpc read.
-  if (!is_ok || inject_read_failure) {
-    VLOG(2) << "read failed on grpc call to handshaker service";
-    handle_response_done(TSI_INTERNAL_ERROR,
-                         "read failed on grpc call to handshaker service",
-                         nullptr, 0, nullptr);
-    return;
-  }
-  if (recv_buffer == nullptr) {
-    VLOG(2)
-        << "recv_buffer is nullptr in alts_tsi_handshaker_handle_response()";
-    handle_response_done(
-        TSI_INTERNAL_ERROR,
-        "recv_buffer is nullptr in alts_tsi_handshaker_handle_response()",
-        nullptr, 0, nullptr);
-    return;
-  }
-  upb::Arena arena;
-  grpc_gcp_HandshakerResp* resp =
-      alts_tsi_utils_deserialize_response(recv_buffer, arena.ptr());
-  grpc_byte_buffer_destroy(recv_buffer);
-  recv_buffer = nullptr;
-  // Invalid handshaker response check.
-  if (resp == nullptr) {
-    LOG(ERROR) << "alts_tsi_utils_deserialize_response() failed";
-    handle_response_done(TSI_DATA_CORRUPTED,
-                         "alts_tsi_utils_deserialize_response() failed",
-                         nullptr, 0, nullptr);
-    return;
-  }
-  const grpc_gcp_HandshakerStatus* resp_status =
-      grpc_gcp_HandshakerResp_status(resp);
-  if (resp_status == nullptr) {
-    LOG(ERROR) << "No status in HandshakerResp";
-    handle_response_done(TSI_DATA_CORRUPTED, "No status in HandshakerResp",
-                         nullptr, 0, nullptr);
-    return;
-  }
-  upb_StringView out_frames = grpc_gcp_HandshakerResp_out_frames(resp);
-  unsigned char* bytes_to_send = nullptr;
-  size_t bytes_to_send_size = 0;
-  if (out_frames.size > 0) {
-    bytes_to_send_size = out_frames.size;
-    while (bytes_to_send_size > buffer_size) {
-      buffer_size *= 2;
-      buffer = static_cast<unsigned char*>(gpr_realloc(buffer, buffer_size));
-    }
-    memcpy(buffer, out_frames.data, bytes_to_send_size);
-    bytes_to_send = buffer;
-  }
-  tsi_handshaker_result* result = nullptr;
-  if (is_handshake_finished_properly(resp)) {
-    tsi_result status =
-        alts_tsi_handshaker_result_create(resp, is_client, &result);
-    if (status != TSI_OK) {
-      LOG(ERROR) << "alts_tsi_handshaker_result_create() failed";
-      handle_response_done(status, "alts_tsi_handshaker_result_create() failed",
-                           nullptr, 0, nullptr);
-      return;
-    }
-    alts_tsi_handshaker_result_set_unused_bytes(
-        result, recv_bytes, grpc_gcp_HandshakerResp_bytes_consumed(resp));
-  }
-  grpc_status_code code = static_cast<grpc_status_code>(
-      grpc_gcp_HandshakerStatus_code(resp_status));
-  std::string error;
-  if (code != GRPC_STATUS_OK) {
-    upb_StringView details = grpc_gcp_HandshakerStatus_details(resp_status);
-    if (details.size > 0) {
-      error = absl::StrCat("Status ", code, " from handshaker service: ",
-                           absl::string_view(details.data, details.size));
-      LOG(ERROR) << error;
-    }
-  }
-  // TODO(apolcyn): consider short ciruiting handle_response_done and
-  // invoking the TSI callback directly if we aren't done yet, if
-  // handle_response_done's allocation per message received causes
-  // a performance issue.
-  handle_response_done(alts_tsi_utils_convert_to_tsi_result(code),
-                       std::move(error), bytes_to_send, bytes_to_send_size,
-                       result);
 }
 
 tsi_result AltsHandshakerClient::continue_make_grpc_call(bool is_start) {

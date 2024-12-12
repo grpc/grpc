@@ -74,7 +74,7 @@ class AltsHandshakerClient {
   /// It returns the created ALTS handshaker client on success, and NULL
   /// on failure.
   ///
-  static AltsHandshakerClient* alts_grpc_handshaker_client_create(
+  static AltsHandshakerClient* CreateNewAltsHandshakerClient(
       alts_tsi_handshaker* handshaker, grpc_channel* channel,
       const char* handshaker_service_url, grpc_pollset_set* interested_parties,
       grpc_alts_credentials_options* options, const grpc_slice& target_name,
@@ -89,14 +89,14 @@ class AltsHandshakerClient {
   ///
   ///- client: ALTS handshaker client instance.
   ///
-  static void alts_handshaker_client_shutdown(AltsHandshakerClient* client);
+  static void Shutdown();
 
   ///
   ///  Dummy function. Manual destruction is no longer needed after unique_ptr 
   ///
   ///- client: an ALTS handshaker client instance.
   ///
-  static void alts_handshaker_client_destroy(AltsHandshakerClient* client);
+  void alts_handshaker_client_destroy(AltsHandshakerClient* client);
 
   ///
   /// This method schedules a client_start handshaker request to ALTS handshaker
@@ -106,7 +106,7 @@ class AltsHandshakerClient {
   ///
   /// It returns TSI_OK on success and an error status code on failure.
   ///
-  static tsi_result alts_handshaker_client_start_client(AltsHandshakerClient* client);
+  tsi_result StartClient();
 
   ///
   /// This method schedules a server_start handshaker request to ALTS handshaker
@@ -118,7 +118,7 @@ class AltsHandshakerClient {
   ///
   /// It returns TSI_OK on success and an error status code on failure.
   ///
-  static tsi_result alts_handshaker_client_start_server(AltsHandshakerClient* client, grpc_slice* bytes_received);
+  tsi_result StartServer(grpc_slice* bytes_received);
 
   ///
   /// This method schedules a next handshaker request to ALTS handshaker
@@ -130,18 +130,17 @@ class AltsHandshakerClient {
   ///
   /// It returns TSI_OK on success and an error status code on failure.
   ///
-  static tsi_result alts_handshaker_client_next(AltsHandshakerClient* client, grpc_slice* bytes_received);
+  tsi_result Next(grpc_slice* bytes_received);
 
   ///
   /// This method handles handshaker response returned from ALTS handshaker
   /// service. Note that the only reason the API is exposed is that it is used
   /// in alts_shared_resources.cc.
   ///
-  ///- client: ALTS handshaker client instance.
   ///- is_ok: a boolean value indicating if the handshaker response is ok to
   /// read.
   ///
-  static void alts_handshaker_client_handle_response(AltsHandshakerClient* client, bool is_ok);
+  void HandleResponse(bool is_ok);
 
   // Returns the max number of concurrent handshakes that are permitted.
   //

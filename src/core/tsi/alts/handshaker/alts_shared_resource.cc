@@ -43,7 +43,7 @@ static void thread_worker(void* /*arg*/) {
     CHECK(event.type == GRPC_OP_COMPLETE);
     AltsHandshakerClient* client =
         static_cast<AltsHandshakerClient*>(event.tag);
-    AltsHandshakerClient::alts_handshaker_client_handle_response(client, event.success);
+    AltsHandshakerClient::HandleResponse(client, event.success);
   }
 }
 

@@ -332,13 +332,13 @@ static alts_handshaker_client_test_config* create_config() {
       create_credentials_options(true /* is_client */);
   grpc_alts_credentials_options* server_options =
       create_credentials_options(false /*  is_client */);
-  config->server = AltsHandshakerClient::alts_grpc_handshaker_client_create(
+  config->server = AltsHandshakerClient::CreateNewAltsHandshakerClient(
       nullptr, config->channel, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
       nullptr, server_options,
       grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME),
       nullptr, nullptr, nullptr, nullptr, false,
       ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE, nullptr);
-  config->client = AltsHandshakerClient::alts_grpc_handshaker_client_create(
+  config->client = AltsHandshakerClient::CreateNewAltsHandshakerClient(
       nullptr, config->channel, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
       nullptr, client_options,
       grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME),
@@ -374,33 +374,33 @@ TEST(AltsHandshakerClientTest, ScheduleRequestInvalidArgTest) {
   // Check client_start.
   {
     grpc_core::ExecCtx exec_ctx;
-    ASSERT_EQ(AltsHandshakerClient::alts_handshaker_client_start_client(nullptr),
+    ASSERT_EQ(AltsHandshakerClient::StartClient(nullptr),
               TSI_INVALID_ARGUMENT);
   }
   // Check server_start.
   {
     grpc_core::ExecCtx exec_ctx;
-    ASSERT_EQ(AltsHandshakerClient::alts_handshaker_client_start_server(config->server, nullptr),
+    ASSERT_EQ(AltsHandshakerClient::StartServer(config->server, nullptr),
               TSI_INVALID_ARGUMENT);
   }
   {
     grpc_core::ExecCtx exec_ctx;
-    ASSERT_EQ(AltsHandshakerClient::alts_handshaker_client_start_server(nullptr, &config->out_frame),
+    ASSERT_EQ(AltsHandshakerClient::StartServer(nullptr, &config->out_frame),
               TSI_INVALID_ARGUMENT);
   }
   // Check next.
   {
     grpc_core::ExecCtx exec_ctx;
-    ASSERT_EQ(AltsHandshakerClient::alts_handshaker_client_next(config->client, nullptr),
+    ASSERT_EQ(AltsHandshakerClient::Next(config->client, nullptr),
               TSI_INVALID_ARGUMENT);
   }
   {
     grpc_core::ExecCtx exec_ctx;
-    ASSERT_EQ(AltsHandshakerClient::alts_handshaker_client_next(nullptr, &config->out_frame),
+    ASSERT_EQ(AltsHandshakerClient::Next(nullptr, &config->out_frame),
               TSI_INVALID_ARGUMENT);
   }
   // Check shutdown.
-  AltsHandshakerClient::alts_handshaker_client_shutdown(nullptr);
+  AltsHandshakerClient::Shutdown(nullptr);
   // Cleanup.
   destroy_config(config);
 }
@@ -413,11 +413,11 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
       config->client, check_client_start_success);
   {
     grpc_core::ExecCtx exec_ctx;
-    ASSERT_EQ(AltsHandshakerClient::alts_handshaker_client_start_client(config->client), TSI_OK);
+    ASSERT_EQ(AltsHandshakerClient::StartClient(config->client), TSI_OK);
   }
   {
     grpc_core::ExecCtx exec_ctx;
-    ASSERT_EQ(AltsHandshakerClient::alts_handshaker_client_next(nullptr, &config->out_frame),
+    ASSERT_EQ(AltsHandshakerClient::Next(nullptr, &config->out_frame),
               TSI_INVALID_ARGUMENT);
   }
   // Check server_start success.
@@ -426,7 +426,7 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(
-        AltsHandshakerClient::alts_handshaker_client_start_server(config->server, &config->out_frame),
+        AltsHandshakerClient::StartServer(config->server, &config->out_frame),
         TSI_OK);
   }
   // Check client next success.
@@ -434,7 +434,7 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
                                                      check_next_success);
   {
     grpc_core::ExecCtx exec_ctx;
-    ASSERT_EQ(AltsHandshakerClient::alts_handshaker_client_next(config->client, &config->out_frame),
+    ASSERT_EQ(AltsHandshakerClient::Next(config->client, &config->out_frame),
               TSI_OK);
   }
   // Check server next success.
@@ -442,7 +442,7 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
                                                      check_next_success);
   {
     grpc_core::ExecCtx exec_ctx;
-    ASSERT_EQ(AltsHandshakerClient::alts_handshaker_client_next(config->server, &config->out_frame),
+    ASSERT_EQ(AltsHandshakerClient::Next(config->server, &config->out_frame),
               TSI_OK);
   }
   // Cleanup.
@@ -476,7 +476,7 @@ TEST(AltsHandshakerClientTest, ScheduleRequestGrpcCallFailureTest) {
     // queue in https://github.com/grpc/grpc/pull/20722
     alts_handshaker_client_set_cb_for_testing(config->client,
                                               tsi_cb_assert_tsi_internal_error);
-    AltsHandshakerClient::alts_handshaker_client_start_client(config->client);
+    AltsHandshakerClient::StartClient(config->client);
   }
   // Check server_start failure.
   alts_handshaker_client_set_grpc_caller_for_testing(config->server,
@@ -488,18 +488,18 @@ TEST(AltsHandshakerClientTest, ScheduleRequestGrpcCallFailureTest) {
     // queue in https://github.com/grpc/grpc/pull/20722
     alts_handshaker_client_set_cb_for_testing(config->server,
                                               tsi_cb_assert_tsi_internal_error);
-    AltsHandshakerClient::alts_handshaker_client_start_server(config->server, &config->out_frame);
+    AltsHandshakerClient::StartServer(config->server, &config->out_frame);
   }
   {
     grpc_core::ExecCtx exec_ctx;
     // Check client next failure.
-    ASSERT_EQ(AltsHandshakerClient::alts_handshaker_client_next(config->client, &config->out_frame),
+    ASSERT_EQ(AltsHandshakerClient::Next(config->client, &config->out_frame),
               TSI_INTERNAL_ERROR);
   }
   {
     grpc_core::ExecCtx exec_ctx;
     // Check server next failure.
-    ASSERT_EQ(AltsHandshakerClient::alts_handshaker_client_next(config->server, &config->out_frame),
+    ASSERT_EQ(AltsHandshakerClient::Next(config->server, &config->out_frame),
               TSI_INTERNAL_ERROR);
   }
   // Cleanup.
