@@ -46,6 +46,7 @@
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.pb.h"
 #include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/xds/xds_server.h"
@@ -245,6 +246,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     int port() const { return port_; }
 
     XdsServingStatusNotifier* notifier() { return &notifier_; }
+
+    GRPC_MUST_USE_RESULT bool WaitOnServingStatusChange(
+        grpc::StatusCode expected_status,
+        absl::Duration timeout = absl::Seconds(10)) {
+      return notifier_.WaitOnServingStatusChange(
+          grpc_core::LocalIpAndPort(port_), expected_status, timeout);
+    }
 
     void set_allow_put_requests(bool allow_put_requests) {
       allow_put_requests_ = allow_put_requests;
@@ -756,6 +764,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
                            StatusCode expected_status,
                            absl::string_view expected_message_regex,
                            const RpcOptions& rpc_options = RpcOptions());
+
+  // Sends RPCs until either a timeout or an RPC fail, in which case the
+  // failure must match the specified status and message regex.
+  void SendRpcsUntilFailure(const grpc_core::DebugLocation& debug_location,
+                            StatusCode expected_status,
+                            absl::string_view expected_message_regex,
+                            int timeout_ms = 15000,
+                            const RpcOptions& rpc_options = RpcOptions());
 
   // Sends num_rpcs RPCs, counting how many of them fail with a message
   // matching the specified expected_message_prefix.
