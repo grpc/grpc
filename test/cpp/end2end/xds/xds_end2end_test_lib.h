@@ -881,6 +881,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // xDS server, or until a timeout expires.
 
   // Sends RPCs until get_state() returns a response.
+  // TODO(roth): Does this actually need to send RPCs, or can it just
+  // use a condition variable to wait?  I suspect that we need to be
+  // sending RPCs for polling reasons, but that should go away when we
+  // finish the EventEngine migration.  Once that's done, try changing
+  // this to not send RPCs.
+  // Also, consider refactoring to also support waiting for ACKs, since
+  // there are several use-cases where tests are doing that.
   absl::optional<AdsServiceImpl::ResponseState> WaitForNack(
       const grpc_core::DebugLocation& debug_location,
       std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
