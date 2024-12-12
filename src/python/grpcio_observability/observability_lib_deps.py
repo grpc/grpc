@@ -26,7 +26,6 @@ CC_FILES=[
     'grpc_root/src/core/lib/slice/slice.cc',
     'grpc_root/src/core/lib/slice/slice_string_helpers.cc',
     'grpc_root/src/core/util/alloc.cc',
-    'grpc_root/src/core/util/atm.cc',
     'grpc_root/src/core/util/crash.cc',
     'grpc_root/src/core/util/examine_stack.cc',
     'grpc_root/src/core/util/fork.cc',
