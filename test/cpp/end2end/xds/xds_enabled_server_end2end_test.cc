@@ -216,8 +216,6 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
 
 class XdsEnabledServerStatusNotificationTest : public XdsEnabledServerTest {
  protected:
-  void SetUp() override { DoSetUp(); }
-
   void SetValidLdsUpdate() {
     SetServerListenerNameAndRouteConfiguration(
         balancer_.get(), default_server_listener_, backends_[0]->port(),
@@ -241,22 +239,25 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerStatusNotificationTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(XdsEnabledServerStatusNotificationTest, ServingStatus) {
+  DoSetUp();
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
+  DoSetUp();
   SetInvalidLdsUpdate();
   StartBackend(0);
-  ASSERT_TRUE(
-      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::UNAVAILABLE));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
+      grpc::StatusCode::INVALID_ARGUMENT));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
                           "connections to all backends failing; last error: "));
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
+  DoSetUp();
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
@@ -276,10 +277,11 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
 
 TEST_P(XdsEnabledServerStatusNotificationTest,
        NotServingStatusToServingStatusTransition) {
+  DoSetUp();
   SetInvalidLdsUpdate();
   StartBackend(0);
-  ASSERT_TRUE(
-      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::UNAVAILABLE));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
+      grpc::StatusCode::INVALID_ARGUMENT));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
                           "connections to all backends failing; last error: "));
@@ -293,6 +295,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
 // results in future connections being dropped.
 TEST_P(XdsEnabledServerStatusNotificationTest,
        ServingStatusToNonServingStatusTransition) {
+  DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
   SetValidLdsUpdate();
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
@@ -308,6 +311,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
+  DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
   StartBackend(0);
   for (int i = 0; i < 5; ++i) {
     // Send a valid LDS update to get the server to start listening
@@ -326,6 +330,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
+  DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
   // Send a valid LDS update to get the server to start listening
   SetValidLdsUpdate();
   StartBackend(0);
@@ -382,6 +387,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
 
 TEST_P(XdsEnabledServerStatusNotificationTest,
        ExistingRpcsFailOnResourceUpdateAfterDrainGraceTimeExpires) {
+  DoSetUp();
   constexpr int kDrainGraceTimeMs = 100;
   xds_drain_grace_time_ms_ = kDrainGraceTimeMs;
   // Send a valid LDS update to get the server to start listening
@@ -849,10 +855,9 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
                                              default_server_route_config_);
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
-  // TODO(yashykt): This code should never be returned as an RPC status,
-  // as per https://github.com/grpc/grpc/blob/master/doc/statuscodes.md.
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::NOT_FOUND,
-                      "Requested route config does not exist");
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "RDS resource unknown_server_route_config: "
+                      "does not exist \\(node ID:xds_end2end_test\\)");
 }
 
 // TODO(yashykt): Once https://github.com/grpc/grpc/issues/24035 is fixed, we
