@@ -1704,8 +1704,10 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   }
 }
 
-class XdsServerFilterChainMatchTest : public XdsServerSecurityTest {
+class XdsServerFilterChainMatchTest : public XdsEnabledServerTest {
  public:
+  void SetUp() override { DoSetUp(); }
+
   HttpConnectionManager GetHttpConnectionManager(const Listener& listener) {
     HttpConnectionManager http_connection_manager =
         ServerHcmAccessor().Unpack(listener);
@@ -1718,10 +1720,8 @@ class XdsServerFilterChainMatchTest : public XdsServerSecurityTest {
 TEST_P(XdsServerFilterChainMatchTest,
        DefaultFilterChainUsedWhenNoFilterChainMentioned) {
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
-  SendRpc([this]() { return CreateInsecureChannel(); },
-          RpcOptions().set_wait_for_ready(true), {}, {});
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -1738,10 +1738,8 @@ TEST_P(XdsServerFilterChainMatchTest,
                                              backends_[0]->port(),
                                              default_server_route_config_);
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
-  SendRpc([this]() { return CreateInsecureChannel(); },
-          RpcOptions().set_wait_for_ready(true), {}, {});
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -1758,14 +1756,12 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
-  SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
-          MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "));
 }
 
 TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
@@ -1779,14 +1775,12 @@ TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
-  SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
-          MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -1801,14 +1795,12 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
-  SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
-          MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -1823,14 +1815,12 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
-  SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
-          MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -1852,12 +1842,10 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // A successful RPC proves that filter chains that mention "raw_buffer" as
   // the transport protocol are chosen as the best match in the round.
-  SendRpc([this]() { return CreateInsecureChannel(); },
-          RpcOptions().set_wait_for_ready(true), {}, {});
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -1909,12 +1897,10 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // A successful RPC proves that the filter chain with the longest matching
   // prefix range was the best match.
-  SendRpc([this]() { return CreateInsecureChannel(); },
-          RpcOptions().set_wait_for_ready(true), {}, {});
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -1946,12 +1932,10 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // A successful RPC proves that the filter chain with the longest matching
   // prefix range was the best match.
-  SendRpc([this]() { return CreateInsecureChannel(); },
-          RpcOptions().set_wait_for_ready(true), {}, {});
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -2009,12 +1993,10 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // A successful RPC proves that the filter chain with the longest matching
   // source prefix range was the best match.
-  SendRpc([this]() { return CreateInsecureChannel(); },
-          RpcOptions().set_wait_for_ready(true), {}, {});
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -2028,28 +2010,21 @@ TEST_P(XdsServerFilterChainMatchTest,
   for (int i = 1; i < 65536; i++) {
     filter_chain->mutable_filter_chain_match()->add_source_ports(i);
   }
-  // Add another filter chain with no source port mentioned with a bad
-  // DownstreamTlsContext configuration.
+  // Add another filter chain with no source port mentioned whose route
+  // config has a route with an unsupported action.
+  auto hcm = GetHttpConnectionManager(listener);
+  hcm.mutable_route_config()->mutable_virtual_hosts(0)->mutable_routes(0)
+      ->mutable_redirect();
   filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      GetHttpConnectionManager(listener));
-  auto* transport_socket = filter_chain->mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  DownstreamTlsContext downstream_tls_context;
-  downstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
   listener.clear_default_filter_chain();
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   StartBackend(0);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   // A successful RPC proves that the filter chain with matching source port
   // was chosen.
-  SendRpc([this]() { return CreateInsecureChannel(); },
-          RpcOptions().set_wait_for_ready(true), {}, {});
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
 using XdsServerRdsTest = XdsEnabledServerStatusNotificationTest;
