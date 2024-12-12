@@ -1,3 +1,4 @@
+//
 // Copyright 2017 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,11 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-
-// TODO(yashkt): Split this file up into (at least) the following pieces:
-// - xDS-enabled server functionality
-// - mTLS functionality on both client and server
-// - RBAC
 
 #include <gmock/gmock.h>
 #include <grpc/grpc.h>
@@ -33,25 +29,18 @@
 #include <grpcpp/xds_server_builder.h>
 #include <gtest/gtest.h>
 
-#include <deque>
+#include <map>
 #include <memory>
-#include <mutex>
-#include <numeric>
-#include <set>
-#include <sstream>
 #include <string>
-#include <thread>
+#include <utility>
 #include <vector>
 
-#include "absl/functional/bind_front.h"
+#include "absl/functional/function_ref.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "absl/strings/str_replace.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
@@ -59,45 +48,25 @@
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
-#include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
 #include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
-#include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
-#include "src/core/load_balancing/xds/xds_channel_args.h"
-#include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/resolver/fake/fake_resolver.h"
-#include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
-#include "src/core/util/time.h"
-#include "src/core/util/time_precise.h"
-#include "src/core/util/time_util.h"
-#include "src/core/util/tmpfile.h"
-#include "src/core/xds/grpc/xds_listener.h"
-#include "src/core/xds/xds_client/xds_api.h"
-#include "src/core/xds/xds_client/xds_channel_args.h"
-#include "src/core/xds/xds_client/xds_client.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
-#include "src/proto/grpc/testing/echo.pb.h"
-#include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
-#include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "test/core/test_util/audit_logging_utils.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
@@ -113,7 +82,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using ::envoy::config::listener::v3::FilterChainMatch;
 using ::envoy::config::rbac::v3::Policy;
 using ::envoy::config::rbac::v3::RBAC_Action_ALLOW;
 using ::envoy::config::rbac::v3::RBAC_Action_DENY;
@@ -273,6 +241,10 @@ class FakeCertificateProviderFactory
 // Global variables for each provider.
 FakeCertificateProvider::CertDataMapWrapper* g_fake1_cert_data_map = nullptr;
 FakeCertificateProvider::CertDataMapWrapper* g_fake2_cert_data_map = nullptr;
+
+//
+// Client-side mTLS tests
+//
 
 class XdsSecurityTest : public XdsEnd2endTest {
  protected:
@@ -443,6 +415,9 @@ class XdsSecurityTest : public XdsEnd2endTest {
   std::vector<std::string> fallback_authenticated_identity_;
   int backend_index_ = 0;
 };
+
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsSecurityTest,
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(XdsSecurityTest, TestTlsConfigurationInCombinedValidationContext) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
@@ -806,6 +781,10 @@ TEST_P(XdsSecurityTest, MtlsWithAggregateCluster) {
             fallback_authenticated_identity_);
 }
 
+//
+// Server-side mTLS tests
+//
+
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
@@ -1040,6 +1019,13 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
   std::vector<std::string> server_authenticated_identity_2_;
   std::vector<std::string> client_authenticated_identity_;
 };
+
+// We are only testing the server here.
+// Run with bootstrap from env var so that we use one XdsClient.
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerSecurityTest,
+                         ::testing::Values(XdsTestType().set_bootstrap_source(
+                             XdsTestType::kBootstrapFromEnvVar)),
+                         &XdsTestType::Name);
 
 TEST_P(XdsServerSecurityTest,
        TestDeprecateTlsCertificateCertificateProviderInstanceField) {
@@ -1356,8 +1342,10 @@ TEST_P(XdsServerSecurityTest, TestFallbackToTls) {
           {});
 }
 
-// Tests RBAC configurations on the server with RDS testing and route config
-// override permutations.
+//
+// Basic RBAC tests
+//
+
 class XdsRbacTest : public XdsServerSecurityTest {
  protected:
   XdsRbacTest() {
@@ -1414,6 +1402,28 @@ class XdsRbacTest : public XdsServerSecurityTest {
   std::vector<std::string> audit_logs_;
 };
 
+// We test with and without RDS, and with the filter config both at the
+// top level and in the route.
+// Run with bootstrap from env var, so that we use a global XdsClient
+// instance.  Otherwise, we would need to use a separate fake resolver
+// result generator on the client and server sides.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsRbacTest,
+    ::testing::Values(
+        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType().set_enable_rds_testing().set_bootstrap_source(
+            XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_filter_config_setup(
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_enable_rds_testing()
+            .set_filter_config_setup(
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
+    &XdsTestType::Name);
+
 TEST_P(XdsRbacTest, AbsentRbacPolicy) {
   SetServerRbacPolicy(RBAC());
   StartBackend(0);
@@ -1437,9 +1447,29 @@ TEST_P(XdsRbacTest, LogAction) {
           RpcOptions().set_wait_for_ready(true), {}, {});
 }
 
-// Tests RBAC policies where a route override is always present. Action
-// permutations are not added.
+//
+// RBAC tests with route config override always present
+//
+
 using XdsRbacTestWithRouteOverrideAlwaysPresent = XdsRbacTest;
+
+// Run both with and without RDS.
+// Run with bootstrap from env var, so that we use a global XdsClient
+// instance.  Otherwise, we would need to use a separate fake resolver
+// result generator on the client and server sides.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsRbacTestWithRouteOverrideAlwaysPresent,
+    ::testing::Values(
+        XdsTestType()
+            .set_filter_config_setup(
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_enable_rds_testing()
+            .set_filter_config_setup(
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
+    &XdsTestType::Name);
 
 TEST_P(XdsRbacTestWithRouteOverrideAlwaysPresent, EmptyRBACPerRouteOverride) {
   HttpConnectionManager http_connection_manager;
@@ -1520,8 +1550,57 @@ TEST_P(XdsRbacTestWithRouteOverrideAlwaysPresent,
           RpcOptions().set_wait_for_ready(true), {}, {});
 }
 
-// Adds Action Permutations to XdsRbacTest
+//
+// RBAC tests with action permutations
+//
+
 using XdsRbacTestWithActionPermutations = XdsRbacTest;
+
+// Run with and without RDS, with the filter config both at the top
+// level and in the route, and without various actions.
+// Run with bootstrap from env var, so that we use a global XdsClient
+// instance.  Otherwise, we would need to use a separate fake resolver
+// result generator on the client and server sides.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsRbacTestWithActionPermutations,
+    ::testing::Values(
+        XdsTestType()
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_enable_rds_testing()
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_enable_rds_testing()
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_filter_config_setup(
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_filter_config_setup(
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_enable_rds_testing()
+            .set_filter_config_setup(
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_enable_rds_testing()
+            .set_filter_config_setup(
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
+    &XdsTestType::Name);
 
 TEST_P(XdsRbacTestWithActionPermutations, EmptyRbacPolicy) {
   RBAC rbac;
@@ -2457,8 +2536,47 @@ TEST_P(XdsRbacTestWithActionPermutations,
   EXPECT_THAT(audit_logs_, ::testing::ElementsAreArray(expected));
 }
 
-// Adds Audit Condition Permutations to XdsRbacTest
+//
+// RBAC tests with audit conditions
+//
+
 using XdsRbacTestWithActionAndAuditConditionPermutations = XdsRbacTest;
+
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsRbacTestWithActionAndAuditConditionPermutations,
+    ::testing::Values(
+        XdsTestType()
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_enable_rds_testing()
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
+    &XdsTestType::Name);
 
 TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations,
        AuditLoggingDisabled) {
@@ -2540,136 +2658,6 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations, MultipleLoggers) {
     EXPECT_THAT(audit_logs_, ::testing::ElementsAre());
   }
 }
-
-INSTANTIATE_TEST_SUITE_P(XdsTest, XdsSecurityTest,
-                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
-
-// We are only testing the server here.
-// Run with bootstrap from env var so that we use one XdsClient.
-INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerSecurityTest,
-                         ::testing::Values(XdsTestType().set_bootstrap_source(
-                             XdsTestType::kBootstrapFromEnvVar)),
-                         &XdsTestType::Name);
-
-// We are only testing the server here.
-// Run with bootstrap from env var, so that we use a global XdsClient
-// instance.  Otherwise, we would need to use a separate fake resolver
-// result generator on the client and server sides.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsRbacTest,
-    ::testing::Values(
-        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType().set_enable_rds_testing().set_bootstrap_source(
-            XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_filter_config_setup(
-                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_enable_rds_testing()
-            .set_filter_config_setup(
-                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
-    &XdsTestType::Name);
-
-// We are only testing the server here.
-// Run with bootstrap from env var, so that we use a global XdsClient
-// instance.  Otherwise, we would need to use a separate fake resolver
-// result generator on the client and server sides.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsRbacTestWithRouteOverrideAlwaysPresent,
-    ::testing::Values(
-        XdsTestType()
-            .set_filter_config_setup(
-                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_enable_rds_testing()
-            .set_filter_config_setup(
-                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
-    &XdsTestType::Name);
-
-// We are only testing the server here.
-// Run with bootstrap from env var, so that we use a global XdsClient
-// instance.  Otherwise, we would need to use a separate fake resolver
-// result generator on the client and server sides.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsRbacTestWithActionPermutations,
-    ::testing::Values(
-        XdsTestType()
-            .set_rbac_action(RBAC_Action_ALLOW)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_rbac_action(RBAC_Action_DENY)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_enable_rds_testing()
-            .set_rbac_action(RBAC_Action_ALLOW)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_enable_rds_testing()
-            .set_rbac_action(RBAC_Action_DENY)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_filter_config_setup(
-                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_rbac_action(RBAC_Action_ALLOW)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_filter_config_setup(
-                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_rbac_action(RBAC_Action_DENY)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_enable_rds_testing()
-            .set_filter_config_setup(
-                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_rbac_action(RBAC_Action_ALLOW)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_enable_rds_testing()
-            .set_filter_config_setup(
-                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_rbac_action(RBAC_Action_DENY)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
-    &XdsTestType::Name);
-
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsRbacTestWithActionAndAuditConditionPermutations,
-    ::testing::Values(
-        XdsTestType()
-            .set_rbac_action(RBAC_Action_ALLOW)
-            .set_rbac_audit_condition(
-                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_rbac_action(RBAC_Action_ALLOW)
-            .set_rbac_audit_condition(
-                RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_rbac_action(RBAC_Action_ALLOW)
-            .set_rbac_audit_condition(
-                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_rbac_action(RBAC_Action_DENY)
-            .set_rbac_audit_condition(
-                RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_rbac_action(RBAC_Action_DENY)
-            .set_rbac_audit_condition(
-                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_enable_rds_testing()
-            .set_rbac_action(RBAC_Action_DENY)
-            .set_rbac_audit_condition(
-                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
-    &XdsTestType::Name);
 
 }  // namespace
 }  // namespace testing
