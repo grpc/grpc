@@ -71,6 +71,19 @@ class UnaryCall extends AbstractCall
         return [$this->_deserializeResponse($event->message), $status];
     }
 
+  /**
+   * Wait for the server to respond, throw an exception if an error occurred, and return response otherwise
+   *
+   * @throws Exceptions\GrpcException
+   */
+    public function waitThrow()
+    {
+        list($response, $status) = $this->wait();
+        Status::throwIfError($status);
+
+        return $response;
+    }
+
     /**
      * @return mixed The metadata sent by the server
      */
