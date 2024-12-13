@@ -831,10 +831,9 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       }
     }
     if (!route_config.ok()) {
-      route_config =
-          absl::Status(route_config.status().code(),
-                       absl::StrCat("RDS resource ", resource_name, ": ",
-                                    route_config.status().message()));
+      route_config = absl::UnavailableError(
+          absl::StrCat("RDS resource ", resource_name, ": ",
+                       route_config.status().message()));
     }
     state.rds_update = std::move(route_config);
   }
@@ -1257,10 +1256,8 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
             rds_update) {
   MutexLock lock(&mu_);
   if (!rds_update.ok()) {
-    rds_update =
-        absl::Status(rds_update.status().code(),
-                     absl::StrCat("RDS resource ", resource_name_, ": ",
-                                  rds_update.status().message()));
+    rds_update = absl::UnavailableError(absl::StrCat(
+        "RDS resource ", resource_name_, ": ", rds_update.status().message()));
   }
   resource_ = std::move(rds_update);
   if (watcher_ == nullptr) {

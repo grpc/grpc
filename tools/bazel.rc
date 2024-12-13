@@ -182,3 +182,6 @@ build:fuzztest_test --cxxopt=-std=c++17
 
 # OpenTelemetry C++ needs this option to build with absl
 build --@io_opentelemetry_cpp//api:with_abseil
+
+# Bazel 7.4.1 needs this (https://github.com/bazelbuild/bazel/issues/24369)
+test --nozip_undeclared_test_outputs

@@ -186,33 +186,6 @@ using ServerFrame =
     absl::variant<ServerInitialMetadataFrame, MessageFrame, BeginMessageFrame,
                   MessageChunkFrame, ServerTrailingMetadataFrame>;
 
-inline FrameInterface& GetFrameInterface(ClientFrame& frame) {
-  return MatchMutable(
-      &frame,
-      [](ClientInitialMetadataFrame* frame) -> FrameInterface& {
-        return *frame;
-      },
-      [](MessageFrame* frame) -> FrameInterface& { return *frame; },
-      [](BeginMessageFrame* frame) -> FrameInterface& { return *frame; },
-      [](MessageChunkFrame* frame) -> FrameInterface& { return *frame; },
-      [](ClientEndOfStream* frame) -> FrameInterface& { return *frame; },
-      [](CancelFrame* frame) -> FrameInterface& { return *frame; });
-}
-
-inline FrameInterface& GetFrameInterface(ServerFrame& frame) {
-  return MatchMutable(
-      &frame,
-      [](ServerInitialMetadataFrame* frame) -> FrameInterface& {
-        return *frame;
-      },
-      [](MessageFrame* frame) -> FrameInterface& { return *frame; },
-      [](BeginMessageFrame* frame) -> FrameInterface& { return *frame; },
-      [](MessageChunkFrame* frame) -> FrameInterface& { return *frame; },
-      [](ServerTrailingMetadataFrame* frame) -> FrameInterface& {
-        return *frame;
-      });
-}
-
 }  // namespace chaotic_good
 }  // namespace grpc_core
 

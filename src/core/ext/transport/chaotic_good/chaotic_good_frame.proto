@@ -17,6 +17,11 @@ syntax = "proto3";
 package chaotic_good_frame;
 
 message Settings {
+    enum Features {
+        UNSPECIFIED = 0;
+        CHUNKING = 1;
+    }
+
     // Connection id
     // - sent server->client on the control channel to specify the
     //   data channel connection id, one for each desired connection
@@ -31,6 +36,10 @@ message Settings {
     // Max chunk size allowed to be sent to a peer (0 or omitted: no limit)
     // Sent on the control channel, applies to all messages.
     uint32 max_chunk_size = 4;
+    // Set of feature flags supported by this endpoint.
+    // Sent client->server on the control channel to advertise its list
+    // And server->client to confirm the set that will be used.
+    repeated Features supported_features = 5;
 }
 
 message UnknownMetadata {
