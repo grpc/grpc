@@ -35,6 +35,7 @@ EXPERIMENT_ENABLES = {
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "pick_first_new": "pick_first_new",
+    "posix_ee_skip_grpc_init": "posix_ee_skip_grpc_init",
     "prioritize_finished_requests": "prioritize_finished_requests",
     "promise_based_http2_client_transport": "promise_based_http2_client_transport",
     "promise_based_http2_server_transport": "promise_based_http2_server_transport",
@@ -67,7 +68,11 @@ EXPERIMENTS = {
                 "chaotic_good_legacy_protocol",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
+                "posix_ee_skip_grpc_init",
                 "retry_in_callv3",
+            ],
+            "cpp_end2end_test": [
+                "posix_ee_skip_grpc_init",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -125,7 +130,11 @@ EXPERIMENTS = {
                 "chaotic_good_legacy_protocol",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
+                "posix_ee_skip_grpc_init",
                 "retry_in_callv3",
+            ],
+            "cpp_end2end_test": [
+                "posix_ee_skip_grpc_init",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -169,7 +178,11 @@ EXPERIMENTS = {
                 "chaotic_good_legacy_protocol",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
+                "posix_ee_skip_grpc_init",
                 "retry_in_callv3",
+            ],
+            "cpp_end2end_test": [
+                "posix_ee_skip_grpc_init",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
