@@ -481,7 +481,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
 /// created, applications must set a custom EventEngine factory method *before*
 /// grpc is initialized.
 void SetEventEngineFactory(
-    absl::AnyInvocable<std::unique_ptr<EventEngine>()> factory);
+    absl::AnyInvocable<std::shared_ptr<EventEngine>()> factory);
 
 /// Reset gRPC's EventEngine factory to the built-in default.
 ///
@@ -491,7 +491,7 @@ void SetEventEngineFactory(
 /// using the previous factories.
 void EventEngineFactoryReset();
 /// Create an EventEngine using the default factory.
-std::unique_ptr<EventEngine> CreateEventEngine();
+std::shared_ptr<EventEngine> CreateEventEngine();
 
 bool operator==(const EventEngine::TaskHandle& lhs,
                 const EventEngine::TaskHandle& rhs);
