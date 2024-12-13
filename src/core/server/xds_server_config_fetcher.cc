@@ -1267,10 +1267,14 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   // DynamicXdsServerConfigSelectorProvider while holding a lock, but if that
   // ever changes, we would want to invoke the update outside the critical
   // region with the use of a WorkSerializer.
-  watcher_->OnServerConfigSelectorUpdate(XdsServerConfigSelector::Create(
-      static_cast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-          .http_filter_registry(),
-      *resource_, http_filters_));
+  if (!resource_.ok()) {
+    watcher_->OnServerConfigSelectorUpdate(resource_.status());
+  } else {
+    watcher_->OnServerConfigSelectorUpdate(XdsServerConfigSelector::Create(
+        static_cast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
+            .http_filter_registry(),
+        *resource_, http_filters_));
+  }
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
