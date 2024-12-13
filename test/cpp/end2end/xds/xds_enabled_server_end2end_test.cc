@@ -116,8 +116,8 @@ TEST_P(XdsEnabledServerTest, ListenerDeletionFailsByDefault) {
   balancer_->ads_service()->UnsetResource(
       kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
   // Server should stop serving.
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
-      grpc::StatusCode::NOT_FOUND));
+  ASSERT_TRUE(
+      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::NOT_FOUND));
 }
 
 TEST_P(XdsEnabledServerTest, ListenerDeletionIgnoredIfConfigured) {
@@ -187,8 +187,8 @@ TEST_P(XdsEnabledServerTest,
   balancer_->ads_service()->UnsetResource(
       kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
   // Server should stop serving.
-  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
-      grpc::StatusCode::NOT_FOUND));
+  ASSERT_TRUE(
+      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::NOT_FOUND));
 }
 
 TEST_P(XdsEnabledServerTest,

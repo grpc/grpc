@@ -50,8 +50,8 @@ bool GrpcXdsServer::IgnoreResourceDeletion() const {
 }
 
 bool GrpcXdsServer::FailOnDataErrors() const {
-  return server_features_.find(std::string(
-             kServerFeatureFailOnDataErrors)) != server_features_.end();
+  return server_features_.find(std::string(kServerFeatureFailOnDataErrors)) !=
+         server_features_.end();
 }
 
 bool GrpcXdsServer::TrustedXdsServer() const {

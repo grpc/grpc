@@ -1256,9 +1256,8 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
             rds_update) {
   MutexLock lock(&mu_);
   if (!rds_update.ok()) {
-    rds_update = absl::UnavailableError(
-        absl::StrCat("RDS resource ", resource_name_, ": ",
-                     rds_update.status().message()));
+    rds_update = absl::UnavailableError(absl::StrCat(
+        "RDS resource ", resource_name_, ": ", rds_update.status().message()));
   }
   resource_ = std::move(rds_update);
   if (watcher_ == nullptr) {

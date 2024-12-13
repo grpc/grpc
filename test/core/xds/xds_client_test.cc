@@ -136,9 +136,7 @@ class XdsClientTest : public ::testing::Test {
       bool IgnoreResourceDeletion() const override {
         return !fail_on_data_errors_;
       }
-      bool FailOnDataErrors() const override {
-        return fail_on_data_errors_;
-      }
+      bool FailOnDataErrors() const override { return fail_on_data_errors_; }
       bool Equals(const XdsServer& other) const override {
         const auto& o = static_cast<const FakeXdsServer&>(other);
         return server_uri_ == o.server_uri_ &&
