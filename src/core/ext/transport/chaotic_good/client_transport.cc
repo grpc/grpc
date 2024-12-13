@@ -32,7 +32,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -122,34 +121,28 @@ auto ChaoticGoodClientTransport::PushFrameIntoCall(
 }
 
 template <typename T>
-auto ChaoticGoodClientTransport::DispatchFrame(
-    RefCountedPtr<ChaoticGoodTransport> transport,
-    IncomingFrame incoming_frame) {
+auto ChaoticGoodClientTransport::DispatchFrame(IncomingFrame incoming_frame) {
   auto stream = LookupStream(incoming_frame.header().stream_id);
   return GRPC_LATENT_SEE_PROMISE(
       "ChaoticGoodClientTransport::DispatchFrame",
       If(
           stream != nullptr,
-          [this, &stream, &incoming_frame, &transport]() {
+          [this, &stream, &incoming_frame]() {
             auto& call = stream->call;
             // TODO(ctiller): instead of SpawnWaitable here we probably want a
             // small queue to push into, so that the call can proceed
             // asynchronously to other calls regardless of frame ordering.
             return call.SpawnWaitable(
-                "push-frame", [this, stream = std::move(stream),
-                               incoming_frame = std::move(incoming_frame),
-                               transport = std::move(transport)]() mutable {
+                "push-frame",
+                [this, stream = std::move(stream),
+                 incoming_frame = std::move(incoming_frame)]() mutable {
                   return TrySeq(
                       incoming_frame.Payload(),
-                      [transport = std::move(transport),
-                       header = incoming_frame.header()](SliceBuffer payload) {
-                        return transport->DeserializeFrame<T>(
-                            header, std::move(payload));
-                      },
-                      [stream = std::move(stream), this](T frame) mutable {
+                      [stream = std::move(stream), this](Frame frame) mutable {
                         auto& call = stream->call;
                         return Map(call.CancelIfFails(PushFrameIntoCall(
-                                       std::move(frame), std::move(stream))),
+                                       std::move(absl::get<T>(frame)),
+                                       std::move(stream))),
                                    [](auto) { return absl::OkStatus(); });
                       });
                 });
@@ -157,33 +150,31 @@ auto ChaoticGoodClientTransport::DispatchFrame(
           []() { return absl::OkStatus(); }));
 }
 
-auto ChaoticGoodClientTransport::TransportReadLoop(
-    RefCountedPtr<ChaoticGoodTransport> transport) {
-  return Loop([this, transport = std::move(transport)] {
+auto ChaoticGoodClientTransport::TransportReadLoop() {
+  return Loop([this] {
     return TrySeq(
-        transport->ReadFrameBytes(),
-        [this, transport](IncomingFrame incoming_frame) mutable {
+        incoming_frames_.Next(),
+        [this](IncomingFrame incoming_frame) mutable {
           return Switch(
               incoming_frame.header().type,
               Case<FrameType, FrameType::kServerInitialMetadata>([&, this]() {
                 return DispatchFrame<ServerInitialMetadataFrame>(
-                    std::move(transport), std::move(incoming_frame));
+                    std::move(incoming_frame));
               }),
               Case<FrameType, FrameType::kServerTrailingMetadata>([&, this]() {
                 return DispatchFrame<ServerTrailingMetadataFrame>(
-                    std::move(transport), std::move(incoming_frame));
+                    std::move(incoming_frame));
               }),
               Case<FrameType, FrameType::kMessage>([&, this]() {
-                return DispatchFrame<MessageFrame>(std::move(transport),
-                                                   std::move(incoming_frame));
+                return DispatchFrame<MessageFrame>(std::move(incoming_frame));
               }),
               Case<FrameType, FrameType::kBeginMessage>([&, this]() {
                 return DispatchFrame<BeginMessageFrame>(
-                    std::move(transport), std::move(incoming_frame));
+                    std::move(incoming_frame));
               }),
               Case<FrameType, FrameType::kMessageChunk>([&, this]() {
                 return DispatchFrame<MessageChunkFrame>(
-                    std::move(transport), std::move(incoming_frame));
+                    std::move(incoming_frame));
               }),
               Default([&]() {
                 LOG_EVERY_N_SEC(INFO, 10)
@@ -207,12 +198,12 @@ auto ChaoticGoodClientTransport::OnTransportActivityDone(
 }
 
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
-    const ChannelArgs& args, PromiseEndpoint control_endpoint, Config config,
-    RefCountedPtr<ClientConnectionFactory>)
+    const ChannelArgs& args, FrameTransport& frame_transport,
+    MessageChunker message_chunker)
     : allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
-      outgoing_frames_(4),
+      incoming_frames_(8),
       message_chunker_(config.MakeMessageChunker()) {
   auto event_engine =
       args.GetObjectRef<grpc_event_engine::experimental::EventEngine>();
