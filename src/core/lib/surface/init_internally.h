@@ -40,7 +40,7 @@ class KeepsGrpcInitialized {
   KeepsGrpcInitialized& operator=(const KeepsGrpcInitialized&) = delete;
 
  private:
-  bool enabled_ = true;
+  bool enabled_;
 };
 
 }  // namespace grpc_core
