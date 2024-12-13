@@ -17,9 +17,9 @@
 
 #include <vector>
 
-#include "frame_header.h"
 #include "src/core/ext/transport/chaotic_good/control_endpoint.h"
 #include "src/core/ext/transport/chaotic_good/data_endpoints.h"
+#include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
 
@@ -70,7 +70,7 @@ class TcpFrameTransport final : public FrameTransport {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine);
 
-  void StartReading(Party* party, PipeSender<IncomingFrame> frames,
+  void StartReading(Party* party, MpscSender<IncomingFrame> frames,
                     absl::AnyInvocable<void(absl::Status)> on_done) override;
   void StartWriting(Party* party, MpscReceiver<Frame> frames,
                     absl::AnyInvocable<void(absl::Status)> on_done) override;

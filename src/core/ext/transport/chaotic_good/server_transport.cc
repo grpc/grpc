@@ -32,6 +32,8 @@
 #include "absl/status/statusor.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
+#include "src/core/ext/transport/chaotic_good/frame_transport.h"
+#include "src/core/ext/transport/chaotic_good/message_chunker.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
@@ -117,10 +119,8 @@ auto ChaoticGoodServerTransport::SendCallBody(uint32_t stream_id,
   // Continuously send client frame with client to server messages.
   return ForEach(MessagesFrom(call_initiator),
                  [this, stream_id](MessageHandle message) mutable {
-                   return Map(
-                       message_chunker_.Send(std::move(message), stream_id,
-                                             outgoing_frames_),
-                       [](bool r) { return StatusFlag(r); });
+                   return message_chunker_.Send(std::move(message), stream_id,
+                                                outgoing_frames_);
                  });
 }
 
@@ -152,7 +152,7 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
   return GRPC_LATENT_SEE_PROMISE(
       "CallOutboundLoop",
       Seq(Map(SendCallInitialMetadataAndBody(stream_id, call_initiator),
-              [stream_id](absl::Status main_body_result) {
+              [stream_id](StatusFlag main_body_result) {
                 GRPC_TRACE_VLOG(chaotic_good, 2)
                     << "CHAOTIC_GOOD: CallOutboundLoop: stream_id=" << stream_id
                     << " main_body_result=" << main_body_result;
@@ -275,8 +275,8 @@ auto ChaoticGoodServerTransport::OnTransportActivityDone(
 }
 
 ChaoticGoodServerTransport::ChaoticGoodServerTransport(
-    const ChannelArgs& args, PromiseEndpoint control_endpoint, Config config,
-    RefCountedPtr<ServerConnectionFactory>)
+    const ChannelArgs& args, FrameTransport& frame_transport,
+    MessageChunker message_chunker)
     : call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
           args.GetObject<ResourceQuota>()
               ->memory_quota()
@@ -284,24 +284,26 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
           1024)),
       event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
-      outgoing_frames_(4),
-      message_chunker_(config.MakeMessageChunker()) {
-  auto transport = MakeRefCounted<ChaoticGoodTransport>(
-      std::move(control_endpoint), config.TakePendingDataEndpoints(),
-      event_engine_, config.MakeTransportOptions(), false);
+      message_chunker_(message_chunker) {
+  /*
+auto transport = MakeRefCounted<ChaoticGoodTransport>(
+std::move(control_endpoint), config.TakePendingDataEndpoints(),
+event_engine_, config.MakeTransportOptions(), false);
+*/
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());
   party_ = Party::Make(std::move(party_arena));
+  MpscReceiver<Frame> outgoing_pipe(8);
+  outgoing_frames_ = outgoing_pipe.MakeSender();
+  frame_transport.StartReading(party_.get(), incoming_frames_.MakeSender(),
+                               OnTransportActivityDone("frame_reader"));
+  frame_transport.StartWriting(party_.get(), std::move(outgoing_pipe),
+                               OnTransportActivityDone("frame_writer"));
   party_->Spawn(
-      "server-chaotic-writer",
-      GRPC_LATENT_SEE_PROMISE("ServerTransportWriteLoop",
-                              transport->TransportWriteLoop(outgoing_frames_)),
-      OnTransportActivityDone("writer"));
-  party_->Spawn("server-chaotic-reader",
-                GRPC_LATENT_SEE_PROMISE("ServerTransportReadLoop",
-                                        TransportReadLoop(transport)),
-                OnTransportActivityDone("reader"));
+      "server-chaotic-reader",
+      GRPC_LATENT_SEE_PROMISE("ServerTransportReadLoop", TransportReadLoop()),
+      OnTransportActivityDone("reader"));
 }
 
 void ChaoticGoodServerTransport::SetCallDestination(

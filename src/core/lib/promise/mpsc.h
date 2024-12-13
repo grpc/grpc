@@ -145,6 +145,7 @@ class MpscReceiver;
 template <typename T>
 class MpscSender {
  public:
+  MpscSender() = default;
   MpscSender(const MpscSender&) = default;
   MpscSender& operator=(const MpscSender&) = default;
   MpscSender(MpscSender&&) noexcept = default;
@@ -168,16 +169,16 @@ class MpscSender {
   template <bool kAwaitReceipt>
   auto SendGeneric(T t) {
     return [center = center_, t = std::move(t),
-            batch = uint64_t(0)]() mutable -> Poll<bool> {
-      if (center == nullptr) return false;
+            batch = uint64_t(0)]() mutable -> Poll<StatusFlag> {
+      if (center == nullptr) return Failure{};
       if (batch == 0) {
         batch = center->Send(std::move(t), kAwaitReceipt);
         CHECK_NE(batch, 0u);
-        if (batch == mpscpipe_detail::Center<T>::kClosedBatch) return false;
+        if (batch == mpscpipe_detail::Center<T>::kClosedBatch) return Failure{};
       }
       auto p = center->PollReceiveBatch(batch);
       if (p.pending()) return Pending{};
-      return true;
+      return Success{};
     };
   }
 

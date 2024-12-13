@@ -7916,8 +7916,8 @@ grpc_cc_library(
     deps = [
         "arena",
         "bitset",
-        "chaotic_good_frame_header",
         "chaotic_good_frame_cc_proto",
+        "chaotic_good_frame_header",
         "context",
         "match",
         "message",
@@ -8295,6 +8295,7 @@ grpc_cc_library(
     deps = [
         "chaotic_good_control_endpoint",
         "chaotic_good_data_endpoints",
+        "chaotic_good_frame_header",
         "chaotic_good_frame_transport",
         "chaotic_good_pending_connection",
         "event_engine_tcp_socket_utils",
@@ -8394,6 +8395,7 @@ grpc_cc_library(
         "chaotic_good_frame",
         "chaotic_good_frame_header",
         "chaotic_good_frame_transport",
+        "chaotic_good_message_chunker",
         "chaotic_good_message_reassembly",
         "chaotic_good_pending_connection",
         "context",

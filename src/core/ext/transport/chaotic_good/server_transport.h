@@ -79,7 +79,8 @@ namespace chaotic_good {
 class ChaoticGoodServerTransport final : public ServerTransport {
  public:
   ChaoticGoodServerTransport(const ChannelArgs& args,
-                             FrameTransport& frame_transport);
+                             FrameTransport& frame_transport,
+                             MessageChunker message_chunker);
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }
@@ -133,7 +134,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
       event_engine_;
   InterActivityLatch<void> got_acceptor_;
   MpscSender<Frame> outgoing_frames_;
-  PipeReceiver<Frame> incoming_frames_;
+  MpscReceiver<IncomingFrame> incoming_frames_{8};
   Mutex mu_;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);

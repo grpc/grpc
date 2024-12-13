@@ -20,8 +20,8 @@
 #include "src/core/lib/promise/match_promise.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
-#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/promise.h"
+
 namespace grpc_core {
 namespace chaotic_good {
 
@@ -67,8 +67,9 @@ class FrameTransport : public RefCounted<FrameTransport> {
  public:
   // Spawn a read loop onto party - read frames from the wire, push them onto
   // frames.
-  // TODO(ctiller): this use case probably warrants a buffered pipe type.
-  virtual void StartReading(Party* party, PipeSender<IncomingFrame> frames,
+  // TODO(ctiller): can likely use a buffered intra-party SpscSender here once
+  // we write one.
+  virtual void StartReading(Party* party, MpscSender<IncomingFrame> frames,
                             absl::AnyInvocable<void(absl::Status)> on_done) = 0;
   // Spawn a write loop onto party - write frames from frames to the wire.
   virtual void StartWriting(Party* party, MpscReceiver<Frame> frames,
