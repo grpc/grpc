@@ -830,7 +830,8 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
   if (!decode_status.ok()) {
     // If the fail_on_data_errors server feature is present, drop the
     // existing cached resource, if any.
-    if (ads_call_->xds_channel()->server_.FailOnDataErrors()) {
+    if (XdsDataErrorHandlingEnabled() &&
+        ads_call_->xds_channel()->server_.FailOnDataErrors()) {
       resource_state.resource.reset();
     }
     // If there is no cached resource (either because we didn't have one
@@ -1091,7 +1092,9 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
               // that the resource does not exist.  For that case, we rely on
               // the request timeout instead.
               if (resource_state.resource == nullptr) continue;
-              if (!xds_channel()->server_.FailOnDataErrors()) {
+              if (XdsDataErrorHandlingEnabled()
+                      ? !xds_channel()->server_.FailOnDataErrors()
+                      : xds_channel()->server_.IgnoreResourceDeletion()) {
                 if (!resource_state.ignored_deletion) {
                   LOG(ERROR)
                       << "[xds_client " << xds_client() << "] xds server "

@@ -465,6 +465,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
         "@envoy_api//envoy/extensions/filters/http/fault/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
     ],
@@ -609,5 +610,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )

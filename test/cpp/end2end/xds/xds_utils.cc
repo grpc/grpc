@@ -92,6 +92,9 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
   if (fail_on_data_errors_) {
     server_features.push_back("\"fail_on_data_errors\"");
   }
+  if (ignore_resource_deletion_) {
+    server_features.push_back("\"ignore_resource_deletion\"");
+  }
   if (trusted_xds_server_) {
     server_features.push_back("\"trusted_xds_server\"");
   }

@@ -39,6 +39,7 @@
 #include "src/proto/grpc/testing/echo.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -91,8 +92,36 @@ TEST_P(XdsEnabledServerTest, Basic) {
   WaitForBackend(DEBUG_LOCATION, 0);
 }
 
-TEST_P(XdsEnabledServerTest, ListenerDeletionIgnoredByDefault) {
+TEST_P(XdsEnabledServerTest, ListenerDeletionFailsByDefault) {
   DoSetUp();
+  StartBackend(0);
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Check that we ACKed.
+  // TODO(roth): There may be multiple entries in the resource state response
+  // queue, because the client doesn't necessarily subscribe to all resources
+  // in a single message, and the server currently (I suspect incorrectly?)
+  // thinks that each subscription message is an ACK.  So for now, we
+  // drain the entire LDS resource state response queue, ensuring that
+  // all responses are ACKs.  Need to look more closely at the protocol
+  // semantics here and make sure the server is doing the right thing,
+  // in which case we may be able to avoid this.
+  while (true) {
+    auto response_state = balancer_->ads_service()->lds_response_state();
+    if (!response_state.has_value()) break;
+    ASSERT_TRUE(response_state.has_value());
+    EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  }
+  // Now unset the resource.
+  balancer_->ads_service()->UnsetResource(
+      kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
+  // Server should stop serving.
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
+      grpc::StatusCode::NOT_FOUND));
+}
+
+TEST_P(XdsEnabledServerTest, ListenerDeletionIgnoredIfConfigured) {
+  DoSetUp(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   WaitForBackend(DEBUG_LOCATION, 0);
@@ -131,7 +160,10 @@ TEST_P(XdsEnabledServerTest, ListenerDeletionIgnoredByDefault) {
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
-TEST_P(XdsEnabledServerTest, ListenerDeletionWithFailOnDataErrors) {
+TEST_P(XdsEnabledServerTest,
+       ListenerDeletionFailsWithFailOnDataErrorsIfEnabled) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
   DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
@@ -157,6 +189,49 @@ TEST_P(XdsEnabledServerTest, ListenerDeletionWithFailOnDataErrors) {
   // Server should stop serving.
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
       grpc::StatusCode::NOT_FOUND));
+}
+
+TEST_P(XdsEnabledServerTest,
+       ListenerDeletionIgnoredByDefaultIfDataErrorHandlingEnabled) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
+  DoSetUp();
+  StartBackend(0);
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Check that we ACKed.
+  // TODO(roth): There may be multiple entries in the resource state response
+  // queue, because the client doesn't necessarily subscribe to all resources
+  // in a single message, and the server currently (I suspect incorrectly?)
+  // thinks that each subscription message is an ACK.  So for now, we
+  // drain the entire LDS resource state response queue, ensuring that
+  // all responses are ACKs.  Need to look more closely at the protocol
+  // semantics here and make sure the server is doing the right thing,
+  // in which case we may be able to avoid this.
+  while (true) {
+    auto response_state = balancer_->ads_service()->lds_response_state();
+    if (!response_state.has_value()) break;
+    ASSERT_TRUE(response_state.has_value());
+    EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  }
+  // Now unset the resource.
+  balancer_->ads_service()->UnsetResource(
+      kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
+  // Wait for update to be ACKed.
+  absl::Time deadline =
+      absl::Now() + (absl::Seconds(10) * grpc_test_slowdown_factor());
+  while (true) {
+    auto response_state = balancer_->ads_service()->lds_response_state();
+    if (!response_state.has_value()) {
+      gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+      continue;
+    }
+    EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+    ASSERT_LT(absl::Now(), deadline);
+    break;
+  }
+  // Make sure server is still serving.
+  CheckRpcSendOk(DEBUG_LOCATION);
 }
 
 // Testing just one example of an invalid resource here.

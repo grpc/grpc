@@ -34,6 +34,10 @@ namespace testing {
 class XdsBootstrapBuilder {
  public:
   XdsBootstrapBuilder() {}
+  XdsBootstrapBuilder& SetIgnoreResourceDeletion() {
+    ignore_resource_deletion_ = true;
+    return *this;
+  }
   XdsBootstrapBuilder& SetFailOnDataErrors() {
     fail_on_data_errors_ = true;
     return *this;
@@ -102,6 +106,7 @@ class XdsBootstrapBuilder {
   std::string MakeCertificateProviderText();
   std::string MakeAuthorityText();
 
+  bool ignore_resource_deletion_ = false;
   bool fail_on_data_errors_ = false;
   bool trusted_xds_server_ = false;
   std::vector<std::string> servers_;
