@@ -43,7 +43,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "frame_transport.h"
-#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -111,8 +110,6 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto SendCallBody(uint32_t stream_id, CallInitiator call_initiator);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
-  auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
-  auto ReadOneFrame(RefCountedPtr<ChaoticGoodTransport> transport);
   // Read different parts of the server frame from control/data endpoints
   // based on frame header.
   // Resolves to a StatusOr<tuple<SliceBuffer, SliceBuffer>>
@@ -127,6 +124,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, ClientEndOfStream frame);
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, BeginMessageFrame frame);
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, MessageChunkFrame frame);
+  auto ProcessNextFrame();
+  auto TransportReadLoop();
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;

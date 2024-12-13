@@ -30,7 +30,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -100,15 +99,14 @@ auto ChaoticGoodServerTransport::DispatchFrame(IncomingFrame frame) {
         // asynchronously to other calls regardless of frame ordering.
         return stream->call.SpawnWaitable(
             "push-frame", [this, stream, frame = std::move(frame)]() mutable {
-              return TrySeq(
-                  frame.Payload(),
-                  [stream = std::move(stream), this](Frame frame) mutable {
-                    auto& call = stream->call;
-                    return Map(
-                        call.CancelIfFails(PushFrameIntoCall(
-                            std::move(stream), std::move(absl::get<T>(frame)))),
-                        [](auto) { return absl::OkStatus(); });
-                  });
+              return TrySeq(frame.Payload(), [stream = std::move(stream),
+                                              this](Frame frame) mutable {
+                auto& call = stream->call;
+                return Map(
+                    call.CancelIfFails(PushFrameIntoCall(
+                        std::move(stream), std::move(absl::get<T>(frame)))),
+                    [](auto) { return absl::OkStatus(); });
+              });
             });
       },
       []() { return absl::OkStatus(); });
@@ -198,40 +196,40 @@ absl::Status ChaoticGoodServerTransport::NewStream(
   return absl::OkStatus();
 }
 
-auto ChaoticGoodServerTransport::ReadOneFrame(
-    RefCountedPtr<ChaoticGoodTransport> transport) {
+auto ChaoticGoodServerTransport::ProcessNextFrame() {
   return GRPC_LATENT_SEE_PROMISE(
       "ReadOneFrame",
       TrySeq(
-          transport->ReadFrameBytes(),
-          [this, transport](IncomingFrame incoming_frame) mutable {
+          incoming_frames_.Next(),
+          [this](IncomingFrame incoming_frame) mutable {
             return Switch(
                 incoming_frame.header().type,
                 Case<FrameType, FrameType::kClientInitialMetadata>([&, this]() {
-                  return TrySeq(incoming_frame.Payload(),
-                                [this, transport = std::move(transport),
-                                 header = incoming_frame.header()](
-                                    SliceBuffer payload) mutable {
-                                  return NewStream(*transport, header,
-                                                   std::move(payload));
-                                });
+                  return TrySeq(
+                      incoming_frame.Payload(),
+                      [this,
+                       header = incoming_frame.header()](Frame frame) mutable {
+                        return NewStream(
+                            header.stream_id,
+                            std::move(
+                                absl::get<ClientInitialMetadataFrame>(frame)));
+                      });
                 }),
                 Case<FrameType, FrameType::kMessage>([&, this]() mutable {
-                  return DispatchFrame<MessageFrame>(std::move(transport),
-                                                     std::move(incoming_frame));
+                  return DispatchFrame<MessageFrame>(std::move(incoming_frame));
                 }),
                 Case<FrameType, FrameType::kBeginMessage>([&, this]() mutable {
                   return DispatchFrame<BeginMessageFrame>(
-                      std::move(transport), std::move(incoming_frame));
+                      std::move(incoming_frame));
                 }),
                 Case<FrameType, FrameType::kMessageChunk>([&, this]() mutable {
                   return DispatchFrame<MessageChunkFrame>(
-                      std::move(transport), std::move(incoming_frame));
+                      std::move(incoming_frame));
                 }),
                 Case<FrameType, FrameType::kClientEndOfStream>(
                     [&, this]() mutable {
                       return DispatchFrame<ClientEndOfStream>(
-                          std::move(transport), std::move(incoming_frame));
+                          std::move(incoming_frame));
                     }),
                 Case<FrameType, FrameType::kCancel>([&, this]() {
                   auto stream =
@@ -260,12 +258,9 @@ auto ChaoticGoodServerTransport::ReadOneFrame(
           []() -> LoopCtl<absl::Status> { return Continue{}; }));
 }
 
-auto ChaoticGoodServerTransport::TransportReadLoop(
-    RefCountedPtr<ChaoticGoodTransport> transport) {
+auto ChaoticGoodServerTransport::TransportReadLoop() {
   return Seq(got_acceptor_.Wait(),
-             Loop([this, transport = std::move(transport)]() mutable {
-               return ReadOneFrame(transport);
-             }));
+             Loop([this]() mutable { return ProcessNextFrame(); }));
 }
 
 auto ChaoticGoodServerTransport::OnTransportActivityDone(

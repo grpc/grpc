@@ -241,7 +241,7 @@ absl::Status MessageFrame::Deserialize(const FrameHeader& header,
 FrameHeader MessageFrame::MakeHeader() const {
   auto length = message->payload()->Length();
   CHECK_LE(length, std::numeric_limits<uint32_t>::max());
-  return FrameHeader{FrameType::kMessage, 0, stream_id,
+  return FrameHeader{FrameType::kMessage, stream_id,
                      static_cast<uint32_t>(length)};
 }
 
@@ -273,7 +273,7 @@ absl::Status MessageChunkFrame::Deserialize(const FrameHeader& header,
 FrameHeader MessageChunkFrame::MakeHeader() const {
   auto length = payload.Length();
   CHECK_LE(length, std::numeric_limits<uint32_t>::max());
-  return FrameHeader{FrameType::kMessageChunk, 0, stream_id,
+  return FrameHeader{FrameType::kMessageChunk, stream_id,
                      static_cast<uint32_t>(length)};
 }
 
@@ -289,8 +289,8 @@ std::string MessageChunkFrame::ToString() const {
 
 namespace {
 template <typename T>
-absl::StatusOr<T> DeserializeFrame(const FrameHeader& header,
-                                   SliceBuffer payload) {
+absl::StatusOr<Frame> DeserializeFrame(const FrameHeader& header,
+                                       SliceBuffer payload) {
   T frame;
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: Deserialize " << header << " with payload "
@@ -307,13 +307,31 @@ absl::StatusOr<T> DeserializeFrame(const FrameHeader& header,
 
 absl::StatusOr<Frame> ParseFrame(const FrameHeader& header,
                                  SliceBuffer payload) {
-  return Switch(header.type, Case<FrameType, FrameType::kSettings>([&]() {
-                  return DeserializeFrame<SettingsFrame>(header,
-                                                         std::move(payload));
-                }),
-                Default([]() -> absl::StatusOr<Frame> {
-                  return absl::InternalError("bah");
-                }));
+  switch (header.type) {
+    case FrameType::kSettings:
+      return DeserializeFrame<SettingsFrame>(header, std::move(payload));
+    case FrameType::kClientInitialMetadata:
+      return DeserializeFrame<ClientInitialMetadataFrame>(header,
+                                                          std::move(payload));
+    case FrameType::kServerInitialMetadata:
+      return DeserializeFrame<ServerInitialMetadataFrame>(header,
+                                                          std::move(payload));
+    case FrameType::kServerTrailingMetadata:
+      return DeserializeFrame<ServerTrailingMetadataFrame>(header,
+                                                           std::move(payload));
+    case FrameType::kMessage:
+      return DeserializeFrame<MessageFrame>(header, std::move(payload));
+    case FrameType::kMessageChunk:
+      return DeserializeFrame<MessageChunkFrame>(header, std::move(payload));
+    case FrameType::kClientEndOfStream:
+      return DeserializeFrame<ClientEndOfStream>(header, std::move(payload));
+    case FrameType::kCancel:
+      return DeserializeFrame<CancelFrame>(header, std::move(payload));
+    case FrameType::kBeginMessage:
+      return DeserializeFrame<BeginMessageFrame>(header, std::move(payload));
+    default:
+      return absl::InternalError("bah");
+  }
 }
 
 }  // namespace chaotic_good

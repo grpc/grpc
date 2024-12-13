@@ -85,7 +85,7 @@ struct ProtoTransportFrame final : public FrameInterface {
     return ReadTransportProto(header, std::move(payload), body);
   }
   FrameHeader MakeHeader() const override {
-    return FrameHeader{frame_type, 0, 0, ProtoPayloadSize(body)};
+    return FrameHeader{frame_type, 0, ProtoPayloadSize(body)};
   }
   void SerializePayload(SliceBuffer& payload) const override {
     WriteProto(body, payload);
@@ -108,7 +108,7 @@ struct ProtoStreamFrame final : public FrameInterface {
     return ReadStreamProto(header, std::move(payload), body, stream_id);
   }
   FrameHeader MakeHeader() const override {
-    return FrameHeader{frame_type, 0, stream_id, ProtoPayloadSize(body)};
+    return FrameHeader{frame_type, stream_id, ProtoPayloadSize(body)};
   }
   void SerializePayload(SliceBuffer& payload) const override {
     DCHECK_NE(stream_id, 0u);
@@ -133,7 +133,7 @@ struct EmptyStreamFrame final : public FrameInterface {
     return ReadEmptyFrame(header, stream_id);
   }
   FrameHeader MakeHeader() const override {
-    return FrameHeader{frame_type, 0, stream_id, 0};
+    return FrameHeader{frame_type, stream_id, 0};
   }
   void SerializePayload(SliceBuffer&) const override {}
   std::string ToString() const override { return FrameTypeString(frame_type); }
@@ -180,9 +180,10 @@ struct MessageChunkFrame final : public FrameInterface {
 };
 
 using Frame =
-    absl::variant<ClientInitialMetadataFrame, ServerInitialMetadataFrame,
-                  ServerTrailingMetadataFrame, MessageFrame, BeginMessageFrame,
-                  MessageChunkFrame, ClientEndOfStream, CancelFrame>;
+    absl::variant<SettingsFrame, ClientInitialMetadataFrame,
+                  ServerInitialMetadataFrame, ServerTrailingMetadataFrame,
+                  MessageFrame, BeginMessageFrame, MessageChunkFrame,
+                  ClientEndOfStream, CancelFrame>;
 
 absl::StatusOr<Frame> ParseFrame(const FrameHeader& header,
                                  SliceBuffer payload);
