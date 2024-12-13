@@ -143,7 +143,7 @@ auto ChaoticGoodServerTransport::SendCallInitialMetadataAndBody(
               return TrySeq(outgoing_frames_.Send(std::move(frame)),
                             SendCallBody(stream_id, call_initiator));
             },
-            []() { return absl::OkStatus(); });
+            []() { return StatusFlag(true); });
       });
 }
 
@@ -328,7 +328,7 @@ void ChaoticGoodServerTransport::Orphan() {
 void ChaoticGoodServerTransport::AbortWithError() {
   // Mark transport as unavailable when the endpoint write/read failed.
   // Close all the available pipes.
-  outgoing_frames_.MarkClosed();
+  incoming_frames_.MarkClosed();
   ReleasableMutexLock lock(&mu_);
   aborted_with_error_ = true;
   StreamMap stream_map = std::move(stream_map_);
@@ -406,10 +406,10 @@ absl::Status ChaoticGoodServerTransport::NewStream(
 
 void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
   RefCountedPtr<Party> cancelled_party;
-  bool close_outgoing_frames = false;
-  auto cleanup = absl::MakeCleanup([&close_outgoing_frames, this]() {
-    if (close_outgoing_frames) {
-      outgoing_frames_.MarkClosed();
+  bool close_incoming_frames = false;
+  auto cleanup = absl::MakeCleanup([&close_incoming_frames, this]() {
+    if (close_incoming_frames) {
+      incoming_frames_.MarkClosed();
     }
   });
   MutexLock lock(&mu_);
@@ -433,7 +433,7 @@ void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
   }
   if (!op->goaway_error.ok() || !op->disconnect_with_error.ok()) {
     cancelled_party = std::move(party_);
-    close_outgoing_frames = true;
+    close_incoming_frames = true;
     state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
                             absl::UnavailableError("transport closed"),
                             "transport closed");
