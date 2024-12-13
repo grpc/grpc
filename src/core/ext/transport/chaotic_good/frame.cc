@@ -120,8 +120,9 @@ struct ClientMetadataEncoder {
   }
 
   void EncodeWithWarning(const Slice& key, const Slice& value) {
-    LOG_EVERY_N_SEC(INFO, 10) << "encoding known key " << key.as_string_view()
-                              << " with unknown encoding";
+    GRPC_TRACE_LOG(chaotic_good, INFO)
+        << "encoding known key " << key.as_string_view()
+        << " with unknown encoding";
     Encode(key, value);
   }
 
