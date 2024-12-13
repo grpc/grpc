@@ -184,6 +184,9 @@ using Frame =
                   ServerTrailingMetadataFrame, MessageFrame, BeginMessageFrame,
                   MessageChunkFrame, ClientEndOfStream, CancelFrame>;
 
+absl::StatusOr<Frame> ParseFrame(const FrameHeader& header,
+                                 SliceBuffer payload);
+
 }  // namespace chaotic_good
 }  // namespace grpc_core
 

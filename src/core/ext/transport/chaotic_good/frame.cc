@@ -29,6 +29,7 @@
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/switch.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -284,6 +285,35 @@ void MessageChunkFrame::SerializePayload(SliceBuffer& payload) const {
 std::string MessageChunkFrame::ToString() const {
   return absl::StrCat("MessageChunk{stream_id=", stream_id,
                       ", payload=", payload.Length(), "b}");
+}
+
+namespace {
+template <typename T>
+absl::StatusOr<T> DeserializeFrame(const FrameHeader& header,
+                                   SliceBuffer payload) {
+  T frame;
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD: Deserialize " << header << " with payload "
+      << absl::CEscape(payload.JoinIntoString());
+  CHECK_EQ(header.payload_length, payload.Length());
+  auto s = frame.Deserialize(header, std::move(payload));
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD: DeserializeFrame "
+      << (s.ok() ? frame.ToString() : s.ToString());
+  if (s.ok()) return std::move(frame);
+  return std::move(s);
+}
+}  // namespace
+
+absl::StatusOr<Frame> ParseFrame(const FrameHeader& header,
+                                 SliceBuffer payload) {
+  return Switch(header.type, Case<FrameType, FrameType::kSettings>([&]() {
+                  return DeserializeFrame<SettingsFrame>(header,
+                                                         std::move(payload));
+                }),
+                Default([]() -> absl::StatusOr<Frame> {
+                  return absl::InternalError("bah");
+                }));
 }
 
 }  // namespace chaotic_good

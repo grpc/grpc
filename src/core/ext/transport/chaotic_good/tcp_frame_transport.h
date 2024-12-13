@@ -17,20 +17,74 @@
 
 #include <vector>
 
-#include "pending_connection.h"
+#include "frame_header.h"
+#include "src/core/ext/transport/chaotic_good/control_endpoint.h"
+#include "src/core/ext/transport/chaotic_good/data_endpoints.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
+#include "src/core/ext/transport/chaotic_good/pending_connection.h"
 
 namespace grpc_core {
 namespace chaotic_good {
 
+struct TcpFrameHeader {
+  // Frame header size is fixed to 12 bytes.
+  enum { kFrameHeaderSize = 12 };
+
+  FrameHeader header;
+  uint32_t payload_connection_id = 0;
+
+  // Parses a frame header from a buffer of 12 bytes. All 12 bytes are consumed.
+  static absl::StatusOr<TcpFrameHeader> Parse(const uint8_t* data);
+  // Serializes a frame header into a buffer of 12 bytes.
+  void Serialize(uint8_t* data) const;
+
+  // Report contents as a string
+  std::string ToString() const;
+
+  bool operator==(const TcpFrameHeader& h) const {
+    return header == h.header &&
+           payload_connection_id == h.payload_connection_id;
+  }
+
+  // Required padding to maintain alignment.
+  uint32_t Padding(uint32_t alignment) const;
+};
+
+inline std::vector<PromiseEndpoint> OneDataEndpoint(PromiseEndpoint endpoint) {
+  std::vector<PromiseEndpoint> ep;
+  ep.emplace_back(std::move(endpoint));
+  return ep;
+}
+
 class TcpFrameTransport final : public FrameTransport {
  public:
-  TcpFrameTransport(PromiseEndpoint control_endpoint,
-                    std::vector<PendingConnection> pending_data_endpoints);
+  struct Options {
+    uint32_t encode_alignment = 64;
+    uint32_t decode_alignment = 64;
+    uint32_t inlined_payload_size_threshold = 8 * 1024;
+  };
+
+  TcpFrameTransport(
+      Options options, PromiseEndpoint control_endpoint,
+      std::vector<PendingConnection> pending_data_endpoints,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine);
+
+  void StartReading(Party* party, PipeSender<IncomingFrame> frames,
+                    absl::AnyInvocable<void(absl::Status)> on_done) override;
+  void StartWriting(Party* party, MpscReceiver<Frame> frames,
+                    absl::AnyInvocable<void(absl::Status)> on_done) override;
 
  private:
-  Poll<StatusFlag> PollWrite(Frame& frame) override;
-  Poll<ValueOrFailure<Frame>> PollRead() override;
+  auto WriteFrame(const FrameInterface& frame);
+  auto WriteLoop(MpscReceiver<Frame> frames);
+  // Read frame header and payloads for control and data portions of one frame.
+  // Resolves to StatusOr<IncomingFrame>.
+  auto ReadFrameBytes();
+
+  ControlEndpoint control_endpoint_;
+  DataEndpoints data_endpoints_;
+  Options options_;
 };
 
 }  // namespace chaotic_good
