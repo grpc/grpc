@@ -2056,7 +2056,6 @@ add_library(gpr
   src/core/config/load_config.cc
   src/core/lib/event_engine/thread_local.cc
   src/core/util/alloc.cc
-  src/core/util/atm.cc
   src/core/util/crash.cc
   src/core/util/examine_stack.cc
   src/core/util/fork.cc

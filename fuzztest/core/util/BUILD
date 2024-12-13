@@ -25,3 +25,14 @@ grpc_fuzz_test(
     ],
     deps = ["//src/core:tdigest"],
 )
+
+grpc_fuzz_test(
+    name = "useful_fuzztest",
+    srcs = ["useful_fuzztest.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:useful"],
+)
