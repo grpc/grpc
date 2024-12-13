@@ -821,9 +821,7 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
                                              default_server_route_config_);
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
-  // TODO(yashykt): This code should never be returned as an RPC status,
-  // as per https://github.com/grpc/grpc/blob/master/doc/statuscodes.md.
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::NOT_FOUND,
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       "Requested route config does not exist");
 }
 

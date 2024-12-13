@@ -27,13 +27,12 @@ grpc_fuzz_test(
 )
 
 grpc_fuzz_test(
-    name = "kolmogorov_smirnov_fuzztest",
-    srcs = ["kolmogorov_smirnov_fuzztest.cc"],
+    name = "useful_fuzztest",
+    srcs = ["useful_fuzztest.cc"],
     external_deps = [
-        "absl/types:variant",
         "fuzztest",
         "fuzztest_main",
         "gtest",
     ],
-    deps = ["//src/core:kolmogorov_smirnov"],
+    deps = ["//src/core:useful"],
 )

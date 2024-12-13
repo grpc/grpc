@@ -35,6 +35,7 @@ namespace {
 // - first attempt gets ABORTED with a long delay
 // - second attempt succeeds
 CORE_END2END_TEST(RetryTest, RetryServerPushbackDelay) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
