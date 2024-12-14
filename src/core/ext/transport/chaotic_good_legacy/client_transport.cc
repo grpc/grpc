@@ -268,28 +268,19 @@ uint32_t ChaoticGoodClientTransport::MakeStream(CallHandler call_handler) {
   return stream_id;
 }
 
-namespace {
-absl::Status BooleanSuccessToTransportError(bool success) {
-  return success ? absl::OkStatus()
-                 : absl::UnavailableError("Transport closed.");
-}
-}  // namespace
-
 auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
                                                   CallHandler call_handler) {
   auto send_fragment = [stream_id,
                         outgoing_frames = outgoing_frames_.MakeSender()](
                            ClientFragmentFrame frame) mutable {
     frame.stream_id = stream_id;
-    return Map(outgoing_frames.Send(std::move(frame)),
-               BooleanSuccessToTransportError);
+    return outgoing_frames.Send(std::move(frame));
   };
   auto send_fragment_acked = [stream_id,
                               outgoing_frames = outgoing_frames_.MakeSender()](
                                  ClientFragmentFrame frame) mutable {
     frame.stream_id = stream_id;
-    return Map(outgoing_frames.SendAcked(std::move(frame)),
-               BooleanSuccessToTransportError);
+    return outgoing_frames.SendAcked(std::move(frame));
   };
   return GRPC_LATENT_SEE_PROMISE(
       "CallOutboundLoop",
@@ -343,7 +334,7 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
               return Map(
                   self->CallOutboundLoop(stream_id, call_handler),
                   [stream_id, sender = self->outgoing_frames_.MakeSender()](
-                      absl::Status result) mutable {
+                      StatusFlag result) mutable {
                     GRPC_TRACE_LOG(chaotic_good, INFO)
                         << "CHAOTIC_GOOD: Call " << stream_id
                         << " finished with " << result.ToString();
@@ -359,7 +350,7 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
                     return result;
                   });
             },
-            []() { return absl::OkStatus(); });
+            []() -> Poll<StatusFlag> { return Success{}; });
       });
 }
 

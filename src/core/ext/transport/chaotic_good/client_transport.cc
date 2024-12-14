@@ -310,7 +310,7 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
              self = std::move(self)]() {
               return Map(
                   self->CallOutboundLoop(stream_id, call_handler),
-                  [self, stream_id](StatusFlag result) mutable {
+                  [self, stream_id](StatusFlag result) -> StatusFlag {
                     GRPC_TRACE_LOG(chaotic_good, INFO)
                         << "CHAOTIC_GOOD: Call " << stream_id
                         << " finished with " << result.ToString();
@@ -326,7 +326,7 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
                     return result;
                   });
             },
-            []() { return absl::OkStatus(); });
+            []() -> Poll<StatusFlag> { return Success{}; });
       });
 }
 
