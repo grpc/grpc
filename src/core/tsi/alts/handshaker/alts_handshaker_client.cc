@@ -61,40 +61,21 @@ AltsHandshakerClient* AltsHandshakerClient::CreateNewAltsHandshakerClient(
   return client;
 }
 
-void AltsHandshakerClient::Shutdown(
-    AltsHandshakerClient* client) {
-  if (client != nullptr) {
-    shutdown(client);
-  }
+void AltsHandshakerClient::Shutdown() { handshaker_client_shutdown(); }
+
+tsi_result AltsHandshakerClient::StartClient() {
+  handshaker_client_start_client();
 }
 
-tsi_result AltsHandshakerClient::StartClient(
-    AltsHandshakerClient* client) {
-  if (client != nullptr) {
-    return client_start(client);
-  }
-  LOG(ERROR) << "client has not been initialized properly";
-  return TSI_INVALID_ARGUMENT;
+tsi_result AltsHandshakerClient::StartServer(grpc_slice* bytes_received) {
+  handshaker_client_start_server(bytes_received);
 }
 
-tsi_result AltsHandshakerClient::StartServer(
-    AltsHandshakerClient* client, grpc_slice* bytes_received) {
-  if (client != nullptr) {
-    return server_start(client, bytes_received);
-  }
-  LOG(ERROR) << "client has not been initialized properly";
-  return TSI_INVALID_ARGUMENT;
+tsi_result AltsHandshakerClient::Next(grpc_slice* bytes_received) {
+  handshaker_client_next();
 }
 
-tsi_result AltsHandshakerClient::Next(
-    AltsHandshakerClient* client, grpc_slice* bytes_received) {
-  if (client != nullptr) {
-    return next(client, bytes_received);
-  }
-  LOG(ERROR) << "client has not been initialized properly";
-  return TSI_INVALID_ARGUMENT;
-}
-void AltsHandshakerClient::HandleResponse(AltsHandshakerClient* client, bool is_ok) {
+void AltsHandshakerClient::HandleResponse(bool is_ok) {
   grpc_byte_buffer* recv_buffer = recv_buffer;
   alts_tsi_handshaker* handshaker = handshaker;
   // Invalid input check.

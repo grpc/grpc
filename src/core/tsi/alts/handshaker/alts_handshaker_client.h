@@ -166,7 +166,7 @@ class AltsHandshakerClient {
   void handshaker_client_shutdown();
   void handshaker_call_unref(void* arg, grpc_error_handle /* error */);
   void handshaker_client_destruct();
-  
+
   struct recv_message_result;
   // One ref is held by the entity that created this handshaker_client, and
   // another ref is held by the pending RECEIVE_STATUS_ON_CLIENT op.
