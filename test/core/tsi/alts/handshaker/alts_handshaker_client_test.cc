@@ -359,8 +359,6 @@ static void destroy_config(alts_handshaker_client_test_config* config) {
   }
   grpc_completion_queue_destroy(config->cq);
   grpc_channel_destroy(config->channel);
-  AltsHandshakerClient::alts_handshaker_client_destroy(config->client);
-  AltsHandshakerClient::alts_handshaker_client_destroy(config->server);
   grpc_slice_unref(config->out_frame);
   gpr_free(config);
 }

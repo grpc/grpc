@@ -68,11 +68,6 @@ void AltsHandshakerClient::Shutdown(
   }
 }
 
-void AltsHandshakerClient::alts_handshaker_client_destroy(
-    AltsHandshakerClient* client) {
-  // Empty dummy function. Remove later. Unique_Ptr doesn't need deletion logic.
-}
-
 tsi_result AltsHandshakerClient::StartClient(
     AltsHandshakerClient* client) {
   if (client != nullptr) {

@@ -87,22 +87,12 @@ class AltsHandshakerClient {
   /// requests to ALTS handshaker service. After this operation, the handshake
   /// will be shutdown, and no more handshaker requests will get scheduled.
   ///
-  ///- client: ALTS handshaker client instance.
   ///
-  static void Shutdown();
-
-  ///
-  ///  Dummy function. Manual destruction is no longer needed after unique_ptr 
-  ///
-  ///- client: an ALTS handshaker client instance.
-  ///
-  void alts_handshaker_client_destroy(AltsHandshakerClient* client);
+  void Shutdown();
 
   ///
   /// This method schedules a client_start handshaker request to ALTS handshaker
   /// service.
-  ///
-  ///- client: ALTS handshaker client instance.
   ///
   /// It returns TSI_OK on success and an error status code on failure.
   ///
@@ -112,7 +102,6 @@ class AltsHandshakerClient {
   /// This method schedules a server_start handshaker request to ALTS handshaker
   /// service.
   ///
-  ///- client: ALTS handshaker client instance.
   ///- bytes_received: bytes in out_frames returned from the peer's handshaker
   ///  response.
   ///
@@ -124,7 +113,6 @@ class AltsHandshakerClient {
   /// This method schedules a next handshaker request to ALTS handshaker
   /// service.
   ///
-  ///- client: ALTS handshaker client instance.
   ///- bytes_received: bytes in out_frames returned from the peer's handshaker
   ///  response.
   ///
