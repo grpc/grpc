@@ -109,73 +109,73 @@ alias(
 
 alias(
     name = "opencensus-context",
-    actual = "@io_opencensus_cpp//opencensus/context:context",
+    actual = "@io_opentelemetry_cpp//sdk/src/context:context",
     tags = ["manual"],
 )
 
 alias(
     name = "opencensus-trace",
-    actual = "@io_opencensus_cpp//opencensus/trace:trace",
+    actual = "@io_opentelemetry_cpp//sdk/src/trace:trace",
     tags = ["manual"],
 )
 
 alias(
     name = "opencensus-trace-context_util",
-    actual = "@io_opencensus_cpp//opencensus/trace:context_util",
+    actual = "@io_opentelemetry_cpp//sdk/src/trace:context_util",
     tags = ["manual"],
 )
 
 alias(
     name = "opencensus-trace-propagation",
-    actual = "@io_opencensus_cpp//opencensus/trace:grpc_trace_bin",
+    actual = "@io_opentelemetry_cpp//sdk/src/trace:grpc_trace_bin",
     tags = ["manual"],
 )
 
 alias(
     name = "opencensus-trace-span_context",
-    actual = "@io_opencensus_cpp//opencensus/trace:span_context",
+    actual = "@io_opentelemetry_cpp//sdk/src/trace:span_context",
     tags = ["manual"],
 )
 
 alias(
     name = "opencensus-stats",
-    actual = "@io_opencensus_cpp//opencensus/stats:stats",
+    actual = "@io_opentelemetry_cpp//sdk/src/stats:stats",
     tags = ["manual"],
 )
 
 alias(
     name = "opencensus-stats-test",
-    actual = "@io_opencensus_cpp//opencensus/stats:test_utils",
+    actual = "@io_opentelemetry_cpp//sdk/src/stats:test_utils",
     tags = ["manual"],
 )
 
 alias(
     name = "opencensus-with-tag-map",
-    actual = "@io_opencensus_cpp//opencensus/tags:with_tag_map",
+    actual = "@io_opentelemetry_cpp//sdk/src/tags:with_tag_map",
     tags = ["manual"],
 )
 
 alias(
     name = "opencensus-tags",
-    actual = "@io_opencensus_cpp//opencensus/tags:tags",
+    actual = "@io_opentelemetry_cpp//sdk/src/tags:tags",
     tags = ["manual"],
 )
 
 alias(
     name = "opencensus-tags-context_util",
-    actual = "@io_opencensus_cpp//opencensus/tags:context_util",
+    actual = "@io_opentelemetry_cpp//sdk/src/tags:context_util",
     tags = ["manual"],
 )
 
 alias(
     name = "opencensus-trace-stackdriver_exporter",
-    actual = "@io_opencensus_cpp//opencensus/exporters/trace/stackdriver:stackdriver_exporter",
+    actual = "@io_opentelemetry_cpp//sdk/src/exporters/trace/stackdriver:stackdriver_exporter",
     tags = ["manual"],
 )
 
 alias(
     name = "opencensus-stats-stackdriver_exporter",
-    actual = "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
+    actual = "@io_opentelemetry_cpp//sdk/src/exporters/stats/stackdriver:stackdriver_exporter",
     tags = ["manual"],
 )
 

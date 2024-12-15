@@ -185,17 +185,6 @@ def grpc_deps():
             ],
         )
 
-    if "io_opencensus_cpp" not in native.existing_rules():
-        http_archive(
-            name = "io_opencensus_cpp",
-            sha256 = "46b3b5812c150a21bacf860c2f76fc42b89773ed77ee954c32adeb8593aa2a8e",
-            strip_prefix = "opencensus-cpp-5501a1a255805e0be83a41348bb5f2630d5ed6b3",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-cpp/archive/5501a1a255805e0be83a41348bb5f2630d5ed6b3.tar.gz",
-                "https://github.com/census-instrumentation/opencensus-cpp/archive/5501a1a255805e0be83a41348bb5f2630d5ed6b3.tar.gz",
-            ],
-        )
-
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
