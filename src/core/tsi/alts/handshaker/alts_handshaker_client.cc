@@ -65,15 +65,15 @@ AltsHandshakerClient::CreateNewAltsHandshakerClient(
 void AltsHandshakerClient::Shutdown() { handshaker_client_shutdown(); }
 
 tsi_result AltsHandshakerClient::StartClient() {
-  handshaker_client_start_client();
+  return handshaker_client_start_client();
 }
 
 tsi_result AltsHandshakerClient::StartServer(grpc_slice* bytes_received) {
-  handshaker_client_start_server(bytes_received);
+  return handshaker_client_start_server(bytes_received);
 }
 
 tsi_result AltsHandshakerClient::Next(grpc_slice* bytes_received) {
-  handshaker_client_next();
+  return handshaker_client_next();
 }
 
 void AltsHandshakerClient::HandleResponse(bool is_ok) {

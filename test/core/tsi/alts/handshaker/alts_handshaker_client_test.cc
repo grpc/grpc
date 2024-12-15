@@ -365,36 +365,32 @@ TEST(AltsHandshakerClientTest, ScheduleRequestInvalidArgTest) {
   // Tests.
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
                                                      check_must_not_be_called);
-  // Check client_start.
+  // Check StartClient.
+  config->client->StartClient();
+  // Check StartServer.
   {
     grpc_core::ExecCtx exec_ctx;
-    ASSERT_EQ(AltsHandshakerClient::StartClient(nullptr),
-              TSI_INVALID_ARGUMENT);
-  }
-  // Check server_start.
-  {
-    grpc_core::ExecCtx exec_ctx;
-    ASSERT_EQ(AltsHandshakerClient::StartServer(config->server, nullptr),
+    ASSERT_EQ(config->client->StartServer(nullptr),
               TSI_INVALID_ARGUMENT);
   }
   {
     grpc_core::ExecCtx exec_ctx;
-    ASSERT_EQ(AltsHandshakerClient::StartServer(nullptr, &config->out_frame),
+    ASSERT_EQ(config->client->StartServer(&config->out_frame),
               TSI_INVALID_ARGUMENT);
   }
-  // Check next.
+  // Check Next.
   {
     grpc_core::ExecCtx exec_ctx;
-    ASSERT_EQ(AltsHandshakerClient::Next(config->client, nullptr),
+    ASSERT_EQ(config->client->Next(nullptr),
               TSI_INVALID_ARGUMENT);
   }
   {
     grpc_core::ExecCtx exec_ctx;
-    ASSERT_EQ(AltsHandshakerClient::Next(nullptr, &config->out_frame),
+    ASSERT_EQ(config->client->Next(&config->out_frame),
               TSI_INVALID_ARGUMENT);
   }
   // Check shutdown.
-  AltsHandshakerClient::Shutdown(nullptr);
+  config->client->Shutdown();
   // Cleanup.
   destroy_config(config);
 }
