@@ -44,7 +44,8 @@
 //
 // Public
 //
-AltsHandshakerClient* AltsHandshakerClient::CreateNewAltsHandshakerClient(
+std::unique_ptr<AltsHandshakerClient>
+AltsHandshakerClient::CreateNewAltsHandshakerClient(
     alts_tsi_handshaker* handshaker, grpc_channel* channel,
     const char* handshaker_service_url, grpc_pollset_set* interested_parties,
     grpc_alts_credentials_options* options, const grpc_slice& target_name,

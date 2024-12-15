@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <memory>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -427,7 +428,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
         handshaker->channel == nullptr
             ? grpc_alts_get_shared_resource_dedicated()->channel
             : handshaker->channel;
-    AltsHandshakerCLient* client = AltsHandshakerCLient::CreateNewAltsHandshakerClient(
+    std::unique_ptr<AltsHandshakerCLient> client = AltsHandshakerCLient::CreateNewAltsHandshakerClient(
         handshaker, channel, handshaker->handshaker_service_url,
         handshaker->interested_parties, handshaker->options,
         handshaker->target_name, grpc_cb, cb, user_data,

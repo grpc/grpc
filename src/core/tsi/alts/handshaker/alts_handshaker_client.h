@@ -24,6 +24,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
@@ -71,10 +73,10 @@ class AltsHandshakerClient {
   /// specified
   ///  maximum frame size if present or default max frame size).
   ///
-  /// It returns the created ALTS handshaker client on success, and NULL
-  /// on failure.
+  /// It returns a unique_ptr to the created ALTS handshaker client on success,
+  /// and NULL on failure.
   ///
-  static AltsHandshakerClient* CreateNewAltsHandshakerClient(
+  static std::unique_ptr<AltsHandshakerClient> CreateNewAltsHandshakerClient(
       alts_tsi_handshaker* handshaker, grpc_channel* channel,
       const char* handshaker_service_url, grpc_pollset_set* interested_parties,
       grpc_alts_credentials_options* options, const grpc_slice& target_name,
