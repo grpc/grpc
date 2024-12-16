@@ -119,7 +119,7 @@ std::list<Connection> CreateConnectedEndpoints(
     EXPECT_NE(server_endpoint, nullptr);
     ++g_num_active_connections;
     PosixTcpOptions options =
-        TcpOptionsFromEndpointConfig(*poller.GetSystemApi(), config);
+        TcpOptionsFromEndpointConfig(poller.GetSystemApi(), config);
     connections.push_back(Connection{
         CreatePosixEndpoint(
             handle,
@@ -198,7 +198,7 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
         std::make_unique<grpc_event_engine::experimental::TestScheduler>(
             posix_ee_.get());
     EXPECT_NE(scheduler_, nullptr);
-    poller_ = MakeDefaultPoller(system_api_, scheduler_.get());
+    poller_ = MakeDefaultPoller(scheduler_.get());
     posix_ee_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(poller_);
     EXPECT_NE(posix_ee_, nullptr);
     scheduler_->ChangeCurrentEventEngine(posix_ee_.get());

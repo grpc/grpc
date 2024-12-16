@@ -77,8 +77,8 @@ TEST(PosixEngineListenerUtils, ListenerContainerAddWildcardAddressesTest) {
   int port = grpc_pick_unused_port_or_die();
   ChannelArgsEndpointConfig config;
   auto result = ListenerContainerAddWildcardAddresses(
-      system_api, listener_sockets,
-      TcpOptionsFromEndpointConfig(system_api, config), port);
+      &system_api, listener_sockets,
+      TcpOptionsFromEndpointConfig(&system_api, config), port);
   EXPECT_TRUE(result.ok());
   EXPECT_GT(*result, 0);
   port = *result;
@@ -119,8 +119,8 @@ TEST(PosixEngineListenerUtils, ListenerContainerAddAllLocalAddressesTest) {
   }
   freeifaddrs(ifa);
   auto result = ListenerContainerAddAllLocalAddresses(
-      system_api, listener_sockets,
-      TcpOptionsFromEndpointConfig(system_api, config), port);
+      &system_api, listener_sockets,
+      TcpOptionsFromEndpointConfig(&system_api, config), port);
   if (num_ifaddrs == 0 || !result.ok()) {
     // Its possible that the machine may not have any Ipv4/Ipv6 interfaces
     // configured for listening. In that case, dont fail test.

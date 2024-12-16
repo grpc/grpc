@@ -141,7 +141,7 @@ class EventEngineForTest {
  public:
   EventEngineForTest()
       : system_api(), scheduler(std::make_unique<TestScheduler>()) {
-    poller = MakeDefaultPoller(system_api, scheduler.get());
+    poller = MakeDefaultPoller(scheduler.get());
     if (poller != nullptr) {
       event_engine = PosixEventEngine::MakeTestOnlyPosixEventEngine(poller);
       scheduler->ChangeCurrentEventEngine(event_engine.get());
