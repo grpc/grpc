@@ -177,12 +177,13 @@ HttpRequest::HttpRequest(
       test_only_generate_response_(std::move(test_only_generate_response)),
       use_event_engine_dns_resolver_(IsEventEngineDnsNonClientChannelEnabled()),
       resolver_(!use_event_engine_dns_resolver_ ? GetDNSResolver() : nullptr),
-      ee_resolver_(use_event_engine_dns_resolver_
-                       ? ChannelArgs::FromC(channel_args_)
-                             .GetObjectRef<EventEngine>()
-                             ->GetDNSResolver(
-                                 EventEngine::DNSResolver::ResolverOptions())
-                       : absl::UnknownError("")) {
+      ee_resolver_(
+          use_event_engine_dns_resolver_
+              ? ChannelArgs::FromC(channel_args_)
+                    .GetObjectRef<EventEngine>()
+                    ->GetDNSResolver(
+                        EventEngine::DNSResolver::ResolverOptions())
+              : absl::InternalError("EventEngine DNS is not enabled")) {
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
   grpc_slice_buffer_init(&incoming_);
   grpc_slice_buffer_init(&outgoing_);
@@ -222,21 +223,26 @@ void HttpRequest::Start() {
   Ref().release();  // ref held by pending DNS resolution
   if (use_event_engine_dns_resolver_) {
     (*ee_resolver_)
-        ->LookupHostname(absl::bind_front(&HttpRequest::OnResolved, this),
-                         uri_.authority(), uri_.scheme());
+        ->LookupHostname(
+            [this](absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+                       addresses_or) {
+              ApplicationCallbackExecCtx callback_exec_ctx;
+              ExecCtx exec_ctx;
+              OnResolved(addresses_or);
+            },
+            uri_.authority(), uri_.scheme());
   } else {
     dns_request_handle_ = resolver_->LookupHostname(
-        [this](
-            absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
-          if (addresses_or.ok()) {
-            std::vector<EventEngine::ResolvedAddress> addresses;
-            for (const auto& addr : *addresses_or) {
-              addresses.push_back(
+        [this](absl::StatusOr<std::vector<grpc_resolved_address>> addresses) {
+          if (addresses.ok()) {
+            std::vector<EventEngine::ResolvedAddress> ee_addresses;
+            for (const auto& addr : *addresses) {
+              ee_addresses.push_back(
                   grpc_event_engine::experimental::CreateResolvedAddress(addr));
             }
-            OnResolved(addresses);
+            OnResolved(ee_addresses);
           } else {
-            OnResolved(addresses_or.status());
+            OnResolved(addresses.status());
           }
         },
         uri_.authority(), uri_.scheme(), kDefaultDNSRequestTimeout,
@@ -399,8 +405,6 @@ void HttpRequest::NextAddress(grpc_error_handle error) {
 
 void HttpRequest::OnResolved(
     absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses_or) {
-  ApplicationCallbackExecCtx callback_exec_ctx;
-  ExecCtx exec_ctx;
   RefCountedPtr<HttpRequest> unreffer(this);
   MutexLock lock(&mu_);
   if (use_event_engine_dns_resolver_) {

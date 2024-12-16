@@ -265,7 +265,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = absl::OkStatus();
   // TODO(yijiem): remove these once event_engine_dns_non_client_channel
   // experiment is fully enabled.
-  bool use_event_engine_dns_resolver_ = false;
+  bool use_event_engine_dns_resolver_;
   std::shared_ptr<DNSResolver> resolver_;
   absl::optional<DNSResolver::TaskHandle> dns_request_handle_
       ABSL_GUARDED_BY(mu_) = DNSResolver::kNullHandle;
