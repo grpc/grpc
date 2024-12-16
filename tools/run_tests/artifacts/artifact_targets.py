@@ -52,7 +52,8 @@ def create_docker_jobspec(
     if extra_docker_args is not None:
         docker_env["EXTRA_DOCKER_ARGS"] = extra_docker_args
     jobspec = jobset.JobSpec(
-        cmdline=["tools/run_tests/dockerize/build_and_run_docker.sh"] + docker_args,
+        cmdline=["tools/run_tests/dockerize/build_and_run_docker.sh"]
+        + docker_args,
         environ=docker_env,
         shortname="build_artifact.%s" % (name),
         timeout_seconds=timeout_seconds,
@@ -145,14 +146,18 @@ class PythonArtifact:
 
         if self.platform == "linux_extra":
             # Crosscompilation build for armv7 (e.g. Raspberry Pi)
-            environ["PYTHON"] = "/opt/python/{}/bin/python3".format(self.py_version)
+            environ["PYTHON"] = "/opt/python/{}/bin/python3".format(
+                self.py_version
+            )
             environ["PIP"] = "/opt/python/{}/bin/pip3".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
             environ["LDFLAGS"] = "-s"
             return create_docker_jobspec(
                 self.name,
-                "tools/dockerfile/grpc_artifact_python_linux_{}".format(self.arch),
+                "tools/dockerfile/grpc_artifact_python_linux_{}".format(
+                    self.arch
+                ),
                 "tools/run_tests/artifacts/build_artifact_python.sh",
                 environ=environ,
                 timeout_seconds=60 * 60 * 2,
@@ -163,7 +168,9 @@ class PythonArtifact:
                 environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
             # Inside the manylinux container, the python installations are located in
             # special places...
-            environ["PYTHON"] = "/opt/python/{}/bin/python".format(self.py_version)
+            environ["PYTHON"] = "/opt/python/{}/bin/python".format(
+                self.py_version
+            )
             environ["PIP"] = "/opt/python/{}/bin/pip".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             if self.arch == "aarch64":
@@ -188,7 +195,9 @@ class PythonArtifact:
                 timeout_seconds=60 * 60 * 2,
             )
         elif "musllinux" in self.platform:
-            environ["PYTHON"] = "/opt/python/{}/bin/python".format(self.py_version)
+            environ["PYTHON"] = "/opt/python/{}/bin/python".format(
+                self.py_version
+            )
             environ["PIP"] = "/opt/python/{}/bin/pip".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
@@ -209,7 +218,9 @@ class PythonArtifact:
             environ["EXT_COMPILER"] = "msvc"
             # For some reason, the batch script %random% always runs with the same
             # seed.  We create a random temp-dir here
-            dir = "".join(random.choice(string.ascii_uppercase) for _ in range(10))
+            dir = "".join(
+                random.choice(string.ascii_uppercase) for _ in range(10)
+            )
             return create_jobspec(
                 self.name,
                 [
@@ -323,13 +334,17 @@ class ProtocArtifact:
             environ["CXXFLAGS"] = ""
             environ["LDFLAGS"] = ""
             if self.platform == "linux":
-                dockerfile_dir = "tools/dockerfile/grpc_artifact_centos6_{}".format(
-                    self.arch
+                dockerfile_dir = (
+                    "tools/dockerfile/grpc_artifact_centos6_{}".format(
+                        self.arch
+                    )
                 )
                 if self.arch == "aarch64":
                     # for aarch64, use a dockcross manylinux image that will
                     # give us both ready to use crosscompiler and sufficient backward compatibility
-                    dockerfile_dir = "tools/dockerfile/grpc_artifact_protoc_aarch64"
+                    dockerfile_dir = (
+                        "tools/dockerfile/grpc_artifact_protoc_aarch64"
+                    )
                 environ["LDFLAGS"] += " -static-libgcc -static-libstdc++ -s"
                 return create_docker_jobspec(
                     self.name,
@@ -392,43 +407,61 @@ def targets():
             PythonArtifact("manylinux2014", "x64", "cp310-cp310"),
             PythonArtifact("manylinux2014", "x64", "cp311-cp311"),
             PythonArtifact("manylinux2014", "x64", "cp312-cp312"),
-            PythonArtifact("manylinux2014", "x64", "cp313-cp313", presubmit=True),
+            PythonArtifact(
+                "manylinux2014", "x64", "cp313-cp313", presubmit=True
+            ),
             PythonArtifact("manylinux2014", "x86", "cp38-cp38", presubmit=True),
             PythonArtifact("manylinux2014", "x86", "cp39-cp39", presubmit=True),
             PythonArtifact("manylinux2014", "x86", "cp310-cp310"),
             PythonArtifact("manylinux2014", "x86", "cp311-cp311"),
             PythonArtifact("manylinux2014", "x86", "cp312-cp312"),
-            PythonArtifact("manylinux2014", "x86", "cp313-cp313", presubmit=True),
-            PythonArtifact("manylinux2014", "aarch64", "cp38-cp38", presubmit=True),
+            PythonArtifact(
+                "manylinux2014", "x86", "cp313-cp313", presubmit=True
+            ),
+            PythonArtifact(
+                "manylinux2014", "aarch64", "cp38-cp38", presubmit=True
+            ),
             PythonArtifact("manylinux2014", "aarch64", "cp39-cp39"),
             PythonArtifact("manylinux2014", "aarch64", "cp310-cp310"),
             PythonArtifact("manylinux2014", "aarch64", "cp311-cp311"),
             PythonArtifact("manylinux2014", "aarch64", "cp312-cp312"),
-            PythonArtifact("manylinux2014", "aarch64", "cp313-cp313", presubmit=True),
+            PythonArtifact(
+                "manylinux2014", "aarch64", "cp313-cp313", presubmit=True
+            ),
             PythonArtifact("linux_extra", "armv7", "cp38-cp38", presubmit=True),
             PythonArtifact("linux_extra", "armv7", "cp39-cp39"),
             PythonArtifact("linux_extra", "armv7", "cp310-cp310"),
             PythonArtifact("linux_extra", "armv7", "cp311-cp311"),
             PythonArtifact("linux_extra", "armv7", "cp312-cp312"),
-            PythonArtifact("linux_extra", "armv7", "cp313-cp313", presubmit=True),
+            PythonArtifact(
+                "linux_extra", "armv7", "cp313-cp313", presubmit=True
+            ),
             PythonArtifact("musllinux_1_1", "x64", "cp38-cp38", presubmit=True),
             PythonArtifact("musllinux_1_1", "x64", "cp39-cp39"),
             PythonArtifact("musllinux_1_1", "x64", "cp310-cp310"),
             PythonArtifact("musllinux_1_1", "x64", "cp311-cp311"),
             PythonArtifact("musllinux_1_1", "x64", "cp312-cp312"),
-            PythonArtifact("musllinux_1_1", "x64", "cp313-cp313", presubmit=True),
+            PythonArtifact(
+                "musllinux_1_1", "x64", "cp313-cp313", presubmit=True
+            ),
             PythonArtifact("musllinux_1_1", "x86", "cp38-cp38", presubmit=True),
             PythonArtifact("musllinux_1_1", "x86", "cp39-cp39"),
             PythonArtifact("musllinux_1_1", "x86", "cp310-cp310"),
             PythonArtifact("musllinux_1_1", "x86", "cp311-cp311"),
             PythonArtifact("musllinux_1_1", "x86", "cp312-cp312"),
-            PythonArtifact("musllinux_1_1", "x86", "cp313-cp313", presubmit=True),
-            PythonArtifact("musllinux_1_1", "aarch64", "cp38-cp38", presubmit=True),
+            PythonArtifact(
+                "musllinux_1_1", "x86", "cp313-cp313", presubmit=True
+            ),
+            PythonArtifact(
+                "musllinux_1_1", "aarch64", "cp38-cp38", presubmit=True
+            ),
             PythonArtifact("musllinux_1_1", "aarch64", "cp39-cp39"),
             PythonArtifact("musllinux_1_1", "aarch64", "cp310-cp310"),
             PythonArtifact("musllinux_1_1", "aarch64", "cp311-cp311"),
             PythonArtifact("musllinux_1_1", "aarch64", "cp312-cp312"),
-            PythonArtifact("musllinux_1_1", "aarch64", "cp313-cp313", presubmit=True),
+            PythonArtifact(
+                "musllinux_1_1", "aarch64", "cp313-cp313", presubmit=True
+            ),
             PythonArtifact("macos", "x64", "python3.8", presubmit=True),
             PythonArtifact("macos", "x64", "python3.9"),
             PythonArtifact("macos", "x64", "python3.10"),
