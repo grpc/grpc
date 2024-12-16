@@ -666,6 +666,7 @@ clean:
 # deps: ['cares', 'libssl', 'z']
 # transitive_deps: ['cares', 'libssl', 'z']
 LIBGRPC_SRC = \
+    src/core/call/request_buffer.cc \
     src/core/channelz/channel_trace.cc \
     src/core/channelz/channelz.cc \
     src/core/channelz/channelz_registry.cc \
@@ -683,6 +684,7 @@ LIBGRPC_SRC = \
     src/core/client_channel/local_subchannel_pool.cc \
     src/core/client_channel/retry_filter.cc \
     src/core/client_channel/retry_filter_legacy_call_data.cc \
+    src/core/client_channel/retry_interceptor.cc \
     src/core/client_channel/retry_service_config.cc \
     src/core/client_channel/retry_throttle.cc \
     src/core/client_channel/subchannel.cc \
@@ -1423,7 +1425,6 @@ LIBGRPC_SRC = \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
     src/core/util/alloc.cc \
-    src/core/util/atm.cc \
     src/core/util/backoff.cc \
     src/core/util/crash.cc \
     src/core/util/dump_args.cc \

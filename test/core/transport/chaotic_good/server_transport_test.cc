@@ -33,6 +33,7 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -71,6 +72,28 @@ ServerMetadataHandle TestTrailingMetadata() {
   return md;
 }
 
+ChannelArgs MakeChannelArgs(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine) {
+  return CoreConfiguration::Get()
+      .channel_args_preconditioning()
+      .PreconditionChannelArgs(nullptr)
+      .SetObject<grpc_event_engine::experimental::EventEngine>(
+          std::move(event_engine));
+}
+
+template <typename... PromiseEndpoints>
+Config MakeConfig(const ChannelArgs& channel_args,
+                  PromiseEndpoints... promise_endpoints) {
+  Config config(channel_args);
+  auto name_endpoint = [i = 0]() mutable { return absl::StrCat(++i); };
+  std::vector<int> this_is_only_here_to_unpack_the_following_statement{
+      (config.ServerAddPendingDataEndpoint(
+           ImmediateConnection(name_endpoint(), std::move(promise_endpoints))),
+       0)...};
+  return config;
+}
+
 class MockCallDestination : public UnstartedCallDestination {
  public:
   ~MockCallDestination() override = default;
@@ -79,18 +102,24 @@ class MockCallDestination : public UnstartedCallDestination {
               (override));
 };
 
+class MockServerConnectionFactory : public ServerConnectionFactory {
+ public:
+  MOCK_METHOD(PendingConnection, RequestDataConnection, (), (override));
+  void Orphaned() final {}
+};
+
 TEST_F(TransportTest, ReadAndWriteOneMessage) {
   MockPromiseEndpoint control_endpoint(1);
   MockPromiseEndpoint data_endpoint(2);
+  auto server_connection_factory =
+      MakeRefCounted<StrictMock<MockServerConnectionFactory>>();
   auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
   EXPECT_CALL(*call_destination, Orphaned()).Times(1);
+  auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodServerTransport>(
-      CoreConfiguration::Get()
-          .channel_args_preconditioning()
-          .PreconditionChannelArgs(nullptr),
-      std::move(control_endpoint.promise_endpoint),
-      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      event_engine());
+      channel_args, std::move(control_endpoint.promise_endpoint),
+      MakeConfig(channel_args, std::move(data_endpoint.promise_endpoint)),
+      server_connection_factory);
   const auto server_initial_metadata =
       EncodeProto<chaotic_good_frame::ServerMetadata>("message: 'hello'");
   const auto server_trailing_metadata =
@@ -171,15 +200,15 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
                              server_initial_metadata.length()),
        server_initial_metadata.Copy(),
        SerializedFrameHeader(FrameType::kMessage, 0, 1, 8),
-       EventEngineSlice::FromCopiedString("87654321")},
-      nullptr);
-  control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kServerTrailingMetadata, 0, 1,
+       EventEngineSlice::FromCopiedString("87654321"),
+       SerializedFrameHeader(FrameType::kServerTrailingMetadata, 0, 1,
                              server_trailing_metadata.length()),
        server_trailing_metadata.Copy()},
       nullptr);
   // Wait until ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
+  ::testing::Mock::VerifyAndClearExpectations(control_endpoint.endpoint);
+  ::testing::Mock::VerifyAndClearExpectations(data_endpoint.endpoint);
   event_engine()->UnsetGlobalHooks();
 }
 

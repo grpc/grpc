@@ -23,6 +23,9 @@
 
 #if defined(GRPC_CFSTREAM)
 namespace {
+const char* const description_backoff_cap_initial_at_max =
+    "Backoff library applies max_backoff even on initial_backoff.";
+const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
@@ -86,6 +89,10 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
+const char* const description_prioritize_finished_requests =
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
+const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -101,6 +108,8 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_retry_in_callv3 = "Support retries with call-v3";
+const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_rq_fast_reject =
     "Resource quota rejects requests immediately (before allocating the "
     "request structure) under very high memory pressure.";
@@ -141,6 +150,8 @@ const char* const additional_constraints_work_serializer_dispatch = "{}";
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
+     additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -184,6 +195,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
+    {"prioritize_finished_requests", description_prioritize_finished_requests,
+     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
+     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -196,6 +210,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"retry_in_callv3", description_retry_in_callv3,
+     additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"rq_fast_reject", description_rq_fast_reject,
      additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
@@ -224,6 +240,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #elif defined(GPR_WINDOWS)
 namespace {
+const char* const description_backoff_cap_initial_at_max =
+    "Backoff library applies max_backoff even on initial_backoff.";
+const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
@@ -287,6 +306,10 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
+const char* const description_prioritize_finished_requests =
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
+const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -302,6 +325,8 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_retry_in_callv3 = "Support retries with call-v3";
+const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_rq_fast_reject =
     "Resource quota rejects requests immediately (before allocating the "
     "request structure) under very high memory pressure.";
@@ -342,6 +367,8 @@ const char* const additional_constraints_work_serializer_dispatch = "{}";
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
+     additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -385,6 +412,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
+    {"prioritize_finished_requests", description_prioritize_finished_requests,
+     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
+     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -397,6 +427,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"retry_in_callv3", description_retry_in_callv3,
+     additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"rq_fast_reject", description_rq_fast_reject,
      additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
@@ -425,6 +457,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #else
 namespace {
+const char* const description_backoff_cap_initial_at_max =
+    "Backoff library applies max_backoff even on initial_backoff.";
+const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
@@ -488,6 +523,10 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
+const char* const description_prioritize_finished_requests =
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
+const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -503,6 +542,8 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_retry_in_callv3 = "Support retries with call-v3";
+const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_rq_fast_reject =
     "Resource quota rejects requests immediately (before allocating the "
     "request structure) under very high memory pressure.";
@@ -543,6 +584,8 @@ const char* const additional_constraints_work_serializer_dispatch = "{}";
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
+     additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -586,6 +629,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
+    {"prioritize_finished_requests", description_prioritize_finished_requests,
+     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
+     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -598,6 +644,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"retry_in_callv3", description_retry_in_callv3,
+     additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"rq_fast_reject", description_rq_fast_reject,
      additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",

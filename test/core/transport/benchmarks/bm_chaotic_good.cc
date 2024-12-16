@@ -34,20 +34,26 @@ class ChaoticGoodTraits {
     auto channel_args = CoreConfiguration::Get()
                             .channel_args_preconditioning()
                             .PreconditionChannelArgs(nullptr);
+    chaotic_good::Config client_config(channel_args);
+    chaotic_good::Config server_config(channel_args);
     auto control = grpc_event_engine::experimental::PassthroughEndpoint::
         MakePassthroughEndpoint(1, 2, true);
     auto data = grpc_event_engine::experimental::PassthroughEndpoint::
         MakePassthroughEndpoint(3, 4, true);
+    client_config.ServerAddPendingDataEndpoint(
+        chaotic_good::ImmediateConnection(
+            "foo", PromiseEndpoint(std::move(data.client), SliceBuffer())));
+    server_config.ServerAddPendingDataEndpoint(
+        chaotic_good::ImmediateConnection(
+            "foo", PromiseEndpoint(std::move(data.server), SliceBuffer())));
     auto client = MakeOrphanable<chaotic_good::ChaoticGoodClientTransport>(
-        PromiseEndpoint(std::move(control.client), SliceBuffer()),
-        chaotic_good::OneDataEndpoint(
-            PromiseEndpoint(std::move(data.client), SliceBuffer())),
-        channel_args, grpc_event_engine::experimental::GetDefaultEventEngine());
+        channel_args, PromiseEndpoint(std::move(control.client), SliceBuffer()),
+        std::move(client_config),
+        MakeRefCounted<FakeClientConnectionFactory>());
     auto server = MakeOrphanable<chaotic_good::ChaoticGoodServerTransport>(
         channel_args, PromiseEndpoint(std::move(control.server), SliceBuffer()),
-        chaotic_good::OneDataEndpoint(
-            PromiseEndpoint(std::move(data.server), SliceBuffer())),
-        grpc_event_engine::experimental::GetDefaultEventEngine());
+        std::move(server_config),
+        MakeRefCounted<FakeServerConnectionFactory>());
     return {std::move(client), std::move(server)};
   }
 
@@ -67,6 +73,25 @@ class ChaoticGoodTraits {
     auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
     return md;
   }
+
+ private:
+  class FakeClientConnectionFactory
+      : public chaotic_good::ClientConnectionFactory {
+   public:
+    chaotic_good::PendingConnection Connect(absl::string_view id) override {
+      Crash("Connect not implemented");
+    }
+    void Orphaned() override {}
+  };
+
+  class FakeServerConnectionFactory
+      : public chaotic_good::ServerConnectionFactory {
+   public:
+    chaotic_good::PendingConnection RequestDataConnection() override {
+      Crash("RequestDataConnection not implemented");
+    }
+    void Orphaned() override {}
+  };
 };
 GRPC_CALL_SPINE_BENCHMARK(TransportFixture<ChaoticGoodTraits>);
 

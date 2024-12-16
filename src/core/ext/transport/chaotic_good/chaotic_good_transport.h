@@ -18,6 +18,8 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstdint>
+#include <limits>
+#include <memory>
 #include <utility>
 
 #include "absl/strings/escaping.h"
@@ -34,6 +36,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 
 namespace grpc_core {
@@ -92,13 +95,14 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
 
   ChaoticGoodTransport(
       PromiseEndpoint control_endpoint,
-      std::vector<PromiseEndpoint> data_endpoints,
+      std::vector<PendingConnection> pending_data_endpoints,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
-      Options options)
+      Options options, bool enable_tracing)
       : event_engine_(std::move(event_engine)),
         control_endpoint_(std::move(control_endpoint), event_engine_.get()),
-        data_endpoints_(std::move(data_endpoints), event_engine_.get()),
+        data_endpoints_(std::move(pending_data_endpoints), event_engine_.get(),
+                        enable_tracing),
         options_(options) {}
 
   auto WriteFrame(const FrameInterface& frame) {
@@ -156,7 +160,8 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           outgoing_frames.Next(),
           // Serialize and write it out.
           [self = self.get()](Frame client_frame) {
-            return self->WriteFrame(GetFrameInterface(client_frame));
+            return self->WriteFrame(
+                absl::ConvertVariantTo<FrameInterface&>(client_frame));
           },
           []() -> LoopCtl<absl::Status> {
             // The write failures will be caught in TrySeq and exit loop.

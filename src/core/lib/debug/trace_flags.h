@@ -36,6 +36,7 @@ extern DebugOnlyTraceFlag fd_trace_trace;
 extern DebugOnlyTraceFlag lb_policy_refcount_trace;
 extern DebugOnlyTraceFlag party_state_trace;
 extern DebugOnlyTraceFlag pending_tags_trace;
+extern DebugOnlyTraceFlag ph2_trace;
 extern DebugOnlyTraceFlag polling_trace;
 extern DebugOnlyTraceFlag polling_api_trace;
 extern DebugOnlyTraceFlag promise_primitives_trace;

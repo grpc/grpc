@@ -443,7 +443,7 @@ std::unique_ptr<EventEngine::Endpoint> grpc_take_wrapped_event_engine_endpoint(
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
   auto endpoint = eeep->wrapper->ReleaseEndpoint();
-  delete eeep->wrapper;
+  eeep->wrapper->Unref();
   return endpoint;
 }
 

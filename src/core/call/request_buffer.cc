@@ -16,9 +16,15 @@
 
 #include <cstdint>
 
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
+#include "src/core/util/match.h"
 
 namespace grpc_core {
+
+RequestBuffer::Buffering::Buffering() {}
+
+RequestBuffer::RequestBuffer() : state_(absl::in_place_type_t<Buffering>()) {}
 
 ValueOrFailure<size_t> RequestBuffer::PushClientInitialMetadata(
     ClientMetadataHandle md) {
@@ -165,4 +171,54 @@ RequestBuffer::Reader::PollPullMessage() {
   return Failure{};
 }
 
+std::string RequestBuffer::DebugString(Reader* caller)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  return absl::StrCat(
+      "have_winner=",
+      (winner_ == nullptr ? "no" : (winner_ == caller ? "this" : "other")),
+      " num_readers=", readers_.size(),
+      " push_waker=", push_waker_.DebugString(),
+      Match(
+          state_,
+          [](const Buffering& buffering) {
+            return absl::StrCat(
+                " buffering initial_metadata=",
+                (buffering.initial_metadata != nullptr
+                     ? buffering.initial_metadata->DebugString()
+                     : "null"),
+                " messages=[",
+                absl::StrJoin(
+                    buffering.messages, ",",
+                    [](std::string* output, const MessageHandle& hdl) {
+                      absl::StrAppend(output, hdl->DebugString());
+                    }),
+                "] buffered=", buffering.buffered);
+          },
+          [](const Buffered& buffered) {
+            return absl::StrCat(
+                " buffered initial_metadata=",
+                (buffered.initial_metadata != nullptr
+                     ? buffered.initial_metadata->DebugString()
+                     : "null"),
+                " messages=[",
+                absl::StrJoin(
+                    buffered.messages, ",",
+                    [](std::string* output, const MessageHandle& hdl) {
+                      absl::StrAppend(
+                          output, hdl != nullptr ? hdl->DebugString() : "null");
+                    }),
+                "]");
+          },
+          [](const Streaming& streaming) {
+            return absl::StrCat(
+                " streaming message=",
+                (streaming.message != nullptr ? streaming.message->DebugString()
+                                              : "null"),
+                " end_of_stream=", streaming.end_of_stream);
+          },
+          [](const Cancelled& cancelled) {
+            return absl::StrCat(" cancelled error=",
+                                cancelled.error.ToString());
+          }));
+}
 }  // namespace grpc_core

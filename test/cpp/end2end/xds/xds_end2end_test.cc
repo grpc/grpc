@@ -2125,7 +2125,7 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
   ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
       grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */, grpc::StatusCode::NOT_FOUND,
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           "Requested route config does not exist");
 }
 

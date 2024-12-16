@@ -94,6 +94,12 @@ class MockEndpoint
       GetLocalAddress, (), (const, override));
 };
 
+class MockClientConnectionFactory : public ClientConnectionFactory {
+ public:
+  MOCK_METHOD(PendingConnection, Connect, (absl::string_view), (override));
+  void Orphaned() final {}
+};
+
 struct MockPromiseEndpoint {
   StrictMock<MockEndpoint>* endpoint = new StrictMock<MockEndpoint>();
   PromiseEndpoint promise_endpoint{
@@ -139,6 +145,17 @@ class ClientTransportTest : public ::testing::Test {
         .PreconditionChannelArgs(nullptr);
   }
 
+  template <typename... PromiseEndpoints>
+  Config MakeConfig(PromiseEndpoints... promise_endpoints) {
+    Config config(MakeChannelArgs());
+    auto name_endpoint = [i = 0]() mutable { return absl::StrCat(++i); };
+    std::vector<int> this_is_only_here_to_unpack_the_following_statement{
+        (config.ServerAddPendingDataEndpoint(ImmediateConnection(
+             name_endpoint(), std::move(promise_endpoints))),
+         0)...};
+    return config;
+  }
+
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
     auto arena = call_arena_allocator_->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
@@ -168,6 +185,8 @@ class ClientTransportTest : public ::testing::Test {
 TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
   MockPromiseEndpoint control_endpoint;
   MockPromiseEndpoint data_endpoint;
+  auto client_connection_factory =
+      MakeRefCounted<StrictMock<MockClientConnectionFactory>>();
   // Mock write failed and read is pending.
   EXPECT_CALL(*control_endpoint.endpoint, Write)
       .Times(AtMost(1))
@@ -185,9 +204,9 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
           }));
   EXPECT_CALL(*control_endpoint.endpoint, Read).WillOnce(Return(false));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      std::move(control_endpoint.promise_endpoint),
-      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      MakeChannelArgs(), event_engine());
+      MakeChannelArgs(), std::move(control_endpoint.promise_endpoint),
+      MakeConfig(std::move(data_endpoint.promise_endpoint)),
+      client_connection_factory);
   auto call = MakeCall(TestInitialMetadata());
   transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
@@ -220,6 +239,8 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
 TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
   MockPromiseEndpoint control_endpoint;
   MockPromiseEndpoint data_endpoint;
+  auto client_connection_factory =
+      MakeRefCounted<StrictMock<MockClientConnectionFactory>>();
   // Mock read failed.
   EXPECT_CALL(*control_endpoint.endpoint, Read)
       .WillOnce(WithArgs<0>(
@@ -229,9 +250,9 @@ TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
             return false;
           }));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      std::move(control_endpoint.promise_endpoint),
-      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      MakeChannelArgs(), event_engine());
+      MakeChannelArgs(), std::move(control_endpoint.promise_endpoint),
+      MakeConfig(std::move(data_endpoint.promise_endpoint)),
+      client_connection_factory);
   auto call = MakeCall(TestInitialMetadata());
   transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
@@ -265,6 +286,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
   // Mock write failed at first stream and second stream's write will fail too.
   MockPromiseEndpoint control_endpoint;
   MockPromiseEndpoint data_endpoint;
+  auto client_connection_factory =
+      MakeRefCounted<StrictMock<MockClientConnectionFactory>>();
   EXPECT_CALL(*control_endpoint.endpoint, Write)
       .Times(AtMost(1))
       .WillRepeatedly(
@@ -281,9 +304,9 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
           }));
   EXPECT_CALL(*control_endpoint.endpoint, Read).WillOnce(Return(false));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      std::move(control_endpoint.promise_endpoint),
-      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      MakeChannelArgs(), event_engine());
+      MakeChannelArgs(), std::move(control_endpoint.promise_endpoint),
+      MakeConfig(std::move(data_endpoint.promise_endpoint)),
+      client_connection_factory);
   auto call1 = MakeCall(TestInitialMetadata());
   transport->StartCall(call1.handler.StartCall());
   auto call2 = MakeCall(TestInitialMetadata());
@@ -338,6 +361,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
 TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
   MockPromiseEndpoint control_endpoint;
   MockPromiseEndpoint data_endpoint;
+  auto client_connection_factory =
+      MakeRefCounted<StrictMock<MockClientConnectionFactory>>();
   // Mock read failed at first stream, and second stream's write will fail too.
   EXPECT_CALL(*control_endpoint.endpoint, Read)
       .WillOnce(WithArgs<0>(
@@ -347,9 +372,9 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
             return false;
           }));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      std::move(control_endpoint.promise_endpoint),
-      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
-      MakeChannelArgs(), event_engine());
+      MakeChannelArgs(), std::move(control_endpoint.promise_endpoint),
+      MakeConfig(std::move(data_endpoint.promise_endpoint)),
+      client_connection_factory);
   auto call1 = MakeCall(TestInitialMetadata());
   transport->StartCall(call1.handler.StartCall());
   auto call2 = MakeCall(TestInitialMetadata());

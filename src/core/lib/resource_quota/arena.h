@@ -190,6 +190,14 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
     return &p->t;
   }
 
+  template <typename T, typename... Args>
+  absl::enable_if_t<std::is_same<typename T::RefCountedUnrefBehaviorType,
+                                 UnrefCallDtor>::value,
+                    RefCountedPtr<T>>
+  MakeRefCounted(Args&&... args) {
+    return RefCountedPtr<T>(New<T>(std::forward<Args>(args)...));
+  }
+
   class PooledDeleter {
    public:
     PooledDeleter() = default;
