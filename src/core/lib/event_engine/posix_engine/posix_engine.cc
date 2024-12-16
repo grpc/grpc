@@ -752,6 +752,7 @@ absl::Status PosixEventEngine::HandlePreFork() {
 }
 
 absl::Status PosixEventEngine::HandleForkInChild() {
+#ifdef GRPC_POSIX_SOCKET_TCP
   grpc_core::MutexLock lock(&fork_mutex_);
   PosixEventPoller* poller = poller_manager_->Poller();
   auto status = poller->GetSystemApi()->AdvanceGeneration();
@@ -762,6 +763,7 @@ absl::Status PosixEventEngine::HandleForkInChild() {
   if (!status.ok()) {
     return status;
   }
+#endif
   return absl::OkStatus();
 }
 
