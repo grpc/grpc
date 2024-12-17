@@ -266,7 +266,7 @@ grpc_cc_test(
         "poll_matcher",
         "//src/core:join",
         "//src/core:poll",
-        "//third_party/grpc/src/core:status_flag",
+        "//src/core:status_flag",
     ],
 )
 
