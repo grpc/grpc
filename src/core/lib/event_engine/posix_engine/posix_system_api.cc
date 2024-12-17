@@ -694,6 +694,18 @@ absl::StatusOr<long> SystemApi::EventFdRead(FileDescriptor fd,
                 [value](int fd) -> long { return eventfd_read(fd, value); });
 }
 
+FileDescriptor SystemApi::EventFd(unsigned int initval, int flags) {
+  return RegisterFileDescriptor(eventfd(initval, flags));
+}
+
+absl::StatusOr<int> SystemApi::EventFdWrite(FileDescriptor fd,
+                                            uint64_t value) const {
+  return WithFd(fd, [=](int fd) { return eventfd_write(fd, value); });
+}
+
+#endif  // GRPC_LINUX_EVENTFD
+
+#ifdef GRPC_LINUX_EPOLL
 absl::StatusOr<int> SystemApi::EpollCtl(FileDescriptor epfd, int op,
                                         FileDescriptor fd,
                                         struct epoll_event* event) const {
@@ -713,16 +725,7 @@ absl::StatusOr<int> SystemApi::EpollWait(FileDescriptor epfd,
       epfd, [=](int fd) { return epoll_wait(fd, events, maxevents, timeout); });
 }
 
-FileDescriptor SystemApi::EventFd(unsigned int initval, int flags) {
-  return RegisterFileDescriptor(eventfd(initval, flags));
-}
-
-absl::StatusOr<int> SystemApi::EventFdWrite(FileDescriptor fd,
-                                            uint64_t value) const {
-  return WithFd(fd, [=](int fd) { return eventfd_write(fd, value); });
-}
-
-#endif  // GRPC_LINUX_EVENTFD
+#endif  // GRPC_LINUX_EPOLL
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

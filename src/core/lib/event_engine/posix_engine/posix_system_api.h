@@ -122,11 +122,13 @@ class SystemApi {
 #ifdef GRPC_LINUX_EVENTFD
   absl::StatusOr<long> EventFdRead(FileDescriptor fd, uint64_t* value) const;
   absl::StatusOr<int> EventFdWrite(FileDescriptor fd, uint64_t value) const;
+#endif  // GRPC_LINUX_EVENTFD
+#ifdef GRPC_LINUX_EPOLL
   absl::StatusOr<int> EpollCtl(FileDescriptor epfd, int op, FileDescriptor fd,
                                struct epoll_event* event) const;
   absl::StatusOr<int> EpollWait(FileDescriptor epfd, struct epoll_event* events,
                                 int maxevents, int timeout) const;
-#endif  // GRPC_LINUX_EVENTFD
+#endif  // GRPC_LINUX_EPOLL
   absl::StatusOr<int> GetSockOpt(FileDescriptor fd, int level, int optname,
                                  void* optval, socklen_t* optlen) const;
   absl::StatusOr<int> GetSockName(FileDescriptor fd, struct sockaddr* addr,
