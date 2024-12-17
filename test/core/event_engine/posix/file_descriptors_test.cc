@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -68,8 +69,11 @@ TEST(FileDescriptorsTest, DetectsIfThreadHasIOLock) {
   FileDescriptors fds;
   FileDescriptor fd = fds.Add(1);
   auto locked = fds.Lock(fd);
+  LOG(INFO) << "before";
   absl::Status status = fds.Stop();
+  LOG(INFO) << 5;
   EXPECT_EQ(status.code(), absl::StatusCode::kFailedPrecondition) << status;
+  LOG(INFO) << 6;
 }
 
 }  // namespace experimental

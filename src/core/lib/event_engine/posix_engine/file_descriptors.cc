@@ -44,13 +44,13 @@ class ThreadLocalCounter {
   }
 
   void FdLocked(const FileDescriptors* descriptors) {
-    if (descriptors != nullptr && !IsThreadAlive()) {
+    if (descriptors != nullptr && IsThreadAlive()) {
       ++thread_locks_count_[descriptors];
     }
   }
 
   void FdUnlocked(const FileDescriptors* descriptors) {
-    if (descriptors != nullptr && !IsThreadAlive()) {
+    if (descriptors != nullptr && IsThreadAlive()) {
       --thread_locks_count_[descriptors];
       CHECK_GE(thread_locks_count_[descriptors], 0);
     }
@@ -78,7 +78,7 @@ class ThreadLocalCounter {
 
   static int GetTid() { return gettid(); }
 #elif
-  static bool IsThreadAlive() { return true; }
+  static bool IsThreadAlive() { return false; }
   static int GetTid() { return -1; }
 #endif  // GPR_HAS_PTHREAD_H
 
