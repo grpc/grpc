@@ -65,8 +65,6 @@ class AltsHandshakerClient {
   ///- grpc_cb: gRPC provided callbacks passed from TSI handshaker.
   ///- cb: callback to be executed when tsi_handshaker_next API compltes.
   ///- user_data: argument passed to cb.
-  ///- vtable_for_testing: ALTS handshaker client vtable instance used for
-  ///  testing purpose. ~~~~DEPRECIATED~~~~
   ///- is_client: a boolean value indicating if the created handshaker client is
   ///  used at the client (is_client = true) or server (is_client = false) side.
   ///- max_frame_size: Maximum frame size used by frame protector (User
@@ -81,8 +79,8 @@ class AltsHandshakerClient {
       const char* handshaker_service_url, grpc_pollset_set* interested_parties,
       grpc_alts_credentials_options* options, const grpc_slice& target_name,
       grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
-      void* user_data, alts_handshaker_client_vtable* vtable_for_testing,
-      bool is_client, size_t max_frame_size, std::string* error);
+      void* user_data, bool is_client, size_t max_frame_size,
+      std::string* error);
 
   ///
   /// This method cancels previously scheduled, but yet executed handshaker
@@ -132,10 +130,38 @@ class AltsHandshakerClient {
   ///
   void HandleResponse(bool is_ok);
 
-  // Returns the max number of concurrent handshakes that are permitted.
-  //
-  // Exposed for testing purposes only.
+  // Friend functions for testing
   static size_t MaxNumberOfConcurrentHandshakes();
+  friend void alts_handshaker_client_set_grpc_caller_for_testing(
+      AltsHandshakerClient* client, alts_grpc_caller caller);
+  friend grpc_byte_buffer* alts_handshaker_client_get_send_buffer_for_testing(
+      AltsHandshakerClient* client);
+  friend grpc_byte_buffer**
+  alts_handshaker_client_get_recv_buffer_addr_for_testing(
+      AltsHandshakerClient* client);
+  friend grpc_metadata_array*
+  alts_handshaker_client_get_initial_metadata_for_testing(
+      AltsHandshakerClient* client);
+  friend void alts_handshaker_client_set_recv_bytes_for_testing(
+      AltsHandshakerClient* client, grpc_slice* recv_bytes);
+  friend void alts_handshaker_client_set_fields_for_testing(
+      AltsHandshakerClient* client, alts_tsi_handshaker* handshaker,
+      tsi_handshaker_on_next_done_cb cb, void* user_data,
+      grpc_byte_buffer* recv_buffer, bool inject_read_failure);
+  friend void alts_handshaker_client_check_fields_for_testing(
+      AltsHandshakerClient* client, tsi_handshaker_on_next_done_cb cb,
+      void* user_data, bool has_sent_start_message, grpc_slice* recv_bytes);
+  friend alts_tsi_handshaker* alts_handshaker_client_get_handshaker_for_testing(
+      AltsHandshakerClient* client);
+  friend void alts_handshaker_client_set_cb_for_testing(
+      AltsHandshakerClient* client, tsi_handshaker_on_next_done_cb cb);
+  friend grpc_closure* alts_handshaker_client_get_closure_for_testing(
+      AltsHandshakerClient* client);
+  friend void alts_handshaker_client_ref_for_testing(
+      AltsHandshakerClient* client);
+  friend void alts_handshaker_client_on_status_received_for_testing(
+      AltsHandshakerClient* client, grpc_status_code status,
+      grpc_error_handle error);
 
  private:
   static constexpr size_t kAltsAes128GcmRekeyKeyLength = 44;
@@ -143,7 +169,15 @@ class AltsHandshakerClient {
       "GRPC_ALTS_MAX_CONCURRENT_HANDSHAKES";
   static constexpr int kHandshakerClientOpNum = 4;
 
-  AltsHandshakerClient();
+  AltsHandshakerClient(alts_tsi_handshaker* handshaker, grpc_channel* channel,
+                       const char* handshaker_service_url,
+                       grpc_pollset_set* interested_parties,
+                       grpc_alts_credentials_options* options,
+                       const grpc_slice& target_name,
+                       grpc_iomgr_cb_func grpc_cb,
+                       tsi_handshaker_on_next_done_cb cb, void* user_data,
+                       bool is_client, size_t max_frame_size,
+                       std::string* error);
   ~AltsHandshakerClient();
   void handshaker_client_send_buffer_destroy();
   static bool is_handshake_finished_properly(grpc_gcp_HandshakerResp* resp);
@@ -172,7 +206,7 @@ class AltsHandshakerClient {
   struct recv_message_result;
   // One ref is held by the entity that created this handshaker_client, and
   // another ref is held by the pending RECEIVE_STATUS_ON_CLIENT op.
-  gpr_refcount refs;
+  gpr_refcount* refs;
   alts_tsi_handshaker* handshaker;
   grpc_call* call;
   // A pointer to a function handling the interaction with handshaker service.
@@ -191,7 +225,7 @@ class AltsHandshakerClient {
   // Used to inject a read failure from tests.
   bool inject_read_failure = false;
   // Initial metadata to be received from handshaker service.
-  grpc_metadata_array recv_initial_metadata;
+  grpc_metadata_array* recv_initial_metadata;
   // A callback function provided by an application to be invoked when response
   // is received from handshaker service.
   tsi_handshaker_on_next_done_cb cb;

@@ -332,13 +332,13 @@ static alts_handshaker_client_test_config* create_config() {
       nullptr, config->channel, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
       nullptr, server_options,
       grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME),
-      nullptr, nullptr, nullptr, nullptr, false,
+      nullptr, nullptr, nullptr, false,
       ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE, nullptr);
   config->client = AltsHandshakerClient::CreateNewAltsHandshakerClient(
       nullptr, config->channel, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
       nullptr, client_options,
       grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME),
-      nullptr, nullptr, nullptr, nullptr, true,
+      nullptr, nullptr, nullptr, true,
       ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE, nullptr);
   EXPECT_NE(config->client, nullptr);
   EXPECT_NE(config->server, nullptr);

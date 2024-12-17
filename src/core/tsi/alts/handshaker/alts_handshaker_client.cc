@@ -50,8 +50,8 @@ AltsHandshakerClient::CreateNewAltsHandshakerClient(
     const char* handshaker_service_url, grpc_pollset_set* interested_parties,
     grpc_alts_credentials_options* options, const grpc_slice& target_name,
     grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
-    void* user_data, alts_handshaker_client_vtable* vtable_for_testing,
-    bool is_client, size_t max_frame_size, std::string* error) {
+    void* user_data, bool is_client, size_t max_frame_size,
+    std::string* error) {
   if (channel == nullptr || handshaker_service_url == nullptr) {
     LOG(ERROR) << "Invalid arguments to alts_handshaker_client_create()";
     return nullptr;
@@ -73,7 +73,7 @@ tsi_result AltsHandshakerClient::StartServer(grpc_slice* bytes_received) {
 }
 
 tsi_result AltsHandshakerClient::Next(grpc_slice* bytes_received) {
-  return handshaker_client_next();
+  return handshaker_client_next(bytes_received);
 }
 
 void AltsHandshakerClient::HandleResponse(bool is_ok) {
@@ -206,8 +206,7 @@ AltsHandshakerClient::AltsHandshakerClient(
     grpc_alts_credentials_options* options, const grpc_slice& target_name,
     grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
     void* user_data, bool is_client, size_t max_frame_size, std::string* error)
-    : refs(1),
-      handshaker(handshaker),
+    : handshaker(handshaker),
       grpc_caller(grpc_call_start_batch_and_execute),
       cb(cb),
       user_data(user_data),
@@ -229,9 +228,10 @@ buffer(static_cast<unsigned char*>(gpr_zalloc(client->buffer_size))),
                    /*authority=*/absl::nullopt,
                    grpc_core::Timestamp::InfFuture(),
                    /*registered_method=*/true)) {
-  grpc_metadata_array_init(recv_initial_metadata);
-  GRPC_CLOSURE_INIT(on_handshaker_service_resp_recv, grpc_cb, this,
-                    grpc_schedule_on_exec_ctx);
+  gpr_ref_init(refs, 1);
+  grpc_metadata_array_init(recv_initial_metadata)
+      GRPC_CLOSURE_INIT(on_handshaker_service_resp_recv, grpc_cb, this,
+                        grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(on_status_received, on_status_received, this,
                     grpc_schedule_on_exec_ctx);
 }
@@ -678,53 +678,41 @@ namespace grpc_core {
 namespace internal {
 
 void alts_handshaker_client_set_grpc_caller_for_testing(
-    AltsHandshakerClient* c, alts_grpc_caller caller) {
-  CHECK(c != nullptr);
+    AltsHandshakerClient* client, alts_grpc_caller caller) {
+  CHECK_NE(client, nullptr);
   CHECK_NE(caller, nullptr);
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(c);
   client->grpc_caller = caller;
 }
 
 grpc_byte_buffer* alts_handshaker_client_get_send_buffer_for_testing(
-    AltsHandshakerClient* c) {
-  CHECK_NE(c, nullptr);
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(c);
+    AltsHandshakerClient* client) {
+  CHECK_NE(client, nullptr);
   return client->send_buffer;
 }
 
 grpc_byte_buffer** alts_handshaker_client_get_recv_buffer_addr_for_testing(
-    AltsHandshakerClient* c) {
-  CHECK_NE(c, nullptr);
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(c);
+    AltsHandshakerClient* client) {
+  CHECK_NE(client, nullptr);
   return &client->recv_buffer;
 }
 
 grpc_metadata_array* alts_handshaker_client_get_initial_metadata_for_testing(
-    AltsHandshakerClient* c) {
-  CHECK_NE(c, nullptr);
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(c);
+    AltsHandshakerClient* client) {
+  CHECK_NE(client, nullptr);
   return &client->recv_initial_metadata;
 }
 
-void alts_handshaker_client_set_recv_bytes_for_testing(AltsHandshakerClient* c,
+void alts_handshaker_client_set_recv_bytes_for_testing(AltsHandshakerClient* client,
                                                        grpc_slice* recv_bytes) {
-  CHECK_NE(c, nullptr);
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(c);
+  CHECK_NE(client, nullptr);
   client->recv_bytes = CSliceRef(*recv_bytes);
 }
 
 void alts_handshaker_client_set_fields_for_testing(
-    AltsHandshakerClient* c, alts_tsi_handshaker* handshaker,
+    AltsHandshakerClient* client, alts_tsi_handshaker* handshaker,
     tsi_handshaker_on_next_done_cb cb, void* user_data,
     grpc_byte_buffer* recv_buffer, bool inject_read_failure) {
-  CHECK_NE(c, nullptr);
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(c);
+  CHECK_NE(client, nullptr);
   client->handshaker = handshaker;
   client->cb = cb;
   client->user_data = user_data;
@@ -733,60 +721,50 @@ void alts_handshaker_client_set_fields_for_testing(
 }
 
 void alts_handshaker_client_check_fields_for_testing(
-    AltsHandshakerClient* c, tsi_handshaker_on_next_done_cb cb, void* user_data,
+    AltsHandshakerClient* client, tsi_handshaker_on_next_done_cb cb, void* user_data,
     bool has_sent_start_message, grpc_slice* recv_bytes) {
-  CHECK_NE(c, nullptr);
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(c);
-  CHECK(client->cb == cb);
-  CHECK(client->user_data == user_data);
+  CHECK_NE(client, nullptr);
+  CHECK_EQ(client->cb, cb);
+  CHECK_EQ(client->user_data, user_data);
   if (recv_bytes != nullptr) {
     CHECK_EQ(grpc_slice_cmp(client->recv_bytes, *recv_bytes), 0);
   }
-  CHECK(alts_tsi_handshaker_get_has_sent_start_message_for_testing(
-            client->handshaker) == has_sent_start_message);
+  CHECK_EQ(alts_tsi_handshaker_get_has_sent_start_message_for_testing(
+            client->handshaker), has_sent_start_message);
 }
 
 alts_tsi_handshaker* alts_handshaker_client_get_handshaker_for_testing(
-    AltsHandshakerClient* c) {
-  CHECK_NE(c, nullptr);
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(c);
+    AltsHandshakerClient* client) {
+  CHECK_NE(client, nullptr);
   return client->handshaker;
 }
 
 void alts_handshaker_client_set_cb_for_testing(
-    AltsHandshakerClient* c, tsi_handshaker_on_next_done_cb cb) {
-  CHECK_NE(c, nullptr);
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(c);
+    AltsHandshakerClient* client, tsi_handshaker_on_next_done_cb cb) {
+  CHECK_NE(client, nullptr);
   client->cb = cb;
 }
 
 grpc_closure* alts_handshaker_client_get_closure_for_testing(
-    AltsHandshakerClient* c) {
-  CHECK_NE(c, nullptr);
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(c);
+    AltsHandshakerClient* client) {
+  CHECK_NE(client, nullptr);
   return &client->on_handshaker_service_resp_recv;
 }
 
-void alts_handshaker_client_ref_for_testing(AltsHandshakerClient* c) {
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(c);
-  gpr_ref(&client->refs);
+void alts_handshaker_client_ref_for_testing(AltsHandshakerClient* client) {
+  CHECK_NE(client, nullptr);
+  gpr_ref(client->refs);
 }
 
 void alts_handshaker_client_on_status_received_for_testing(
-    AltsHandshakerClient* c, grpc_status_code status, grpc_error_handle error) {
+    AltsHandshakerClient* client, grpc_status_code status, grpc_error_handle error) {
   // We first make sure that the handshake queue has been initialized
   // here because there are tests that use this API that mock out
   // other parts of the alts_handshaker_client in such a way that the
   // code path that would normally ensure that the handshake queue
   // has been initialized isn't taken.
+  CHECK_NE(client, nullptr);
   gpr_once_init(&g_queued_handshakes_init, DoHandshakeQueuesInit);
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(c);
   client->handshake_status_code = status;
   client->handshake_status_details = grpc_empty_slice();
   Closure::Run(DEBUG_LOCATION, &client->on_status_received, error);
