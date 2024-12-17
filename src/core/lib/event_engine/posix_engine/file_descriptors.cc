@@ -77,7 +77,7 @@ class ThreadLocalCounter {
   }
 
   static int GetTid() { return gettid(); }
-#elif
+#else
   static bool IsThreadAlive() { return false; }
   static int GetTid() { return -1; }
 #endif  // GPR_HAS_PTHREAD_H
