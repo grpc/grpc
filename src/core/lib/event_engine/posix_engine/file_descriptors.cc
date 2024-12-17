@@ -16,7 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 
@@ -26,81 +25,17 @@
 
 namespace grpc_event_engine {
 namespace experimental {
-namespace {
-
-grpc_core::Mutex gone_threads_mu;
-std::unordered_set<int> gone_threads ABSL_GUARDED_BY(&gone_threads_mu);
-
-class ThreadLocalCounter {
- public:
-  ThreadLocalCounter() {
-    grpc_core::MutexLock lock(&gone_threads_mu);
-    gone_threads.erase(GetTid());
-  }
-
-  ~ThreadLocalCounter() {
-    grpc_core::MutexLock lock(&gone_threads_mu);
-    gone_threads.emplace(GetTid());
-  }
-
-  void FdLocked(const FileDescriptors* descriptors) {
-    if (descriptors != nullptr && IsThreadAlive()) {
-      ++thread_locks_count_[descriptors];
-    }
-  }
-
-  void FdUnlocked(const FileDescriptors* descriptors) {
-    if (descriptors != nullptr && IsThreadAlive()) {
-      --thread_locks_count_[descriptors];
-      CHECK_GE(thread_locks_count_[descriptors], 0);
-    }
-  }
-
-  int count(const FileDescriptors* descriptors) const {
-    if (!IsThreadAlive()) {
-      return 0;
-    }
-    auto c = thread_locks_count_.find(descriptors);
-    if (c != thread_locks_count_.end()) {
-      return c->second;
-    } else {
-      return 0;
-    }
-  }
-
- private:
-#ifdef __linux__
-  static bool IsThreadAlive() {
-    int tid = gettid();
-    grpc_core::MutexLock lock(&gone_threads_mu);
-    return gone_threads.find(tid) == gone_threads.end();
-  }
-
-  static int GetTid() { return gettid(); }
-#else
-  static bool IsThreadAlive() { return false; }
-  static int GetTid() { return -1; }
-#endif  // GPR_HAS_PTHREAD_H
-
-  std::unordered_map<const FileDescriptors*, int> thread_locks_count_;
-};
-
-thread_local ThreadLocalCounter counter;
-
-}  // namespace
 
 ReentrantLock::ReentrantLock(const FileDescriptors* descriptors)
     : descriptors_(descriptors) {
   if (descriptors_ != nullptr) {
     descriptors_->IncrementCounter();
-    counter.FdLocked(descriptors);
   }
 }
 
 ReentrantLock::~ReentrantLock() noexcept {
   if (descriptors_ != nullptr) {
     descriptors_->DecrementCounter();
-    counter.FdUnlocked(descriptors_);
   }
 }
 
@@ -163,12 +98,6 @@ void FileDescriptors::DecrementCounter() const {
 }
 
 absl::Status FileDescriptors::Stop() {
-  if (counter.count(this) > 0) {
-    return absl::FailedPreconditionError(
-        absl::StrFormat("Current thread holds %d i/o locks that need to be "
-                        "released before calling fork",
-                        counter.count(this)));
-  }
   grpc_core::MutexLock lock(&mu_);
   CHECK(state_ == State::kReady)
       << (state_ == State::kStopping ? "Actual: stopping" : "Actual: stopped");
