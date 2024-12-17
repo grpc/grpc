@@ -26,7 +26,7 @@
 namespace grpc_core {
 
 TEST(JoinTest, Join1) {
-  std::string execution_order = "";
+  std::string execution_order;
   EXPECT_THAT(Join([&execution_order]() mutable -> Poll<int> {
                 execution_order += "1";
                 return 3;
@@ -36,7 +36,7 @@ TEST(JoinTest, Join1) {
 }
 
 TEST(JoinTest, Join2) {
-  std::string execution_order = "";
+  std::string execution_order;
   EXPECT_THAT(Join(
                   [&execution_order]() mutable -> Poll<int> {
                     execution_order += "3";
@@ -51,7 +51,7 @@ TEST(JoinTest, Join2) {
 }
 
 TEST(JoinTest, Join3) {
-  std::string execution_order = "";
+  std::string execution_order;
   EXPECT_THAT(Join(
                   [&execution_order]() mutable -> Poll<int> {
                     execution_order += "3";
@@ -73,7 +73,7 @@ TEST(JoinTest, JoinPendingFailure) {
   // Assert that one failing promise in the Join should not stall our execution.
   // Also assert that only the Pending{} promise is re-run when the Join is run
   // a second time.
-  std::string execution_order = "";
+  std::string execution_order;
   auto first_promise = [&execution_order]() mutable -> Poll<int> {
     execution_order += "1";
     return 1;
