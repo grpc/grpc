@@ -29,6 +29,19 @@
 
 namespace grpc_core {
 
+// A Loop combinator
+
+// A Loop combinator takes as input only one promise or promise factory.
+// This input promise or promise factory should have a return type of LoopCtl which is an alias for absl::variant<Continue, T>
+
+// Running of the Loop combinator
+// The loop promise is guranteed to run atleast once when it is invoked.
+// The promise that is passed to the Loop combinator will keep running for as long as it returns Continue() .
+// If it returns T instead, the Loop combinator will return this value and stop execution.
+// The execution of multiple iterations of the promise happen on the same thread.
+// If the Loop promise has return value as LoopCtl<absl::Status> , a failure status will cause the Loop to break.
+
+
 // Special type - signals to loop to take another iteration, instead of
 // finishing
 struct Continue {};
