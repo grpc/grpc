@@ -13912,7 +13912,6 @@ targets:
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: lru_cache_test
