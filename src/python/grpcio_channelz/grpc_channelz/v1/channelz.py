@@ -17,7 +17,11 @@ import sys
 
 import grpc
 from grpc_channelz.v1._servicer import ChannelzServicer
-import channelz_pb2_grpc as _channelz_pb2_grpc
+import os
+if os.environ.get('BUILD_SYSTEM') == 'Bazel':
+    import channelz_pb2_grpc as _channelz_pb2_grpc
+else:
+    from grpc_channelz.v1 import channelz_pb2_grpc as _channelz_pb2_grpc
 
 _add_channelz_servicer_doc = """Add Channelz servicer to a server.
 
