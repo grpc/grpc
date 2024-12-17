@@ -15,7 +15,6 @@
 #include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 
 #include <grpc/support/port_platform.h>
-#include <unistd.h>
 
 #include <unordered_map>
 #include <unordered_set>
