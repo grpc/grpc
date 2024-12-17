@@ -180,3 +180,9 @@ build:fuzztest_test --cxxopt=-std=c++17
 
 # OpenTelemetry C++ needs this option to build with absl
 build --@io_opentelemetry_cpp//api:with_abseil
+build --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+query --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+build --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+query --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+build --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+query --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf

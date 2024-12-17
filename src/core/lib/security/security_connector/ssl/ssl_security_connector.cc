@@ -80,7 +80,7 @@ class grpc_ssl_channel_security_connector final
   grpc_ssl_channel_security_connector(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-      const grpc_ssl_config* config, const char* target_name,
+      const char* target_name,
       const char* overridden_target_name,
       tsi_ssl_client_handshaker_factory* client_handshaker_factory)
       : grpc_channel_security_connector(GRPC_SSL_URL_SCHEME,
@@ -374,20 +374,55 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_ssl_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-    const grpc_ssl_config* config, const char* target_name,
+    const char* target_name,
     const char* overridden_target_name,
     tsi_ssl_client_handshaker_factory* client_factory) {
-  if (config == nullptr || target_name == nullptr) {
-    LOG(ERROR) << "An ssl channel needs a config and a target name.";
+  if (target_name == nullptr) {
+    LOG(ERROR) << "An ssl channel needs a target name.";
     return nullptr;
   }
+  grpc_ssl_credentials *credentials =
+      (grpc_ssl_credentials *)channel_creds;
+  grpc_security_status retval = GRPC_SECURITY_OK;
 
-  grpc_core::RefCountedPtr<grpc_ssl_channel_security_connector> c =
-      grpc_core::MakeRefCounted<grpc_ssl_channel_security_connector>(
-          std::move(channel_creds), std::move(request_metadata_creds), config,
-          target_name, overridden_target_name,
-          tsi_ssl_client_handshaker_factory_ref(client_factory));
-  return c;
+  GPR_ASSERT(credentials != NULL);
+  GPR_ASSERT(sc != NULL);
+
+   grpc_ssl_channel_security_connector *c =
+      grpc_ssl_channel_security_connector_initialize(channel_creds);
+  if (channel_connector_has_cert_config_fetcher(c)) {
+    // Load initial credentials from certificate_config_fetcher:
+    if (!try_fetch_ssl_channel_credentials(c)) {
+      gpr_log(GPR_ERROR, "Failed loading SSL channel credentials from fetcher.");
+      retval = GRPC_SECURITY_ERROR;
+    }
+  } else {
+    size_t num_alpn_protocols = 0;
+    const char **alpn_protocol_strings =
+        fill_alpn_protocol_strings(&num_alpn_protocols);
+    result = tsi_create_ssl_server_handshaker_factory_ex(
+        server_credentials->config.pem_key_cert_pairs,
+        server_credentials->config.num_key_cert_pairs,
+        server_credentials->config.pem_root_certs,
+        get_tsi_client_certificate_request_type(
+            server_credentials->config.client_certificate_request),
+        ssl_cipher_suites(), alpn_protocol_strings,
+        (uint16_t)num_alpn_protocols, &c->server_handshaker_factory);
+    gpr_free((void *)alpn_protocol_strings);
+    if (result != TSI_OK) {
+      gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
+              tsi_result_to_string(result));
+      retval = GRPC_SECURITY_ERROR;
+    }
+  }
+
+  if (retval == GRPC_SECURITY_OK) {
+    *sc = &c->base;
+  } else {
+    if (c != NULL) ssl_channel_destroy(exec_ctx, &c->base.base);
+    if (sc != NULL) *sc = NULL;
+  }
+  return retval;
 }
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
