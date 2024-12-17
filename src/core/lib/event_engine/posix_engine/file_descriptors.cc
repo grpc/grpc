@@ -14,10 +14,13 @@
 
 #include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 
+#include <unistd.h>
+
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -26,20 +29,63 @@ namespace grpc_event_engine {
 namespace experimental {
 namespace {
 
-thread_local std::unordered_map<const FileDescriptors*, int> thread_locks_count;
+grpc_core::Mutex gone_threads_mu;
+std::unordered_set<int> gone_threads ABSL_GUARDED_BY(&gone_threads_mu);
 
-void FdLocked(const FileDescriptors* descriptors) {
-  if (descriptors != nullptr) {
-    ++thread_locks_count[descriptors];
+class ThreadLocalCounter {
+ public:
+  ThreadLocalCounter() {
+    grpc_core::MutexLock lock(&gone_threads_mu);
+    gone_threads.erase(gettid());
+    LOG(INFO) << "Counter created " << this << " tid: " << gettid();
   }
-}
 
-void FdUnlocked(const FileDescriptors* descriptors) {
-  if (descriptors != nullptr) {
-    --thread_locks_count[descriptors];
-    CHECK_GE(thread_locks_count[descriptors], 0);
+  ~ThreadLocalCounter() {
+    grpc_core::MutexLock lock(&gone_threads_mu);
+    gone_threads.emplace(gettid());
+    LOG(INFO) << "Counter destroyed " << this << " tid: " << gettid();
   }
-}
+
+  void FdLocked(const FileDescriptors* descriptors) {
+    if (descriptors != nullptr && !CheckAndReportThreadThatIsGone()) {
+      ++thread_locks_count_[descriptors];
+    }
+  }
+
+  void FdUnlocked(const FileDescriptors* descriptors) {
+    if (descriptors != nullptr && !CheckAndReportThreadThatIsGone()) {
+      --thread_locks_count_[descriptors];
+      CHECK_GE(thread_locks_count_[descriptors], 0);
+    }
+  }
+
+  int count(const FileDescriptors* descriptors) const {
+    if (!CheckAndReportThreadThatIsGone()) {
+      return 0;
+    }
+    auto c = thread_locks_count_.find(descriptors);
+    if (c != thread_locks_count_.end()) {
+      return c->second;
+    } else {
+      return 0;
+    }
+  }
+
+ private:
+  static bool CheckAndReportThreadThatIsGone() {
+    int tid = gettid();
+    grpc_core::MutexLock lock(&gone_threads_mu);
+    if (gone_threads.find(tid) != gone_threads.end()) {
+      LOG(INFO) << "Thread " << tid << " is gone";
+      return false;
+    }
+    return true;
+  }
+
+  std::unordered_map<const FileDescriptors*, int> thread_locks_count_;
+};
+
+thread_local ThreadLocalCounter counter;
 
 }  // namespace
 
@@ -47,14 +93,14 @@ ReentrantLock::ReentrantLock(const FileDescriptors* descriptors)
     : descriptors_(descriptors) {
   if (descriptors_ != nullptr) {
     descriptors_->IncrementCounter();
-    FdLocked(descriptors);
+    counter.FdLocked(descriptors);
   }
 }
 
 ReentrantLock::~ReentrantLock() noexcept {
   if (descriptors_ != nullptr) {
     descriptors_->DecrementCounter();
-    FdUnlocked(descriptors_);
+    counter.FdUnlocked(descriptors_);
   }
 }
 
@@ -117,11 +163,11 @@ void FileDescriptors::DecrementCounter() const {
 }
 
 absl::Status FileDescriptors::Stop() {
-  if (thread_locks_count[this] > 0) {
+  if (counter.count(this) > 0) {
     return absl::FailedPreconditionError(
         absl::StrFormat("Current thread holds %d i/o locks that need to be "
                         "released before calling fork",
-                        thread_locks_count[this]));
+                        counter.count(this)));
   }
   grpc_core::MutexLock lock(&mu_);
   CHECK(state_ == State::kReady)

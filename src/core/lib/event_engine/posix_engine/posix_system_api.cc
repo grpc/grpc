@@ -17,17 +17,14 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-#include <algorithm>
 #include <array>
 #include <cerrno>
-#include <unordered_set>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/synchronization/mutex.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
@@ -690,7 +687,7 @@ std::pair<int, std::array<FileDescriptor, 2>> SystemApi::Pipe() {
   return {status, {AdoptExternalFd(fds[0]), AdoptExternalFd(fds[1])}};
 }
 
-#ifdef GRPC_LINUX_EPOLL
+#ifdef GRPC_LINUX_EVENTFD
 absl::StatusOr<long> SystemApi::EventFdRead(FileDescriptor fd,
                                             uint64_t* value) const {
   return WithFd(fd,
@@ -883,7 +880,8 @@ std::pair<int, std::array<FileDescriptor, 2>> SystemApi::SocketPair(
     int domain, int type, int protocol) {
   grpc_core::Crash("unimplemented");
 }
-#ifdef GRPC_LINUX_EPOLL
+
+#ifdef GRPC_LINUX_EVENTFD
 
 absl::StatusOr<long> SystemApi::EventFdRead(FileDescriptor fd,
                                             uint64_t* value) const {
@@ -900,7 +898,7 @@ absl::StatusOr<int> EpollCtl(FileDescriptor epfd, int op, FileDescriptor fd,
   grpc_core::Crash("unimplemented");
 }
 
-#endif  // GRPC_LINUX_EPOLL
+#endif  // GRPC_LINUX_EVENTFD
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

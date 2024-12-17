@@ -119,14 +119,14 @@ class SystemApi {
                               socklen_t addrlen) const;
   absl::StatusOr<ReentrantLock> PosixLock() const { return fds_.PosixLock(); }
 
-#ifdef GRPC_LINUX_EPOLL
+#ifdef GRPC_LINUX_EVENTFD
   absl::StatusOr<long> EventFdRead(FileDescriptor fd, uint64_t* value) const;
   absl::StatusOr<int> EventFdWrite(FileDescriptor fd, uint64_t value) const;
   absl::StatusOr<int> EpollCtl(FileDescriptor epfd, int op, FileDescriptor fd,
                                struct epoll_event* event) const;
   absl::StatusOr<int> EpollWait(FileDescriptor epfd, struct epoll_event* events,
                                 int maxevents, int timeout) const;
-#endif  // GRPC_LINUX_EPOLL
+#endif  // GRPC_LINUX_EVENTFD
   absl::StatusOr<int> GetSockOpt(FileDescriptor fd, int level, int optname,
                                  void* optval, socklen_t* optlen) const;
   absl::StatusOr<int> GetSockName(FileDescriptor fd, struct sockaddr* addr,

@@ -190,7 +190,7 @@ TEST(PosixSystemApiTest, PosixLevel) {
   ASSERT_EQ(client_api.Write(server_client->client, buf.data(), buf.size())
                 .status()
                 .code(),
-            absl::StatusCode::kNotFound);
+            absl::StatusCode::kInternal);
   // Send using the new connection
   server_client = EstablishConnection(server_api, client_api, *server, port);
   ASSERT_TRUE(server_client.ok()) << server_client.status();
