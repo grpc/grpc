@@ -69,7 +69,7 @@ class ThreadLocalCounter {
   }
 
  private:
-#ifdef GPR_HAS_PTHREAD_H
+#ifdef __linux__
   static bool IsThreadAlive() {
     int tid = gettid();
     grpc_core::MutexLock lock(&gone_threads_mu);
