@@ -389,7 +389,11 @@ void Epoll1Poller::Close() {
   closed_ = true;
 }
 
-Epoll1Poller::~Epoll1Poller() { Close(); }
+Epoll1Poller::~Epoll1Poller() {
+  Close();
+  // Ensure wakeup_fd_ does not outlive poller fields
+  wakeup_fd_.reset();
+}
 
 EventHandle* Epoll1Poller::CreateHandle(FileDescriptor fd,
                                         absl::string_view /*name*/,

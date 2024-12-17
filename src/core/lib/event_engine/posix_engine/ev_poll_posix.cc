@@ -914,6 +914,10 @@ void PollPoller::PrepareFork() { grpc_core::Crash("unimplemented"); }
 void PollPoller::PostforkParent() { grpc_core::Crash("unimplemented"); }
 void PollPoller::PostforkChild() { grpc_core::Crash("unimplemented"); }
 
+absl::Status PollPoller::PrepareForkNew() { grpc_core::Crash("unimplemented"); }
+
+absl::Status PollPoller::RestartOnFork() { grpc_core::Crash("unimplemented"); }
+
 void PollPoller::Close() { grpc_core::Crash("unimplemented"); }
 
 void PollPoller::KickExternal(bool /*ext*/) {
