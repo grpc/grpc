@@ -17,6 +17,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/promise/seq.h"
@@ -26,15 +27,33 @@ namespace grpc_core {
 TEST(LoopTest, CountToFive) {
   std::string execution_order = "";
   int i = 0;
-  Poll<int> retval = Loop([&execution_order, &i]() -> LoopCtl<int> {
-    absl::StrAppend(&execution_order, i);
-    i++;
-    if (i < 5) return Continue();
-    return i;
-  })();
+  Poll<int> retval =
+      Loop([&execution_order, &i]() -> Poll<LoopCtl<absl::Status>> {
+        absl::StrAppend(&execution_order, i);
+        i++;
+        if (i == 5) return absl::CancelledError("Test");
+        if (i < 10) return Continue();
+        return absl::OkStatus;
+      })();
   EXPECT_TRUE(retval.ready());
   EXPECT_EQ(retval.value(), 5);
   EXPECT_EQ(i, 5);
+  EXPECT_STREQ(execution_order.c_str(), "01234");
+}
+
+TEST(LoopTest, FailingLoop) {
+  std::string execution_order = "";
+  int i = 0;
+  Poll<absl::Status> retval =
+      Loop([&execution_order, &i]() -> LoopCtl<absl::Status> {
+        absl::StrAppend(&execution_order, i);
+        i++;
+        if (i == 5) return absl::CancelledError("Test");
+        if (i < 10) return Continue();
+        return absl::OkStatus();
+      })();
+  EXPECT_TRUE(retval.ready());
+  EXPECT_EQ(retval.value(), absl::CancelledError("Test"));
   EXPECT_STREQ(execution_order.c_str(), "01234");
 }
 
