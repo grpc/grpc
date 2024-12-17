@@ -681,6 +681,26 @@ void XdsEnd2endTest::CheckRpcSendFailure(
       << debug_location.file() << ":" << debug_location.line();
 }
 
+void XdsEnd2endTest::SendRpcsUntilFailure(
+    const grpc_core::DebugLocation& debug_location, StatusCode expected_status,
+    absl::string_view expected_message_regex, int timeout_ms,
+    const RpcOptions& rpc_options) {
+  SendRpcsUntil(
+      debug_location,
+      [&](const RpcResult& result) {
+        // Might still succeed if channel hasn't yet seen the server go down.
+        if (result.status.ok()) return true;
+        // RPC failed.  Make sure the failure status is as expected and stop.
+        EXPECT_EQ(result.status.error_code(), expected_status)
+            << debug_location.file() << ":" << debug_location.line();
+        EXPECT_THAT(result.status.error_message(),
+                    ::testing::MatchesRegex(expected_message_regex))
+            << debug_location.file() << ":" << debug_location.line();
+        return false;
+      },
+      timeout_ms, rpc_options);
+}
+
 size_t XdsEnd2endTest::SendRpcsAndCountFailuresWithMessage(
     const grpc_core::DebugLocation& debug_location, size_t num_rpcs,
     StatusCode expected_status, absl::string_view expected_message_prefix,
