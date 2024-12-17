@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Checks if any of the Python artifacts exceeds a certern size limit since
+# Checks if any of the Python artifacts exceeds a certain size limit since
 # Pypi has a per-file size limit.
 
 set -ex
