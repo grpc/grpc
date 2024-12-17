@@ -686,6 +686,7 @@ PosixEventEngine::CreatePosixEndpointFromFd(int fd,
 
 std::unique_ptr<EventEngine::Endpoint> PosixEventEngine::CreateEndpointFromFd(
     int fd, const EndpointConfig& config) {
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   SystemApi* system_api = poller_manager_->Poller()->GetSystemApi();
   auto options = TcpOptionsFromEndpointConfig(system_api, config);
   MemoryAllocator allocator;
@@ -699,6 +700,11 @@ std::unique_ptr<EventEngine::Endpoint> PosixEventEngine::CreateEndpointFromFd(
       fd, config,
       options.resource_quota->memory_quota()->CreateMemoryAllocator(
           absl::StrCat("allocator:", fd)));
+#else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  grpc_core::Crash(
+      "PosixEventEngine::CreateEndpointFromFd is not supported on "
+      "this platform");
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
@@ -743,16 +749,18 @@ PosixEventEngine::CreatePosixListener(
 }
 
 absl::Status PosixEventEngine::HandlePreFork() {
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   grpc_core::MutexLock lock(&fork_mutex_);
   auto poller = poller_manager_->Poller();
   if (poller != nullptr) {
     return poller->PrepareForkNew();
   }
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   return absl::OkStatus();
 }
 
 absl::Status PosixEventEngine::HandleForkInChild() {
-#ifdef GRPC_POSIX_SOCKET_TCP
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   grpc_core::MutexLock lock(&fork_mutex_);
   PosixEventPoller* poller = poller_manager_->Poller();
   auto status = poller->GetSystemApi()->AdvanceGeneration();
@@ -763,7 +771,7 @@ absl::Status PosixEventEngine::HandleForkInChild() {
   if (!status.ok()) {
     return status;
   }
-#endif
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   return absl::OkStatus();
 }
 

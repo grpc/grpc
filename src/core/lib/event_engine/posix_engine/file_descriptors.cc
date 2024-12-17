@@ -15,12 +15,12 @@
 #include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 
 #include <grpc/support/port_platform.h>
+#include <unistd.h>
 
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -36,29 +36,29 @@ class ThreadLocalCounter {
  public:
   ThreadLocalCounter() {
     grpc_core::MutexLock lock(&gone_threads_mu);
-    gone_threads.erase(gettid());
+    gone_threads.erase(GetTid());
   }
 
   ~ThreadLocalCounter() {
     grpc_core::MutexLock lock(&gone_threads_mu);
-    gone_threads.emplace(gettid());
+    gone_threads.emplace(GetTid());
   }
 
   void FdLocked(const FileDescriptors* descriptors) {
-    if (descriptors != nullptr && !CheckAndReportThreadThatIsGone()) {
+    if (descriptors != nullptr && !IsThreadAlive()) {
       ++thread_locks_count_[descriptors];
     }
   }
 
   void FdUnlocked(const FileDescriptors* descriptors) {
-    if (descriptors != nullptr && !CheckAndReportThreadThatIsGone()) {
+    if (descriptors != nullptr && !IsThreadAlive()) {
       --thread_locks_count_[descriptors];
       CHECK_GE(thread_locks_count_[descriptors], 0);
     }
   }
 
   int count(const FileDescriptors* descriptors) const {
-    if (!CheckAndReportThreadThatIsGone()) {
+    if (!IsThreadAlive()) {
       return 0;
     }
     auto c = thread_locks_count_.find(descriptors);
@@ -70,15 +70,18 @@ class ThreadLocalCounter {
   }
 
  private:
-  static bool CheckAndReportThreadThatIsGone() {
+#ifdef GPR_HAS_PTHREAD_H
+  static bool IsThreadAlive() {
     int tid = gettid();
     grpc_core::MutexLock lock(&gone_threads_mu);
-    if (gone_threads.find(tid) != gone_threads.end()) {
-      LOG(INFO) << "Thread " << tid << " is gone";
-      return false;
-    }
-    return true;
+    return gone_threads.find(tid) == gone_threads.end();
   }
+
+  static int GetTid() { return gettid(); }
+#elif
+  static bool IsThreadAlive() { return true; }
+  static int GetTid() { return -1; }
+#endif  // GPR_HAS_PTHREAD_H
 
   std::unordered_map<const FileDescriptors*, int> thread_locks_count_;
 };
