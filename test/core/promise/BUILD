@@ -245,7 +245,7 @@ grpc_cc_test(
     srcs = ["loop_test.cc"],
     external_deps = [
         "gtest",
-        "absl/utility",
+        "absl/strings",
     ],
     language = "c++",
     tags = ["promise_test"],
