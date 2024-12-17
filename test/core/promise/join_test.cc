@@ -101,9 +101,9 @@ TEST(JoinTest, JoinPendingFailure) {
   EXPECT_TRUE(second_execution.ready());
 
   JoinTuple& tuple = *(second_execution.value_if_ready());
-  EXPECT_EQ(get<0>(tuple), 1);
-  EXPECT_EQ(get<1>(tuple), Failure{});
-  EXPECT_STREQ(get<2>(tuple).c_str(), "Hello World");
+  EXPECT_EQ(std::get<0>(tuple), 1);
+  EXPECT_EQ(std::get<1>(tuple), Failure{});
+  EXPECT_STREQ(std::get<2>(tuple).c_str(), "Hello World");
 
   EXPECT_STREQ(execution_order.c_str(), "12303");
 }
