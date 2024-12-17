@@ -21253,6 +21253,7 @@ target_link_libraries(loop_test
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
+  absl::utility
   gpr
 )
 

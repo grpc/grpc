@@ -17,19 +17,25 @@
 #include <memory>
 #include <utility>
 
+#include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/promise/seq.h"
 
 namespace grpc_core {
 
 TEST(LoopTest, CountToFive) {
+  std::string execution_order = "";
   int i = 0;
-  Loop([&i]() -> LoopCtl<int> {
+  auto retval = Loop([&execution_order, &i]() -> LoopCtl<int> {
+    absl::StrAppend(&execution_order, i);
     i++;
     if (i < 5) return Continue();
     return i;
   })();
+  EXPECT_TRUE(retval.ready());
+  EXPECT_EQ(retval.value(), 5);
   EXPECT_EQ(i, 5);
+  EXPECT_STREQ(execution_order.c_str(), "01234");
 }
 
 TEST(LoopTest, FactoryCountToFive) {
@@ -45,9 +51,36 @@ TEST(LoopTest, FactoryCountToFive) {
 }
 
 TEST(LoopTest, LoopOfSeq) {
-  auto x =
-      Loop(Seq([]() { return 42; }, [](int i) -> LoopCtl<int> { return i; }))();
-  EXPECT_EQ(x, Poll<int>(42));
+  std::string execution_order = "";
+  auto retval = Loop(Seq(
+      [&execution_order]() mutable -> Poll<int> {
+        absl::StrAppend(&execution_order, "a");
+        return 42;
+      },
+      [&execution_order](int i) mutable -> LoopCtl<int> {
+        absl::StrAppend(&execution_order, i);
+        return i;
+      }))();
+  EXPECT_TRUE(retval.ready());
+  EXPECT_EQ(retval, Poll<int>(42));
+  EXPECT_STREQ(execution_order.c_str(), "a42");
+}
+
+TEST(LoopTest, LoopOfSeq1) {
+  std::string execution_order = "";
+  auto retval = Loop(Seq(
+      [&execution_order]() mutable -> Poll<int> {
+        absl::StrAppend(&execution_order, "a");
+        return execution_order.length();
+      },
+      [&execution_order](int i) mutable -> LoopCtl<int> {
+        absl::StrAppend(&execution_order, i);
+        if (i < 9) return Continue();
+        return i;
+      }))();
+  EXPECT_TRUE(retval.ready());
+  EXPECT_EQ(retval, Poll<int>(9));
+  EXPECT_STREQ(execution_order.c_str(), "a1a3a5a7a9");
 }
 
 TEST(LoopTest, CanAccessFactoryLambdaVariables) {
