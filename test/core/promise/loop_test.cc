@@ -26,7 +26,7 @@ namespace grpc_core {
 TEST(LoopTest, CountToFive) {
   std::string execution_order = "";
   int i = 0;
-  auto retval = Loop([&execution_order, &i]() -> LoopCtl<int> {
+  Poll<int> retval = Loop([&execution_order, &i]() -> LoopCtl<int> {
     absl::StrAppend(&execution_order, i);
     i++;
     if (i < 5) return Continue();
@@ -52,7 +52,7 @@ TEST(LoopTest, FactoryCountToFive) {
 
 TEST(LoopTest, LoopOfSeq) {
   std::string execution_order = "";
-  auto retval = Loop(Seq(
+  Poll<int> retval = Loop(Seq(
       [&execution_order]() mutable -> Poll<int> {
         absl::StrAppend(&execution_order, "a");
         return 42;
@@ -68,7 +68,7 @@ TEST(LoopTest, LoopOfSeq) {
 
 TEST(LoopTest, LoopOfSeq1) {
   std::string execution_order = "";
-  auto retval = Loop(Seq(
+  Poll<int> retval = Loop(Seq(
       [&execution_order]() mutable -> Poll<int> {
         absl::StrAppend(&execution_order, "a");
         return execution_order.length();
