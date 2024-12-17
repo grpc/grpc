@@ -39,15 +39,15 @@ TEST(JoinTest, Join2) {
   std::string execution_order = "";
   EXPECT_THAT(Join(
                   [&execution_order]() mutable -> Poll<int> {
-                    execution_order += "1";
+                    execution_order += "3";
                     return 3;
                   },
                   [&execution_order]() mutable -> Poll<int> {
-                    execution_order += "2";
+                    execution_order += "4";
                     return 4;
                   })(),
               IsReady(std::make_tuple(3, 4)));
-  EXPECT_STREQ(execution_order.c_str(), "12");
+  EXPECT_STREQ(execution_order.c_str(), "34");
 }
 
 TEST(JoinTest, Join3) {
