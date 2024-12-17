@@ -14,7 +14,7 @@
 
 #include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 
-#include <unistd.h>
+#include <grpc/support/port_platform.h>
 
 #include <unordered_map>
 #include <unordered_set>
@@ -37,13 +37,11 @@ class ThreadLocalCounter {
   ThreadLocalCounter() {
     grpc_core::MutexLock lock(&gone_threads_mu);
     gone_threads.erase(gettid());
-    LOG(INFO) << "Counter created " << this << " tid: " << gettid();
   }
 
   ~ThreadLocalCounter() {
     grpc_core::MutexLock lock(&gone_threads_mu);
     gone_threads.emplace(gettid());
-    LOG(INFO) << "Counter destroyed " << this << " tid: " << gettid();
   }
 
   void FdLocked(const FileDescriptors* descriptors) {

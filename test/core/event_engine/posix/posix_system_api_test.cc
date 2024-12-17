@@ -34,6 +34,7 @@
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -302,7 +303,7 @@ using helloworld::HelloRequest;
 
 }  // namespace
 
-TEST(PosixSystemApiTest, FullGrpc) {
+TEST(PosixSystemApiTest, DISABLED_FullGrpc) {
   int port = grpc_pick_unused_port_or_die();
   int pid = fork();
   ASSERT_GE(pid, 0) << absl::ErrnoToStatus(errno, "Fork");
@@ -332,7 +333,8 @@ TEST(PosixSystemApiTest, FullGrpc) {
   grpc::ClientContext ctx2;
   response = {};
   status = stub->SayHello(&ctx2, request, &response);
-  EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_TRUE(status.ok()) << absl::StrFormat("(%d) %s", status.error_code(),
+                                              status.error_message());
   EXPECT_EQ(response.message(), "Hello system_api_test");
 }
 

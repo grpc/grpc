@@ -107,6 +107,7 @@ ssize_t TcpSend(const SystemApi& api, FileDescriptor fd,
            (*saved_errno = errno) == EINTR);
   if (!sent_length.ok()) {
     LOG(ERROR) << sent_length.status();
+    return -1;
   }
   return *sent_length;
 }
