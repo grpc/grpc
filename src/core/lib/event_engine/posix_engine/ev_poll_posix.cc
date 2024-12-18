@@ -632,6 +632,7 @@ PollPoller::~PollPoller() {
   // They should have been orphaned before reaching this state.
   CHECK_EQ(num_poll_handles_, 0);
   CHECK_EQ(poll_handles_list_head_, nullptr);
+  wakeup_fd_.reset();
 }
 
 Poller::WorkResult PollPoller::Work(
