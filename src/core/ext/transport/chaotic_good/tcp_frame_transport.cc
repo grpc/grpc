@@ -76,6 +76,10 @@ uint32_t TcpFrameHeader::Padding(uint32_t alignment) const {
   return DataConnectionPadding(header.payload_length, alignment);
 }
 
+std::string TcpFrameHeader::ToString() const {
+  return absl::StrCat(header.ToString(), "@", payload_connection_id);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // TcpFrameTransport
 
