@@ -33,7 +33,7 @@ TEST(LoopTest, CountToFive) {
         i++;
         if (i == 5) return absl::CancelledError("Test");
         if (i < 10) return Continue();
-        return absl::OkStatus;
+        return absl::OkStatus();
       })();
   EXPECT_TRUE(retval.ready());
   EXPECT_EQ(retval.value(), 5);
