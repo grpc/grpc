@@ -25,6 +25,7 @@
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "src/core/util/json/json.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 
 namespace grpc {
@@ -214,23 +215,26 @@ class XdsResourceUtils {
   struct EdsResourceArgs {
     // An individual endpoint for a backend running on a specified port.
     struct Endpoint {
-      explicit Endpoint(int port,
-                        ::envoy::config::core::v3::HealthStatus health_status =
-                            ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                        int lb_weight = 1,
-                        std::vector<int> additional_ports = {},
-                        absl::string_view hostname = "")
+      explicit Endpoint(
+          int port,
+          ::envoy::config::core::v3::HealthStatus health_status =
+              ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+          int lb_weight = 1, std::vector<int> additional_ports = {},
+          absl::string_view hostname = "",
+          const std::map<std::string, grpc_core::Json::Object>& metadata = {})
           : port(port),
             health_status(health_status),
             lb_weight(lb_weight),
             additional_ports(std::move(additional_ports)),
-            hostname(hostname) {}
+            hostname(hostname),
+            metadata(metadata) {}
 
       int port;
       ::envoy::config::core::v3::HealthStatus health_status;
       int lb_weight;
       std::vector<int> additional_ports;
       std::string hostname;
+      std::map<std::string, grpc_core::Json::Object> metadata;
     };
 
     // A locality.

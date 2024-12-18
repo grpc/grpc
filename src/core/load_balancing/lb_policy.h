@@ -152,14 +152,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// The LB policy may use the existing metadata to influence its routing
     /// decision, and it may add new metadata elements to be sent with the
     /// call to the chosen backend.
-    // TODO(roth): Before making the LB policy API public, consider
-    // whether this is the right way to expose metadata to the picker.
-    // This approach means that if a pick modifies metadata but then we
-    // discard the pick because the subchannel is not connected, the
-    // metadata change will still have been made.  Maybe we actually
-    // want to somehow provide metadata changes in PickResult::Complete
-    // instead?  Or maybe we use a CallTracer that can add metadata when
-    // the call actually starts on the subchannel?
     MetadataInterface* initial_metadata;
     /// An interface for accessing call state.  Can be used to allocate
     /// memory associated with the call in an efficient way.
