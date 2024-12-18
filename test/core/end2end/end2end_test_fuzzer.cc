@@ -41,8 +41,8 @@
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/test_config.h"
 
-using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::DefaultEventEngineScope;
+using ::grpc_event_engine::experimental::FuzzingEventEngine;
 
 bool squelch = true;
 
@@ -100,8 +100,8 @@ void RunEnd2endFuzzer(const core_end2end_test_fuzzer::Msg& msg) {
   FuzzingEventEngine::Options options;
   options.max_delay_run_after = std::chrono::milliseconds(500);
   options.max_delay_write = std::chrono::microseconds(5);
-  std::shared_ptr<FuzzingEventEngine> engine(options,
-                                             msg.event_engine_actions());
+  auto engine =
+      std::make_shared<FuzzingEventEngine>(options, msg.event_engine_actions());
   DefaultEventEngineScope engine_scope(engine);
   if (!squelch) {
     fprintf(stderr, "RUN TEST: %s\n", tests[test_id].name.c_str());
