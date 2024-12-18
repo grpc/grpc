@@ -125,6 +125,8 @@ TEST(CredentialsTest,
   key_cert_pair.certificate_chain = GetFileContents(SERVER_CERT_PATH);
   StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
   EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
+  EXPECT_EQ(provider.ValidateRootCertificates(), absl::OkStatus());
+  EXPECT_EQ(provider.ValidateIdentityKeyCertPairs(), absl::OkStatus());
 }
 
 TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedRoot) {
@@ -142,6 +144,8 @@ TEST(CredentialsTest,
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
                                           CA_CERT_PATH, 1);
   EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
+  EXPECT_EQ(provider.ValidateRootCertificates(), absl::OkStatus());
+  EXPECT_EQ(provider.ValidateIdentityKeyCertPairs(), absl::OkStatus());
 }
 
 TEST(CredentialsTest, FileWatcherCertificateProviderWithMalformedRoot) {
