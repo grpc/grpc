@@ -31,6 +31,7 @@ namespace grpc_core {
 
 // A Loop combinator
 //
+// Input:
 // A Loop combinator takes as input only one promise or promise factory.
 // This input promise or promise factory should have a return type of LoopCtl<T>
 // which is an alias for absl::variant<Continue, T> . Also, this promise can
@@ -46,11 +47,10 @@ namespace grpc_core {
 // promise has return value as LoopCtl<absl::Status> , a failure status will
 // cause the Loop to break.
 //
-// Return
+// Return:
 // The input to the Loop combinator has return type LoopCtl<T> , and the Loop
 // combinator when executed will return Poll<T> Our current implementation of
-// Loop combinator makes sure that the the Loop combinator never returns
-// Pending{}
+// Loop combinator never returns Pending{}
 
 // Special type - signals to loop to take another iteration, instead of
 // finishing
