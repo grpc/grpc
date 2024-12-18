@@ -52,7 +52,7 @@ grpc_cc_test(
 grpc_fuzzer(
     name = "tcp_frame_header_fuzzer",
     srcs = ["tcp_frame_header_fuzzer.cc"],
-    corpus = "frame_header_fuzzer_corpus",
+    corpus = "corpus/frame_header_fuzzer",
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
@@ -82,9 +82,9 @@ grpc_cc_test(
 )
 
 grpc_proto_fuzzer(
-    name = "frame_fuzzer",
-    srcs = ["frame_fuzzer.cc"],
-    corpus = "frame_fuzzer_corpus",
+    name = "tcp_frame_fuzzer",
+    srcs = ["tcp_frame_fuzzer.cc"],
+    corpus = "corpus/tcp_frame_fuzzer",
     external_deps = [
         "absl/log:check",
         "absl/log:log",
@@ -110,6 +110,7 @@ grpc_proto_fuzzer(
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//src/core:chaotic_good_tcp_frame_transport",
         "//test/core/promise:test_context",
     ],
 )
