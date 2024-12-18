@@ -97,17 +97,18 @@ TEST(CallStateTest, ClientToServerMessagesWaitForInitialMetadata) {
   CallState state;
   EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
   state.BeginPushClientToServerMessage();
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(), IsPending());
   EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
   state.BeginPullClientInitialMetadata();
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(), IsPending());
   EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
   EXPECT_WAKEUP(activity, state.FinishPullClientInitialMetadata());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(), IsPending());
   EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(), IsPending());
   EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(),
+              IsReady(Success{}));
 }
 
 TEST(CallStateTest, RepeatedClientToServerMessagesWithHalfClose) {
@@ -120,37 +121,41 @@ TEST(CallStateTest, RepeatedClientToServerMessagesWithHalfClose) {
   // Message 0
   EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
   EXPECT_WAKEUP(activity, state.BeginPushClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(), IsPending());
   EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(), IsPending());
   EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(),
+              IsReady(Success{}));
 
   // Message 1
   EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
   EXPECT_WAKEUP(activity, state.BeginPushClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(), IsPending());
   EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(), IsPending());
   EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(),
+              IsReady(Success{}));
 
   // Message 2: push before polling
   state.BeginPushClientToServerMessage();
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(), IsPending());
   EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(), IsPending());
   EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(),
+              IsReady(Success{}));
 
   // Message 3: push before polling and half close
   state.BeginPushClientToServerMessage();
   state.ClientToServerHalfClose();
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(), IsPending());
   EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(), IsPending());
   EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(),
+              IsReady(Success{}));
 
   // ... and now we should see the half close
   EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(false));
@@ -177,18 +182,19 @@ TEST(CallStateTest, ServerToClientMessagesWaitForInitialMetadata) {
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsPending());
   EXPECT_WAKEUP(activity, state.PushServerInitialMetadata());
   state.BeginPushServerToClientMessage();
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(), IsPending());
   EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
   EXPECT_WAKEUP(activity,
                 EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(),
                             IsReady(true)));
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(), IsPending());
   EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
   EXPECT_WAKEUP(activity, state.FinishPullServerInitialMetadata());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(), IsPending());
   EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(true));
   EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(),
+              IsReady(Success{}));
 }
 
 TEST(CallStateTest, RepeatedServerToClientMessages) {
@@ -203,36 +209,40 @@ TEST(CallStateTest, RepeatedServerToClientMessages) {
   // Message 0
   EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
   EXPECT_WAKEUP(activity, state.BeginPushServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(), IsPending());
   EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(), IsPending());
   EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(),
+              IsReady(Success{}));
 
   // Message 1
   EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
   EXPECT_WAKEUP(activity, state.BeginPushServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(), IsPending());
   EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(), IsPending());
   EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(),
+              IsReady(Success{}));
 
   // Message 2: push before polling
   state.BeginPushServerToClientMessage();
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(), IsPending());
   EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(), IsPending());
   EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(),
+              IsReady(Success{}));
 
   // Message 3: push before polling
   state.BeginPushServerToClientMessage();
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(), IsPending());
   EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(), IsPending());
   EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(),
+              IsReady(Success{}));
 }
 
 TEST(CallStateTest, ReceiveTrailersOnly) {
@@ -345,11 +355,12 @@ TEST(CallStateTest, ClientSendBlockedUntilPullCompletes) {
   state.FinishPullClientInitialMetadata();
   EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
   EXPECT_WAKEUP(activity, state.BeginPushClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(), IsPending());
   EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(), IsPending());
   EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
+  EXPECT_THAT(state.PollReadyForPushClientToServerMessage(),
+              IsReady(Success{}));
 }
 
 TEST(CallStateTest, ServerSendBlockedUntilPullCompletes) {
@@ -364,11 +375,12 @@ TEST(CallStateTest, ServerSendBlockedUntilPullCompletes) {
   state.FinishPullClientInitialMetadata();
   EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
   EXPECT_WAKEUP(activity, state.BeginPushServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(), IsPending());
   EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(), IsPending());
   EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
+  EXPECT_THAT(state.PollReadyForPushServerToClientMessage(),
+              IsReady(Success{}));
 }
 
 }  // namespace grpc_core
