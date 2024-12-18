@@ -99,15 +99,16 @@ void SetDefaultEventEngine(std::shared_ptr<EventEngine> engine) {
   g_weak_internal_event_engine->reset();
 }
 
-void ShutdownDefaultEventEngine() {
+void ShutdownDefaultEventEngine(bool wait) {
   std::shared_ptr<EventEngine> engine;
   {
     grpc_core::MutexLock lock(&*g_mu);
-    g_weak_internal_event_engine->reset();
     engine = std::move(*g_user_event_engine);
     g_user_event_engine->reset();
   }
-  WaitForSingleOwner(std::move(engine));
+  if (wait) {
+    WaitForSingleOwner(std::move(engine));
+  }
 }
 
 void EventEngineFactoryReset() {
@@ -116,13 +117,15 @@ void EventEngineFactoryReset() {
 }
 
 std::shared_ptr<EventEngine> CreateEventEngine() {
-#ifdef GRPC_MAXIMIZE_THREADYNESS
-  return std::make_shared<ThreadyEventEngine>(CreateEventEngineInner());
-#endif
+  std::shared_ptr<EventEngine> engine;
   if (auto* factory = g_event_engine_factory.load()) {
-    return (*factory)();
+    engine = (*factory)();
   }
-  return DefaultEventEngineFactory();
+  engine = DefaultEventEngineFactory();
+#ifdef GRPC_MAXIMIZE_THREADYNESS
+  return std::make_shared<ThreadyEventEngine>(std::move(engine));
+#endif
+  return engine;
 }
 
 // std::shared_ptr<EventEngine> GetDefaultEventEngine(

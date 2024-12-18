@@ -550,9 +550,15 @@ std::shared_ptr<EventEngine> GetDefaultEventEngine();
 /// ShutdownDefaultEventEngine. If you don't, the default engine will never be
 /// destroyed.
 ///
+/// By default, this method will return when all refs are released and the
+/// engine has been destroyed. If \a wait is false, this function will reset the
+/// internal gRPC state to that there will be no _new uses_ of the
+/// application-provided engine, but the function will not wait for the engine
+/// to be destroyed.
+///
 /// Note that this method will never return if you also hold a ref to that
 /// default engine anywhere else in your application.
-void ShutdownDefaultEventEngine();
+void ShutdownDefaultEventEngine(bool wait = true);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

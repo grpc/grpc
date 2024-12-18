@@ -104,17 +104,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "smoke_test",
-    srcs = ["smoke_test.cc"],
-    external_deps = ["gtest"],
-    deps = [
-        "//:event_engine_base_hdrs",
-        "//:gpr_platform",
-        "//test/core/test_util:grpc_test_util_unsecure",
-    ],
-)
-
-grpc_cc_test(
     name = "factory_test",
     srcs = ["factory_test.cc"],
     external_deps = ["gtest"],
