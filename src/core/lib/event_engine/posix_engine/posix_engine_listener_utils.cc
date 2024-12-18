@@ -60,28 +60,28 @@ using ListenerSocket = ListenerSocketsContainer::ListenerSocket;
 #ifdef GRPC_HAVE_IFADDRS
 
 // Bind to "::" to get a port number not used by any address.
-absl::StatusOr<int> GetUnusedPort() {
+absl::StatusOr<int> GetUnusedPort(const SystemApi& system_api) {
   ResolvedAddress wild = ResolvedAddressMakeWild6(0);
   PosixSocketWrapper::DSMode dsmode;
-  auto sock = PosixSocketWrapper::CreateDualStackSocket(nullptr, wild,
-                                                        SOCK_STREAM, 0, dsmode);
+  auto sock = PosixSocketWrapper::CreateDualStackSocket(
+      system_api, nullptr, wild, SOCK_STREAM, 0, dsmode);
   GRPC_RETURN_IF_ERROR(sock.status());
   if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
     wild = ResolvedAddressMakeWild4(0);
   }
-  if (bind(sock->Fd(), wild.address(), wild.size()) != 0) {
-    close(sock->Fd());
+  if (system_api.Bind(sock->Fd(), wild.address(), wild.size()) != 0) {
+    system_api.Close(sock->Fd());
     return absl::FailedPreconditionError(
         absl::StrCat("bind(GetUnusedPort): ", std::strerror(errno)));
   }
   socklen_t len = wild.size();
-  if (getsockname(sock->Fd(), const_cast<sockaddr*>(wild.address()), &len) !=
-      0) {
-    close(sock->Fd());
+  if (system_api.GetSockName(sock->Fd(), const_cast<sockaddr*>(wild.address()),
+                             &len) != 0) {
+    system_api.Close(sock->Fd());
     return absl::FailedPreconditionError(
         absl::StrCat("getsockname(GetUnusedPort): ", std::strerror(errno)));
   }
-  close(sock->Fd());
+  system_api.Close(sock->Fd());
   int port = ResolvedAddressGetPort(wild);
   if (port <= 0) {
     return absl::FailedPreconditionError("Bad port");
@@ -130,27 +130,28 @@ int GetMaxAcceptQueueSize() {
 }
 
 // Prepare a recently-created socket for listening.
-absl::Status PrepareSocket(const PosixTcpOptions& options,
+absl::Status PrepareSocket(const SystemApi& system_api,
+                           const PosixTcpOptions& options,
                            ListenerSocket& socket) {
   ResolvedAddress sockname_temp;
-  int fd = socket.sock.Fd();
-  CHECK_GE(fd, 0);
+  FileDescriptor fd = socket.sock.Fd();
+  CHECK(fd.ready());
   bool close_fd = true;
   socket.zero_copy_enabled = false;
   socket.port = 0;
-  auto sock_cleanup = absl::MakeCleanup([&close_fd, fd]() -> void {
-    if (close_fd && fd >= 0) {
-      close(fd);
+  auto sock_cleanup = absl::MakeCleanup([&close_fd, fd, &system_api]() -> void {
+    if (close_fd && fd.ready()) {
+      system_api.Close(fd);
     }
   });
-  if (PosixSocketWrapper::IsSocketReusePortSupported() &&
-      options.allow_reuse_port && socket.addr.address()->sa_family != AF_UNIX &&
+  if (system_api.IsSocketReusePortSupported() && options.allow_reuse_port &&
+      socket.addr.address()->sa_family != AF_UNIX &&
       !ResolvedAddressIsVSock(socket.addr)) {
-    GRPC_RETURN_IF_ERROR(socket.sock.SetSocketReusePort(1));
+    GRPC_RETURN_IF_ERROR(system_api.SetSocketReusePort(socket.sock.Fd(), 1));
   }
 
 #ifdef GRPC_LINUX_ERRQUEUE
-  if (!socket.sock.SetSocketZeroCopy().ok()) {
+  if (!system_api.SetSocketZeroCopy(socket.sock.Fd()).ok()) {
     // it's not fatal, so just log it.
     VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
   } else {
@@ -158,21 +159,25 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
   }
 #endif
 
-  GRPC_RETURN_IF_ERROR(socket.sock.SetSocketNonBlocking(1));
-  GRPC_RETURN_IF_ERROR(socket.sock.SetSocketCloexec(1));
+  GRPC_RETURN_IF_ERROR(system_api.SetSocketNonBlocking(socket.sock.Fd(), 1));
+  GRPC_RETURN_IF_ERROR(system_api.SetSocketCloexec(socket.sock.Fd(), 1));
 
   if (socket.addr.address()->sa_family != AF_UNIX &&
       !ResolvedAddressIsVSock(socket.addr)) {
-    GRPC_RETURN_IF_ERROR(socket.sock.SetSocketLowLatency(1));
-    GRPC_RETURN_IF_ERROR(socket.sock.SetSocketReuseAddr(1));
-    GRPC_RETURN_IF_ERROR(socket.sock.SetSocketDscp(options.dscp));
-    socket.sock.TrySetSocketTcpUserTimeout(options, false);
+    GRPC_RETURN_IF_ERROR(system_api.SetSocketLowLatency(socket.sock.Fd(), 1));
+    GRPC_RETURN_IF_ERROR(system_api.SetSocketReuseAddr(socket.sock.Fd(), 1));
+    GRPC_RETURN_IF_ERROR(
+        system_api.SetSocketDscp(socket.sock.Fd(), options.dscp));
+    system_api.TrySetSocketTcpUserTimeout(socket.sock.Fd(),
+                                          options.keep_alive_time_ms,
+                                          options.keep_alive_timeout_ms, false);
   }
-  GRPC_RETURN_IF_ERROR(socket.sock.SetSocketNoSigpipeIfPossible());
-  GRPC_RETURN_IF_ERROR(socket.sock.ApplySocketMutatorInOptions(
-      GRPC_FD_SERVER_LISTENER_USAGE, options));
+  GRPC_RETURN_IF_ERROR(
+      system_api.SetSocketNoSigpipeIfPossible(socket.sock.Fd()));
+  GRPC_RETURN_IF_ERROR(ApplySocketMutatorInOptions(
+      socket.sock.Fd(), GRPC_FD_SERVER_LISTENER_USAGE, options));
 
-  if (bind(fd, socket.addr.address(), socket.addr.size()) < 0) {
+  if (system_api.Bind(fd, socket.addr.address(), socket.addr.size()) < 0) {
     auto sockaddr_str = ResolvedAddressToString(socket.addr);
     if (!sockaddr_str.ok()) {
       LOG(ERROR) << "Could not convert sockaddr to string: "
@@ -185,14 +190,14 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
                      "': ", std::strerror(errno)));
   }
 
-  if (listen(fd, GetMaxAcceptQueueSize()) < 0) {
+  if (system_api.Listen(fd, GetMaxAcceptQueueSize()) < 0) {
     return absl::FailedPreconditionError(
         absl::StrCat("Error in listen: ", std::strerror(errno)));
   }
   socklen_t len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
 
-  if (getsockname(fd, const_cast<sockaddr*>(sockname_temp.address()), &len) <
-      0) {
+  if (system_api.GetSockName(fd, const_cast<sockaddr*>(sockname_temp.address()),
+                             &len) < 0) {
     return absl::FailedPreconditionError(
         absl::StrCat("Error in getsockname: ", std::strerror(errno)));
   }
@@ -207,11 +212,12 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
 }  // namespace
 
 absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
-    const PosixTcpOptions& options, const ResolvedAddress& addr) {
+    const SystemApi& system_api, const PosixTcpOptions& options,
+    const ResolvedAddress& addr) {
   ResolvedAddress addr4_copy;
   ListenerSocket socket;
   auto result = PosixSocketWrapper::CreateDualStackSocket(
-      nullptr, addr, SOCK_STREAM, 0, socket.dsmode);
+      system_api, nullptr, addr, SOCK_STREAM, 0, socket.dsmode);
   if (!result.ok()) {
     return result.status();
   }
@@ -222,14 +228,14 @@ absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
   } else {
     socket.addr = addr;
   }
-  GRPC_RETURN_IF_ERROR(PrepareSocket(options, socket));
+  GRPC_RETURN_IF_ERROR(PrepareSocket(system_api, options, socket));
   CHECK_GT(socket.port, 0);
   return socket;
 }
 
 absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
-    ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
-    int requested_port) {
+    const SystemApi& system_api, ListenerSocketsContainer& listener_sockets,
+    const PosixTcpOptions& options, int requested_port) {
 #ifdef GRPC_HAVE_IFADDRS
   absl::Status op_status = absl::OkStatus();
   struct ifaddrs* ifa = nullptr;
@@ -237,7 +243,7 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
   bool no_local_addresses = true;
   int assigned_port = 0;
   if (requested_port == 0) {
-    auto result = GetUnusedPort();
+    auto result = GetUnusedPort(system_api);
     GRPC_RETURN_IF_ERROR(result.status());
     requested_port = *result;
     VLOG(2) << "Picked unused port " << requested_port;
@@ -282,7 +288,7 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
               << ifa_name;
       continue;
     }
-    auto result = CreateAndPrepareListenerSocket(options, addr);
+    auto result = CreateAndPrepareListenerSocket(system_api, options, addr);
     if (!result.ok()) {
       op_status = absl::FailedPreconditionError(
           absl::StrCat("Failed to add listener: ", addr_str,
@@ -310,8 +316,8 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
 }
 
 absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
-    ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
-    int requested_port) {
+    const SystemApi& system_api, ListenerSocketsContainer& listener_sockets,
+    const PosixTcpOptions& options, int requested_port) {
   ResolvedAddress wild4 = ResolvedAddressMakeWild4(requested_port);
   ResolvedAddress wild6 = ResolvedAddressMakeWild6(requested_port);
   absl::StatusOr<ListenerSocket> v6_sock;
@@ -319,12 +325,12 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
   int assigned_port = 0;
 
   if (SystemHasIfAddrs() && options.expand_wildcard_addrs) {
-    return ListenerContainerAddAllLocalAddresses(listener_sockets, options,
-                                                 requested_port);
+    return ListenerContainerAddAllLocalAddresses(system_api, listener_sockets,
+                                                 options, requested_port);
   }
 
   // Try listening on IPv6 first.
-  v6_sock = CreateAndPrepareListenerSocket(options, wild6);
+  v6_sock = CreateAndPrepareListenerSocket(system_api, options, wild6);
   if (v6_sock.ok()) {
     listener_sockets.Append(*v6_sock);
     requested_port = v6_sock->port;
@@ -336,7 +342,7 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
   }
   // If we got a v6-only socket or nothing, try adding 0.0.0.0.
   ResolvedAddressSetPort(wild4, requested_port);
-  v4_sock = CreateAndPrepareListenerSocket(options, wild4);
+  v4_sock = CreateAndPrepareListenerSocket(system_api, options, wild4);
   if (v4_sock.ok()) {
     assigned_port = v4_sock->port;
     listener_sockets.Append(*v4_sock);
