@@ -309,8 +309,6 @@ class Server : public ServerInterface, private internal::GrpcLibrary {
 
   internal::CondVar shutdown_cv_;
 
-  std::shared_ptr<GlobalCallbacks> global_callbacks_;
-
   std::vector<std::string> services_;
   bool has_async_generic_service_ = false;
   bool has_callback_generic_service_ = false;
