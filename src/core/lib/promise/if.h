@@ -55,16 +55,14 @@ namespace promise_detail {
 // promise factory, the promise is executed. The return value of this execution
 // could either be Poll<bool> or Poll<absl::StatusOr<bool>> . If the first input
 // is a bool, it is taken as it is.
-// 2. Now the value from #1 is processed to decide if we want to run the second
-// or third promise.
-// 3. If the promise returns Pending{} , the second and third promises are not
-// run.
-// 4. If the promise returns any failure status , the second and third promises
-// are not run.
-// 5. If the value is equivalent to true, the combinator executes the second
-// promise (if_true).
-// 6. If the value is equivalent to false, the combinator executes the third
-// promise (if_false).
+// 2. If the first promise returns Pending{} , the second and third promises are
+// not executed.
+// 3. If the promise returns any failure status , the second and third promises
+// are not executed.
+// 4. If the return value of the first promise is equivalent to true, the
+// combinator executes the second promise (if_true).
+// 5. If the return value of the first promise is equivalent to false, the
+// combinator executes the third promise (if_false).
 //
 // Both the condition and the if_true/if_false promises will be executed
 // serially on the same thread.
