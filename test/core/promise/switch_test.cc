@@ -22,11 +22,11 @@ namespace grpc_core {
 
 TEST(SwitchTest, JustDefault) {
   std::string execution_order;
-  EXPECT_EQ(Switch(42, Default([&execution_order] {
-                     absl::StrAppend(&execution_order, "42");
-                     return 1;
-                   }))(),
-            Poll<int>(1));
+  auto switch_combinator = Switch(42, Default([&execution_order] {
+                                    absl::StrAppend(&execution_order, "42");
+                                    return 1;
+                                  }));
+  EXPECT_EQ(switch_combinator(), Poll<int>(1));
   EXPECT_STREQ(execution_order.c_str(), "42");
 }
 
@@ -69,7 +69,8 @@ TEST(SwitchTest, ThreeImmediateCases) {
 
 TEST(SwitchTest, Pending) {
   std::string execution_order;
-  auto test_switch = [&execution_order](int num) {
+  bool is_pending = true;
+  auto test_switch = [&execution_order, &is_pending](int num) {
     execution_order.clear();
     return Switch(num, Case<int, 0>([&execution_order]() -> Poll<int> {
                     absl::StrAppend(&execution_order, "0");
@@ -83,9 +84,10 @@ TEST(SwitchTest, Pending) {
                     absl::StrAppend(&execution_order, "2");
                     return 200;
                   }),
-                  Case<int, 3>([&execution_order]() -> Poll<int> {
+                  Case<int, 3>([&execution_order, &is_pending]() -> Poll<int> {
                     absl::StrAppend(&execution_order, "3");
-                    return Pending{};
+                    if (is_pending) return Pending{};
+                    return 300;
                   }),
                   Default([&execution_order] {
                     absl::StrAppend(&execution_order, "D");
@@ -107,6 +109,10 @@ TEST(SwitchTest, Pending) {
 
   EXPECT_EQ(test_switch(4)(), Poll<int>(-1));
   EXPECT_STREQ(execution_order.c_str(), "D");
+
+  is_pending = false;
+  EXPECT_EQ(test_switch(3)(), Poll<int>(300));
+  EXPECT_STREQ(execution_order.c_str(), "3");
 }
 
 TEST(SwitchTest, ThreeCasesFromEnum) {
@@ -129,7 +135,7 @@ TEST(SwitchTest, ThreeCasesFromEnum) {
                   }),
                   Default([&execution_order] {
                     absl::StrAppend(&execution_order, "D");
-                    return -1;
+                    return 52;
                   }));
   };
 
