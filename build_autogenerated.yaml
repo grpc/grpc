@@ -3991,6 +3991,7 @@ libs:
   deps:
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:string_view
   - grpc
   - protobuf
   baselib: true
@@ -4372,6 +4373,7 @@ libs:
   deps:
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:string_view
   - grpc_unsecure
   - protobuf
   baselib: true
@@ -24139,6 +24141,7 @@ targets:
   - gtest
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:string_view
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -24425,6 +24428,7 @@ targets:
   - gtest
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:string_view
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -25288,6 +25292,7 @@ targets:
   - gtest
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:string_view
   - protobuf
   - grpc_test_util
   uses_polling: false
