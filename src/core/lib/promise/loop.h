@@ -40,17 +40,33 @@ namespace grpc_core {
 //
 // Running of the Loop combinator:
 // The input promise is guranteed to run atleast once when it is invoked.
-// The input promise will keep running for as long as it returns Continue().
-// If the input promise returns T instead, the Loop combinator will stop
-// execution and return this value to the caller as Poll<T>. The execution of
-// multiple iterations of the promise happen on the same thread. If the Loop
-// promise has return value as LoopCtl<absl::Status> , a failure status will
-// cause the Loop to break.
+// The Loop combinators execution will keep running input promise for as long as
+// the input promise returns Continue(). If the input promise returns T instead,
+// the Loop combinator will stop execution and return this value to the caller
+// as Poll<T>. The execution of multiple iterations of the input promise happen
+// on the same thread. If the Loop promise has return value as
+// LoopCtl<absl::Status> , a failure status will cause the Loop to break.
 //
 // Return:
-// The input to the Loop combinator has return type LoopCtl<T> , and the Loop
-// combinator when executed will return Poll<T> Our current implementation of
-// Loop combinator never returns Pending{}
+// The input promise to the Loop combinator has return type LoopCtl<T> , and the
+// Loop combinator when executed will return Poll<T>. Our current implementation
+// of Loop combinator never returns Pending{}
+//
+// Example:
+//
+// {
+//   std::string execution_order;
+//   int i = 0;
+//   Poll<int> retval = Loop([&execution_order, &i]() -> LoopCtl<int> {
+//     absl::StrAppend(&execution_order, i);
+//     i++;
+//     if (i < 5) return Continue();
+//     return i;
+//   })();
+//   EXPECT_TRUE(retval.ready());
+//   EXPECT_EQ(retval.value(), 5);
+//   EXPECT_STREQ(execution_order.c_str(), "01234");
+// }
 
 // Special type - signals to loop to take another iteration, instead of
 // finishing
