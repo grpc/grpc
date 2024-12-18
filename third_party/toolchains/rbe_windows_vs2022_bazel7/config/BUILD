@@ -28,7 +28,7 @@ toolchain(
         "@platforms//os:windows",
         "@platforms//cpu:x86_64",
     ],
-    toolchain = "//third_party/toolchains/rbe_windows_bazel_7.3.1_vs2022/cc:cc-compiler-x64_windows",
+    toolchain = "//third_party/toolchains/rbe_windows_vs2022_bazel7/cc:cc-compiler-x64_windows",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
 

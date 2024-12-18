@@ -1124,6 +1124,17 @@ def _impl(ctx):
             ],
             implies = ["msvc_compile_env", "msvc_link_env"],
         )
+
+        symbol_check_feature = feature(
+            name = "symbol_check",
+            flag_sets = [
+                flag_set(
+                    actions = [ACTION_NAMES.cpp_link_static_library],
+                    flag_groups = [flag_group(flags = ["/WX:4006"])],
+                ),
+            ],
+        )
+
         features = [
             no_legacy_features_feature,
             nologo_feature,
@@ -1174,6 +1185,7 @@ def _impl(ctx):
             no_windows_export_all_symbols_feature,
             supports_dynamic_linker_feature,
             supports_interface_shared_libraries_feature,
+            symbol_check_feature,
         ]
     else:
         targets_windows_feature = feature(
