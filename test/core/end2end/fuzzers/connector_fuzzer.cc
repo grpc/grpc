@@ -53,7 +53,7 @@ class ConnectorFuzzer {
             FuzzingEventEngine::Options(), msg.event_engine_actions())),
         mock_endpoint_controller_(MockEndpointController::Create(engine_)),
         connector_(make_connector()),
-        engine_scope_(std::dynamic_pointer_cast<EventEngine*>(engine_) {
+        engine_scope_(std::dynamic_pointer_cast<EventEngine>(engine_)) {
     CHECK(engine_);
     for (const auto& input : msg.network_input()) {
       network_inputs_.push(input);
