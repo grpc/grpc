@@ -43,8 +43,9 @@ namespace grpc_core {
 // How it works :
 // Given a discriminator, the Switch combinator tries to find a matching Case.
 // If a matching Case is found, then the promise corresponding to the matching
-// Case is returned. If a matching Case is not found, the promise corresponding
-// to the Default is returned.
+// Case is returned.
+// If a matching Case is not found, the promise corresponding to the Default is
+// returned.
 //
 // Example :
 //
@@ -64,6 +65,8 @@ namespace grpc_core {
 //
 // All Case objects and the Default object need to have the same Poll<T> return
 // type.
+// Our code currently permits you to create multiple cases for the same
+// discriminator value. However this should be avoided as it could lead to bugs.
 
 namespace promise_detail {
 template <typename D, D discriminator, typename F>
