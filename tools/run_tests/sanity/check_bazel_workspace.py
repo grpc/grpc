@@ -59,8 +59,6 @@ _GRPC_DEP_NAMES = [
     "com_google_fuzztest",
     "io_opencensus_cpp",
     "io_opentelemetry_cpp",
-    # TODO(stanleycheung): remove when prometheus-cpp has new release
-    "com_github_jupp0r_prometheus_cpp",
     "envoy_api",
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
@@ -91,8 +89,6 @@ _GRPC_BAZEL_ONLY_DEPS = [
     "com_google_absl",
     "com_google_fuzztest",
     "io_opencensus_cpp",
-    # TODO(stanleycheung): remove when prometheus-cpp has new release
-    "com_github_jupp0r_prometheus_cpp",
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _BAZEL_COMPDB_DEP_NAME,
