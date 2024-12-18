@@ -183,7 +183,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
     }
     std::string expected_addresses_str = absl::StrJoin(expected_addresses, ",");
     for (size_t i = 0; i < 3; ++i) {
-      EXPECT_EQ(ExpectPickComplete(picker, {attribute},
+      EXPECT_EQ(ExpectPickComplete(picker, {attribute}, /*metadata=*/{},
                                    /*subchannel_call_tracker=*/nullptr,
                                    /*picked_subchannel=*/nullptr, location),
                 expected)
@@ -203,8 +203,9 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
     std::vector<std::string> actual_picks;
     for (size_t i = 0; i < expected.size(); ++i) {
       auto address = ExpectPickComplete(
-          picker, {attribute}, /*subchannel_call_tracker=*/nullptr,
-          /*picked_subchannel=*/nullptr, location);
+          picker, {attribute}, /*metadata=*/{},
+          /*subchannel_call_tracker=*/nullptr, /*picked_subchannel=*/nullptr,
+          location);
       ASSERT_TRUE(address.has_value())
           << location.file() << ":" << location.line();
       EXPECT_THAT(*address, ::testing::AnyOfArray(expected))

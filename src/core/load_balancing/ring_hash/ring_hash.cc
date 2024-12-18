@@ -336,7 +336,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   // Determine request hash.
   bool using_random_hash = false;
   uint64_t request_hash;
-  if (request_hash_header_ == nullptr) {
+  if (request_hash_header_.as_string_view().empty()) {
     // Being used in xDS.  Request hash is passed in via an attribute.
     auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
     auto* hash_attribute = call_state->GetCallAttribute<RequestHashAttribute>();
@@ -935,7 +935,8 @@ class RingHashFactory final : public LoadBalancingPolicyFactory {
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
     return LoadFromJson<RefCountedPtr<RingHashLbConfig>>(
-        json, JsonArgs(), "errors validating ring_hash LB policy config");
+        json, RingHashJsonArgs(),
+        "errors validating ring_hash LB policy config");
   }
 };
 
