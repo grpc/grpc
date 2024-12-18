@@ -27,9 +27,14 @@
 /// to be decompressed by the message_decompress filter. (Does not apply for
 /// stream compression.)
 #define GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED (0x40000000u)
+/// Internal bit flag for when we know a particular message is the last one to
+/// be sent: this allows various flow control optimizations.
+#define GRPC_WRITE_INTERNAL_KNOWN_LAST_MESSAGE (0x20000000u)
 /// Mask of all valid internal flags.
-#define GRPC_WRITE_INTERNAL_USED_MASK \
-  (GRPC_WRITE_INTERNAL_COMPRESS | GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED)
+#define GRPC_WRITE_INTERNAL_USED_MASK             \
+  (GRPC_WRITE_INTERNAL_COMPRESS |                 \
+   GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED | \
+   GRPC_WRITE_INTERNAL_KNOWN_LAST_MESSAGE)
 
 namespace grpc_core {
 

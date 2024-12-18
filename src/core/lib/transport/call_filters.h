@@ -1745,11 +1745,23 @@ class CallFilters {
   // Client: Push client to server message
   // Returns a promise that resolves to a StatusFlag indicating success
   GRPC_MUST_USE_RESULT auto PushClientToServerMessage(MessageHandle message) {
-    call_state_.BeginPushClientToServerMessage();
     DCHECK_NE(message.get(), nullptr);
-    DCHECK_EQ(push_client_to_server_message_.get(), nullptr);
-    push_client_to_server_message_ = std::move(message);
-    return [this]() { return call_state_.PollPushClientToServerMessage(); };
+    return Seq(
+        [this]() {
+          return call_state_.PollReadyForPushClientToServerMessage();
+        },
+        [this, message = std::move(message)]() mutable {
+          call_state_.BeginPushClientToServerMessage();
+          DCHECK_EQ(push_client_to_server_message_.get(), nullptr);
+          bool is_last =
+              (message->flags() & GRPC_WRITE_INTERNAL_KNOWN_LAST_MESSAGE) != 0;
+          push_client_to_server_message_ = std::move(message);
+          return If(
+              is_last, []() -> Poll<StatusFlag> { return Success{}; },
+              [this]() {
+                return call_state_.PollReadyForPushClientToServerMessage();
+              });
+        });
   }
   // Client: Indicate that no more messages will be sent
   void FinishClientToServerSends() { call_state_.ClientToServerHalfClose(); }
@@ -1779,9 +1791,23 @@ class CallFilters {
   // Server: Push server to client message
   // Returns a promise that resolves to a StatusFlag indicating success
   GRPC_MUST_USE_RESULT auto PushServerToClientMessage(MessageHandle message) {
-    call_state_.BeginPushServerToClientMessage();
-    push_server_to_client_message_ = std::move(message);
-    return [this]() { return call_state_.PollPushServerToClientMessage(); };
+    DCHECK_NE(message.get(), nullptr);
+    return Seq(
+        [this]() {
+          return call_state_.PollReadyForPushServerToClientMessage();
+        },
+        [this, message = std::move(message)]() mutable {
+          call_state_.BeginPushServerToClientMessage();
+          DCHECK_EQ(push_server_to_client_message_.get(), nullptr);
+          bool is_last =
+              (message->flags() & GRPC_WRITE_INTERNAL_KNOWN_LAST_MESSAGE) != 0;
+          push_server_to_client_message_ = std::move(message);
+          return If(
+              is_last, []() -> Poll<StatusFlag> { return Success{}; },
+              [this]() {
+                return call_state_.PollReadyForPushServerToClientMessage();
+              });
+        });
   }
   // Server: Fetch server to client message
   // Returns a promise that resolves to ServerToClientNextMessage

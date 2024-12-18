@@ -56,7 +56,8 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
                     }),
                 Map(handler.PullMessage(),
                     [](ClientToServerNextMessage msg) { return msg.status(); }),
-                handler.PushMessage(fixture.MakePayload())),
+                handler.PushMessage(fixture.MakePayload(
+                    GRPC_WRITE_INTERNAL_KNOWN_LAST_MESSAGE))),
             [&handler_done, &fixture, handler](StatusFlag status) mutable {
               CHECK(status.ok());
               handler.PushServerTrailingMetadata(
@@ -69,7 +70,8 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
                                                    &initiator_done]() mutable {
         return Map(
             AllOk<StatusFlag>(
-                Map(initiator.PushMessage(fixture.MakePayload()),
+                Map(initiator.PushMessage(fixture.MakePayload(
+                        GRPC_WRITE_INTERNAL_KNOWN_LAST_MESSAGE)),
                     [](StatusFlag) { return Success{}; }),
                 Map(initiator.PullServerInitialMetadata(),
                     [](absl::optional<ServerMetadataHandle> md) {
@@ -125,7 +127,7 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
                  });
     });
     call.initiator.SpawnInfallible("initiator", [&]() {
-      return Map(call.initiator.PushMessage(fixture.MakePayload()),
+      return Map(call.initiator.PushMessage(fixture.MakePayload(0)),
                  [&](StatusFlag result) {
                    CHECK(result.ok());
                    initiator_done.Notify();

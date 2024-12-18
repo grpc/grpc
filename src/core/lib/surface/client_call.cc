@@ -287,13 +287,16 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
   }
   if (!is_notify_tag_closure) grpc_cq_begin_op(cq_, notify_tag);
   BatchOpIndex op_index(ops, nops);
-  auto send_message =
-      op_index.OpHandler<GRPC_OP_SEND_MESSAGE>([this](const grpc_op& op) {
+  auto send_message = op_index.OpHandler<GRPC_OP_SEND_MESSAGE>(
+      [this, is_last = op_index.has_op(GRPC_OP_SEND_CLOSE_FROM_CLIENT)](
+          const grpc_op& op) {
         SliceBuffer send;
         grpc_slice_buffer_swap(
             &op.data.send_message.send_message->data.raw.slice_buffer,
             send.c_slice_buffer());
-        auto msg = arena()->MakePooled<Message>(std::move(send), op.flags);
+        auto msg = arena()->MakePooled<Message>(
+            std::move(send),
+            op.flags | (is_last ? GRPC_WRITE_INTERNAL_KNOWN_LAST_MESSAGE : 0));
         return [this, msg = std::move(msg)]() mutable {
           return started_call_initiator_.PushMessage(std::move(msg));
         };
