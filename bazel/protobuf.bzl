@@ -205,9 +205,6 @@ def get_staged_proto_file(label, context, source_file):
         # probably even in different repositories)
         prefix = _make_prefix(source_file.owner)
         copied_proto = context.actions.declare_file(source_file.path[len(prefix):])
-        # print(">>[xuan_testing] copy proto from: " + str(source_file.path) + " to :" + str(copied_proto.path))
-        # copy proto from: src/proto/grpc/channelz/channelz.proto
-        # to :bazel-out/k8-fastbuild/bin/src/python/grpcio_channelz/grpc_channelz/v1/channelz.proto
         context.actions.run_shell(
             inputs = [source_file],
             outputs = [copied_proto],
@@ -228,7 +225,6 @@ def protos_from_context(context):
     protos = []
     for src in context.attr.deps:
         for file in src[ProtoInfo].direct_sources:
-            # print(">>[xuan_testing] Checking file " + str(file))
             protos.append(get_staged_proto_file(context.label, context, file))
     return protos
 
@@ -279,7 +275,6 @@ def declare_out_files(protos, context, generated_file_format):
     """
 
     out_file_paths = []
-    # print("[xuan_testing] gen_path: " + str(context.genfiles_dir.path))
     for proto in protos:
         if not is_in_virtual_imports(proto):
             prefix = _make_prefix(proto.owner)
@@ -289,17 +284,8 @@ def declare_out_files(protos, context, generated_file_format):
             elif proto.path.startswith(prefix):
                 out_file_paths.append(proto.path[len(prefix):])
         else:
-            # print("[xuan_testing] declare_out_files proto.path: " + str(proto.path))
-            # bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors/channelz.proto
             out_file_paths.append(proto.path[proto.path.index(_VIRTUAL_IMPORTS) + 1:])
-            # print("[xuan_testing] out_file_path: " + str(out_file_paths[-1]))
-            # _virtual_imports/channelz_proto_descriptors/channelz.proto
-            # path = proto_path_to_generated_filename(
-            #     out_file_paths[-1],
-            #     generated_file_format,
-            # )
-            # print("[xuan_testing] path: " + str(path))
-            # _virtual_imports/channelz_proto_descriptors/channelz_pb2_grpc.py
+
     return [
         context.actions.declare_file(
             proto_path_to_generated_filename(
@@ -329,14 +315,9 @@ def get_out_dir(protos, context):
             fail("Proto sources must be either all virtual imports or all real")
     if at_least_one_virtual:
         out_dir = get_include_directory(protos[0])
-        # print("  [xuan_testing] include_directory: " + str(out_dir))
-        # bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors
         ws_root = protos[0].owner.workspace_root
-        # print("  [xuan_testing] ws_root: " + str(ws_root))
-        # ws_root:
         prefix = "/" + _make_prefix(protos[0].owner) + _VIRTUAL_IMPORTS[1:]
-        # print("  [xuan_testing] prefix: " + str(prefix))
-        # /src/proto/grpc/channelz/_virtual_imports/
+
         return struct(
             path = out_dir,
             import_path = out_dir[out_dir.find(prefix) + 1:],

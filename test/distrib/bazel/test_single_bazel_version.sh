@@ -91,7 +91,7 @@ do
     pushd "test/distrib/bazel/${TEST_DIRECTORY}/"
     if [ "${TEST_SHARD}" == "distribtest_${TEST_DIRECTORY}" ] ; then
       tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
-      tools/bazel test "${ACTION_ENV_FLAG}" --test_output=all --test_env=BUILD_SYSTEM=Bazel //:all || FAILED_TESTS="${FAILED_TESTS}distribtest_${TEST_DIRECTORY} "
+      tools/bazel test "${ACTION_ENV_FLAG}" --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}distribtest_${TEST_DIRECTORY} "
       SHARD_RAN="true"
     fi
     popd

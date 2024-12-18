@@ -18,7 +18,6 @@ package(default_visibility = ["//visibility:public"])
 
 py_proto_library(
     name = "health_py_pb2",
-    # imports = ["../../"],
     deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
 )
 

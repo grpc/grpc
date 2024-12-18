@@ -20,11 +20,11 @@ from time import sleep
 
 import grpc
 from grpc_health.v1 import health
-import os
-if os.environ.get('BUILD_SYSTEM') == 'Bazel':
+# Bazel build uses another path.
+try:
     import health_pb2
     import health_pb2_grpc
-else:
+except ImportError:
     from grpc_health.v1 import health_pb2
     from grpc_health.v1 import health_pb2_grpc
 import helloworld_pb2

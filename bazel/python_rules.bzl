@@ -27,7 +27,6 @@ load(
     "get_staged_proto_file",
     "includes_from_deps",
     "is_well_known",
-    "is_in_virtual_imports",
     "protos_from_context",
 )
 
@@ -72,6 +71,7 @@ def _gen_py_aspect_impl(target, context):
     tools = [context.executable._protoc]
 
     out_dir = get_out_dir(protos, context)
+
     arguments = ([
         "--python_out={}".format(out_dir.path),
         "--pyi_out={}".format(out_dir.path),
@@ -188,106 +188,32 @@ py_proto_library = protobuf_py_proto_library
 
 def _generate_pb2_grpc_src_impl(context):
     protos = protos_from_context(context)
-    is_virtual = False
-    for proto in protos:
-        if is_in_virtual_imports(proto):
-            is_virtual = True
     includes = includes_from_deps(context.attr.deps)
 
     out_files = declare_out_files(protos, context, _GENERATED_GRPC_PROTO_FORMAT)
-    print(">>>>>>[xuan_testing] pb2_grpc out_files: " + str(out_files))
-    # [<generated file src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors/channelz_pb2_grpc.py>]
-    # [<generated file src/python/grpcio_channelz/grpc_channelz/v1/channelz_pb2_grpc.py>]
-    # [<generated file src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors/grpc_channelz/v1/channelz_pb2_grpc.py>]
-
-    print(">>>>>>[xuan_testing] pb2_grpc out_files.dirname: " + str(out_files[0].dirname))
-    # bazel-out/k8-fastbuild/bin/src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors
-    # bazel-out/k8-fastbuild/bin/src/python/grpcio_channelz/grpc_channelz/v1
-    # bazel-out/k8-fastbuild/bin/src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors/grpc_channelz/v1
-    if is_virtual:
-        root, relative = out_files[0].path.split(_VIRTUAL_IMPORTS, 2)
-        # root: bazel-out/k8-fastbuild/bin/src/python/grpcio_channelz/grpc_channelz/v1
-        # relative: channelz_proto_descriptors/grpc_channelz/v1/channelz_pb2_grpc.py
-        result = root + _VIRTUAL_IMPORTS + relative.split("/", 1)[0]
-        # bazel-out/k8-fastbuild/bin/src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors
-        print(">>>>>>[xuan_testing] result: " + str(result))
-        out_path = result
-
     plugin_flags = ["grpc_2_0"] + context.attr.strip_prefixes
 
     arguments = []
     tools = [context.executable._protoc, context.executable._grpc_plugin]
     out_dir = get_out_dir(protos, context)
-    # bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors
-    print("[xuan_testing] pb2_grpc out_dir: " + str(out_dir))
-    # struct(import_path = "src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors",
-    #        path = "bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors")
-    # struct(import_path = None, path = "bazel-out/k8-fastbuild/bin")
-    # struct(import_path = "src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors",
-    #        path = "bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors")
-    print("[xuan_testing] pb2_grpc out_dir.path: " + str(out_dir.path))
-    # bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors
-    # bazel-out/k8-fastbuild/bin
-    # bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors
-    print("[xuan_testing] pb2_grpc context.genfiles_dir.path: " + str(context.genfiles_dir.path))
-    # bazel-out/k8-fastbuild/bin
     if out_dir.import_path:
         # is virtual imports
-        # out_path = out_dir.path
         out_path = get_include_directory(out_files[0])
     else:
         out_path = context.genfiles_dir.path
-    print(">>>>>>[xuan_testing] pb2_grpc out_path: " + str(out_path))
-    # bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors
-    # bazel-out/k8-fastbuild/bin
-    # bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors
-    # Fix 1:
-    # out_path = out_files[0].dirname
-    # if is_virtual:
-    #     out_path = result
-    # bazel-out/k8-fastbuild/bin/src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors
-    # Fix 2:
-    # out_path = result
     arguments += get_plugin_args(
         context.executable._grpc_plugin,
         plugin_flags,
         out_path,
         False,
     )
-    # --PLUGIN_out=grpc_2_0,src.python.grpcio_channelz.:
-    # bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors (==out_path)
-    # bazel-out/k8-fastbuild/bin/src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors (Fixed)
-    # bazel-out/k8-fastbuild/bin
-    # bazel-out/k8-fastbuild/bin/src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors/grpc_channelz/v1
 
     arguments += [
         "--proto_path={}".format(get_include_directory(i))
         for i in includes
     ]
-    # bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors
     arguments.append("--proto_path={}".format(context.genfiles_dir.path))
-    print("[xuan_testing] pb2_grpc proto_path: " + str(context.genfiles_dir.path))
-    # bazel-out/k8-fastbuild/bin
     arguments += get_proto_arguments(protos, context.genfiles_dir.path)
-    print("[xuan_testing] pb2_grpc get_proto_arguments: " + str(arguments))
-    # --plugin=protoc-gen-PLUGIN=bazel-out/k8-opt-exec-ST-a828a81199fe/bin/src/compiler/grpc_python_plugin
-    # --PLUGIN_out=XXX
-    # --proto_path=bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors (Old & Fixed)
-    # --proto_path=bazel-out/k8-fastbuild/bin/external/com_google_protobuf/src/google/protobuf/_virtual_imports/any_proto
-    # --proto_path=bazel-out/k8-fastbuild/bin/external/com_google_protobuf/src/google/protobuf/_virtual_imports/duration_proto    
-    # --proto_path=bazel-out/k8-fastbuild/bin/external/com_google_protobuf/src/google/protobuf/_virtual_imports/timestamp_proto
-    # --proto_path=bazel-out/k8-fastbuild/bin/external/com_google_protobuf/src/google/protobuf/_virtual_imports/wrappers_proto
-    # --proto_path=bazel-out/k8-fastbuild/bin
-    # channelz.proto
-
-    # --proto_path=.
-    # src/python/grpcio_channelz/grpc_channelz/v1/channelz.proto
-
-    # --proto_path=bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors
-    # grpc_channelz/v1/channelz.proto
-
-    # for dep in context.attr.py_deps:
-    #     print("~~~~~[xuan_testing] dep: " + str(dep[PyInfo].transitive_sources.to_list()))
     context.actions.run(
         inputs = protos + includes,
         tools = tools,
@@ -296,20 +222,8 @@ def _generate_pb2_grpc_src_impl(context):
         arguments = arguments,
         mnemonic = "ProtocInvocation",
     )
-    # Fix:
-    # Out file: [<generated file src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors/channelz_pb2_grpc.py>]
-    # Plugin out: bazel-out/k8-fastbuild/bin/src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors
-    # Proto path: channelz.proto
-    # Actual out: .runfiles/com_github_grpc_grpc/src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors/channelz_pb2_grpc.py
-
-    # Out file: [<generated file src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors/grpc_channelz/v1/channelz_pb2_grpc.py>]
-    # Plugin out: bazel-out/k8-fastbuild/bin/src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors/grpc_channelz/v1
-    # Proto path: grpc_channelz/v1/channelz.proto
-    # Actual out: ?
-    # Expected: src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors/grpc_channelz/v1/channelz_pb2_grpc.py
 
     imports = []
-    # Fix 1:
     # Adding to PYTHONPATH so the generated modules can be imported.
     # This is necessary when there is strip_import_prefix, the Python modules are generated under _virtual_imports.
     # But it's undesirable otherwise, because it will put the repo root at the top of the PYTHONPATH, ahead of
@@ -322,9 +236,6 @@ def _generate_pb2_grpc_src_impl(context):
 
         import_path = "{}/{}".format(context.workspace_name, import_path)
         imports.append(import_path)
-        print(">>>>[xuan_testing] pb2_grpc added imports: " + str(import_path))
-        # com_github_grpc_grpc/src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors (Fixed)
-        # com_github_grpc_grpc/src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors
 
     p = PyInfo(transitive_sources = depset(direct = out_files), imports = depset(direct = imports))
     py_info = _merge_pyinfos(

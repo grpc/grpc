@@ -17,7 +17,7 @@ set -ex
 
 RESULTSTORE_RESULTS_FLAG="--bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc"
 TEST_TARGETS="//src/python/... //tools/distrib/python/grpcio_tools/... //examples/python/..."
-BAZEL_FLAGS="--test_output=errors --test_env=BUILD_SYSTEM=Bazel"
+BAZEL_FLAGS="--test_output=errors"
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
 python_bazel_tests/bazel_wrapper ${RESULTSTORE_RESULTS_FLAG} test ${BAZEL_FLAGS} ${TEST_TARGETS}

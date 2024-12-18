@@ -20,11 +20,11 @@ from google.protobuf import descriptor_pb2
 from google.protobuf import descriptor_pool
 import grpc
 from grpc_reflection.v1alpha import reflection
-import os
-if os.environ.get('BUILD_SYSTEM') == 'Bazel':
+# Bazel build uses another path.
+try:
     import reflection_pb2
     import reflection_pb2_grpc
-else:
+except ImportError:
     from grpc_reflection.v1alpha import reflection_pb2
     from grpc_reflection.v1alpha import reflection_pb2_grpc
 
