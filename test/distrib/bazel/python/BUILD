@@ -15,7 +15,6 @@
 # limitations under the License.
 
 load("@com_google_protobuf//bazel:py_proto_library.bzl", "py_proto_library")
-load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
 load(
     "@com_github_grpc_grpc//bazel:python_rules.bzl",
     "py_grpc_library",
