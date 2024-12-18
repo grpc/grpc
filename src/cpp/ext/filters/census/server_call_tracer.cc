@@ -270,7 +270,8 @@ void OpenCensusServerCallTracer::RecordEnd(
          {RpcServerReceivedBytesPerRpc(), static_cast<double>(incoming_bytes)},
          {RpcServerServerLatency(), elapsed_time_ms},
          {RpcServerSentMessagesPerRpc(), sent_message_count_},
-         {RpcServerReceivedMessagesPerRpc(), recv_message_count_}},
+         {RpcServerReceivedMessagesPerRpc(), recv_message_count_},
+         {RpcServerCompletedRpcs(), 1}},
         tags);
   }
   if (OpenCensusTracingEnabled()) {
