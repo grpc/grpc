@@ -27,14 +27,12 @@ namespace grpc_core {
 TEST(LoopTest, CountToFive) {
   std::string execution_order = "";
   int i = 0;
-  Poll<int> retval =
-      Loop([&execution_order, &i]() -> Poll<LoopCtl<absl::Status>> {
-        absl::StrAppend(&execution_order, i);
-        i++;
-        if (i == 5) return absl::CancelledError("Test");
-        if (i < 10) return Continue();
-        return absl::OkStatus();
-      })();
+  Poll<int> retval = Loop([&execution_order, &i]() -> LoopCtl<int> {
+    absl::StrAppend(&execution_order, i);
+    i++;
+    if (i < 5) return Continue();
+    return i;
+  })();
   EXPECT_TRUE(retval.ready());
   EXPECT_EQ(retval.value(), 5);
   EXPECT_EQ(i, 5);
