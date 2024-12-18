@@ -28,6 +28,8 @@
 namespace grpc_core {
 namespace promise_detail {
 
+// Join Promise Combinator
+//
 // The Join promise combinator takes as inputs multiple promises.
 // When the Join promise is polled, these input promises will be executed
 // serially on the same thread.
