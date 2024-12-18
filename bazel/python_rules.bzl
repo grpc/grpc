@@ -29,7 +29,6 @@ load(
     "is_well_known",
     "is_in_virtual_imports",
     "protos_from_context",
-    "proto_path_to_generated_filename",
 )
 
 _VIRTUAL_IMPORTS = "/_virtual_imports/"
@@ -73,8 +72,6 @@ def _gen_py_aspect_impl(target, context):
     tools = [context.executable._protoc]
 
     out_dir = get_out_dir(protos, context)
-    print("[xuan_testing] python_out out_dir.path:")
-    print(out_dir)
     arguments = ([
         "--python_out={}".format(out_dir.path),
         "--pyi_out={}".format(out_dir.path),
@@ -101,10 +98,6 @@ def _gen_py_aspect_impl(target, context):
         imports.append("{}/{}".format(context.workspace_name, out_dir.import_path))
 
     py_info = PyInfo(transitive_sources = depset(direct = out_files), imports = depset(direct = imports))
-    print("[xuan_testing] py_info in deps:")
-    print(py_info)
-    print("[xuan_testing] generated_py_srcs in deps:")
-    print(generated_py_srcs)
     return PyProtoInfo(
         py_info = _merge_pyinfos(
             [
@@ -150,22 +143,16 @@ def _generate_py_impl(context):
     if context.label.package != context.attr.deps[0].label.package:
         for py_src in context.attr.deps[0][PyProtoInfo].generated_py_srcs:
             reimport_py_file = context.actions.declare_file(py_src.basename)
-            print("[xuan_testing] reimport_py_file: " + str(reimport_py_file))
             py_sources.append(reimport_py_file)
             import_line = "from %s import *" % py_src.short_path.replace("..", "external").replace("/", ".")[:-len(".py")]
-            print("[xuan_testing] import_line: " + import_line)
             context.actions.write(reimport_py_file, import_line)
 
     # Collect output PyInfo provider.
     imports = [context.label.package + "/" + i for i in context.attr.imports]
-    print("[xuan_testing] py_sources:")
-    print(py_sources)
     py_info = PyInfo(transitive_sources = depset(direct = py_sources), imports = depset(direct = imports))
     out_pyinfo = _merge_pyinfos([py_info, context.attr.deps[0][PyProtoInfo].py_info])
 
     runfiles = context.runfiles(files = out_pyinfo.transitive_sources.to_list()).merge(context.attr._protobuf_library[DefaultInfo].data_runfiles)
-    print("[xuan_testing] out_pyinfo:")
-    print(out_pyinfo)
     return [
         DefaultInfo(
             files = out_pyinfo.transitive_sources,
@@ -203,15 +190,6 @@ def _generate_pb2_grpc_src_impl(context):
     protos = protos_from_context(context)
     is_virtual = False
     for proto in protos:
-        print(">>[xuan_testing] pb2_grpc protos: " + str(proto))
-        # <generated file src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors/channelz.proto>
-        # <generated file src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors/grpc_channelz/v1/channelz.proto>
-        print(">>[xuan_testing] pb2_grpc protos.path: " + str(proto.path))
-        # bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors/channelz.proto
-        # bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors/grpc_channelz/v1/channelz.proto
-        print(">>[xuan_testing] pb2_grpc protos.dirname: " + str(proto.dirname))
-        # bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors
-        # bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors/grpc_channelz/v1
         if is_in_virtual_imports(proto):
             is_virtual = True
     includes = includes_from_deps(context.attr.deps)
@@ -255,7 +233,8 @@ def _generate_pb2_grpc_src_impl(context):
     # bazel-out/k8-fastbuild/bin
     if out_dir.import_path:
         # is virtual imports
-        out_path = out_dir.path
+        # out_path = out_dir.path
+        out_path = get_include_directory(out_files[0])
     else:
         out_path = context.genfiles_dir.path
     print(">>>>>>[xuan_testing] pb2_grpc out_path: " + str(out_path))
@@ -264,8 +243,8 @@ def _generate_pb2_grpc_src_impl(context):
     # bazel-out/k8-fastbuild/bin/src/proto/grpc/channelz/_virtual_imports/channelz_proto_descriptors
     # Fix 1:
     # out_path = out_files[0].dirname
-    if is_virtual:
-        out_path = result
+    # if is_virtual:
+    #     out_path = result
     # bazel-out/k8-fastbuild/bin/src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors
     # Fix 2:
     # out_path = result
@@ -331,7 +310,11 @@ def _generate_pb2_grpc_src_impl(context):
 
     imports = []
     # Fix 1:
-    if is_virtual:
+    # Adding to PYTHONPATH so the generated modules can be imported.
+    # This is necessary when there is strip_import_prefix, the Python modules are generated under _virtual_imports.
+    # But it's undesirable otherwise, because it will put the repo root at the top of the PYTHONPATH, ahead of
+    # directories added through `imports` attributes.
+    if _VIRTUAL_IMPORTS in out_path:
         import_path = out_path
         # Handles virtual import cases
         if out_path.startswith(context.genfiles_dir.path):
@@ -339,7 +322,7 @@ def _generate_pb2_grpc_src_impl(context):
 
         import_path = "{}/{}".format(context.workspace_name, import_path)
         imports.append(import_path)
-        print(">>>>[xuan_testing] pb2_grpc added imports: " + str(imports))
+        print(">>>>[xuan_testing] pb2_grpc added imports: " + str(import_path))
         # com_github_grpc_grpc/src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors (Fixed)
         # com_github_grpc_grpc/src/python/grpcio_channelz/grpc_channelz/v1/_virtual_imports/channelz_proto_descriptors
 
