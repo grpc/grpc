@@ -19,18 +19,18 @@
 namespace grpc_core {
 
 TEST(IfTest, ChooseTrue) {
-  int execution_order = 0;
+  std::string execution_order;
   EXPECT_EQ(If(
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 1;
+                  absl::StrAppend(&execution_order, 1);
                   return true;
                 },
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 2;
+                  absl::StrAppend(&execution_order, 2);
                   return 2;
                 },
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 3;
+                  absl::StrAppend(&execution_order, 3);
                   return 3;
                 })(),
             Poll<int>(2));
@@ -38,18 +38,18 @@ TEST(IfTest, ChooseTrue) {
 }
 
 TEST(IfTest, ChooseFalse) {
-  int execution_order = 0;
+  std::string execution_order;
   EXPECT_EQ(If(
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 1;
+                  absl::StrAppend(&execution_order, 1);
                   return false;
                 },
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 2;
+                  absl::StrAppend(&execution_order, 2);
                   return 2;
                 },
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 3;
+                  absl::StrAppend(&execution_order, 3);
                   return 3;
                 })(),
             Poll<int>(3));
@@ -57,18 +57,18 @@ TEST(IfTest, ChooseFalse) {
 }
 
 TEST(IfTest, ChooseSuccessfulTrue) {
-  int execution_order = 0;
+  std::string execution_order;
   EXPECT_EQ(If(
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 1;
+                  absl::StrAppend(&execution_order, 1);
                   return absl::StatusOr<bool>(true);
                 },
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 2;
+                  absl::StrAppend(&execution_order, 2);
                   return absl::StatusOr<int>(2);
                 },
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 3;
+                  absl::StrAppend(&execution_order, 3);
                   return absl::StatusOr<int>(3);
                 })(),
             Poll<absl::StatusOr<int>>(absl::StatusOr<int>(2)));
@@ -76,18 +76,18 @@ TEST(IfTest, ChooseSuccessfulTrue) {
 }
 
 TEST(IfTest, ChooseSuccessfulFalse) {
-  int execution_order = 0;
+  std::string execution_order;
   EXPECT_EQ(If(
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 1;
+                  absl::StrAppend(&execution_order, 1);
                   return absl::StatusOr<bool>(false);
                 },
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 2;
+                  absl::StrAppend(&execution_order, 2);
                   return absl::StatusOr<int>(2);
                 },
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 3;
+                  absl::StrAppend(&execution_order, 3);
                   return absl::StatusOr<int>(3);
                 })(),
             Poll<absl::StatusOr<int>>(absl::StatusOr<int>(3)));
@@ -95,18 +95,18 @@ TEST(IfTest, ChooseSuccessfulFalse) {
 }
 
 TEST(IfTest, ChooseFailure) {
-  int execution_order = 0;
+  std::string execution_order;
   EXPECT_EQ(If(
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 1;
+                  absl::StrAppend(&execution_order, 1);
                   return absl::StatusOr<bool>();
                 },
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 2;
+                  absl::StrAppend(&execution_order, 2);
                   return absl::StatusOr<int>(2);
                 },
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 3;
+                  absl::StrAppend(&execution_order, 3);
                   return absl::StatusOr<int>(3);
                 })(),
             Poll<absl::StatusOr<int>>(absl::StatusOr<int>()));
@@ -114,21 +114,21 @@ TEST(IfTest, ChooseFailure) {
 }
 
 TEST(IfTest, ChoosePending) {
-  int execution_order = 0;
+  std::string execution_order;
   int once = false;
   auto if_combiner = If(
       [&execution_order, &once]() -> Poll<bool> {
-        execution_order = (10 * execution_order) + 1;
+        absl::StrAppend(&execution_order, 1);
         if (once) return true;
         once = true;
         return Pending{};
       },
       [&execution_order]() {
-        execution_order = (10 * execution_order) + 2;
+        absl::StrAppend(&execution_order, 2);
         return 2;
       },
       [&execution_order]() {
-        execution_order = (10 * execution_order) + 3;
+        absl::StrAppend(&execution_order, 3);
         return 3;
       });
 
@@ -144,15 +144,15 @@ TEST(IfTest, ChoosePending) {
 }
 
 TEST(IfTest, ImmediateChooseTrue) {
-  int execution_order = 0;
+  std::string execution_order;
   EXPECT_EQ(If(
                 true,
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 2;
+                  absl::StrAppend(&execution_order, 2);
                   return 2;
                 },
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 3;
+                  absl::StrAppend(&execution_order, 3);
                   return 3;
                 })(),
             Poll<int>(2));
@@ -160,15 +160,15 @@ TEST(IfTest, ImmediateChooseTrue) {
 }
 
 TEST(IfTest, ImmediateChooseFalse) {
-  int execution_order = 0;
+  std::string execution_order;
   EXPECT_EQ(If(
                 false,
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 2;
+                  absl::StrAppend(&execution_order, 2);
                   return 2;
                 },
                 [&execution_order]() {
-                  execution_order = (10 * execution_order) + 3;
+                  absl::StrAppend(&execution_order, 3);
                   return 3;
                 })(),
             Poll<int>(3));
