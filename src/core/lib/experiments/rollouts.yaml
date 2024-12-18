@@ -91,6 +91,8 @@
   default: true
 - name: pick_first_new
   default: true
+- name: posix_ee_skip_grpc_init
+  default: false
 - name: prioritize_finished_requests
   default: false
 - name: promise_based_client_call

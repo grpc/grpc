@@ -48,6 +48,7 @@
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/utils.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
@@ -361,7 +362,9 @@ PosixEnginePollerManager::~PosixEnginePollerManager() {
 }
 
 PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
-    : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
+    : grpc_core::KeepsGrpcInitialized(
+          /*enabled=*/!grpc_core::IsPosixEeSkipGrpcInitEnabled()),
+      connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
   g_timer_fork_manager->RegisterForkable(
@@ -374,7 +377,9 @@ PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
 }
 
 PosixEventEngine::PosixEventEngine()
-    : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
+    : grpc_core::KeepsGrpcInitialized(
+          /*enabled=*/!grpc_core::IsPosixEeSkipGrpcInitEnabled()),
+      connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
   g_timer_fork_manager->RegisterForkable(
