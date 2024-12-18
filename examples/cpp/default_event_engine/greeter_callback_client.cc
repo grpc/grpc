@@ -26,6 +26,8 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/log.h"
+#include "wrapping_event_engine.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -41,6 +43,8 @@ using grpc::Status;
 using helloworld::Greeter;
 using helloworld::HelloReply;
 using helloworld::HelloRequest;
+
+namespace my_application {
 
 class GreeterClient {
  public:
@@ -79,27 +83,31 @@ class GreeterClient {
   std::unique_ptr<Greeter::Stub> stub_;
 };
 
+}  // namespace my_application
+
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
-  // Instantiate some EventEngine of your choosing, likely your own.
-  auto custom_engine = grpc_event_engine::experimental::CreateEventEngine();
+  // Create some EventEngine of your choosing, likely your own.
+  auto custom_engine = std::make_shared<my_application::WrappingEventEngine>();
   // Provide this engine to gRPC. Now there are 2 refs to this engine: one here,
   // and one owned by gRPC.
   grpc_event_engine::experimental::SetDefaultEventEngine(custom_engine);
-  // This scope ensures gRPC objects are destroyed before waiting for all custom
-  // engine refs to be released.
+  // This scope ensures that gRPC objects are destroyed before trying to shut
+  // down the EventEngine.
   {
     std::string target_str = absl::GetFlag(FLAGS_target);
-    GreeterClient greeter(
+    my_application::GreeterClient greeter(
         grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
     std::string user("EventEngine");
     std::string reply = greeter.SayHello(user);
     std::cout << "Greeter received: " << reply << std::endl;
   }
-  // Release the application ref on the custom EventEngine. Now gRPC fully owns
-  // the engine.
+  LOG(INFO) << "My EventEngine ran " << custom_engine->get_run_count()
+            << " closures";
+  // Release the application's ownership of the EventEngine. Now gRPC solely
+  // owns the engine.
   custom_engine.reset();
-  // Wait until gRPC is done using the engine. The engine will be destroyed.
+  // Block until gRPC is done using the engine, and the engine is destroyed.
   grpc_event_engine::experimental::ShutdownDefaultEventEngine();
   return 0;
 }

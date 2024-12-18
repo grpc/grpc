@@ -19,6 +19,7 @@ cc_binary(
     srcs = ["greeter_callback_client.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
+        "wrapping_event_engine",
         "//:grpc++",
         "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
@@ -37,5 +38,13 @@ cc_binary(
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/strings:str_format",
+    ],
+)
+
+cc_library(
+    name = "wrapping_event_engine",
+    hdrs = ["wrapping_event_engine.h"],
+    deps = [
+        "//:grpc++",
     ],
 )
