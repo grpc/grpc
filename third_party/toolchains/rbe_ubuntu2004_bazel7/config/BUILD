@@ -17,6 +17,7 @@
 
 package(default_visibility = ["//visibility:public"])
 
+
 toolchain(
     name = "cc-toolchain",
     exec_compatible_with = [
@@ -28,20 +29,20 @@ toolchain(
         "@platforms//os:linux",
         "@platforms//cpu:x86_64",
     ],
-    toolchain = "//third_party/toolchains/rbe_ubuntu2004/cc:cc-compiler-k8",
+    toolchain = "//third_party/toolchains/rbe_ubuntu2004_bazel7/cc:cc-compiler-k8",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
 
 platform(
     name = "platform",
+    parents = ["@local_config_platform//:host"],
     constraint_values = [
         "@platforms//os:linux",
         "@platforms//cpu:x86_64",
         "@bazel_tools//tools/cpp:clang",
     ],
     exec_properties = {
-        "container-image": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_ubuntu2004@sha256:b3eb1a17b7b091e3c5648a803076b2c40601242ff91c04d55997af6641305f68",
+        "container-image": "docker://docker.pkg.dev/grpc-testing/testing-images-public/rbe_ubuntu2004@sha256:b3eb1a17b7b091e3c5648a803076b2c40601242ff91c04d55997af6641305f68",
         "OSFamily": "Linux",
     },
-    parents = ["@local_config_platform//:host"],
 )
