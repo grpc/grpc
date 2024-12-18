@@ -56,12 +56,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-SystemApi::~SystemApi() {
-  for (int fd : fds_.Clear()) {
-    close(fd);
-  }
-}
-
 absl::StatusOr<LockedFd> SystemApi::Lock(FileDescriptor fd) const {
   if (!fd.ready()) {
     return absl::InternalError("Invalid file descriptor");

@@ -221,7 +221,7 @@ TEST_F(EventEngineServerTest,
     oracle_ee->Connect(
         [&client_endpoint,
          &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> endpoint) {
-          ASSERT_TRUE(endpoint.ok());
+          ASSERT_TRUE(endpoint.ok()) << endpoint.status();
           client_endpoint = std::move(*endpoint);
           client_signal.Notify();
         },

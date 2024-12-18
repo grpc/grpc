@@ -88,8 +88,6 @@ class SystemApi {
   SystemApi() = default;
   SystemApi(const SystemApi& other) = delete;
 
-  ~SystemApi();
-
   absl::Status AdvanceGeneration();
 
   absl::StatusOr<FileDescriptor> Accept(FileDescriptor sockfd,
