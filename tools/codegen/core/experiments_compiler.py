@@ -224,9 +224,15 @@ class ExperimentDefinition(object):
         ):
             return True
         expiry = datetime.datetime.strptime(self._expiry, "%Y/%m/%d").date()
-        if (expiry.month == 11 or expiry.month == 12 or (expiry.month == 1 and expiry.day < 15)):
-            print("For experiment %s: Experiment expiration is not allowed between Nov 1 and Jan 15 (experiment lists %s)."
-                % (self._name, self._expiry))
+        if (
+            expiry.month == 11
+            or expiry.month == 12
+            or (expiry.month == 1 and expiry.day < 15)
+        ):
+            print(
+                "For experiment %s: Experiment expiration is not allowed between Nov 1 and Jan 15 (experiment lists %s)."
+                % (self._name, self._expiry)
+            )
             self._error = True
             return False
         if not check_expiry:
