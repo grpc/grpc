@@ -261,7 +261,8 @@ DEFINE_PROTO_FUZZER(const event_engine_client_channel_resolver::Msg& msg) {
   bool done_resolving = false;
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
-  auto engine = std::make_shared<FuzzingResolverEventEngine>(msg, &done_resolving));
+  auto engine =
+      std::make_shared<FuzzingResolverEventEngine>(msg, &done_resolving);
   grpc_event_engine::experimental::SetDefaultEventEngine(engine);
   {
     // scoped to ensure the resolver is orphaned when done resolving.

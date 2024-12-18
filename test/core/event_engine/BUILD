@@ -28,6 +28,7 @@ grpc_cc_test(
         "absl/functional:any_invocable",
         "gtest",
     ],
+    uses_polling = False,
     deps = [
         "//:gpr_platform",
         "//src/core:common_event_engine_closures",
@@ -59,6 +60,7 @@ grpc_cc_test(
         "absl/time",
         "gtest",
     ],
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -95,7 +97,9 @@ grpc_cc_test(
         "absl/time",
         "gtest",
     ],
+    uses_polling = False,
     deps = [
+        "mock_event_engine",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//src/core:default_event_engine",
@@ -107,8 +111,10 @@ grpc_cc_test(
     name = "factory_test",
     srcs = ["factory_test.cc"],
     external_deps = ["gtest"],
+    uses_polling = False,
     deps = [
         "aborting_event_engine",
+        "mock_event_engine",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//src/core:default_event_engine",
@@ -123,6 +129,7 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:gpr_platform",

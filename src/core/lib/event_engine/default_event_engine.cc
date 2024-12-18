@@ -95,6 +95,10 @@ void SetEventEngineFactory(
 
 void SetDefaultEventEngine(std::shared_ptr<EventEngine> engine) {
   grpc_core::MutexLock lock(&*g_mu);
+  CHECK_EQ(*g_user_event_engine, nullptr)
+      << "The previous user-supplied engine was not properly shut down. Please "
+         "use ShutdownDefaultEventEngine";
+  CHECK_NE(engine, nullptr);
   *g_user_event_engine = engine;
   g_weak_internal_event_engine->reset();
 }
@@ -120,8 +124,9 @@ std::shared_ptr<EventEngine> CreateEventEngine() {
   std::shared_ptr<EventEngine> engine;
   if (auto* factory = g_event_engine_factory.load()) {
     engine = (*factory)();
+  } else {
+    engine = DefaultEventEngineFactory();
   }
-  engine = DefaultEventEngineFactory();
 #ifdef GRPC_MAXIMIZE_THREADYNESS
   return std::make_shared<ThreadyEventEngine>(std::move(engine));
 #endif
