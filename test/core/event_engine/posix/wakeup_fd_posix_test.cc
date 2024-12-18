@@ -30,8 +30,8 @@ TEST(WakeupFdPosixTest, PipeWakeupFdTest) {
   }
   auto pipe_wakeup_fd = PipeWakeupFd::CreatePipeWakeupFd();
   EXPECT_TRUE(pipe_wakeup_fd.ok());
-  EXPECT_GE((*pipe_wakeup_fd)->ReadFd(), 0);
-  EXPECT_GE((*pipe_wakeup_fd)->WriteFd(), 0);
+  EXPECT_TRUE((*pipe_wakeup_fd)->ReadFd().ready());
+  EXPECT_TRUE((*pipe_wakeup_fd)->WriteFd().ready());
   EXPECT_TRUE((*pipe_wakeup_fd)->Wakeup().ok());
   EXPECT_TRUE((*pipe_wakeup_fd)->ConsumeWakeup().ok());
 }
@@ -42,8 +42,8 @@ TEST(WakeupFdPosixTest, EventFdWakeupFdTest) {
   }
   auto eventfd_wakeup_fd = EventFdWakeupFd::CreateEventFdWakeupFd();
   EXPECT_TRUE(eventfd_wakeup_fd.ok());
-  EXPECT_GE((*eventfd_wakeup_fd)->ReadFd(), 0);
-  EXPECT_EQ((*eventfd_wakeup_fd)->WriteFd(), -1);
+  EXPECT_TRUE((*eventfd_wakeup_fd)->ReadFd().ready());
+  EXPECT_FALSE((*eventfd_wakeup_fd)->WriteFd().ready());
   EXPECT_TRUE((*eventfd_wakeup_fd)->Wakeup().ok());
   EXPECT_TRUE((*eventfd_wakeup_fd)->ConsumeWakeup().ok());
 }

@@ -82,6 +82,7 @@ grpc_cc_library(
         "lib/event_engine/extensions/can_track_errors.h",
         "lib/event_engine/extensions/chaotic_good_extension.h",
         "lib/event_engine/extensions/supports_fd.h",
+        "lib/event_engine/extensions/system_api.h",
         "lib/event_engine/extensions/tcp_trace.h",
     ],
     external_deps = [
@@ -1916,6 +1917,7 @@ grpc_cc_library(
     ],
     external_deps = ["absl/functional:function_ref"],
     deps = [
+        "event_engine_extensions",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
     ],
@@ -2129,6 +2131,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "event_engine_extensions",
         "event_engine_poller",
         "forkable",
         "posix_event_engine_closure",
@@ -2180,7 +2183,11 @@ grpc_cc_library(
         "lib/event_engine/posix_engine/wakeup_fd_posix.h",
     ],
     external_deps = ["absl/status"],
-    deps = ["//:gpr_platform"],
+    deps = [
+        "event_engine_extensions",
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
@@ -2266,6 +2273,7 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
+        "event_engine_extensions",
         "event_engine_poller",
         "event_engine_time_util",
         "iomgr_port",
@@ -2273,6 +2281,7 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_internal_errqueue",
         "posix_event_engine_lockfree_event",
+        "posix_event_engine_system_api",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
         "status_helper",
@@ -2304,11 +2313,13 @@ grpc_cc_library(
     ],
     deps = [
         "common_event_engine_closures",
+        "event_engine_extensions",
         "event_engine_poller",
         "event_engine_time_util",
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
+        "posix_event_engine_system_api",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
         "status_helper",
@@ -2342,6 +2353,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "posix_event_engine_system_api",
+    srcs = [
+        "lib/event_engine/posix_engine/posix_system_api.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/posix_engine/posix_system_api.h",
+    ],
+    external_deps = [],
+    deps = [
+        "event_engine_extensions",
+        "//:config_vars",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "posix_event_engine_internal_errqueue",
     srcs = [
         "lib/event_engine/posix_engine/internal_errqueue.cc",
@@ -2353,8 +2380,10 @@ grpc_cc_library(
         "absl/log:log",
     ],
     deps = [
+        "event_engine_extensions",
         "iomgr_port",
         "strerror",
+        "//:event_engine_base_hdrs",
         "//:gpr",
     ],
 )
@@ -2374,8 +2403,10 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
+        "event_engine_extensions",
         "iomgr_port",
         "posix_event_engine_internal_errqueue",
+        "//:event_engine_base_hdrs",
         "//:gpr",
     ],
 )
@@ -2465,6 +2496,7 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
+        "event_engine_extensions",
         "event_engine_tcp_socket_utils",
         "iomgr_port",
         "resource_quota",
@@ -2497,6 +2529,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "event_engine_extensions",
         "event_engine_tcp_socket_utils",
         "iomgr_port",
         "posix_event_engine_tcp_socket_utils",
@@ -2579,6 +2612,7 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_listener",
         "posix_event_engine_poller_posix_default",
+        "posix_event_engine_system_api",
         "posix_event_engine_tcp_socket_utils",
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
@@ -2993,6 +3027,7 @@ grpc_cc_library(
     deps = [
         "common_event_engine_closures",
         "error",
+        "event_engine_extensions",
         "event_engine_time_util",
         "grpc_sockaddr",
         "iomgr_port",

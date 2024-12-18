@@ -24,7 +24,6 @@
 #include <atomic>
 #include <list>
 #include <memory>
-#include <string>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -67,7 +66,8 @@ class PosixEngineListenerImpl
   // Trigger graceful shutdown of all asynchronous accept operations.
   void TriggerShutdown();
 
-  absl::Status HandleExternalConnection(int listener_fd, int fd,
+  absl::Status HandleExternalConnection(FileDescriptor listener_fd,
+                                        FileDescriptor fd,
                                         SliceBuffer* pending_data);
 
   ~PosixEngineListenerImpl();
@@ -86,7 +86,7 @@ class PosixEngineListenerImpl
           listener_(std::move(listener)),
           socket_(socket),
           handle_(listener_->poller_->CreateHandle(
-              socket_.sock.Fd(),
+              socket_.sock.Fd().fd(),
               *grpc_event_engine::experimental::
                   ResolvedAddressToNormalizedString(socket_.addr),
               listener_->poller_->CanTrackErrors())),
@@ -107,7 +107,8 @@ class PosixEngineListenerImpl
     }
     ListenerSocketsContainer::ListenerSocket& Socket() { return socket_; }
     ~AsyncConnectionAcceptor() {
-      auto address = socket_.sock.LocalAddress();
+      auto address =
+          socket_.sock.LocalAddress(*handle_->Poller()->GetSystemApi());
       if (address.ok()) {
         // If uds socket, unlink it so that the corresponding file is deleted.
         UnlinkIfUnixDomainSocket(*address);
@@ -141,7 +142,7 @@ class PosixEngineListenerImpl
       acceptors_.push_back(new AsyncConnectionAcceptor(
           listener_->engine_, listener_->shared_from_this(), socket));
       if (on_append_) {
-        on_append_(socket.sock.Fd());
+        on_append_(socket.sock.Fd().fd());
       }
     }
 
@@ -220,7 +221,8 @@ class PosixEngineListener : public PosixListenerWithFdSupport {
       override {
     return impl_->Bind(addr, std::move(on_bind_new_fd));
   }
-  absl::Status HandleExternalConnection(int listener_fd, int fd,
+  absl::Status HandleExternalConnection(FileDescriptor listener_fd,
+                                        FileDescriptor fd,
                                         SliceBuffer* pending_data) override {
     return impl_->HandleExternalConnection(listener_fd, fd, pending_data);
   }
