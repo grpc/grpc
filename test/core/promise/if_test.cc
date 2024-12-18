@@ -35,7 +35,7 @@ TEST(IfTest, ChooseTrue) {
                   return 3;
                 })(),
             Poll<int>(2));
-  EXPECT_EQ(execution_order, 12);
+  EXPECT_STREQ(execution_order.c_str(), "12");
 }
 
 TEST(IfTest, ChooseFalse) {
@@ -54,7 +54,7 @@ TEST(IfTest, ChooseFalse) {
                   return 3;
                 })(),
             Poll<int>(3));
-  EXPECT_EQ(execution_order, 13);
+  EXPECT_STREQ(execution_order.c_str(), "13");
 }
 
 TEST(IfTest, ChooseSuccessfulTrue) {
@@ -73,7 +73,7 @@ TEST(IfTest, ChooseSuccessfulTrue) {
                   return absl::StatusOr<int>(3);
                 })(),
             Poll<absl::StatusOr<int>>(absl::StatusOr<int>(2)));
-  EXPECT_EQ(execution_order, 12);
+  EXPECT_STREQ(execution_order.c_str(), "12");
 }
 
 TEST(IfTest, ChooseSuccessfulFalse) {
@@ -92,7 +92,7 @@ TEST(IfTest, ChooseSuccessfulFalse) {
                   return absl::StatusOr<int>(3);
                 })(),
             Poll<absl::StatusOr<int>>(absl::StatusOr<int>(3)));
-  EXPECT_EQ(execution_order, 13);
+  EXPECT_STREQ(execution_order.c_str(), "13");
 }
 
 TEST(IfTest, ChooseFailure) {
@@ -111,7 +111,7 @@ TEST(IfTest, ChooseFailure) {
                   return absl::StatusOr<int>(3);
                 })(),
             Poll<absl::StatusOr<int>>(absl::StatusOr<int>()));
-  EXPECT_EQ(execution_order, 1);
+  EXPECT_STREQ(execution_order.c_str(), "1");
 }
 
 TEST(IfTest, ChoosePending) {
@@ -135,13 +135,13 @@ TEST(IfTest, ChoosePending) {
 
   Poll<int> first_execution = if_combiner();
   EXPECT_FALSE(first_execution.ready());
-  EXPECT_EQ(execution_order, 1);
+  EXPECT_STREQ(execution_order.c_str(), "1");
 
-  execution_order = 0;
+  execution_order.clear();
   Poll<int> second_execution = if_combiner();
   EXPECT_TRUE(second_execution.ready());
   EXPECT_EQ(second_execution.value(), 2);
-  EXPECT_EQ(execution_order, 12);
+  EXPECT_EQ(execution_order, "12");
 }
 
 TEST(IfTest, ImmediateChooseTrue) {
@@ -157,7 +157,7 @@ TEST(IfTest, ImmediateChooseTrue) {
                   return 3;
                 })(),
             Poll<int>(2));
-  EXPECT_EQ(execution_order, 2);
+  EXPECT_STREQ(execution_order.c_str(), "2");
 }
 
 TEST(IfTest, ImmediateChooseFalse) {
@@ -173,7 +173,7 @@ TEST(IfTest, ImmediateChooseFalse) {
                   return 3;
                 })(),
             Poll<int>(3));
-  EXPECT_EQ(execution_order, 3);
+  EXPECT_STREQ(execution_order.c_str(), "3");
 }
 
 }  // namespace grpc_core
