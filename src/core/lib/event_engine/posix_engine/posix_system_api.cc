@@ -731,8 +731,6 @@ absl::StatusOr<int> SystemApi::EpollWait(FileDescriptor epfd,
 namespace grpc_event_engine {
 namespace experimental {
 
-SystemApi::~SystemApi() {}
-
 FileDescriptor SystemApi::AdoptExternalFd(int fd) {
   grpc_core::Crash("unimplemented");
 }
