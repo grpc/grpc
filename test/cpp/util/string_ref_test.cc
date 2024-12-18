@@ -131,22 +131,22 @@ TEST_F(StringRefTest, StartsWith) {
   string_ref s1(kTestString);
   string_ref s2(kTestUnrelatedString);
   string_ref s3(kTestStringWithEmbeddedNull, kTestStringWithEmbeddedNullLength);
-  EXPECT_TRUE(s1.starts_with(s1));
-  EXPECT_FALSE(s1.starts_with(s2));
-  EXPECT_FALSE(s2.starts_with(s1));
-  EXPECT_FALSE(s1.starts_with(s3));
-  EXPECT_TRUE(s3.starts_with(s1));
+  EXPECT_TRUE(StartsWith(s1, s1));
+  EXPECT_FALSE(StartsWith(s1, s2));
+  EXPECT_FALSE(StartsWith(s2, s1));
+  EXPECT_FALSE(StartsWith(s1, s3));
+  EXPECT_TRUE(StartsWith(s3, s1));
 }
 
 TEST_F(StringRefTest, Endswith) {
   string_ref s1(kTestString);
   string_ref s2(kTestUnrelatedString);
   string_ref s3(kTestStringWithEmbeddedNull, kTestStringWithEmbeddedNullLength);
-  EXPECT_TRUE(s1.ends_with(s1));
-  EXPECT_FALSE(s1.ends_with(s2));
-  EXPECT_FALSE(s2.ends_with(s1));
-  EXPECT_FALSE(s2.ends_with(s3));
-  EXPECT_TRUE(s3.ends_with(s2));
+  EXPECT_TRUE(EndsWith(s1, s1));
+  EXPECT_FALSE(EndsWith(s1, s2));
+  EXPECT_FALSE(EndsWith(s2, s1));
+  EXPECT_FALSE(EndsWith(s2, s3));
+  EXPECT_TRUE(EndsWith(s3, s2));
 }
 
 TEST_F(StringRefTest, Find) {
