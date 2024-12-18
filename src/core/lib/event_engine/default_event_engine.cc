@@ -37,16 +37,16 @@ namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
-std::atomic<absl::AnyInvocable<std::unique_ptr<EventEngine>()>*>
+std::atomic<absl::AnyInvocable<std::shared_ptr<EventEngine>()>*>
     g_event_engine_factory{nullptr};
 grpc_core::NoDestruct<grpc_core::Mutex> g_mu;
 grpc_core::NoDestruct<std::weak_ptr<EventEngine>> g_event_engine;
 }  // namespace
 
 void SetEventEngineFactory(
-    absl::AnyInvocable<std::unique_ptr<EventEngine>()> factory) {
+    absl::AnyInvocable<std::shared_ptr<EventEngine>()> factory) {
   delete g_event_engine_factory.exchange(
-      new absl::AnyInvocable<std::unique_ptr<EventEngine>()>(
+      new absl::AnyInvocable<std::shared_ptr<EventEngine>()>(
           std::move(factory)));
   // Forget any previous EventEngines
   grpc_core::MutexLock lock(&*g_mu);
@@ -58,16 +58,16 @@ void EventEngineFactoryReset() {
   g_event_engine->reset();
 }
 
-std::unique_ptr<EventEngine> CreateEventEngineInner() {
+std::shared_ptr<EventEngine> CreateEventEngineInner() {
   if (auto* factory = g_event_engine_factory.load()) {
     return (*factory)();
   }
   return DefaultEventEngineFactory();
 }
 
-std::unique_ptr<EventEngine> CreateEventEngine() {
+std::shared_ptr<EventEngine> CreateEventEngine() {
 #ifdef GRPC_MAXIMIZE_THREADYNESS
-  return std::make_unique<ThreadyEventEngine>(CreateEventEngineInner());
+  return std::make_shared<ThreadyEventEngine>(CreateEventEngineInner());
 #else
   return CreateEventEngineInner();
 #endif
