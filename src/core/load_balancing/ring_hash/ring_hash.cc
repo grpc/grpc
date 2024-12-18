@@ -147,8 +147,8 @@ class RingHashLbConfig final : public LoadBalancingPolicy::Config {
   }
 
  private:
-  size_t min_ring_size_ = 1024;
-  size_t max_ring_size_ = 4096;
+  uint64_t min_ring_size_ = 1024;
+  uint64_t max_ring_size_ = 4096;
   std::string request_hash_header_;
 };
 
