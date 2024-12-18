@@ -2132,6 +2132,7 @@ grpc_cc_library(
         "event_engine_poller",
         "forkable",
         "posix_event_engine_closure",
+        "posix_event_engine_system_api",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
     ],
@@ -2180,7 +2181,10 @@ grpc_cc_library(
         "lib/event_engine/posix_engine/wakeup_fd_posix.h",
     ],
     external_deps = ["absl/status"],
-    deps = ["//:gpr_platform"],
+    deps = [
+        "posix_event_engine_system_api",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
@@ -2273,6 +2277,7 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_internal_errqueue",
         "posix_event_engine_lockfree_event",
+        "posix_event_engine_system_api",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
         "status_helper",
@@ -2309,6 +2314,7 @@ grpc_cc_library(
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
+        "posix_event_engine_system_api",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
         "status_helper",
@@ -2338,6 +2344,30 @@ grpc_cc_library(
         "posix_event_engine_poller_posix_poll",
         "//:config_vars",
         "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_system_api",
+    srcs = [
+        "lib/event_engine/posix_engine/posix_system_api.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/posix_engine/posix_system_api.h",
+    ],
+    external_deps = [
+        "absl/log:log",
+        "absl/status",
+        "absl/strings",
+    ],
+    deps = [
+        "event_engine_tcp_socket_utils",
+        "iomgr_port",
+        "strerror",
+        "//:config_vars",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
@@ -2467,6 +2497,7 @@ grpc_cc_library(
     deps = [
         "event_engine_tcp_socket_utils",
         "iomgr_port",
+        "posix_event_engine_system_api",
         "resource_quota",
         "socket_mutator",
         "status_helper",
@@ -2579,6 +2610,7 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_listener",
         "posix_event_engine_poller_posix_default",
+        "posix_event_engine_system_api",
         "posix_event_engine_tcp_socket_utils",
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
