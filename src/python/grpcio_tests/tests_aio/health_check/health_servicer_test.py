@@ -22,6 +22,7 @@ import unittest
 import grpc
 from grpc.experimental import aio
 from grpc_health.v1 import health
+
 # Bazel build uses another path.
 try:
     import health_pb2

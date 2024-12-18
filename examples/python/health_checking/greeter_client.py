@@ -17,6 +17,9 @@ import logging
 from time import sleep
 
 import grpc
+import helloworld_pb2
+import helloworld_pb2_grpc
+
 # Bazel build uses another path.
 try:
     import health_pb2
@@ -24,8 +27,6 @@ try:
 except ImportError:
     from grpc_health.v1 import health_pb2
     from grpc_health.v1 import health_pb2_grpc
-import helloworld_pb2
-import helloworld_pb2_grpc
 
 
 def unary_call(stub: helloworld_pb2_grpc.GreeterStub, message: str):

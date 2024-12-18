@@ -36,7 +36,6 @@ proto_library(
     strip_import_prefix = "/src/proto/grpc/reflection/v1",
 )
 
-
 filegroup(
     name = "reflection_proto_file",
     srcs = [

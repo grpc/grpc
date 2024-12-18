@@ -16,7 +16,6 @@
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load("@rules_python//python:py_info.bzl", "PyInfo")
 load("@com_google_protobuf//bazel:py_proto_library.bzl", protobuf_py_proto_library = "py_proto_library")
-
 load(
     "//bazel:protobuf.bzl",
     "declare_out_files",
@@ -224,12 +223,14 @@ def _generate_pb2_grpc_src_impl(context):
     )
 
     imports = []
+
     # Adding to PYTHONPATH so the generated modules can be imported.
     # This is necessary when there is strip_import_prefix, the Python modules are generated under _virtual_imports.
     # But it's undesirable otherwise, because it will put the repo root at the top of the PYTHONPATH, ahead of
     # directories added through `imports` attributes.
     if _VIRTUAL_IMPORTS in out_path:
         import_path = out_path
+
         # Handles virtual import cases
         if out_path.startswith(context.genfiles_dir.path):
             import_path = import_path[len(context.genfiles_dir.path) + 1:]

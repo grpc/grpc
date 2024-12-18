@@ -23,6 +23,7 @@ from typing import Any, Dict, Iterable, List, Set
 from google.protobuf.descriptor_database import DescriptorDatabase
 from google.protobuf.descriptor_pb2 import FileDescriptorProto
 import grpc
+
 # Bazel build uses another path.
 try:
     from reflection_pb2 import ExtensionNumberResponse
@@ -42,7 +43,6 @@ except ImportError:
     from grpc_reflection.v1alpha.reflection_pb2 import ServerReflectionResponse
     from grpc_reflection.v1alpha.reflection_pb2 import ServiceResponse
     from grpc_reflection.v1alpha.reflection_pb2_grpc import ServerReflectionStub
-
 
 
 class ProtoReflectionDescriptorDatabase(DescriptorDatabase):

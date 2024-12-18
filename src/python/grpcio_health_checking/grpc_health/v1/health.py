@@ -18,6 +18,7 @@ import sys
 import threading
 
 import grpc
+
 # Bazel build uses another path.
 try:
     import health_pb2 as _health_pb2

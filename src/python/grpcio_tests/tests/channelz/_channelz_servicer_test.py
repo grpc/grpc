@@ -19,6 +19,7 @@ import unittest
 
 import grpc
 from grpc_channelz.v1 import channelz
+
 # Bazel build uses another path.
 try:
     import channelz_pb2

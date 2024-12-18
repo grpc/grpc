@@ -17,11 +17,14 @@ import sys
 
 import grpc
 from grpc_channelz.v1._servicer import ChannelzServicer
+
 # Bazel build uses another path.
+# pylint: disable=ungrouped-imports
 try:
     import channelz_pb2_grpc as _channelz_pb2_grpc
 except ImportError:
     from grpc_channelz.v1 import channelz_pb2_grpc as _channelz_pb2_grpc
+# pylint: enable=ungrouped-imports
 
 _add_channelz_servicer_doc = """Add Channelz servicer to a server.
 

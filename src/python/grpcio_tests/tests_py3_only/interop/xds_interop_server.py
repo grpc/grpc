@@ -27,15 +27,17 @@ import grpc
 from grpc_channelz.v1 import channelz
 from grpc_csm_observability import CsmOpenTelemetryPlugin
 from grpc_health.v1 import health as grpc_health
+
 # Bazel build uses another path.
 try:
+    import channelz_pb2
     import health_pb2
     import health_pb2_grpc
-    import channelz_pb2
 except ImportError:
     from grpc_health.v1 import health_pb2
     from grpc_health.v1 import health_pb2_grpc
     from grpc_channelz.v1 import channelz_pb2
+
 from grpc_reflection.v1alpha import reflection
 from opentelemetry.exporter.prometheus import PrometheusMetricReader
 from opentelemetry.sdk.metrics import MeterProvider
