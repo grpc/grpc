@@ -320,32 +320,14 @@ def grpc_deps():
             ],
         )
 
-    # TODO(stanleycheung): remove this when prometheus-cpp AND
-    #   opentelemetry-cpp cut a new release
-    # This override is needed because this fix
-    #   https://github.com/jupp0r/prometheus-cpp/pull/626
-    #   has not been included in the latest prometheus-cpp release yet.
-    # We also need opentelemetry-cpp to update their dependency on
-    #   prometheus-cpp after that fix is released.
-    # Without the fix, we cannot build the prometheus exporter with bazel 6
-    if "com_github_jupp0r_prometheus_cpp" not in native.existing_rules():
-        http_archive(
-            name = "com_github_jupp0r_prometheus_cpp",
-            sha256 = "cdf03ee63fcb1d9e113f7bd525e043c254729dddf19d80396489f5b92c83c18d",
-            strip_prefix = "prometheus-cpp-b1234816facfdda29845c46696a02998a4af115a",
-            urls = [
-                "https://github.com/jupp0r/prometheus-cpp/archive/b123481.zip",
-            ],
-        )
-
     if "io_opentelemetry_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opentelemetry_cpp",
-            sha256 = "4b822a2f137b8c2ea403c5ec9a661addcc048aa8ba3afebffd58cbcf218457bc",
-            strip_prefix = "opentelemetry-cpp-a388e87d72b8321c189c8d41edb746ffa687ce3c",
+            sha256 = "b149109d5983cf8290d614654a878899a68b0c8902b64c934d06f47cd50ffe2e",
+            strip_prefix = "opentelemetry-cpp-1.18.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/a388e87d72b8321c189c8d41edb746ffa687ce3c.tar.gz",
-                "https://github.com/open-telemetry/opentelemetry-cpp/archive/a388e87d72b8321c189c8d41edb746ffa687ce3c.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.18.0.tar.gz",
+                "https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.18.0.tar.gz",
             ],
         )
 
