@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/types/optional.h"
 #include "src/core/lib/event_engine/posix_engine/timer_heap.h"
 #include "src/core/util/sync.h"
@@ -63,11 +64,22 @@ class TimerListHost {
   // Wake up a thread to check for timers.
   virtual void Kick() = 0;
 
- protected:
-  ~TimerListHost() = default;
+  virtual ~TimerListHost() = default;
 };
 
-class TimerList {
+class TimerListInterface {
+ public:
+  virtual ~TimerListInterface() = default;
+  virtual void TimerInit(Timer* timer, grpc_core::Timestamp deadline,
+                         experimental::EventEngine::Closure* closure) = 0;
+  GRPC_MUST_USE_RESULT virtual bool TimerCancel(Timer* timer) = 0;
+  GRPC_MUST_USE_RESULT virtual bool TimerExtend(Timer* timer,
+                                                grpc_core::Duration delay) = 0;
+  virtual absl::optional<std::vector<experimental::EventEngine::Closure*>>
+  TimerCheck(grpc_core::Timestamp* next) = 0;
+};
+
+class TimerList : public TimerListInterface {
  public:
   explicit TimerList(TimerListHost* host);
 
@@ -79,14 +91,17 @@ class TimerList {
   // closure will not be run. Behavior is undefined for a deadline of
   // grpc_core::Timestamp::InfFuture().
   void TimerInit(Timer* timer, grpc_core::Timestamp deadline,
-                 experimental::EventEngine::Closure* closure);
+                 experimental::EventEngine::Closure* closure) override;
 
   // Cancel a Timer.
   // Returns false if the timer cannot be canceled. This will happen if the
   // timer has already fired, or if its closure is currently running. The
   // closure is guaranteed to run eventually if this method returns false.
   // Otherwise, this returns true, and the closure will not be run.
-  GRPC_MUST_USE_RESULT bool TimerCancel(Timer* timer);
+  GRPC_MUST_USE_RESULT bool TimerCancel(Timer* timer) override;
+
+  GRPC_MUST_USE_RESULT bool TimerExtend(Timer* timer,
+                                        grpc_core::Duration delay) override;
 
   // Check for timers to be run, and return them.
   // Return nullopt if timers could not be checked due to contention with
@@ -98,7 +113,7 @@ class TimerList {
   // with high probability at least one thread in the system will see an update
   // at any time slice.
   absl::optional<std::vector<experimental::EventEngine::Closure*>> TimerCheck(
-      grpc_core::Timestamp* next);
+      grpc_core::Timestamp* next) override;
 
  private:
   // A "timer shard". Contains a 'heap' and a 'list' of timers. All timers with
@@ -136,6 +151,8 @@ class TimerList {
     Timer list ABSL_GUARDED_BY(mu);
   };
 
+  void TimerInitInternalOnShard(Timer* timer, Shard* shard,
+                                grpc_core::Timestamp deadline);
   void SwapAdjacentShardsInQueue(uint32_t first_shard_queue_index)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void NoteDeadlineChange(Shard* shard) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -156,6 +173,59 @@ class TimerList {
   // Maintains a sorted list of timer shards (sorted by their min_deadline, i.e
   // the deadline of the next timer in each shard).
   const std::unique_ptr<Shard*[]> shard_queue_ ABSL_GUARDED_BY(mu_);
+};
+
+// A "slacked" timer list.
+//
+// This timer list is similar to the TimerList above, but it uses a different
+// data structure to store timers.
+//
+// The SlackedTimerList can be used to efficiently manage timers that can accept
+// some slack in their deadline. When enqueuing a timer, the timer's deadline
+// is rounded to the nearest resolution boundary.
+//
+// When checking for expired timers, the SlackedTimerList will return all timers
+// that are expired as of the current time (the resolution boundary).
+//
+// The SlackedTimerList is more efficient than the TimerList when there is a
+// large number of timers that can accept some slack in their deadline.
+//
+// The SlackedTimerList is thread-safe.
+//
+class SlackedTimerList : public TimerListInterface {
+ public:
+  struct Options {
+    int num_shards;
+    grpc_core::Duration resolution;
+  };
+  SlackedTimerList(TimerListHost* host, Options options);
+  void TimerInit(Timer* timer, grpc_core::Timestamp deadline,
+                 experimental::EventEngine::Closure* closure) override;
+  GRPC_MUST_USE_RESULT bool TimerCancel(Timer* timer) override;
+  GRPC_MUST_USE_RESULT bool TimerExtend(Timer* timer,
+                                        grpc_core::Duration delay) override;
+  absl::optional<std::vector<experimental::EventEngine::Closure*>> TimerCheck(
+      grpc_core::Timestamp* next) override;
+
+ private:
+  struct Shard {
+    ~Shard();
+    grpc_core::Mutex mu;
+    TimerHeap active_tick_idxes ABSL_GUARDED_BY(mu);
+    absl::flat_hash_map<uint64_t, Timer*> timers ABSL_GUARDED_BY(&mu);
+  };
+
+  void TimerInitInternalOnShardLocked(Timer* timer, Shard* shard)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&shard->mu);
+
+  uint64_t ComputeTickIndex(grpc_core::Timestamp deadline);
+
+  void NoteTimerRemovalLocked(Shard* shard, uint64_t tick_idx)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&shard->mu);
+
+  TimerListHost* host_;
+  Options options_;
+  std::unique_ptr<Shard[]> shards_;
 };
 
 }  // namespace experimental

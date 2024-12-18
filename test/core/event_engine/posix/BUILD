@@ -68,6 +68,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "slacked_timer_list_test",
+    srcs = ["slacked_timer_list_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:posix_event_engine_timer",
+    ],
+)
+
+grpc_cc_test(
     name = "timer_manager_test",
     srcs = ["timer_manager_test.cc"],
     external_deps = [

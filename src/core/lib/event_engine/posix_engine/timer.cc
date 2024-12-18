@@ -20,10 +20,15 @@
 
 #include <grpc/support/cpu.h>
 #include <grpc/support/port_platform.h>
+#include <sys/types.h>
 
 #include <algorithm>
 #include <atomic>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <limits>
+#include <memory>
 #include <utility>
 
 #include "src/core/lib/event_engine/posix_engine/timer_heap.h"
@@ -77,6 +82,17 @@ void ListRemove(Timer* timer) {
   timer->next->prev = timer->prev;
   timer->prev->next = timer->next;
 }
+
+Timer* NewSentinel(int64_t deadline) {
+  Timer* sentinel = new Timer();
+  sentinel->next = sentinel;
+  sentinel->prev = sentinel;
+  sentinel->heap_index = kInvalidHeapIndex;
+  sentinel->pending = false;
+  sentinel->closure = nullptr;
+  sentinel->deadline = deadline;
+  return sentinel;
+}
 }  // namespace
 
 void TimerList::SwapAdjacentShardsInQueue(uint32_t first_shard_queue_index) {
@@ -106,11 +122,15 @@ void TimerList::NoteDeadlineChange(Shard* shard) {
 
 void TimerList::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
                           experimental::EventEngine::Closure* closure) {
-  bool is_first_timer = false;
   Shard* shard = &shards_[grpc_core::HashPointer(timer, num_shards_)];
   timer->closure = closure;
   timer->deadline = deadline.milliseconds_after_process_epoch();
+  TimerInitInternalOnShard(timer, shard, deadline);
+}
 
+void TimerList::TimerInitInternalOnShard(Timer* timer, Shard* shard,
+                                         grpc_core::Timestamp deadline) {
+  bool is_first_timer = false;
 #ifndef NDEBUG
   timer->hash_table_next = nullptr;
 #endif
@@ -174,6 +194,29 @@ bool TimerList::TimerCancel(Timer* timer) {
   }
 
   return false;
+}
+
+bool TimerList::TimerExtend(Timer* timer, grpc_core::Duration delay) {
+  Shard* shard = &shards_[grpc_core::HashPointer(timer, num_shards_)];
+  grpc_core::MutexLock lock(&shard->mu);
+  grpc_core::Timestamp new_deadline =
+      grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(timer->deadline) +
+      delay;
+
+  if (!timer->pending) {
+    return false;
+  }
+
+  if (timer->heap_index == kInvalidHeapIndex) {
+    timer->deadline = new_deadline.milliseconds_after_process_epoch();
+    return true;
+  }
+
+  shard->heap.Remove(timer);
+  timer->heap_index = kInvalidHeapIndex;
+  timer->deadline = new_deadline.milliseconds_after_process_epoch();
+  TimerInitInternalOnShard(timer, shard, new_deadline);
+  return true;
 }
 
 // Rebalances the timer shard by computing a new 'queue_deadline_cap' and moving
@@ -304,6 +347,129 @@ TimerList::TimerCheck(grpc_core::Timestamp* next) {
   checker_mu_.Unlock();
 
   return std::move(run);
+}
+
+SlackedTimerList::Shard::~Shard() {
+  grpc_core::MutexLock lock(&mu);
+  while (!active_tick_idxes.is_empty()) {
+    Timer* active_list = active_tick_idxes.Top();
+    timers.erase(active_list->deadline);
+    active_tick_idxes.Pop();
+    delete active_list;
+  }
+}
+
+SlackedTimerList::SlackedTimerList(TimerListHost* host, Options options)
+    : host_(host), options_(options) {
+  if (options_.num_shards < 1) {
+    options_.num_shards = grpc_core::Clamp(2 * gpr_cpu_num_cores(), 1u, 32u);
+  }
+  shards_ = std::unique_ptr<Shard[]>(new Shard[options_.num_shards]);
+}
+
+uint64_t SlackedTimerList::ComputeTickIndex(grpc_core::Timestamp deadline) {
+  return std::round(
+      static_cast<double>(deadline.milliseconds_after_process_epoch()) /
+      options_.resolution.millis());
+}
+
+void SlackedTimerList::NoteTimerRemovalLocked(Shard* shard, uint64_t tick_idx) {
+  DCHECK(shard->timers.contains(tick_idx));
+  Timer* sentinel = shard->timers[tick_idx];
+  if (sentinel->next == sentinel) {
+    // No more timers in this tick. Remove and delete the sentinel.
+    shard->timers.erase(tick_idx);
+    shard->active_tick_idxes.Remove(sentinel);
+    delete sentinel;
+    return;
+  }
+}
+
+void SlackedTimerList::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
+                                 experimental::EventEngine::Closure* closure) {
+  Shard* shard = &shards_[grpc_core::HashPointer(timer, options_.num_shards)];
+  timer->pending = true;
+  timer->closure = closure;
+  timer->deadline = deadline.milliseconds_after_process_epoch();
+  timer->heap_index = ComputeTickIndex(deadline);
+  grpc_core::MutexLock lock(&shard->mu);
+  TimerInitInternalOnShardLocked(timer, shard);
+}
+
+void SlackedTimerList::TimerInitInternalOnShardLocked(Timer* timer,
+                                                      Shard* shard) {
+  uint64_t tick_idx = timer->heap_index;
+  if (!shard->timers.contains(tick_idx)) {
+    Timer* sentinel = NewSentinel(tick_idx);
+    shard->timers[tick_idx] = sentinel;
+    shard->active_tick_idxes.Add(sentinel);
+  }
+  ListJoin(shard->timers[tick_idx], timer);
+}
+
+bool SlackedTimerList::TimerCancel(Timer* timer) {
+  Shard* shard = &shards_[grpc_core::HashPointer(timer, options_.num_shards)];
+  grpc_core::MutexLock lock(&shard->mu);
+  if (timer->pending) {
+    timer->pending = false;
+    ListRemove(timer);
+    NoteTimerRemovalLocked(shard, timer->heap_index);
+    return true;
+  }
+  return false;
+}
+
+bool SlackedTimerList::TimerExtend(Timer* timer, grpc_core::Duration delay) {
+  Shard* shard = &shards_[grpc_core::HashPointer(timer, options_.num_shards)];
+  grpc_core::Timestamp new_deadline =
+      grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(timer->deadline) +
+      delay;
+  uint64_t new_tick_idx = ComputeTickIndex(new_deadline);
+
+  grpc_core::MutexLock lock(&shard->mu);
+  if (new_tick_idx == timer->heap_index) {
+    return true;
+  }
+
+  if (!timer->pending) {
+    return false;
+  }
+
+  // Remove from queue for current period.
+  ListRemove(timer);
+  NoteTimerRemovalLocked(shard, timer->heap_index);
+
+  timer->deadline = new_deadline.milliseconds_after_process_epoch();
+  timer->heap_index = new_tick_idx;
+  TimerInitInternalOnShardLocked(timer, shard);
+  return true;
+}
+
+absl::optional<std::vector<experimental::EventEngine::Closure*>>
+SlackedTimerList::TimerCheck(grpc_core::Timestamp* /*next*/) {
+  std::vector<experimental::EventEngine::Closure*> run;
+  uint64_t current_tick_idx = ComputeTickIndex(host_->Now());
+  for (size_t i = 0; i < options_.num_shards; i++) {
+    Shard* shard = &shards_[i];
+    grpc_core::MutexLock lock(&shard->mu);
+    while (!shard->active_tick_idxes.is_empty()) {
+      Timer* active_list = shard->active_tick_idxes.Top();
+      if (active_list->deadline > current_tick_idx) {
+        break;
+      }
+      Timer *timer, *next;
+      for (timer = active_list->next; timer != active_list; timer = next) {
+        next = timer->next;
+        ListRemove(timer);
+        timer->pending = false;
+        run.push_back(timer->closure);
+      }
+      shard->timers.erase(active_list->deadline);
+      shard->active_tick_idxes.Pop();
+      delete active_list;
+    };
+  }
+  return run;
 }
 
 }  // namespace experimental
