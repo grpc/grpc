@@ -62,6 +62,7 @@ class TcpFrameTransport final : public FrameTransport {
     uint32_t encode_alignment = 64;
     uint32_t decode_alignment = 64;
     uint32_t inlined_payload_size_threshold = 8 * 1024;
+    bool enable_tracing = false;
   };
 
   TcpFrameTransport(
@@ -84,7 +85,7 @@ class TcpFrameTransport final : public FrameTransport {
 
   ControlEndpoint control_endpoint_;
   DataEndpoints data_endpoints_;
-  Options options_;
+  const Options options_;
 };
 
 }  // namespace chaotic_good

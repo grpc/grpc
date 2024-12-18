@@ -40,18 +40,18 @@ grpc_cc_library(
 )
 
 grpc_cc_test(
-    name = "frame_header_test",
-    srcs = ["frame_header_test.cc"],
+    name = "tcp_frame_header_test",
+    srcs = ["tcp_frame_header_test.cc"],
     external_deps = [
         "absl/status",
         "gtest",
     ],
-    deps = ["//src/core:chaotic_good_frame_header"],
+    deps = ["//src/core:chaotic_good_tcp_frame_transport"],
 )
 
 grpc_fuzzer(
-    name = "frame_header_fuzzer",
-    srcs = ["frame_header_fuzzer.cc"],
+    name = "tcp_frame_header_fuzzer",
+    srcs = ["tcp_frame_header_fuzzer.cc"],
     corpus = "frame_header_fuzzer_corpus",
     external_deps = [
         "absl/status:statusor",
@@ -61,7 +61,7 @@ grpc_fuzzer(
     tags = ["no_windows"],
     deps = [
         "//:grpc",
-        "//src/core:chaotic_good_frame_header",
+        "//src/core:chaotic_good_tcp_frame_transport",
     ],
 )
 

@@ -14,6 +14,7 @@
 
 #include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 
+#include "control_endpoint.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
@@ -77,6 +78,15 @@ uint32_t TcpFrameHeader::Padding(uint32_t alignment) const {
 
 ///////////////////////////////////////////////////////////////////////////////
 // TcpFrameTransport
+
+TcpFrameTransport::TcpFrameTransport(
+    Options options, PromiseEndpoint control_endpoint,
+    std::vector<PendingConnection> pending_data_endpoints,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
+    : control_endpoint_(std::move(control_endpoint), event_engine.get()),
+      data_endpoints_(std::move(pending_data_endpoints), event_engine.get(),
+                      options.enable_tracing),
+      options_(options) {}
 
 auto TcpFrameTransport::WriteFrame(const FrameInterface& frame) {
   FrameHeader header = frame.MakeHeader();
@@ -210,6 +220,12 @@ auto TcpFrameTransport::ReadFrameBytes() {
                       }));
             });
       });
+}
+
+void TcpFrameTransport::StartReading(
+    Party* party, MpscSender<IncomingFrame> frames,
+    absl::AnyInvocable<void(absl::Status)> on_done) {
+  Crash("Not implemented");
 }
 
 }  // namespace chaotic_good
