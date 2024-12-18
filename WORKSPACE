@@ -1,28 +1,4 @@
-workspace(name = "com_github_grpc_grpc")
 
-load("//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
-
-grpc_deps()
-
-grpc_test_only_deps()
-
-load("//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
-
-grpc_extra_deps()
-
-load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_rbe_exec_properties_dict", "custom_exec_properties")
-
-custom_exec_properties(
-    name = "grpc_custom_exec_properties",
-    constants = {
-        "LARGE_MACHINE": create_rbe_exec_properties_dict(
-            labels = {
-                "os": "ubuntu",
-                "machine_size": "large",
-            },
-        ),
-    },
-)
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
