@@ -56,6 +56,34 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+namespace {
+absl::Status RawSetSocketReusePort(int fd, int reuse) {
+#ifndef SO_REUSEPORT
+  return absl::Status(absl::StatusCode::kInternal,
+                      "SO_REUSEPORT unavailable on compiling system");
+#else
+  int val = (reuse != 0);
+  int newval;
+  socklen_t intlen = sizeof(newval);
+  if (0 != setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val))) {
+    return absl::Status(
+        absl::StatusCode::kInternal,
+        absl::StrCat("setsockopt(SO_REUSEPORT): ", grpc_core::StrError(errno)));
+  }
+  if (0 != getsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &newval, &intlen)) {
+    return absl::Status(
+        absl::StatusCode::kInternal,
+        absl::StrCat("getsockopt(SO_REUSEPORT): ", grpc_core::StrError(errno)));
+  }
+  if ((newval != 0) != val) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        "Failed to set SO_REUSEPORT");
+  }
+  return absl::OkStatus();
+#endif
+}
+}  // namespace
+
 absl::StatusOr<LockedFd> SystemApi::Lock(FileDescriptor fd) const {
   if (!fd.ready()) {
     return absl::InternalError("Invalid file descriptor");
@@ -91,7 +119,7 @@ absl::StatusOr<FileDescriptor> SystemApi::Accept4(
         }
       }
       addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
-      return FileDescriptor(fd);
+      return RegisterFileDescriptor(fd);
     close_and_error:
       close(fd);
       return FileDescriptor();
@@ -248,7 +276,7 @@ absl::Status SystemApi::SetSocketNoSigpipeIfPossible(FileDescriptor fd) const {
 
 bool SystemApi::IsSocketReusePortSupported() const {
   // This is depends on the OS so it is ok to make it static
-  static bool kSupportSoReusePort = [this]() -> bool {
+  static bool kSupportSoReusePort = []() -> bool {
     int s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0) {
       // This might be an ipv6-only environment in which case
@@ -257,7 +285,7 @@ bool SystemApi::IsSocketReusePortSupported() const {
       s = socket(AF_INET6, SOCK_STREAM, 0);
     }
     if (s >= 0) {
-      bool result = SetSocketReusePort(FileDescriptor(s), 1).ok();
+      bool result = RawSetSocketReusePort(s, 1).ok();
       close(s);
       return result;
     } else {
@@ -270,29 +298,7 @@ bool SystemApi::IsSocketReusePortSupported() const {
 // set a socket to reuse old ports
 absl::Status SystemApi::SetSocketReusePort(FileDescriptor fd, int reuse) const {
   return WithFd(fd, [=](int fd) -> absl::Status {
-#ifndef SO_REUSEPORT
-    return absl::Status(absl::StatusCode::kInternal,
-                        "SO_REUSEPORT unavailable on compiling system");
-#else
-  int val = (reuse != 0);
-  int newval;
-  socklen_t intlen = sizeof(newval);
-  if (0 != setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val))) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_REUSEPORT): ", grpc_core::StrError(errno)));
-  }
-  if (0 != getsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &newval, &intlen)) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("getsockopt(SO_REUSEPORT): ", grpc_core::StrError(errno)));
-  }
-  if ((newval != 0) != val) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        "Failed to set SO_REUSEPORT");
-  }
-  return absl::OkStatus();
-#endif
+    return RawSetSocketReusePort(fd, reuse);
   });
 }
 
