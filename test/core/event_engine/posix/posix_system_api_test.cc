@@ -303,7 +303,7 @@ using helloworld::HelloRequest;
 
 }  // namespace
 
-TEST(PosixSystemApiTest, DISABLED_FullGrpc) {
+TEST(PosixSystemApiTest, FullGrpc) {
   int port = grpc_pick_unused_port_or_die();
   int pid = fork();
   ASSERT_GE(pid, 0) << absl::ErrnoToStatus(errno, "Fork");
