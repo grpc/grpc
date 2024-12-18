@@ -32,9 +32,9 @@ TEST(SwitchTest, JustDefault) {
 
 TEST(SwitchTest, ThreeImmediateCases) {
   std::string execution_order;
-  auto test_switch = [&execution_order](int num) {
+  auto test_switch = [&execution_order](int discriminator) {
     execution_order.clear();
-    return Switch(num, Case<int, 1>([&execution_order] {
+    return Switch(discriminator, Case<int, 1>([&execution_order] {
                     absl::StrAppend(&execution_order, "1");
                     return 100;
                   }),
@@ -70,9 +70,10 @@ TEST(SwitchTest, ThreeImmediateCases) {
 TEST(SwitchTest, Pending) {
   std::string execution_order;
   bool is_pending = true;
-  auto test_switch = [&execution_order, &is_pending](int num) {
+  auto test_switch = [&execution_order, &is_pending](int discriminator) {
     execution_order.clear();
-    return Switch(num, Case<int, 0>([&execution_order]() -> Poll<int> {
+    return Switch(discriminator,
+                  Case<int, 0>([&execution_order]() -> Poll<int> {
                     absl::StrAppend(&execution_order, "0");
                     return Pending{};
                   }),
