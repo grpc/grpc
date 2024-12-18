@@ -17,6 +17,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <utility>
 
@@ -37,56 +38,121 @@ namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
-std::atomic<absl::AnyInvocable<std::unique_ptr<EventEngine>()>*>
+std::atomic<absl::AnyInvocable<std::shared_ptr<EventEngine>()>*>
     g_event_engine_factory{nullptr};
 grpc_core::NoDestruct<grpc_core::Mutex> g_mu;
-grpc_core::NoDestruct<std::weak_ptr<EventEngine>> g_event_engine;
+grpc_core::NoDestruct<std::weak_ptr<EventEngine>> g_weak_internal_event_engine;
+grpc_core::NoDestruct<std::shared_ptr<EventEngine>> g_user_event_engine;
+
+void AsanAssertNoLeaks() {
+#if GRPC_BUILD_HAS_ASAN
+  __lsan_do_leak_check();
+#endif
+}
+
+// DO NOT SUBMIT: move to some shared util in core
+void WaitForSingleOwnerWithTimeout(std::shared_ptr<EventEngine> engine,
+                                   EventEngine::Duration timeout) {
+  int n = 0;
+  auto start = std::chrono::system_clock::now();
+  while (engine.use_count() > 1) {
+    ++n;
+    if (n % 100 == 0) {
+      LOG(INFO) << "Checking for leaks...";
+      AsanAssertNoLeaks();
+    }
+    auto remaining = timeout - (std::chrono::system_clock::now() - start);
+    if (remaining < std::chrono::seconds{0}) {
+      grpc_core::Crash("Timed out waiting for a single EventEngine owner");
+    }
+    LOG_EVERY_N_SEC(INFO, 2)
+        << "engine.use_count() = " << engine.use_count()
+        << " timeout_remaining = "
+        << absl::FormatDuration(absl::Nanoseconds(remaining.count()));
+    absl::SleepFor(absl::Milliseconds(100));
+  }
+}
+
+// DO NOT SUBMIT: move to some shared util in core
+// Waits until the use_count of the EventEngine shared_ptr has reached 1
+// and returns.
+// Callers must give up their ref, or this method will block forever.
+// Usage: WaitForSingleOwner(std::move(engine))
+void WaitForSingleOwner(std::shared_ptr<EventEngine> engine) {
+  WaitForSingleOwnerWithTimeout(std::move(engine), std::chrono::hours{24});
+}
 }  // namespace
 
 void SetEventEngineFactory(
-    absl::AnyInvocable<std::unique_ptr<EventEngine>()> factory) {
+    absl::AnyInvocable<std::shared_ptr<EventEngine>()> factory) {
   delete g_event_engine_factory.exchange(
-      new absl::AnyInvocable<std::unique_ptr<EventEngine>()>(
+      new absl::AnyInvocable<std::shared_ptr<EventEngine>()>(
           std::move(factory)));
-  // Forget any previous EventEngines
+  // Forget any previous factory-created EventEngines
   grpc_core::MutexLock lock(&*g_mu);
-  g_event_engine->reset();
+  g_weak_internal_event_engine->reset();
+}
+
+void SetDefaultEventEngine(std::shared_ptr<EventEngine> engine) {
+  grpc_core::MutexLock lock(&*g_mu);
+  *g_user_event_engine = engine;
+  g_weak_internal_event_engine->reset();
+}
+
+void ShutdownDefaultEventEngine() {
+  std::shared_ptr<EventEngine> engine;
+  {
+    grpc_core::MutexLock lock(&*g_mu);
+    g_weak_internal_event_engine->reset();
+    engine = std::move(*g_user_event_engine);
+    g_user_event_engine->reset();
+  }
+  WaitForSingleOwner(std::move(engine));
 }
 
 void EventEngineFactoryReset() {
   delete g_event_engine_factory.exchange(nullptr);
-  g_event_engine->reset();
+  g_weak_internal_event_engine->reset();
 }
 
-std::unique_ptr<EventEngine> CreateEventEngineInner() {
+std::shared_ptr<EventEngine> CreateEventEngine() {
+#ifdef GRPC_MAXIMIZE_THREADYNESS
+  return std::make_shared<ThreadyEventEngine>(CreateEventEngineInner());
+#endif
   if (auto* factory = g_event_engine_factory.load()) {
     return (*factory)();
   }
   return DefaultEventEngineFactory();
 }
 
-std::unique_ptr<EventEngine> CreateEventEngine() {
-#ifdef GRPC_MAXIMIZE_THREADYNESS
-  return std::make_unique<ThreadyEventEngine>(CreateEventEngineInner());
-#else
-  return CreateEventEngineInner();
-#endif
-}
-
-std::shared_ptr<EventEngine> GetDefaultEventEngine(
-    grpc_core::SourceLocation location) {
+// std::shared_ptr<EventEngine> GetDefaultEventEngine(
+//     grpc_core::SourceLocation location) {
+std::shared_ptr<EventEngine> GetDefaultEventEngine() {
   grpc_core::MutexLock lock(&*g_mu);
-  if (std::shared_ptr<EventEngine> engine = g_event_engine->lock()) {
+  // User-provided default engine
+  if (*g_user_event_engine) {
+    CHECK_EQ(g_weak_internal_event_engine->use_count(), 0)
+        << "Both a provided EventEngine and an internal EventEngine exist at "
+           "the same time. This should not be possible.";
+    GRPC_TRACE_LOG(event_engine, INFO)
+        << "Returning existing application-provided EventEngine::"
+        << g_user_event_engine->get()
+        << ". use_count:" << g_user_event_engine->use_count();
+    return *g_user_event_engine;
+  }
+  // An already-instantiated internal default engine
+  if (std::shared_ptr<EventEngine> engine =
+          g_weak_internal_event_engine->lock()) {
     GRPC_TRACE_LOG(event_engine, INFO)
         << "Returning existing EventEngine::" << engine.get()
-        << ". use_count:" << engine.use_count() << ". Called from " << location;
+        << ". use_count:" << engine.use_count();
     return engine;
   }
+  // Create a new engine.
   std::shared_ptr<EventEngine> engine{CreateEventEngine()};
   GRPC_TRACE_LOG(event_engine, INFO)
-      << "Created DefaultEventEngine::" << engine.get() << ". Called from "
-      << location;
-  *g_event_engine = engine;
+      << "Created DefaultEventEngine::" << engine.get();
+  *g_weak_internal_event_engine = engine;
   return engine;
 }
 

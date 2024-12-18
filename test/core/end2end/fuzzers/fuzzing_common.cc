@@ -344,19 +344,11 @@ Validator* ValidateConnectivityWatch(gpr_timespec deadline, int* counter) {
 
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-using ::grpc_event_engine::experimental::SetEventEngineFactory;
 
 BasicFuzzer::BasicFuzzer(const fuzzing_event_engine::Actions& actions)
-    : engine_([actions]() {
-        SetEventEngineFactory(
-            [actions]() -> std::unique_ptr<
-                            grpc_event_engine::experimental::EventEngine> {
-              return std::make_unique<FuzzingEventEngine>(
-                  FuzzingEventEngine::Options(), actions);
-            });
-        return std::dynamic_pointer_cast<FuzzingEventEngine>(
-            GetDefaultEventEngine());
-      }()) {
+    : engine_(std::make_shared<FuzzingEventEngine>(
+          FuzzingEventEngine::Options(), actions)),
+      engine_scope_(engine_) {
   grpc_timer_manager_set_start_threaded(false);
   grpc_init();
   {

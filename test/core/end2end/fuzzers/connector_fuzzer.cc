@@ -14,6 +14,8 @@
 
 #include "test/core/end2end/fuzzers/connector_fuzzer.h"
 
+#include <memory>
+
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -34,7 +36,6 @@ using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using ::grpc_event_engine::experimental::MockEndpointController;
-using ::grpc_event_engine::experimental::SetEventEngineFactory;
 using ::grpc_event_engine::experimental::URIToResolvedAddress;
 
 namespace grpc_core {
@@ -48,16 +49,11 @@ class ConnectorFuzzer {
           make_security_connector,
       absl::FunctionRef<OrphanablePtr<SubchannelConnector>()> make_connector)
       : make_security_connector_(make_security_connector),
-        engine_([actions = msg.event_engine_actions()]() {
-          SetEventEngineFactory([actions]() -> std::unique_ptr<EventEngine> {
-            return std::make_unique<FuzzingEventEngine>(
-                FuzzingEventEngine::Options(), actions);
-          });
-          return std::dynamic_pointer_cast<FuzzingEventEngine>(
-              GetDefaultEventEngine());
-        }()),
+        engine_(std::make_shared<FuzzingEventEngine>(
+            FuzzingEventEngine::Options(), msg.event_engine_actions())),
         mock_endpoint_controller_(MockEndpointController::Create(engine_)),
-        connector_(make_connector()) {
+        connector_(make_connector()),
+        engine_scope_(std::dynamic_pointer_cast<EventEngine*>(engine_) {
     CHECK(engine_);
     for (const auto& input : msg.network_input()) {
       network_inputs_.push(input);
@@ -164,6 +160,7 @@ class ConnectorFuzzer {
   std::shared_ptr<MockEndpointController> mock_endpoint_controller_;
   std::unique_ptr<EventEngine::Listener> listener_;
   OrphanablePtr<SubchannelConnector> connector_;
+  grpc_event_engine::experimental::DefaultEventEngineScope engine_scope_;
 };
 
 }  // namespace

@@ -481,7 +481,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
 /// created, applications must set a custom EventEngine factory method *before*
 /// grpc is initialized.
 void SetEventEngineFactory(
-    absl::AnyInvocable<std::unique_ptr<EventEngine>()> factory);
+    absl::AnyInvocable<std::shared_ptr<EventEngine>()> factory);
 
 /// Reset gRPC's EventEngine factory to the built-in default.
 ///
@@ -491,7 +491,7 @@ void SetEventEngineFactory(
 /// using the previous factories.
 void EventEngineFactoryReset();
 /// Create an EventEngine using the default factory.
-std::unique_ptr<EventEngine> CreateEventEngine();
+std::shared_ptr<EventEngine> CreateEventEngine();
 
 bool operator==(const EventEngine::TaskHandle& lhs,
                 const EventEngine::TaskHandle& rhs);
@@ -519,6 +519,40 @@ template <typename Sink>
 void AbslStringify(Sink& out, const EventEngine::TaskHandle& handle) {
   out.Append(detail::FormatHandleString(handle.keys[0], handle.keys[1]));
 }
+
+/// Set the default EventEngine instance, which will be used throughout gRPC
+///
+/// gRPC will hold a ref to this engine. For your engine to be shut down, you
+/// must call \a ShutdownDefaultEventEngine at the end of your program.
+///
+/// Earlier calls to \a GetDefaultEventEngine will still hold a ref to the
+/// previous default engine instance, if any.
+void SetDefaultEventEngine(std::shared_ptr<EventEngine> engine);
+
+/// Returns the shared default EventEngine instance.
+///
+/// GetDefaultEventEngine is a lazy thing: either a shared global EventEngine
+/// instance exists and will be returned, or that shared global instance will be
+/// created and returned. The returned shared_ptr<EventEngine>'s life is
+/// determined by the shared_ptr, and therefore EventEngines may be created and
+/// destroyed multiple times through the life of your gRPC process, there is no
+/// guarantee of one persistent global instance like in iomgr.
+///
+/// If you're writing code that needs an EventEngine, you are responsible for
+/// caching the EventEngine somewhere to guarantee its lifetime.
+std::shared_ptr<EventEngine> GetDefaultEventEngine();
+
+/// Waits for all refs on the DefaultEventEngine to be released, and resets the
+/// CreateEventEngine factory to create and return one of the default internal
+/// EventEngines.
+///
+/// If you called \a SetDefaultEventEngine, you must call \a
+/// ShutdownDefaultEventEngine. If you don't, the default engine will never be
+/// destroyed.
+///
+/// Note that this method will never return if you also hold a ref to that
+/// default engine anywhere else in your application.
+void ShutdownDefaultEventEngine();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
