@@ -187,6 +187,10 @@ names_without_bazel_only_deps = list(names_and_urls.keys())
 for dep_name in _GRPC_BAZEL_ONLY_DEPS:
     names_without_bazel_only_deps.remove(dep_name)
 archive_urls = [names_and_urls[name] for name in names_without_bazel_only_deps]
+for url in archive_urls:
+    if re.search(git_hash_pattern, url) is None:
+        print("Cannot find the hash value from url", url)
+        sys.exit(1)
 workspace_git_hashes = {
     re.search(git_hash_pattern, url).group() for url in archive_urls
 }
