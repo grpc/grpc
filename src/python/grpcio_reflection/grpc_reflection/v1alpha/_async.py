@@ -26,6 +26,7 @@ except ImportError:
     from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
 # pylint: enable=ungrouped-imports
 
+
 class ReflectionServicer(BaseReflectionServicer):
     """Servicer handling RPCs for service statuses."""
 
