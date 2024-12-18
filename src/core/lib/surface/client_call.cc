@@ -296,7 +296,7 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
             send.c_slice_buffer());
         auto msg = arena()->MakePooled<Message>(
             std::move(send),
-            op.flags | (is_last ? GRPC_WRITE_INTERNAL_KNOWN_LAST_MESSAGE : 0));
+            op.flags | (is_last ? GRPC_WRITE_INTERNAL_IMMEDIATE_PUSH : 0));
         return [this, msg = std::move(msg)]() mutable {
           return started_call_initiator_.PushMessage(std::move(msg));
         };

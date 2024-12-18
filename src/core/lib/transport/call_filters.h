@@ -1616,6 +1616,7 @@ class CallFilters {
    private:
     Poll<ValueOrFailure<Output>> FinishStep(
         Poll<filters_detail::ResultOr<Input>> p) {
+      GRPC_LATENT_SEE_INNER_SCOPE("MetadataExecutor::FinishStep");
       auto* r = p.value_if_ready();
       if (r == nullptr) return Pending{};
       if (r->ok != nullptr) {
@@ -1672,6 +1673,7 @@ class CallFilters {
 
    private:
     Poll<NextMsg> FinishStep(Poll<filters_detail::ResultOr<MessageHandle>> p) {
+      GRPC_LATENT_SEE_INNER_SCOPE("MessageExecutor::FinishStep");
       auto* r = p.value_if_ready();
       if (r == nullptr) return Pending{};
       if (r->ok != nullptr) {
@@ -1699,12 +1701,14 @@ class CallFilters {
   // Returns a promise that resolves to ValueOrFailure<ClientMetadataHandle>
   GRPC_MUST_USE_RESULT auto PullClientInitialMetadata() {
     call_state_.BeginPullClientInitialMetadata();
-    return MetadataExecutor<ClientMetadataHandle, ClientMetadataHandle,
-                            &CallFilters::push_client_initial_metadata_,
-                            &filters_detail::StackData::client_initial_metadata,
-                            &CallState::FinishPullClientInitialMetadata,
-                            StacksVector::const_iterator>(
-        this, stacks_.cbegin(), stacks_.cend());
+    return GRPC_LATENT_SEE_PROMISE(
+        "PullClientInitialMetadata",
+        (MetadataExecutor<ClientMetadataHandle, ClientMetadataHandle,
+                          &CallFilters::push_client_initial_metadata_,
+                          &filters_detail::StackData::client_initial_metadata,
+                          &CallState::FinishPullClientInitialMetadata,
+                          StacksVector::const_iterator>(this, stacks_.cbegin(),
+                                                        stacks_.cend())));
   }
   // Server: Push server initial metadata
   // Returns a promise that resolves to a StatusFlag indicating success
@@ -1715,122 +1719,133 @@ class CallFilters {
   // Client: Fetch server initial metadata
   // Returns a promise that resolves to ValueOrFailure<ServerMetadataHandle>
   GRPC_MUST_USE_RESULT auto PullServerInitialMetadata() {
-    return Seq(
-        [this]() {
-          return call_state_.PollPullServerInitialMetadataAvailable();
-        },
-        [this](bool has_server_initial_metadata) {
-          return If(
-              has_server_initial_metadata,
-              [this]() {
-                return Map(
-                    MetadataExecutor<
-                        absl::optional<ServerMetadataHandle>,
-                        ServerMetadataHandle,
-                        &CallFilters::push_server_initial_metadata_,
-                        &filters_detail::StackData::server_initial_metadata,
-                        &CallState::FinishPullServerInitialMetadata,
-                        StacksVector::const_reverse_iterator>(
-                        this, stacks_.crbegin(), stacks_.crend()),
-                    [](ValueOrFailure<absl::optional<ServerMetadataHandle>> r) {
-                      if (r.ok()) return std::move(*r);
-                      return absl::optional<ServerMetadataHandle>{};
-                    });
-              },
-              []() {
-                return Immediate(absl::optional<ServerMetadataHandle>{});
-              });
-        });
+    return GRPC_LATENT_SEE_PROMISE(
+        "PullServerInitialMetadata",
+        Seq(
+            [this]() {
+              return call_state_.PollPullServerInitialMetadataAvailable();
+            },
+            [this](bool has_server_initial_metadata) {
+              return If(
+                  has_server_initial_metadata,
+                  [this]() {
+                    return Map(
+                        MetadataExecutor<
+                            absl::optional<ServerMetadataHandle>,
+                            ServerMetadataHandle,
+                            &CallFilters::push_server_initial_metadata_,
+                            &filters_detail::StackData::server_initial_metadata,
+                            &CallState::FinishPullServerInitialMetadata,
+                            StacksVector::const_reverse_iterator>(
+                            this, stacks_.crbegin(), stacks_.crend()),
+                        [](ValueOrFailure<absl::optional<ServerMetadataHandle>>
+                               r) {
+                          if (r.ok()) return std::move(*r);
+                          return absl::optional<ServerMetadataHandle>{};
+                        });
+                  },
+                  []() {
+                    return Immediate(absl::optional<ServerMetadataHandle>{});
+                  });
+            }));
   }
   // Client: Push client to server message
   // Returns a promise that resolves to a StatusFlag indicating success
   GRPC_MUST_USE_RESULT auto PushClientToServerMessage(MessageHandle message) {
     DCHECK_NE(message.get(), nullptr);
-    return Seq(
-        [this]() {
-          return call_state_.PollReadyForPushClientToServerMessage();
-        },
-        [this, message = std::move(message)]() mutable {
-          call_state_.BeginPushClientToServerMessage();
-          DCHECK_EQ(push_client_to_server_message_.get(), nullptr);
-          bool is_last =
-              (message->flags() & GRPC_WRITE_INTERNAL_KNOWN_LAST_MESSAGE) != 0;
-          push_client_to_server_message_ = std::move(message);
-          return If(
-              is_last, []() -> Poll<StatusFlag> { return Success{}; },
-              [this]() {
-                return call_state_.PollReadyForPushClientToServerMessage();
-              });
-        });
+    return GRPC_LATENT_SEE_PROMISE(
+        "PushClientToServerMessage",
+        Seq(
+            [this]() {
+              return call_state_.PollReadyForPushClientToServerMessage();
+            },
+            [this, message = std::move(message)]() mutable {
+              call_state_.BeginPushClientToServerMessage();
+              DCHECK_EQ(push_client_to_server_message_.get(), nullptr);
+              bool is_last =
+                  (message->flags() & GRPC_WRITE_INTERNAL_IMMEDIATE_PUSH) != 0;
+              push_client_to_server_message_ = std::move(message);
+              return If(
+                  is_last, []() -> Poll<StatusFlag> { return Success{}; },
+                  [this]() {
+                    return call_state_.PollReadyForPushClientToServerMessage();
+                  });
+            }));
   }
   // Client: Indicate that no more messages will be sent
   void FinishClientToServerSends() { call_state_.ClientToServerHalfClose(); }
   // Server: Fetch client to server message
   // Returns a promise that resolves to ClientToServerNextMessage
   GRPC_MUST_USE_RESULT auto PullClientToServerMessage() {
-    return TrySeq(
-        [this]() {
-          return call_state_.PollPullClientToServerMessageAvailable();
-        },
-        [this](bool message_available) {
-          return If(
-              message_available,
-              [this]() {
-                return MessageExecutor<
-                    &CallFilters::push_client_to_server_message_,
-                    &filters_detail::StackData::client_to_server_messages,
-                    &CallState::FinishPullClientToServerMessage,
-                    StacksVector::const_iterator>(this, stacks_.cbegin(),
-                                                  stacks_.cend());
-              },
-              []() -> ClientToServerNextMessage {
-                return ClientToServerNextMessage();
-              });
-        });
+    return GRPC_LATENT_SEE_PROMISE(
+        "PullClientToServerMessage",
+        TrySeq(
+            [this]() {
+              return call_state_.PollPullClientToServerMessageAvailable();
+            },
+            [this](bool message_available) {
+              return If(
+                  message_available,
+                  [this]() {
+                    return MessageExecutor<
+                        &CallFilters::push_client_to_server_message_,
+                        &filters_detail::StackData::client_to_server_messages,
+                        &CallState::FinishPullClientToServerMessage,
+                        StacksVector::const_iterator>(this, stacks_.cbegin(),
+                                                      stacks_.cend());
+                  },
+                  []() -> ClientToServerNextMessage {
+                    return ClientToServerNextMessage();
+                  });
+            }));
   }
   // Server: Push server to client message
   // Returns a promise that resolves to a StatusFlag indicating success
   GRPC_MUST_USE_RESULT auto PushServerToClientMessage(MessageHandle message) {
     DCHECK_NE(message.get(), nullptr);
-    return Seq(
-        [this]() {
-          return call_state_.PollReadyForPushServerToClientMessage();
-        },
-        [this, message = std::move(message)]() mutable {
-          call_state_.BeginPushServerToClientMessage();
-          DCHECK_EQ(push_server_to_client_message_.get(), nullptr);
-          bool is_last =
-              (message->flags() & GRPC_WRITE_INTERNAL_KNOWN_LAST_MESSAGE) != 0;
-          push_server_to_client_message_ = std::move(message);
-          return If(
-              is_last, []() -> Poll<StatusFlag> { return Success{}; },
-              [this]() {
-                return call_state_.PollReadyForPushServerToClientMessage();
-              });
-        });
+    return GRPC_LATENT_SEE_PROMISE(
+        "PushServerToClientMessage",
+        Seq(
+            [this]() {
+              return call_state_.PollReadyForPushServerToClientMessage();
+            },
+            [this, message = std::move(message)]() mutable {
+              call_state_.BeginPushServerToClientMessage();
+              DCHECK_EQ(push_server_to_client_message_.get(), nullptr);
+              bool is_last =
+                  (message->flags() & GRPC_WRITE_INTERNAL_IMMEDIATE_PUSH) != 0;
+              push_server_to_client_message_ = std::move(message);
+              return If(
+                  is_last, []() -> Poll<StatusFlag> { return Success{}; },
+                  [this]() {
+                    return call_state_.PollReadyForPushServerToClientMessage();
+                  });
+            }));
   }
   // Server: Fetch server to client message
   // Returns a promise that resolves to ServerToClientNextMessage
   GRPC_MUST_USE_RESULT auto PullServerToClientMessage() {
-    return TrySeq(
-        [this]() {
-          return call_state_.PollPullServerToClientMessageAvailable();
-        },
-        [this](bool message_available) {
-          return If(
-              message_available,
-              [this]() {
-                return MessageExecutor<
-                    &CallFilters::push_server_to_client_message_,
-                    &filters_detail::StackData::server_to_client_messages,
-                    &CallState::FinishPullServerToClientMessage,
-                    StacksVector::const_reverse_iterator>(
-                    this, stacks_.crbegin(), stacks_.crend());
-              },
-              []() -> ServerToClientNextMessage {
-                return ServerToClientNextMessage();
-              });
-        });
+    return GRPC_LATENT_SEE_PROMISE(
+        "PullServerToClientMessage",
+        TrySeq(
+            [this]() {
+              return call_state_.PollPullServerToClientMessageAvailable();
+            },
+            [this](bool message_available) {
+              return If(
+                  message_available,
+                  [this]() {
+                    return MessageExecutor<
+                        &CallFilters::push_server_to_client_message_,
+                        &filters_detail::StackData::server_to_client_messages,
+                        &CallState::FinishPullServerToClientMessage,
+                        StacksVector::const_reverse_iterator>(
+                        this, stacks_.crbegin(), stacks_.crend());
+                  },
+                  []() -> ServerToClientNextMessage {
+                    return ServerToClientNextMessage();
+                  });
+            }));
   }
   // Server: Indicate end of response
   // Closes the request entirely - no messages can be sent/received
@@ -1842,20 +1857,24 @@ class CallFilters {
   // Client: Fetch server trailing metadata
   // Returns a promise that resolves to ServerMetadataHandle
   GRPC_MUST_USE_RESULT auto PullServerTrailingMetadata() {
-    return Map(
-        [this]() { return call_state_.PollServerTrailingMetadataAvailable(); },
-        [this](Empty) {
-          auto value = std::move(push_server_trailing_metadata_);
-          if (call_data_ != nullptr) {
-            for (auto it = stacks_.crbegin(); it != stacks_.crend(); ++it) {
-              value = filters_detail::RunServerTrailingMetadata(
-                  it->stack->data_.server_trailing_metadata,
-                  filters_detail::Offset(call_data_, it->call_data_offset),
-                  std::move(value));
-            }
-          }
-          return value;
-        });
+    return GRPC_LATENT_SEE_PROMISE(
+        "PullServerTrailingMetadata",
+        Map(
+            [this]() {
+              return call_state_.PollServerTrailingMetadataAvailable();
+            },
+            [this](Empty) {
+              auto value = std::move(push_server_trailing_metadata_);
+              if (call_data_ != nullptr) {
+                for (auto it = stacks_.crbegin(); it != stacks_.crend(); ++it) {
+                  value = filters_detail::RunServerTrailingMetadata(
+                      it->stack->data_.server_trailing_metadata,
+                      filters_detail::Offset(call_data_, it->call_data_offset),
+                      std::move(value));
+                }
+              }
+              return value;
+            }));
   }
   // Server: Wait for server trailing metadata to have been sent
   // Returns a promise that resolves to a StatusFlag indicating whether the

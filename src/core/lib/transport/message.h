@@ -27,14 +27,18 @@
 /// to be decompressed by the message_decompress filter. (Does not apply for
 /// stream compression.)
 #define GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED (0x40000000u)
-/// Internal bit flag for when we know a particular message is the last one to
-/// be sent: this allows various flow control optimizations.
-#define GRPC_WRITE_INTERNAL_KNOWN_LAST_MESSAGE (0x20000000u)
+/// Usually when we `Push` to a `CallInitiator` or `CallHandler` they block
+/// until the message has been pulled. This flag signals that instead the push
+/// should finish once the data is available to be pulled (this may still block
+/// if a previous message is not yet claimed).
+/// Setting this is appropriate for messages sent from the API that are known
+/// to be the last message to be sent, OR for messages from the transport.
+#define GRPC_WRITE_INTERNAL_IMMEDIATE_PUSH (0x20000000u)
 /// Mask of all valid internal flags.
 #define GRPC_WRITE_INTERNAL_USED_MASK             \
   (GRPC_WRITE_INTERNAL_COMPRESS |                 \
    GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED | \
-   GRPC_WRITE_INTERNAL_KNOWN_LAST_MESSAGE)
+   GRPC_WRITE_INTERNAL_IMMEDIATE_PUSH)
 
 namespace grpc_core {
 

@@ -56,8 +56,8 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
                     }),
                 Map(handler.PullMessage(),
                     [](ClientToServerNextMessage msg) { return msg.status(); }),
-                handler.PushMessage(fixture.MakePayload(
-                    GRPC_WRITE_INTERNAL_KNOWN_LAST_MESSAGE))),
+                handler.PushMessage(
+                    fixture.MakePayload(GRPC_WRITE_INTERNAL_IMMEDIATE_PUSH))),
             [&handler_done, &fixture, handler](StatusFlag status) mutable {
               CHECK(status.ok());
               handler.PushServerTrailingMetadata(
@@ -71,7 +71,7 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
         return Map(
             AllOk<StatusFlag>(
                 Map(initiator.PushMessage(fixture.MakePayload(
-                        GRPC_WRITE_INTERNAL_KNOWN_LAST_MESSAGE)),
+                        GRPC_WRITE_INTERNAL_IMMEDIATE_PUSH)),
                     [](StatusFlag) { return Success{}; }),
                 Map(initiator.PullServerInitialMetadata(),
                     [](absl::optional<ServerMetadataHandle> md) {
