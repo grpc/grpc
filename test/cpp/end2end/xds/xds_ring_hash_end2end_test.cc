@@ -471,37 +471,42 @@ TEST_P(RingHashTest, HashKeysInEds) {
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({
-      {"locality0", {
-       CreateEndpoint(
-           0,
-           /*health_status=*/::envoy::config::core::v3::HealthStatus::UNKNOWN,
-           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-           /*hostname=*/"",
-           {{"envoy.lb",
-             JsonParse("{\"hash_key\":\"foo\"}").value().object()}}),
-       CreateEndpoint(
-           1,
-           /*health_status=*/::envoy::config::core::v3::HealthStatus::UNKNOWN,
-           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-           /*hostname=*/"",
-           {{"envoy.lb",
-             JsonParse("{\"hash_key\":\"bar\"}").value().object()}}),
-       CreateEndpoint(
-           2,
-           /*health_status=*/::envoy::config::core::v3::HealthStatus::UNKNOWN,
-           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-           /*hostname=*/"",
-           {{"envoy.lb",
-             JsonParse("{\"hash_key\":\"baz\"}").value().object()}}),
-       CreateEndpoint(
-           3,
-           /*health_status=*/::envoy::config::core::v3::HealthStatus::UNKNOWN,
-           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-           /*hostname=*/"",
-           {{"envoy.lb",
-             JsonParse("{\"hash_key\":\"quux\"}").value().object()}}),
-       }}});
+  EdsResourceArgs args(
+      {{"locality0",
+        {
+            CreateEndpoint(
+                0,
+                /*health_status=*/
+                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                /*hostname=*/"",
+                {{"envoy.lb",
+                  JsonParse("{\"hash_key\":\"foo\"}").value().object()}}),
+            CreateEndpoint(
+                1,
+                /*health_status=*/
+                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                /*hostname=*/"",
+                {{"envoy.lb",
+                  JsonParse("{\"hash_key\":\"bar\"}").value().object()}}),
+            CreateEndpoint(
+                2,
+                /*health_status=*/
+                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                /*hostname=*/"",
+                {{"envoy.lb",
+                  JsonParse("{\"hash_key\":\"baz\"}").value().object()}}),
+            CreateEndpoint(
+                3,
+                /*health_status=*/
+                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                /*hostname=*/"",
+                {{"envoy.lb",
+                  JsonParse("{\"hash_key\":\"quux\"}").value().object()}}),
+        }}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Note each type of RPC will contains a header value that will always be
   // hashed to a specific backend as the header value matches the value used
@@ -550,37 +555,42 @@ TEST_P(RingHashTest, HashKeysInEdsNotEnabled) {
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({
-      {"locality0", {
-       CreateEndpoint(
-           0,
-           /*health_status=*/::envoy::config::core::v3::HealthStatus::UNKNOWN,
-           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-           /*hostname=*/"",
-           {{"envoy.lb",
-             JsonParse("{\"hash_key\":\"foo\"}").value().object()}}),
-       CreateEndpoint(
-           1,
-           /*health_status=*/::envoy::config::core::v3::HealthStatus::UNKNOWN,
-           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-           /*hostname=*/"",
-           {{"envoy.lb",
-             JsonParse("{\"hash_key\":\"bar\"}").value().object()}}),
-       CreateEndpoint(
-           2,
-           /*health_status=*/::envoy::config::core::v3::HealthStatus::UNKNOWN,
-           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-           /*hostname=*/"",
-           {{"envoy.lb",
-             JsonParse("{\"hash_key\":\"baz\"}").value().object()}}),
-       CreateEndpoint(
-           3,
-           /*health_status=*/::envoy::config::core::v3::HealthStatus::UNKNOWN,
-           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-           /*hostname=*/"",
-           {{"envoy.lb",
-             JsonParse("{\"hash_key\":\"quux\"}").value().object()}}),
-       }}});
+  EdsResourceArgs args(
+      {{"locality0",
+        {
+            CreateEndpoint(
+                0,
+                /*health_status=*/
+                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                /*hostname=*/"",
+                {{"envoy.lb",
+                  JsonParse("{\"hash_key\":\"foo\"}").value().object()}}),
+            CreateEndpoint(
+                1,
+                /*health_status=*/
+                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                /*hostname=*/"",
+                {{"envoy.lb",
+                  JsonParse("{\"hash_key\":\"bar\"}").value().object()}}),
+            CreateEndpoint(
+                2,
+                /*health_status=*/
+                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                /*hostname=*/"",
+                {{"envoy.lb",
+                  JsonParse("{\"hash_key\":\"baz\"}").value().object()}}),
+            CreateEndpoint(
+                3,
+                /*health_status=*/
+                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                /*hostname=*/"",
+                {{"envoy.lb",
+                  JsonParse("{\"hash_key\":\"quux\"}").value().object()}}),
+        }}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Note each type of RPC will contains a header value that will always be
   // hashed to a specific backend as the header value matches the value used

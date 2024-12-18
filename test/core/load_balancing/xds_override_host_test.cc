@@ -202,10 +202,10 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       SourceLocation location = SourceLocation()) {
     std::vector<std::string> actual_picks;
     for (size_t i = 0; i < expected.size(); ++i) {
-      auto address = ExpectPickComplete(
-          picker, {attribute}, /*metadata=*/{},
-          /*subchannel_call_tracker=*/nullptr, /*picked_subchannel=*/nullptr,
-          location);
+      auto address =
+          ExpectPickComplete(picker, {attribute}, /*metadata=*/{},
+                             /*subchannel_call_tracker=*/nullptr,
+                             /*picked_subchannel=*/nullptr, location);
       ASSERT_TRUE(address.has_value())
           << location.file() << ":" << location.line();
       EXPECT_THAT(*address, ::testing::AnyOfArray(expected))

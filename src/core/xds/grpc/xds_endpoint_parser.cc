@@ -112,8 +112,9 @@ std::string GetHashKeyFromMetadata(const XdsMetadataMap& metadata_map) {
       metadata_map.FindType<XdsStructMetadataValue>("envoy.lb");
   if (hash_key_entry == nullptr) return "";
   ValidationErrors unused_errors;
-  return LoadJsonObjectField<std::string>(
-      hash_key_entry->json().object(), JsonArgs(), "hash_key", &unused_errors)
+  return LoadJsonObjectField<std::string>(hash_key_entry->json().object(),
+                                          JsonArgs(), "hash_key",
+                                          &unused_errors)
       .value_or("");
 }
 
