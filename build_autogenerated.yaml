@@ -9439,6 +9439,7 @@ targets:
   - gtest
   - absl/status:statusor
   - gpr
+  uses_polling: false
 - name: completion_queue_threading_test
   gtest: true
   build: test
@@ -9866,12 +9867,14 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/mock_event_engine.h
   src:
   - test/core/event_engine/default_engine_methods_test.cc
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: default_host_test
   gtest: true
   build: test
@@ -10672,12 +10675,14 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/mock_event_engine.h
   - test/core/event_engine/util/aborting_event_engine.h
   src:
   - test/core/event_engine/factory_test.cc
   deps:
   - gtest
   - grpc_test_util_unsecure
+  uses_polling: false
 - name: fake_resolver_test
   gtest: true
   build: test
@@ -21698,16 +21703,6 @@ targets:
   - absl/status:statusor
   - gpr
   uses_polling: false
-- name: smoke_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/event_engine/smoke_test.cc
-  deps:
-  - gtest
-  - grpc_test_util_unsecure
 - name: sockaddr_resolver_test
   gtest: true
   build: test
@@ -22528,6 +22523,7 @@ targets:
   - absl/status:statusor
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: test_core_iomgr_timer_heap_test
   gtest: true
   build: test
@@ -22882,6 +22878,7 @@ targets:
   - gtest
   - grpc
   - grpc_test_util_unsecure
+  uses_polling: false
 - name: thread_quota_test
   gtest: true
   build: test
