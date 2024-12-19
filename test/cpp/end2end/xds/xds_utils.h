@@ -25,7 +25,6 @@
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
-#include "src/core/util/json/json.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 
 namespace grpc {
@@ -221,7 +220,7 @@ class XdsResourceUtils {
               ::envoy::config::core::v3::HealthStatus::UNKNOWN,
           int lb_weight = 1, std::vector<int> additional_ports = {},
           absl::string_view hostname = "",
-          const std::map<std::string, grpc_core::Json::Object>& metadata = {})
+          const std::map<std::string, std::string /*JSON*/>& metadata = {})
           : port(port),
             health_status(health_status),
             lb_weight(lb_weight),
@@ -234,7 +233,7 @@ class XdsResourceUtils {
       int lb_weight;
       std::vector<int> additional_ports;
       std::string hostname;
-      std::map<std::string, grpc_core::Json::Object> metadata;
+      std::map<std::string, std::string /*JSON*/> metadata;
     };
 
     // A locality.

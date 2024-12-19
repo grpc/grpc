@@ -37,7 +37,6 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/server/server.h"
 #include "src/core/util/env.h"
-#include "src/core/util/json/json.h"
 #include "src/core/util/tmpfile.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_channel_args.h"
@@ -54,7 +53,6 @@ using ::envoy::config::listener::v3::Listener;
 using ::envoy::config::route::v3::RouteConfiguration;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
-using grpc_core::Json;
 
 //
 // XdsBootstrapBuilder
@@ -336,54 +334,6 @@ std::string XdsResourceUtils::LocalityNameString(absl::string_view sub_zone) {
                          sub_zone);
 }
 
-namespace {
-
-void PopulateMetadataValue(const Json& value,
-                           ::google::protobuf::Value* value_pb);
-
-void PopulateListValue(const Json::Array& values,
-                       ::google::protobuf::ListValue* value_pb) {
-  for (const auto& value : values) {
-    PopulateMetadataValue(value, value_pb->add_values());
-  }
-}
-
-void PopulateMetadata(const Json::Object& metadata,
-                      ::google::protobuf::Struct* metadata_pb) {
-  auto& map = *metadata_pb->mutable_fields();
-  for (const auto& p : metadata) {
-    PopulateMetadataValue(p.second, &map[p.first]);
-  }
-}
-
-void PopulateMetadataValue(const Json& value,
-                           ::google::protobuf::Value* value_pb) {
-  switch (value.type()) {
-    case Json::Type::kNull:
-      value_pb->set_null_value(::google::protobuf::NullValue::NULL_VALUE);
-      break;
-    case Json::Type::kNumber:
-      double number;
-      CHECK(absl::SimpleAtod(value.string(), &number));
-      value_pb->set_number_value(number);
-      break;
-    case Json::Type::kString:
-      value_pb->set_string_value(value.string());
-      break;
-    case Json::Type::kBoolean:
-      value_pb->set_bool_value(value.boolean());
-      break;
-    case Json::Type::kObject:
-      PopulateMetadata(value.object(), value_pb->mutable_struct_value());
-      break;
-    case Json::Type::kArray:
-      PopulateListValue(value.array(), value_pb->mutable_list_value());
-      break;
-  }
-}
-
-}  // namespace
-
 ClusterLoadAssignment XdsResourceUtils::BuildEdsResource(
     const EdsResourceArgs& args, absl::string_view eds_service_name) {
   ClusterLoadAssignment assignment;
@@ -425,7 +375,10 @@ ClusterLoadAssignment XdsResourceUtils::BuildEdsResource(
         auto& filter_map =
             *lb_endpoints->mutable_metadata()->mutable_filter_metadata();
         for (const auto& p : endpoint.metadata) {
-          PopulateMetadata(p.second, &filter_map[p.first]);
+          absl::Status status = grpc::protobuf::json::JsonStringToMessage(
+              p.second, &filter_map[p.first],
+              grpc::protobuf::json::JsonParseOptions());
+          CHECK(status.ok()) << status;
         }
       }
     }

@@ -32,7 +32,6 @@
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/util/env.h"
-#include "src/core/util/json/json_reader.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
@@ -44,7 +43,6 @@ namespace {
 
 using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
-using grpc_core::JsonParse;
 
 class RingHashTest : public XdsEnd2endTest {
  protected:
@@ -480,32 +478,28 @@ TEST_P(RingHashTest, HashKeysInEds) {
                 ::envoy::config::core::v3::HealthStatus::UNKNOWN,
                 /*lb_weight=*/1, /*additional_backend_indexes=*/{},
                 /*hostname=*/"",
-                {{"envoy.lb",
-                  JsonParse("{\"hash_key\":\"foo\"}").value().object()}}),
+                {{"envoy.lb", "{\"hash_key\":\"foo\"}"}}),
             CreateEndpoint(
                 1,
                 /*health_status=*/
                 ::envoy::config::core::v3::HealthStatus::UNKNOWN,
                 /*lb_weight=*/1, /*additional_backend_indexes=*/{},
                 /*hostname=*/"",
-                {{"envoy.lb",
-                  JsonParse("{\"hash_key\":\"bar\"}").value().object()}}),
+                {{"envoy.lb", "{\"hash_key\":\"bar\"}"}}),
             CreateEndpoint(
                 2,
                 /*health_status=*/
                 ::envoy::config::core::v3::HealthStatus::UNKNOWN,
                 /*lb_weight=*/1, /*additional_backend_indexes=*/{},
                 /*hostname=*/"",
-                {{"envoy.lb",
-                  JsonParse("{\"hash_key\":\"baz\"}").value().object()}}),
+                {{"envoy.lb", "{\"hash_key\":\"baz\"}"}}),
             CreateEndpoint(
                 3,
                 /*health_status=*/
                 ::envoy::config::core::v3::HealthStatus::UNKNOWN,
                 /*lb_weight=*/1, /*additional_backend_indexes=*/{},
                 /*hostname=*/"",
-                {{"envoy.lb",
-                  JsonParse("{\"hash_key\":\"quux\"}").value().object()}}),
+                {{"envoy.lb", "{\"hash_key\":\"quux\"}"}}),
         }}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Note each type of RPC will contains a header value that will always be
@@ -564,32 +558,28 @@ TEST_P(RingHashTest, HashKeysInEdsNotEnabled) {
                 ::envoy::config::core::v3::HealthStatus::UNKNOWN,
                 /*lb_weight=*/1, /*additional_backend_indexes=*/{},
                 /*hostname=*/"",
-                {{"envoy.lb",
-                  JsonParse("{\"hash_key\":\"foo\"}").value().object()}}),
+                {{"envoy.lb", "{\"hash_key\":\"foo\"}"}}),
             CreateEndpoint(
                 1,
                 /*health_status=*/
                 ::envoy::config::core::v3::HealthStatus::UNKNOWN,
                 /*lb_weight=*/1, /*additional_backend_indexes=*/{},
                 /*hostname=*/"",
-                {{"envoy.lb",
-                  JsonParse("{\"hash_key\":\"bar\"}").value().object()}}),
+                {{"envoy.lb", "{\"hash_key\":\"bar\"}"}}),
             CreateEndpoint(
                 2,
                 /*health_status=*/
                 ::envoy::config::core::v3::HealthStatus::UNKNOWN,
                 /*lb_weight=*/1, /*additional_backend_indexes=*/{},
                 /*hostname=*/"",
-                {{"envoy.lb",
-                  JsonParse("{\"hash_key\":\"baz\"}").value().object()}}),
+                {{"envoy.lb", "{\"hash_key\":\"baz\"}"}}),
             CreateEndpoint(
                 3,
                 /*health_status=*/
                 ::envoy::config::core::v3::HealthStatus::UNKNOWN,
                 /*lb_weight=*/1, /*additional_backend_indexes=*/{},
                 /*hostname=*/"",
-                {{"envoy.lb",
-                  JsonParse("{\"hash_key\":\"quux\"}").value().object()}}),
+                {{"envoy.lb", "{\"hash_key\":\"quux\"}"}}),
         }}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Note each type of RPC will contains a header value that will always be
