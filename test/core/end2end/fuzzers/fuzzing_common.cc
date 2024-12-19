@@ -347,8 +347,9 @@ using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 BasicFuzzer::BasicFuzzer(const fuzzing_event_engine::Actions& actions)
     : engine_(std::make_shared<FuzzingEventEngine>(
-          FuzzingEventEngine::Options(), actions)),
-      engine_scope_(engine_) {
+          FuzzingEventEngine::Options(), actions)) {
+  CHECK(engine_);
+  grpc_event_engine::experimental::SetDefaultEventEngine(engine_);
   grpc_timer_manager_set_start_threaded(false);
   grpc_init();
   {
@@ -371,6 +372,9 @@ BasicFuzzer::~BasicFuzzer() {
 
   grpc_shutdown_blocking();
   engine_->UnsetGlobalHooks();
+  // The engine ref must be released for ShutdownDefaultEventEngine to finish.
+  engine_.reset();
+  grpc_event_engine::experimental::ShutdownDefaultEventEngine();
 }
 
 void BasicFuzzer::Tick() {

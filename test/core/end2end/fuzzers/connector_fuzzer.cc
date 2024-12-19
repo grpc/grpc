@@ -52,9 +52,9 @@ class ConnectorFuzzer {
         engine_(std::make_shared<FuzzingEventEngine>(
             FuzzingEventEngine::Options(), msg.event_engine_actions())),
         mock_endpoint_controller_(MockEndpointController::Create(engine_)),
-        connector_(make_connector()),
-        engine_scope_(std::dynamic_pointer_cast<EventEngine>(engine_)) {
+        connector_(make_connector()) {
     CHECK(engine_);
+    grpc_event_engine::experimental::SetDefaultEventEngine(engine_);
     for (const auto& input : msg.network_input()) {
       network_inputs_.push(input);
     }
@@ -117,6 +117,9 @@ class ConnectorFuzzer {
     engine_->TickUntilIdle();
     grpc_shutdown_blocking();
     engine_->UnsetGlobalHooks();
+    // The engine ref must be released for ShutdownDefaultEventEngine to finish.
+    engine_.reset();
+    grpc_event_engine::experimental::ShutdownDefaultEventEngine();
   }
 
   void Run() {
@@ -160,7 +163,6 @@ class ConnectorFuzzer {
   std::shared_ptr<MockEndpointController> mock_endpoint_controller_;
   std::unique_ptr<EventEngine::Listener> listener_;
   OrphanablePtr<SubchannelConnector> connector_;
-  grpc_event_engine::experimental::DefaultEventEngineScope engine_scope_;
 };
 
 }  // namespace
