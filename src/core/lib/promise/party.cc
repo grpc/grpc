@@ -292,6 +292,7 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
     while (wakeup_mask_ != 0) {
       auto wakeup_mask = std::exchange(wakeup_mask_, 0);
       while (wakeup_mask != 0) {
+        GRPC_LATENT_SEE_INNER_SCOPE("run_one_promise");
         const uint64_t t = LowestOneBit(wakeup_mask);
         const int i = absl::countr_zero(t);
         wakeup_mask ^= t;
