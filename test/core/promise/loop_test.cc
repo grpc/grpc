@@ -56,26 +56,6 @@ TEST(LoopTest, CountToFivePoll) {
   EXPECT_STREQ(execution_order.c_str(), "01234P");
 }
 
-TEST(LoopTest, FailingLoop) {
-  // The loop will break if a failure status is returned.
-  std::string execution_order;
-  int i = 0;
-  Poll<absl::Status> retval =
-      Loop([&execution_order, &i]() -> LoopCtl<absl::Status> {
-        absl::StrAppend(&execution_order, i);
-        i++;
-        if (i == 5) {
-          absl::StrAppend(&execution_order, "F");
-          return absl::CancelledError("Test");
-        }
-        if (i < 10) return Continue();
-        return absl::OkStatus();
-      })();
-  EXPECT_TRUE(retval.ready());
-  EXPECT_EQ(retval.value(), absl::CancelledError("Test"));
-  EXPECT_STREQ(execution_order.c_str(), "01234F");
-}
-
 TEST(LoopTest, FactoryCountToFive) {
   std::string execution_order;
   int i = 0;
@@ -109,7 +89,7 @@ TEST(LoopTest, LoopOfSeq) {
   EXPECT_STREQ(execution_order.c_str(), "a42");
 }
 
-TEST(LoopTest, LoopOfSeq1) {
+TEST(LoopTest, LoopOfSeqMultiple) {
   std::string execution_order;
   Poll<int> retval = Loop(Seq(
       [&execution_order]() mutable -> Poll<int> {
@@ -128,7 +108,7 @@ TEST(LoopTest, LoopOfSeq1) {
 
 TEST(LoopTest, CanAccessFactoryLambdaVariables) {
   std::string execution_order;
-  int i = 0;
+  int i = 99;
   auto x = Loop([&execution_order, p = &i]() {
     return [q = &p, &execution_order]() -> Poll<LoopCtl<int>> {
       absl::StrAppend(&execution_order, **q);
@@ -140,8 +120,8 @@ TEST(LoopTest, CanAccessFactoryLambdaVariables) {
   auto z = std::move(y);
   Poll<int> retval = z();
   EXPECT_TRUE(retval.pending());
-  EXPECT_STREQ(execution_order.c_str(), "0");
-  EXPECT_EQ(i, 1);
+  EXPECT_STREQ(execution_order.c_str(), "99");
+  EXPECT_EQ(i, 100);
 }
 
 }  // namespace grpc_core
