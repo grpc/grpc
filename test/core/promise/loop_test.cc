@@ -39,6 +39,23 @@ TEST(LoopTest, CountToFive) {
   EXPECT_STREQ(execution_order.c_str(), "01234");
 }
 
+TEST(LoopTest, CountToFivePoll) {
+  std::string execution_order;
+  int i = 0;
+  Poll<int> retval = Loop([&execution_order, &i]() -> Poll<LoopCtl<int>> {
+    absl::StrAppend(&execution_order, i);
+    i++;
+    if (i == 5) {
+      absl::StrAppend(&execution_order, "F");
+      return Pending{};
+    };
+    return Continue();
+  })();
+  EXPECT_TRUE(retval.pending());
+  EXPECT_EQ(i, 5);
+  EXPECT_STREQ(execution_order.c_str(), "01234F");
+}
+
 TEST(LoopTest, FailingLoop) {
   // The loop will break if a failure status is returned.
   std::string execution_order;
