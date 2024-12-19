@@ -40,19 +40,19 @@ grpc_cc_library(
 )
 
 grpc_cc_test(
-    name = "frame_header_test",
-    srcs = ["frame_header_test.cc"],
+    name = "tcp_frame_header_test",
+    srcs = ["tcp_frame_header_test.cc"],
     external_deps = [
         "absl/status",
         "gtest",
     ],
-    deps = ["//src/core:chaotic_good_frame_header"],
+    deps = ["//src/core:chaotic_good_tcp_frame_transport"],
 )
 
 grpc_fuzzer(
-    name = "frame_header_fuzzer",
-    srcs = ["frame_header_fuzzer.cc"],
-    corpus = "frame_header_fuzzer_corpus",
+    name = "tcp_frame_header_fuzzer",
+    srcs = ["tcp_frame_header_fuzzer.cc"],
+    corpus = "corpus/frame_header_fuzzer",
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
@@ -61,7 +61,7 @@ grpc_fuzzer(
     tags = ["no_windows"],
     deps = [
         "//:grpc",
-        "//src/core:chaotic_good_frame_header",
+        "//src/core:chaotic_good_tcp_frame_transport",
     ],
 )
 
@@ -81,10 +81,25 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_library(
+    name = "mock_frame_transport",
+    srcs = [
+        "mock_frame_transport.cc",
+    ],
+    hdrs = [
+        "mock_frame_transport.h",
+    ],
+    external_deps = [
+        "gtest",
+        "protobuf_headers",
+    ],
+    deps = ["//src/core:chaotic_good_frame_transport"],
+)
+
 grpc_proto_fuzzer(
-    name = "frame_fuzzer",
-    srcs = ["frame_fuzzer.cc"],
-    corpus = "frame_fuzzer_corpus",
+    name = "tcp_frame_fuzzer",
+    srcs = ["tcp_frame_fuzzer.cc"],
+    corpus = "corpus/tcp_frame_fuzzer",
     external_deps = [
         "absl/log:check",
         "absl/log:log",
@@ -105,6 +120,7 @@ grpc_proto_fuzzer(
         "//src/core:arena",
         "//src/core:chaotic_good_frame",
         "//src/core:chaotic_good_frame_header",
+        "//src/core:chaotic_good_tcp_frame_transport",
         "//src/core:event_engine_memory_allocator",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
@@ -194,21 +210,23 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "mock_frame_transport",
         "transport_test",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//:iomgr_timer",
         "//:ref_counted_ptr",
         "//src/core:arena",
+        "//src/core:chaotic_good_frame_cc_proto",
         "//src/core:chaotic_good_server_transport",
         "//src/core:memory_quota",
+        "//src/core:metadata_batch",
         "//src/core:resource_quota",
         "//src/core:seq",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
-        "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
 

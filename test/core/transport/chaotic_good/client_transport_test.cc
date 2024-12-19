@@ -57,12 +57,6 @@ namespace grpc_core {
 namespace chaotic_good {
 namespace testing {
 
-class MockClientConnectionFactory : public ClientConnectionFactory {
- public:
-  MOCK_METHOD(PendingConnection, Connect, (absl::string_view), (override));
-  void Orphaned() final {}
-};
-
 ClientMetadataHandle TestInitialMetadata() {
   auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step"));
@@ -101,23 +95,8 @@ ChannelArgs MakeChannelArgs(
           std::move(event_engine));
 }
 
-template <typename... PromiseEndpoints>
-Config MakeConfig(const ChannelArgs& channel_args,
-                  PromiseEndpoints... promise_endpoints) {
-  Config config(channel_args);
-  auto name_endpoint = [i = 0]() mutable { return absl::StrCat(++i); };
-  std::vector<int> this_is_only_here_to_unpack_the_following_statement{
-      (config.ServerAddPendingDataEndpoint(
-           ImmediateConnection(name_endpoint(), std::move(promise_endpoints))),
-       0)...};
-  return config;
-}
-
 TEST_F(TransportTest, AddOneStream) {
-  MockPromiseEndpoint control_endpoint(1000);
-  MockPromiseEndpoint data_endpoint(1001);
-  auto client_connection_factory =
-      MakeRefCounted<StrictMock<MockClientConnectionFactory>>();
+  MockFrameTransport frame_transport;
   static const std::string many_as(1024 * 1024, 'a');
   const auto server_initial_metadata =
       EncodeProto<chaotic_good_frame::ServerMetadata>("message: 'hello'");
@@ -142,22 +121,14 @@ TEST_F(TransportTest, AddOneStream) {
       .WillOnce(Return(false));
   auto channel_args = MakeChannelArgs(event_engine());
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-      channel_args, std::move(control_endpoint.promise_endpoint),
-      MakeConfig(channel_args, std::move(data_endpoint.promise_endpoint)),
-      client_connection_factory);
+      channel_args, frame_transport, MessageChunker(0, 1));
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
-  control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kClientInitialMetadata, 0, 1,
-                             client_initial_metadata.length()),
-       client_initial_metadata.Copy()},
-      nullptr);
-  control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kMessage, 0, 1, 1),
-       EventEngineSlice::FromCopiedString("0"),
-       SerializedFrameHeader(FrameType::kClientEndOfStream, 0, 1, 0)},
-      nullptr);
+  frame_transport.ExpectWrite(MakeProtoFrame<ClientInitialMetadataFrame>(
+      1, "path: '/demo.Service/Step'"));
+  frame_transport.ExpectWrite(MakeMessageFrame(1, many_as));
+  frame_transport.ExpectWrite(ClientEndOfStreamFrame(1));
   transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {

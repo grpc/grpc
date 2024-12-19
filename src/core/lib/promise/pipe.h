@@ -534,6 +534,7 @@ class Next {
 template <typename T>
 class PipeReceiver {
  public:
+  PipeReceiver() = default;
   PipeReceiver(const PipeReceiver&) = delete;
   PipeReceiver& operator=(const PipeReceiver&) = delete;
   PipeReceiver(PipeReceiver&& other) noexcept = default;
