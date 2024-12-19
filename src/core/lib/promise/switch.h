@@ -32,9 +32,9 @@ namespace grpc_core {
 // Input :
 //
 // 1. The first input is the Switch discriminator. Only data types that can be
-// used with a C++ switch statement can be passed as the discriminator.
+//    used with a C++ switch statement can be passed as the discriminator.
 // 2. Then we can pass zero or more objects of type Case as inputs. The Case
-// object is a promise factory.
+//    object is a promise factory.
 // 3. One object of type Default.
 //
 // Returns :
@@ -63,8 +63,12 @@ namespace grpc_core {
 //   EXPECT_EQ(test_switch(4)(), Poll<int>(-1));
 // }
 //
-// All Case objects and the Default object need to have the same Poll<T> return
+// All Case objects and the Default object must have the same Poll<T> return
 // type.
+//
+// The fallthrough mechanism is present in C++ switch statements is NOT present
+// in the switch promise combinator.
+//
 // Our code currently permits you to create multiple cases for the same
 // discriminator value. However this should be avoided as it could lead to bugs.
 
