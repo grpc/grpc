@@ -52,7 +52,6 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/hash/hash.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
@@ -67,7 +66,6 @@
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/orphanable.h"
@@ -108,9 +106,9 @@ absl::Status AresStatusToAbslStatus(int status, absl::string_view error_msg) {
 constexpr EventEngine::Duration kAresBackupPollAlarmDuration =
     std::chrono::seconds(1);
 
-bool IsIpv6LoopbackAvailable() {
+bool AresIsIpv6LoopbackAvailable() {
 #ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER
-  return PosixSocketWrapper::IsIpv6LoopbackAvailable();
+  return IsIpv6LoopbackAvailable();
 #elif defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
   // TODO(yijiem): implement this for Windows
   return true;
@@ -322,7 +320,7 @@ void AresResolver::LookupHostname(
   grpc_core::MutexLock lock(&mutex_);
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new HostnameQueryArg(this, id_, name, port);
-  if (IsIpv6LoopbackAvailable()) {
+  if (AresIsIpv6LoopbackAvailable()) {
     // Note that using AF_UNSPEC for both IPv6 and IPv4 queries does not work in
     // all cases, e.g. for localhost:<> it only gets back the IPv6 result (i.e.
     // ::1).
