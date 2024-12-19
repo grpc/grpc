@@ -261,13 +261,14 @@ class XdsClient::XdsChannel::AdsCall final
         // We might have received the resource after the timer fired but before
         // the callback ran.
         if (state.resource == nullptr) {
-          std::string resource_name = XdsClient::ConstructFullXdsResourceName(
-              name_.authority, type_->type_url(), name_.key);
           GRPC_TRACE_LOG(xds_client, INFO)
               << "[xds_client " << ads_call_->xds_client() << "] xds server "
               << ads_call_->xds_channel()->server_.server_uri()
               << ": timeout obtaining resource {type=" << type_->type_url()
-              << " name=" << resource_name << "} from xds server";
+              << " name="
+              << XdsClient::ConstructFullXdsResourceName(
+                     name_.authority, type_->type_url(), name_.key)
+              << "} from xds server";
           resource_seen_ = true;
           state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
           ads_call_->xds_client()->NotifyWatchersOnResourceChanged(
@@ -1272,6 +1273,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     }
     NotifyWatchersOnResourceChanged(std::move(status), {watcher},
                                     ReadDelayHandle::NoWait());
+    work_serializer_.DrainQueue();
   };
   auto resource_name = ParseXdsResourceName(name, type);
   if (!resource_name.ok()) {
