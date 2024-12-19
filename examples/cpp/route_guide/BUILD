@@ -39,6 +39,7 @@ cc_binary(
         ":route_guide_helper",
         "//:grpc++",
         "//examples/protos:route_guide",
+        "@com_google_absl//absl/flags:parse",
     ],
 )
 
@@ -53,6 +54,7 @@ cc_binary(
         ":route_guide_helper",
         "//:grpc++",
         "//examples/protos:route_guide",
+        "@com_google_absl//absl/flags:parse",
     ],
 )
 
