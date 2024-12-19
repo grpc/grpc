@@ -1105,7 +1105,7 @@ TEST_P(RingHashTest, ReattemptWhenGoingFromTransientFailureToIdle) {
   // Channel should fail RPCs and go into TRANSIENT_FAILURE.
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "empty address list: EDS resource eds_service_name contains empty "
+      "empty address list: EDS resource eds_service_name: contains empty "
       "localities: \\[\\{region=\"xds_default_locality_region\", "
       "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]",
       RpcOptions().set_timeout_ms(kConnectionTimeoutMilliseconds));
