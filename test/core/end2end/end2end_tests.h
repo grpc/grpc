@@ -55,6 +55,7 @@
 #include "src/core/util/bitset.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/time.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
@@ -576,8 +577,7 @@ class CoreEnd2endTest : public ::testing::Test {
       step_fn_ = nullptr;
   absl::AnyInvocable<void(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>&&)>
-      quiesce_event_engine_ =
-          grpc_event_engine::experimental::WaitForSingleOwner;
+      quiesce_event_engine_ = WaitForSingleOwner;
 };
 
 // Define names for additional test suites.

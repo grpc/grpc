@@ -2919,6 +2919,7 @@ grpc_cc_library(
         "default_event_engine_factory",
         "no_destruct",
         "thready_event_engine",
+        "wait_for_single_owner",
         "//:config",
         "//:debug_location",
         "//:event_engine_base_hdrs",
@@ -9174,6 +9175,16 @@ grpc_cc_library(
         "slice",
         "time",
         "//:call_tracer",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "wait_for_single_owner",
+    hdrs = ["util/wait_for_single_owner.h"],
+    external_deps = ["absl/log"],
+    deps = [
+        "time",
         "//:gpr",
     ],
 )

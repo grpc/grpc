@@ -35,7 +35,6 @@
 
 namespace {
 
-using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 class DefaultEngineTest : public testing::Test {
@@ -53,7 +52,7 @@ class DefaultEngineTest : public testing::Test {
     explicit CountingEngine(EngineOpCounts& counter) : counter_(counter) {
       counter_.constructed++;
     }
-    ~CountingEngine() { counter_.destroyed++; }
+    ~CountingEngine() override { counter_.destroyed++; }
     void Run(Closure* /* closure */) override { counter_.ran++; };
     void Run(absl::AnyInvocable<void()> /* closure */) override {
       counter_.ran++;

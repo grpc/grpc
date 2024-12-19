@@ -53,6 +53,7 @@
 #include "src/core/util/host_port.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"

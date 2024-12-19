@@ -72,6 +72,7 @@
 #include "src/core/util/tmpfile.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/test_config.h"
@@ -2469,8 +2470,7 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
     creds_.reset();
-    grpc_event_engine::experimental::WaitForSingleOwner(
-        std::move(event_engine_));
+    WaitForSingleOwner(std::move(event_engine_));
     grpc_shutdown_blocking();
   }
 
@@ -2820,8 +2820,7 @@ class ExternalAccountCredentialsTest : public ::testing::Test {
     event_engine_->FuzzingDone();
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
-    grpc_event_engine::experimental::WaitForSingleOwner(
-        std::move(event_engine_));
+    WaitForSingleOwner(std::move(event_engine_));
     grpc_shutdown_blocking();
   }
 

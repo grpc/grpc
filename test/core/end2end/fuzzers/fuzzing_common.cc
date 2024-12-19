@@ -343,7 +343,6 @@ Validator* ValidateConnectivityWatch(gpr_timespec deadline, int* counter) {
 }  // namespace
 
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 BasicFuzzer::BasicFuzzer(const fuzzing_event_engine::Actions& actions)
     : engine_(std::make_shared<FuzzingEventEngine>(

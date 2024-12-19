@@ -34,7 +34,6 @@ bool leak_check = true;
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using ::grpc_event_engine::experimental::MockEndpointController;
 using ::grpc_event_engine::experimental::URIToResolvedAddress;
 

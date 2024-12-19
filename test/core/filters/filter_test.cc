@@ -41,7 +41,6 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 
 using grpc_event_engine::experimental::FuzzingEventEngine;
-using grpc_event_engine::experimental::GetDefaultEventEngine;
 
 namespace grpc_core {
 

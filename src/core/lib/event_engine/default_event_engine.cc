@@ -29,6 +29,7 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
+#include "src/core/util/wait_for_single_owner.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
 #include "src/core/lib/event_engine/thready_event_engine/thready_event_engine.h"  // IWYU pragma: keep
@@ -44,43 +45,6 @@ grpc_core::NoDestruct<grpc_core::Mutex> g_mu;
 grpc_core::NoDestruct<std::weak_ptr<EventEngine>> g_weak_internal_event_engine;
 grpc_core::NoDestruct<std::shared_ptr<EventEngine>> g_user_event_engine;
 
-void AsanAssertNoLeaks() {
-#if GRPC_BUILD_HAS_ASAN
-  __lsan_do_leak_check();
-#endif
-}
-
-// DO NOT SUBMIT: move to some shared util in core
-void WaitForSingleOwnerWithTimeout(std::shared_ptr<EventEngine> engine,
-                                   EventEngine::Duration timeout) {
-  int n = 0;
-  auto start = std::chrono::system_clock::now();
-  while (engine.use_count() > 1) {
-    ++n;
-    if (n % 100 == 0) {
-      LOG(INFO) << "Checking for leaks...";
-      AsanAssertNoLeaks();
-    }
-    auto remaining = timeout - (std::chrono::system_clock::now() - start);
-    if (remaining < std::chrono::seconds{0}) {
-      grpc_core::Crash("Timed out waiting for a single EventEngine owner");
-    }
-    LOG_EVERY_N_SEC(INFO, 2)
-        << "engine.use_count() = " << engine.use_count()
-        << " timeout_remaining = "
-        << absl::FormatDuration(absl::Nanoseconds(remaining.count()));
-    absl::SleepFor(absl::Milliseconds(100));
-  }
-}
-
-// DO NOT SUBMIT: move to some shared util in core
-// Waits until the use_count of the EventEngine shared_ptr has reached 1
-// and returns.
-// Callers must give up their ref, or this method will block forever.
-// Usage: WaitForSingleOwner(std::move(engine))
-void WaitForSingleOwner(std::shared_ptr<EventEngine> engine) {
-  WaitForSingleOwnerWithTimeout(std::move(engine), std::chrono::hours{24});
-}
 }  // namespace
 
 void SetEventEngineFactory(
@@ -111,16 +75,13 @@ void ShutdownDefaultEventEngine(bool wait) {
     g_user_event_engine->reset();
   }
   if (wait) {
-    WaitForSingleOwner(std::move(engine));
+    grpc_core::WaitForSingleOwner(std::move(engine));
   }
 }
 
 void EventEngineFactoryReset() {
   grpc_core::MutexLock lock(&*g_mu);
-  auto factory = g_event_engine_factory.exchange(nullptr);
-  if (factory != nullptr) {
-    delete factory;
-  }
+  delete g_event_engine_factory.exchange(nullptr);
   g_weak_internal_event_engine->reset();
 }
 

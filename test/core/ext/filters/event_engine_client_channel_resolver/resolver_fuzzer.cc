@@ -55,7 +55,6 @@ namespace {
 using event_engine_client_channel_resolver::ExecutionStep;
 using event_engine_client_channel_resolver::TXTRecordType;
 using grpc_core::EventEngineClientChannelDNSResolverFactory;
-using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::FuzzingEventEngine;
 using grpc_event_engine::experimental::URIToResolvedAddress;
 

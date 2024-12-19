@@ -45,6 +45,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/notification.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
