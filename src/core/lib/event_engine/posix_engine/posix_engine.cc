@@ -248,6 +248,9 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
   do {
     err = poller->GetSystemApi()->Connect(fd, addr.address(), addr.size());
   } while (err.ok() && *err < 0 && errno == EINTR);
+  if (err.ok()) {
+    err = *err < 0 ? errno : 0;
+  }
   auto addr_uri = ResolvedAddressToURI(addr);
   if (!addr_uri.ok()) {
     Run([on_connect = std::move(on_connect),
@@ -261,7 +264,7 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
   EventHandle* handle =
       poller->CreateHandle(fd, name, poller->CanTrackErrors());
 
-  if (err.ok()) {
+  if (err.ok() && *err == 0) {
     // Connection already succeeded. Return 0 to discourage any cancellation
     // attempts.
     Run([on_connect = std::move(on_connect),
