@@ -32,25 +32,28 @@ namespace grpc_core {
 // A Loop combinator
 //
 // Input:
-// A Loop combinator takes as input only one promise or promise factory.
-// This input promise or promise factory should have a return type of LoopCtl<T>
-// which is an alias for absl::variant<Continue, T> . Also, this promise can
-// never return Pending{}. This is different from typical promises having a
-// return type of Poll<T>
+//
+// 1. A Loop combinator takes as input only one promise or promise factory.
+// 2. This input promise or promise factory should have a return type of either
+//    a.  LoopCtl<T> which is an alias for absl::variant<Continue, T>
+//    b.  Or Poll<LoopCtl<T>>
 //
 // Running of the Loop combinator:
-// The input promise is guranteed to run atleast once when the combinator is
-// invoked. The Loop combinators execution will keep running input promise for
-// as long as the input promise returns Continue(). If the input promise returns
-// T instead, the Loop combinator will stop execution and return this value to
-// the caller as Poll<T>. The execution of multiple iterations of the input
-// promise happen on the same thread. If the input promise has return its value
-// as LoopCtl<absl::Status> , a failure status will cause the Loop to break.
+//
+// 1. The input promise is guranteed to run atleast once when the combinator
+//    is invoked.
+// 2. The Loop combinators execution will keep running input promise for
+//    as long as the input promise returns the Continue() object.
+// 3. The Loop breaks if
+//    a.  the input promise returns T.
+//    b.  the input promise returns Pending{}.
+//
+// The execution of multiple iterations of the input
+// promise happen on the same thread.
 //
 // Return:
-// The input promise to the Loop combinator has return type LoopCtl<T> , and the
-// Loop combinator when executed will return Poll<T>. Our current implementation
-// of Loop combinator never returns Pending{}.
+//
+// The Loop combinator when executed will return Poll<T>.
 //
 // Example:
 //
