@@ -39,18 +39,18 @@ namespace grpc_core {
 // return type of Poll<T>
 //
 // Running of the Loop combinator:
-// The input promise is guranteed to run atleast once when it is invoked.
-// The Loop combinators execution will keep running input promise for as long as
-// the input promise returns Continue(). If the input promise returns T instead,
-// the Loop combinator will stop execution and return this value to the caller
-// as Poll<T>. The execution of multiple iterations of the input promise happen
-// on the same thread. If the Loop promise has return value as
-// LoopCtl<absl::Status> , a failure status will cause the Loop to break.
+// The input promise is guranteed to run atleast once when the combinator is
+// invoked. The Loop combinators execution will keep running input promise for
+// as long as the input promise returns Continue(). If the input promise returns
+// T instead, the Loop combinator will stop execution and return this value to
+// the caller as Poll<T>. The execution of multiple iterations of the input
+// promise happen on the same thread. If the input promise has return its value
+// as LoopCtl<absl::Status> , a failure status will cause the Loop to break.
 //
 // Return:
 // The input promise to the Loop combinator has return type LoopCtl<T> , and the
 // Loop combinator when executed will return Poll<T>. Our current implementation
-// of Loop combinator never returns Pending{}
+// of Loop combinator never returns Pending{}.
 //
 // Example:
 //
@@ -184,9 +184,6 @@ class Loop {
 
 }  // namespace promise_detail
 
-// Looping combinator.
-// Expects F returns LoopCtl<T> - if it's Continue, then run the loop again -
-// otherwise yield the returned value as the result of the loop.
 template <typename F>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Loop<F> Loop(F f) {
   return promise_detail::Loop<F>(std::move(f));
