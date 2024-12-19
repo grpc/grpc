@@ -422,6 +422,7 @@ FilterTestBase::FilterTestBase() {
 FilterTestBase::~FilterTestBase() {
   grpc_shutdown();
   event_engine_->UnsetGlobalHooks();
+  event_engine_.reset();
   grpc_event_engine::experimental::ShutdownDefaultEventEngine();
 }
 
