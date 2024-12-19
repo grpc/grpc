@@ -167,7 +167,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   for (auto sock : sockets) {
     close(sock);
   }
-  WaitForSingleOwner(std::move(posix_ee));
+  grpc_core::WaitForSingleOwner(std::move(posix_ee));
 }
 
 TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
@@ -197,7 +197,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   for (auto sock : sockets) {
     close(sock);
   }
-  WaitForSingleOwner(std::move(posix_ee));
+  grpc_core::WaitForSingleOwner(std::move(posix_ee));
 }
 
 }  // namespace experimental

@@ -219,7 +219,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     // Ensure all pending callbacks are handled before finishing the test
     // to ensure hygiene between test cases.
     // (requires any grpc-object-holding values be cleared out first).
-    WaitForSingleOwner(
+    grpc_core::WaitForSingleOwner(
         grpc_event_engine::experimental::GetDefaultEventEngine());
   }
 

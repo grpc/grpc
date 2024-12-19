@@ -176,7 +176,7 @@ class RlsEnd2endTest : public ::testing::Test {
 
   static void TearDownTestSuite() {
     grpc_shutdown_blocking();
-    WaitForSingleOwner(
+    grpc_core::WaitForSingleOwner(
         grpc_event_engine::experimental::GetDefaultEventEngine());
     grpc_core::CoreConfiguration::Reset();
   }

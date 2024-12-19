@@ -576,8 +576,9 @@ class CoreEnd2endTest : public ::testing::Test {
       grpc_event_engine::experimental::EventEngine::Duration) const>
       step_fn_ = nullptr;
   absl::AnyInvocable<void(
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>&&)>
-      quiesce_event_engine_ = WaitForSingleOwner;
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>)>
+      quiesce_event_engine_ =
+          WaitForSingleOwner<grpc_event_engine::experimental::EventEngine>;
 };
 
 // Define names for additional test suites.
