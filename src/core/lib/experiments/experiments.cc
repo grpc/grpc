@@ -29,15 +29,10 @@ const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_canary_client_privacy =
-    "If set, canary client privacy";
-const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_chaotic_good_legacy_protocol =
     "If set, use the first version of the chaotic-good protocol when that "
     "protocol is enabled.";
 const char* const additional_constraints_chaotic_good_legacy_protocol = "{}";
-const char* const description_client_privacy = "If set, client privacy";
-const char* const additional_constraints_client_privacy = "{}";
 const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "Disable buffer hint flag parsing in the transport under high memory "
     "pressure.";
@@ -118,8 +113,6 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
-const char* const description_server_privacy = "If set, server privacy";
-const char* const additional_constraints_server_privacy = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -154,13 +147,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
-    {"canary_client_privacy", description_canary_client_privacy,
-     additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"chaotic_good_legacy_protocol", description_chaotic_good_legacy_protocol,
      additional_constraints_chaotic_good_legacy_protocol, nullptr, 0, false,
      true},
-    {"client_privacy", description_client_privacy,
-     additional_constraints_client_privacy, nullptr, 0, false, false},
     {"disable_buffer_hint_on_high_memory_pressure",
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
@@ -218,8 +207,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
-    {"server_privacy", description_server_privacy,
-     additional_constraints_server_privacy, nullptr, 0, false, false},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -246,15 +233,10 @@ const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_canary_client_privacy =
-    "If set, canary client privacy";
-const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_chaotic_good_legacy_protocol =
     "If set, use the first version of the chaotic-good protocol when that "
     "protocol is enabled.";
 const char* const additional_constraints_chaotic_good_legacy_protocol = "{}";
-const char* const description_client_privacy = "If set, client privacy";
-const char* const additional_constraints_client_privacy = "{}";
 const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "Disable buffer hint flag parsing in the transport under high memory "
     "pressure.";
@@ -335,8 +317,6 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
-const char* const description_server_privacy = "If set, server privacy";
-const char* const additional_constraints_server_privacy = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -371,13 +351,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
-    {"canary_client_privacy", description_canary_client_privacy,
-     additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"chaotic_good_legacy_protocol", description_chaotic_good_legacy_protocol,
      additional_constraints_chaotic_good_legacy_protocol, nullptr, 0, false,
      true},
-    {"client_privacy", description_client_privacy,
-     additional_constraints_client_privacy, nullptr, 0, false, false},
     {"disable_buffer_hint_on_high_memory_pressure",
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
@@ -435,8 +411,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
-    {"server_privacy", description_server_privacy,
-     additional_constraints_server_privacy, nullptr, 0, false, false},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -463,15 +437,10 @@ const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_canary_client_privacy =
-    "If set, canary client privacy";
-const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_chaotic_good_legacy_protocol =
     "If set, use the first version of the chaotic-good protocol when that "
     "protocol is enabled.";
 const char* const additional_constraints_chaotic_good_legacy_protocol = "{}";
-const char* const description_client_privacy = "If set, client privacy";
-const char* const additional_constraints_client_privacy = "{}";
 const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "Disable buffer hint flag parsing in the transport under high memory "
     "pressure.";
@@ -552,8 +521,6 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
-const char* const description_server_privacy = "If set, server privacy";
-const char* const additional_constraints_server_privacy = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -588,13 +555,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
-    {"canary_client_privacy", description_canary_client_privacy,
-     additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"chaotic_good_legacy_protocol", description_chaotic_good_legacy_protocol,
      additional_constraints_chaotic_good_legacy_protocol, nullptr, 0, false,
      true},
-    {"client_privacy", description_client_privacy,
-     additional_constraints_client_privacy, nullptr, 0, false, false},
     {"disable_buffer_hint_on_high_memory_pressure",
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
@@ -652,8 +615,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
-    {"server_privacy", description_server_privacy,
-     additional_constraints_server_privacy, nullptr, 0, false, false},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,

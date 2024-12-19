@@ -50,25 +50,11 @@
   expiry: 2025/02/01
   owner: roth@google.com
   test_tags: []
-- name: canary_client_privacy
-  description:
-    If set, canary client privacy
-  expiry: 2025/01/01
-  owner: alishananda@google.com
-  test_tags: []
-  allow_in_fuzzing_config: false
 - name: chaotic_good_legacy_protocol
   description: If set, use the first version of the chaotic-good protocol when that protocol is enabled.
   expiry: 2025/01/15
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
-- name: client_privacy
-  description:
-    If set, client privacy
-  expiry: 2025/01/01
-  owner: alishananda@google.com
-  test_tags: []
-  allow_in_fuzzing_config: false
 - name: disable_buffer_hint_on_high_memory_pressure
   description:
     Disable buffer hint flag parsing in the transport under high memory pressure.
@@ -119,7 +105,7 @@
   test_tags: [resource_quota_test]
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
-  expiry: 2024/12/30
+  expiry: 2024/01/30
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: max_pings_wo_data_throttle
@@ -127,7 +113,7 @@
     Experiment to throttle pings to a period of 1 min when
     GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of
     completely blocking).
-  expiry: 2024/12/31
+  expiry: 2025/01/30
   owner: yashkt@google.com
   test_tags: []
 - name: monitoring_experiment
@@ -194,13 +180,6 @@
   expiry: 2025/03/01
   owner: vigneshbabu@google.com
   test_tags: []
-- name: server_privacy
-  description:
-    If set, server privacy
-  expiry: 2025/01/01
-  owner: alishananda@google.com
-  test_tags: []
-  allow_in_fuzzing_config: false
 - name: tcp_frame_size_tuning
   description:
     If set, enables TCP to use RPC size estimation made by higher layers.
@@ -222,7 +201,7 @@
   test_tags: []
 - name: trace_record_callops
   description: Enables tracing of call batch initiation and completion.
-  expiry: 2025/01/01
+  expiry: 2025/01/30
   owner: vigneshbabu@google.com
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
@@ -235,6 +214,6 @@
     Have the work serializer dispatch work to event engine for every callback,
     instead of running things inline in the first thread that successfully
     enqueues work.
-  expiry: 2024/12/31
+  expiry: 2024/01/30
   owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]
