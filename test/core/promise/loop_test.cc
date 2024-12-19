@@ -60,14 +60,19 @@ TEST(LoopTest, FailingLoop) {
 }
 
 TEST(LoopTest, FactoryCountToFive) {
+  std::string execution_order;
   int i = 0;
-  Loop([&i]() {
-    return [&i]() -> LoopCtl<int> {
+  Poll<int> retval = Loop([&execution_order, &i]() {
+    return [&execution_order, &i]() -> LoopCtl<int> {
+      absl::StrAppend(&execution_order, i);
       i++;
       if (i < 5) return Continue();
       return i;
     };
   })();
+  EXPECT_TRUE(retval.ready());
+  EXPECT_EQ(retval.value(), 5);
+  EXPECT_STREQ(execution_order.c_str(), "01234");
   EXPECT_EQ(i, 5);
 }
 
@@ -105,16 +110,20 @@ TEST(LoopTest, LoopOfSeq1) {
 }
 
 TEST(LoopTest, CanAccessFactoryLambdaVariables) {
+  std::string execution_order;
   int i = 0;
-  auto x = Loop([p = &i]() {
-    return [q = &p]() -> Poll<LoopCtl<int>> {
+  auto x = Loop([&execution_order, p = &i]() {
+    return [q = &p, &execution_order]() -> Poll<LoopCtl<int>> {
+      absl::StrAppend(&execution_order, **q);
       ++**q;
       return Pending{};
     };
   });
   auto y = std::move(x);
   auto z = std::move(y);
-  z();
+  Poll<int> retval = z();
+  EXPECT_TRUE(retval.pending());
+  EXPECT_STREQ(execution_order.c_str(), "0");
   EXPECT_EQ(i, 1);
 }
 
