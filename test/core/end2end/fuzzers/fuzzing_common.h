@@ -186,7 +186,6 @@ class BasicFuzzer {
   RefCountedPtr<ResourceQuota> resource_quota_;
   size_t active_call_ = 0;
   Duration minimum_run_time_ = Duration::Zero();
-  grpc_event_engine::experimental::DefaultEventEngineScope engine_scope_;
 };
 
 }  // namespace testing
