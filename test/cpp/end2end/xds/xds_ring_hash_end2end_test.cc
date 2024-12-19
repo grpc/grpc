@@ -472,34 +472,30 @@ TEST_P(RingHashTest, HashKeysInEds) {
   EdsResourceArgs args(
       {{"locality0",
         {
-            CreateEndpoint(
-                0,
-                /*health_status=*/
-                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-                /*hostname=*/"",
-                {{"envoy.lb", "{\"hash_key\":\"foo\"}"}}),
-            CreateEndpoint(
-                1,
-                /*health_status=*/
-                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-                /*hostname=*/"",
-                {{"envoy.lb", "{\"hash_key\":\"bar\"}"}}),
-            CreateEndpoint(
-                2,
-                /*health_status=*/
-                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-                /*hostname=*/"",
-                {{"envoy.lb", "{\"hash_key\":\"baz\"}"}}),
-            CreateEndpoint(
-                3,
-                /*health_status=*/
-                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-                /*hostname=*/"",
-                {{"envoy.lb", "{\"hash_key\":\"quux\"}"}}),
+            CreateEndpoint(0,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"foo\"}"}}),
+            CreateEndpoint(1,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"bar\"}"}}),
+            CreateEndpoint(2,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"baz\"}"}}),
+            CreateEndpoint(3,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"quux\"}"}}),
         }}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Note each type of RPC will contains a header value that will always be
@@ -552,34 +548,30 @@ TEST_P(RingHashTest, HashKeysInEdsNotEnabled) {
   EdsResourceArgs args(
       {{"locality0",
         {
-            CreateEndpoint(
-                0,
-                /*health_status=*/
-                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-                /*hostname=*/"",
-                {{"envoy.lb", "{\"hash_key\":\"foo\"}"}}),
-            CreateEndpoint(
-                1,
-                /*health_status=*/
-                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-                /*hostname=*/"",
-                {{"envoy.lb", "{\"hash_key\":\"bar\"}"}}),
-            CreateEndpoint(
-                2,
-                /*health_status=*/
-                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-                /*hostname=*/"",
-                {{"envoy.lb", "{\"hash_key\":\"baz\"}"}}),
-            CreateEndpoint(
-                3,
-                /*health_status=*/
-                ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-                /*hostname=*/"",
-                {{"envoy.lb", "{\"hash_key\":\"quux\"}"}}),
+            CreateEndpoint(0,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"foo\"}"}}),
+            CreateEndpoint(1,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"bar\"}"}}),
+            CreateEndpoint(2,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"baz\"}"}}),
+            CreateEndpoint(3,
+                           /*health_status=*/
+                           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/"",
+                           {{"envoy.lb", "{\"hash_key\":\"quux\"}"}}),
         }}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Note each type of RPC will contains a header value that will always be
