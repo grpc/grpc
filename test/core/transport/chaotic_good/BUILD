@@ -83,6 +83,7 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "mock_frame_transport",
+    testonly=1,
     srcs = [
         "mock_frame_transport.cc",
     ],
@@ -98,6 +99,7 @@ grpc_cc_library(
         "//src/core:inter_activity_latch",
         "//src/core:loop",
         "//src/core:try_seq",
+        "//test/core/promise:poll_matcher",
     ],
 )
 

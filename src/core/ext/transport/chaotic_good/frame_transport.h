@@ -66,12 +66,13 @@ class IncomingFrame {
 
 class FrameTransport : public RefCounted<FrameTransport> {
  public:
+  using ReadFramePipe = InterActivityPipe<IncomingFrame, 8>;
+
   // Spawn a read loop onto party - read frames from the wire, push them onto
   // frames.
   // TODO(ctiller): can likely use a buffered intra-party SpscSender here once
   // we write one.
-  virtual void StartReading(Party* party,
-                            InterActivityPipe<IncomingFrame>::Sender frames,
+  virtual void StartReading(Party* party, ReadFramePipe::Sender frames,
                             absl::AnyInvocable<void(absl::Status)> on_done) = 0;
   // Spawn a write loop onto party - write frames from frames to the wire.
   virtual void StartWriting(Party* party, MpscReceiver<Frame> frames,

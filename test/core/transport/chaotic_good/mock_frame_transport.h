@@ -30,8 +30,7 @@ class MockFrameTransport final : public FrameTransport {
  public:
   ~MockFrameTransport() override;
 
-  void StartReading(Party* party,
-                    InterActivityPipe<IncomingFrame>::Sender frames,
+  void StartReading(Party* party, ReadFramePipe::Sender frames,
                     absl::AnyInvocable<void(absl::Status)> on_done) final;
   void StartWriting(Party* party, MpscReceiver<Frame> frames,
                     absl::AnyInvocable<void(absl::Status)> on_done) final;
@@ -52,7 +51,7 @@ class MockFrameTransport final : public FrameTransport {
   std::queue<ExpectedWrite> expected_writes_;
   std::shared_ptr<InterActivityLatch<absl::Status>> end_writes_ =
       std::make_shared<InterActivityLatch<absl::Status>>();
-  MpscSender<IncomingFrame> reader_;
+ReadFramePipe::Sender reader_;
   absl::AnyInvocable<void(absl::Status)> on_read_done_;
 };
 

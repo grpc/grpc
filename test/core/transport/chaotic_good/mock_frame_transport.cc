@@ -18,6 +18,8 @@
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "gmock/gmock.h"
+#include "test/core/promise/poll_matcher.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -37,7 +39,7 @@ MockFrameTransport::~MockFrameTransport() {
 }
 
 void MockFrameTransport::StartReading(
-    Party*, InterActivityPipe<IncomingFrame>::Sender frames,
+    Party*, ReadFramePipe::Sender frames,
     absl::AnyInvocable<void(absl::Status)> on_done) {
   reader_ = std::move(frames);
   on_read_done_ = std::move(on_done);
@@ -79,7 +81,7 @@ void MockFrameTransport::Read(Frame frame) {
   LOG(INFO) << "Read " << frame_interface.ToString();
   auto header = frame_interface.MakeHeader();
   frame_interface.SerializePayload(buffer);
-  reader_.UnbufferedImmediateSend(IncomingFrame(header, std::move(buffer)));
+  EXPECT_THAT(reader_.Push(IncomingFrame(header, std::move(buffer)))(), IsReady());
 }
 
 }  // namespace testing

@@ -8274,6 +8274,7 @@ grpc_cc_library(
         "match_promise",
         "mpsc",
         "pipe",
+        "inter_activity_pipe",
         "//:promise",
     ],
 )

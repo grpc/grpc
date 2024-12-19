@@ -227,7 +227,7 @@ auto TcpFrameTransport::ReadFrameBytes() {
 }
 
 void TcpFrameTransport::StartReading(
-    Party* party, MpscSender<IncomingFrame> frames,
+    Party* party, ReadFramePipe::Sender frames,
     absl::AnyInvocable<void(absl::Status)> on_done) {
   Crash("Not implemented");
 }
