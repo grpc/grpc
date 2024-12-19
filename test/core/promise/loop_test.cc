@@ -46,14 +46,14 @@ TEST(LoopTest, CountToFivePoll) {
     absl::StrAppend(&execution_order, i);
     i++;
     if (i == 5) {
-      absl::StrAppend(&execution_order, "F");
+      absl::StrAppend(&execution_order, "P");
       return Pending{};
     };
     return Continue();
   })();
   EXPECT_TRUE(retval.pending());
   EXPECT_EQ(i, 5);
-  EXPECT_STREQ(execution_order.c_str(), "01234F");
+  EXPECT_STREQ(execution_order.c_str(), "01234P");
 }
 
 TEST(LoopTest, FailingLoop) {
