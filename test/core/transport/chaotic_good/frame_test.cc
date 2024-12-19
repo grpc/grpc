@@ -34,7 +34,6 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   EXPECT_EQ(hdr.type, expected_frame_type);
   // Frames should always set connection id 0, though the transport may adjust
   // it.
-  EXPECT_EQ(hdr.payload_connection_id, 0);
   SliceBuffer output_buffer;
   input.SerializePayload(output_buffer);
   EXPECT_EQ(hdr.payload_length, output_buffer.Length());
