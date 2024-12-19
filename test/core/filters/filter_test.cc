@@ -409,15 +409,12 @@ void FilterTestBase::Call::FinishNextFilter(ServerMetadataHandle md) {
 // FilterTestBase
 
 FilterTestBase::FilterTestBase() {
-  grpc_event_engine::experimental::SetEventEngineFactory([]() {
-    FuzzingEventEngine::Options options;
-    options.max_delay_run_after = std::chrono::milliseconds(500);
-    options.max_delay_write = std::chrono::milliseconds(50);
-    return std::make_unique<FuzzingEventEngine>(
-        options, fuzzing_event_engine::Actions());
-  });
-  event_engine_ =
-      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
+  FuzzingEventEngine::Options options;
+  options.max_delay_run_after = std::chrono::milliseconds(500);
+  options.max_delay_write = std::chrono::milliseconds(50);
+  event_engine_ = std::make_shared<FuzzingEventEngine>(
+      options, fuzzing_event_engine::Actions());
+  grpc_event_engine::experimental::SetDefaultEventEngine(event_engine_);
   grpc_timer_manager_set_start_threaded(false);
   grpc_init();
 }
@@ -425,6 +422,7 @@ FilterTestBase::FilterTestBase() {
 FilterTestBase::~FilterTestBase() {
   grpc_shutdown();
   event_engine_->UnsetGlobalHooks();
+  grpc_event_engine::experimental::ShutdownDefaultEventEngine();
 }
 
 void FilterTestBase::Step() {
