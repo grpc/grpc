@@ -70,9 +70,10 @@ TEST(JoinTest, Join3) {
 }
 
 TEST(JoinTest, JoinPendingFailure) {
-  // Assert that one failing promise in the Join should not stall our execution.
-  // Also assert that only the Pending{} promise is re-run when the Join is run
-  // a second time.
+  // 1. Assert that one failing promise in the Join should not cancel the
+  //    execution of the following promises.
+  // 2. Also assert that only the Pending{} promise is re-run when the Join is
+  //    run a second time.
   std::string execution_order;
   auto first_promise = [&execution_order]() mutable -> Poll<int> {
     execution_order += "1";
