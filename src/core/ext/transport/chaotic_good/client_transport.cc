@@ -200,16 +200,15 @@ auto ChaoticGoodClientTransport::OnTransportActivityDone(
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
     const ChannelArgs& args, FrameTransport& frame_transport,
     MessageChunker message_chunker)
-    : allocator_(args.GetObject<ResourceQuota>()
+    : event_engine_( args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
+    allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
       incoming_frames_(8),
       message_chunker_(message_chunker) {
-  auto event_engine =
-      args.GetObjectRef<grpc_event_engine::experimental::EventEngine>();
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-      event_engine.get());
+      event_engine_.get());
   party_ = Party::Make(std::move(party_arena));
   MpscReceiver<Frame> outgoing_frames{8};
   outgoing_frames_ = outgoing_frames.MakeSender();

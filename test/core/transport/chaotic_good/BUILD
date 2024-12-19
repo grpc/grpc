@@ -93,7 +93,12 @@ grpc_cc_library(
         "gtest",
         "protobuf_headers",
     ],
-    deps = ["//src/core:chaotic_good_frame_transport"],
+    deps = [
+        "//src/core:chaotic_good_frame_transport",
+        "//src/core:inter_activity_latch",
+        "//src/core:loop",
+        "//src/core:try_seq",
+    ],
 )
 
 grpc_proto_fuzzer(
@@ -144,6 +149,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "mock_frame_transport",
         "transport_test",
         "//:grpc",
         "//:grpc_public_hdrs",
@@ -172,6 +178,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "mock_frame_transport",
         "//:grpc_public_hdrs",
         "//:grpc_unsecure",
         "//:iomgr_timer",

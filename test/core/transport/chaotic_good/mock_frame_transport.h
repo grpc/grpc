@@ -20,6 +20,7 @@
 #include <queue>
 
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
+#include "src/core/lib/promise/inter_activity_latch.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -38,6 +39,7 @@ class MockFrameTransport final : public FrameTransport {
     expected_writes_.emplace(std::move(frame), whence);
   }
   void Read(Frame frame);
+  void CloseWrites() { end_writes_->Set(absl::OkStatus()); }
 
  private:
   struct ExpectedWrite {
@@ -47,6 +49,8 @@ class MockFrameTransport final : public FrameTransport {
     SourceLocation whence;
   };
   std::queue<ExpectedWrite> expected_writes_;
+  std::shared_ptr<InterActivityLatch<absl::Status>> end_writes_ =
+      std::make_shared<InterActivityLatch<absl::Status>>();
   MpscSender<IncomingFrame> reader_;
   absl::AnyInvocable<void(absl::Status)> on_read_done_;
 };

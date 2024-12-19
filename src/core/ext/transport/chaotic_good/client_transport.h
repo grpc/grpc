@@ -107,6 +107,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   auto PushFrameIntoCall(BeginMessageFrame frame, RefCountedPtr<Stream> stream);
   auto PushFrameIntoCall(MessageChunkFrame frame, RefCountedPtr<Stream> stream);
 
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   grpc_event_engine::experimental::MemoryAllocator allocator_;
   MpscSender<Frame> outgoing_frames_;
   MpscReceiver<IncomingFrame> incoming_frames_{8};
