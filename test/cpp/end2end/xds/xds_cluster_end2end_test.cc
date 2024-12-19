@@ -383,9 +383,9 @@ TEST_P(CdsDeletionTest, ClusterDeleted) {
   SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
     if (result.status.ok()) return true;  // Keep going.
     EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-    EXPECT_EQ(
-        absl::StrCat("CDS resource ", kDefaultClusterName, " does not exist"),
-        result.status.error_message());
+    EXPECT_EQ(absl::StrCat("CDS resource ", kDefaultClusterName,
+                           ": does not exist (node ID:xds_end2end_test)"),
+              result.status.error_message());
     return false;
   });
   // Make sure we ACK'ed the update.
@@ -540,7 +540,7 @@ TEST_P(EdsTest, LocalityBecomesEmptyWithDeactivatedChildStateUpdate) {
   // Wait for RPCs to start failing.
   constexpr char kErrorMessage[] =
       "no children in weighted_target policy: "
-      "EDS resource eds_service_name contains empty localities: "
+      "EDS resource eds_service_name: contains empty localities: "
       "\\[\\{region=\"xds_default_locality_region\", "
       "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
   SendRpcsUntil(DEBUG_LOCATION, [&](const RpcResult& result) {
@@ -581,7 +581,7 @@ TEST_P(EdsTest, NoLocalities) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should fail.
   constexpr char kErrorMessage[] =
-      "no children in weighted_target policy: EDS resource eds_service_name "
+      "no children in weighted_target policy: EDS resource eds_service_name: "
       "contains no localities";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send EDS resource that has an endpoint.
@@ -798,7 +798,7 @@ TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
   // RPCs should fail.
   constexpr char kErrorMessage[] =
       "no children in weighted_target policy: "
-      "EDS resource eds_service_name contains empty localities: "
+      "EDS resource eds_service_name: contains empty localities: "
       "\\[\\{region=\"xds_default_locality_region\", "
       "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
