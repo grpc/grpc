@@ -53,10 +53,10 @@ TEST_F(EventEngineFactoryTest, CustomFactoryIsUsed) {
 
 TEST_F(EventEngineFactoryTest, FactoryResetWorks) {
   int counter{0};
-  SetEventEngineFactory([&counter]() -> std::unique_ptr<EventEngine> {
+  SetEventEngineFactory([&counter]() {
     // this factory should only be used twice;
     EXPECT_LE(++counter, 2);
-    return std::make_unique<AbortingEventEngine>();
+    return std::make_shared<AbortingEventEngine>();
   });
   auto custom_ee = GetDefaultEventEngine();
   ASSERT_EQ(counter, 1);
