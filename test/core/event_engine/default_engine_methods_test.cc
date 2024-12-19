@@ -44,7 +44,7 @@ class DefaultEngineTest : public testing::Test {
       : public grpc_event_engine::experimental::MockEventEngine {
    public:
     struct EngineOpCounts {
-      EngineOpCounts() : constructed(0), destroyed(0), ran(0), ran_after(0){};
+      EngineOpCounts() : constructed(0), destroyed(0), ran(0), ran_after(0) {};
       int constructed;
       int destroyed;
       int ran;
