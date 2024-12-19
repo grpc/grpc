@@ -84,6 +84,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "src/core/util/work_serializer.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
@@ -746,7 +747,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       lb_policy_.reset();
     }
     fuzzing_ee_->TickUntilIdle();
-    grpc_event_engine::experimental::WaitForSingleOwner(std::move(fuzzing_ee_));
+    WaitForSingleOwner(std::move(fuzzing_ee_));
     grpc_shutdown_blocking();
   }
 
