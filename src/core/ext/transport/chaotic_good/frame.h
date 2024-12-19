@@ -204,6 +204,10 @@ using Frame =
                   MessageFrame, BeginMessageFrame, MessageChunkFrame,
                   ClientEndOfStream, CancelFrame>;
 
+inline std::ostream& operator<<(std::ostream& out, const Frame& frame) {
+  return out << absl::ConvertVariantTo<FrameInterface&>(frame).ToString();
+}
+
 absl::StatusOr<Frame> ParseFrame(const FrameHeader& header,
                                  SliceBuffer payload);
 

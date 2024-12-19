@@ -160,14 +160,14 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
       }));
   transport->SetCallDestination(call_destination);
   frame_transport.ExpectWrite(
-      MakeProtoFrame<ServerInitialMetadataFrame>(1, ""));
+      MakeProtoFrame<ServerInitialMetadataFrame>(1, "message: \"hello\""));
   frame_transport.ExpectWrite(MakeMessageFrame(1, "87654321"));
   frame_transport.ExpectWrite(
-      MakeProtoFrame<ServerTrailingMetadataFrame>(1, ""));
+      MakeProtoFrame<ServerTrailingMetadataFrame>(1, "status: 0"));
   frame_transport.Read(MakeProtoFrame<ClientInitialMetadataFrame>(
       1, "path: '/demo.Service/Step'"));
   frame_transport.Read(MakeMessageFrame(1, "12345678"));
-  frame_transport.Read(ClientEndOfStream());
+  frame_transport.Read(ClientEndOfStream(1));
   EXPECT_CALL(on_done, Call());
   // Wait until ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();

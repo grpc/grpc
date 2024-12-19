@@ -202,6 +202,8 @@ auto ChaoticGoodServerTransport::ProcessNextFrame() {
       TrySeq(
           incoming_frames_.Next(),
           [this](IncomingFrame incoming_frame) mutable {
+            LOG(INFO) << "ProcessNextFrame: "
+                      << incoming_frame.header().ToString();
             return Switch(
                 incoming_frame.header().type,
                 Case<FrameType, FrameType::kClientInitialMetadata>([&, this]() {

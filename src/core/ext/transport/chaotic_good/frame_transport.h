@@ -43,17 +43,17 @@ class IncomingFrame {
   const FrameHeader& header() { return header_; }
 
   auto Payload() {
-    return Map(
-        MatchPromise(
-            std::move(payload_),
-            [](absl::StatusOr<SliceBuffer> status) { return status; },
-            [](Promise<absl::StatusOr<SliceBuffer>> promise) {
-              return promise;
-            }),
-        [this](absl::StatusOr<SliceBuffer> payload) -> absl::StatusOr<Frame> {
-          if (!payload.ok()) return payload.status();
-          return ParseFrame(header_, std::move(*payload));
-        });
+    return Map(MatchPromise(
+                   std::move(payload_),
+                   [](absl::StatusOr<SliceBuffer> status) { return status; },
+                   [](Promise<absl::StatusOr<SliceBuffer>> promise) {
+                     return promise;
+                   }),
+               [header = header_](absl::StatusOr<SliceBuffer> payload)
+                   -> absl::StatusOr<Frame> {
+                 if (!payload.ok()) return payload.status();
+                 return ParseFrame(header, std::move(*payload));
+               });
   }
 
  private:
