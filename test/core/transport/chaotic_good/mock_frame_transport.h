@@ -30,7 +30,8 @@ class MockFrameTransport final : public FrameTransport {
  public:
   ~MockFrameTransport() override;
 
-  void StartReading(Party* party, MpscSender<IncomingFrame> frames,
+  void StartReading(Party* party,
+                    InterActivityPipe<IncomingFrame>::Sender frames,
                     absl::AnyInvocable<void(absl::Status)> on_done) final;
   void StartWriting(Party* party, MpscReceiver<Frame> frames,
                     absl::AnyInvocable<void(absl::Status)> on_done) final;

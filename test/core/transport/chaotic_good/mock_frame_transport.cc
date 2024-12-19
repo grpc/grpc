@@ -16,8 +16,8 @@
 
 #include "gtest/gtest.h"
 #include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/try_seq.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -37,7 +37,7 @@ MockFrameTransport::~MockFrameTransport() {
 }
 
 void MockFrameTransport::StartReading(
-    Party*, MpscSender<IncomingFrame> frames,
+    Party*, InterActivityPipe<IncomingFrame>::Sender frames,
     absl::AnyInvocable<void(absl::Status)> on_done) {
   reader_ = std::move(frames);
   on_read_done_ = std::move(on_done);

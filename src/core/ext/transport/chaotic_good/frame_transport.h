@@ -16,6 +16,7 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_TRANSPORT_H
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
+#include "src/core/lib/promise/inter_activity_pipe.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/match_promise.h"
 #include "src/core/lib/promise/mpsc.h"
@@ -69,7 +70,8 @@ class FrameTransport : public RefCounted<FrameTransport> {
   // frames.
   // TODO(ctiller): can likely use a buffered intra-party SpscSender here once
   // we write one.
-  virtual void StartReading(Party* party, MpscSender<IncomingFrame> frames,
+  virtual void StartReading(Party* party,
+                            InterActivityPipe<IncomingFrame>::Sender frames,
                             absl::AnyInvocable<void(absl::Status)> on_done) = 0;
   // Spawn a write loop onto party - write frames from frames to the wire.
   virtual void StartWriting(Party* party, MpscReceiver<Frame> frames,
