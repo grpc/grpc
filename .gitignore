@@ -6,6 +6,10 @@ gens
 libs
 objs
 
+#modification
+.gitignore
+cmake/*
+
 # Python items
 .coverage*
 .eggs

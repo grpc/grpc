@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <memory>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -60,7 +61,7 @@ struct alts_tsi_handshaker {
   // potential concurrency of tsi_handshaker_shutdown and
   // tsi_handshaker_next).
   grpc_core::Mutex mu;
-  alts_handshaker_client* client = nullptr;
+  AltsHandshakerClient* client = nullptr;
   // shutdown effectively follows base.handshake_shutdown,
   // but is synchronized by the mutex of this object.
   bool shutdown = false;
@@ -381,7 +382,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
 // gRPC provided callback used when gRPC thread model is applied.
 static void on_handshaker_service_resp_recv(void* arg,
                                             grpc_error_handle error) {
-  alts_handshaker_client* client = static_cast<alts_handshaker_client*>(arg);
+  AltsHandshakerClient* client = static_cast<AltsHandshakerClient*>(arg);
   if (client == nullptr) {
     LOG(ERROR) << "ALTS handshaker client is nullptr";
     return;
@@ -392,7 +393,7 @@ static void on_handshaker_service_resp_recv(void* arg,
             << grpc_core::StatusToString(error);
     success = false;
   }
-  alts_handshaker_client_handle_response(client, success);
+  AltsHandshakerClient::HandleResponse(client, success);
 }
 
 // gRPC provided callback used when dedicatd CQ and thread are used.
@@ -427,7 +428,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
         handshaker->channel == nullptr
             ? grpc_alts_get_shared_resource_dedicated()->channel
             : handshaker->channel;
-    alts_handshaker_client* client = alts_grpc_handshaker_client_create(
+    std::unique_ptr<AltsHandshakerCLient> client = AltsHandshakerCLient::CreateNewAltsHandshakerClient(
         handshaker, channel, handshaker->handshaker_service_url,
         handshaker->interested_parties, handshaker->options,
         handshaker->target_name, grpc_cb, cb, user_data,
@@ -464,17 +465,17 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
   if (!handshaker->has_sent_start_message) {
     handshaker->has_sent_start_message = true;
     ok = handshaker->is_client
-             ? alts_handshaker_client_start_client(handshaker->client)
-             : alts_handshaker_client_start_server(handshaker->client, &slice);
+             ? AltsHandshakerClient::StartClient(handshaker->client)
+             : AltsHandshakerClient::StartServer(handshaker->client, &slice);
     // It's unsafe for the current thread to access any state in handshaker
-    // at this point, since alts_handshaker_client_start_client/server
+    // at this point, since StartClient/server
     // have potentially just started an op batch on the handshake call.
     // The completion callback for that batch is unsynchronized and so
     // can invoke the TSI next API callback from any thread, at which point
     // there is nothing taking ownership of this handshaker to prevent it
     // from being destroyed.
   } else {
-    ok = alts_handshaker_client_next(handshaker->client, &slice);
+    ok = AltsHandshakerClient::Next(handshaker->client, &slice);
   }
   grpc_core::CSliceUnref(slice);
   return ok;
@@ -599,7 +600,7 @@ static void handshaker_shutdown(tsi_handshaker* self) {
     return;
   }
   if (handshaker->client != nullptr) {
-    alts_handshaker_client_shutdown(handshaker->client);
+    AltsHandshakerClient::Shutdown(handshaker->client);
   }
   handshaker->shutdown = true;
 }
@@ -610,7 +611,6 @@ static void handshaker_destroy(tsi_handshaker* self) {
   }
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
-  alts_handshaker_client_destroy(handshaker->client);
   grpc_core::CSliceUnref(handshaker->target_name);
   grpc_alts_credentials_options_destroy(handshaker->options);
   if (handshaker->channel != nullptr) {
@@ -711,7 +711,7 @@ bool alts_tsi_handshaker_get_is_client_for_testing(
   return handshaker->is_client;
 }
 
-alts_handshaker_client* alts_tsi_handshaker_get_client_for_testing(
+AltsHandshakerClient* alts_tsi_handshaker_get_client_for_testing(
     alts_tsi_handshaker* handshaker) {
   return handshaker->client;
 }
