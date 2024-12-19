@@ -50,7 +50,7 @@ std::string FrameTypeString(FrameType type) {
     case FrameType::kMessageChunk:
       return "MessageChunk";
   }
-  return absl::StrCat("Unknown[", static_cast<int>(type), "]");
+  return absl::StrCat("Unknown[0x", absl::Hex(static_cast<int>(type)), "]");
 }
 
 }  // namespace chaotic_good

@@ -331,7 +331,9 @@ absl::StatusOr<Frame> ParseFrame(const FrameHeader& header,
     case FrameType::kBeginMessage:
       return DeserializeFrame<BeginMessageFrame>(header, std::move(payload));
     default:
-      return absl::InternalError("bah");
+      return absl::InternalError(
+          absl::StrCat("Unknown frame type: ", header.ToString(),
+                       " payload:", payload.Length(), "b"));
   }
 }
 

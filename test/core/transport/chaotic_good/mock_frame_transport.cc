@@ -73,9 +73,10 @@ void MockFrameTransport::StartWriting(
 void MockFrameTransport::Read(Frame frame) {
   SliceBuffer buffer;
   auto& frame_interface = absl::ConvertVariantTo<FrameInterface&>(frame);
+  LOG(INFO) << "Read " << frame_interface.ToString();
+  auto header = frame_interface.MakeHeader();
   frame_interface.SerializePayload(buffer);
-  reader_.UnbufferedImmediateSend(
-      IncomingFrame(frame_interface.MakeHeader(), std::move(buffer)));
+  reader_.UnbufferedImmediateSend(IncomingFrame(header, std::move(buffer)));
 }
 
 }  // namespace testing
