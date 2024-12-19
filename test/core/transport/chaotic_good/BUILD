@@ -81,6 +81,21 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_library(
+    name = "mock_frame_transport",
+    srcs = [
+        "mock_frame_transport.cc",
+    ],
+    hdrs = [
+        "mock_frame_transport.h",
+    ],
+    external_deps = [
+        "gtest",
+        "protobuf_headers",
+    ],
+    deps = ["//src/core:chaotic_good_frame_transport"],
+)
+
 grpc_proto_fuzzer(
     name = "tcp_frame_fuzzer",
     srcs = ["tcp_frame_fuzzer.cc"],
@@ -105,12 +120,12 @@ grpc_proto_fuzzer(
         "//src/core:arena",
         "//src/core:chaotic_good_frame",
         "//src/core:chaotic_good_frame_header",
+        "//src/core:chaotic_good_tcp_frame_transport",
         "//src/core:event_engine_memory_allocator",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:slice_buffer",
-        "//src/core:chaotic_good_tcp_frame_transport",
         "//test/core/promise:test_context",
     ],
 )
@@ -195,21 +210,23 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "mock_frame_transport",
         "transport_test",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//:iomgr_timer",
         "//:ref_counted_ptr",
         "//src/core:arena",
+        "//src/core:chaotic_good_frame_cc_proto",
         "//src/core:chaotic_good_server_transport",
         "//src/core:memory_quota",
+        "//src/core:metadata_batch",
         "//src/core:resource_quota",
         "//src/core:seq",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
-        "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
 

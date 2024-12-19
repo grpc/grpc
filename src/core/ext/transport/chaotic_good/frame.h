@@ -94,6 +94,9 @@ struct ProtoTransportFrame final : public FrameInterface {
     return absl::StrCat(FrameTypeString(frame_type), "{",
                         body.ShortDebugString(), "}");
   }
+  bool operator==(const ProtoTransportFrame& other) const {
+    return body.ShortDebugString() == other.body.ShortDebugString();
+  }
 
   Body body;
 };
@@ -118,6 +121,10 @@ struct ProtoStreamFrame final : public FrameInterface {
     return absl::StrCat(FrameTypeString(frame_type), "{@", stream_id, "; ",
                         body.ShortDebugString(), "}");
   }
+  bool operator==(const ProtoStreamFrame& other) const {
+    return body.ShortDebugString() == other.body.ShortDebugString() &&
+           stream_id == other.stream_id;
+  }
 
   Body body;
   uint32_t stream_id;
@@ -137,6 +144,9 @@ struct EmptyStreamFrame final : public FrameInterface {
   }
   void SerializePayload(SliceBuffer&) const override {}
   std::string ToString() const override { return FrameTypeString(frame_type); }
+  bool operator==(const EmptyStreamFrame& other) const {
+    return stream_id == other.stream_id;
+  }
 
   uint32_t stream_id;
 };
@@ -163,6 +173,11 @@ struct MessageFrame final : public FrameInterface {
   FrameHeader MakeHeader() const override;
   void SerializePayload(SliceBuffer& payload) const override;
   std::string ToString() const override;
+  bool operator==(const MessageFrame& other) const {
+    return stream_id == other.stream_id &&
+           message->payload()->JoinIntoString() ==
+               other.message->payload()->JoinIntoString();
+  }
 
   uint32_t stream_id;
   MessageHandle message;
@@ -174,6 +189,10 @@ struct MessageChunkFrame final : public FrameInterface {
   FrameHeader MakeHeader() const override;
   void SerializePayload(SliceBuffer& payload) const override;
   std::string ToString() const override;
+  bool operator==(const MessageChunkFrame& other) const {
+    return stream_id == other.stream_id &&
+           payload.JoinIntoString() == other.payload.JoinIntoString();
+  }
 
   uint32_t stream_id;
   SliceBuffer payload;
