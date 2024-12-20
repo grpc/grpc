@@ -132,10 +132,7 @@ class PosixEnginePollerManager
 
 // An iomgr-based Posix EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
-// TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
-// EventEngine is shut down before we shut down iomgr.
-class PosixEventEngine final : public PosixEventEngineWithFdSupport,
-                               public grpc_core::KeepsGrpcInitialized {
+class PosixEventEngine final : public PosixEventEngineWithFdSupport {
  public:
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:

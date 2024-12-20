@@ -48,6 +48,7 @@
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
@@ -211,8 +212,8 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
     if (poller_ != nullptr) {
       poller_->Shutdown();
     }
-    WaitForSingleOwner(std::move(posix_ee_));
-    WaitForSingleOwner(std::move(oracle_ee_));
+    grpc_core::WaitForSingleOwner(std::move(posix_ee_));
+    grpc_core::WaitForSingleOwner(std::move(oracle_ee_));
   }
 
  public:

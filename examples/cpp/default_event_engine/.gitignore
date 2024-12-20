@@ -1,0 +1,8 @@
+*.o
+*.pb.cc
+*.pb.h
+greeter_client
+greeter_server
+greeter_async_client
+greeter_async_client2
+greeter_async_server
