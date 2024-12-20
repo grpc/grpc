@@ -62,7 +62,6 @@ extern void RegisterOutlierDetectionLbPolicy(
     CoreConfiguration::Builder* builder);
 extern void RegisterWeightedTargetLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterPickFirstLbPolicy(CoreConfiguration::Builder* builder);
-extern void RegisterRingHashLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterRoundRobinLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterWeightedRoundRobinLbPolicy(
     CoreConfiguration::Builder* builder);
@@ -103,7 +102,6 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterWeightedTargetLbPolicy(builder);
   RegisterPickFirstLbPolicy(builder);
   RegisterRoundRobinLbPolicy(builder);
-  RegisterRingHashLbPolicy(builder);
   RegisterWeightedRoundRobinLbPolicy(builder);
   BuildClientChannelConfiguration(builder);
   SecurityRegisterHandshakerFactories(builder);

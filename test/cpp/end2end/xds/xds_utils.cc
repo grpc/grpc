@@ -26,7 +26,6 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -370,16 +369,6 @@ ClusterLoadAssignment XdsResourceUtils::BuildEdsResource(
       }
       if (!endpoint.hostname.empty()) {
         endpoint_proto->set_hostname(endpoint.hostname);
-      }
-      if (!endpoint.metadata.empty()) {
-        auto& filter_map =
-            *lb_endpoints->mutable_metadata()->mutable_filter_metadata();
-        for (const auto& p : endpoint.metadata) {
-          absl::Status status = grpc::protobuf::json::JsonStringToMessage(
-              p.second, &filter_map[p.first],
-              grpc::protobuf::json::JsonParseOptions());
-          CHECK(status.ok()) << status;
-        }
       }
     }
   }

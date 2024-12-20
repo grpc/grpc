@@ -37,6 +37,7 @@ extern void RegisterCdsLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterXdsOverrideHostLbPolicy(
     CoreConfiguration::Builder* builder);
 extern void RegisterXdsWrrLocalityLbPolicy(CoreConfiguration::Builder* builder);
+extern void RegisterRingHashLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterFileWatcherCertificateProvider(
     CoreConfiguration::Builder* builder);
 extern void RegisterXdsHttpProxyMapper(CoreConfiguration::Builder* builder);
@@ -59,6 +60,7 @@ void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   RegisterCdsLbPolicy(builder);
   RegisterXdsOverrideHostLbPolicy(builder);
   RegisterXdsWrrLocalityLbPolicy(builder);
+  RegisterRingHashLbPolicy(builder);
   RegisterFileWatcherCertificateProvider(builder);
   RegisterXdsHttpProxyMapper(builder);
 #endif

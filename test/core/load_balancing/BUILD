@@ -265,7 +265,6 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_ring_hash",
         "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:scoped_env_var",
     ],
 )
 

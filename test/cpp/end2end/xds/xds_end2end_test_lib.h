@@ -487,8 +487,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       ::envoy::config::core::v3::HealthStatus health_status =
           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
       int lb_weight = 1, std::vector<size_t> additional_backend_indexes = {},
-      absl::string_view hostname = "",
-      const std::map<std::string, std::string /*JSON*/>& metadata = {}) {
+      absl::string_view hostname = "") {
     std::vector<int> additional_ports;
     additional_ports.reserve(additional_backend_indexes.size());
     for (size_t idx : additional_backend_indexes) {
@@ -496,7 +495,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     }
     return EdsResourceArgs::Endpoint(backends_[backend_idx]->port(),
                                      health_status, lb_weight, additional_ports,
-                                     hostname, metadata);
+                                     hostname);
   }
 
   // Creates a vector of endpoints for a specified range of backends,
