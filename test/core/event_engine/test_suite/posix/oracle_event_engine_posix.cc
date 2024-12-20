@@ -468,7 +468,7 @@ EventEngine::ConnectionHandle PosixOracleEventEngine::Connect(
       }
     } else if (err < 0) {
       if (errno != ECONNREFUSED || ++num_retries > kMaxRetries) {
-        on_connect(absl::CancelledError("Connect failed."));
+        on_connect(absl::ErrnoToStatus(errno, "Connect failed"));
         return {};
       }
       // If ECONNREFUSED && num_retries < kMaxRetries, wait a while and try
