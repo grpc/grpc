@@ -67,7 +67,7 @@ namespace grpc_core {
 // type.
 //
 // The fallthrough mechanism is present in C++ switch statements is NOT present
-// in the switch promise combinator.
+// in the Switch promise combinator.
 //
 // Our code currently permits you to create multiple cases for the same
 // discriminator value. However this should be avoided as it could lead to bugs.
