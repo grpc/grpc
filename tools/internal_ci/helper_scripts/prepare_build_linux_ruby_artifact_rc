@@ -41,7 +41,9 @@ set -ex
 ruby --version
 
 # Bundler is required for grpc ruby artifact build.
-gem install bundler -v 2.5
+# TODO(apolcyn): unpin, bundler 2.6 seems to have broken us,
+# pinning as a workaround.
+gem install bundler -v 2.5.23
 
 # log gem versions for easier debugging if things go wrong
 gem list || true
