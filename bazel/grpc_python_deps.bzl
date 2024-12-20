@@ -17,6 +17,18 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@com_github_grpc_grpc//third_party/py:python_configure.bzl", "python_configure")
 
 # buildifier: disable=unnamed-macro
+def cython():
+    http_archive(
+        name = "cython",
+        build_file = "@com_github_grpc_grpc//third_party:cython.BUILD",
+        sha256 = "2ec7d66d23d6da2328fb24f5c1bec6c63a59ec2e91027766ab904f417e1078aa",
+        strip_prefix = "cython-3.0.11",
+        urls = [
+            "https://github.com/cython/cython/archive/3.0.11.tar.gz",
+        ],
+    )
+
+# buildifier: disable=unnamed-macro
 def grpc_python_deps():
     """Loads dependencies for gRPC Python."""
     if "rules_python" not in native.existing_rules():
@@ -44,3 +56,5 @@ def grpc_python_deps():
                 "https://github.com/cython/cython/archive/3.0.11.tar.gz",
             ],
         )
+
+grpc_python_deps_ext = module_extension(implementation = lambda ctx: cython())
