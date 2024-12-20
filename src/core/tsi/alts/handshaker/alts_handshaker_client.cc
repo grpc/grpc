@@ -77,8 +77,6 @@ tsi_result AltsHandshakerClient::Next(grpc_slice* bytes_received) {
 }
 
 void AltsHandshakerClient::HandleResponse(bool is_ok) {
-  grpc_byte_buffer* recv_buffer = recv_buffer;
-  alts_tsi_handshaker* handshaker = handshaker;
   // Invalid input check.
   if (cb == nullptr) {
     LOG(ERROR) << "cb is nullptr in alts_tsi_handshaker_handle_response()";
@@ -161,7 +159,7 @@ void AltsHandshakerClient::HandleResponse(bool is_ok) {
       return;
     }
     alts_tsi_handshaker_result_set_unused_bytes(
-        result, recv_bytes, grpc_gcp_HandshakerResp_bytes_consumed(resp));
+        result, &recv_bytes, grpc_gcp_HandshakerResp_bytes_consumed(resp));
   }
   grpc_status_code code = static_cast<grpc_status_code>(
       grpc_gcp_HandshakerStatus_code(resp_status));
@@ -214,25 +212,26 @@ AltsHandshakerClient::AltsHandshakerClient(
       target_name(grpc_slice_copy(target_name)),
       is_client(is_client),
       recv_bytes(grpc_empty_slice()),
-      buffer_size(TSI_ALTS_INITIAL_BUFFER_SIZE);
-buffer(static_cast<unsigned char*>(gpr_zalloc(client->buffer_size))),
-    handshake_status_details(grpc_empty_slice()),
-    max_frame_size(max_frame_size), error(error),
-    call(strcmp(handshaker_service_url,
-                ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING) == 0
-             ? nullptr
-             : grpc_core::Channel::FromC(channel)->CreateCall(
-                   /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS,
-                   /*cq=*/nullptr, interested_parties,
-                   grpc_core::Slice::FromStaticString(ALTS_SERVICE_METHOD),
-                   /*authority=*/absl::nullopt,
-                   grpc_core::Timestamp::InfFuture(),
-                   /*registered_method=*/true)) {
+      buffer_size(TSI_ALTS_INITIAL_BUFFER_SIZE),
+      buffer(static_cast<unsigned char*>(gpr_zalloc(buffer_size))),
+      handshake_status_details(grpc_empty_slice()),
+      max_frame_size(max_frame_size),
+      error(error),
+      call(strcmp(handshaker_service_url,
+                  ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING) == 0
+               ? nullptr
+               : grpc_core::Channel::FromC(channel)->CreateCall(
+                     /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS,
+                     /*cq=*/nullptr, interested_parties,
+                     grpc_core::Slice::FromStaticString(ALTS_SERVICE_METHOD),
+                     /*authority=*/absl::nullopt,
+                     grpc_core::Timestamp::InfFuture(),
+                     /*registered_method=*/true)) {
   gpr_ref_init(refs, 1);
-  grpc_metadata_array_init(recv_initial_metadata)
-      GRPC_CLOSURE_INIT(on_handshaker_service_resp_recv, grpc_cb, this,
-                        grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(on_status_received, on_status_received, this,
+  grpc_metadata_array_init(recv_initial_metadata);
+  GRPC_CLOSURE_INIT(&on_handshaker_service_resp_recv, grpc_cb, this,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_status_received, on_status_received, this,
                     grpc_schedule_on_exec_ctx);
 }
 
@@ -267,7 +266,7 @@ void AltsHandshakerClient::maybe_complete_tsi_next(
     recv_message_result* pending_recv_message_result) {
   recv_message_result* r;
   {
-    grpc_core::MutexLock lock(mu);
+    grpc_core::MutexLock lock(&mu);
     receive_status_finished |= receive_status_finished;
     if (pending_recv_message_result != nullptr) {
       CHECK_EQ(pending_recv_message_result, nullptr);
@@ -296,7 +295,7 @@ void AltsHandshakerClient::maybe_complete_tsi_next(
 void AltsHandshakerClient::handle_response_done(
     tsi_result status, std::string error, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* result) {
-  if (error != nullptr) *error = std::move(error);
+  if (this->error != nullptr) *this->error = std::move(error);
   recv_message_result* p = grpc_core::Zalloc<recv_message_result>();
   p->status = status;
   p->bytes_to_send = bytes_to_send;
@@ -363,7 +362,7 @@ class HandshakeQueue {
   explicit HandshakeQueue(size_t max_outstanding_handshakes)
       : max_outstanding_handshakes_(max_outstanding_handshakes) {}
 
-  void RequestHandshake(alts_grpc_handshaker_client* client) {
+  void RequestHandshake(AltsHandshakerClient* client) {
     {
       grpc_core::MutexLock lock(&mu_);
       if (outstanding_handshakes_ == max_outstanding_handshakes_) {
@@ -378,7 +377,7 @@ class HandshakeQueue {
   }
 
   void HandshakeDone() {
-    alts_grpc_handshaker_client* client = nullptr;
+    AltsHandshakerClient* client = nullptr;
     {
       grpc_core::MutexLock lock(&mu_);
       if (queued_handshakes_.empty()) {
@@ -395,7 +394,7 @@ class HandshakeQueue {
 
  private:
   grpc_core::Mutex mu_;
-  std::list<alts_grpc_handshaker_client*> queued_handshakes_;
+  std::list<AltsHandshakerClient*> queued_handshakes_;
   size_t outstanding_handshakes_ = 0;
   const size_t max_outstanding_handshakes_;
 };
@@ -414,14 +413,14 @@ HandshakeQueue* g_server_handshake_queue;
 
 void DoHandshakeQueuesInit(void) {
   const size_t per_queue_max_outstanding_handshakes =
-      MaxNumberOfConcurrentHandshakes();
+      AltsHandshakerClient::MaxNumberOfConcurrentHandshakes();
   g_client_handshake_queue =
       new HandshakeQueue(per_queue_max_outstanding_handshakes);
   g_server_handshake_queue =
       new HandshakeQueue(per_queue_max_outstanding_handshakes);
 }
 
-void RequestHandshake(alts_grpc_handshaker_client* client, bool is_client) {
+void RequestHandshake(AltsHandshakerClient* client, bool is_client) {
   gpr_once_init(&g_queued_handshakes_init, DoHandshakeQueuesInit);
   HandshakeQueue* queue =
       is_client ? g_client_handshake_queue : g_server_handshake_queue;
@@ -449,10 +448,9 @@ tsi_result AltsHandshakerClient::make_grpc_call(bool is_start) {
   }
 }
 
-void AltsHandshakerClient::on_status_received(void* arg,
-                                              grpc_error_handle error) {
-  alts_grpc_handshaker_client* client =
-      static_cast<alts_grpc_handshaker_client*>(arg);
+void AltsHandshakerClient::on_status_received(void* arg, grpc_error_handle error) {
+  AltsHandshakerClient* client =
+      static_cast<AltsHandshakerClient*>(arg);
   if (client->handshake_status_code != GRPC_STATUS_OK) {
     // TODO(apolcyn): consider overriding the handshake result's
     // status from the final ALTS message with the status here.
@@ -502,7 +500,7 @@ grpc_byte_buffer* AltsHandshakerClient::get_serialized_start_client() {
       grpc_gcp_StartClientHandshakeReq_mutable_rpc_versions(start_client,
                                                             arena.ptr());
   grpc_gcp_RpcProtocolVersions_assign_from_struct(client_version, arena.ptr(),
-                                                  options->rpc_versions);
+                                                  &options->rpc_versions);
   grpc_gcp_StartClientHandshakeReq_set_target_name(
       start_client,
       upb_StringView_FromDataAndSize(
@@ -664,13 +662,6 @@ void AltsHandshakerClient::handshaker_client_destruct() {
   }
 }
 
-AltsHandshakerClient::recv_message_result {
-  tsi_result status;
-  const unsigned char* bytes_to_send;
-  size_t bytes_to_send_size;
-  tsi_handshaker_result* result;
-};
-
 //
 // Test Code
 //
@@ -702,8 +693,8 @@ grpc_metadata_array* alts_handshaker_client_get_initial_metadata_for_testing(
   return &client->recv_initial_metadata;
 }
 
-void alts_handshaker_client_set_recv_bytes_for_testing(AltsHandshakerClient* client,
-                                                       grpc_slice* recv_bytes) {
+void alts_handshaker_client_set_recv_bytes_for_testing(
+    AltsHandshakerClient* client, grpc_slice* recv_bytes) {
   CHECK_NE(client, nullptr);
   client->recv_bytes = CSliceRef(*recv_bytes);
 }
@@ -721,8 +712,8 @@ void alts_handshaker_client_set_fields_for_testing(
 }
 
 void alts_handshaker_client_check_fields_for_testing(
-    AltsHandshakerClient* client, tsi_handshaker_on_next_done_cb cb, void* user_data,
-    bool has_sent_start_message, grpc_slice* recv_bytes) {
+    AltsHandshakerClient* client, tsi_handshaker_on_next_done_cb cb,
+    void* user_data, bool has_sent_start_message, grpc_slice* recv_bytes) {
   CHECK_NE(client, nullptr);
   CHECK_EQ(client->cb, cb);
   CHECK_EQ(client->user_data, user_data);
@@ -730,7 +721,8 @@ void alts_handshaker_client_check_fields_for_testing(
     CHECK_EQ(grpc_slice_cmp(client->recv_bytes, *recv_bytes), 0);
   }
   CHECK_EQ(alts_tsi_handshaker_get_has_sent_start_message_for_testing(
-            client->handshaker), has_sent_start_message);
+               client->handshaker),
+           has_sent_start_message);
 }
 
 alts_tsi_handshaker* alts_handshaker_client_get_handshaker_for_testing(
@@ -757,7 +749,8 @@ void alts_handshaker_client_ref_for_testing(AltsHandshakerClient* client) {
 }
 
 void alts_handshaker_client_on_status_received_for_testing(
-    AltsHandshakerClient* client, grpc_status_code status, grpc_error_handle error) {
+    AltsHandshakerClient* client, grpc_status_code status,
+    grpc_error_handle error) {
   // We first make sure that the handshake queue has been initialized
   // here because there are tests that use this API that mock out
   // other parts of the alts_handshaker_client in such a way that the

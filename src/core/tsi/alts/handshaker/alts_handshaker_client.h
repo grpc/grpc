@@ -40,6 +40,13 @@
 typedef grpc_call_error (*alts_grpc_caller)(grpc_call* call, const grpc_op* ops,
                                             size_t nops, grpc_closure* tag);
 
+struct recv_message_result {
+  tsi_result status;
+  const unsigned char* bytes_to_send;
+  size_t bytes_to_send_size;
+  tsi_handshaker_result* result;
+};
+
 ///
 /// A ALTS handshaker client interface. It is used to communicate with
 /// ALTS handshaker service by scheduling a handshaker request that could be one
@@ -203,7 +210,6 @@ class AltsHandshakerClient {
   void handshaker_call_unref(void* arg, grpc_error_handle /* error */);
   void handshaker_client_destruct();
 
-  struct recv_message_result;
   // One ref is held by the entity that created this handshaker_client, and
   // another ref is held by the pending RECEIVE_STATUS_ON_CLIENT op.
   gpr_refcount* refs;
