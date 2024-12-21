@@ -139,34 +139,42 @@ class AltsHandshakerClient {
 
   // Friend functions for testing
   static size_t MaxNumberOfConcurrentHandshakes();
-  friend void alts_handshaker_client_set_grpc_caller_for_testing(
+  friend void
+  grpc_core::internal::alts_handshaker_client_set_grpc_caller_for_testing(
       AltsHandshakerClient* client, alts_grpc_caller caller);
-  friend grpc_byte_buffer* alts_handshaker_client_get_send_buffer_for_testing(
+  friend grpc_byte_buffer*
+  grpc_core::internal::alts_handshaker_client_get_send_buffer_for_testing(
       AltsHandshakerClient* client);
   friend grpc_byte_buffer**
-  alts_handshaker_client_get_recv_buffer_addr_for_testing(
+  grpc_core::internal::alts_handshaker_client_get_recv_buffer_addr_for_testing(
       AltsHandshakerClient* client);
   friend grpc_metadata_array*
-  alts_handshaker_client_get_initial_metadata_for_testing(
+  grpc_core::internal::alts_handshaker_client_get_initial_metadata_for_testing(
       AltsHandshakerClient* client);
-  friend void alts_handshaker_client_set_recv_bytes_for_testing(
+  friend void
+  grpc_core::internal::alts_handshaker_client_set_recv_bytes_for_testing(
       AltsHandshakerClient* client, grpc_slice* recv_bytes);
-  friend void alts_handshaker_client_set_fields_for_testing(
+  friend void
+  grpc_core::internal::alts_handshaker_client_set_fields_for_testing(
       AltsHandshakerClient* client, alts_tsi_handshaker* handshaker,
       tsi_handshaker_on_next_done_cb cb, void* user_data,
       grpc_byte_buffer* recv_buffer, bool inject_read_failure);
-  friend void alts_handshaker_client_check_fields_for_testing(
+  friend void
+  grpc_core::internal::alts_handshaker_client_check_fields_for_testing(
       AltsHandshakerClient* client, tsi_handshaker_on_next_done_cb cb,
       void* user_data, bool has_sent_start_message, grpc_slice* recv_bytes);
-  friend alts_tsi_handshaker* alts_handshaker_client_get_handshaker_for_testing(
+  friend alts_tsi_handshaker*
+  grpc_core::internal::alts_handshaker_client_get_handshaker_for_testing(
       AltsHandshakerClient* client);
-  friend void alts_handshaker_client_set_cb_for_testing(
+  friend void grpc_core::internal::alts_handshaker_client_set_cb_for_testing(
       AltsHandshakerClient* client, tsi_handshaker_on_next_done_cb cb);
-  friend grpc_closure* alts_handshaker_client_get_closure_for_testing(
+  friend grpc_closure*
+  grpc_core::internal::alts_handshaker_client_get_closure_for_testing(
       AltsHandshakerClient* client);
-  friend void alts_handshaker_client_ref_for_testing(
+  friend void grpc_core::internal::alts_handshaker_client_ref_for_testing(
       AltsHandshakerClient* client);
-  friend void alts_handshaker_client_on_status_received_for_testing(
+  friend void
+  grpc_core::internal::alts_handshaker_client_on_status_received_for_testing(
       AltsHandshakerClient* client, grpc_status_code status,
       grpc_error_handle error);
 
