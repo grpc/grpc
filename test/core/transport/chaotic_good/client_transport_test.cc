@@ -214,6 +214,40 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
   event_engine()->UnsetGlobalHooks();
 }
 
+TEST_F(TransportTest, CheckFailure) {
+  MockFrameTransport frame_transport;
+  auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
+      MakeChannelArgs(event_engine()), frame_transport, MessageChunker(0, 1));
+  frame_transport.Close();
+  auto call = MakeCall(TestInitialMetadata());
+  transport->StartCall(call.handler.StartCall());
+  call.initiator.SpawnGuarded("test-send",
+                              [initiator = call.initiator]() mutable {
+                                return SendClientToServerMessages(initiator, 1);
+                              });
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+  call.initiator.SpawnInfallible(
+      "test-read", [&on_done, initiator = call.initiator]() mutable {
+        return Seq(
+            initiator.PullServerInitialMetadata(),
+            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+              EXPECT_TRUE(md.ok());
+            },
+            initiator.PullServerTrailingMetadata(),
+            [&on_done](ServerMetadataHandle md) {
+              EXPECT_EQ(md->get(GrpcStatusMetadata()).value(),
+                        GRPC_STATUS_UNAVAILABLE);
+              on_done.Call();
+            });
+      });
+  // Wait until ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  transport.reset();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+}
+
 }  // namespace testing
 }  // namespace chaotic_good
 }  // namespace grpc_core

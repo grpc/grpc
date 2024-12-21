@@ -166,45 +166,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "client_transport_error_test",
-    srcs = ["client_transport_error_test.cc"],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings:str_format",
-        "absl/types:optional",
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "mock_frame_transport",
-        "//:grpc_public_hdrs",
-        "//:grpc_unsecure",
-        "//:iomgr_timer",
-        "//:ref_counted_ptr",
-        "//src/core:activity",
-        "//src/core:arena",
-        "//src/core:chaotic_good_client_transport",
-        "//src/core:event_engine_wakeup_scheduler",
-        "//src/core:grpc_promise_endpoint",
-        "//src/core:if",
-        "//src/core:join",
-        "//src/core:loop",
-        "//src/core:memory_quota",
-        "//src/core:pipe",
-        "//src/core:resource_quota",
-        "//src/core:seq",
-        "//src/core:slice",
-        "//src/core:slice_buffer",
-        "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
-    ],
-)
-
-grpc_cc_test(
     name = "server_transport_test",
     srcs = ["server_transport_test.cc"],
     external_deps = [

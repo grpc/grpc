@@ -39,7 +39,11 @@ class MockFrameTransport final : public FrameTransport {
     expected_writes_.emplace(std::move(frame), whence);
   }
   void Read(Frame frame);
-  void CloseWrites() { end_writes_->Set(absl::OkStatus()); }
+  void Close() {
+    reader_ = ReadFramePipe::Sender();
+    on_read_done_(absl::UnavailableError("closed"));
+    closed_.store(true);
+  }
 
  private:
   struct ExpectedWrite {
@@ -49,9 +53,8 @@ class MockFrameTransport final : public FrameTransport {
     SourceLocation whence;
   };
   std::queue<ExpectedWrite> expected_writes_;
-  std::shared_ptr<InterActivityLatch<absl::Status>> end_writes_ =
-      std::make_shared<InterActivityLatch<absl::Status>>();
-ReadFramePipe::Sender reader_;
+  ReadFramePipe::Sender reader_;
+  std::atomic<bool> closed_{false};
   absl::AnyInvocable<void(absl::Status)> on_read_done_;
 };
 

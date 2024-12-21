@@ -97,7 +97,8 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   auto OnTransportActivityDone(absl::string_view what);
   template <typename T>
   auto DispatchFrame(IncomingFrame incoming_frame);
-  auto TransportReadLoop();
+  auto TransportReadLoop(
+      FrameTransport::ReadFramePipe::Receiver incoming_frames);
   // Push one frame into a call
   auto PushFrameIntoCall(ServerInitialMetadataFrame frame,
                          RefCountedPtr<Stream> stream);
@@ -110,7 +111,6 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   grpc_event_engine::experimental::MemoryAllocator allocator_;
   MpscSender<Frame> outgoing_frames_;
-  MpscReceiver<IncomingFrame> incoming_frames_{8};
   Mutex mu_;
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.

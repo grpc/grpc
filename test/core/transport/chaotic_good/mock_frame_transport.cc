@@ -51,26 +51,25 @@ void MockFrameTransport::StartWriting(
   party->Spawn(
       "MockFrameTransport_Writer",
       [this, frames = std::move(frames)]() mutable {
-        return Race(
-            end_writes_->Wait(),
-            Loop([this, frames = std::move(frames)]() mutable {
-              return TrySeq(
-                  frames.Next(), [this](Frame frame) -> LoopCtl<absl::Status> {
-                    if (expected_writes_.empty()) {
-                      ADD_FAILURE()
-                          << "Unexpected write of "
-                          << absl::ConvertVariantTo<FrameInterface&>(frame)
-                                 .ToString();
-                      return Continue{};
-                    }
-                    auto expected = std::move(expected_writes_.front());
-                    expected_writes_.pop();
-                    EXPECT_EQ(expected.frame, frame)
-                        << " from " << expected.whence.file() << ":"
-                        << expected.whence.line();
-                    return Continue{};
-                  });
-            }));
+        return Loop([this, frames = std::move(frames)]() mutable {
+          return TrySeq(
+              frames.Next(), [this](Frame frame) -> LoopCtl<absl::Status> {
+                if (closed_.load()) return absl::OkStatus();
+                if (expected_writes_.empty()) {
+                  ADD_FAILURE()
+                      << "Unexpected write of "
+                      << absl::ConvertVariantTo<FrameInterface&>(frame)
+                             .ToString();
+                  return Continue{};
+                }
+                auto expected = std::move(expected_writes_.front());
+                expected_writes_.pop();
+                EXPECT_EQ(expected.frame, frame)
+                    << " from " << expected.whence.file() << ":"
+                    << expected.whence.line();
+                return Continue{};
+              });
+        });
       },
       std::move(on_done));
 }
