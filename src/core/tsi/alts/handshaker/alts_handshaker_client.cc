@@ -668,6 +668,8 @@ void AltsHandshakerClient::handshaker_client_destruct() {
 namespace grpc_core {
 namespace internal {
 
+class ::AltsHandshakerClient;
+
 void alts_handshaker_client_set_grpc_caller_for_testing(
     AltsHandshakerClient* client, alts_grpc_caller caller) {
   CHECK_NE(client, nullptr);
