@@ -448,9 +448,9 @@ tsi_result AltsHandshakerClient::make_grpc_call(bool is_start) {
   }
 }
 
-void AltsHandshakerClient::on_status_received(void* arg, grpc_error_handle error) {
-  AltsHandshakerClient* client =
-      static_cast<AltsHandshakerClient*>(arg);
+void AltsHandshakerClient::on_status_received(void* arg,
+                                              grpc_error_handle error) {
+  AltsHandshakerClient* client = static_cast<AltsHandshakerClient*>(arg);
   if (client->handshake_status_code != GRPC_STATUS_OK) {
     // TODO(apolcyn): consider overriding the handshake result's
     // status from the final ALTS message with the status here.
