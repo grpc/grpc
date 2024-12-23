@@ -852,6 +852,13 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
     GRPC_TRACE_LOG(xds_client, INFO)
         << "[xds_client " << xds_client() << "] " << result_.type_url
         << " resource " << resource_name << " identical to current, ignoring.";
+    // If we previously had connectivity problems, notify watchers that
+    // the ambient error has been cleared.
+    if (!ads_call_->xds_channel()->status().ok()) {
+      xds_client()->NotifyWatchersOnAmbientError(absl::OkStatus(),
+                                                 resource_state.watchers,
+                                                 result_.read_delay_handle);
+    }
     return;
   }
   // Update the resource state.
@@ -1523,7 +1530,7 @@ void XdsClient::NotifyWatchersOnResourceChanged(
 void XdsClient::NotifyWatchersOnAmbientError(
     absl::Status status, WatcherSet watchers,
     RefCountedPtr<ReadDelayHandle> read_delay_handle) {
-  status = AppendNodeToStatus(status);
+  if (!status.ok()) status = AppendNodeToStatus(status);
   work_serializer_.Schedule(
       [watchers = std::move(watchers), status = std::move(status),
        read_delay_handle = std::move(read_delay_handle)]()
