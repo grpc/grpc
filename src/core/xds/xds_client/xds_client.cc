@@ -855,9 +855,8 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
     // If we previously had connectivity problems, notify watchers that
     // the ambient error has been cleared.
     if (!ads_call_->xds_channel()->status().ok()) {
-      xds_client()->NotifyWatchersOnAmbientError(absl::OkStatus(),
-                                                 resource_state.watchers,
-                                                 result_.read_delay_handle);
+      xds_client()->NotifyWatchersOnAmbientError(
+          absl::OkStatus(), resource_state.watchers, result_.read_delay_handle);
     }
     return;
   }
