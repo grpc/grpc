@@ -34,6 +34,7 @@
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/work_serializer.h"
@@ -132,7 +133,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
     // down-casting in the caller.
     template <typename T>
     T* endpoint_list() const {
-      return static_cast<T*>(endpoint_list_.get());
+      return DownCast<T*>(endpoint_list_.get());
     }
 
     // Templated for convenience, to provide a short-hand for down-casting
@@ -198,7 +199,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
   // in the caller.
   template <typename T>
   T* policy() const {
-    return static_cast<T*>(policy_.get());
+    return DownCast<T*>(policy_.get());
   }
 
   // Returns true if all endpoints have seen their initial connectivity

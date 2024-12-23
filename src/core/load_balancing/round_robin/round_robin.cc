@@ -393,7 +393,7 @@ void RoundRobin::RoundRobinEndpointList::
         << "[RR " << round_robin << "] reporting CONNECTING with child list "
         << this;
     round_robin->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING, absl::Status(),
+        GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
         MakeRefCounted<QueuePicker>(nullptr));
   } else if (num_transient_failure_ == size()) {
     GRPC_TRACE_LOG(round_robin, INFO)

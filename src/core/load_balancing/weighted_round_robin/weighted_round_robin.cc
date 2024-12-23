@@ -962,14 +962,14 @@ void WeightedRoundRobin::WrrEndpointList::
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
         << "[WRR " << wrr << "] reporting READY with endpoint list " << this;
     wrr->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_READY, absl::Status(),
+        GRPC_CHANNEL_READY, absl::OkStatus(),
         MakeRefCounted<Picker>(wrr->RefAsSubclass<WeightedRoundRobin>(), this));
   } else if (num_connecting_ > 0) {
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
         << "[WRR " << wrr << "] reporting CONNECTING with endpoint list "
         << this;
     wrr->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING, absl::Status(),
+        GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
         MakeRefCounted<QueuePicker>(nullptr));
   } else if (num_transient_failure_ == size()) {
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
