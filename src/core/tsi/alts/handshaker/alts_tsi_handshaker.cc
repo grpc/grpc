@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <memory>
 
 #include "absl/log/check.h"
@@ -53,7 +54,6 @@ struct alts_tsi_handshaker {
   char* handshaker_service_url;
   grpc_pollset_set* interested_parties;
   grpc_alts_credentials_options* options;
-  alts_handshaker_client_vtable* client_vtable_for_testing = nullptr;
   grpc_channel* channel = nullptr;
   bool use_dedicated_cq;
   // mu synchronizes all fields below. Note these are the
@@ -428,12 +428,12 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
         handshaker->channel == nullptr
             ? grpc_alts_get_shared_resource_dedicated()->channel
             : handshaker->channel;
-    std::unique_ptr<AltsHandshakerCLient> client = AltsHandshakerCLient::CreateNewAltsHandshakerClient(
-        handshaker, channel, handshaker->handshaker_service_url,
-        handshaker->interested_parties, handshaker->options,
-        handshaker->target_name, grpc_cb, cb, user_data,
-        handshaker->client_vtable_for_testing, handshaker->is_client,
-        handshaker->max_frame_size, error);
+    std::unique_ptr<AltsHandshakerCLient> client =
+        AltsHandshakerCLient::CreateNewAltsHandshakerClient(
+            handshaker, channel, handshaker->handshaker_service_url,
+            handshaker->interested_parties, handshaker->options,
+            handshaker->target_name, grpc_cb, cb, user_data,
+            handshaker->is_client, handshaker->max_frame_size, error);
     if (client == nullptr) {
       LOG(ERROR) << "Failed to create ALTS handshaker client";
       if (error != nullptr) *error = "Failed to create ALTS handshaker client";
@@ -451,8 +451,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
     }
     handshaker->has_created_handshaker_client = true;
   }
-  if (handshaker->channel == nullptr &&
-      handshaker->client_vtable_for_testing == nullptr) {
+  if (handshaker->channel == nullptr) {
     CHECK(grpc_cq_begin_op(grpc_alts_get_shared_resource_dedicated()->cq,
                            handshaker->client));
   }
@@ -697,12 +696,6 @@ bool alts_tsi_handshaker_get_has_sent_start_message_for_testing(
     alts_tsi_handshaker* handshaker) {
   CHECK_NE(handshaker, nullptr);
   return handshaker->has_sent_start_message;
-}
-
-void alts_tsi_handshaker_set_client_vtable_for_testing(
-    alts_tsi_handshaker* handshaker, alts_handshaker_client_vtable* vtable) {
-  CHECK_NE(handshaker, nullptr);
-  handshaker->client_vtable_for_testing = vtable;
 }
 
 bool alts_tsi_handshaker_get_is_client_for_testing(
