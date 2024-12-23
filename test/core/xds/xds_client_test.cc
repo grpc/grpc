@@ -277,11 +277,11 @@ class XdsClientTest : public ::testing::Test {
         auto event = WaitForNextOnResourceChangedEvent(location);
         if (!event.has_value()) return absl::nullopt;
         EXPECT_TRUE(event->resource.ok())
-            << "got unexpected error: " << event->resource.status()
-            << " at " << location.file() << ":" << location.line();
+            << "got unexpected error: " << event->resource.status() << " at "
+            << location.file() << ":" << location.line();
         if (!event->resource.ok()) return absl::nullopt;
-        return ResourceAndReadDelayHandle{
-              std::move(*event->resource), std::move(event->read_delay_handle)};
+        return ResourceAndReadDelayHandle{std::move(*event->resource),
+                                          std::move(event->read_delay_handle)};
       }
 
       std::shared_ptr<const ResourceStruct> WaitForNextResource(
@@ -296,8 +296,8 @@ class XdsClientTest : public ::testing::Test {
         auto event = WaitForNextOnResourceChangedEvent(location);
         if (!event.has_value()) return absl::nullopt;
         EXPECT_FALSE(event->resource.ok())
-            << "got unexpected resource: " << (*event->resource)->name
-            << " at " << location.file() << ":" << location.line();
+            << "got unexpected resource: " << (*event->resource)->name << " at "
+            << location.file() << ":" << location.line();
         if (event->resource.ok()) return absl::nullopt;
         return event->resource.status();
       }
@@ -320,8 +320,8 @@ class XdsClientTest : public ::testing::Test {
             [&](const absl::StatusOr<std::shared_ptr<const ResourceStruct>>&
                     resource) -> absl::optional<absl::Status> {
               EXPECT_TRUE(false)
-                  << "got unexpected resource: " << event->ToString()
-                  << " at " << location.file() << ":" << location.line();
+                  << "got unexpected resource: " << event->ToString() << " at "
+                  << location.file() << ":" << location.line();
               return absl::nullopt;
             },
             [&](const absl::Status& status) -> absl::optional<absl::Status> {
@@ -347,17 +347,15 @@ class XdsClientTest : public ::testing::Test {
                       resource) {
                 return absl::StrCat(
                     "{resource=",
-                    resource.ok()
-                        ? (*resource)->name
-                        : resource.status().ToString(),
+                    resource.ok() ? (*resource)->name
+                                  : resource.status().ToString(),
                     ", read_delay_handle=", (read_delay_handle == nullptr),
                     "}");
               },
               [&](const absl::Status& status) {
-                return absl::StrCat(
-                    "{ambient_error=", status.ToString(),
-                    ", read_delay_handle=", (read_delay_handle == nullptr),
-                    "}");
+                return absl::StrCat("{ambient_error=", status.ToString(),
+                                    ", read_delay_handle=",
+                                    (read_delay_handle == nullptr), "}");
               });
         }
       };
@@ -387,8 +385,8 @@ class XdsClientTest : public ::testing::Test {
         if (!event.has_value()) return absl::nullopt;
         return MatchMutable(
             &event->payload,
-            [&](absl::StatusOr<std::shared_ptr<const ResourceStruct>>*
-                    resource) -> absl::optional<OnResourceChangedEvent> {
+            [&](absl::StatusOr<std::shared_ptr<const ResourceStruct>>* resource)
+                -> absl::optional<OnResourceChangedEvent> {
               return OnResourceChangedEvent{
                   std::move(*resource), std::move(event->read_delay_handle)};
             },
