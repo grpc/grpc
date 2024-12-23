@@ -1614,7 +1614,6 @@ void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
       << ", p->subchannel_list_=" << p->subchannel_list_.get()
       << ", p->latest_pending_subchannel_list_="
       << p->latest_pending_subchannel_list_.get();
-
   if (subchannel_list_->shutting_down_ || pending_watcher_ == nullptr) return;
   auto& stats_plugins = subchannel_list_->policy_->channel_control_helper()
                             ->GetStatsPluginGroup();
@@ -2025,6 +2024,7 @@ void OldPickFirst::SubchannelList::MaybeFinishHappyEyeballsPass() {
     }
   }
 }
+
 //
 // factory
 //
