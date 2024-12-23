@@ -274,26 +274,14 @@ class XdsClientTest : public ::testing::Test {
       };
       absl::optional<ResourceAndReadDelayHandle> WaitForNextResourceAndHandle(
           SourceLocation location = SourceLocation()) {
-        auto event = WaitForNextEvent();
+        auto event = WaitForNextOnResourceChangedEvent(location);
         if (!event.has_value()) return absl::nullopt;
-        return MatchMutable(
-            &event->payload,
-            [&](absl::StatusOr<std::shared_ptr<const ResourceStruct>>*
-                    resource) -> absl::optional<ResourceAndReadDelayHandle> {
-              EXPECT_TRUE(resource->ok())
-                  << "got unexpected error: " << resource->status().ToString()
-                  << " at " << location.file() << ":" << location.line();
-              if (!resource->ok()) return absl::nullopt;
-              return ResourceAndReadDelayHandle{
-                  std::move(**resource), std::move(event->read_delay_handle)};
-            },
-            [&](absl::Status* status)
-                -> absl::optional<ResourceAndReadDelayHandle> {
-              EXPECT_TRUE(false)
-                  << "got unexpected ambient error: " << status->ToString()
-                  << " at " << location.file() << ":" << location.line();
-              return absl::nullopt;
-            });
+        EXPECT_TRUE(event->resource.ok())
+            << "got unexpected error: " << event->resource.status()
+            << " at " << location.file() << ":" << location.line();
+        if (!event->resource.ok()) return absl::nullopt;
+        return ResourceAndReadDelayHandle{
+              std::move(*event->resource), std::move(event->read_delay_handle)};
       }
 
       std::shared_ptr<const ResourceStruct> WaitForNextResource(
@@ -305,24 +293,22 @@ class XdsClientTest : public ::testing::Test {
 
       absl::optional<absl::Status> WaitForNextError(
           SourceLocation location = SourceLocation()) {
-        auto event = WaitForNextEvent();
+        auto event = WaitForNextOnResourceChangedEvent(location);
         if (!event.has_value()) return absl::nullopt;
-        return Match(
-            event->payload,
-            [&](const absl::StatusOr<std::shared_ptr<const ResourceStruct>>&
-                    resource) -> absl::optional<absl::Status> {
-              EXPECT_FALSE(resource.ok())
-                  << "got unexpected resource: " << (*resource)->name
-                  << " at " << location.file() << ":" << location.line();
-              if (resource.ok()) return absl::nullopt;
-              return resource.status();
-            },
-            [&](const absl::Status& status) -> absl::optional<absl::Status> {
-              EXPECT_TRUE(false)
-                  << "got unexpected ambient error: " << status.ToString()
-                  << " at " << location.file() << ":" << location.line();
-              return absl::nullopt;
-            });
+        EXPECT_FALSE(event->resource.ok())
+            << "got unexpected resource: " << (*event->resource)->name
+            << " at " << location.file() << ":" << location.line();
+        if (event->resource.ok()) return absl::nullopt;
+        return event->resource.status();
+      }
+
+      bool WaitForDoesNotExist(SourceLocation location = SourceLocation()) {
+        auto status = WaitForNextError(location);
+        if (!status.has_value()) return false;
+        EXPECT_EQ(status->code(), absl::StatusCode::kNotFound)
+            << "unexpected status: " << *status << " at " << location.file()
+            << ":" << location.line();
+        return status->code() == absl::StatusCode::kNotFound;
       }
 
       absl::optional<absl::Status> WaitForNextAmbientError(
@@ -341,15 +327,6 @@ class XdsClientTest : public ::testing::Test {
             [&](const absl::Status& status) -> absl::optional<absl::Status> {
               return status;
             });
-      }
-
-      bool WaitForDoesNotExist(SourceLocation location = SourceLocation()) {
-        auto status = WaitForNextError(location);
-        if (!status.has_value()) return false;
-        EXPECT_EQ(status->code(), absl::StatusCode::kNotFound)
-            << "unexpected status: " << *status << " at " << location.file()
-            << ":" << location.line();
-        return status->code() == absl::StatusCode::kNotFound;
       }
 
      private:
@@ -398,6 +375,30 @@ class XdsClientTest : public ::testing::Test {
           }
           event_engine_->Tick();
         }
+      }
+
+      struct OnResourceChangedEvent {
+        absl::StatusOr<std::shared_ptr<const ResourceStruct>> resource;
+        RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle;
+      };
+      absl::optional<OnResourceChangedEvent> WaitForNextOnResourceChangedEvent(
+          SourceLocation location = SourceLocation()) {
+        auto event = WaitForNextEvent();
+        if (!event.has_value()) return absl::nullopt;
+        return MatchMutable(
+            &event->payload,
+            [&](absl::StatusOr<std::shared_ptr<const ResourceStruct>>*
+                    resource) -> absl::optional<OnResourceChangedEvent> {
+              return OnResourceChangedEvent{
+                  std::move(*resource), std::move(event->read_delay_handle)};
+            },
+            [&](absl::Status* status)
+                -> absl::optional<OnResourceChangedEvent> {
+              EXPECT_TRUE(false)
+                  << "got unexpected ambient error: " << status->ToString()
+                  << " at " << location.file() << ":" << location.line();
+              return absl::nullopt;
+            });
       }
 
       void OnResourceChanged(
