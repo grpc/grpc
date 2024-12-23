@@ -137,6 +137,10 @@ class AltsHandshakerClient {
   ///
   void HandleResponse(bool is_ok);
 
+  // For compatibillity only.
+  // DO NOT USE !!!
+  tsi_result continue_make_grpc_call(bool is_start);
+
   // Friend functions for testing
   static size_t MaxNumberOfConcurrentHandshakes();
   friend void
@@ -203,9 +207,9 @@ class AltsHandshakerClient {
                             const unsigned char* bytes_to_send,
                             size_t bytes_to_send_size,
                             tsi_handshaker_result* result);
-  tsi_result continue_make_grpc_call(bool is_start);
+  
   tsi_result make_grpc_call(bool is_start);
-  static void on_status_received(void* arg, grpc_error_handle error);
+  static void do_on_status_received(void* arg, grpc_error_handle error);
   static grpc_byte_buffer* get_serialized_handshaker_req(
       grpc_gcp_HandshakerReq* req, upb_Arena* arena);
   grpc_byte_buffer* get_serialized_start_client();
@@ -215,7 +219,7 @@ class AltsHandshakerClient {
   static grpc_byte_buffer* get_serialized_next(grpc_slice* bytes_received);
   tsi_result handshaker_client_next(grpc_slice* bytes_received);
   void handshaker_client_shutdown();
-  void handshaker_call_unref(void* arg, grpc_error_handle /* error */);
+  static void handshaker_call_unref(void* arg, grpc_error_handle /* error */);
   void handshaker_client_destruct();
 
   // One ref is held by the entity that created this handshaker_client, and

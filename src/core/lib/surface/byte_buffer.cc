@@ -17,6 +17,7 @@
 //
 
 #include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/slice.h>

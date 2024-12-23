@@ -231,7 +231,7 @@ AltsHandshakerClient::AltsHandshakerClient(
   grpc_metadata_array_init(recv_initial_metadata);
   GRPC_CLOSURE_INIT(&on_handshaker_service_resp_recv, grpc_cb, this,
                     grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&on_status_received, on_status_received, this,
+  GRPC_CLOSURE_INIT(&on_status_received, do_on_status_received, this,
                     grpc_schedule_on_exec_ctx);
 }
 
@@ -312,15 +312,15 @@ tsi_result AltsHandshakerClient::continue_make_grpc_call(bool is_start) {
   if (is_start) {
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
     op->data.recv_status_on_client.trailing_metadata = nullptr;
-    op->data.recv_status_on_client.status = handshake_status_code;
-    op->data.recv_status_on_client.status_details = handshake_status_details;
+    op->data.recv_status_on_client.status = &handshake_status_code;
+    op->data.recv_status_on_client.status_details = &handshake_status_details;
     op->flags = 0;
     op->reserved = nullptr;
     op++;
     CHECK(op - ops <= kHandshakerClientOpNum);
     gpr_ref(refs);
     grpc_call_error call_error = grpc_caller(
-        call, ops, static_cast<size_t>(op - ops), on_status_received);
+        call, ops, static_cast<size_t>(op - ops), &on_status_received);
     // TODO(apolcyn): return the error here instead, as done for other ops?
     CHECK_EQ(call_error, GRPC_CALL_OK);
     memset(ops, 0, sizeof(ops));
@@ -340,12 +340,12 @@ tsi_result AltsHandshakerClient::continue_make_grpc_call(bool is_start) {
   op++;
   CHECK(op - ops <= kHandshakerClientOpNum);
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = recv_buffer;
+  op->data.recv_message.recv_message = &recv_buffer;
   op++;
   CHECK(op - ops <= kHandshakerClientOpNum);
   CHECK_NE(grpc_caller, nullptr);
   if (grpc_caller(call, ops, static_cast<size_t>(op - ops),
-                  on_handshaker_service_resp_recv) != GRPC_CALL_OK) {
+                  &on_handshaker_service_resp_recv) != GRPC_CALL_OK) {
     LOG(ERROR) << "Start batch operation failed";
     return TSI_INTERNAL_ERROR;
   }
@@ -448,7 +448,7 @@ tsi_result AltsHandshakerClient::make_grpc_call(bool is_start) {
   }
 }
 
-void AltsHandshakerClient::on_status_received(void* arg,
+void AltsHandshakerClient::do_on_status_received(void* arg,
                                               grpc_error_handle error) {
   AltsHandshakerClient* client = static_cast<AltsHandshakerClient*>(arg);
   if (client->handshake_status_code != GRPC_STATUS_OK) {
@@ -564,7 +564,7 @@ grpc_byte_buffer* AltsHandshakerClient::get_serialized_start_server(
       grpc_gcp_StartServerHandshakeReq_mutable_rpc_versions(start_server,
                                                             arena.ptr());
   grpc_gcp_RpcProtocolVersions_assign_from_struct(server_version, arena.ptr(),
-                                                  options->rpc_versions);
+                                                  &options->rpc_versions);
   grpc_gcp_StartServerHandshakeReq_set_max_frame_size(
       start_server, static_cast<uint32_t>(max_frame_size));
   return get_serialized_handshaker_req(req, arena.ptr());
@@ -692,7 +692,7 @@ grpc_byte_buffer** alts_handshaker_client_get_recv_buffer_addr_for_testing(
 grpc_metadata_array* alts_handshaker_client_get_initial_metadata_for_testing(
     AltsHandshakerClient* client) {
   CHECK_NE(client, nullptr);
-  return &client->recv_initial_metadata;
+  return client->recv_initial_metadata;
 }
 
 void alts_handshaker_client_set_recv_bytes_for_testing(
