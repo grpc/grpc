@@ -560,22 +560,17 @@ class CLanguage(object):
             _check_compiler(compiler, ["default", "cmake"])
 
         if compiler == "default" or compiler == "cmake":
-            # This is to address Apple clang defaults C++98.
-            cmake_args = (
-                ["-DCMAKE_CXX_STANDARD=14"]
-                if platform_string() == "mac"
-                else []
-            )
-            return ("debian11", cmake_args)
+            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc8":
-            return ("gcc_8", [])
+            return ("gcc_8", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2":
-            return ("debian11", [])
+            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2_openssl102":
             return (
                 "debian11_openssl102",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
         elif compiler == "gcc10.2_openssl111":
@@ -583,6 +578,7 @@ class CLanguage(object):
                 "debian11_openssl111",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
         elif compiler == "gcc12_openssl309":
@@ -590,16 +586,25 @@ class CLanguage(object):
                 "debian12_openssl309",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
         elif compiler == "gcc14":
             return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
-            return ("alpine", [])
+            return ("alpine", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "clang7":
-            return ("clang_7", self._clang_cmake_configure_extra_args())
+            return (
+                "clang_7",
+                self._clang_cmake_configure_extra_args()
+                + "-DCMAKE_CXX_STANDARD=17",
+            )
         elif compiler == "clang19":
-            return ("clang_19", self._clang_cmake_configure_extra_args())
+            return (
+                "clang_19",
+                self._clang_cmake_configure_extra_args()
+                + "-DCMAKE_CXX_STANDARD=17",
+            )
         else:
             raise Exception("Compiler %s not supported." % compiler)
 
