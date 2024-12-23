@@ -182,8 +182,9 @@ class AltsHandshakerClient {
       AltsHandshakerClient* client, grpc_status_code status,
       grpc_error_handle error);
 
+ static constexpr size_t kAltsAes128GcmRekeyKeyLength = 44;
+
  private:
-  static constexpr size_t kAltsAes128GcmRekeyKeyLength = 44;
   static constexpr char kMaxConcurrentStreamsEnvironmentVariable[] =
       "GRPC_ALTS_MAX_CONCURRENT_HANDSHAKES";
   static constexpr int kHandshakerClientOpNum = 4;
