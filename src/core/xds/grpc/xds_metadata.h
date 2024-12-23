@@ -60,6 +60,14 @@ class XdsMetadataMap {
 
   const XdsMetadataValue* Find(absl::string_view key) const;
 
+  template <typename T>
+  const T* FindType(absl::string_view key) const {
+    auto it = map_.find(key);
+    if (it == map_.end()) return nullptr;
+    if (it->second->type() != T::Type()) return nullptr;
+    return DownCast<const T*>(it->second.get());
+  }
+
   bool empty() const { return map_.empty(); }
   size_t size() const { return map_.size(); }
 
