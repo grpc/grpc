@@ -65,8 +65,8 @@ TEST_P(LdsTest, NotAnApiListener) {
   balancer_->ads_service()->SetLdsResource(listener);
   // RPCs should fail.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      absl::StrCat("empty address list: LDS resource ",
-                                   kServerName, ": not an API listener"));
+                      absl::StrCat("empty address list \\(LDS resource ",
+                                   kServerName, ": not an API listener\\)"));
   // We should have ACKed the LDS resource.
   const auto deadline =
       absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
@@ -104,8 +104,8 @@ TEST_P(LdsDeletionTest, ListenerDeleted) {
     if (result.status.ok()) return true;  // Keep going.
     EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
     EXPECT_EQ(result.status.error_message(),
-              absl::StrCat("empty address list: LDS resource ", kServerName,
-                           ": does not exist (node ID:xds_end2end_test)"));
+              absl::StrCat("empty address list (LDS resource ", kServerName,
+                           ": does not exist (node ID:xds_end2end_test))"));
     return false;
   });
   // Make sure we ACK'ed the update.
@@ -428,12 +428,12 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       absl::StrCat(
-          "empty address list: ",
+          "empty address list \\(",
           (GetParam().enable_rds_testing() ? "RDS" : "LDS"), " resource ",
           (GetParam().enable_rds_testing() ? kDefaultRouteConfigurationName
                                            : kServerName),
           ": could not find VirtualHost for ", kServerName,
-          " in RouteConfiguration"));
+          " in RouteConfiguration\\)"));
   // Do a bit of polling, to allow the ACK to get to the ADS server.
   channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100));
   auto response_state = RouteConfigurationResponseState(balancer_.get());

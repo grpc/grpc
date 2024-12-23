@@ -373,8 +373,8 @@ TEST_P(TimeoutTest, LdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: LDS resource ", kServerName,
-                   ": does not exist \\(node ID:xds_end2end_test\\)"),
+      absl::StrCat("empty address list \\(LDS resource ", kServerName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -382,8 +382,8 @@ TEST_P(TimeoutTest, LdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: LDS resource ", kServerName,
-                   ": does not exist \\(node ID:xds_end2end_test\\)"),
+      absl::StrCat("empty address list \\(LDS resource ", kServerName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -410,17 +410,17 @@ TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
       SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
   EXPECT_EQ(status.error_message(),
-            absl::StrCat("empty address list: LDS resource ", kNewServerName,
-                         ": does not exist (node ID:xds_end2end_test)"));
+            absl::StrCat("empty address list (LDS resource ", kNewServerName,
+                         ": does not exist (node ID:xds_end2end_test))"));
 }
 
 TEST_P(TimeoutTest, RdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kRdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: RDS resource ",
+      absl::StrCat("empty address list \\(RDS resource ",
                    kDefaultRouteConfigurationName,
-                   ": does not exist \\(node ID:xds_end2end_test\\)"),
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -429,9 +429,9 @@ TEST_P(TimeoutTest, RdsResourceNotPresentInRequest) {
                                           kDefaultRouteConfigurationName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: RDS resource ",
+      absl::StrCat("empty address list \\(RDS resource ",
                    kDefaultRouteConfigurationName,
-                   ": does not exist \\(node ID:xds_end2end_test\\)"),
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -471,8 +471,8 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
   EXPECT_EQ(
       status.error_message(),
-      absl::StrCat("empty address list: RDS resource ", kNewRouteConfigName,
-                   ": does not exist (node ID:xds_end2end_test)"));
+      absl::StrCat("empty address list (RDS resource ", kNewRouteConfigName,
+                   ": does not exist (node ID:xds_end2end_test))"));
 }
 
 TEST_P(TimeoutTest, CdsServerIgnoresRequest) {
@@ -916,9 +916,9 @@ TEST_P(XdsFederationTest, RdsResourceNameAuthorityUnknown) {
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_EQ(
       status.error_message(),
-      absl::StrCat("empty address list: RDS resource ", kNewRouteConfigName,
+      absl::StrCat("empty address list (RDS resource ", kNewRouteConfigName,
                    ": authority \"xds.unknown.com\" not present in "
-                   "bootstrap config (node ID:xds_end2end_test)"));
+                   "bootstrap config (node ID:xds_end2end_test))"));
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 
