@@ -1237,6 +1237,7 @@ libs:
   - src/core/util/uri.h
   - src/core/util/uuid_v4.h
   - src/core/util/validation_errors.h
+  - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - src/core/util/xxhash_inline.h
   - src/core/xds/grpc/certificate_provider_store.h
@@ -2761,6 +2762,7 @@ libs:
   - src/core/util/uri.h
   - src/core/util/uuid_v4.h
   - src/core/util/validation_errors.h
+  - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -4796,6 +4798,7 @@ libs:
   - src/core/util/unique_type_name.h
   - src/core/util/uri.h
   - src/core/util/validation_errors.h
+  - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -7188,6 +7191,7 @@ targets:
   - src/core/util/unique_type_name.h
   - src/core/util/uri.h
   - src/core/util/validation_errors.h
+  - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -23560,6 +23564,21 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
+  - absl/status:statusor
+  - gpr
+  uses_polling: false
+- name: wait_for_single_owner_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/time.h
+  - src/core/util/wait_for_single_owner.h
+  src:
+  - src/core/util/time.cc
+  - test/core/util/wait_for_single_owner_test.cc
+  deps:
+  - gtest
   - absl/status:statusor
   - gpr
   uses_polling: false
