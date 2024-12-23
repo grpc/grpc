@@ -114,20 +114,16 @@ class XdsApi final {
   };
   static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
                     envoy_admin_v3_REQUESTED) ==
-                    ResourceMetadata::ClientResourceStatus::REQUESTED,
-                "");
+                ResourceMetadata::ClientResourceStatus::REQUESTED);
   static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
                     envoy_admin_v3_DOES_NOT_EXIST) ==
-                    ResourceMetadata::ClientResourceStatus::DOES_NOT_EXIST,
-                "");
+                ResourceMetadata::ClientResourceStatus::DOES_NOT_EXIST);
   static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
                     envoy_admin_v3_ACKED) ==
-                    ResourceMetadata::ClientResourceStatus::ACKED,
-                "");
+                ResourceMetadata::ClientResourceStatus::ACKED);
   static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
                     envoy_admin_v3_NACKED) ==
-                    ResourceMetadata::ClientResourceStatus::NACKED,
-                "");
+                ResourceMetadata::ClientResourceStatus::NACKED);
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
          upb::DefPool* def_pool, std::string user_agent_name,
