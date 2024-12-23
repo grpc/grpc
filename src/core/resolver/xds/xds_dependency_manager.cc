@@ -703,6 +703,15 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
         for (const auto& note : notes) {
           if (!note.empty()) resolution_notes.push_back(note);
         }
+        if (resolution_notes.empty()) {
+          const XdsBootstrap::Node* node =
+              DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
+                  .node();
+          if (node != nullptr) {
+            resolution_notes.push_back(
+                absl::StrCat("xDS node ID:", node->id()));
+          }
+        }
         cluster_config.emplace(*state.update, eds_state.update.endpoints,
                                absl::StrJoin(resolution_notes, "; "));
         if (leaf_clusters != nullptr) (*leaf_clusters)->push_back(name);
