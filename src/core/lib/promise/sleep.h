@@ -38,9 +38,9 @@ namespace grpc_core {
 // If this promise is Polled before the deadline, it returns Pending{}
 // If this promise if Polled after the deadline, it returns absl::OkStatus()
 //
-// If this Sleep object is a part of an Activity, the Activity will sleep when
-// this Sleep promise is executed. And the the Activity will be woken up by the
-// event engine when the deadline passes.
+// If this Sleep promise is a part of an Activity/Party, the Activity/Party will
+// sleep when this Sleep promise is executed. And the the Activity/Party will be
+// woken up by the event engine when the deadline passes.
 class Sleep final {
  public:
   explicit Sleep(Timestamp deadline);
