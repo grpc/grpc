@@ -33,7 +33,7 @@ TEST(SeqTest, Immediate) {
   EXPECT_STREQ(execution_order.c_str(), "1");
 }
 
-TEST(SeqTest, TwoImmediate) {
+TEST(SeqTest, OneThen) {
   std::string execution_order;
   auto initial = [&execution_order,
                   test_destructor_invocation1 =
@@ -90,34 +90,105 @@ TEST(SeqTest, TestPending) {
   EXPECT_STREQ(execution_order.c_str(), "123");
 }
 
-TEST(SeqTest, ThreeTypedThens) {
+TEST(SeqTest, ThreeTypedPendingThens) {
   std::string execution_order;
-  struct A {};
-  struct B {};
-  struct C {};
+  bool pending_a = true;
+  bool pending_b = true;
+  bool pending_c = true;
+  bool pending_d = true;
+
+  struct A {
+    int a_ = -1;
+  };
+  struct B {
+    int b_ = -1;
+  };
+  struct C {
+    int c_ = -1;
+  };
   struct D {
-    int d;
+    int d_ = -1;
   };
-  auto initial = [&execution_order] {
+
+  auto initial = [&execution_order, &pending_a]() -> Poll<A> {
     absl::StrAppend(&execution_order, "0");
-    return A{};
+    if (pending_a) {
+      absl::StrAppend(&execution_order, "P");
+      return Pending{};
+    }
+    absl::StrAppend(&execution_order, "a");
+    return A{100};
   };
-  auto next1 = [&execution_order](A) {
+
+  auto next1 = [&execution_order, &pending_b](A a) {
     absl::StrAppend(&execution_order, "1");
-    return []() { return B{}; };
+    return [&execution_order, &pending_b, a]() -> Poll<B> {
+      EXPECT_EQ(a.a_, 100);
+      if (pending_b) {
+        absl::StrAppend(&execution_order, "P");
+        return Pending{};
+      }
+      absl::StrAppend(&execution_order, "b");
+      return B{200};
+    };
   };
-  auto next2 = [&execution_order](B) {
+
+  auto next2 = [&execution_order, &pending_c](B b) {
     absl::StrAppend(&execution_order, "2");
-    return []() { return C{}; };
+    return [&execution_order, &pending_c, b]() -> Poll<C> {
+      EXPECT_EQ(b.b_, 200);
+      if (pending_c) {
+        absl::StrAppend(&execution_order, "P");
+        return Pending{};
+      }
+      absl::StrAppend(&execution_order, "c");
+      return C{300};
+    };
   };
-  auto next3 = [&execution_order](C) {
+
+  auto next3 = [&execution_order, &pending_d](C c) {
     absl::StrAppend(&execution_order, "3");
-    return []() { return D{100}; };
+    return [&execution_order, &pending_d, c]() -> Poll<D> {
+      EXPECT_EQ(c.c_, 300);
+      if (pending_d) {
+        absl::StrAppend(&execution_order, "P");
+        return Pending{};
+      }
+      absl::StrAppend(&execution_order, "d");
+      return D{400};
+    };
   };
-  auto retval = Seq(initial, next1, next2, next3)();
+
+  auto seq_combinator = Seq(initial, next1, next2, next3);
+
+  auto retval = seq_combinator();
+  EXPECT_TRUE(retval.pending());
+  EXPECT_STREQ(execution_order.c_str(), "0P");
+
+  execution_order.clear();
+  pending_a = false;
+  retval = seq_combinator();
+  EXPECT_TRUE(retval.pending());
+  EXPECT_STREQ(execution_order.c_str(), "0a1P");
+
+  execution_order.clear();
+  pending_b = false;
+  retval = seq_combinator();
+  EXPECT_TRUE(retval.pending());
+  EXPECT_STREQ(execution_order.c_str(), "b2P");
+
+  execution_order.clear();
+  pending_c = false;
+  retval = seq_combinator();
+  EXPECT_TRUE(retval.pending());
+  EXPECT_STREQ(execution_order.c_str(), "c3P");
+
+  execution_order.clear();
+  pending_d = false;
+  retval = seq_combinator();
   EXPECT_TRUE(retval.ready());
-  EXPECT_EQ(retval.value().d, 100);
-  EXPECT_STREQ(execution_order.c_str(), "0123");
+  EXPECT_EQ(retval.value().d_, 400);
+  EXPECT_STREQ(execution_order.c_str(), "d");
 }
 
 // This does not compile, but is useful for testing error messages generated
