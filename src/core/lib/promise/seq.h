@@ -43,7 +43,7 @@ namespace grpc_core {
 // Polling the Seq Promise combinator returns Poll<T> where T is the type
 // returned by the last promise in the list of input promises.
 //
-// Polling the Seq combinator works in the following way
+// Polling the Seq combinator works in the following way :
 // Run the first promise. If it returns Pending{}, nothing else is executed.
 // If the first promise returns a value, pass this result to the second promise
 // factory, and run the returned promise. If it returns Pending{}, nothing else
