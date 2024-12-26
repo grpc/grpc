@@ -50,6 +50,11 @@ namespace grpc_core {
 // is executed. If it returns a value, pass this result to the third, and run
 // the returned promise. etc. Return the final value.
 //
+// If any of the promises in the Seq chain returns a failure status, Seq will
+// still proceed with the execution of the remaining promises. If you want the
+// execution to stop when a failure status is received, use the TrySeq
+// combinator instead.
+//
 // Example :
 // The unit tests (esp ThreeTypedPendingThens) in seq_test.cc provide all
 // possible permutations of how Seq combinator can be used.
