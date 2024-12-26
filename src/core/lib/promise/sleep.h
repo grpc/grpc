@@ -28,7 +28,7 @@
 
 namespace grpc_core {
 
-// Sleep is a promise
+// Sleep is a Promise
 //
 // Instantiation :
 // We will need either a Timestamp or Duration object to instantiate this
