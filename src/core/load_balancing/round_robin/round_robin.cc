@@ -69,8 +69,7 @@ class RoundRobin final : public LoadBalancingPolicy {
    public:
     RoundRobinEndpointList(RefCountedPtr<RoundRobin> round_robin,
                            EndpointAddressesIterator* endpoints,
-                           const ChannelArgs& args,
-                           std::string resolution_note,
+                           const ChannelArgs& args, std::string resolution_note,
                            std::vector<std::string>* errors)
         : EndpointList(std::move(round_robin), std::move(resolution_note),
                        GRPC_TRACE_FLAG_ENABLED(round_robin)
@@ -259,9 +258,9 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
                 << endpoint_list_.get();
     }
     endpoint_list_ = std::move(latest_pending_endpoint_list_);
-    absl::Status status =
-        args.addresses.ok() ? absl::UnavailableError("empty address list")
-                            : args.addresses.status();
+    absl::Status status = args.addresses.ok()
+                              ? absl::UnavailableError("empty address list")
+                              : args.addresses.status();
     endpoint_list_->ReportTransientFailure(status);
     return status;
   }

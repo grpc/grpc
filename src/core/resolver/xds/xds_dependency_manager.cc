@@ -107,8 +107,8 @@ class XdsDependencyManager::RouteConfigWatcher final
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<RouteConfigWatcher>(), status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
-          self->dependency_mgr_->OnRouteConfigAmbientError(
-              self->name_, std::move(status));
+          self->dependency_mgr_->OnRouteConfigAmbientError(self->name_,
+                                                           std::move(status));
         },
         DEBUG_LOCATION);
   }
@@ -376,8 +376,9 @@ void XdsDependencyManager::OnListenerUpdate(
 
 void XdsDependencyManager::OnListenerAmbientError(absl::Status status) {
   GRPC_TRACE_LOG(xds_resolver, INFO)
-      << "[XdsDependencyManager " << this << "] received Listener error: "
-      << listener_resource_name_ << ": " << status;
+      << "[XdsDependencyManager " << this
+      << "] received Listener error: " << listener_resource_name_ << ": "
+      << status;
   if (xds_client_ == nullptr) return;
   if (status.ok()) {
     lds_resolution_note_.clear();
@@ -486,17 +487,17 @@ void XdsDependencyManager::OnRouteConfigUpdate(
   MaybeReportUpdate();
 }
 
-void XdsDependencyManager::OnRouteConfigAmbientError(
-    std::string resource_name, absl::Status status) {
+void XdsDependencyManager::OnRouteConfigAmbientError(std::string resource_name,
+                                                     absl::Status status) {
   GRPC_TRACE_LOG(xds_resolver, INFO)
-      << "[XdsDependencyManager " << this << "] received RouteConfig error: "
-      << resource_name << ": " << status;
+      << "[XdsDependencyManager " << this
+      << "] received RouteConfig error: " << resource_name << ": " << status;
   if (xds_client_ == nullptr) return;
   if (status.ok()) {
     rds_resolution_note_.clear();
   } else {
-    rds_resolution_note_ = absl::StrCat(
-        "RDS resource ", resource_name, ": ", status.message());
+    rds_resolution_note_ =
+        absl::StrCat("RDS resource ", resource_name, ": ", status.message());
   }
   MaybeReportUpdate();
 }

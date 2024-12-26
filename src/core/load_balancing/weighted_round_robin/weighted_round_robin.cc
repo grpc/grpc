@@ -782,9 +782,9 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
                 << endpoint_list_.get();
     }
     endpoint_list_ = std::move(latest_pending_endpoint_list_);
-    absl::Status status =
-        args.addresses.ok() ? absl::UnavailableError("empty address list")
-                            : args.addresses.status();
+    absl::Status status = args.addresses.ok()
+                              ? absl::UnavailableError("empty address list")
+                              : args.addresses.status();
     endpoint_list_->ReportTransientFailure(status);
     return status;
   }

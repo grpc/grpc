@@ -470,10 +470,9 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   // current selected subchannel.
   if (subchannel_list_->size() == 0) {
     channel_control_helper()->RequestReresolution();
-    absl::Status status =
-        latest_update_args_.addresses.ok()
-            ? absl::UnavailableError("empty address list")
-            : latest_update_args_.addresses.status();
+    absl::Status status = latest_update_args_.addresses.ok()
+                              ? absl::UnavailableError("empty address list")
+                              : latest_update_args_.addresses.status();
     subchannel_list_->ReportTransientFailure(std::move(status));
     UnsetSelectedSubchannel();
   }
@@ -647,8 +646,7 @@ void PickFirst::HealthWatcher::OnConnectivityStateChange(
           MakeRefCounted<QueuePicker>(policy_->Ref()));
       break;
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      std::string message =
-          absl::StrCat("health watch: ", status.message());
+      std::string message = absl::StrCat("health watch: ", status.message());
       if (!resolution_note_.empty()) {
         absl::StrAppend(&message, " (", resolution_note_, ")");
       }
@@ -992,9 +990,9 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
     : InternallyRefCounted<SubchannelList>(
           GRPC_TRACE_FLAG_ENABLED(pick_first) ? "SubchannelList" : nullptr),
       policy_(std::move(policy)),
-      args_(args.Remove(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
-                .Remove(
-                    GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX)),
+      args_(
+          args.Remove(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
+              .Remove(GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX)),
       resolution_note_(resolution_note) {
   GRPC_TRACE_LOG(pick_first, INFO)
       << "[PF " << policy_.get() << "] Creating subchannel list " << this
@@ -1050,9 +1048,8 @@ void PickFirst::SubchannelList::ResetBackoffLocked() {
 
 void PickFirst::SubchannelList::ReportTransientFailure(absl::Status status) {
   if (!resolution_note_.empty()) {
-    status = absl::Status(
-        status.code(),
-        absl::StrCat(status.message(), " (", resolution_note_, ")"));
+    status = absl::Status(status.code(), absl::StrCat(status.message(), " (",
+                                                      resolution_note_, ")"));
   }
   policy_->UpdateState(GRPC_CHANNEL_TRANSIENT_FAILURE, status,
                        MakeRefCounted<TransientFailurePicker>(status));
@@ -1433,10 +1430,9 @@ void OldPickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   // TRANSIENT_FAILURE and request re-resolution.
   if (latest_pending_subchannel_list_->size() == 0) {
     channel_control_helper()->RequestReresolution();
-    absl::Status status =
-        latest_update_args_.addresses.ok()
-            ? absl::UnavailableError("empty address list")
-            : latest_update_args_.addresses.status();
+    absl::Status status = latest_update_args_.addresses.ok()
+                              ? absl::UnavailableError("empty address list")
+                              : latest_update_args_.addresses.status();
     latest_pending_subchannel_list_->ReportTransientFailure(std::move(status));
   }
   // If the new update is empty or we don't yet have a selected subchannel in
@@ -1576,8 +1572,7 @@ void OldPickFirst::HealthWatcher::OnConnectivityStateChange(
           MakeRefCounted<QueuePicker>(policy_->Ref()));
       break;
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      std::string message =
-          absl::StrCat("health watch: ", status.message());
+      std::string message = absl::StrCat("health watch: ", status.message());
       if (!resolution_note_.empty()) {
         absl::StrAppend(&message, " (", resolution_note_, ")");
       }
@@ -1934,9 +1929,9 @@ OldPickFirst::SubchannelList::SubchannelList(
     : InternallyRefCounted<SubchannelList>(
           GRPC_TRACE_FLAG_ENABLED(pick_first) ? "SubchannelList" : nullptr),
       policy_(std::move(policy)),
-      args_(args.Remove(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
-                .Remove(
-                    GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX)),
+      args_(
+          args.Remove(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
+              .Remove(GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX)),
       resolution_note_(resolution_note) {
   GRPC_TRACE_LOG(pick_first, INFO)
       << "[PF " << policy_.get() << "] Creating subchannel list " << this
@@ -1991,9 +1986,8 @@ void OldPickFirst::SubchannelList::ResetBackoffLocked() {
 
 void OldPickFirst::SubchannelList::ReportTransientFailure(absl::Status status) {
   if (!resolution_note_.empty()) {
-    status = absl::Status(
-        status.code(),
-        absl::StrCat(status.message(), " (", resolution_note_, ")"));
+    status = absl::Status(status.code(), absl::StrCat(status.message(), " (",
+                                                      resolution_note_, ")"));
   }
   policy_->UpdateState(GRPC_CHANNEL_TRANSIENT_FAILURE, status,
                        MakeRefCounted<TransientFailurePicker>(status));

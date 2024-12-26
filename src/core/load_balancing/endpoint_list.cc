@@ -182,9 +182,8 @@ void EndpointList::ResetBackoffLocked() {
 
 void EndpointList::ReportTransientFailure(absl::Status status) {
   if (!resolution_note_.empty()) {
-    status = absl::Status(
-        status.code(),
-        absl::StrCat(status.message(), " (", resolution_note_, ")"));
+    status = absl::Status(status.code(), absl::StrCat(status.message(), " (",
+                                                      resolution_note_, ")"));
   }
   channel_control_helper()->UpdateState(
       GRPC_CHANNEL_TRANSIENT_FAILURE, status,
