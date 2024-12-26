@@ -45,8 +45,11 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/load_balancing/ring_hash/ring_hash.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
@@ -72,6 +75,16 @@ bool XdsDualstackEndpointsEnabled() {
   return parse_succeeded && parsed_value;
 }
 
+// TODO(roth): Flip the default to false once this proves stable, then
+// remove it entirely at some point in the future.
+bool XdsEndpointHashKeyBackwardCompatEnabled() {
+  auto value = GetEnv("GRPC_XDS_ENDPOINT_HASH_KEY_BACKWARD_COMPAT");
+  if (!value.has_value()) return true;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
 void MaybeLogClusterLoadAssignment(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_endpoint_v3_ClusterLoadAssignment* cla) {
@@ -87,21 +100,22 @@ void MaybeLogClusterLoadAssignment(
   }
 }
 
-std::string GetProxyAddressFromMetadata(
-    const XdsResourceType::DecodeContext& context,
-    const envoy_config_core_v3_Metadata* metadata, ValidationErrors* errors) {
-  if (XdsHttpConnectEnabled() && metadata != nullptr) {
-    XdsMetadataMap metadata_map =
-        ParseXdsMetadataMap(context, metadata, errors);
-    auto* proxy_address_entry =
-        metadata_map.Find("envoy.http11_proxy_transport_socket.proxy_address");
-    if (proxy_address_entry != nullptr &&
-        proxy_address_entry->type() == XdsAddressMetadataValue::Type()) {
-      return DownCast<const XdsAddressMetadataValue*>(proxy_address_entry)
-          ->address();
-    }
-  }
-  return "";
+std::string GetProxyAddressFromMetadata(const XdsMetadataMap& metadata_map) {
+  auto* proxy_address_entry = metadata_map.FindType<XdsAddressMetadataValue>(
+      "envoy.http11_proxy_transport_socket.proxy_address");
+  if (proxy_address_entry == nullptr) return "";
+  return proxy_address_entry->address();
+}
+
+std::string GetHashKeyFromMetadata(const XdsMetadataMap& metadata_map) {
+  auto* hash_key_entry =
+      metadata_map.FindType<XdsStructMetadataValue>("envoy.lb");
+  if (hash_key_entry == nullptr) return "";
+  ValidationErrors unused_errors;
+  return LoadJsonObjectField<std::string>(hash_key_entry->json().object(),
+                                          JsonArgs(), "hash_key",
+                                          &unused_errors)
+      .value_or("");
 }
 
 absl::optional<EndpointAddresses> EndpointAddressesParse(
@@ -126,9 +140,19 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
     }
   }
   // metadata
-  std::string proxy_address = GetProxyAddressFromMetadata(
-      context, envoy_config_endpoint_v3_LbEndpoint_metadata(lb_endpoint),
-      errors);
+  std::string proxy_address;
+  std::string hash_key;
+  if (XdsHttpConnectEnabled() || !XdsEndpointHashKeyBackwardCompatEnabled()) {
+    XdsMetadataMap metadata_map = ParseXdsMetadataMap(
+        context, envoy_config_endpoint_v3_LbEndpoint_metadata(lb_endpoint),
+        errors);
+    if (XdsHttpConnectEnabled()) {
+      proxy_address = GetProxyAddressFromMetadata(metadata_map);
+    }
+    if (!XdsEndpointHashKeyBackwardCompatEnabled()) {
+      hash_key = GetHashKeyFromMetadata(metadata_map);
+    }
+  }
   // endpoint
   std::vector<grpc_resolved_address> addresses;
   absl::string_view hostname;
@@ -176,6 +200,9 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
     args = args.Set(GRPC_ARG_XDS_HTTP_PROXY, proxy_address);
   } else if (!locality_proxy_address.empty()) {
     args = args.Set(GRPC_ARG_XDS_HTTP_PROXY, locality_proxy_address);
+  }
+  if (!hash_key.empty()) {
+    args = args.Set(GRPC_ARG_RING_HASH_ENDPOINT_HASH_KEY, hash_key);
   }
   return EndpointAddresses(addresses, args);
 }
@@ -231,11 +258,15 @@ absl::optional<ParsedLocality> LocalityParse(
   parsed_locality.locality.name = MakeRefCounted<XdsLocalityName>(
       std::move(region), std::move(zone), std::move(sub_zone));
   // metadata
-  std::string proxy_address = GetProxyAddressFromMetadata(
-      context,
-      envoy_config_endpoint_v3_LocalityLbEndpoints_metadata(
-          locality_lb_endpoints),
-      errors);
+  std::string proxy_address;
+  if (XdsHttpConnectEnabled()) {
+    XdsMetadataMap metadata_map = ParseXdsMetadataMap(
+        context,
+        envoy_config_endpoint_v3_LocalityLbEndpoints_metadata(
+            locality_lb_endpoints),
+        errors);
+    proxy_address = GetProxyAddressFromMetadata(metadata_map);
+  }
   // lb_endpoints
   size_t size;
   const envoy_config_endpoint_v3_LbEndpoint* const* lb_endpoints =
