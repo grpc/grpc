@@ -52,9 +52,9 @@ class MyEndpointList : public EndpointList {
  public:
   MyEndpointList(RefCountedPtr<MyLbPolicy> lb_policy,
                  EndpointAddressesIterator* endpoints,
-                 const ChannelArgs& args,
+                 const ChannelArgs& args, std::string resolution_note,
                  std::vector<std::string>* errors)
-      : EndpointList(std::move(lb_policy),
+      : EndpointList(std::move(lb_policy), std::move(resolution_note),
                      GRPC_TRACE_FLAG_ENABLED(my_tracer)
                          ? "MyEndpointList"
                          : nullptr) {
@@ -182,12 +182,17 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
 
   void ResetBackoffLocked();
 
+  void ReportTransientFailure(absl::Status status);
+
  protected:
   // We use two-phase initialization here to ensure that the vtable is
   // initialized before we need to use it.  Subclass must invoke Init()
   // from inside its ctor.
-  EndpointList(RefCountedPtr<LoadBalancingPolicy> policy, const char* tracer)
-      : policy_(std::move(policy)), tracer_(tracer) {}
+  EndpointList(RefCountedPtr<LoadBalancingPolicy> policy,
+               std::string resolution_note, const char* tracer)
+      : policy_(std::move(policy)),
+        resolution_note_(std::move(resolution_note)),
+        tracer_(tracer) {}
 
   void Init(EndpointAddressesIterator* endpoints, const ChannelArgs& args,
             absl::FunctionRef<OrphanablePtr<Endpoint>(
@@ -215,6 +220,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
       const = 0;
 
   RefCountedPtr<LoadBalancingPolicy> policy_;
+  std::string resolution_note_;
   const char* tracer_;
   std::vector<OrphanablePtr<Endpoint>> endpoints_;
   size_t num_endpoints_seen_initial_state_ = 0;

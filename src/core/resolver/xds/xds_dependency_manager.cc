@@ -703,13 +703,14 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
         for (const auto& note : notes) {
           if (!note.empty()) resolution_notes.push_back(note);
         }
+        std::string node_id_buffer;
         if (resolution_notes.empty()) {
           const XdsBootstrap::Node* node =
               DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
                   .node();
           if (node != nullptr) {
-            resolution_notes.push_back(
-                absl::StrCat("xDS node ID:", node->id()));
+            node_id_buffer = absl::StrCat("xDS node ID:", node->id());
+            resolution_notes.push_back(node_id_buffer);
           }
         }
         cluster_config.emplace(*state.update, eds_state.update.endpoints,

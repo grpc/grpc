@@ -217,7 +217,8 @@ class RingHash final : public LoadBalancingPolicy {
     explicit Picker(RefCountedPtr<RingHash> ring_hash)
         : ring_hash_(std::move(ring_hash)),
           ring_(ring_hash_->ring_),
-          endpoints_(ring_hash_->endpoints_.size()) {
+          endpoints_(ring_hash_->endpoints_.size()),
+          resolution_note_(ring_hash_->resolution_note_) {
       for (const auto& p : ring_hash_->endpoint_map_) {
         endpoints_[p.second->index()] = p.second->GetInfoForPicker();
       }
@@ -260,6 +261,7 @@ class RingHash final : public LoadBalancingPolicy {
     RefCountedPtr<RingHash> ring_hash_;
     RefCountedPtr<Ring> ring_;
     std::vector<RingHashEndpoint::EndpointInfo> endpoints_;
+    std::string resolution_note_;
   };
 
   ~RingHash() override;
@@ -281,6 +283,7 @@ class RingHash final : public LoadBalancingPolicy {
   RefCountedPtr<Ring> ring_;
 
   std::map<EndpointAddressSet, OrphanablePtr<RingHashEndpoint>> endpoint_map_;
+  std::string resolution_note_;
 
   // TODO(roth): If we ever change the helper UpdateState() API to not
   // need the status reported for TRANSIENT_FAILURE state (because
@@ -350,9 +353,13 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         break;
     }
   }
-  return PickResult::Fail(absl::UnavailableError(absl::StrCat(
+  std::string message = absl::StrCat(
       "ring hash cannot find a connected endpoint; first failure: ",
-      endpoints_[ring[index].endpoint_index].status.message())));
+      endpoints_[ring[index].endpoint_index].status.message());
+  if (!resolution_note_.empty()) {
+    absl::StrAppend(&message, " (", resolution_note_, ")");
+  }
+  return PickResult::Fail(absl::UnavailableError(message));
 }
 
 //
@@ -676,11 +683,13 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
     }
   }
   endpoint_map_ = std::move(endpoint_map);
+  // Update resolution note.
+  resolution_note_ = std::move(args.resolution_note);
   // If the address list is empty, report TRANSIENT_FAILURE.
   if (endpoints_.empty()) {
     absl::Status status =
         args.addresses.ok() ? absl::UnavailableError(absl::StrCat(
-                                  "empty address list: ", args.resolution_note))
+                                  "empty address list: ", resolution_note_))
                             : args.addresses.status();
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,

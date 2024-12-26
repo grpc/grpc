@@ -276,8 +276,9 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
 
     WrrEndpointList(RefCountedPtr<WeightedRoundRobin> wrr,
                     EndpointAddressesIterator* endpoints,
-                    const ChannelArgs& args, std::vector<std::string>* errors)
-        : EndpointList(std::move(wrr),
+                    const ChannelArgs& args, std::string resolution_note,
+                    std::vector<std::string>* errors)
+        : EndpointList(std::move(wrr), std::move(resolution_note),
                        GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)
                            ? "WrrEndpointList"
                            : nullptr) {
@@ -770,7 +771,8 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   }
   std::vector<std::string> errors;
   latest_pending_endpoint_list_ = MakeOrphanable<WrrEndpointList>(
-      RefAsSubclass<WeightedRoundRobin>(), addresses.get(), args.args, &errors);
+      RefAsSubclass<WeightedRoundRobin>(), addresses.get(), args.args,
+      std::move(args.resolution_note), &errors);
   // If the new list is empty, immediately promote it to
   // endpoint_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_endpoint_list_->size() == 0) {
@@ -781,12 +783,9 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
     }
     endpoint_list_ = std::move(latest_pending_endpoint_list_);
     absl::Status status =
-        args.addresses.ok() ? absl::UnavailableError(absl::StrCat(
-                                  "empty address list: ", args.resolution_note))
+        args.addresses.ok() ? absl::UnavailableError("empty address list")
                             : args.addresses.status();
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        MakeRefCounted<TransientFailurePicker>(status));
+    endpoint_list_->ReportTransientFailure(status);
     return status;
   }
   // Otherwise, if this is the initial update, immediately promote it to
@@ -980,9 +979,7 @@ void WeightedRoundRobin::WrrEndpointList::
           absl::StrCat("connections to all backends failing; last error: ",
                        status_for_tf.ToString()));
     }
-    wrr->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, last_failure_,
-        MakeRefCounted<TransientFailurePicker>(last_failure_));
+    ReportTransientFailure(last_failure_);
   }
 }
 
