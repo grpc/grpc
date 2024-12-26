@@ -833,7 +833,7 @@ def grpc_objc_library(
         srcs = srcs,
         non_arc_srcs = non_arc_srcs,
         textual_hdrs = textual_hdrs,
-        copts = GRPC_DEFAULT_COPTS + ["-ObjC++", "-std=gnu++14"],
+        copts = GRPC_DEFAULT_COPTS + ["-ObjC++", "-std=gnu++17"],
         testonly = testonly,
         data = data,
         deps = deps,
