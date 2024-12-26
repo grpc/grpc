@@ -30,7 +30,9 @@ namespace grpc_core {
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
 
+#if !defined(_WIN32) || !defined(_DLL)
 thread_local Activity* Activity::g_current_activity_{nullptr};
+#endif
 
 namespace promise_detail {
 

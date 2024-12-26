@@ -287,9 +287,9 @@ if(WIN32)
 endif()
 
 if (APPLE AND NOT DEFINED CMAKE_CXX_STANDARD)
-  # AppleClang defaults to C++98, so we bump it to C++14.
-  message("CMAKE_CXX_STANDARD was undefined, defaulting to C++14.")
-  set(CMAKE_CXX_STANDARD 14)
+  # AppleClang defaults to C++98, so we bump it to C++17.
+  message("CMAKE_CXX_STANDARD was undefined, defaulting to C++17.")
+  set(CMAKE_CXX_STANDARD 17)
 endif ()
 
 if (NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
@@ -3671,7 +3671,6 @@ add_library(grpc_unsecure
   src/core/load_balancing/outlier_detection/outlier_detection.cc
   src/core/load_balancing/pick_first/pick_first.cc
   src/core/load_balancing/priority/priority.cc
-  src/core/load_balancing/ring_hash/ring_hash.cc
   src/core/load_balancing/rls/rls.cc
   src/core/load_balancing/round_robin/round_robin.cc
   src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc
