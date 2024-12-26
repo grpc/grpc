@@ -28,7 +28,19 @@
 
 namespace grpc_core {
 
-// Promise that sleeps until a deadline and then finishes.
+// Sleep is a promise
+//
+// Instantiation :
+// We will need either a Timestamp or Duration object to instantiate this
+// promise.
+//
+// Return :
+// If this promise is Polled before the deadline, it returns Pending{}
+// If this promise if Polled after the deadline, it returns absl::OkStatus()
+//
+// If this Sleep object is a part of an Activity, the Activity will sleep when
+// this Sleep promise is executed. And the the Activity will be woken up by the
+// event engine when the deadline passes.
 class Sleep final {
  public:
   explicit Sleep(Timestamp deadline);
