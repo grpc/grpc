@@ -51,8 +51,8 @@ namespace grpc_core {
 // the returned promise. etc. Return the final value.
 //
 // Example :
-// The unit tests (esp ThreeTypedPendingThens) in seq_test.cc provide all possible permutations of how Seq
-// combinator can be used.
+// The unit tests (esp ThreeTypedPendingThens) in seq_test.cc provide all
+// possible permutations of how Seq combinator can be used.
 
 namespace promise_detail {
 
