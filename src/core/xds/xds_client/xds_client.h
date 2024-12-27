@@ -253,11 +253,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     absl::Status status_;
   };
 
-  struct ResourceState {
-    std::map<ResourceWatcherInterface*, RefCountedPtr<ResourceWatcherInterface>>
-        watchers;
-    // The latest data seen for the resource.
-    std::shared_ptr<const XdsResourceType::ResourceData> resource;
+  class ResourceState {
+   public:
     // Resource status from the view of a xDS client, which tells the
     // synchronization status between the xDS client and the xDS server.
     enum ClientResourceStatus {
@@ -291,36 +288,65 @@ class XdsClient : public DualRefCounted<XdsClient> {
         static_cast<ClientResourceStatus>(envoy_admin_v3_NACKED) ==
             ClientResourceStatus::NACKED,
         "");
-    ClientResourceStatus client_status = REQUESTED;
-    // The serialized bytes of the last successfully updated raw xDS resource.
-    std::string serialized_proto;
-    // The timestamp when the resource was last successfully updated.
-    Timestamp update_time;
-    // The last successfully updated version of the resource.
-    std::string version;
-    // The rejected version string of the last failed update attempt.
-    std::string failed_version;
-    // Details about the last failed update attempt.
-    std::string failed_details;
-    // Timestamp of the last failed update attempt.
-    Timestamp failed_update_time;
-    // If we've ignored deletion.
-    bool ignored_deletion = false;
+
+    void AddWatcher(RefCountedPtr<ResourceWatcherInterface> watcher) {
+      auto* watcher_ptr = watcher.get();
+      watchers_[watcher_ptr] = std::move(watcher);
+    }
+    void RemoveWatcher(ResourceWatcherInterface* watcher) {
+      watchers_.erase(watcher);
+    }
+    bool HasWatchers() const { return !watchers_.empty(); }
+    const std::map<ResourceWatcherInterface*,
+                   RefCountedPtr<ResourceWatcherInterface>>& watchers() const {
+      return watchers_;
+    }
 
     void SetAcked(std::shared_ptr<const XdsResourceType::ResourceData> resource,
                   std::string serialized_proto, std::string version,
                   Timestamp update_time);
-
     void SetNacked(const std::string& version, const std::string& details,
                    Timestamp update_time);
-
     void SetDoesNotExist();
 
+    void set_ignored_deletion(bool value) { ignored_deletion_ = value; }
+    bool ignored_deletion() const { return ignored_deletion_; }
+
+    ClientResourceStatus client_status() const { return client_status_; }
     absl::string_view CacheStateString() const;
+
+    bool HasResource() const { return resource_ != nullptr; }
+    std::shared_ptr<const XdsResourceType::ResourceData> resource() const {
+      return resource_;
+    }
+
+    absl::string_view failed_details() const { return failed_details_; }
 
     void FillGenericXdsConfig(
         upb_StringView type_url, upb_StringView resource_name, upb_Arena* arena,
         envoy_service_status_v3_ClientConfig_GenericXdsConfig* entry) const;
+
+   private:
+    std::map<ResourceWatcherInterface*, RefCountedPtr<ResourceWatcherInterface>>
+        watchers_;
+    // The latest data seen for the resource.
+    std::shared_ptr<const XdsResourceType::ResourceData> resource_;
+    // Cache state.
+    ClientResourceStatus client_status_ = REQUESTED;
+    // The serialized bytes of the last successfully updated raw xDS resource.
+    std::string serialized_proto_;
+    // The timestamp when the resource was last successfully updated.
+    Timestamp update_time_;
+    // The last successfully updated version of the resource.
+    std::string version_;
+    // The rejected version string of the last failed update attempt.
+    std::string failed_version_;
+    // Details about the last failed update attempt.
+    std::string failed_details_;
+    // Timestamp of the last failed update attempt.
+    Timestamp failed_update_time_;
+    // If we've ignored deletion.
+    bool ignored_deletion_ = false;
   };
 
   struct AuthorityState {
