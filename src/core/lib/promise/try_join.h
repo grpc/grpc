@@ -35,33 +35,34 @@ namespace promise_detail {
 
 // TryJoin Promise Combinator
 //
-// The TryJoin promise combinator takes as inputs multiple promises.
-// When the TryJoin promise is polled, these input promises will be executed
-// serially on the same thread.
-// Each promise being executed either returns a value or Pending{}.
-// Each subsequent execution of the TryJoin will only execute the input promises
-// which returned Pending{} in any of the previous executions. This mechanism
-// ensures that no promise is executed after it resolves, which is an essential
-// requirement.
+// Input :
+// The TryJoin promise combinator takes as inputs one or more promises.
 //
-// Suppose you have three promises
+// Return :
+// Suppose you have three input promises
 // 1.  First promise returning type Poll<int>
 // 2.  Second promise returning type Poll<bool>
 // 3.  Third promise returning type Poll<double>
-// Then you poll the TryJoin of theses three promises, the result will have the
-// type Poll<std::tuple<int, bool, double>>
+// When you poll the TryJoin combinator composed of these 3 promises,
+// 1.  It will return Pending{} if even one promise in the input list of
+//     promises returns Pending{}.
+// 2.  It will return Poll<std::tuple<int, bool, double>> if all promises are
+//     resolved. The data types in the tuple correspond to the return types of
+//     the input promises in that order.
 //
-// Polling this join promise will
-// 1.  Return Pending{} if even one promise in the input list of promises
-// returns Pending{}
-// 2.  Return the tuple if all promises are resolved.
-//
-// Polling this TryJoin combinator promise will make the pending promises run
+// Polling the TryJoin combinator works in the following way :
+// Polling this TryJoin combinator will make the pending promises run
 // serially, in order and on the same thread.
+// Each promise being executed either returns a value or Pending{}.
+// Each subsequent execution of the TryJoin will only execute the input promises
+// which are still pending. This mechanism
+// ensures that no promise is executed after it resolves, which is an essential
+// requirement.
 //
-// All promises in the input list will be executed irrespective of failure
-// status. If you want the promise execution to stop when there is a failure in
-// any one promise, consider using Join promise combinator instead of the
+// Execution of promises in the TryJoin combinator will stop if any one promise
+// returns a failure status.
+//  If you want the promise execution to continue when there is a failure ,
+//  consider using Join promise combinator instead of the
 // TryJoin combinator.
 //
 // Example of TryJoin : Refer to try_join_test.cc

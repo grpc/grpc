@@ -30,29 +30,29 @@ namespace promise_detail {
 
 // Join Promise Combinator
 //
-// The Join promise combinator takes as inputs multiple promises.
-// When the Join promise is polled, these input promises will be executed
-// serially on the same thread.
-// Each promise being executed either returns a value or Pending{}.
-// Each subsequent execution of the Join will only execute the input promises
-// which returned Pending{} in any of the previous executions. This mechanism
-// ensures that no promise is executed after it resolves, which is an essential
-// requirement.
+// Input :
+// The Join promise combinator takes as inputs one or more promises.
 //
-// Suppose you have three promises
+// Return :
+// Suppose you have three input promises
 // 1.  First promise returning type Poll<int>
 // 2.  Second promise returning type Poll<bool>
 // 3.  Third promise returning type Poll<double>
-// Then you poll the Join of theses three promises, the result will have the
-// type Poll<std::tuple<int, bool, double>>
+// When you poll the Join combinator composed of these 3 promises,
+// 1.  It will return Pending{} if even one promise in the input list of
+//     promises returns Pending{}.
+// 2.  It will return Poll<std::tuple<int, bool, double>> if all promises are
+//     resolved. The data types in the tuple correspond to the return types of
+//     the input promises in that order.
 //
-// Polling this join promise will
-// 1.  Return Pending{} if even one promise in the input list of promises
-// returns Pending{}
-// 2.  Return the tuple if all promises are resolved.
-//
-// Polling this Join combinator promise will make the pending promises run
+// Polling the Join combinator works in the following way :
+// Polling this Join combinator will make the pending promises run
 // serially, in order and on the same thread.
+// Each promise being executed either returns a value or Pending{}.
+// Each subsequent execution of the Join will only execute the input promises
+// which are still pending. This mechanism
+// ensures that no promise is executed after it resolves, which is an essential
+// requirement.
 //
 // All promises in the input list will be executed irrespective of failure
 // status. If you want the promise execution to stop when there is a failure in
