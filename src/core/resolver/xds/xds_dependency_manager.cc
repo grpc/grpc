@@ -322,7 +322,7 @@ void XdsDependencyManager::OnListenerUpdate(
     current_listener_.reset();
     return ReportError("LDS", listener_resource_name_, "not an API listener");
   }
-  current_listener_ = std::move(*listener);
+  current_listener_ = *std::move(listener);
   Match(
       hcm->route_config,
       // RDS resource name
