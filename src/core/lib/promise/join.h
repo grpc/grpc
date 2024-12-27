@@ -38,14 +38,15 @@ namespace promise_detail {
 // 1.  First promise returning type Poll<int>
 // 2.  Second promise returning type Poll<bool>
 // 3.  Third promise returning type Poll<double>
-// Then the Join promise will have return type Poll<std::tuple<int, bool,
-// double>> When you poll the Join combinator composed of these 3 promises,
+// Then the Join promise will have return type
+// Poll<std::tuple<int, bool, double>> . The tuple have one entry corresponding
+// to each input promise. When you poll the Join combinator composed of these 3
+// promises,
 // 1.  It will return Pending{} if even one promise in the input list of
 //     promises returns Pending{}.
 // 2.  It will return Poll<std::tuple<int, bool, double>> holding a tuple if all
-// promises are
-//     resolved. The data types in the tuple correspond to the return types of
-//     the input promises in that order.
+//     promises are resolved. The data types in the tuple correspond to the
+//     return types of the input promises in that order.
 //
 // Polling the Join combinator works in the following way :
 // Polling this Join combinator will make the pending promises run
@@ -53,7 +54,9 @@ namespace promise_detail {
 // Each promise being executed either returns a value or Pending{}.
 // Each subsequent execution of the Join will only execute the input promises
 // which are still pending. This mechanism ensures that no promise is executed
-// after it resolved, which is an essential requirement.
+// after it resolved, which is an essential requirement. If all the promises
+// have finished running, the Join combinator will return a tuple having
+// the return value of each promise.
 //
 // All promises in the input list will be executed irrespective of failure
 // status. If you want the promise execution to stop when there is a failure in
