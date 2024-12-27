@@ -22,6 +22,7 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
+#include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/util/crash.h"
 
 namespace grpc_event_engine {
@@ -30,24 +31,30 @@ namespace experimental {
 using ResolvedAddress =
     grpc_event_engine::experimental::EventEngine::ResolvedAddress;
 
+using grpc_event_engine::experimental::EventEngineSupportsFdExtension::
+    PosixApis;
+
 // Creates a client socket and blocks until it connects to the specified
 // server address. The function abort fails upon encountering errors.
-int ConnectToServerOrDie(const ResolvedAddress& server_address) {
-  int client_fd;
+EventEngine::FileDescriptor ConnectToServerOrDie(
+    const grpc_event_engine::experimental::EventEngineSupportsFdExtension::
+        PosixApis& event_engine,
+    const ResolvedAddress& server_address) {
+  EventEngine::FileDescriptor client_fd;
   int one = 1;
   int flags;
 
-  client_fd = socket(AF_INET6, SOCK_STREAM, 0);
-  setsockopt(client_fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+  client_fd = event_engine.(AF_INET6, SOCK_STREAM, 0);
+  client_fd.setsockopt(SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
   // Make fd non-blocking.
-  flags = fcntl(client_fd, F_GETFL, 0);
-  fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
+  flags = client_fd.fcntl(F_GETFL, 0);
+  client_fd.fcntl(F_SETFL, flags | O_NONBLOCK);
 
-  if (connect(client_fd, const_cast<struct sockaddr*>(server_address.address()),
-              server_address.size()) == -1) {
+  if (client_fd.connect(const_cast<struct sockaddr*>(server_address.address()),
+                        server_address.size()) == -1) {
     if (errno == EINPROGRESS) {
       struct pollfd pfd;
-      pfd.fd = client_fd;
+      pfd.fd = client_fd.file_descriptor_for_polling();
       pfd.events = POLLOUT;
       pfd.revents = 0;
       if (poll(&pfd, 1, -1) == -1) {

@@ -58,7 +58,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
   ~GrpcPolledFdPosix() override {
     // c-ares library will close the fd. This fd may be picked up immediately by
     // another thread and should not be closed by the following OrphanHandle.
-    int phony_release_fd;
+    EventEngine::FileDescriptor phony_release_fd;
     handle_->OrphanHandle(/*on_done=*/nullptr, &phony_release_fd,
                           "c-ares query finished");
   }
@@ -77,7 +77,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
 
   bool IsFdStillReadableLocked() override {
     size_t bytes_available = 0;
-    return ioctl(handle_->WrappedFd(), FIONREAD, &bytes_available) == 0 &&
+    return handle_->WrappedFd().ioctl(FIONREAD, &bytes_available) == 0 &&
            bytes_available > 0;
   }
 
@@ -114,13 +114,16 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     owned_fds_.insert(as);
     return std::make_unique<GrpcPolledFdPosix>(
         as,
-        poller_->CreateHandle(as, "c-ares socket", poller_->CanTrackErrors()));
+        poller_->CreateHandle(EventEngine::FileDescriptor::FromAresSocket(as),
+                              "c-ares socket", poller_->CanTrackErrors()));
   }
 
-  void ConfigureAresChannelLocked(ares_channel channel) override {
+  void ConfigureAresChannelLocked(const SystemApi& system_api,
+                                  ares_channel channel) override {
     ares_set_socket_functions(channel, &kSockFuncs, this);
     ares_set_socket_configure_callback(
-        channel, &GrpcPolledFdFactoryPosix::ConfigureSocket, nullptr);
+        channel, &GrpcPolledFdFactoryPosix::ConfigureSocket,
+        poller_->GetSystemApi());
   }
 
  private:
@@ -168,15 +171,16 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   ///   - non-blocking
   ///   - cloexec flag
   ///   - disable nagle
-  static int ConfigureSocket(ares_socket_t fd, int type, void* /*user_data*/) {
+  static int ConfigureSocket(ares_socket_t fd, int type, void* system_api_ptr) {
     // clang-format off
 #define RETURN_IF_ERROR(expr) if (!(expr).ok()) { return -1; }
     // clang-format on
-    PosixSocketWrapper sock(fd);
-    RETURN_IF_ERROR(sock.SetSocketNonBlocking(1));
-    RETURN_IF_ERROR(sock.SetSocketCloexec(1));
+    SystemApi& system_api = *static_cast<SystemApi*>(system_api_ptr);
+    PosixSocketWrapper sock(system_api.AdoptExternalFd(fd));
+    RETURN_IF_ERROR(sock.SetSocketNonBlocking(system_api, 1));
+    RETURN_IF_ERROR(sock.SetSocketCloexec(system_api, 1));
     if (type == SOCK_STREAM) {
-      RETURN_IF_ERROR(sock.SetSocketLowLatency(1));
+      RETURN_IF_ERROR(sock.SetSocketLowLatency(system_api, 1));
     }
     return 0;
   }
