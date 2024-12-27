@@ -2454,8 +2454,7 @@ TEST_P(ClientLoadReportingTest, CircuitBreakingStats) {
     for (const auto& load_report : load_reports) {
       client_stats += load_report;
     }
-  } while (client_stats.total_requests_in_progress() !=
-           kMaxConcurrentRequests);
+  } while (client_stats.total_requests_in_progress() != kMaxConcurrentRequests);
   EXPECT_EQ(client_stats.total_dropped_requests(), 1);
   // Cancel one RPC to allow another one through
   rpcs[0].CancelRpc();
