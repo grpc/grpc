@@ -38,6 +38,7 @@ ExternalProject_Add(absl
   CMAKE_CACHE_ARGS
         -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=TRUE
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/absl
+        -DCMAKE_CXX_STANDARD=17
 )
 
 # Builds utf8_range project from the git submodule.
@@ -49,6 +50,7 @@ ExternalProject_Add(utf8_range
         -Dutf8_range_ENABLE_TESTS:BOOL=OFF
         -Dabsl_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/absl/lib/cmake/absl
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/utf8_range
+        -DCMAKE_CXX_STANDARD=17
   DEPENDS absl
 )
 
@@ -75,6 +77,7 @@ ExternalProject_Add(protobuf
         -Dutf8_range_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/utf8_range/lib/cmake/utf8_range
         -Dprotobuf_MSVC_STATIC_RUNTIME:BOOL=OFF
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/protobuf
+        -DCMAKE_CXX_STANDARD=17
   DEPENDS absl utf8_range
 )
 
@@ -85,6 +88,7 @@ ExternalProject_Add(re2
   CMAKE_CACHE_ARGS
         -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=TRUE
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/re2
+        -DCMAKE_CXX_STANDARD=17
 )
 
 # Builds zlib project from the git submodule.
@@ -124,6 +128,7 @@ ExternalProject_Add(grpc
         -DgRPC_SSL_PROVIDER:STRING=package
         ${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/grpc
+        -DCMAKE_CXX_STANDARD=17
   DEPENDS c-ares protobuf re2 zlib absl
 )
 
@@ -148,5 +153,6 @@ ExternalProject_Add(helloworld
         -Dabsl_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/absl/lib/cmake/absl
         ${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
         -DgRPC_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/grpc/lib/cmake/grpc
+        -DCMAKE_CXX_STANDARD=17
   DEPENDS protobuf grpc
 )

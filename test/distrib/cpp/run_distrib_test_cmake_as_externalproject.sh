@@ -35,5 +35,5 @@ GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS=${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_J
 cd examples/cpp/helloworld/cmake_externalproject
 mkdir -p cmake/build
 cd cmake/build
-cmake -DCMAKE_CXX_STANDARD=17 ../..
+cmake ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"
