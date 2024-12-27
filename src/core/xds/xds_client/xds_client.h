@@ -32,6 +32,8 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "envoy/admin/v3/config_dump_shared.upb.h"
+#include "envoy/service/status/v3/csds.upb.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/orphanable.h"
@@ -257,12 +259,92 @@ class XdsClient : public DualRefCounted<XdsClient> {
                           RefCountedPtrHash<ResourceWatcherInterface>,
                           RefCountedPtrEq<ResourceWatcherInterface>>;
 
-  struct ResourceState {
-    WatcherSet watchers;
+  class ResourceState {
+   public:
+    // Resource status from the view of a xDS client, which tells the
+    // synchronization status between the xDS client and the xDS server.
+    enum ClientResourceStatus {
+      // Client requested this resource but hasn't received any update from
+      // management server. The client will not fail requests, but will queue
+      // them until update arrives or the client times out waiting for the
+      // resource.
+      REQUESTED = 1,
+      // This resource has been requested by the client but has either not been
+      // delivered by the server or was previously delivered by the server and
+      // then subsequently removed from resources provided by the server.
+      DOES_NOT_EXIST,
+      // Client received this resource and replied with ACK.
+      ACKED,
+      // Client received this resource and replied with NACK.
+      NACKED,
+    };
+    static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_REQUESTED) ==
+                      ClientResourceStatus::REQUESTED,
+                  "");
+    static_assert(
+        static_cast<ClientResourceStatus>(envoy_admin_v3_DOES_NOT_EXIST) ==
+            ClientResourceStatus::DOES_NOT_EXIST,
+        "");
+    static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_ACKED) ==
+                      ClientResourceStatus::ACKED,
+                  "");
+    static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_NACKED) ==
+                      ClientResourceStatus::NACKED,
+                  "");
+
+    void AddWatcher(RefCountedPtr<ResourceWatcherInterface> watcher) {
+      watchers_.insert(std::move(watcher));
+    }
+    void RemoveWatcher(ResourceWatcherInterface* watcher) {
+      watchers_.erase(watcher);
+    }
+    bool HasWatchers() const { return !watchers_.empty(); }
+    const WatcherSet& watchers() const { return watchers_; }
+
+    void SetAcked(std::shared_ptr<const XdsResourceType::ResourceData> resource,
+                  std::string serialized_proto, std::string version,
+                  Timestamp update_time);
+    void SetNacked(const std::string& version, const std::string& details,
+                   Timestamp update_time);
+    void SetDoesNotExist();
+
+    void set_ignored_deletion(bool value) { ignored_deletion_ = value; }
+    bool ignored_deletion() const { return ignored_deletion_; }
+
+    ClientResourceStatus client_status() const { return client_status_; }
+    absl::string_view CacheStateString() const;
+
+    bool HasResource() const { return resource_ != nullptr; }
+    std::shared_ptr<const XdsResourceType::ResourceData> resource() const {
+      return resource_;
+    }
+
+    absl::string_view failed_details() const { return failed_details_; }
+
+    void FillGenericXdsConfig(
+        upb_StringView type_url, upb_StringView resource_name, upb_Arena* arena,
+        envoy_service_status_v3_ClientConfig_GenericXdsConfig* entry) const;
+
+   private:
+    WatcherSet watchers_;
     // The latest data seen for the resource.
-    std::shared_ptr<const XdsResourceType::ResourceData> resource;
-    XdsApi::ResourceMetadata meta;
-    bool ignored_deletion = false;
+    std::shared_ptr<const XdsResourceType::ResourceData> resource_;
+    // Cache state.
+    ClientResourceStatus client_status_ = REQUESTED;
+    // The serialized bytes of the last successfully updated raw xDS resource.
+    std::string serialized_proto_;
+    // The timestamp when the resource was last successfully updated.
+    Timestamp update_time_;
+    // The last successfully updated version of the resource.
+    std::string version_;
+    // The rejected version string of the last failed update attempt.
+    std::string failed_version_;
+    // Details about the last failed update attempt.
+    std::string failed_details_;
+    // Timestamp of the last failed update attempt.
+    Timestamp failed_update_time_;
+    // If we've ignored deletion.
+    bool ignored_deletion_ = false;
   };
 
   struct AuthorityState {
@@ -303,10 +385,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::shared_ptr<XdsBootstrap> bootstrap_;
+  const std::string user_agent_name_;
+  const std::string user_agent_version_;
   RefCountedPtr<XdsTransportFactory> transport_factory_;
   const Duration request_timeout_;
   const bool xds_federation_enabled_;
-  XdsApi api_;
   WorkSerializer work_serializer_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
   std::unique_ptr<XdsMetricsReporter> metrics_reporter_;
