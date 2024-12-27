@@ -81,19 +81,10 @@ class XdsApi final {
          upb::DefPool* def_pool, std::string user_agent_name,
          std::string user_agent_version);
 
-  // Creates an ADS request.
-  std::string CreateAdsRequest(absl::string_view type_url,
-                               absl::string_view version,
-                               absl::string_view nonce,
-                               const std::vector<std::string>& resource_names,
-                               absl::Status status, bool populate_node);
-
   // Returns non-OK when failing to deserialize response message.
   // Otherwise, all events are reported to the parser.
   absl::Status ParseAdsResponse(absl::string_view encoded_response,
                                 AdsResponseParserInterface* parser);
-
-  void PopulateNode(envoy_config_core_v3_Node* node_msg, upb_Arena* arena);
 
  private:
   XdsClient* client_;

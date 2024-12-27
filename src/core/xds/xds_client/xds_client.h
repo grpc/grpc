@@ -386,6 +386,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::shared_ptr<XdsBootstrap> bootstrap_;
+  const std::string user_agent_name_;
+  const std::string user_agent_version_;
   RefCountedPtr<XdsTransportFactory> transport_factory_;
   const Duration request_timeout_;
   const bool xds_federation_enabled_;

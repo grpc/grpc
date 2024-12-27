@@ -39,9 +39,12 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 #include "envoy/config/core/v3/base.upb.h"
+#include "envoy/service/discovery/v3/discovery.upb.h"
+#include "envoy/service/discovery/v3/discovery.upbdefs.h"
 #include "envoy/service/status/v3/csds.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/timestamp.upb.h"
+#include "google/rpc/status.upb.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
@@ -55,6 +58,8 @@
 #include "src/core/xds/xds_client/xds_locality.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
+#include "upb/reflection/def.h"
+#include "upb/text/encode.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_XDS_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -322,6 +327,11 @@ class XdsClient::XdsChannel::AdsCall final
              std::map<XdsResourceKey, OrphanablePtr<ResourceTimer>>>
         subscribed_resources;
   };
+
+  std::string CreateAdsRequest(
+      absl::string_view type_url, absl::string_view version,
+      absl::string_view nonce, const std::vector<std::string>& resource_names,
+      absl::Status status) const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   void SendMessageLocked(const XdsResourceType* type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
@@ -912,6 +922,93 @@ void XdsClient::XdsChannel::AdsCall::Orphan() {
   streaming_call_.reset();
 }
 
+namespace {
+
+void MaybeLogDiscoveryRequest(
+    const XdsClient* client, upb_DefPool* def_pool,
+    const envoy_service_discovery_v3_DiscoveryRequest* request) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client) && ABSL_VLOG_IS_ON(2)) {
+    const upb_MessageDef* msg_type =
+        envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(def_pool);
+    char buf[10240];
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(request), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
+    VLOG(2) << "[xds_client " << client
+            << "] constructed ADS request: " << buf;
+  }
+}
+
+std::string SerializeDiscoveryRequest(
+    upb_Arena* arena, envoy_service_discovery_v3_DiscoveryRequest* request) {
+  size_t output_length;
+  char* output = envoy_service_discovery_v3_DiscoveryRequest_serialize(
+      request, arena, &output_length);
+  return std::string(output, output_length);
+}
+
+}  // namespace
+
+std::string XdsClient::XdsChannel::AdsCall::CreateAdsRequest(
+    absl::string_view type_url, absl::string_view version,
+    absl::string_view nonce, const std::vector<std::string>& resource_names,
+    absl::Status status) const {
+  upb::Arena arena;
+  // Create a request.
+  envoy_service_discovery_v3_DiscoveryRequest* request =
+      envoy_service_discovery_v3_DiscoveryRequest_new(arena.ptr());
+  // Set type_url.
+  std::string type_url_str = absl::StrCat("type.googleapis.com/", type_url);
+  envoy_service_discovery_v3_DiscoveryRequest_set_type_url(
+      request, StdStringToUpbString(type_url_str));
+  // Set version_info.
+  if (!version.empty()) {
+    envoy_service_discovery_v3_DiscoveryRequest_set_version_info(
+        request, StdStringToUpbString(version));
+  }
+  // Set nonce.
+  if (!nonce.empty()) {
+    envoy_service_discovery_v3_DiscoveryRequest_set_response_nonce(
+        request, StdStringToUpbString(nonce));
+  }
+  // Set error_detail if it's a NACK.
+  std::string error_string_storage;
+  if (!status.ok()) {
+    google_rpc_Status* error_detail =
+        envoy_service_discovery_v3_DiscoveryRequest_mutable_error_detail(
+            request, arena.ptr());
+    // Hard-code INVALID_ARGUMENT as the status code.
+    // TODO(roth): If at some point we decide we care about this value,
+    // we could attach a status code to the individual errors where we
+    // generate them in the parsing code, and then use that here.
+    google_rpc_Status_set_code(error_detail, GRPC_STATUS_INVALID_ARGUMENT);
+    // Error description comes from the status that was passed in.
+    error_string_storage = std::string(status.message());
+    upb_StringView error_description =
+        StdStringToUpbString(error_string_storage);
+    google_rpc_Status_set_message(error_detail, error_description);
+  }
+  // Populate node.
+  if (!sent_initial_message_) {
+    envoy_config_core_v3_Node* node_msg =
+        envoy_service_discovery_v3_DiscoveryRequest_mutable_node(request,
+                                                                 arena.ptr());
+    PopulateXdsNode(
+        xds_client()->bootstrap_->node(), xds_client()->user_agent_name_,
+        xds_client()->user_agent_version_, node_msg, arena.ptr());
+    envoy_config_core_v3_Node_add_client_features(
+        node_msg, upb_StringView_FromString("xds.config.resource-in-sotw"),
+        arena.ptr());
+  }
+  // Add resource_names.
+  for (const std::string& resource_name : resource_names) {
+    envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
+        request, StdStringToUpbString(resource_name), arena.ptr());
+  }
+  MaybeLogDiscoveryRequest(xds_client(), xds_client()->def_pool_.ptr(),
+                           request);
+  return SerializeDiscoveryRequest(arena.ptr(), request);
+}
+
 void XdsClient::XdsChannel::AdsCall::SendMessageLocked(
     const XdsResourceType* type)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
@@ -921,10 +1018,9 @@ void XdsClient::XdsChannel::AdsCall::SendMessageLocked(
     return;
   }
   auto& state = state_map_[type];
-  std::string serialized_message = xds_client()->api_.CreateAdsRequest(
+  std::string serialized_message = CreateAdsRequest(
       type->type_url(), xds_channel()->resource_type_version_map_[type],
-      state.nonce, ResourceNamesForRequest(type), state.status,
-      !sent_initial_message_);
+      state.nonce, ResourceNamesForRequest(type), state.status);
   sent_initial_message_ = true;
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[xds_client " << xds_client() << "] xds server "
@@ -1272,11 +1368,12 @@ XdsClient::XdsClient(
     : DualRefCounted<XdsClient>(
           GRPC_TRACE_FLAG_ENABLED(xds_client_refcount) ? "XdsClient" : nullptr),
       bootstrap_(std::move(bootstrap)),
+      user_agent_name_(std::move(user_agent_name)),
+      user_agent_version_(std::move(user_agent_version)),
       transport_factory_(std::move(transport_factory)),
       request_timeout_(resource_request_timeout),
       xds_federation_enabled_(XdsFederationEnabled()),
-      api_(this, &xds_client_trace, bootstrap_->node(), &def_pool_,
-           std::move(user_agent_name), std::move(user_agent_version)),
+      api_(this, &xds_client_trace, bootstrap_->node(), &def_pool_, "", ""),
       work_serializer_(engine),
       engine_(std::move(engine)),
       metrics_reporter_(std::move(metrics_reporter)) {
@@ -1624,7 +1721,8 @@ void XdsClient::DumpClientConfig(
   // Fill-in the node information
   auto* node =
       envoy_service_status_v3_ClientConfig_mutable_node(client_config, arena);
-  api_.PopulateNode(node, arena);
+  PopulateXdsNode(bootstrap_->node(), user_agent_name_, user_agent_version_,
+                  node, arena);
   // Dump each resource.
   for (const auto& a : authority_state_map_) {  // authority
     const std::string& authority = a.first;

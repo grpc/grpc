@@ -125,36 +125,7 @@ void PopulateMetadataValue(google_protobuf_Value* value_pb, const Json& value,
   }
 }
 
-void MaybeLogDiscoveryRequest(
-    const XdsApiContext& context,
-    const envoy_service_discovery_v3_DiscoveryRequest* request) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
-    const upb_MessageDef* msg_type =
-        envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(context.def_pool);
-    char buf[10240];
-    upb_TextEncode(reinterpret_cast<const upb_Message*>(request), msg_type,
-                   nullptr, 0, buf, sizeof(buf));
-    VLOG(2) << "[xds_client " << context.client
-            << "] constructed ADS request: " << buf;
-  }
-}
-
-std::string SerializeDiscoveryRequest(
-    const XdsApiContext& context,
-    envoy_service_discovery_v3_DiscoveryRequest* request) {
-  size_t output_length;
-  char* output = envoy_service_discovery_v3_DiscoveryRequest_serialize(
-      request, context.arena, &output_length);
-  return std::string(output, output_length);
-}
-
 }  // namespace
-
-void XdsApi::PopulateNode(envoy_config_core_v3_Node* node_msg,
-                          upb_Arena* arena) {
-  PopulateXdsNode(node_, user_agent_name_, user_agent_version_, node_msg,
-                  arena);
-}
 
 void PopulateXdsNode(const XdsBootstrap::Node* node,
                      absl::string_view user_agent_name,
@@ -200,66 +171,6 @@ void PopulateXdsNode(const XdsBootstrap::Node* node,
       node_msg,
       upb_StringView_FromString("envoy.lb.does_not_support_overprovisioning"),
       arena);
-}
-
-std::string XdsApi::CreateAdsRequest(
-    absl::string_view type_url, absl::string_view version,
-    absl::string_view nonce, const std::vector<std::string>& resource_names,
-    absl::Status status, bool populate_node) {
-  upb::Arena arena;
-  const XdsApiContext context = {client_, tracer_, def_pool_->ptr(),
-                                 arena.ptr()};
-  // Create a request.
-  envoy_service_discovery_v3_DiscoveryRequest* request =
-      envoy_service_discovery_v3_DiscoveryRequest_new(arena.ptr());
-  // Set type_url.
-  std::string type_url_str = absl::StrCat("type.googleapis.com/", type_url);
-  envoy_service_discovery_v3_DiscoveryRequest_set_type_url(
-      request, StdStringToUpbString(type_url_str));
-  // Set version_info.
-  if (!version.empty()) {
-    envoy_service_discovery_v3_DiscoveryRequest_set_version_info(
-        request, StdStringToUpbString(version));
-  }
-  // Set nonce.
-  if (!nonce.empty()) {
-    envoy_service_discovery_v3_DiscoveryRequest_set_response_nonce(
-        request, StdStringToUpbString(nonce));
-  }
-  // Set error_detail if it's a NACK.
-  std::string error_string_storage;
-  if (!status.ok()) {
-    google_rpc_Status* error_detail =
-        envoy_service_discovery_v3_DiscoveryRequest_mutable_error_detail(
-            request, arena.ptr());
-    // Hard-code INVALID_ARGUMENT as the status code.
-    // TODO(roth): If at some point we decide we care about this value,
-    // we could attach a status code to the individual errors where we
-    // generate them in the parsing code, and then use that here.
-    google_rpc_Status_set_code(error_detail, GRPC_STATUS_INVALID_ARGUMENT);
-    // Error description comes from the status that was passed in.
-    error_string_storage = std::string(status.message());
-    upb_StringView error_description =
-        StdStringToUpbString(error_string_storage);
-    google_rpc_Status_set_message(error_detail, error_description);
-  }
-  // Populate node.
-  if (populate_node) {
-    envoy_config_core_v3_Node* node_msg =
-        envoy_service_discovery_v3_DiscoveryRequest_mutable_node(request,
-                                                                 arena.ptr());
-    PopulateNode(node_msg, arena.ptr());
-    envoy_config_core_v3_Node_add_client_features(
-        node_msg, upb_StringView_FromString("xds.config.resource-in-sotw"),
-        context.arena);
-  }
-  // Add resource_names.
-  for (const std::string& resource_name : resource_names) {
-    envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
-        request, StdStringToUpbString(resource_name), arena.ptr());
-  }
-  MaybeLogDiscoveryRequest(context, request);
-  return SerializeDiscoveryRequest(context, request);
 }
 
 namespace {
