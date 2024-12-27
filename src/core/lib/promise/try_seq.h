@@ -64,6 +64,9 @@ namespace promise_detail {
 // the execution to continue when a failure status is received, use the Seq
 // combinator instead.
 //
+// Promises in the TrySeq combinator are run in order, serially and on the same
+// thread.
+//
 // Example :
 // The unit tests (esp ThreeTypedPendingThens) in try_seq_test.cc provide all
 // possible permutations of how TrySeq combinator can be used.
