@@ -60,10 +60,10 @@ namespace promise_detail {
 // serially, in order and on the same thread.
 // Each promise being executed either returns a value or Pending{}.
 // Each subsequent execution of the TryJoin will only execute the input promises
-// which are still pending. This mechanism
-// ensures that no promise is executed after it resolves, which is an essential
-// requirement. If all the promises have finished running successfully, the Join
-// combinator will return a tuple having the return value of each promise.
+// which are still pending. This mechanism ensures that no promise is executed
+// after it resolves, which is an essential requirement. If all the promises
+// have finished running successfully, the Join combinator will return a tuple
+// having the return value of each promise.
 //
 // Execution of promises in the TryJoin combinator will stop if any one promise
 // returns a failure status. If you want the promise execution to continue when
