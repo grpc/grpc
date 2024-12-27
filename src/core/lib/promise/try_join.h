@@ -67,10 +67,6 @@ namespace promise_detail {
 //
 // Example of TryJoin : Refer to try_join_test.cc
 
-// Run all promises.
-// If any fail, cancel the rest and return the failure.
-// If all succeed, return Ok(tuple-of-results).
-
 // Extract the T from a StatusOr<T>
 template <typename T>
 T IntoResult(absl::StatusOr<T>* status) {
