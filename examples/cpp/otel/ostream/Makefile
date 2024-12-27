@@ -68,7 +68,7 @@ greeter_callback_server: util.o helloworld.pb.o helloworld.grpc.pb.o greeter_cal
 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 
 util.o: ../util.cc
-	$(CXX) $^ -I . -I $(CPPFLAGS) -c -o $@
+	$(CXX) $^ -I . $(CPPFLAGS) $(CXXFLAGS) -c -o $@
 
 clean:
 	rm -f *.o *.pb.cc *.pb.h greeter_callback_client greeter_callback_server
