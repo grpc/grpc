@@ -203,7 +203,6 @@ TEST_P(CdsTest, CircuitBreaking) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Update CDS resource to set max concurrent request.
-  CircuitBreakers circuit_breaks;
   Cluster cluster = default_cluster_;
   auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
   threshold->set_priority(RoutingPriority::DEFAULT);
@@ -246,7 +245,6 @@ TEST_P(CdsTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Update CDS resource to set max concurrent request.
-  CircuitBreakers circuit_breaks;
   Cluster cluster = default_cluster_;
   auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
   threshold->set_priority(RoutingPriority::DEFAULT);
@@ -281,6 +279,41 @@ TEST_P(CdsTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   CheckRpcSendOk(DEBUG_LOCATION);
   // Clean up.
   for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
+    rpcs[i].CancelRpc();
+  }
+}
+
+TEST_P(CdsTest, CircuitBreakingThresholdLoweredInUpdate) {
+  CreateAndStartBackends(1);
+  constexpr size_t kMaxConcurrentRequests = 10;
+  // Populate new EDS resources.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Send exactly kMaxConcurrentRequests long RPCs.
+  LongRunningRpc rpcs[kMaxConcurrentRequests];
+  for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
+    rpcs[i].StartRpc(stub_.get());
+  }
+  // Wait for all RPCs to be in flight.
+  while (backends_[0]->backend_service()->RpcsWaitingForClientCancel() <
+         kMaxConcurrentRequests) {
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_micros(1 * 1000, GPR_TIMESPAN)));
+  }
+  // The current circuit breaking limit is still the default (1024), so
+  // additional RPCs should be allowed at this point.
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Now send a CDS update that lowers the limit to kMaxConcurrentRequests.
+  Cluster cluster = default_cluster_;
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Wait for the new config to take effect.
+  SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                       "circuit breaker drop");
+  // Clean up.
+  for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].CancelRpc();
   }
 }
@@ -2364,6 +2397,89 @@ TEST_P(ClientLoadReportingTest, DropStats) {
       static_cast<double>(client_stats.dropped_requests(kThrottleDropType)) /
           (kNumRpcs * (1 - kDropRateForLb)),
       ::testing::DoubleNear(kDropRateForThrottle, kErrorTolerance));
+}
+
+TEST_P(ClientLoadReportingTest, CircuitBreakingStats) {
+  CreateAndStartBackends(1);
+  constexpr size_t kMaxConcurrentRequests = 10;
+  // Populate new EDS resources.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Start 2 * kMaxConcurrentRequests RPCs.
+  LongRunningRpc rpcs[kMaxConcurrentRequests * 2];
+  for (size_t i = 0; i < kMaxConcurrentRequests * 2; ++i) {
+    rpcs[i].StartRpc(stub_.get());
+  }
+  // Wait for all RPCs to be in flight.
+  while (backends_[0]->backend_service()->RpcsWaitingForClientCancel() <
+         kMaxConcurrentRequests * 2) {
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_micros(1 * 1000, GPR_TIMESPAN)));
+  }
+  // The current circuit breaking limit is still the default (1024), so
+  // additional RPCs should be allowed at this point.
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Now send a CDS update that lowers the limit to kMaxConcurrentRequests.
+  Cluster cluster = default_cluster_;
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Wait for the new config to take effect.
+  SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                       "circuit breaker drop");
+  // Wait for a load report to show the RPCs in flight.
+  ClientStats client_stats;
+  do {
+    std::vector<ClientStats> load_reports =
+        balancer_->lrs_service()->WaitForLoadReport();
+    for (const auto& load_report : load_reports) {
+      client_stats += load_report;
+    }
+  } while (client_stats.total_requests_in_progress() !=
+           kMaxConcurrentRequests * 2);
+  EXPECT_EQ(client_stats.total_dropped_requests(), 1);
+  // Terminate half of the long-running RPCs.
+  for (size_t i = kMaxConcurrentRequests; i < kMaxConcurrentRequests * 2; ++i) {
+    rpcs[i].CancelRpc();
+  }
+  // RPCs should still fail at this point.
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "circuit breaker drop");
+  // Wait for load report to show the decrease.
+  client_stats.Reset();
+  do {
+    std::vector<ClientStats> load_reports =
+        balancer_->lrs_service()->WaitForLoadReport();
+    for (const auto& load_report : load_reports) {
+      client_stats += load_report;
+    }
+  } while (client_stats.total_requests_in_progress() !=
+           kMaxConcurrentRequests);
+  EXPECT_EQ(client_stats.total_dropped_requests(), 1);
+  // Cancel one RPC to allow another one through
+  rpcs[0].CancelRpc();
+  // Add a sleep here to ensure the RPC cancellation has completed correctly
+  // before trying the next RPC. There maybe a slight delay between return of
+  // CANCELLED RPC status and update of internal state tracking the number of
+  // concurrent active requests.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_millis(1000, GPR_TIMESPAN)));
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Clean up.
+  for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
+    rpcs[i].CancelRpc();
+  }
+  // Wait for load report to show 0 in-flight RPCs and 1 success.
+  client_stats.Reset();
+  do {
+    std::vector<ClientStats> load_reports =
+        balancer_->lrs_service()->WaitForLoadReport();
+    for (const auto& load_report : load_reports) {
+      client_stats += load_report;
+    }
+  } while (client_stats.total_requests_in_progress() != 0 &&
+           client_stats.total_successful_requests() != 1);
 }
 
 }  // namespace
