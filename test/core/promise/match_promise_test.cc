@@ -31,10 +31,11 @@ struct MatchFloat {
   float fval = -1.0f;
 };
 
+using V = absl::variant<MatchInt, MatchFloat, std::string>;
+
 TEST(MatchPromiseTest, ThreeTypedImmediate) {
   std::string execution_order;
 
-  using V = absl::variant<MatchInt, MatchFloat, std::string>;
   auto make_promise = [&execution_order](V variant) -> Promise<std::string> {
     return MatchPromise(
         std::move(variant),
@@ -73,7 +74,6 @@ TEST(MatchPromiseTest, ThreeTypedImmediate) {
 TEST(MatchPromiseTest, ThreeTypedPending) {
   std::string execution_order;
 
-  using V = absl::variant<MatchInt, MatchFloat, std::string>;
   auto make_promise = [&execution_order](V variant) -> Promise<std::string> {
     return MatchPromise(
         std::move(variant),
