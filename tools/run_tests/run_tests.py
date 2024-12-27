@@ -306,7 +306,7 @@ class CLanguage(object):
 
             self._cmake_configure_extra_args = list(
                 self.args.cmake_configure_extra_args
-            )
+            ) + ["-DCMAKE_CXX_STANDARD=17"]
             self._cmake_generator_windows = cmake_generator
             # required to pass as cmake "-A" configuration for VS builds (but not for Ninja)
             self._cmake_architecture_windows = (
