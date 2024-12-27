@@ -54,7 +54,42 @@ namespace promise_detail {
 // any one promise, consider using TryJoin promise combinator instead of the
 // Join combinator.
 //
-// Example of Join : Refer join_test.cc
+// Example of Join :
+//
+// {
+//   int execution_order = 0;
+//   auto first_promise = [&execution_order]() mutable -> Poll<int> {
+//     execution_order = (execution_order * 10) + 1;
+//     return 1;
+//   };
+//   auto second_promise = [&execution_order]() mutable -> Poll<bool> {
+//     execution_order = (execution_order * 10) + 2;
+//     return false;
+//   };
+//   auto third_promise = [&execution_order,
+//                         once = false]() mutable -> Poll<StatusFlag> {
+//     execution_order = (execution_order * 10) + 3;
+//     if (once) return Success{};
+//     once = true;
+//     return Pending{};
+//   };
+//
+//   auto join_1_2_3 = Join(first_promise, second_promise, third_promise);
+//
+//   using JoinTuple = std::tuple<int, bool, StatusFlag>;
+//   Poll<JoinTuple> first_execution = join_1_2_3();
+//   EXPECT_FALSE(first_execution.ready());
+//
+//   Poll<JoinTuple> second_execution = join_1_2_3();
+//   EXPECT_TRUE(second_execution.ready());
+//
+//   JoinTuple& tuple = *(second_execution.value_if_ready());
+//   EXPECT_EQ(get<0>(tuple), 1);
+//   EXPECT_EQ(get<1>(tuple), false);
+//   EXPECT_EQ(get<2>(tuple), Success{});
+//
+//   EXPECT_EQ(execution_order, 1233);  // Check the order of execution.
+// }
 
 struct JoinTraits {
   template <typename T>
