@@ -41,7 +41,6 @@
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 #include "envoy/service/discovery/v3/discovery.upbdefs.h"
-#include "envoy/service/status/v3/csds.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 #include "google/rpc/status.upb.h"
@@ -1418,7 +1417,6 @@ XdsClient::XdsClient(
       transport_factory_(std::move(transport_factory)),
       request_timeout_(resource_request_timeout),
       xds_federation_enabled_(XdsFederationEnabled()),
-      api_(this, &xds_client_trace, bootstrap_->node(), &def_pool_, "", ""),
       work_serializer_(engine),
       engine_(std::move(engine)),
       metrics_reporter_(std::move(metrics_reporter)) {

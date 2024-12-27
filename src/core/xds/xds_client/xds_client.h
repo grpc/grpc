@@ -31,6 +31,8 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "envoy/admin/v3/config_dump_shared.upb.h"
+#include "envoy/service/status/v3/csds.upb.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/orphanable.h"
@@ -391,7 +393,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   RefCountedPtr<XdsTransportFactory> transport_factory_;
   const Duration request_timeout_;
   const bool xds_federation_enabled_;
-  XdsApi api_;
   WorkSerializer work_serializer_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
   std::unique_ptr<XdsMetricsReporter> metrics_reporter_;
