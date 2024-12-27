@@ -38,10 +38,12 @@ namespace promise_detail {
 // 1.  First promise returning type Poll<int>
 // 2.  Second promise returning type Poll<bool>
 // 3.  Third promise returning type Poll<double>
-// When you poll the Join combinator composed of these 3 promises,
+// Then the Join promise will have return type Poll<std::tuple<int, bool,
+// double>> When you poll the Join combinator composed of these 3 promises,
 // 1.  It will return Pending{} if even one promise in the input list of
 //     promises returns Pending{}.
-// 2.  It will return Poll<std::tuple<int, bool, double>> if all promises are
+// 2.  It will return Poll<std::tuple<int, bool, double>> holding a tuple if all
+// promises are
 //     resolved. The data types in the tuple correspond to the return types of
 //     the input promises in that order.
 //

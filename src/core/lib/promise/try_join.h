@@ -43,11 +43,15 @@ namespace promise_detail {
 // 1.  First promise returning type Poll<int>
 // 2.  Second promise returning type Poll<bool>
 // 3.  Third promise returning type Poll<double>
+// Then the TryJoin promise will have return type of either
+// Poll<absl::StatusOr<std::tuple<int, bool, double>>> or
+// Poll<ValueOrFailure<std::tuple<int, bool, double>>
+//
 // When you poll the TryJoin combinator composed of these 3 promises,
 // 1.  It will return Pending{} if even one promise in the input list of
 //     promises returns Pending{}.
 // 2.  It will return a failure status if any one of the input promises fails.
-// 2.  It will return Poll<std::tuple<int, bool, double>> if all promises are
+// 2.  It will return a tuple if all promises are
 //     resolved and successful. The data types in the tuple correspond to the
 //     return types of the input promises in that order.
 //
