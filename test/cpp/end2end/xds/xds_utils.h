@@ -219,23 +219,26 @@ class XdsResourceUtils {
   struct EdsResourceArgs {
     // An individual endpoint for a backend running on a specified port.
     struct Endpoint {
-      explicit Endpoint(int port,
-                        ::envoy::config::core::v3::HealthStatus health_status =
-                            ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                        int lb_weight = 1,
-                        std::vector<int> additional_ports = {},
-                        absl::string_view hostname = "")
+      explicit Endpoint(
+          int port,
+          ::envoy::config::core::v3::HealthStatus health_status =
+              ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+          int lb_weight = 1, std::vector<int> additional_ports = {},
+          absl::string_view hostname = "",
+          const std::map<std::string, std::string /*JSON*/>& metadata = {})
           : port(port),
             health_status(health_status),
             lb_weight(lb_weight),
             additional_ports(std::move(additional_ports)),
-            hostname(hostname) {}
+            hostname(hostname),
+            metadata(metadata) {}
 
       int port;
       ::envoy::config::core::v3::HealthStatus health_status;
       int lb_weight;
       std::vector<int> additional_ports;
       std::string hostname;
+      std::map<std::string, std::string /*JSON*/> metadata;
     };
 
     // A locality.
