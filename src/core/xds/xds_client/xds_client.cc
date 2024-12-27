@@ -547,10 +547,10 @@ void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
         MaybeFallbackLocked(a.first, a.second)) {
       continue;
     }
-    for (const auto& t : a.second.resource_map) {    // type
-      for (const auto& r : t.second) {               // resource id
-        auto& watchers = r.second.HasResource() ? watchers_cached
-                                                : watchers_uncached;
+    for (const auto& t : a.second.resource_map) {  // type
+      for (const auto& r : t.second) {             // resource id
+        auto& watchers =
+            r.second.HasResource() ? watchers_cached : watchers_uncached;
         for (const auto& w : r.second.watchers()) {  // watchers
           watchers.insert(w);
         }
@@ -1032,9 +1032,9 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
     // If we previously had connectivity problems, notify watchers that
     // the ambient error has been cleared.
     if (!xds_channel()->status().ok()) {
-      xds_client()->NotifyWatchersOnAmbientError(
-          absl::OkStatus(), resource_state.watchers(),
-          context->read_delay_handle);
+      xds_client()->NotifyWatchersOnAmbientError(absl::OkStatus(),
+                                                 resource_state.watchers(),
+                                                 context->read_delay_handle);
     }
     return;
   }
