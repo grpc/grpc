@@ -24,11 +24,11 @@
 namespace grpc_core {
 
 struct MatchInt {
-  int ival;
+  int ival = -1;
 };
 
 struct MatchFloat {
-  float fval;
+  float fval = -1.0f;
 };
 
 TEST(MatchPromiseTest, ThreeTypedImmediate) {
