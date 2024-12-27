@@ -33,6 +33,43 @@ namespace grpc_core {
 
 namespace promise_detail {
 
+// TryJoin Promise Combinator
+//
+// The TryJoin promise combinator takes as inputs multiple promises.
+// When the TryJoin promise is polled, these input promises will be executed
+// serially on the same thread.
+// Each promise being executed either returns a value or Pending{}.
+// Each subsequent execution of the TryJoin will only execute the input promises
+// which returned Pending{} in any of the previous executions. This mechanism
+// ensures that no promise is executed after it resolves, which is an essential
+// requirement.
+//
+// Suppose you have three promises
+// 1.  First promise returning type Poll<int>
+// 2.  Second promise returning type Poll<bool>
+// 3.  Third promise returning type Poll<double>
+// Then you poll the TryJoin of theses three promises, the result will have the
+// type Poll<std::tuple<int, bool, double>>
+//
+// Polling this join promise will
+// 1.  Return Pending{} if even one promise in the input list of promises
+// returns Pending{}
+// 2.  Return the tuple if all promises are resolved.
+//
+// Polling this TryJoin combinator promise will make the pending promises run
+// serially, in order and on the same thread.
+//
+// All promises in the input list will be executed irrespective of failure
+// status. If you want the promise execution to stop when there is a failure in
+// any one promise, consider using Join promise combinator instead of the
+// TryJoin combinator.
+//
+// Example of TryJoin : Refer to try_join_test.cc
+
+// Run all promises.
+// If any fail, cancel the rest and return the failure.
+// If all succeed, return Ok(tuple-of-results).
+
 // Extract the T from a StatusOr<T>
 template <typename T>
 T IntoResult(absl::StatusOr<T>* status) {
@@ -129,9 +166,6 @@ struct WrapInStatusOrTuple {
 
 }  // namespace promise_detail
 
-// Run all promises.
-// If any fail, cancel the rest and return the failure.
-// If all succeed, return Ok(tuple-of-results).
 template <template <typename> class R, typename... Promises>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::TryJoin<R,
                                                                     Promises...>
