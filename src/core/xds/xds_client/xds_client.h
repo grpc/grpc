@@ -258,8 +258,69 @@ class XdsClient : public DualRefCounted<XdsClient> {
         watchers;
     // The latest data seen for the resource.
     std::shared_ptr<const XdsResourceType::ResourceData> resource;
-    XdsApi::ResourceMetadata meta;
+    // Resource status from the view of a xDS client, which tells the
+    // synchronization status between the xDS client and the xDS server.
+    enum ClientResourceStatus {
+      // Client requested this resource but hasn't received any update from
+      // management server. The client will not fail requests, but will queue
+      // them until update arrives or the client times out waiting for the
+      // resource.
+      REQUESTED = 1,
+      // This resource has been requested by the client but has either not been
+      // delivered by the server or was previously delivered by the server and
+      // then subsequently removed from resources provided by the server.
+      DOES_NOT_EXIST,
+      // Client received this resource and replied with ACK.
+      ACKED,
+      // Client received this resource and replied with NACK.
+      NACKED,
+    };
+    static_assert(
+        static_cast<ClientResourceStatus>(envoy_admin_v3_REQUESTED) ==
+             ClientResourceStatus::REQUESTED,
+        "");
+    static_assert(
+        static_cast<ClientResourceStatus>(envoy_admin_v3_DOES_NOT_EXIST) ==
+            ClientResourceStatus::DOES_NOT_EXIST,
+        "");
+    static_assert(
+        static_cast<ClientResourceStatus>(envoy_admin_v3_ACKED) ==
+            ClientResourceStatus::ACKED,
+        "");
+    static_assert(
+        static_cast<ClientResourceStatus>(envoy_admin_v3_NACKED) ==
+            ClientResourceStatus::NACKED,
+        "");
+    ClientResourceStatus client_status = REQUESTED;
+    // The serialized bytes of the last successfully updated raw xDS resource.
+    std::string serialized_proto;
+    // The timestamp when the resource was last successfully updated.
+    Timestamp update_time;
+    // The last successfully updated version of the resource.
+    std::string version;
+    // The rejected version string of the last failed update attempt.
+    std::string failed_version;
+    // Details about the last failed update attempt.
+    std::string failed_details;
+    // Timestamp of the last failed update attempt.
+    Timestamp failed_update_time;
+    // If we've ignored deletion.
     bool ignored_deletion = false;
+
+    void SetAcked(std::shared_ptr<const XdsResourceType::ResourceData> resource,
+                  std::string serialized_proto, std::string version,
+                  Timestamp update_time);
+
+    void SetNacked(const std::string& version, const std::string& details,
+                   Timestamp update_time);
+
+    void SetDoesNotExist();
+
+    absl::string_view CacheStateString() const;
+
+    void FillGenericXdsConfig(
+        upb_StringView type_url, upb_StringView resource_name, upb_Arena* arena,
+        envoy_service_status_v3_ClientConfig_GenericXdsConfig* entry) const;
   };
 
   struct AuthorityState {

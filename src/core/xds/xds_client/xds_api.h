@@ -77,58 +77,6 @@ class XdsApi final {
                                               absl::string_view message) = 0;
   };
 
-  // The metadata of the xDS resource; used by the xDS config dump.
-  struct ResourceMetadata {
-    // Resource status from the view of a xDS client, which tells the
-    // synchronization status between the xDS client and the xDS server.
-    enum ClientResourceStatus {
-      // Client requested this resource but hasn't received any update from
-      // management server. The client will not fail requests, but will queue
-      // them
-      // until update arrives or the client times out waiting for the resource.
-      REQUESTED = 1,
-      // This resource has been requested by the client but has either not been
-      // delivered by the server or was previously delivered by the server and
-      // then subsequently removed from resources provided by the server.
-      DOES_NOT_EXIST,
-      // Client received this resource and replied with ACK.
-      ACKED,
-      // Client received this resource and replied with NACK.
-      NACKED
-    };
-
-    // The client status of this resource.
-    ClientResourceStatus client_status = REQUESTED;
-    // The serialized bytes of the last successfully updated raw xDS resource.
-    std::string serialized_proto;
-    // The timestamp when the resource was last successfully updated.
-    Timestamp update_time;
-    // The last successfully updated version of the resource.
-    std::string version;
-    // The rejected version string of the last failed update attempt.
-    std::string failed_version;
-    // Details about the last failed update attempt.
-    std::string failed_details;
-    // Timestamp of the last failed update attempt.
-    Timestamp failed_update_time;
-  };
-  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
-                    envoy_admin_v3_REQUESTED) ==
-                    ResourceMetadata::ClientResourceStatus::REQUESTED,
-                "");
-  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
-                    envoy_admin_v3_DOES_NOT_EXIST) ==
-                    ResourceMetadata::ClientResourceStatus::DOES_NOT_EXIST,
-                "");
-  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
-                    envoy_admin_v3_ACKED) ==
-                    ResourceMetadata::ClientResourceStatus::ACKED,
-                "");
-  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
-                    envoy_admin_v3_NACKED) ==
-                    ResourceMetadata::ClientResourceStatus::NACKED,
-                "");
-
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
          upb::DefPool* def_pool, std::string user_agent_name,
          std::string user_agent_version);
