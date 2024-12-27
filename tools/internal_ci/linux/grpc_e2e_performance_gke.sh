@@ -210,6 +210,10 @@ if [[ -v "useLanguage[ruby]" ]]; then
 fi
 
 # Disable broken tests by regex.
+# The test disabled here hangs on 8 cores. The result of this test is not
+# displayed in the public dashboard. The test runs and passes on the 30-core
+# ("32core") node pool. This can be considered a permanent fix, selectively
+# removing an unnecessary test and allowing the test run to become green.
 declare -a disabledTests8core=(
   cpp_protobuf_async_client_unary_1channel_64wide_128breq_8mbresp_insecure
 )
