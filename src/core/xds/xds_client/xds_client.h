@@ -274,22 +274,19 @@ class XdsClient : public DualRefCounted<XdsClient> {
       // Client received this resource and replied with NACK.
       NACKED,
     };
-    static_assert(
-        static_cast<ClientResourceStatus>(envoy_admin_v3_REQUESTED) ==
-             ClientResourceStatus::REQUESTED,
-        "");
+    static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_REQUESTED) ==
+                      ClientResourceStatus::REQUESTED,
+                  "");
     static_assert(
         static_cast<ClientResourceStatus>(envoy_admin_v3_DOES_NOT_EXIST) ==
             ClientResourceStatus::DOES_NOT_EXIST,
         "");
-    static_assert(
-        static_cast<ClientResourceStatus>(envoy_admin_v3_ACKED) ==
-            ClientResourceStatus::ACKED,
-        "");
-    static_assert(
-        static_cast<ClientResourceStatus>(envoy_admin_v3_NACKED) ==
-            ClientResourceStatus::NACKED,
-        "");
+    static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_ACKED) ==
+                      ClientResourceStatus::ACKED,
+                  "");
+    static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_NACKED) ==
+                      ClientResourceStatus::NACKED,
+                  "");
 
     void AddWatcher(RefCountedPtr<ResourceWatcherInterface> watcher) {
       auto* watcher_ptr = watcher.get();
@@ -300,7 +297,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     }
     bool HasWatchers() const { return !watchers_.empty(); }
     const std::map<ResourceWatcherInterface*,
-                   RefCountedPtr<ResourceWatcherInterface>>& watchers() const {
+                   RefCountedPtr<ResourceWatcherInterface>>&
+    watchers() const {
       return watchers_;
     }
 

@@ -289,10 +289,12 @@ class XdsClient::XdsChannel::AdsCall final
         subscribed_resources;
   };
 
-  std::string CreateAdsRequest(
-      absl::string_view type_url, absl::string_view version,
-      absl::string_view nonce, const std::vector<std::string>& resource_names,
-      absl::Status status) const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+  std::string CreateAdsRequest(absl::string_view type_url,
+                               absl::string_view version,
+                               absl::string_view nonce,
+                               const std::vector<std::string>& resource_names,
+                               absl::Status status) const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   void SendMessageLocked(const XdsResourceType* type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
@@ -552,8 +554,8 @@ void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
         MaybeFallbackLocked(a.first, a.second)) {
       continue;
     }
-    for (const auto& t : a.second.resource_map) {  // type
-      for (const auto& r : t.second) {             // resource id
+    for (const auto& t : a.second.resource_map) {    // type
+      for (const auto& r : t.second) {               // resource id
         for (const auto& w : r.second.watchers()) {  // watchers
           watchers.insert(w.second);
         }
@@ -779,8 +781,7 @@ void MaybeLogDiscoveryRequest(
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(request), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    VLOG(2) << "[xds_client " << client
-            << "] constructed ADS request: " << buf;
+    VLOG(2) << "[xds_client " << client << "] constructed ADS request: " << buf;
   }
 }
 
@@ -838,9 +839,9 @@ std::string XdsClient::XdsChannel::AdsCall::CreateAdsRequest(
     envoy_config_core_v3_Node* node_msg =
         envoy_service_discovery_v3_DiscoveryRequest_mutable_node(request,
                                                                  arena.ptr());
-    PopulateXdsNode(
-        xds_client()->bootstrap_->node(), xds_client()->user_agent_name_,
-        xds_client()->user_agent_version_, node_msg, arena.ptr());
+    PopulateXdsNode(xds_client()->bootstrap_->node(),
+                    xds_client()->user_agent_name_,
+                    xds_client()->user_agent_version_, node_msg, arena.ptr());
     envoy_config_core_v3_Node_add_client_features(
         node_msg, upb_StringView_FromString("xds.config.resource-in-sotw"),
         arena.ptr());
@@ -1025,7 +1026,7 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
   // If it didn't change, ignore it.
   if (resource_state.HasResource() &&
       context->type->ResourcesEqual(resource_state.resource().get(),
-                                   decode_result.resource->get())) {
+                                    decode_result.resource->get())) {
     GRPC_TRACE_LOG(xds_client, INFO)
         << "[xds_client " << xds_client() << "] " << context->type_url
         << " resource " << resource_name << " identical to current, ignoring.";
@@ -1059,8 +1060,7 @@ void MaybeLogDiscoveryResponse(
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(response), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    VLOG(2) << "[xds_client " << client
-            << "] received response: " << buf;
+    VLOG(2) << "[xds_client " << client << "] received response: " << buf;
   }
 }
 
@@ -1126,9 +1126,9 @@ absl::Status XdsClient::XdsChannel::AdsCall::DecodeAdsResponse(
       const auto* resource =
           envoy_service_discovery_v3_Resource_resource(resource_wrapper);
       if (resource == nullptr) {
-        context->errors.emplace_back(absl::StrCat(
-            "resource index ", i,
-            ": No resource present in Resource proto wrappe"));
+        context->errors.emplace_back(
+            absl::StrCat("resource index ", i,
+                         ": No resource present in Resource proto wrappe"));
         ++context->num_invalid_resources;
         continue;
       }
@@ -1379,8 +1379,8 @@ void XdsClient::ResourceState::FillGenericXdsConfig(
         envoy_service_status_v3_ClientConfig_GenericXdsConfig_mutable_xds_config(
             entry, arena);
     google_protobuf_Any_set_type_url(any_field, type_url);
-    google_protobuf_Any_set_value(
-        any_field, StdStringToUpbString(serialized_proto_));
+    google_protobuf_Any_set_value(any_field,
+                                  StdStringToUpbString(serialized_proto_));
   }
   if (client_status_ == ClientResourceStatus::NACKED) {
     auto* update_failure_state = envoy_admin_v3_UpdateFailureState_new(arena);
@@ -1389,8 +1389,7 @@ void XdsClient::ResourceState::FillGenericXdsConfig(
     envoy_admin_v3_UpdateFailureState_set_version_info(
         update_failure_state, StdStringToUpbString(failed_version_));
     envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
-        update_failure_state,
-        EncodeTimestamp(failed_update_time_, arena));
+        update_failure_state, EncodeTimestamp(failed_update_time_, arena));
     envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_error_state(
         entry, update_failure_state);
   }
