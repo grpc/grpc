@@ -38,7 +38,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using ::envoy::config::cluster::v3::CircuitBreakers;
 using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::config::core::v3::RoutingPriority;
 using ::envoy::type::v3::FractionalPercent;
