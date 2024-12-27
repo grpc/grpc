@@ -35,8 +35,8 @@ namespace grpc_core {
 // Input :
 // 1. The seq combinator needs minimum one promise as input.
 // 2. The first input to seq combinator is a promise.
-// 3. The remainng inputs to seq combinator are promise factories. The input
-// type of the Nth promise factory should be the return value of the (N-1)th
+// 3. The remainng inputs to seq combinator are functors which return promises.
+// The input type of the Nth functor should be the return value of the (N-1)th
 // promise.
 //
 // Return :
@@ -45,10 +45,10 @@ namespace grpc_core {
 //
 // Polling the Seq combinator works in the following way :
 // Run the first promise. If it returns Pending{}, nothing else is executed.
-// If the first promise returns a value, pass this result to the second promise
-// factory, and run the returned promise. If it returns Pending{}, nothing else
-// is executed. If it returns a value, pass this result to the third, and run
-// the returned promise. etc. Return the final value.
+// If the first promise returns a value, pass this result to the second functor,
+// and run the returned promise. If it returns Pending{}, nothing else is
+// executed. If it returns a value, pass this result to the third, and run the
+// returned promise. etc. Return the final value.
 //
 // If any of the promises in the Seq chain returns a failure status, Seq will
 // still proceed with the execution of the remaining promises. If you want the
