@@ -372,7 +372,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
       SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                            // TODO(yashkt): Change individual test cases to
                            // expect the exact error message here.
-                           ".*", /* timeout_ms= */ 20 * 1000,
+                           ".*", /*timeout_ms=*/20 * 1000,
                            RpcOptions().set_timeout_ms(5000));
     } else {
       backends_[backend_index_]->backend_service()->ResetCounters();

@@ -409,6 +409,7 @@ grpc_cc_test(
         "//:grpc++",
         "//:grpc_resolver_fake",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
         "//test/cpp/end2end:connection_attempt_injector",
         "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
