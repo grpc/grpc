@@ -28,7 +28,7 @@ namespace grpc_core {
 TEST(JoinTest, Join1) {
   std::string execution_order;
   EXPECT_THAT(Join([&execution_order]() mutable -> Poll<int> {
-                execution_order += "1";
+                absl::StrAppend(&execution_order, "1");
                 return 3;
               })(),
               IsReady(std::make_tuple(3)));
@@ -39,11 +39,11 @@ TEST(JoinTest, Join2) {
   std::string execution_order;
   EXPECT_THAT(Join(
                   [&execution_order]() mutable -> Poll<int> {
-                    execution_order += "3";
+                    absl::StrAppend(&execution_order, "3");
                     return 3;
                   },
                   [&execution_order]() mutable -> Poll<int> {
-                    execution_order += "4";
+                    absl::StrAppend(&execution_order, "4");
                     return 4;
                   })(),
               IsReady(std::make_tuple(3, 4)));
@@ -54,15 +54,15 @@ TEST(JoinTest, Join3) {
   std::string execution_order;
   EXPECT_THAT(Join(
                   [&execution_order]() mutable -> Poll<int> {
-                    execution_order += "3";
+                    absl::StrAppend(&execution_order, "3");
                     return 3;
                   },
                   [&execution_order]() mutable -> Poll<int> {
-                    execution_order += "4";
+                    absl::StrAppend(&execution_order, "4");
                     return 4;
                   },
                   [&execution_order]() mutable -> Poll<int> {
-                    execution_order += "5";
+                    absl::StrAppend(&execution_order, "5");
                     return 5;
                   })(),
               IsReady(std::make_tuple(3, 4, 5)));
@@ -76,16 +76,16 @@ TEST(JoinTest, JoinPendingFailure) {
   //    run a second time.
   std::string execution_order;
   auto first_promise = [&execution_order]() mutable -> Poll<int> {
-    execution_order += "1";
+    absl::StrAppend(&execution_order, "1");
     return 1;
   };
   auto second_promise = [&execution_order]() mutable -> Poll<StatusFlag> {
-    execution_order += "2";
+    absl::StrAppend(&execution_order, "2");
     return Failure{};
   };
   auto third_promise = [&execution_order,
                         once = false]() mutable -> Poll<std::string> {
-    execution_order += "3";
+    absl::StrAppend(&execution_order, "3");
     if (once) return "Hello World";
     once = true;
     return Pending{};
@@ -96,7 +96,7 @@ TEST(JoinTest, JoinPendingFailure) {
   using JoinTuple = std::tuple<int, StatusFlag, std::string>;
   Poll<JoinTuple> first_execution = join_1_2_3();
   EXPECT_FALSE(first_execution.ready());
-  execution_order += "0";
+  absl::StrAppend(&execution_order, "0");
 
   Poll<JoinTuple> second_execution = join_1_2_3();
   EXPECT_TRUE(second_execution.ready());
