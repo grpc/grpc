@@ -31,7 +31,7 @@ namespace promise_detail {
 // Join Promise Combinator
 //
 // Input :
-// The Join promise combinator takes as inputs one or more promises.
+// The Join promise combinator takes as input one or more promises.
 //
 // Return :
 // Suppose you have three input promises
@@ -50,9 +50,8 @@ namespace promise_detail {
 // serially, in order and on the same thread.
 // Each promise being executed either returns a value or Pending{}.
 // Each subsequent execution of the Join will only execute the input promises
-// which are still pending. This mechanism
-// ensures that no promise is executed after it resolves, which is an essential
-// requirement.
+// which are still pending. This mechanism ensures that no promise is executed
+// after it resolved, which is an essential requirement.
 //
 // All promises in the input list will be executed irrespective of failure
 // status. If you want the promise execution to stop when there is a failure in

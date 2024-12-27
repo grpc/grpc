@@ -46,9 +46,10 @@ namespace promise_detail {
 // When you poll the TryJoin combinator composed of these 3 promises,
 // 1.  It will return Pending{} if even one promise in the input list of
 //     promises returns Pending{}.
+// 2.  It will return a failure status if any one of the input promises fails.
 // 2.  It will return Poll<std::tuple<int, bool, double>> if all promises are
-//     resolved. The data types in the tuple correspond to the return types of
-//     the input promises in that order.
+//     resolved and successful. The data types in the tuple correspond to the
+//     return types of the input promises in that order.
 //
 // Polling the TryJoin combinator works in the following way :
 // Polling this TryJoin combinator will make the pending promises run
@@ -60,9 +61,8 @@ namespace promise_detail {
 // requirement.
 //
 // Execution of promises in the TryJoin combinator will stop if any one promise
-// returns a failure status.
-//  If you want the promise execution to continue when there is a failure ,
-//  consider using Join promise combinator instead of the
+// returns a failure status. If you want the promise execution to continue when
+// there is a failure , consider using Join promise combinator instead of the
 // TryJoin combinator.
 //
 // Example of TryJoin : Refer to try_join_test.cc
