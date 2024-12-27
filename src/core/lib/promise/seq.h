@@ -55,6 +55,9 @@ namespace grpc_core {
 // execution to stop when a failure status is received, use the TrySeq
 // combinator instead.
 //
+// All promises in the Seq combinator are run in order, serially and on the same
+// thread.
+//
 // Example :
 // The unit tests (esp ThreeTypedPendingThens) in seq_test.cc provide all
 // possible permutations of how Seq combinator can be used.
