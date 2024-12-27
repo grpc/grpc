@@ -33,6 +33,10 @@ namespace grpc_core {
 
 namespace promise_detail {
 
+// Run all promises.
+// If any fail, cancel the rest and return the failure.
+// If all succeed, return Ok(tuple-of-results).
+
 // Extract the T from a StatusOr<T>
 template <typename T>
 T IntoResult(absl::StatusOr<T>* status) {
@@ -129,9 +133,6 @@ struct WrapInStatusOrTuple {
 
 }  // namespace promise_detail
 
-// Run all promises.
-// If any fail, cancel the rest and return the failure.
-// If all succeed, return Ok(tuple-of-results).
 template <template <typename> class R, typename... Promises>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::TryJoin<R,
                                                                     Promises...>
