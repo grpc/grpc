@@ -759,9 +759,8 @@ class XdsClientTest : public ::testing::Test {
 
   // Sets transport_factory_ and initializes xds_client_ with the
   // specified bootstrap config.
-  void InitXdsClient(
-      FakeXdsBootstrap::Builder bootstrap_builder =
-          FakeXdsBootstrap::Builder()) {
+  void InitXdsClient(FakeXdsBootstrap::Builder bootstrap_builder =
+                         FakeXdsBootstrap::Builder()) {
     transport_factory_ = MakeRefCounted<FakeXdsTransportFactory>(
         []() { FAIL() << "Multiple concurrent reads"; }, event_engine_);
     auto metrics_reporter = std::make_unique<MetricsReporter>(event_engine_);
