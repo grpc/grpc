@@ -69,7 +69,7 @@ If "%GRPC_CMAKE_GENERATOR%" == "Ninja" (
   cd third_party/abseil-cpp
   mkdir build
   cd build
-  cmake -G "%GRPC_CMAKE_GENERATOR%" -DCMAKE_C_COMPILER="cl.exe" -DCMAKE_CXX_COMPILER="cl.exe" -DABSL_BUILD_TESTING=OFF -DCMAKE_BUILD_TYPE="%MSBUILD_CONFIG%" -DCMAKE_INSTALL_PREFIX="%INSTALL_PATH%" %* ..  || goto :error
+  cmake -G "%GRPC_CMAKE_GENERATOR%" -DCMAKE_C_COMPILER="cl.exe" -DCMAKE_CXX_COMPILER="cl.exe" -DABSL_BUILD_TESTING=OFF -DCMAKE_BUILD_TYPE="%MSBUILD_CONFIG%" -DCMAKE_INSTALL_PREFIX="%INSTALL_PATH%" -DCMAKE_CXX_STANDARD=17 %* ..  || goto :error
   ninja -j%GRPC_RUN_TESTS_JOBS% install || goto :error
 
   @rem Install opentelemetry-cpp since we only support "package" mode for opentelemetry at present.
