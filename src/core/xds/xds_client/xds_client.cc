@@ -146,44 +146,6 @@ class XdsClient::XdsChannel::AdsCall final
  private:
   class AdsReadDelayHandle;
 
-  class AdsResponseParser final : public XdsApi::AdsResponseParserInterface {
-   public:
-    struct Result {
-      const XdsResourceType* type;
-      std::string type_url;
-      std::string version;
-      std::string nonce;
-      std::vector<std::string> errors;
-      std::map<std::string /*authority*/, std::set<XdsResourceKey>>
-          resources_seen;
-      uint64_t num_valid_resources = 0;
-      uint64_t num_invalid_resources = 0;
-      RefCountedPtr<ReadDelayHandle> read_delay_handle;
-    };
-
-    explicit AdsResponseParser(AdsCall* ads_call) : ads_call_(ads_call) {}
-
-    absl::Status ProcessAdsResponseFields(AdsResponseFields fields) override
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-
-    void ParseResource(upb_Arena* arena, size_t idx, absl::string_view type_url,
-                       absl::string_view resource_name,
-                       absl::string_view serialized_resource) override
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-
-    void ResourceWrapperParsingFailed(size_t idx,
-                                      absl::string_view message) override;
-
-    Result TakeResult() { return std::move(result_); }
-
-   private:
-    XdsClient* xds_client() const { return ads_call_->xds_client(); }
-
-    AdsCall* ads_call_;
-    const Timestamp update_time_ = Timestamp::Now();
-    Result result_;
-  };
-
   class ResourceTimer final : public InternallyRefCounted<ResourceTimer> {
    public:
     ResourceTimer(const XdsResourceType* type, const XdsResourceName& name)
@@ -334,6 +296,29 @@ class XdsClient::XdsChannel::AdsCall final
       absl::Status status) const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   void SendMessageLocked(const XdsResourceType* type)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+
+  struct DecodeContext {
+    upb::Arena arena;
+    const XdsResourceType* type;
+    std::string type_url;
+    std::string version;
+    std::string nonce;
+    std::vector<std::string> errors;
+    std::map<std::string /*authority*/, std::set<XdsResourceKey>>
+        resources_seen;
+    uint64_t num_valid_resources = 0;
+    uint64_t num_invalid_resources = 0;
+    Timestamp update_time_ = Timestamp::Now();
+    RefCountedPtr<ReadDelayHandle> read_delay_handle;
+  };
+  void ParseResource(size_t idx, absl::string_view type_url,
+                     absl::string_view resource_name,
+                     absl::string_view serialized_resource,
+                     DecodeContext* context)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+  absl::Status DecodeAdsResponse(absl::string_view encoded_response,
+                                 DecodeContext* context)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   void OnRequestSent(bool ok);
@@ -693,177 +678,6 @@ class XdsClient::XdsChannel::AdsCall::AdsReadDelayHandle final
 };
 
 //
-// XdsClient::XdsChannel::AdsCall::AdsResponseParser
-//
-
-absl::Status
-XdsClient::XdsChannel::AdsCall::AdsResponseParser::ProcessAdsResponseFields(
-    AdsResponseFields fields) {
-  GRPC_TRACE_LOG(xds_client, INFO)
-      << "[xds_client " << ads_call_->xds_client() << "] xds server "
-      << ads_call_->xds_channel()->server_.server_uri()
-      << ": received ADS response: type_url=" << fields.type_url
-      << ", version=" << fields.version << ", nonce=" << fields.nonce
-      << ", num_resources=" << fields.num_resources;
-  result_.type =
-      ads_call_->xds_client()->GetResourceTypeLocked(fields.type_url);
-  if (result_.type == nullptr) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("unknown resource type ", fields.type_url));
-  }
-  result_.type_url = std::move(fields.type_url);
-  result_.version = std::move(fields.version);
-  result_.nonce = std::move(fields.nonce);
-  result_.read_delay_handle =
-      MakeRefCounted<AdsReadDelayHandle>(ads_call_->Ref());
-  return absl::OkStatus();
-}
-
-void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
-    upb_Arena* arena, size_t idx, absl::string_view type_url,
-    absl::string_view resource_name, absl::string_view serialized_resource) {
-  std::string error_prefix = absl::StrCat(
-      "resource index ", idx, ": ",
-      resource_name.empty() ? "" : absl::StrCat(resource_name, ": "));
-  // Check the type_url of the resource.
-  if (result_.type_url != type_url) {
-    result_.errors.emplace_back(
-        absl::StrCat(error_prefix, "incorrect resource type \"", type_url,
-                     "\" (should be \"", result_.type_url, "\")"));
-    ++result_.num_invalid_resources;
-    return;
-  }
-  // Parse the resource.
-  XdsResourceType::DecodeContext context = {
-      xds_client(), ads_call_->xds_channel()->server_, &xds_client_trace,
-      xds_client()->def_pool_.ptr(), arena};
-  XdsResourceType::DecodeResult decode_result =
-      result_.type->Decode(context, serialized_resource);
-  // If we didn't already have the resource name from the Resource
-  // wrapper, try to get it from the decoding result.
-  if (resource_name.empty()) {
-    if (decode_result.name.has_value()) {
-      resource_name = *decode_result.name;
-      error_prefix =
-          absl::StrCat("resource index ", idx, ": ", resource_name, ": ");
-    } else {
-      // We don't have any way of determining the resource name, so
-      // there's nothing more we can do here.
-      result_.errors.emplace_back(absl::StrCat(
-          error_prefix, decode_result.resource.status().ToString()));
-      ++result_.num_invalid_resources;
-      return;
-    }
-  }
-  // If decoding failed, make sure we include the error in the NACK.
-  const absl::Status& decode_status = decode_result.resource.status();
-  if (!decode_status.ok()) {
-    result_.errors.emplace_back(
-        absl::StrCat(error_prefix, decode_status.ToString()));
-  }
-  // Check the resource name.
-  auto parsed_resource_name =
-      xds_client()->ParseXdsResourceName(resource_name, result_.type);
-  if (!parsed_resource_name.ok()) {
-    result_.errors.emplace_back(
-        absl::StrCat(error_prefix, "Cannot parse xDS resource name"));
-    ++result_.num_invalid_resources;
-    return;
-  }
-  // Cancel resource-does-not-exist timer, if needed.
-  auto timer_it = ads_call_->state_map_.find(result_.type);
-  if (timer_it != ads_call_->state_map_.end()) {
-    auto it = timer_it->second.subscribed_resources.find(
-        parsed_resource_name->authority);
-    if (it != timer_it->second.subscribed_resources.end()) {
-      auto res_it = it->second.find(parsed_resource_name->key);
-      if (res_it != it->second.end()) {
-        res_it->second->MarkSeen();
-      }
-    }
-  }
-  // Lookup the authority in the cache.
-  auto authority_it =
-      xds_client()->authority_state_map_.find(parsed_resource_name->authority);
-  if (authority_it == xds_client()->authority_state_map_.end()) {
-    return;  // Skip resource -- we don't have a subscription for it.
-  }
-  // Found authority, so look up type.
-  AuthorityState& authority_state = authority_it->second;
-  auto type_it = authority_state.resource_map.find(result_.type);
-  if (type_it == authority_state.resource_map.end()) {
-    return;  // Skip resource -- we don't have a subscription for it.
-  }
-  auto& type_map = type_it->second;
-  // Found type, so look up resource key.
-  auto it = type_map.find(parsed_resource_name->key);
-  if (it == type_map.end()) {
-    return;  // Skip resource -- we don't have a subscription for it.
-  }
-  ResourceState& resource_state = it->second;
-  // If needed, record that we've seen this resource.
-  if (result_.type->AllResourcesRequiredInSotW()) {
-    result_.resources_seen[parsed_resource_name->authority].insert(
-        parsed_resource_name->key);
-  }
-  // If we previously ignored the resource's deletion, log that we're
-  // now re-adding it.
-  if (resource_state.ignored_deletion()) {
-    LOG(INFO) << "[xds_client " << xds_client() << "] xds server "
-              << ads_call_->xds_channel()->server_.server_uri()
-              << ": server returned new version of resource for which we "
-                 "previously ignored a deletion: type "
-              << type_url << " name " << resource_name;
-    resource_state.set_ignored_deletion(false);
-  }
-  // Update resource state based on whether the resource is valid.
-  if (!decode_status.ok()) {
-    xds_client()->NotifyWatchersOnErrorLocked(
-        resource_state.watchers(),
-        absl::UnavailableError(
-            absl::StrCat("invalid resource: ", decode_status.ToString())),
-        result_.read_delay_handle);
-    resource_state.SetNacked(result_.version, decode_status.ToString(),
-                             update_time_);
-    ++result_.num_invalid_resources;
-    return;
-  }
-  // Resource is valid.
-  ++result_.num_valid_resources;
-  // If it didn't change, ignore it.
-  if (resource_state.HasResource() &&
-      result_.type->ResourcesEqual(resource_state.resource().get(),
-                                   decode_result.resource->get())) {
-    GRPC_TRACE_LOG(xds_client, INFO)
-        << "[xds_client " << xds_client() << "] " << result_.type_url
-        << " resource " << resource_name << " identical to current, ignoring.";
-    return;
-  }
-  // Update the resource state.
-  resource_state.SetAcked(std::move(*decode_result.resource),
-                          std::string(serialized_resource), result_.version,
-                          update_time_);
-  // Notify watchers.
-  auto& watchers_list = resource_state.watchers();
-  xds_client()->work_serializer_.Schedule(
-      [watchers_list, value = resource_state.resource(),
-       read_delay_handle = result_.read_delay_handle]()
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client()->work_serializer_) {
-            for (const auto& p : watchers_list) {
-              p.first->OnGenericResourceChanged(value, read_delay_handle);
-            }
-          },
-      DEBUG_LOCATION);
-}
-
-void XdsClient::XdsChannel::AdsCall::AdsResponseParser::
-    ResourceWrapperParsingFailed(size_t idx, absl::string_view message) {
-  result_.errors.emplace_back(
-      absl::StrCat("resource index ", idx, ": ", message));
-  ++result_.num_invalid_resources;
-}
-
-//
 // XdsClient::XdsChannel::AdsCall
 //
 
@@ -920,6 +734,39 @@ void XdsClient::XdsChannel::AdsCall::Orphan() {
   // here, since there may be other refs held to streaming_call_ by internal
   // callbacks.
   streaming_call_.reset();
+}
+
+void XdsClient::XdsChannel::AdsCall::SubscribeLocked(
+    const XdsResourceType* type, const XdsResourceName& name, bool delay_send) {
+  auto& state = state_map_[type].subscribed_resources[name.authority][name.key];
+  if (state == nullptr) {
+    state = MakeOrphanable<ResourceTimer>(type, name);
+    if (!delay_send) SendMessageLocked(type);
+  }
+}
+
+void XdsClient::XdsChannel::AdsCall::UnsubscribeLocked(
+    const XdsResourceType* type, const XdsResourceName& name,
+    bool delay_unsubscription) {
+  auto& type_state_map = state_map_[type];
+  auto& authority_map = type_state_map.subscribed_resources[name.authority];
+  authority_map.erase(name.key);
+  if (authority_map.empty()) {
+    type_state_map.subscribed_resources.erase(name.authority);
+  }
+  // Don't need to send unsubscription message if this was the last
+  // resource we were subscribed to, since we'll be closing the stream
+  // immediately in that case.
+  if (!delay_unsubscription && HasSubscribedResources()) {
+    SendMessageLocked(type);
+  }
+}
+
+bool XdsClient::XdsChannel::AdsCall::HasSubscribedResources() const {
+  for (const auto& p : state_map_) {
+    if (!p.second.subscribed_resources.empty()) return true;
+  }
+  return false;
 }
 
 namespace {
@@ -1033,39 +880,6 @@ void XdsClient::XdsChannel::AdsCall::SendMessageLocked(
   send_message_pending_ = type;
 }
 
-void XdsClient::XdsChannel::AdsCall::SubscribeLocked(
-    const XdsResourceType* type, const XdsResourceName& name, bool delay_send) {
-  auto& state = state_map_[type].subscribed_resources[name.authority][name.key];
-  if (state == nullptr) {
-    state = MakeOrphanable<ResourceTimer>(type, name);
-    if (!delay_send) SendMessageLocked(type);
-  }
-}
-
-void XdsClient::XdsChannel::AdsCall::UnsubscribeLocked(
-    const XdsResourceType* type, const XdsResourceName& name,
-    bool delay_unsubscription) {
-  auto& type_state_map = state_map_[type];
-  auto& authority_map = type_state_map.subscribed_resources[name.authority];
-  authority_map.erase(name.key);
-  if (authority_map.empty()) {
-    type_state_map.subscribed_resources.erase(name.authority);
-  }
-  // Don't need to send unsubscription message if this was the last
-  // resource we were subscribed to, since we'll be closing the stream
-  // immediately in that case.
-  if (!delay_unsubscription && HasSubscribedResources()) {
-    SendMessageLocked(type);
-  }
-}
-
-bool XdsClient::XdsChannel::AdsCall::HasSubscribedResources() const {
-  for (const auto& p : state_map_) {
-    if (!p.second.subscribed_resources.empty()) return true;
-  }
-  return false;
-}
-
 void XdsClient::XdsChannel::AdsCall::OnRequestSent(bool ok) {
   MutexLock lock(&xds_client()->mu_);
   // For each resource that was in the message we just sent, start the
@@ -1098,18 +912,249 @@ void XdsClient::XdsChannel::AdsCall::OnRequestSent(bool ok) {
   }
 }
 
+void XdsClient::XdsChannel::AdsCall::ParseResource(
+    size_t idx, absl::string_view type_url, absl::string_view resource_name,
+    absl::string_view serialized_resource, DecodeContext* context) {
+  std::string error_prefix = absl::StrCat(
+      "resource index ", idx, ": ",
+      resource_name.empty() ? "" : absl::StrCat(resource_name, ": "));
+  // Check the type_url of the resource.
+  if (context->type_url != type_url) {
+    context->errors.emplace_back(
+        absl::StrCat(error_prefix, "incorrect resource type \"", type_url,
+                     "\" (should be \"", context->type_url, "\")"));
+    ++context->num_invalid_resources;
+    return;
+  }
+  // Parse the resource.
+  XdsResourceType::DecodeContext resource_type_context = {
+      xds_client(), xds_channel()->server_, &xds_client_trace,
+      xds_client()->def_pool_.ptr(), context->arena.ptr()};
+  XdsResourceType::DecodeResult decode_result =
+      context->type->Decode(resource_type_context, serialized_resource);
+  // If we didn't already have the resource name from the Resource
+  // wrapper, try to get it from the decoding result.
+  if (resource_name.empty()) {
+    if (decode_result.name.has_value()) {
+      resource_name = *decode_result.name;
+      error_prefix =
+          absl::StrCat("resource index ", idx, ": ", resource_name, ": ");
+    } else {
+      // We don't have any way of determining the resource name, so
+      // there's nothing more we can do here.
+      context->errors.emplace_back(absl::StrCat(
+          error_prefix, decode_result.resource.status().ToString()));
+      ++context->num_invalid_resources;
+      return;
+    }
+  }
+  // If decoding failed, make sure we include the error in the NACK.
+  const absl::Status& decode_status = decode_result.resource.status();
+  if (!decode_status.ok()) {
+    context->errors.emplace_back(
+        absl::StrCat(error_prefix, decode_status.ToString()));
+  }
+  // Check the resource name.
+  auto parsed_resource_name =
+      xds_client()->ParseXdsResourceName(resource_name, context->type);
+  if (!parsed_resource_name.ok()) {
+    context->errors.emplace_back(
+        absl::StrCat(error_prefix, "Cannot parse xDS resource name"));
+    ++context->num_invalid_resources;
+    return;
+  }
+  // Cancel resource-does-not-exist timer, if needed.
+  auto timer_it = state_map_.find(context->type);
+  if (timer_it != state_map_.end()) {
+    auto it = timer_it->second.subscribed_resources.find(
+        parsed_resource_name->authority);
+    if (it != timer_it->second.subscribed_resources.end()) {
+      auto res_it = it->second.find(parsed_resource_name->key);
+      if (res_it != it->second.end()) {
+        res_it->second->MarkSeen();
+      }
+    }
+  }
+  // Lookup the authority in the cache.
+  auto authority_it =
+      xds_client()->authority_state_map_.find(parsed_resource_name->authority);
+  if (authority_it == xds_client()->authority_state_map_.end()) {
+    return;  // Skip resource -- we don't have a subscription for it.
+  }
+  // Found authority, so look up type.
+  AuthorityState& authority_state = authority_it->second;
+  auto type_it = authority_state.resource_map.find(context->type);
+  if (type_it == authority_state.resource_map.end()) {
+    return;  // Skip resource -- we don't have a subscription for it.
+  }
+  auto& type_map = type_it->second;
+  // Found type, so look up resource key.
+  auto it = type_map.find(parsed_resource_name->key);
+  if (it == type_map.end()) {
+    return;  // Skip resource -- we don't have a subscription for it.
+  }
+  ResourceState& resource_state = it->second;
+  // If needed, record that we've seen this resource.
+  if (context->type->AllResourcesRequiredInSotW()) {
+    context->resources_seen[parsed_resource_name->authority].insert(
+        parsed_resource_name->key);
+  }
+  // If we previously ignored the resource's deletion, log that we're
+  // now re-adding it.
+  if (resource_state.ignored_deletion()) {
+    LOG(INFO) << "[xds_client " << xds_client() << "] xds server "
+              << xds_channel()->server_.server_uri()
+              << ": server returned new version of resource for which we "
+                 "previously ignored a deletion: type "
+              << type_url << " name " << resource_name;
+    resource_state.set_ignored_deletion(false);
+  }
+  // Update resource state based on whether the resource is valid.
+  if (!decode_status.ok()) {
+    xds_client()->NotifyWatchersOnErrorLocked(
+        resource_state.watchers(),
+        absl::UnavailableError(
+            absl::StrCat("invalid resource: ", decode_status.ToString())),
+        context->read_delay_handle);
+    resource_state.SetNacked(context->version, decode_status.ToString(),
+                             context->update_time_);
+    ++context->num_invalid_resources;
+    return;
+  }
+  // Resource is valid.
+  ++context->num_valid_resources;
+  // If it didn't change, ignore it.
+  if (resource_state.HasResource() &&
+      context->type->ResourcesEqual(resource_state.resource().get(),
+                                   decode_result.resource->get())) {
+    GRPC_TRACE_LOG(xds_client, INFO)
+        << "[xds_client " << xds_client() << "] " << context->type_url
+        << " resource " << resource_name << " identical to current, ignoring.";
+    return;
+  }
+  // Update the resource state.
+  resource_state.SetAcked(std::move(*decode_result.resource),
+                          std::string(serialized_resource), context->version,
+                          context->update_time_);
+  // Notify watchers.
+  auto& watchers_list = resource_state.watchers();
+  xds_client()->work_serializer_.Schedule(
+      [watchers_list, value = resource_state.resource(),
+       read_delay_handle = context->read_delay_handle]()
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client()->work_serializer_) {
+            for (const auto& p : watchers_list) {
+              p.first->OnGenericResourceChanged(value, read_delay_handle);
+            }
+          },
+      DEBUG_LOCATION);
+}
+
+namespace {
+
+void MaybeLogDiscoveryResponse(
+    const XdsClient* client, upb_DefPool* def_pool,
+    const envoy_service_discovery_v3_DiscoveryResponse* response) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client) && ABSL_VLOG_IS_ON(2)) {
+    const upb_MessageDef* msg_type =
+        envoy_service_discovery_v3_DiscoveryResponse_getmsgdef(def_pool);
+    char buf[10240];
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(response), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
+    VLOG(2) << "[xds_client " << client
+            << "] received response: " << buf;
+  }
+}
+
+}  // namespace
+
+absl::Status XdsClient::XdsChannel::AdsCall::DecodeAdsResponse(
+    absl::string_view encoded_response, DecodeContext* context) {
+  // Decode the response.
+  const envoy_service_discovery_v3_DiscoveryResponse* response =
+      envoy_service_discovery_v3_DiscoveryResponse_parse(
+          encoded_response.data(), encoded_response.size(),
+          context->arena.ptr());
+  // If decoding fails, report a fatal error and return.
+  if (response == nullptr) {
+    return absl::InvalidArgumentError("Can't decode DiscoveryResponse.");
+  }
+  MaybeLogDiscoveryResponse(xds_client(), xds_client()->def_pool_.ptr(),
+                            response);
+  // Get the type_url, version, nonce, and number of resources.
+  context->type_url = std::string(absl::StripPrefix(
+      UpbStringToAbsl(
+          envoy_service_discovery_v3_DiscoveryResponse_type_url(response)),
+      "type.googleapis.com/"));
+  context->version = UpbStringToStdString(
+      envoy_service_discovery_v3_DiscoveryResponse_version_info(response));
+  context->nonce = UpbStringToStdString(
+      envoy_service_discovery_v3_DiscoveryResponse_nonce(response));
+  size_t num_resources;
+  const google_protobuf_Any* const* resources =
+      envoy_service_discovery_v3_DiscoveryResponse_resources(response,
+                                                             &num_resources);
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[xds_client " << xds_client() << "] xds server "
+      << xds_channel()->server_.server_uri()
+      << ": received ADS response: type_url=" << context->type_url
+      << ", version=" << context->version << ", nonce=" << context->nonce
+      << ", num_resources=" << num_resources;
+  context->type = xds_client()->GetResourceTypeLocked(context->type_url);
+  if (context->type == nullptr) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("unknown resource type ", context->type_url));
+  }
+  context->read_delay_handle = MakeRefCounted<AdsReadDelayHandle>(Ref());
+  // Process each resource.
+  for (size_t i = 0; i < num_resources; ++i) {
+    absl::string_view type_url = absl::StripPrefix(
+        UpbStringToAbsl(google_protobuf_Any_type_url(resources[i])),
+        "type.googleapis.com/");
+    absl::string_view serialized_resource =
+        UpbStringToAbsl(google_protobuf_Any_value(resources[i]));
+    // Unwrap Resource messages, if so wrapped.
+    absl::string_view resource_name;
+    if (type_url == "envoy.service.discovery.v3.Resource") {
+      const auto* resource_wrapper = envoy_service_discovery_v3_Resource_parse(
+          serialized_resource.data(), serialized_resource.size(),
+          context->arena.ptr());
+      if (resource_wrapper == nullptr) {
+        context->errors.emplace_back(absl::StrCat(
+            "resource index ", i, ": Can't decode Resource proto wrapper"));
+        ++context->num_invalid_resources;
+        continue;
+      }
+      const auto* resource =
+          envoy_service_discovery_v3_Resource_resource(resource_wrapper);
+      if (resource == nullptr) {
+        context->errors.emplace_back(absl::StrCat(
+            "resource index ", i,
+            ": No resource present in Resource proto wrappe"));
+        ++context->num_invalid_resources;
+        continue;
+      }
+      type_url = absl::StripPrefix(
+          UpbStringToAbsl(google_protobuf_Any_type_url(resource)),
+          "type.googleapis.com/");
+      serialized_resource =
+          UpbStringToAbsl(google_protobuf_Any_value(resource));
+      resource_name = UpbStringToAbsl(
+          envoy_service_discovery_v3_Resource_name(resource_wrapper));
+    }
+    ParseResource(i, type_url, resource_name, serialized_resource, context);
+  }
+  return absl::OkStatus();
+}
+
 void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
-  // Needs to be destroyed after the mutex is released.
-  RefCountedPtr<ReadDelayHandle> read_delay_handle;
+  // context.read_delay_handle needs to be destroyed after the mutex is
+  // released.
+  DecodeContext context;
   {
     MutexLock lock(&xds_client()->mu_);
     if (!IsCurrentCallOnChannel()) return;
     // Parse and validate the response.
-    AdsResponseParser parser(this);
-    absl::Status status = xds_client()->api_.ParseAdsResponse(payload, &parser);
-    // This includes a handle that will trigger an ADS read.
-    AdsResponseParser::Result result = parser.TakeResult();
-    read_delay_handle = std::move(result.read_delay_handle);
+    absl::Status status = DecodeAdsResponse(payload, &context);
     if (!status.ok()) {
       // Ignore unparsable response.
       LOG(ERROR) << "[xds_client " << xds_client() << "] xds server "
@@ -1120,22 +1165,22 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
       seen_response_ = true;
       xds_channel()->SetHealthyLocked();
       // Update nonce.
-      auto& state = state_map_[result.type];
-      state.nonce = result.nonce;
+      auto& state = state_map_[context.type];
+      state.nonce = context.nonce;
       // If we got an error, set state.status so that we'll NACK the update.
-      if (!result.errors.empty()) {
+      if (!context.errors.empty()) {
         state.status = absl::UnavailableError(
             absl::StrCat("xDS response validation errors: [",
-                         absl::StrJoin(result.errors, "; "), "]"));
+                         absl::StrJoin(context.errors, "; "), "]"));
         LOG(ERROR) << "[xds_client " << xds_client() << "] xds server "
                    << xds_channel()->server_.server_uri()
                    << ": ADS response invalid for resource type "
-                   << result.type_url << " version " << result.version
+                   << context.type_url << " version " << context.version
                    << ", will NACK: nonce=" << state.nonce
                    << " status=" << state.status;
       }
       // Delete resources not seen in update if needed.
-      if (result.type->AllResourcesRequiredInSotW()) {
+      if (context.type->AllResourcesRequiredInSotW()) {
         for (auto& a : xds_client()->authority_state_map_) {
           const std::string& authority = a.first;
           AuthorityState& authority_state = a.second;
@@ -1143,15 +1188,15 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
           if (authority_state.xds_channels.back() != xds_channel()) {
             continue;
           }
-          auto seen_authority_it = result.resources_seen.find(authority);
+          auto seen_authority_it = context.resources_seen.find(authority);
           // Find this resource type.
-          auto type_it = authority_state.resource_map.find(result.type);
+          auto type_it = authority_state.resource_map.find(context.type);
           if (type_it == authority_state.resource_map.end()) continue;
           // Iterate over resource ids.
           for (auto& r : type_it->second) {
             const XdsResourceKey& resource_key = r.first;
             ResourceState& resource_state = r.second;
-            if (seen_authority_it == result.resources_seen.end() ||
+            if (seen_authority_it == context.resources_seen.end() ||
                 seen_authority_it->second.find(resource_key) ==
                     seen_authority_it->second.end()) {
               // If the resource was newly requested but has not yet been
@@ -1168,33 +1213,33 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
                       << "[xds_client " << xds_client() << "] xds server "
                       << xds_channel()->server_.server_uri()
                       << ": ignoring deletion for resource type "
-                      << result.type_url << " name "
+                      << context.type_url << " name "
                       << XdsClient::ConstructFullXdsResourceName(
-                             authority, result.type_url.c_str(), resource_key);
+                             authority, context.type_url.c_str(), resource_key);
                   resource_state.set_ignored_deletion(true);
                 }
               } else {
                 resource_state.SetDoesNotExist();
                 xds_client()->NotifyWatchersOnResourceDoesNotExist(
-                    resource_state.watchers(), read_delay_handle);
+                    resource_state.watchers(), context.read_delay_handle);
               }
             }
           }
         }
       }
       // If we had valid resources or the update was empty, update the version.
-      if (result.num_valid_resources > 0 || result.errors.empty()) {
-        xds_channel()->resource_type_version_map_[result.type] =
-            std::move(result.version);
+      if (context.num_valid_resources > 0 || context.errors.empty()) {
+        xds_channel()->resource_type_version_map_[context.type] =
+            std::move(context.version);
       }
       // Send ACK or NACK.
-      SendMessageLocked(result.type);
+      SendMessageLocked(context.type);
     }
     // Update metrics.
     if (xds_client()->metrics_reporter_ != nullptr) {
       xds_client()->metrics_reporter_->ReportResourceUpdates(
-          xds_channel()->server_.server_uri(), result.type_url,
-          result.num_valid_resources, result.num_invalid_resources);
+          xds_channel()->server_.server_uri(), context.type_url,
+          context.num_valid_resources, context.num_invalid_resources);
     }
   }
   xds_client()->work_serializer_.DrainQueue();
