@@ -89,7 +89,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
       std::unique_ptr<XdsMetricsReporter> metrics_reporter,
       std::string user_agent_name, std::string user_agent_version,
-      Duration resource_request_timeout = Duration::Seconds(15));
+      // This parameter overrides the timer duration for testing
+      // purposes only -- do not use in production.
+      Duration resource_request_timeout = Duration::Zero());
   ~XdsClient() override;
 
   // Start and cancel watch for a resource.

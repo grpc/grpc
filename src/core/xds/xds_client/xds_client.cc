@@ -208,9 +208,15 @@ class XdsClient::XdsChannel::AdsCall final
       if (state.HasResource()) return;
       // Start timer.
       ads_call_ = std::move(ads_call);
+      Duration timeout = ads_call_->xds_client()->request_timeout_;
+      if (timeout == Duration::Zero()) {
+        timeout =
+            ads_call_->xds_channel()->server_.ResourceTimerIsTransientFailure()
+                ? Duration::Seconds(30)
+                : Duration::Seconds(15);
+      }
       timer_handle_ = ads_call_->xds_client()->engine()->RunAfter(
-          ads_call_->xds_client()->request_timeout_,
-          [self = Ref(DEBUG_LOCATION, "timer")]() {
+          timeout, [self = Ref(DEBUG_LOCATION, "timer")]() {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             self->OnTimer();
@@ -237,9 +243,15 @@ class XdsClient::XdsChannel::AdsCall final
               << "} from xds server";
           resource_seen_ = true;
           state.SetDoesNotExist();
+          absl::Status status =
+              ads_call_->xds_channel()->server_
+                  .ResourceTimerIsTransientFailure()
+                  ? absl::UnavailableError(absl::StrCat(
+                        "xDS server ", ads_call_->xds_channel()->server_uri(),
+                        " not responding"))
+                  : absl::NotFoundError("does not exist");
           ads_call_->xds_client()->NotifyWatchersOnResourceChanged(
-              absl::NotFoundError("does not exist"), state.watchers(),
-              ReadDelayHandle::NoWait());
+              std::move(status), state.watchers(), ReadDelayHandle::NoWait());
         }
       }
       ads_call_->xds_client()->work_serializer_.DrainQueue();

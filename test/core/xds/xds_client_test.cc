@@ -137,6 +137,9 @@ class XdsClientTest : public ::testing::Test {
       bool IgnoreResourceDeletion() const override {
         return ignore_resource_deletion_;
       }
+      bool ResourceTimerIsTransientFailure() const override {
+        return false;  // FIXME
+      }
       bool Equals(const XdsServer& other) const override {
         const auto& o = static_cast<const FakeXdsServer&>(other);
         return server_uri_ == o.server_uri_ &&
