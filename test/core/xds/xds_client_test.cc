@@ -3226,7 +3226,48 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
                /*version_info=*/"1", /*response_nonce=*/"A",
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  // Now cancel watch for "bar1".
+  // Server sends an empty response for the resource type.
+  // (The server doesn't need to do this, but it may.)
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("C")
+          .Serialize());
+  // Client should ACK.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"C",
+               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  // Now subscribe to foo2.
+  watcher = StartFooWatch("foo2");
+  // Client sends a subscription request, which retains the nonce and
+  // version seen previously.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"C",
+               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
+  // Server sends foo2.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("D")
+          .AddFooResource(XdsFooResource("foo2", 8))
+          .Serialize());
+  // Watcher receives the resource.
+  resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo2");
+  EXPECT_EQ(resource->value, 8);
+  // Client ACKs.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"D",
+               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
+  // Cancel watches.
+  CancelFooWatch(watcher.get(), "foo2", /*delay_unsubscription=*/true);
   CancelBarWatch(watcher2.get(), "bar1");
   EXPECT_TRUE(stream->IsOrphaned());
 }
