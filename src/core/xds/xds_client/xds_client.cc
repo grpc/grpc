@@ -1008,9 +1008,8 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
   if (!decode_status.ok()) {
     // If the fail_on_data_errors server feature is present, drop the
     // existing cached resource, if any.
-    const bool drop_cached_resource =
-        XdsDataErrorHandlingEnabled() &&
-        xds_channel()->server_.FailOnDataErrors();
+    const bool drop_cached_resource = XdsDataErrorHandlingEnabled() &&
+                                      xds_channel()->server_.FailOnDataErrors();
     resource_state.SetNacked(context->version, decode_status.ToString(),
                              context->update_time_, drop_cached_resource);
     ++context->num_invalid_resources;
@@ -1331,9 +1330,10 @@ void XdsClient::ResourceState::SetAcked(
   failed_details_.clear();
 }
 
-void XdsClient::ResourceState::SetNacked(
-    const std::string& version, const std::string& details,
-    Timestamp update_time, bool drop_cached_resource) {
+void XdsClient::ResourceState::SetNacked(const std::string& version,
+                                         const std::string& details,
+                                         Timestamp update_time,
+                                         bool drop_cached_resource) {
   if (drop_cached_resource) resource_.reset();
   client_status_ = ClientResourceStatus::NACKED;
   failed_version_ = version;
