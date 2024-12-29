@@ -1,0 +1,2 @@
+# A completely empty WORKSPACE file to replace the original WORKSPACE content when enabling Bzlmod.
+# No WORKSPACE prefix or suffix are added for this file.
