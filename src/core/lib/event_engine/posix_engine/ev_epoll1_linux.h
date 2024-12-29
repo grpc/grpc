@@ -28,6 +28,7 @@
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
+#include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/sync.h"
@@ -35,6 +36,9 @@
 #ifdef GRPC_LINUX_EPOLL
 #include <sys/epoll.h>
 #endif
+#ifdef GRPC_LINUX_EVENTFD
+#include <sys/eventfd.h>
+#endif  // GRPC_LINUX_EVENTFD
 
 #define MAX_EPOLL_EVENTS 100
 
@@ -46,8 +50,8 @@ class Epoll1EventHandle;
 // Definition of epoll1 based poller.
 class Epoll1Poller : public PosixEventPoller {
  public:
-  explicit Epoll1Poller(Scheduler* scheduler);
-  EventHandle* CreateHandle(int fd, absl::string_view name,
+  Epoll1Poller(Scheduler* scheduler, const SystemApi& system_api);
+  EventHandle* CreateHandle(FileDescriptor fd, absl::string_view name,
                             bool track_err) override;
   Poller::WorkResult Work(
       grpc_event_engine::experimental::EventEngine::Duration timeout,
@@ -71,6 +75,7 @@ class Epoll1Poller : public PosixEventPoller {
   void PostforkChild() override;
 
   void Close();
+  const SystemApi* GetSystemApi() const override { return system_api_; }
 
  private:
   // This initial vector size may need to be tuned
@@ -101,7 +106,7 @@ class Epoll1Poller : public PosixEventPoller {
   friend class Epoll1EventHandle;
 #ifdef GRPC_LINUX_EPOLL
   struct EpollSet {
-    int epfd = -1;
+    FileDescriptor epfd;
 
     // The epoll_events after the last call to epoll_wait()
     struct epoll_event events[MAX_EPOLL_EVENTS]{};
@@ -124,11 +129,13 @@ class Epoll1Poller : public PosixEventPoller {
   std::list<EventHandle*> free_epoll1_handles_list_ ABSL_GUARDED_BY(mu_);
   std::unique_ptr<WakeupFd> wakeup_fd_;
   bool closed_;
+  const SystemApi* system_api_;
 };
 
 // Return an instance of a epoll1 based poller tied to the specified event
 // engine.
-std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler);
+std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler,
+                                               const SystemApi& system_api);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
