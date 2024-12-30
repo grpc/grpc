@@ -200,11 +200,17 @@ class PythonArtifact:
             )
             environ["PIP"] = "/opt/python/{}/bin/pip".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
-            environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
-            environ["GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX"] = "TRUE"
 
-            if self.arch == "x86":
+            if self.arch in ("x86", "aarch64"):
                 environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
+
+            if self.arch == "aarch64":
+                # As we won't strip the binary with auditwheel (see below), strip
+                # it at link time.
+                environ["LDFLAGS"] = "-s"
+            else:
+                environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
+                environ["GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX"] = "TRUE"
 
             return create_docker_jobspec(
                 self.name,
@@ -212,7 +218,7 @@ class PythonArtifact:
                 % (self.platform, self.arch),
                 "tools/run_tests/artifacts/build_artifact_python.sh",
                 environ=environ,
-                timeout_seconds=60 * 60 * 8,
+                timeout_seconds=60 * 60 * 10,
             )
         elif self.platform == "windows":
             environ["EXT_COMPILER"] = "msvc"
