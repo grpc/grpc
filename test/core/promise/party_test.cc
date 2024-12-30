@@ -65,26 +65,36 @@ class PartyTest : public ::testing::Test {
 
 TEST_F(PartyTest, Noop) { auto party = MakeParty(); }
 
-TEST_F(PartyTest, CanSpawnAndRun) {
+TEST_F(PartyTest, SpawnAndRunOneParty) {
+  std::string execution_order;
   auto party = MakeParty();
   Notification n;
   party->Spawn(
       "TestSpawn",
-      [i = 10]() mutable -> Poll<int> {
+      [i = 5, &execution_order]() mutable -> Poll<int> {
         EXPECT_GT(i, 0);
         GetContext<Activity>()->ForceImmediateRepoll();
         --i;
-        if (i == 0) return 42;
+        if (i == 0) {
+          absl::StrAppend(&execution_order, "1");
+          return 42;
+        }
+        absl::StrAppend(&execution_order, "P");
         return Pending{};
       },
-      [&n](int x) {
+      [&n, &execution_order](int x) {
+        absl::StrAppend(&execution_order, "2");
         EXPECT_EQ(x, 42);
         n.Notify();
       });
+  absl::StrAppend(&execution_order, "3");
   n.WaitForNotification();
+  absl::StrAppend(&execution_order, "4");
+  EXPECT_STREQ(execution_order.c_str(), "PPPP1234");
 }
 
-TEST_F(PartyTest, CanSpawnWaitableAndRun) {
+TEST_F(PartyTest, SpawnWaitableAndRunTwoParties) {
+  std::string execution_order;
   auto party1 = MakeParty();
   auto party2 = MakeParty();
   Notification n;
@@ -93,17 +103,33 @@ TEST_F(PartyTest, CanSpawnWaitableAndRun) {
   // The party2 task will wait on the latch `done`.
   party1->Spawn(
       "party1_main",
-      [&party2, &done]() {
+      [&party2, &done, &execution_order]() {
+        absl::StrAppend(&execution_order, "1");
         return party2->SpawnWaitable("party2_main",
-                                     [&done]() { return done.Wait(); });
+                                     [&done, &execution_order]() {
+                                       absl::StrAppend(&execution_order, "2");
+                                       return done.Wait();
+                                     });
       },
-      [&n](Empty) { n.Notify(); });
+      [&n, &execution_order](Empty) {
+        absl::StrAppend(&execution_order, "3");
+        n.Notify();
+      });
   ASSERT_FALSE(n.HasBeenNotified());
-  party1->Spawn("party1_notify_latch", [&done]() { done.Set(); }, [](Empty) {});
+  party1->Spawn(
+      "party1_notify_latch",
+      [&done, &execution_order]() {
+        absl::StrAppend(&execution_order, "4");
+        done.Set();
+      },
+      [&execution_order](Empty) { absl::StrAppend(&execution_order, "5"); });
   n.WaitForNotification();
+  EXPECT_STREQ(execution_order.c_str(), "12453");
 }
 
 TEST_F(PartyTest, CanSpawnFromSpawn) {
+  // While nesting one party inside another is possible, this is expensive. We
+  // would caution against using this in production code.
   auto party = MakeParty();
   Notification n1;
   Notification n2;
