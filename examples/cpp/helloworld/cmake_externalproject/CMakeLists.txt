@@ -25,9 +25,6 @@ cmake_minimum_required(VERSION 3.16)
 # Project
 project(HelloWorld-SuperBuild C CXX)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-
 include(ExternalProject)
 
 # Note: For all external projects, instead of using checked-out code, one could
@@ -41,7 +38,7 @@ ExternalProject_Add(absl
   CMAKE_CACHE_ARGS
         -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=TRUE
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/absl
-        -DCMAKE_CXX_STANDARD=17
+        -DCMAKE_CXX_STANDARD:STRING=17
 )
 
 # Builds utf8_range project from the git submodule.
@@ -51,7 +48,7 @@ ExternalProject_Add(utf8_range
   CMAKE_CACHE_ARGS
         -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=TRUE
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/utf8_range
-        -DCMAKE_CXX_STANDARD=17
+        -DCMAKE_CXX_STANDARD:STRING=17
         -Dutf8_range_ENABLE_TESTS:BOOL=OFF
         -Dabsl_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/absl/lib/cmake/absl
   DEPENDS absl
@@ -74,7 +71,7 @@ ExternalProject_Add(protobuf
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/protobuf"
   CMAKE_CACHE_ARGS
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/protobuf
-        -DCMAKE_CXX_STANDARD=17
+        -DCMAKE_CXX_STANDARD:STRING=17
         -Dprotobuf_BUILD_TESTS:BOOL=OFF
         -Dprotobuf_WITH_ZLIB:BOOL=OFF
         -Dprotobuf_ABSL_PROVIDER:STRING=package
@@ -91,7 +88,7 @@ ExternalProject_Add(re2
   CMAKE_CACHE_ARGS
         -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=TRUE
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/re2
-        -DCMAKE_CXX_STANDARD=17
+        -DCMAKE_CXX_STANDARD:STRING=17
 )
 
 # Builds zlib project from the git submodule.
@@ -115,7 +112,7 @@ ExternalProject_Add(grpc
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../.."
   CMAKE_CACHE_ARGS
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/grpc
-        -DCMAKE_CXX_STANDARD=17
+        -DCMAKE_CXX_STANDARD:STRING=17
         -DgRPC_INSTALL:BOOL=ON
         -DgRPC_BUILD_TESTS:BOOL=OFF
         -DgRPC_BUILD_MSVC_MP_COUNT:STRING=-1
@@ -148,7 +145,7 @@ ExternalProject_Add(helloworld
   BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/helloworld"
   INSTALL_COMMAND ""
   CMAKE_CACHE_ARGS
-        -DCMAKE_CXX_STANDARD=17
+        -DCMAKE_CXX_STANDARD:STRING=17
         -DProtobuf_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/protobuf/lib/cmake/protobuf
         -Dc-ares_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/c-ares/lib/cmake/c-ares
         -Dre2_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/re2/lib/cmake/re2
