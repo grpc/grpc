@@ -128,34 +128,41 @@ TEST_F(PartyTest, SpawnWaitableAndRunTwoParties) {
 }
 
 TEST_F(PartyTest, CanSpawnFromSpawn) {
-  // While nesting one party inside another is possible, this is expensive. We
-  // would caution against using this in production code.
+  std::string execution_order;
   auto party = MakeParty();
   Notification n1;
   Notification n2;
   party->Spawn(
       "TestSpawn",
-      [party, &n2]() -> Poll<int> {
+      [party, &n2, &execution_order]() -> Poll<int> {
+        absl::StrAppend(&execution_order, "1");
         party->Spawn(
             "TestSpawnInner",
-            [i = 10]() mutable -> Poll<int> {
+            [i = 5, &execution_order]() mutable -> Poll<int> {
               GetContext<Activity>()->ForceImmediateRepoll();
               --i;
-              if (i == 0) return 42;
+              if (i == 0) {
+                absl::StrAppend(&execution_order, "2");
+                return 42;
+              }
+              absl::StrAppend(&execution_order, "P");
               return Pending{};
             },
-            [&n2](int x) {
+            [&n2, &execution_order](int x) {
+              absl::StrAppend(&execution_order, "3");
               EXPECT_EQ(x, 42);
               n2.Notify();
             });
         return 1234;
       },
-      [&n1](int x) {
+      [&n1, &execution_order](int x) {
+        absl::StrAppend(&execution_order, "4");
         EXPECT_EQ(x, 1234);
         n1.Notify();
       });
   n1.WaitForNotification();
   n2.WaitForNotification();
+  EXPECT_STREQ(execution_order.c_str(), "14PPPP23");
 }
 
 TEST_F(PartyTest, CanWakeupWithOwningWaker) {
