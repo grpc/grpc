@@ -28,13 +28,13 @@ namespace promise_detail {
 // Match Promise Combinator
 //
 // Input:
-// The first input is an absl::variant<...>
+// The first input is an absl::variant<...> object.
 // The remaining inputs are either
 // 1. Promises which take one of the variant types as input parameter and return
 //    Poll<T>
 // 2. Functors that take one of the variant types as input parameter and return
 //    a Promise with return type Poll<T>
-// 3. There MUST be one promise/functor corresponding to each type in the
+// 3. There MUST be one input promise/functor corresponding to each type in the
 //    absl::variant<...> input
 // 4. The return type of all promises must be the same.
 //
