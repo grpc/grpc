@@ -33,6 +33,45 @@ namespace grpc_core {
 
 namespace promise_detail {
 
+// TryJoin Promise Combinator
+//
+// Input :
+// The TryJoin promise combinator takes as inputs one or more promises.
+//
+// Return :
+// Suppose you have three input promises
+// 1.  First promise returning type Poll<int>
+// 2.  Second promise returning type Poll<bool>
+// 3.  Third promise returning type Poll<double>
+// Then the TryJoin promise will have return type of either
+// Poll<absl::StatusOr<std::tuple<int, bool, double>>> or
+// Poll<ValueOrFailure<std::tuple<int, bool, double>>
+// The tuple have one entry corresponding to each input promise.
+// When you poll the TryJoin combinator composed of these 3 promises,
+// 1.  It will return Pending{} if even one promise in the input list of
+//     promises returns Pending{}.
+// 2.  It will return a failure status if any one of the input promises fails.
+// 2.  It will return a tuple if all the input promises are
+//     resolved and successful. The data types in the tuple correspond to the
+//     return types of the input promises in that order.
+//
+// Polling the TryJoin combinator works in the following way :
+// Polling this TryJoin combinator will make the pending promises run
+// serially, in order and on the same thread.
+// Each promise being executed either returns a value or Pending{}.
+// Each subsequent execution of the TryJoin will only execute the input promises
+// which are still pending. This mechanism ensures that no promise is executed
+// after it resolves, which is an essential requirement. If all the promises
+// have finished running successfully, the Join combinator will return a tuple
+// having the return value of each promise.
+//
+// Execution of promises in the TryJoin combinator will stop if any one promise
+// returns a failure status. If you want the promise execution to continue when
+// there is a failure , consider using Join promise combinator instead of the
+// TryJoin combinator.
+//
+// Example of TryJoin : Refer to try_join_test.cc
+
 // Extract the T from a StatusOr<T>
 template <typename T>
 T IntoResult(absl::StatusOr<T>* status) {
@@ -129,9 +168,6 @@ struct WrapInStatusOrTuple {
 
 }  // namespace promise_detail
 
-// Run all promises.
-// If any fail, cancel the rest and return the failure.
-// If all succeed, return Ok(tuple-of-results).
 template <template <typename> class R, typename... Promises>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::TryJoin<R,
                                                                     Promises...>
