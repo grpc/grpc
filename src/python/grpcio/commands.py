@@ -256,7 +256,7 @@ class BuildExt(build_ext.build_ext):
                 # TODO(lidiz) Remove the generated a.out for success tests.
                 cc = os.environ.get("CC", "cc")
                 cc_test = subprocess.Popen(
-                    [cc, "-x", "c", "-std=c++14", "-"],
+                    [cc, "-x", "c", "-std=c++17", "-"],
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
