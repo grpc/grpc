@@ -28,6 +28,40 @@
 
 namespace grpc_core {
 
+// Seq Promise combinator.
+//
+// Seq stands for sequencing.
+//
+// Input :
+// 1. The seq combinator needs minimum one promise as input.
+// 2. The first input to seq combinator is a promise.
+// 3. The remainng inputs to seq combinator are functors which return promises.
+// The input type of the Nth functor should be the return value of the (N-1)th
+// promise.
+//
+// Return :
+// Polling the Seq Promise combinator returns Poll<T> where T is the type
+// returned by the last promise in the list of input promises.
+//
+// Polling the Seq combinator works in the following way :
+// Run the first promise. If it returns Pending{}, nothing else is executed.
+// If the first promise returns a value, pass this result to the second functor,
+// and run the returned promise. If it returns Pending{}, nothing else is
+// executed. If it returns a value, pass this result to the third, and run the
+// returned promise. etc. Return the final value.
+//
+// If any of the promises in the Seq chain returns a failure status, Seq will
+// still proceed with the execution of the remaining promises. If you want the
+// execution to stop when a failure status is received, use the TrySeq
+// combinator instead.
+//
+// Promises in the Seq combinator are run in order, serially and on the same
+// thread.
+//
+// Example :
+// The unit tests (esp ThreeTypedPendingThens) in seq_test.cc provide all
+// possible permutations of how Seq combinator can be used.
+
 namespace promise_detail {
 
 template <typename T>
@@ -76,12 +110,6 @@ using SeqIter = BasicSeqIter<SeqTraits, Iter, Factory, Argument>;
 
 }  // namespace promise_detail
 
-// Sequencing combinator.
-// Run the first promise.
-// Pass its result to the second, and run the returned promise.
-// Pass its result to the third, and run the returned promise.
-// etc
-// Return the final value.
 template <typename F>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline F Seq(F functor) {
   return functor;
