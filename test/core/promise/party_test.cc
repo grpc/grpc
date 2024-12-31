@@ -65,6 +65,66 @@ class PartyTest : public ::testing::Test {
 
 TEST_F(PartyTest, Noop) { auto party = MakeParty(); }
 
+auto MakePromise(std::string& execution_order, int num) {
+  return [i = num, &execution_order]() mutable -> Poll<int> {
+    absl::StrAppend(&execution_order, "L");
+    absl::StrAppend(&execution_order, i);
+    return i;
+  };
+}
+
+auto MakeOnDone(std::string& execution_order) {
+  return [&execution_order](int num) mutable -> Poll<int> {
+    absl::StrAppend(&execution_order, "D");
+    absl::StrAppend(&execution_order, num);
+    return num;
+  };
+}
+
+TEST_F(PartyTest, TestLargeNumberOfSpawnedPromises) {
+  const int kNumPromises = 256;
+  std::string execution_order;
+  auto party = MakeParty();
+  for (int i = 1; i <= kNumPromises; ++i) {
+    absl::StrAppend(&execution_order, ".");
+    party->Spawn(absl::StrCat("p", i), MakePromise(execution_order, i),
+                 MakeOnDone(execution_order));
+  }
+  std::string expected_execution_order;
+  for (int i = 1; i <= kNumPromises; ++i) {
+    absl::StrAppend(&expected_execution_order, ".L");
+    absl::StrAppend(&expected_execution_order, i);
+    absl::StrAppend(&expected_execution_order, "D");
+    absl::StrAppend(&expected_execution_order, i);
+  }
+  EXPECT_STREQ(execution_order.c_str(), expected_execution_order.c_str());
+}
+
+auto MakePendingPromise(std::string& execution_order, int num) {
+  return [i = num, &execution_order]() mutable -> Poll<int> {
+    absl::StrAppend(&execution_order, "P");
+    absl::StrAppend(&execution_order, i);
+    return Pending{};
+  };
+}
+
+TEST_F(PartyTest, Test16SpawnedPendingPromises) {
+  const int kNumPromises = 16;
+  std::string execution_order;
+  auto party = MakeParty();
+  for (int i = 1; i <= kNumPromises; ++i) {
+    absl::StrAppend(&execution_order, ".");
+    party->Spawn(absl::StrCat("p", i), MakePendingPromise(execution_order, i),
+                 MakeOnDone(execution_order));
+  }
+  std::string expected_execution_order;
+  for (int i = 1; i <= kNumPromises; ++i) {
+    absl::StrAppend(&expected_execution_order, ".P");
+    absl::StrAppend(&expected_execution_order, i);
+  }
+  EXPECT_STREQ(execution_order.c_str(), expected_execution_order.c_str());
+}
+
 TEST_F(PartyTest, SpawnAndRunOneParty) {
   std::string execution_order;
   auto party = MakeParty();
