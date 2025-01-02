@@ -513,7 +513,7 @@ TEST_F(PartyTest, ThreadStressTest) {
   // 5. The threads run in parallel. Spawn does not acquire locks that it should
   // not. And it does not introduce majaor delays of any sort.
   constexpr int kNumThreads = 8;
-  constexpr int kNumSpawns = 100;
+  const int kNumSpawns = 100;
   auto party = MakeParty();
   std::vector<std::string> execution_order(kNumThreads);
   std::vector<Timestamp> start_times(kNumThreads);
