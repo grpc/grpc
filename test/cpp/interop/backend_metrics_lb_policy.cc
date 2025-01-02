@@ -16,15 +16,16 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "test/cpp/interop/backend_metrics_lb_policy.h"
 
-#include "absl/strings/str_format.h"
+#include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/load_balancing/delegating_helper.h"
+#include "src/core/load_balancing/delegating_helper.h"
+#include "src/core/load_balancing/oob_backend_metric.h"
 
 namespace grpc {
 namespace testing {
@@ -66,7 +67,7 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
       : LoadBalancingPolicy(std::move(args), /*initial_refcount=*/2) {
     load_report_tracker_ =
         channel_args().GetPointer<LoadReportTracker>(kMetricsTrackerArgument);
-    GPR_ASSERT(load_report_tracker_ != nullptr);
+    CHECK_NE(load_report_tracker_, nullptr);
     Args delegate_args;
     delegate_args.work_serializer = work_serializer();
     delegate_args.args = channel_args();
@@ -86,6 +87,11 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
   }
 
   absl::Status UpdateLocked(UpdateArgs args) override {
+    auto config =
+        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+            grpc_core::Json::FromArray({grpc_core::Json::FromObject(
+                {{"pick_first", grpc_core::Json::FromObject({})}})}));
+    args.config = std::move(config.value());
     return delegate_->UpdateLocked(std::move(args));
   }
 
@@ -249,18 +255,16 @@ LoadReportTracker::LoadReportEntry LoadReportTracker::WaitForOobLoadReport(
   grpc_core::MutexLock lock(&load_reports_mu_);
   // This condition will be called under lock
   for (size_t i = 0; i < max_attempts; i++) {
-    auto deadline = absl::Now() + poll_timeout;
-    // loop to handle spurious wakeups.
-    do {
-      if (absl::Now() >= deadline) {
+    if (oob_load_reports_.empty()) {
+      load_reports_cv_.WaitWithTimeout(&load_reports_mu_, poll_timeout);
+      if (oob_load_reports_.empty()) {
         return absl::nullopt;
       }
-      load_reports_cv_.WaitWithDeadline(&load_reports_mu_, deadline);
-    } while (oob_load_reports_.empty());
+    }
     auto report = std::move(oob_load_reports_.front());
     oob_load_reports_.pop_front();
     if (predicate(report)) {
-      gpr_log(GPR_DEBUG, "Report #%" PRIuPTR " matched", i + 1);
+      VLOG(2) << "Report #" << (i + 1) << " matched";
       return report;
     }
   }

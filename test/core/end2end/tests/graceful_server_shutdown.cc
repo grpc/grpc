@@ -16,13 +16,12 @@
 //
 //
 
+#include <grpc/status.h>
+
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -30,8 +29,8 @@ namespace {
 
 CORE_END2END_TEST(Http2Test, GracefulServerShutdown) {
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(10)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -43,7 +42,7 @@ CORE_END2END_TEST(Http2Test, GracefulServerShutdown) {
   // shutdown and destroy the server
   ShutdownServerAndNotify(200);
   Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})

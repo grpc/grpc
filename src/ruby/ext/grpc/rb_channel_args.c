@@ -20,13 +20,13 @@
 
 #include "rb_channel_args.h"
 
-#include "rb_grpc.h"
-#include "rb_grpc_imports.generated.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "rb_grpc.h"
+#include "rb_grpc_imports.generated.h"
 
 static rb_data_type_t grpc_rb_channel_args_data_type = {
     "grpc_channel_args",
@@ -71,7 +71,7 @@ static int grpc_rb_channel_create_in_process_add_args_hash_cb(VALUE key,
     return ST_STOP;
   }
 
-  args->args[args->num_args - 1].key = (char*)the_key;
+  args->args[args->num_args - 1].key = gpr_strdup(the_key);
   switch (TYPE(val)) {
     case T_SYMBOL:
       args->args[args->num_args - 1].type = GRPC_ARG_STRING;
@@ -160,9 +160,11 @@ void grpc_rb_hash_convert_to_channel_args(VALUE src_hash,
 }
 
 void grpc_rb_channel_args_destroy(grpc_channel_args* args) {
-  GPR_ASSERT(args != NULL);
+  GRPC_RUBY_ASSERT(args != NULL);
   if (args->args == NULL) return;
   for (int i = 0; i < args->num_args; i++) {
+    // the key was created with gpr_strdup
+    gpr_free(args->args[i].key);
     if (args->args[i].type == GRPC_ARG_STRING) {
       // we own string pointers, which were created with gpr_strdup
       gpr_free(args->args[i].value.string);

@@ -18,20 +18,18 @@
 
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 
+#include <grpc/support/alloc.h>
 #include <string.h>
 
 #include <memory>
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/string.h"
+#include "test/core/test_util/test_config.h"
 
 static int all_ok = 1;
 
@@ -40,8 +38,8 @@ static void expect_slice_eq(grpc_slice expected, grpc_slice slice,
   if (!grpc_slice_eq(slice, expected)) {
     char* hs = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char* he = grpc_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    gpr_log(GPR_ERROR, "FAILED:%d: %s\ngot:  %s\nwant: %s", line, debug, hs,
-            he);
+    LOG(ERROR) << "FAILED:" << line << ": " << debug << "\ngot:  " << hs
+               << "\nwant: " << he;
     gpr_free(hs);
     gpr_free(he);
     all_ok = 0;
@@ -131,7 +129,7 @@ TEST(BinDecoderTest, MainTest) {
   EXPECT_SLICE_EQ("", base64_decode("ab"));
   EXPECT_SLICE_EQ("", base64_decode("abc"));
 
-  // Test illegal charactors in grpc_chttp2_base64_decode
+  // Test illegal characters in grpc_chttp2_base64_decode
   EXPECT_SLICE_EQ("", base64_decode("Zm:v"));
   EXPECT_SLICE_EQ("", base64_decode("Zm=v"));
 
@@ -141,7 +139,7 @@ TEST(BinDecoderTest, MainTest) {
   EXPECT_SLICE_EQ("", base64_decode_with_length("Zm8", 3));
   EXPECT_SLICE_EQ("", base64_decode_with_length("Zm9v", 4));
 
-  // Test illegal charactors in grpc_chttp2_base64_decode_with_length
+  // Test illegal characters in grpc_chttp2_base64_decode_with_length
   EXPECT_SLICE_EQ("", base64_decode_with_length("Zm:v", 3));
   EXPECT_SLICE_EQ("", base64_decode_with_length("Zm=v", 3));
 

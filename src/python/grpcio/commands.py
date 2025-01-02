@@ -256,7 +256,7 @@ class BuildExt(build_ext.build_ext):
                 # TODO(lidiz) Remove the generated a.out for success tests.
                 cc = os.environ.get("CC", "cc")
                 cc_test = subprocess.Popen(
-                    [cc, "-x", "c", "-std=c++14", "-"],
+                    [cc, "-x", "c", "-std=c++17", "-"],
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
@@ -273,7 +273,7 @@ class BuildExt(build_ext.build_ext):
         #   behavior in gcc and clang. The clang doesn't take --stdc++11
         #   flags but gcc does. Since the setuptools of Python only support
         #   all C or all C++ compilation, the mix of C and C++ will crash.
-        #   *By default*, macOS and FreBSD use clang and Linux use gcc
+        #   *By default*, macOS and FreeBSD use clang and Linux use gcc
         #
         #   If we are not using a permissive compiler that's OK with being
         #   passed wrong std flags, swap out compile function by adding a filter
@@ -284,11 +284,11 @@ class BuildExt(build_ext.build_ext):
             def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
                 if src.endswith(".c"):
                     extra_postargs = [
-                        arg for arg in extra_postargs if not "-std=c++" in arg
+                        arg for arg in extra_postargs if "-std=c++" not in arg
                     ]
                 elif src.endswith(".cc") or src.endswith(".cpp"):
                     extra_postargs = [
-                        arg for arg in extra_postargs if not "-std=gnu99" in arg
+                        arg for arg in extra_postargs if "-std=gnu99" not in arg
                     ]
                 return old_compile(
                     obj, src, ext, cc_args, extra_postargs, pp_opts

@@ -13,25 +13,28 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/thd_id.h>
+
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <functional>
+#include <memory>
 #include <thread>
+#include <tuple>
 #include <vector>
 
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/thd_id.h>
-
 #include "src/core/lib/event_engine/thread_pool/thread_count.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/thd.h"
+#include "src/core/util/time.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -92,7 +95,7 @@ TYPED_TEST(ThreadPoolTest, ForkStressTest) {
   // This test exercises a subset of the fork logic, the pieces we can control
   // without an actual OS fork.
   constexpr int expected_runcount = 1000;
-  constexpr absl::Duration fork_freqency{absl::Milliseconds(50)};
+  constexpr absl::Duration fork_frequency{absl::Milliseconds(50)};
   constexpr int num_closures_between_forks{100};
   TypeParam pool(8);
   std::atomic<int> runcount{0};
@@ -118,7 +121,7 @@ TYPED_TEST(ThreadPoolTest, ForkStressTest) {
   // simulate multiple forks at a fixed frequency
   int curr_runcount = 0;
   while (curr_runcount < expected_runcount) {
-    absl::SleepFor(fork_freqency);
+    absl::SleepFor(fork_frequency);
     curr_runcount = runcount.load(std::memory_order_relaxed);
     int curr_forkcount = fork_count.load(std::memory_order_relaxed);
     if (curr_forkcount * num_closures_between_forks > curr_runcount) {
@@ -283,6 +286,15 @@ TYPED_TEST(ThreadPoolTest, WorkerThreadLocalRunWorksWithOtherPools) {
   }
   finished_all_iterations.WaitForNotification();
   p2.Quiesce();
+  p1.Quiesce();
+}
+
+TYPED_TEST(ThreadPoolTest, DISABLED_TestDumpStack) {
+  TypeParam p1(8);
+  for (size_t i = 0; i < 8; i++) {
+    p1.Run([]() { absl::SleepFor(absl::Seconds(90)); });
+  }
+  absl::SleepFor(absl::Seconds(2));
   p1.Quiesce();
 }
 
@@ -452,11 +464,11 @@ TEST_F(LivingThreadCountTest, BlockUntilThreadCountTest) {
   });
   {
     auto alive = living_thread_count.MakeAutoThreadCounter();
-    living_thread_count.BlockUntilThreadCount(1,
-                                              "block until 1 thread remains");
+    std::ignore = living_thread_count.BlockUntilThreadCount(
+        1, "block until 1 thread remains", grpc_core::Duration::Infinity());
   }
-  living_thread_count.BlockUntilThreadCount(0,
-                                            "block until all threads are gone");
+  std::ignore = living_thread_count.BlockUntilThreadCount(
+      0, "block until all threads are gone", grpc_core::Duration::Infinity());
   joiner.join();
   ASSERT_EQ(living_thread_count.count(), 0);
 }

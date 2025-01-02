@@ -11,22 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
-#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -65,8 +61,8 @@ int64_t event_engine_tcp_client_connect(
         } else {
           *endpoint = nullptr;
         }
-        GRPC_EVENT_ENGINE_TRACE("EventEngine::Connect Status: %s",
-                                ep.status().ToString().c_str());
+        GRPC_TRACE_LOG(event_engine, INFO)
+            << "EventEngine::Connect Status: " << ep.status();
         grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_connect,
                                 absl_status_to_grpc_error(conn_status));
       },
@@ -76,15 +72,14 @@ int64_t event_engine_tcp_client_connect(
           : grpc_event_engine::experimental::MemoryAllocator(),
       std::max(grpc_core::Duration::Milliseconds(1),
                deadline - grpc_core::Timestamp::Now()));
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::Connect Peer: %s, handle: %" PRId64,
-                          (*addr_uri).c_str(),
-                          static_cast<int64_t>(handle.keys[0]));
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "EventEngine::Connect Peer: " << *addr_uri << ", handle: " << handle;
   return handle.keys[0];
 }
 
 bool event_engine_tcp_client_cancel_connect(int64_t connection_handle) {
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::CancelConnect handle: %" PRId64,
-                          connection_handle);
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "EventEngine::CancelConnect handle: " << connection_handle;
   return GetDefaultEventEngine()->CancelConnect(
       {static_cast<intptr_t>(connection_handle), 0});
 }

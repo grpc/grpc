@@ -16,19 +16,17 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/compression/message_compress.h"
-
-#include <string.h>
-
-#include <zconf.h>
-#include <zlib.h>
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <string.h>
+#include <zconf.h>
+#include <zlib.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/slice/slice.h"
 
 #define OUTPUT_BLOCK_SIZE 1024
@@ -42,40 +40,40 @@ static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
   grpc_slice outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);
   const uInt uint_max = ~uInt{0};
 
-  GPR_ASSERT(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
+  CHECK(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
   zs->avail_out = static_cast<uInt> GRPC_SLICE_LENGTH(outbuf);
   zs->next_out = GRPC_SLICE_START_PTR(outbuf);
   flush = Z_NO_FLUSH;
   for (i = 0; i < input->count; i++) {
     if (i == input->count - 1) flush = Z_FINISH;
-    GPR_ASSERT(GRPC_SLICE_LENGTH(input->slices[i]) <= uint_max);
+    CHECK(GRPC_SLICE_LENGTH(input->slices[i]) <= uint_max);
     zs->avail_in = static_cast<uInt> GRPC_SLICE_LENGTH(input->slices[i]);
     zs->next_in = GRPC_SLICE_START_PTR(input->slices[i]);
     do {
       if (zs->avail_out == 0) {
         grpc_slice_buffer_add_indexed(output, outbuf);
         outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);
-        GPR_ASSERT(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
+        CHECK(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
         zs->avail_out = static_cast<uInt> GRPC_SLICE_LENGTH(outbuf);
         zs->next_out = GRPC_SLICE_START_PTR(outbuf);
       }
       r = flate(zs, flush);
       if (r < 0 && r != Z_BUF_ERROR /* not fatal */) {
-        gpr_log(GPR_INFO, "zlib error (%d)", r);
+        VLOG(2) << "zlib error (" << r << ")";
         goto error;
       }
     } while (zs->avail_out == 0);
     if (zs->avail_in) {
-      gpr_log(GPR_INFO, "zlib: not all input consumed");
+      VLOG(2) << "zlib: not all input consumed";
       goto error;
     }
   }
   if (r != Z_STREAM_END) {
-    gpr_log(GPR_INFO, "zlib: Data error");
+    VLOG(2) << "zlib: Data error";
     goto error;
   }
 
-  GPR_ASSERT(outbuf.refcount);
+  CHECK(outbuf.refcount);
   outbuf.data.refcounted.length -= zs->avail_out;
   grpc_slice_buffer_add_indexed(output, outbuf);
 
@@ -105,7 +103,7 @@ static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   zs.zfree = zfree_gpr;
   r = deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | (gzip ? 16 : 0),
                    8, Z_DEFAULT_STRATEGY);
-  GPR_ASSERT(r == Z_OK);
+  CHECK(r == Z_OK);
   r = zlib_body(&zs, input, output, deflate) && output->length < input->length;
   if (!r) {
     for (i = count_before; i < output->count; i++) {
@@ -129,7 +127,7 @@ static int zlib_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   zs.zalloc = zalloc_gpr;
   zs.zfree = zfree_gpr;
   r = inflateInit2(&zs, 15 | (gzip ? 16 : 0));
-  GPR_ASSERT(r == Z_OK);
+  CHECK(r == Z_OK);
   r = zlib_body(&zs, input, output, inflate);
   if (!r) {
     for (i = count_before; i < output->count; i++) {
@@ -164,7 +162,7 @@ static int compress_inner(grpc_compression_algorithm algorithm,
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
       break;
   }
-  gpr_log(GPR_ERROR, "invalid compression algorithm %d", algorithm);
+  LOG(ERROR) << "invalid compression algorithm " << algorithm;
   return 0;
 }
 
@@ -189,6 +187,6 @@ int grpc_msg_decompress(grpc_compression_algorithm algorithm,
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
       break;
   }
-  gpr_log(GPR_ERROR, "invalid compression algorithm %d", algorithm);
+  LOG(ERROR) << "invalid compression algorithm " << algorithm;
   return 0;
 }

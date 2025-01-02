@@ -18,7 +18,6 @@
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/promise/seq.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
@@ -38,12 +37,12 @@ TEST(InterActivityPipe, CanSendAndReceive) {
     return absl::OkStatus();
   }));
   EXPECT_FALSE(done);
-  auto b =
-      TestActivity(Seq(pipe.receiver.Next(), [&done](absl::optional<int> n) {
-        EXPECT_EQ(n, 3);
-        done = true;
-        return absl::OkStatus();
-      }));
+  auto b = TestActivity(Seq(pipe.receiver.Next(),
+                            [&done](InterActivityPipe<int, 1>::NextResult n) {
+                              EXPECT_EQ(n.value(), 3);
+                              done = true;
+                              return absl::OkStatus();
+                            }));
   EXPECT_TRUE(done);
 }
 
@@ -63,12 +62,12 @@ TEST(InterActivityPipe, CanSendTwiceAndReceive) {
   EXPECT_FALSE(done);
   auto b = TestActivity(Seq(
       pipe.receiver.Next(),
-      [&pipe](absl::optional<int> n) {
-        EXPECT_EQ(n, 3);
+      [&pipe](InterActivityPipe<int, 1>::NextResult n) {
+        EXPECT_EQ(n.value(), 3);
         return pipe.receiver.Next();
       },
-      [&done](absl::optional<int> n) {
-        EXPECT_EQ(n, 4);
+      [&done](InterActivityPipe<int, 1>::NextResult n) {
+        EXPECT_EQ(n.value(), 4);
         done = true;
         return absl::OkStatus();
       }));
@@ -78,12 +77,12 @@ TEST(InterActivityPipe, CanSendTwiceAndReceive) {
 TEST(InterActivityPipe, CanReceiveAndSend) {
   InterActivityPipe<int, 1> pipe;
   bool done = false;
-  auto b =
-      TestActivity(Seq(pipe.receiver.Next(), [&done](absl::optional<int> n) {
-        EXPECT_EQ(n, 3);
-        done = true;
-        return absl::OkStatus();
-      }));
+  auto b = TestActivity(Seq(pipe.receiver.Next(),
+                            [&done](InterActivityPipe<int, 1>::NextResult n) {
+                              EXPECT_EQ(n.value(), 3);
+                              done = true;
+                              return absl::OkStatus();
+                            }));
   EXPECT_FALSE(done);
   auto a = TestActivity(Seq(pipe.sender.Push(3), [](bool b) {
     EXPECT_TRUE(b);
@@ -95,15 +94,17 @@ TEST(InterActivityPipe, CanReceiveAndSend) {
 TEST(InterActivityPipe, CanClose) {
   InterActivityPipe<int, 1> pipe;
   bool done = false;
-  auto b =
-      TestActivity(Seq(pipe.receiver.Next(), [&done](absl::optional<int> n) {
-        EXPECT_EQ(n, absl::nullopt);
-        done = true;
-        return absl::OkStatus();
-      }));
+  auto b = TestActivity(Seq(pipe.receiver.Next(),
+                            [&done](InterActivityPipe<int, 1>::NextResult n) {
+                              EXPECT_FALSE(n.has_value());
+                              done = true;
+                              return absl::OkStatus();
+                            }));
   EXPECT_FALSE(done);
   // Drop the sender
-  { auto x = std::move(pipe.sender); }
+  {
+    auto x = std::move(pipe.sender);
+  }
   EXPECT_TRUE(done);
 }
 

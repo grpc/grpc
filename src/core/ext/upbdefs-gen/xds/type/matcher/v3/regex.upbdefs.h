@@ -3,21 +3,19 @@
  *     xds/type/matcher/v3/regex.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPBDEFS_H_
-#define XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPBDEFS_H_
+#ifndef XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H__UPBDEFS_H_
+#define XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
-#include "upb/port/def.inc"
+
+#include "upb/port/def.inc" // Must be last.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "upb/reflection/def.h"
-
-#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init xds_type_matcher_v3_regex_proto_upbdefinit;
 
@@ -37,4 +35,4 @@ UPB_INLINE const upb_MessageDef *xds_type_matcher_v3_RegexMatcher_GoogleRE2_getm
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPBDEFS_H_ */
+#endif  /* XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H__UPBDEFS_H_ */

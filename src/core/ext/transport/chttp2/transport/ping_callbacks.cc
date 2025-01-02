@@ -12,18 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
+
+#include <grpc/support/port_platform.h>
 
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/distributions.h"
-
-#include <grpc/support/log.h>
-
-grpc_core::TraceFlag grpc_ping_trace(false, "http2_ping");
 
 namespace grpc_core {
 
@@ -96,7 +93,7 @@ absl::optional<uint64_t> Chttp2PingCallbacks::OnPingTimeout(
     Duration ping_timeout,
     grpc_event_engine::experimental::EventEngine* event_engine,
     Callback callback) {
-  GPR_ASSERT(started_new_ping_without_setting_timeout_);
+  CHECK(started_new_ping_without_setting_timeout_);
   started_new_ping_without_setting_timeout_ = false;
   auto it = inflight_.find(most_recent_inflight_);
   if (it == inflight_.end()) return absl::nullopt;

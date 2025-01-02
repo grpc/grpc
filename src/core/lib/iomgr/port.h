@@ -30,6 +30,9 @@
 #endif
 #if defined(GPR_WINDOWS)
 #define GRPC_WINSOCK_SOCKET 1
+#ifndef __MINGW32__
+#define GRPC_HAVE_UNIX_SOCKET 1
+#endif  // __MINGW32__
 #define GRPC_WINDOWS_SOCKETUTILS 1
 #define GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER 1
 #elif defined(GPR_ANDROID)
@@ -37,8 +40,8 @@
 #define GRPC_HAVE_IP_PKTINFO 1
 #define GRPC_HAVE_MSG_NOSIGNAL 1
 #define GRPC_HAVE_UNIX_SOCKET 1
-#if defined(LINUX_VERSION_CODE) && defined(__GLIBC_PREREQ)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0) && __GLIBC_PREREQ(2, 18)
+#if defined(LINUX_VERSION_CODE) && defined(__NDK_MAJOR__)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0) && __NDK_MAJOR__ >= 14
 #define GRPC_HAVE_VSOCK 1
 #endif
 #endif

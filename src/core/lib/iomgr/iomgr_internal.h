@@ -20,7 +20,6 @@
 #define GRPC_SRC_CORE_LIB_IOMGR_IOMGR_INTERNAL_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdbool.h>
 
 #include "src/core/lib/iomgr/closure.h"

@@ -37,7 +37,7 @@ class CFTypeUniqueRef {
   CFTypeUniqueRef(CFTypeUniqueRef const&) = delete;
   CFTypeUniqueRef& operator=(CFTypeUniqueRef const&) = delete;
 
-  CFTypeUniqueRef(CFTypeUniqueRef&& other) : cf_type_ref_(other.release()){};
+  CFTypeUniqueRef(CFTypeUniqueRef&& other) : cf_type_ref_(other.release()) {};
   CFTypeUniqueRef& operator=(CFTypeUniqueRef&& other) {
     reset(other.release());
     return *this;

@@ -11,13 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
 #include <memory>
 
+#include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
 
 using ::grpc_event_engine::experimental::EventEngine;
 
@@ -45,6 +45,11 @@ TYPED_TEST(TaskHandleTest, Validity) {
   ASSERT_NE(t, TypeParam::kInvalid);
   ASSERT_NE(TypeParam::kInvalid, t);
   ASSERT_EQ(TypeParam::kInvalid, TypeParam::kInvalid);
+}
+
+TYPED_TEST(TaskHandleTest, AbslStringify) {
+  TypeParam t{42, 43};
+  ASSERT_EQ(absl::StrCat(t), "{000000000000002a,000000000000002b}");
 }
 
 int main(int argc, char** argv) {

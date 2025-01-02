@@ -14,15 +14,14 @@
 
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_FRAMEWORK_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_FRAMEWORK_H
+#include <grpc/event_engine/event_engine.h>
+#include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
 
-#include <gtest/gtest.h>
-
 #include "absl/functional/any_invocable.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
+#include "absl/log/check.h"
 
 extern absl::AnyInvocable<
     std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>*
@@ -68,13 +67,13 @@ class EventEngineTest : public testing::Test {
  protected:
   std::shared_ptr<grpc_event_engine::experimental::EventEngine>
   NewEventEngine() {
-    GPR_ASSERT(g_ee_factory != nullptr);
+    CHECK_NE(g_ee_factory, nullptr);
     return (*g_ee_factory)();
   }
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine>
   NewOracleEventEngine() {
-    GPR_ASSERT(g_oracle_ee_factory != nullptr);
+    CHECK_NE(g_oracle_ee_factory, nullptr);
     return (*g_oracle_ee_factory)();
   }
 };

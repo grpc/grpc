@@ -3,21 +3,19 @@
  *     xds/core/v3/collection_entry.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPBDEFS_H_
-#define XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPBDEFS_H_
+#ifndef XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPB_H__UPBDEFS_H_
+#define XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
-#include "upb/port/def.inc"
+
+#include "upb/port/def.inc" // Must be last.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "upb/reflection/def.h"
-
-#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init xds_core_v3_collection_entry_proto_upbdefinit;
 
@@ -37,4 +35,4 @@ UPB_INLINE const upb_MessageDef *xds_core_v3_CollectionEntry_InlineEntry_getmsgd
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPBDEFS_H_ */
+#endif  /* XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPB_H__UPBDEFS_H_ */

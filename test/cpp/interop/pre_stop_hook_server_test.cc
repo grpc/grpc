@@ -16,23 +16,21 @@
 
 #include "test/cpp/interop/pre_stop_hook_server.h"
 
-#include <thread>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/strings/str_format.h"
-
 #include <grpc/grpc.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
+#include <gtest/gtest.h>
 
-#include "src/core/lib/gprpp/sync.h"
+#include <thread>
+
+#include "absl/strings/str_format.h"
+#include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace testing {
@@ -209,7 +207,8 @@ TEST(PreStopHookService, StartDoRequestStop) {
   stub.async()->Hook(
       &infos[1].context, &infos[1].request, &infos[1].response,
       [&infos](const Status& status) { infos[1].SetStatus(status); });
-  ASSERT_TRUE(service.TestOnlyExpectRequests(2, absl::Milliseconds(100)));
+  ASSERT_TRUE(service.TestOnlyExpectRequests(
+      2, absl::Milliseconds(500) * grpc_test_slowdown_factor()));
   ClientContext ctx;
   SetReturnStatusRequest request;
   request.set_grpc_code_to_return(StatusCode::INTERNAL);
@@ -238,7 +237,8 @@ TEST(PreStopHookService, StartDoRequestStop) {
   stub.async()->Hook(
       &call_hangs.context, &call_hangs.request, &call_hangs.response,
       [&](const Status& status) { call_hangs.SetStatus(status); });
-  ASSERT_TRUE(service.TestOnlyExpectRequests(1, absl::Milliseconds(100)));
+  ASSERT_TRUE(service.TestOnlyExpectRequests(
+      1, absl::Milliseconds(500) * grpc_test_slowdown_factor()));
   status = call_hangs.WaitForStatus(absl::Milliseconds(100));
   EXPECT_FALSE(status.has_value()) << status->error_message();
   service.Stop();

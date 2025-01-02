@@ -20,20 +20,16 @@
 #define GRPC_SRC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
 
 #include <grpc/support/port_platform.h>
-
+#include <grpc/support/time.h>
 #include <inttypes.h>
 
 #include <string>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/time.h"
-
-extern grpc_core::TraceFlag grpc_bdp_estimator_trace;
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -51,11 +47,10 @@ class BdpEstimator {
   // grpc_bdp_estimator_add_incoming_bytes once a ping has been scheduled by a
   // transport (but not necessarily started)
   void SchedulePing() {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_INFO, "bdp[%s]:sched acc=%" PRId64 " est=%" PRId64,
-              std::string(name_).c_str(), accumulator_, estimate_);
-    }
-    GPR_ASSERT(ping_state_ == PingState::UNSCHEDULED);
+    GRPC_TRACE_LOG(bdp_estimator, INFO)
+        << "bdp[" << name_ << "]:sched acc=" << accumulator_
+        << " est=" << estimate_;
+    CHECK(ping_state_ == PingState::UNSCHEDULED);
     ping_state_ = PingState::SCHEDULED;
     accumulator_ = 0;
   }
@@ -64,11 +59,10 @@ class BdpEstimator {
   // once
   // the ping is on the wire
   void StartPing() {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_INFO, "bdp[%s]:start acc=%" PRId64 " est=%" PRId64,
-              std::string(name_).c_str(), accumulator_, estimate_);
-    }
-    GPR_ASSERT(ping_state_ == PingState::SCHEDULED);
+    GRPC_TRACE_LOG(bdp_estimator, INFO)
+        << "bdp[" << name_ << "]:start acc=" << accumulator_
+        << " est=" << estimate_;
+    CHECK(ping_state_ == PingState::SCHEDULED);
     ping_state_ = PingState::STARTED;
     ping_start_time_ = gpr_now(GPR_CLOCK_MONOTONIC);
   }

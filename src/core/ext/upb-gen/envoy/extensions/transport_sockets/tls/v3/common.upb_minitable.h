@@ -3,10 +3,11 @@
  *     envoy/extensions/transport_sockets/tls/v3/common.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_COMMON_PROTO_UPB_MINITABLE_H_
-#define ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_COMMON_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_COMMON_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_COMMON_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -18,12 +19,21 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__TlsParameters_msg_init;
+extern const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__TlsParameters_msg_init_ptr;
 extern const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__PrivateKeyProvider_msg_init;
+extern const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__PrivateKeyProvider_msg_init_ptr;
 extern const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__TlsCertificate_msg_init;
+extern const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__TlsCertificate_msg_init_ptr;
 extern const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__TlsSessionTicketKeys_msg_init;
+extern const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__TlsSessionTicketKeys_msg_init_ptr;
 extern const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__CertificateProviderPluginInstance_msg_init;
+extern const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__CertificateProviderPluginInstance_msg_init_ptr;
 extern const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__SubjectAltNameMatcher_msg_init;
+extern const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__SubjectAltNameMatcher_msg_init_ptr;
 extern const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext_msg_init;
+extern const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext_msg_init_ptr;
+extern const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext__SystemRootCerts_msg_init;
+extern const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext__SystemRootCerts_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_extensions_transport_sockets_tls_v3_common_proto_upb_file_layout;
 
@@ -33,4 +43,4 @@ extern const upb_MiniTableFile envoy_extensions_transport_sockets_tls_v3_common_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_COMMON_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_COMMON_PROTO_UPB_H__UPB_MINITABLE_H_ */

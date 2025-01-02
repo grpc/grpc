@@ -16,15 +16,14 @@
 //
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 #define MAX_PING_STRIKES 2
@@ -43,8 +42,8 @@ CORE_END2END_TEST(RetryHttp2Test, BadPing) {
                  .Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, MAX_PING_STRIKES)
                  .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0));
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(10)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -67,7 +66,7 @@ CORE_END2END_TEST(RetryHttp2Test, BadPing) {
     }
     Step();
   }
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
@@ -87,6 +86,9 @@ CORE_END2END_TEST(RetryHttp2Test, BadPing) {
 // Try sending more pings than server allows, but server should be fine because
 // max_pings_without_data should limit pings sent out on wire.
 CORE_END2END_TEST(RetryHttp2Test, PingsWithoutData) {
+  if (IsMaxPingsWoDataThrottleEnabled()) {
+    GTEST_SKIP() << "pings are not limited if this experiment is enabled";
+  }
   // Only allow MAX_PING_STRIKES pings without data (DATA/HEADERS/WINDOW_UPDATE)
   // so that the transport will throttle the excess pings.
   InitClient(ChannelArgs()
@@ -98,8 +100,8 @@ CORE_END2END_TEST(RetryHttp2Test, PingsWithoutData) {
                  .Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, MAX_PING_STRIKES)
                  .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0));
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(10)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -119,7 +121,7 @@ CORE_END2END_TEST(RetryHttp2Test, PingsWithoutData) {
     }
     Step();
   }
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})

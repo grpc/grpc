@@ -13,6 +13,9 @@
 // limitations under the License.
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
@@ -29,21 +32,16 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/surface/init_internally.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/sync.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
@@ -170,9 +168,16 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 
   ~PosixEventEngine() override;
 
-  std::unique_ptr<PosixEndpointWithFdSupport> CreatePosixEndpointFromFd(
+  std::unique_ptr<EventEngine::Endpoint> CreatePosixEndpointFromFd(
       int fd, const EndpointConfig& config,
       MemoryAllocator memory_allocator) override;
+  std::unique_ptr<EventEngine::Endpoint> CreateEndpointFromFd(
+      int fd, const EndpointConfig& config) override;
+
+  ConnectionHandle CreateEndpointFromUnconnectedFd(
+      int fd, EventEngine::OnConnectCallback on_connect,
+      const EventEngine::ResolvedAddress& addr, const EndpointConfig& config,
+      MemoryAllocator memory_allocator, EventEngine::Duration timeout) override;
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
@@ -181,8 +186,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
       override;
 
-  absl::StatusOr<std::unique_ptr<PosixListenerWithFdSupport>>
-  CreatePosixListener(
+  absl::StatusOr<std::unique_ptr<EventEngine::Listener>> CreatePosixListener(
       PosixEventEngineWithFdSupport::PosixAcceptCallback on_accept,
       absl::AnyInvocable<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
@@ -236,12 +240,10 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   static void PollerWorkInternal(
       std::shared_ptr<PosixEnginePollerManager> poller_manager);
 
-  ConnectionHandle ConnectInternal(
-      grpc_event_engine::experimental::PosixSocketWrapper sock,
-      OnConnectCallback on_connect, ResolvedAddress addr,
-      MemoryAllocator&& allocator,
-      const grpc_event_engine::experimental::PosixTcpOptions& options,
-      Duration timeout);
+  ConnectionHandle CreateEndpointFromUnconnectedFdInternal(
+      int fd, EventEngine::OnConnectCallback on_connect,
+      const EventEngine::ResolvedAddress& addr, const PosixTcpOptions& options,
+      MemoryAllocator memory_allocator, EventEngine::Duration timeout);
 
   void OnConnectFinishInternal(int connection_handle);
 

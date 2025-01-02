@@ -16,20 +16,19 @@
 //
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+
 #include <memory>
 
 #include "absl/strings/str_cat.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 
@@ -38,9 +37,9 @@ void CancelAfterAccept(CoreEnd2endTest& test,
                        std::unique_ptr<CancellationMode> cancellation_mode,
                        Duration timeout) {
   auto c = test.NewClientCall("/service/method").Timeout(timeout).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(1)
       .RecvStatusOnClient(server_status)
       .SendInitialMetadata({})
@@ -50,8 +49,8 @@ void CancelAfterAccept(CoreEnd2endTest& test,
   auto s = test.RequestCall(2);
   test.Expect(2, true);
   test.Step();
-  CoreEnd2endTest::IncomingMessage client_message;
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingMessage client_message;
+  IncomingCloseOnServer client_close;
   s.NewBatch(3)
       .RecvMessage(client_message)
       .SendInitialMetadata({})

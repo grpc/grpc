@@ -20,7 +20,6 @@
 #define GRPC_SRC_CORE_TSI_ALTS_FRAME_PROTECTOR_ALTS_FRAME_PROTECTOR_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdbool.h>
 
 #include "src/core/tsi/transport_security_interface.h"

@@ -16,10 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <algorithm>
@@ -27,40 +26,62 @@
 #include <cstring>
 #include <utility>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
-#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/telemetry/stats.h"
 
 namespace grpc_core {
 
 void HPackTable::MementoRingBuffer::Put(Memento m) {
-  GPR_ASSERT(num_entries_ < max_entries_);
+  CHECK_LT(num_entries_, max_entries_);
   if (entries_.size() < max_entries_) {
     ++num_entries_;
     return entries_.push_back(std::move(m));
   }
   size_t index = (first_entry_ + num_entries_) % max_entries_;
+  if (timestamp_index_ == kNoTimestamp) {
+    timestamp_index_ = index;
+    timestamp_ = Timestamp::Now();
+  }
   entries_[index] = std::move(m);
   ++num_entries_;
 }
 
 auto HPackTable::MementoRingBuffer::PopOne() -> Memento {
-  GPR_ASSERT(num_entries_ > 0);
+  CHECK_GT(num_entries_, 0u);
   size_t index = first_entry_ % max_entries_;
+  if (index == timestamp_index_) {
+    global_stats().IncrementHttp2HpackEntryLifetime(
+        (Timestamp::Now() - timestamp_).millis());
+    timestamp_index_ = kNoTimestamp;
+  }
   ++first_entry_;
   --num_entries_;
-  return std::move(entries_[index]);
+  auto& entry = entries_[index];
+  if (!entry.parse_status.TestBit(Memento::kUsedBit)) {
+    global_stats().IncrementHttp2HpackMisses();
+  }
+  return std::move(entry);
 }
 
-auto HPackTable::MementoRingBuffer::Lookup(uint32_t index) const
+auto HPackTable::MementoRingBuffer::Lookup(uint32_t index) -> const Memento* {
+  if (index >= num_entries_) return nullptr;
+  uint32_t offset = (num_entries_ - 1u - index + first_entry_) % max_entries_;
+  auto& entry = entries_[offset];
+  const bool was_used = entry.parse_status.TestBit(Memento::kUsedBit);
+  entry.parse_status.SetBit(Memento::kUsedBit);
+  if (!was_used) global_stats().IncrementHttp2HpackHits();
+  return &entry;
+}
+
+auto HPackTable::MementoRingBuffer::Peek(uint32_t index) const
     -> const Memento* {
   if (index >= num_entries_) return nullptr;
   uint32_t offset = (num_entries_ - 1u - index + first_entry_) % max_entries_;
@@ -80,18 +101,26 @@ void HPackTable::MementoRingBuffer::Rebuild(uint32_t max_entries) {
   entries_.swap(entries);
 }
 
-void HPackTable::MementoRingBuffer::ForEach(
-    absl::FunctionRef<void(uint32_t, const Memento&)> f) const {
+template <typename F>
+void HPackTable::MementoRingBuffer::ForEach(F f) const {
   uint32_t index = 0;
-  while (auto* m = Lookup(index++)) {
+  while (auto* m = Peek(index++)) {
     f(index, *m);
   }
+}
+
+HPackTable::MementoRingBuffer::~MementoRingBuffer() {
+  ForEach([](uint32_t, const Memento& m) {
+    if (!m.parse_status.TestBit(Memento::kUsedBit)) {
+      global_stats().IncrementHttp2HpackMisses();
+    }
+  });
 }
 
 // Evict one element from the table
 void HPackTable::EvictOne() {
   auto first_entry = entries_.PopOne();
-  GPR_ASSERT(first_entry.md.transport_size() <= mem_used_);
+  CHECK(first_entry.md.transport_size() <= mem_used_);
   mem_used_ -= first_entry.md.transport_size();
 }
 
@@ -99,9 +128,7 @@ void HPackTable::SetMaxBytes(uint32_t max_bytes) {
   if (max_bytes_ == max_bytes) {
     return;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(GPR_INFO, "Update hpack parser max size to %d", max_bytes);
-  }
+  GRPC_TRACE_LOG(http, INFO) << "Update hpack parser max size to " << max_bytes;
   while (mem_used_ > max_bytes) {
     EvictOne();
   }
@@ -111,9 +138,7 @@ void HPackTable::SetMaxBytes(uint32_t max_bytes) {
 bool HPackTable::SetCurrentTableSize(uint32_t bytes) {
   if (current_table_bytes_ == bytes) return true;
   if (bytes > max_bytes_) return false;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(GPR_INFO, "Update hpack parser table size to %d", bytes);
-  }
+  GRPC_TRACE_LOG(http, INFO) << "Update hpack parser table size to " << bytes;
   while (mem_used_ > bytes) {
     EvictOne();
   }

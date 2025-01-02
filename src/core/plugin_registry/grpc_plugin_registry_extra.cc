@@ -14,17 +14,17 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
-
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/surface/builtins.h"
+#include "src/core/config/core_configuration.h"
 
 namespace grpc_core {
 #ifndef GRPC_NO_XDS
 extern void RbacFilterRegister(CoreConfiguration::Builder* builder);
 extern void StatefulSessionFilterRegister(CoreConfiguration::Builder* builder);
+extern void GcpAuthenticationFilterRegister(
+    CoreConfiguration::Builder* builder);
 extern void RegisterXdsChannelStackModifier(
     CoreConfiguration::Builder* builder);
 extern void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder);
@@ -40,6 +40,7 @@ extern void RegisterXdsWrrLocalityLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterRingHashLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterFileWatcherCertificateProvider(
     CoreConfiguration::Builder* builder);
+extern void RegisterXdsHttpProxyMapper(CoreConfiguration::Builder* builder);
 #endif
 void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   // Use builder to avoid unused-parameter warning.
@@ -49,6 +50,7 @@ void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   // re2 library by default
   RbacFilterRegister(builder);
   StatefulSessionFilterRegister(builder);
+  GcpAuthenticationFilterRegister(builder);
   RegisterXdsChannelStackModifier(builder);
   RegisterChannelDefaultCreds(builder);
   RegisterXdsResolver(builder);
@@ -60,6 +62,7 @@ void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   RegisterXdsWrrLocalityLbPolicy(builder);
   RegisterRingHashLbPolicy(builder);
   RegisterFileWatcherCertificateProvider(builder);
+  RegisterXdsHttpProxyMapper(builder);
 #endif
 }
 }  // namespace grpc_core

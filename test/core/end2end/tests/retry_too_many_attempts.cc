@@ -16,16 +16,15 @@
 //
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+
 #include <memory>
 
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -35,6 +34,7 @@ namespace {
 // - first attempt gets ABORTED
 // - second attempt gets ABORTED but does not retry
 CORE_END2END_TEST(RetryTest, RetryTooManyAttempts) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -55,9 +55,9 @@ CORE_END2END_TEST(RetryTest, RetryTooManyAttempts) {
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("foo")
@@ -70,7 +70,7 @@ CORE_END2END_TEST(RetryTest, RetryTooManyAttempts) {
   Step();
   EXPECT_NE(s.GetPeer(), absl::nullopt);
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_ABORTED, "xyz", {})
@@ -83,7 +83,7 @@ CORE_END2END_TEST(RetryTest, RetryTooManyAttempts) {
   Step();
   EXPECT_NE(s2.GetPeer(), absl::nullopt);
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingCloseOnServer client_close2;
+  IncomingCloseOnServer client_close2;
   s2.NewBatch(202)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_ABORTED, "xyz", {})

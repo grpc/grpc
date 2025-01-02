@@ -16,24 +16,22 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
 #include <stddef.h>
 
 #include <algorithm>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -146,11 +144,11 @@ CORE_END2END_TEST(ResourceQuotaTest, ResourceQuota) {
       cancelled_calls_on_server++;
     }
   }
-  gpr_log(GPR_INFO,
-          "Done. %d total calls: %d cancelled at server, %d cancelled at "
-          "client, %d timed out, %d unavailable.",
-          kNumCalls, cancelled_calls_on_server, cancelled_calls_on_client,
-          deadline_exceeded, unavailable);
+  LOG(INFO) << "Done. " << kNumCalls
+            << " total calls: " << cancelled_calls_on_server
+            << " cancelled at server, " << cancelled_calls_on_client
+            << " cancelled at client, " << deadline_exceeded << " timed out, "
+            << unavailable << " unavailable.";
 
   ShutdownServerAndNotify(0);
   Expect(0, PerformAction{[this](bool success) {

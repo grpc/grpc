@@ -16,35 +16,34 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <string>
 #include <utility>
 
-#include <openssl/bio.h>
-#include <openssl/evp.h>
-#include <openssl/pem.h>
-#include <openssl/rsa.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/json.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
+#include "absl/strings/escaping.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json_reader.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/util/json_util.h"
-#include "src/core/lib/slice/b64.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 
 using grpc_core::Json;
 
@@ -84,7 +83,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
   memset(&result, 0, sizeof(grpc_auth_json_key));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
   if (json.type() == Json::Type::kNull) {
-    gpr_log(GPR_ERROR, "Invalid json.");
+    LOG(ERROR) << "Invalid json.";
     goto end;
   }
 
@@ -112,7 +111,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
   bio = BIO_new(BIO_s_mem());
   success = BIO_puts(bio, prop_value);
   if ((success < 0) || (static_cast<size_t>(success) != strlen(prop_value))) {
-    gpr_log(GPR_ERROR, "Could not write into openssl BIO.");
+    LOG(ERROR) << "Could not write into openssl BIO.";
     goto end;
   }
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
@@ -122,7 +121,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
   result.private_key = PEM_read_bio_PrivateKey(bio, nullptr, nullptr, nullptr);
 #endif
   if (result.private_key == nullptr) {
-    gpr_log(GPR_ERROR, "Could not deserialize private key.");
+    LOG(ERROR) << "Could not deserialize private key.";
     goto end;
   }
   success = 1;
@@ -138,8 +137,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_string(
   Json json;
   auto json_or = grpc_core::JsonParse(json_string);
   if (!json_or.ok()) {
-    gpr_log(GPR_ERROR, "JSON key parsing error: %s",
-            json_or.status().ToString().c_str());
+    LOG(ERROR) << "JSON key parsing error: " << json_or.status();
   } else {
     json = std::move(*json_or);
   }
@@ -180,7 +178,7 @@ static char* encoded_jwt_header(const char* key_id, const char* algorithm) {
       {"kid", Json::FromString(key_id)},
   });
   std::string json_str = grpc_core::JsonDump(json);
-  return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
+  return gpr_strdup(absl::WebSafeBase64Escape(json_str).c_str());
 }
 
 static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
@@ -189,7 +187,7 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec expiration = gpr_time_add(now, token_lifetime);
   if (gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()) > 0) {
-    gpr_log(GPR_INFO, "Cropping token lifetime to maximum allowed value.");
+    VLOG(2) << "Cropping token lifetime to maximum allowed value.";
     expiration = gpr_time_add(now, grpc_max_auth_token_lifetime());
   }
 
@@ -208,7 +206,7 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
 
   std::string json_str =
       grpc_core::JsonDump(Json::FromObject(std::move(object)));
-  return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
+  return gpr_strdup(absl::WebSafeBase64Escape(json_str).c_str());
 }
 
 static char* dot_concat_and_free_strings(char* str1, char* str2) {
@@ -223,8 +221,8 @@ static char* dot_concat_and_free_strings(char* str1, char* str2) {
   *(current++) = '.';
   memcpy(current, str2, str2_len);
   current += str2_len;
-  GPR_ASSERT(current >= result);
-  GPR_ASSERT((uintptr_t)(current - result) == result_len);
+  CHECK(current >= result);
+  CHECK((uintptr_t)(current - result) == result_len);
   *current = '\0';
   gpr_free(str1);
   gpr_free(str2);
@@ -235,7 +233,7 @@ const EVP_MD* openssl_digest_from_algorithm(const char* algorithm) {
   if (strcmp(algorithm, GRPC_JWT_RSA_SHA256_ALGORITHM) == 0) {
     return EVP_sha256();
   } else {
-    gpr_log(GPR_ERROR, "Unknown algorithm %s.", algorithm);
+    LOG(ERROR) << "Unknown algorithm " << algorithm;
     return nullptr;
   }
 }
@@ -254,7 +252,7 @@ char* compute_and_encode_signature(const grpc_auth_json_key* json_key,
   if (md == nullptr) return nullptr;
   md_ctx = EVP_MD_CTX_create();
   if (md_ctx == nullptr) {
-    gpr_log(GPR_ERROR, "Could not create MD_CTX");
+    LOG(ERROR) << "Could not create MD_CTX";
     goto end;
   }
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
@@ -264,23 +262,26 @@ char* compute_and_encode_signature(const grpc_auth_json_key* json_key,
   if (EVP_DigestSignInit(md_ctx, nullptr, md, nullptr, json_key->private_key) !=
       1) {
 #endif
-    gpr_log(GPR_ERROR, "DigestInit failed.");
+    LOG(ERROR) << "DigestInit failed.";
     goto end;
   }
   if (EVP_DigestSignUpdate(md_ctx, to_sign, strlen(to_sign)) != 1) {
-    gpr_log(GPR_ERROR, "DigestUpdate failed.");
+    LOG(ERROR) << "DigestUpdate failed.";
     goto end;
   }
   if (EVP_DigestSignFinal(md_ctx, nullptr, &sig_len) != 1) {
-    gpr_log(GPR_ERROR, "DigestFinal (get signature length) failed.");
+    LOG(ERROR) << "DigestFinal (get signature length) failed.";
     goto end;
   }
   sig = static_cast<unsigned char*>(gpr_malloc(sig_len));
   if (EVP_DigestSignFinal(md_ctx, sig, &sig_len) != 1) {
-    gpr_log(GPR_ERROR, "DigestFinal (signature compute) failed.");
+    LOG(ERROR) << "DigestFinal (signature compute) failed.";
     goto end;
   }
-  result = grpc_base64_encode(sig, sig_len, 1, 0);
+  result =
+      gpr_strdup(absl::WebSafeBase64Escape(
+                     absl::string_view(reinterpret_cast<char*>(sig), sig_len))
+                     .c_str());
 
 end:
 #if OPENSSL_VERSION_NUMBER < 0x30000000L

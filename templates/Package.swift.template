@@ -25,8 +25,8 @@
       ],
     
       dependencies: [
-        .package(url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20220623.0"..<"0.20220624.0"),
-        .package(url: "https://github.com/firebase/boringssl-SwiftPM.git", "0.9.0"..<"0.10.0"),
+        .package(url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20240722.0"..<"0.20240723.0"),
+        .package(url: "https://github.com/firebase/boringssl-SwiftPM.git", "0.32.0"..<"0.33.0"),
       ],
     
       targets: [
@@ -54,10 +54,10 @@
             "${file}",
             % endfor
           ],
-          publicHeadersPath: "spm-core-include",
           resources: [
             .copy("src/objective-c/PrivacyInfo.xcprivacy"),
           ],
+          publicHeadersPath: "spm-core-include",
           cSettings: [
             .headerSearchPath("./"),
             .headerSearchPath("include/"),
@@ -65,6 +65,7 @@
             .headerSearchPath("third_party/upb/"),
             .headerSearchPath("third_party/utf8_range/"),
             .headerSearchPath("third_party/xxhash/"),
+            .headerSearchPath("third_party/address_sorting/include/"),
             .headerSearchPath("src/core/ext/upb-gen/"),
             .headerSearchPath("src/core/ext/upbdefs-gen/"),
             .define("GRPC_ARES", to: "0"),
@@ -103,10 +104,10 @@
           sources: [
             "src/cpp/",
           ],
-          publicHeadersPath: "spm-cpp-include",
           resources: [
             .copy("src/objective-c/PrivacyInfo.xcprivacy"),
           ],
+          publicHeadersPath: "spm-cpp-include",
           cSettings: [
             .headerSearchPath("./"),
             .headerSearchPath("include/"),

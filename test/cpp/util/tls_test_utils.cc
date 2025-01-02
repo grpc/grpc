@@ -18,9 +18,9 @@
 
 #include <memory>
 
-#include "src/core/lib/gprpp/thd.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/thd.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 using ::grpc::experimental::TlsCustomVerificationCheckRequest;
 

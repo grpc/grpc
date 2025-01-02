@@ -20,12 +20,11 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-
-#include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
-#include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h"
-#include "src/proto/grpc/testing/xds/v3/listener.pb.h"
-#include "src/proto/grpc/testing/xds/v3/route.pb.h"
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/config/endpoint/v3/endpoint.pb.h"
+#include "envoy/config/listener/v3/listener.pb.h"
+#include "envoy/config/route/v3/route.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 
 namespace grpc {
@@ -39,15 +38,18 @@ class XdsBootstrapBuilder {
     ignore_resource_deletion_ = true;
     return *this;
   }
-  // If ignore_if_set is true, sets the default server only if it has
-  // not already been set.
-  XdsBootstrapBuilder& SetDefaultServer(const std::string& server,
-                                        bool ignore_if_set = false) {
-    if (!ignore_if_set || top_server_.empty()) top_server_ = server;
+  XdsBootstrapBuilder& SetTrustedXdsServer() {
+    trusted_xds_server_ = true;
     return *this;
   }
-  XdsBootstrapBuilder& SetXdsChannelCredentials(const std::string& type) {
+  XdsBootstrapBuilder& SetServers(absl::Span<const absl::string_view> servers) {
+    servers_ = std::vector<std::string>(servers.begin(), servers.end());
+    return *this;
+  }
+  XdsBootstrapBuilder& SetXdsChannelCredentials(
+      const std::string& type, const std::string& config = "") {
     xds_channel_creds_type_ = type;
+    xds_channel_creds_config_ = config;
     return *this;
   }
   XdsBootstrapBuilder& SetClientDefaultListenerResourceNameTemplate(
@@ -65,7 +67,15 @@ class XdsBootstrapBuilder {
   XdsBootstrapBuilder& AddAuthority(
       const std::string& authority, const std::string& server = "",
       const std::string& client_listener_resource_name_template = "") {
-    authorities_[authority] = {server, client_listener_resource_name_template};
+    return AddAuthority(authority,
+                        server.empty() ? std::vector<std::string>()
+                                       : std::vector<std::string>({server}),
+                        client_listener_resource_name_template);
+  }
+  XdsBootstrapBuilder& AddAuthority(
+      const std::string& authority, const std::vector<std::string>& servers,
+      const std::string& client_listener_resource_name_template = "") {
+    authorities_[authority] = {servers, client_listener_resource_name_template};
     return *this;
   }
   XdsBootstrapBuilder& SetServerListenerResourceNameTemplate(
@@ -83,18 +93,20 @@ class XdsBootstrapBuilder {
     std::string plugin_config;
   };
   struct AuthorityInfo {
-    std::string server;
+    std::vector<std::string> servers;
     std::string client_listener_resource_name_template;
   };
 
-  std::string MakeXdsServersText(absl::string_view server_uri);
+  std::string MakeXdsServersText(absl::Span<const std::string> server_uris);
   std::string MakeNodeText();
   std::string MakeCertificateProviderText();
   std::string MakeAuthorityText();
 
   bool ignore_resource_deletion_ = false;
-  std::string top_server_;
+  bool trusted_xds_server_ = false;
+  std::vector<std::string> servers_;
   std::string xds_channel_creds_type_ = "fake";
+  std::string xds_channel_creds_config_;
   std::string client_default_listener_resource_name_template_;
   std::map<std::string /*key*/, PluginInfo> plugins_;
   std::map<std::string /*authority_name*/, AuthorityInfo> authorities_;
@@ -195,24 +207,33 @@ class XdsResourceUtils {
                                     bool use_rds = false,
                                     const Listener* listener_to_copy = nullptr);
 
+  // Returns a string representing the locality with the specified sub_zone.
+  static std::string LocalityNameString(absl::string_view sub_zone);
+
   // Arguments for constructing an EDS resource.
   struct EdsResourceArgs {
     // An individual endpoint for a backend running on a specified port.
     struct Endpoint {
-      explicit Endpoint(int port,
-                        ::envoy::config::core::v3::HealthStatus health_status =
-                            ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                        int lb_weight = 1,
-                        std::vector<int> additional_ports = {})
+      explicit Endpoint(
+          int port,
+          ::envoy::config::core::v3::HealthStatus health_status =
+              ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+          int lb_weight = 1, std::vector<int> additional_ports = {},
+          absl::string_view hostname = "",
+          const std::map<std::string, std::string /*JSON*/>& metadata = {})
           : port(port),
             health_status(health_status),
             lb_weight(lb_weight),
-            additional_ports(std::move(additional_ports)) {}
+            additional_ports(std::move(additional_ports)),
+            hostname(hostname),
+            metadata(metadata) {}
 
       int port;
       ::envoy::config::core::v3::HealthStatus health_status;
       int lb_weight;
       std::vector<int> additional_ports;
+      std::string hostname;
+      std::map<std::string, std::string /*JSON*/> metadata;
     };
 
     // A locality.

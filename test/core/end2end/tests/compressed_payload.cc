@@ -16,6 +16,10 @@
 //
 //
 
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
 #include <stdint.h>
 
 #include <initializer_list>
@@ -24,15 +28,9 @@
 
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/bitset.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -91,8 +89,8 @@ class TestConfigurator {
     Init();
     auto c = test_.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
     auto s = test_.RequestCall(101);
-    CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-    CoreEnd2endTest::IncomingStatusOnClient server_status;
+    IncomingMetadata server_initial_metadata;
+    IncomingStatusOnClient server_status;
     c.NewBatch(1)
         .SendInitialMetadata({})
         .SendMessage(std::string(1024, 'x'))
@@ -102,9 +100,9 @@ class TestConfigurator {
     test_.Expect(101, true);
     test_.Expect(1, true);
     test_.Step();
-    CoreEnd2endTest::IncomingMessage client_message;
+    IncomingMessage client_message;
     s.NewBatch(102).SendInitialMetadata({}).RecvMessage(client_message);
-    CoreEnd2endTest::IncomingCloseOnServer client_close;
+    IncomingCloseOnServer client_close;
     test_.Expect(102, false);
     s.NewBatch(103).RecvCloseOnServer(client_close);
     test_.Expect(103, true);
@@ -126,8 +124,8 @@ class TestConfigurator {
     Init();
     auto c =
         test_.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
-    CoreEnd2endTest::IncomingStatusOnClient server_status;
-    CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+    IncomingStatusOnClient server_status;
+    IncomingMetadata server_initial_metadata;
     c.NewBatch(1)
         .SendInitialMetadata(client_init_metadata)
         .RecvInitialMetadata(server_initial_metadata)
@@ -136,13 +134,13 @@ class TestConfigurator {
     test_.Expect(100, true);
     test_.Step();
     EXPECT_TRUE(s.GetEncodingsAcceptedByPeer().all());
-    CoreEnd2endTest::IncomingCloseOnServer client_close;
+    IncomingCloseOnServer client_close;
     s.NewBatch(101).SendInitialMetadata({}).RecvCloseOnServer(client_close);
     for (int i = 0; i < 2; i++) {
       c.NewBatch(2).SendMessage(std::string(1024, 'x'),
                                 client_send_flags_bitmask);
       test_.Expect(2, true);
-      CoreEnd2endTest::IncomingMessage client_message;
+      IncomingMessage client_message;
       s.NewBatch(102).RecvMessage(client_message);
       test_.Expect(102, true);
       test_.Step();
@@ -150,7 +148,7 @@ class TestConfigurator {
       EXPECT_EQ(client_message.payload(), std::string(1024, 'x'));
       EXPECT_EQ(client_message.compression(), expected_algorithm_from_client_);
       s.NewBatch(103).SendMessage(std::string(1024, 'y'));
-      CoreEnd2endTest::IncomingMessage server_message;
+      IncomingMessage server_message;
       c.NewBatch(3).RecvMessage(server_message);
       test_.Expect(103, true);
       test_.Expect(3, true);
@@ -178,8 +176,8 @@ class TestConfigurator {
         test_.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
     c.NewBatch(2).SendMessage(std::string(1024, 'x'));
     test_.Expect(2, true);
-    CoreEnd2endTest::IncomingStatusOnClient server_status;
-    CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+    IncomingStatusOnClient server_status;
+    IncomingMetadata server_initial_metadata;
     c.NewBatch(1)
         .SendInitialMetadata({})
         .RecvInitialMetadata(server_initial_metadata)
@@ -188,14 +186,14 @@ class TestConfigurator {
     test_.Expect(100, true);
     test_.Step();
     EXPECT_TRUE(s.GetEncodingsAcceptedByPeer().all());
-    CoreEnd2endTest::IncomingCloseOnServer client_close;
+    IncomingCloseOnServer client_close;
     s.NewBatch(101).SendInitialMetadata({}).RecvCloseOnServer(client_close);
     for (int i = 0; i < 2; i++) {
       if (i > 0) {
         c.NewBatch(2).SendMessage(std::string(1024, 'x'));
         test_.Expect(2, true);
       }
-      CoreEnd2endTest::IncomingMessage client_message;
+      IncomingMessage client_message;
       s.NewBatch(102).RecvMessage(client_message);
       test_.Expect(102, true);
       test_.Step();
@@ -203,7 +201,7 @@ class TestConfigurator {
       EXPECT_EQ(client_message.payload(), std::string(1024, 'x'));
       EXPECT_EQ(client_message.compression(), expected_algorithm_from_client_);
       s.NewBatch(103).SendMessage(std::string(1024, 'y'));
-      CoreEnd2endTest::IncomingMessage server_message;
+      IncomingMessage server_message;
       c.NewBatch(3).RecvMessage(server_message);
       test_.Expect(103, true);
       test_.Expect(3, true);
@@ -228,8 +226,8 @@ class TestConfigurator {
   void RequestWithServerLevel(grpc_compression_level server_compression_level) {
     Init();
     auto c = test_.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
-    CoreEnd2endTest::IncomingStatusOnClient server_status;
-    CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+    IncomingStatusOnClient server_status;
+    IncomingMetadata server_initial_metadata;
     c.NewBatch(1)
         .SendInitialMetadata({})
         .RecvInitialMetadata(server_initial_metadata)
@@ -238,14 +236,14 @@ class TestConfigurator {
     test_.Expect(100, true);
     test_.Step();
     EXPECT_TRUE(s.GetEncodingsAcceptedByPeer().all());
-    CoreEnd2endTest::IncomingCloseOnServer client_close;
+    IncomingCloseOnServer client_close;
     s.NewBatch(101)
         .SendInitialMetadata({}, 0, server_compression_level)
         .RecvCloseOnServer(client_close);
     for (int i = 0; i < 2; i++) {
       c.NewBatch(2).SendMessage(std::string(1024, 'x'));
       test_.Expect(2, true);
-      CoreEnd2endTest::IncomingMessage client_message;
+      IncomingMessage client_message;
       s.NewBatch(102).RecvMessage(client_message);
       test_.Expect(102, true);
       test_.Step();
@@ -253,7 +251,7 @@ class TestConfigurator {
       EXPECT_EQ(client_message.payload(), std::string(1024, 'x'));
       EXPECT_EQ(client_message.compression(), expected_algorithm_from_client_);
       s.NewBatch(103).SendMessage(std::string(1024, 'y'));
-      CoreEnd2endTest::IncomingMessage server_message;
+      IncomingMessage server_message;
       c.NewBatch(3).RecvMessage(server_message);
       test_.Expect(103, true);
       test_.Expect(3, true);

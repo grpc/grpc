@@ -18,28 +18,35 @@
 
 #include "src/cpp/ext/csm/csm_observability.h"
 
+#include <grpcpp/ext/csm_observability.h>
+#include <grpcpp/ext/otel_plugin.h>
+
 #include "google/cloud/opentelemetry/resource_detector.h"
 #include "gtest/gtest.h"
-
-#include <grpcpp/ext/csm_observability.h>
-
-#include "src/core/lib/gprpp/env.h"
-#include "test/core/util/test_config.h"
+#include "opentelemetry/sdk/metrics/meter_provider.h"
+#include "src/core/xds/grpc/xds_enabled_server.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace testing {
 namespace {
 
 TEST(CsmObservabilityBuilderTest, Basic) {
-  EXPECT_TRUE(
-      experimental::CsmObservabilityBuilder().BuildAndRegister().status().ok());
+  EXPECT_EQ(
+      CsmObservabilityBuilder()
+          .SetMeterProvider(
+              std::make_shared<opentelemetry::sdk::metrics::MeterProvider>())
+          .BuildAndRegister()
+          .status(),
+      absl::OkStatus());
 }
 
-TEST(GsmDependencyTest, GoogleCloudOpenTelemetryDependency) {
+TEST(CsmDependencyTest, GoogleCloudOpenTelemetryDependency) {
   EXPECT_NE(google::cloud::otel::MakeResourceDetector(), nullptr);
 }
 
 TEST(CsmChannelTargetSelectorTest, NonXdsTargets) {
+  auto obs = CsmObservabilityBuilder().BuildAndRegister();
   EXPECT_FALSE(internal::CsmChannelTargetSelector("foo.bar.google.com"));
   EXPECT_FALSE(internal::CsmChannelTargetSelector("dns:///foo.bar.google.com"));
   EXPECT_FALSE(
@@ -49,17 +56,56 @@ TEST(CsmChannelTargetSelectorTest, NonXdsTargets) {
 }
 
 TEST(CsmChannelTargetSelectorTest, XdsTargets) {
+  auto obs = CsmObservabilityBuilder().BuildAndRegister();
   EXPECT_TRUE(internal::CsmChannelTargetSelector("xds:///foo"));
   EXPECT_TRUE(internal::CsmChannelTargetSelector("xds:///foo.bar"));
 }
 
 TEST(CsmChannelTargetSelectorTest, XdsTargetsWithNonTDAuthority) {
+  auto obs = CsmObservabilityBuilder().BuildAndRegister();
   EXPECT_FALSE(internal::CsmChannelTargetSelector("xds://authority/foo"));
 }
 
 TEST(CsmChannelTargetSelectorTest, XdsTargetsWithTDAuthority) {
+  auto obs = CsmObservabilityBuilder().BuildAndRegister();
   EXPECT_TRUE(internal::CsmChannelTargetSelector(
       "xds://traffic-director-global.xds.googleapis.com/foo"));
+}
+
+TEST(CsmChannelTargetSelectorTest, CsmObservabilityOutOfScope) {
+  {
+    auto obs =
+        CsmObservabilityBuilder()
+            .SetMeterProvider(
+                std::make_shared<opentelemetry::sdk::metrics::MeterProvider>())
+            .BuildAndRegister();
+  }
+  // When CsmObservability goes out of scope, the target selector should return
+  // false as well.
+  EXPECT_FALSE(internal::CsmChannelTargetSelector("foo.bar.google.com"));
+  EXPECT_FALSE(internal::CsmChannelTargetSelector("xds:///foo"));
+  EXPECT_FALSE(internal::CsmChannelTargetSelector(
+      "xds://traffic-director-global.xds.googleapis.com/foo"));
+}
+
+TEST(CsmServerSelectorTest, ChannelArgs) {
+  auto obs = CsmObservabilityBuilder().BuildAndRegister();
+  EXPECT_TRUE(internal::CsmServerSelector(grpc_core::ChannelArgs()));
+}
+
+TEST(CsmServerSelectorTest, CsmObservabilityOutOfScope) {
+  {
+    auto obs =
+        CsmObservabilityBuilder()
+            .SetMeterProvider(
+                std::make_shared<opentelemetry::sdk::metrics::MeterProvider>())
+            .BuildAndRegister();
+  }
+  // When CsmObservability goes out of scope, the server selector should return
+  // false as well.
+  EXPECT_FALSE(internal::CsmServerSelector(grpc_core::ChannelArgs()));
+  EXPECT_FALSE(internal::CsmServerSelector(
+      grpc_core::ChannelArgs().Set(GRPC_ARG_XDS_ENABLED_SERVER, true)));
 }
 
 }  // namespace

@@ -15,9 +15,10 @@
 // TODO(ctiller): Add a unit test suite for these filters once it's practical to
 // mock transport operations.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h"
+
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
 
 #include <functional>
 #include <utility>
@@ -25,22 +26,13 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
+#include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/per_cpu.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -50,20 +42,22 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/per_cpu.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
 namespace {
 
-// TODO(roth): This can go back to being a constant when the experiment
-// is removed.
-Duration DefaultIdleTimeout() {
-  if (IsClientIdlenessEnabled()) return Duration::Minutes(30);
-  return Duration::Infinity();
-}
+constexpr Duration kDefaultIdleTimeout = Duration::Minutes(30);
 
 // If these settings change, make sure that we are not sending a GOAWAY for
 // inproc transport, since a GOAWAY to inproc ends up destroying the transport.
@@ -72,24 +66,12 @@ const auto kDefaultMaxConnectionAgeGrace = Duration::Infinity();
 const auto kDefaultMaxConnectionIdle = Duration::Infinity();
 const auto kMaxConnectionAgeJitter = 0.1;
 
-TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
 }  // namespace
-
-#define GRPC_IDLE_FILTER_LOG(format, ...)                               \
-  do {                                                                  \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_client_idle_filter)) {       \
-      gpr_log(GPR_INFO, "(client idle filter) " format, ##__VA_ARGS__); \
-    }                                                                   \
-  } while (0)
-
-namespace {
 
 Duration GetClientIdleTimeout(const ChannelArgs& args) {
   return args.GetDurationFromIntMillis(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS)
-      .value_or(DefaultIdleTimeout());
+      .value_or(kDefaultIdleTimeout);
 }
-
-}  // namespace
 
 struct LegacyMaxAgeFilter::Config {
   Duration max_connection_age;
@@ -133,19 +115,24 @@ struct LegacyMaxAgeFilter::Config {
   }
 };
 
-absl::StatusOr<LegacyClientIdleFilter> LegacyClientIdleFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  LegacyClientIdleFilter filter(filter_args.channel_stack(),
-                                GetClientIdleTimeout(args));
-  return absl::StatusOr<LegacyClientIdleFilter>(std::move(filter));
+// We need access to the channel stack here to send a goaway - but that access
+// is deprecated and will be removed when call-v3 is fully enabled. This filter
+// will be removed at that time also, so just disable the deprecation warning
+// for now.
+ABSL_INTERNAL_DISABLE_DEPRECATED_DECLARATION_WARNING
+absl::StatusOr<std::unique_ptr<LegacyClientIdleFilter>>
+LegacyClientIdleFilter::Create(const ChannelArgs& args,
+                               ChannelFilter::Args filter_args) {
+  return std::make_unique<LegacyClientIdleFilter>(filter_args.channel_stack(),
+                                                  GetClientIdleTimeout(args));
 }
 
-absl::StatusOr<LegacyMaxAgeFilter> LegacyMaxAgeFilter::Create(
+absl::StatusOr<std::unique_ptr<LegacyMaxAgeFilter>> LegacyMaxAgeFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  LegacyMaxAgeFilter filter(filter_args.channel_stack(),
-                            Config::FromChannelArgs(args));
-  return absl::StatusOr<LegacyMaxAgeFilter>(std::move(filter));
+  return std::make_unique<LegacyMaxAgeFilter>(filter_args.channel_stack(),
+                                              Config::FromChannelArgs(args));
 }
+ABSL_INTERNAL_RESTORE_DEPRECATED_DECLARATION_WARNING
 
 void LegacyMaxAgeFilter::Shutdown() {
   max_age_activity_.Reset();
@@ -180,6 +167,9 @@ void LegacyMaxAgeFilter::PostInit() {
 
   // Start the max age timer
   if (max_connection_age_ != Duration::Infinity()) {
+    auto arena = SimpleArenaAllocator(0)->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        channel_stack->EventEngine());
     max_age_activity_.Set(MakeActivity(
         TrySeq(
             // First sleep until the max connection age
@@ -215,9 +205,9 @@ void LegacyMaxAgeFilter::PostInit() {
           // OnDone -- close the connection if the promise completed
           // successfully.
           // (if it did not, it was cancelled)
-          if (status.ok()) CloseChannel();
+          if (status.ok()) CloseChannel("max connection age");
         },
-        channel_stack->EventEngine()));
+        std::move(arena)));
   }
 }
 
@@ -230,7 +220,7 @@ ArenaPromise<ServerMetadataHandle> LegacyChannelIdleFilter::MakeCallPromise(
   return ArenaPromise<ServerMetadataHandle>(
       [decrementer = Decrementer(this),
        next = next_promise_factory(std::move(call_args))]() mutable
-      -> Poll<ServerMetadataHandle> { return next(); });
+          -> Poll<ServerMetadataHandle> { return next(); });
 }
 
 bool LegacyChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
@@ -259,7 +249,8 @@ void LegacyChannelIdleFilter::DecreaseCallCount() {
 }
 
 void LegacyChannelIdleFilter::StartIdleTimer() {
-  GRPC_IDLE_FILTER_LOG("timer has started");
+  GRPC_TRACE_LOG(client_idle_filter, INFO)
+      << "(client idle filter) timer has started";
   auto idle_filter_state = idle_filter_state_;
   // Hold a ref to the channel stack for the timer callback.
   auto channel_stack = channel_stack_->Ref();
@@ -274,41 +265,41 @@ void LegacyChannelIdleFilter::StartIdleTimer() {
                     }
                   });
   });
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      channel_stack_->EventEngine());
   activity_.Set(MakeActivity(
       std::move(promise), ExecCtxWakeupScheduler{},
       [channel_stack, this](absl::Status status) {
-        if (status.ok()) CloseChannel();
+        if (status.ok()) CloseChannel("connection idle");
       },
-      channel_stack->EventEngine()));
+      std::move(arena)));
 }
 
-void LegacyChannelIdleFilter::CloseChannel() {
+void LegacyChannelIdleFilter::CloseChannel(absl::string_view reason) {
   auto* op = grpc_make_transport_op(nullptr);
   op->disconnect_with_error = grpc_error_set_int(
-      GRPC_ERROR_CREATE("enter idle"),
-      StatusIntProperty::ChannelConnectivityState, GRPC_CHANNEL_IDLE);
+      GRPC_ERROR_CREATE(reason), StatusIntProperty::ChannelConnectivityState,
+      GRPC_CHANNEL_IDLE);
   // Pass the transport op down to the channel stack.
   auto* elem = grpc_channel_stack_element(channel_stack_, 0);
   elem->filter->start_transport_op(elem, op);
 }
 
 const grpc_channel_filter LegacyClientIdleFilter::kFilter =
-    MakePromiseBasedFilter<LegacyClientIdleFilter, FilterEndpoint::kClient>(
-        "client_idle");
+    MakePromiseBasedFilter<LegacyClientIdleFilter, FilterEndpoint::kClient>();
 const grpc_channel_filter LegacyMaxAgeFilter::kFilter =
-    MakePromiseBasedFilter<LegacyMaxAgeFilter, FilterEndpoint::kServer>(
-        "max_age");
+    MakePromiseBasedFilter<LegacyMaxAgeFilter, FilterEndpoint::kServer>();
 
 void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
-  if (IsV3ChannelIdleFiltersEnabled()) return;
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_CHANNEL, &LegacyClientIdleFilter::kFilter)
+      ->RegisterV2Filter<LegacyClientIdleFilter>(GRPC_CLIENT_CHANNEL)
       .ExcludeFromMinimalStack()
       .If([](const ChannelArgs& channel_args) {
         return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &LegacyMaxAgeFilter::kFilter)
+      ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
       .ExcludeFromMinimalStack()
       .If([](const ChannelArgs& channel_args) {
         return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)

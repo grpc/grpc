@@ -283,24 +283,23 @@ class CLanguage(object):
                 [
                     "default",
                     "cmake",
-                    "cmake_ninja_vs2019",
-                    "cmake_vs2019",
+                    "cmake_ninja_vs2022",
+                    "cmake_vs2022",
                 ],
             )
             _check_arch(self.args.arch, ["default", "x64", "x86"])
 
             activate_vs_tools = ""
             if (
-                self.args.compiler == "cmake_ninja_vs2019"
+                self.args.compiler == "cmake_ninja_vs2022"
                 or self.args.compiler == "cmake"
                 or self.args.compiler == "default"
             ):
                 # cmake + ninja build is the default because it is faster and supports boringssl assembly optimizations
-                # the compiler used is exactly the same as for cmake_vs2017
                 cmake_generator = "Ninja"
-                activate_vs_tools = "2019"
-            elif self.args.compiler == "cmake_vs2019":
-                cmake_generator = "Visual Studio 16 2019"
+                activate_vs_tools = "2022"
+            elif self.args.compiler == "cmake_vs2022":
+                cmake_generator = "Visual Studio 17 2022"
             else:
                 print("should never reach here.")
                 sys.exit(1)
@@ -313,7 +312,7 @@ class CLanguage(object):
             self._cmake_architecture_windows = (
                 "x64" if self.args.arch == "x64" else "Win32"
             )
-            # when builing with Ninja, the VS common tools need to be activated first
+            # when building with Ninja, the VS common tools need to be activated first
             self._activate_vs_tools_windows = activate_vs_tools
             # "x64_x86" means create 32bit binaries, but use 64bit toolkit to secure more memory for the build
             self._vs_tools_architecture_windows = (
@@ -531,6 +530,8 @@ class CLanguage(object):
             environ[
                 "GRPC_BUILD_VS_TOOLS_ARCHITECTURE"
             ] = self._vs_tools_architecture_windows
+        elif self.platform == "linux":
+            environ["GRPC_RUNTESTS_ARCHITECTURE"] = self.args.arch
         return environ
 
     def post_tests_steps(self):
@@ -559,7 +560,13 @@ class CLanguage(object):
             _check_compiler(compiler, ["default", "cmake"])
 
         if compiler == "default" or compiler == "cmake":
-            return ("debian11", [])
+            # This is to address Apple clang defaults C++98.
+            cmake_args = (
+                ["-DCMAKE_CXX_STANDARD=14"]
+                if platform_string() == "mac"
+                else []
+            )
+            return ("debian11", cmake_args)
         elif compiler == "gcc8":
             return ("gcc_8", [])
         elif compiler == "gcc10.2":
@@ -578,8 +585,6 @@ class CLanguage(object):
                     "-DgRPC_SSL_PROVIDER=package",
                 ],
             )
-        elif compiler == "gcc12":
-            return ("gcc_12", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc12_openssl309":
             return (
                 "debian12_openssl309",
@@ -587,12 +592,14 @@ class CLanguage(object):
                     "-DgRPC_SSL_PROVIDER=package",
                 ],
             )
+        elif compiler == "gcc14":
+            return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
             return ("alpine", [])
-        elif compiler == "clang6":
-            return ("clang_6", self._clang_cmake_configure_extra_args())
-        elif compiler == "clang16":
-            return ("clang_16", self._clang_cmake_configure_extra_args())
+        elif compiler == "clang7":
+            return ("clang_7", self._clang_cmake_configure_extra_args())
+        elif compiler == "clang19":
+            return ("clang_19", self._clang_cmake_configure_extra_args())
         else:
             raise Exception("Compiler %s not supported." % compiler)
 
@@ -606,82 +613,7 @@ class CLanguage(object):
         return self.lang_suffix
 
 
-# This tests Node on grpc/grpc-node and will become the standard for Node testing
-class RemoteNodeLanguage(object):
-    def __init__(self):
-        self.platform = platform_string()
-
-    def configure(self, config, args):
-        self.config = config
-        self.args = args
-        # Note: electron ABI only depends on major and minor version, so that's all
-        # we should specify in the compiler argument
-        _check_compiler(
-            self.args.compiler,
-            [
-                "default",
-                "node0.12",
-                "node4",
-                "node5",
-                "node6",
-                "node7",
-                "node8",
-                "electron1.3",
-                "electron1.6",
-            ],
-        )
-        if self.args.compiler == "default":
-            self.runtime = "node"
-            self.node_version = "8"
-        else:
-            if self.args.compiler.startswith("electron"):
-                self.runtime = "electron"
-                self.node_version = self.args.compiler[8:]
-            else:
-                self.runtime = "node"
-                # Take off the word "node"
-                self.node_version = self.args.compiler[4:]
-
-    # TODO: update with Windows/electron scripts when available for grpc/grpc-node
-    def test_specs(self):
-        if self.platform == "windows":
-            return [
-                self.config.job_spec(
-                    ["tools\\run_tests\\helper_scripts\\run_node.bat"]
-                )
-            ]
-        else:
-            return [
-                self.config.job_spec(
-                    ["tools/run_tests/helper_scripts/run_grpc-node.sh"],
-                    None,
-                    environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-                )
-            ]
-
-    def pre_build_steps(self):
-        return []
-
-    def build_steps(self):
-        return []
-
-    def build_steps_environ(self):
-        """Extra environment variables set for pre_build_steps and build_steps jobs."""
-        return {}
-
-    def post_tests_steps(self):
-        return []
-
-    def dockerfile_dir(self):
-        return "tools/dockerfile/test/node_jessie_%s" % _docker_arch_suffix(
-            self.args.arch
-        )
-
-    def __str__(self):
-        return "grpc-node"
-
-
-class Php7Language(object):
+class Php8Language(object):
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -709,12 +641,12 @@ class Php7Language(object):
         return [["tools/run_tests/helper_scripts/post_tests_php.sh"]]
 
     def dockerfile_dir(self):
-        return "tools/dockerfile/test/php7_debian11_%s" % _docker_arch_suffix(
+        return "tools/dockerfile/test/php8_debian12_%s" % _docker_arch_suffix(
             self.args.arch
         )
 
     def __str__(self):
-        return "php7"
+        return "php8"
 
 
 class PythonConfig(
@@ -779,7 +711,7 @@ class PythonLanguage(object):
                         self.config.job_spec(
                             python_config.run
                             + [self._TEST_COMMAND[io_platform]],
-                            timeout_seconds=8 * 60,
+                            timeout_seconds=10 * 60,
                             environ=dict(
                                 GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
                                 **environment,
@@ -869,13 +801,6 @@ class PythonLanguage(object):
 
         # TODO: Supported version range should be defined by a single
         # source of truth.
-        python37_config = _python_config_generator(
-            name="py37",
-            major="3",
-            minor="7",
-            bits=bits,
-            config_vars=config_vars,
-        )
         python38_config = _python_config_generator(
             name="py38",
             major="3",
@@ -911,6 +836,13 @@ class PythonLanguage(object):
             bits=bits,
             config_vars=config_vars,
         )
+        python313_config = _python_config_generator(
+            name="py313",
+            major="3",
+            minor="13",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -934,11 +866,9 @@ class PythonLanguage(object):
             else:
                 # Default set tested on master. Test oldest and newest.
                 return (
-                    python37_config,
-                    python312_config,
+                    python38_config,
+                    python313_config,
                 )
-        elif args.compiler == "python3.7":
-            return (python37_config,)
         elif args.compiler == "python3.8":
             return (python38_config,)
         elif args.compiler == "python3.9":
@@ -949,20 +879,22 @@ class PythonLanguage(object):
             return (python311_config,)
         elif args.compiler == "python3.12":
             return (python312_config,)
+        elif args.compiler == "python3.13":
+            return (python313_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
             return (pypy32_config,)
         elif args.compiler == "python_alpine":
-            return (python39_config,)
+            return (python310_config,)
         elif args.compiler == "all_the_cpythons":
             return (
-                python37_config,
                 python38_config,
                 python39_config,
                 python310_config,
                 python311_config,
                 python312_config,
+                python313_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -978,13 +910,46 @@ class RubyLanguage(object):
         _check_compiler(self.args.compiler, ["default"])
 
     def test_specs(self):
-        tests = [
-            self.config.job_spec(
-                ["tools/run_tests/helper_scripts/run_ruby.sh"],
-                timeout_seconds=10 * 60,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+        tests = []
+        for test in [
+            "src/ruby/spec/google_rpc_status_utils_spec.rb",
+            "src/ruby/spec/client_server_spec.rb",
+            "src/ruby/spec/errors_spec.rb",
+            "src/ruby/spec/pb/codegen/package_option_spec.rb",
+            "src/ruby/spec/pb/health/checker_spec.rb",
+            "src/ruby/spec/pb/duplicate/codegen_spec.rb",
+            "src/ruby/spec/server_spec.rb",
+            "src/ruby/spec/error_sanity_spec.rb",
+            "src/ruby/spec/channel_spec.rb",
+            "src/ruby/spec/user_agent_spec.rb",
+            "src/ruby/spec/call_credentials_spec.rb",
+            "src/ruby/spec/channel_credentials_spec.rb",
+            "src/ruby/spec/channel_connection_spec.rb",
+            "src/ruby/spec/compression_options_spec.rb",
+            "src/ruby/spec/time_consts_spec.rb",
+            "src/ruby/spec/server_credentials_spec.rb",
+            "src/ruby/spec/generic/server_interceptors_spec.rb",
+            "src/ruby/spec/generic/rpc_server_pool_spec.rb",
+            "src/ruby/spec/generic/client_stub_spec.rb",
+            "src/ruby/spec/generic/active_call_spec.rb",
+            "src/ruby/spec/generic/rpc_server_spec.rb",
+            "src/ruby/spec/generic/service_spec.rb",
+            "src/ruby/spec/generic/client_interceptors_spec.rb",
+            "src/ruby/spec/generic/rpc_desc_spec.rb",
+            "src/ruby/spec/generic/interceptor_registry_spec.rb",
+            "src/ruby/spec/debug_message_spec.rb",
+            "src/ruby/spec/logconfig_spec.rb",
+            "src/ruby/spec/call_spec.rb",
+            "src/ruby/spec/client_auth_spec.rb",
+        ]:
+            tests.append(
+                self.config.job_spec(
+                    ["rspec", test],
+                    shortname=test,
+                    timeout_seconds=20 * 60,
+                    environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+                )
             )
-        ]
         # TODO(apolcyn): re-enable the following tests after
         # https://bugs.ruby-lang.org/issues/15499 is fixed:
         # They previously worked on ruby 2.5 but needed to be disabled
@@ -996,6 +961,7 @@ class RubyLanguage(object):
         # This crashes have been unreproducible outside of CI. Also see
         # b/266212253.
         #   - src/ruby/end2end/grpc_class_init_test.rb
+        #   - src/ruby/end2end/load_grpc_with_gc_stress_test.rb
         for test in [
             "src/ruby/end2end/fork_test.rb",
             "src/ruby/end2end/simple_fork_test.rb",
@@ -1008,7 +974,6 @@ class RubyLanguage(object):
             "src/ruby/end2end/killed_client_thread_test.rb",
             "src/ruby/end2end/forking_client_test.rb",
             "src/ruby/end2end/multiple_killed_watching_threads_test.rb",
-            "src/ruby/end2end/load_grpc_with_gc_stress_test.rb",
             "src/ruby/end2end/client_memory_usage_test.rb",
             "src/ruby/end2end/package_with_underscore_test.rb",
             "src/ruby/end2end/graceful_sig_handling_test.rb",
@@ -1026,6 +991,7 @@ class RubyLanguage(object):
                 "src/ruby/end2end/bad_usage_fork_test.rb",
                 "src/ruby/end2end/prefork_without_using_grpc_test.rb",
                 "src/ruby/end2end/prefork_postfork_loop_test.rb",
+                "src/ruby/end2end/fork_test_repro_35489.rb",
             ]:
                 # Skip fork tests in general until https://github.com/grpc/grpc/issues/34442
                 # is fixed. Otherwise we see too many flakes.
@@ -1182,7 +1148,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=20 * 60,
+                timeout_seconds=60 * 60,
                 shortname="ios-buildtest-example-sample",
                 cpu_cost=1e6,
                 environ={
@@ -1195,7 +1161,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=20 * 60,
+                timeout_seconds=60 * 60,
                 shortname="ios-buildtest-example-switftsample",
                 cpu_cost=1e6,
                 environ={
@@ -1207,7 +1173,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=20 * 60,
+                timeout_seconds=60 * 60,
                 shortname="ios-buildtest-example-switft-use-frameworks",
                 cpu_cost=1e6,
                 environ={
@@ -1233,15 +1199,16 @@ class ObjCLanguage(object):
 
         # TODO(jtattermusch): move the test out of the test/core/iomgr/CFStreamTests directory?
         # How does one add the cfstream dependency in bazel?
-        out.append(
-            self.config.job_spec(
-                ["test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh"],
-                timeout_seconds=60 * 60,
-                shortname="ios-test-cfstream-tests",
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-            )
-        )
+        # Disabled due to flakiness and being replaced with event engine
+        # out.append(
+        #     self.config.job_spec(
+        #         ["test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh"],
+        #         timeout_seconds=60 * 60,
+        #         shortname="ios-test-cfstream-tests",
+        #         cpu_cost=1e6,
+        #         environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+        #     )
+        # )
         return sorted(out)
 
     def pre_build_steps(self):
@@ -1326,8 +1293,7 @@ with open("tools/run_tests/generated/configs.json") as f:
 _LANGUAGES = {
     "c++": CLanguage("cxx", "c++"),
     "c": CLanguage("c", "c"),
-    "grpc-node": RemoteNodeLanguage(),
-    "php7": Php7Language(),
+    "php8": Php8Language(),
     "python": PythonLanguage(),
     "ruby": RubyLanguage(),
     "csharp": CSharpLanguage(),
@@ -1739,11 +1705,11 @@ argp.add_argument(
         "gcc10.2",
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
-        "gcc12",
         "gcc12_openssl309",
+        "gcc14",
         "gcc_musl",
-        "clang6",
-        "clang16",
+        "clang7",
+        "clang19",
         # TODO: Automatically populate from supported version
         "python3.7",
         "python3.8",
@@ -1755,12 +1721,10 @@ argp.add_argument(
         "pypy3",
         "python_alpine",
         "all_the_cpythons",
-        "electron1.3",
-        "electron1.6",
         "coreclr",
         "cmake",
-        "cmake_ninja_vs2019",
-        "cmake_vs2019",
+        "cmake_ninja_vs2022",
+        "cmake_vs2022",
         "mono",
     ],
     default="default",
@@ -1853,7 +1817,7 @@ argp.add_argument(
 argp.add_argument(
     "--cmake_configure_extra_args",
     default=[],
-    nargs="+",
+    action="append",
     help="Extra arguments that will be passed to the cmake configure command. Only works for C/C++.",
 )
 args = argp.parse_args()

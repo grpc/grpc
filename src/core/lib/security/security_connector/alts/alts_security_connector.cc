@@ -16,30 +16,28 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
-
-#include <string.h>
-
-#include <algorithm>
-#include <utility>
-
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+#include <string.h>
 
+#include <algorithm>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "src/core/handshaker/handshaker.h"
+#include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -50,12 +48,12 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 void grpc_alts_set_rpc_protocol_versions(
     grpc_gcp_rpc_protocol_versions* rpc_versions) {
@@ -104,10 +102,10 @@ class grpc_alts_channel_security_connector final
         static_cast<const grpc_alts_credentials*>(channel_creds());
     const size_t user_specified_max_frame_size =
         std::max(0, args.GetInt(GRPC_ARG_TSI_MAX_FRAME_SIZE).value_or(0));
-    GPR_ASSERT(alts_tsi_handshaker_create(
-                   creds->options(), target_name_,
-                   creds->handshaker_service_url(), true, interested_parties,
-                   &handshaker, user_specified_max_frame_size) == TSI_OK);
+    CHECK(alts_tsi_handshaker_create(creds->options(), target_name_,
+                                     creds->handshaker_service_url(), true,
+                                     interested_parties, &handshaker,
+                                     user_specified_max_frame_size) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
@@ -157,10 +155,10 @@ class grpc_alts_server_security_connector final
         static_cast<const grpc_alts_server_credentials*>(server_creds());
     size_t user_specified_max_frame_size =
         std::max(0, args.GetInt(GRPC_ARG_TSI_MAX_FRAME_SIZE).value_or(0));
-    GPR_ASSERT(alts_tsi_handshaker_create(
-                   creds->options(), nullptr, creds->handshaker_service_url(),
-                   false, interested_parties, &handshaker,
-                   user_specified_max_frame_size) == TSI_OK);
+    CHECK(alts_tsi_handshaker_create(creds->options(), nullptr,
+                                     creds->handshaker_service_url(), false,
+                                     interested_parties, &handshaker,
+                                     user_specified_max_frame_size) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
@@ -187,8 +185,7 @@ namespace internal {
 RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
     const tsi_peer* peer) {
   if (peer == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid arguments to grpc_alts_auth_context_from_tsi_peer()");
+    LOG(ERROR) << "Invalid arguments to grpc_alts_auth_context_from_tsi_peer()";
     return nullptr;
   }
   // Validate certificate type.
@@ -197,21 +194,21 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
   if (cert_type_prop == nullptr ||
       strncmp(cert_type_prop->value.data, TSI_ALTS_CERTIFICATE_TYPE,
               cert_type_prop->value.length) != 0) {
-    gpr_log(GPR_ERROR, "Invalid or missing certificate type property.");
+    LOG(ERROR) << "Invalid or missing certificate type property.";
     return nullptr;
   }
   // Check if security level exists.
   const tsi_peer_property* security_level_prop =
       tsi_peer_get_property_by_name(peer, TSI_SECURITY_LEVEL_PEER_PROPERTY);
   if (security_level_prop == nullptr) {
-    gpr_log(GPR_ERROR, "Missing security level property.");
+    LOG(ERROR) << "Missing security level property.";
     return nullptr;
   }
   // Validate RPC protocol versions.
   const tsi_peer_property* rpc_versions_prop =
       tsi_peer_get_property_by_name(peer, TSI_ALTS_RPC_VERSIONS);
   if (rpc_versions_prop == nullptr) {
-    gpr_log(GPR_ERROR, "Missing rpc protocol versions property.");
+    LOG(ERROR) << "Missing rpc protocol versions property.";
     return nullptr;
   }
   grpc_gcp_rpc_protocol_versions local_versions, peer_versions;
@@ -222,21 +219,21 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
       grpc_gcp_rpc_protocol_versions_decode(slice, &peer_versions);
   CSliceUnref(slice);
   if (!decode_result) {
-    gpr_log(GPR_ERROR, "Invalid peer rpc protocol versions.");
+    LOG(ERROR) << "Invalid peer rpc protocol versions.";
     return nullptr;
   }
   // TODO(unknown): Pass highest common rpc protocol version to grpc caller.
   bool check_result = grpc_gcp_rpc_protocol_versions_check(
       &local_versions, &peer_versions, nullptr);
   if (!check_result) {
-    gpr_log(GPR_ERROR, "Mismatch of local and peer rpc protocol versions.");
+    LOG(ERROR) << "Mismatch of local and peer rpc protocol versions.";
     return nullptr;
   }
   // Validate ALTS Context.
   const tsi_peer_property* alts_context_prop =
       tsi_peer_get_property_by_name(peer, TSI_ALTS_CONTEXT);
   if (alts_context_prop == nullptr) {
-    gpr_log(GPR_ERROR, "Missing alts context property.");
+    LOG(ERROR) << "Missing alts context property.";
     return nullptr;
   }
   // Create auth context.
@@ -252,8 +249,8 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
       grpc_auth_context_add_property(
           ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY,
           tsi_prop->value.data, tsi_prop->value.length);
-      GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
-                     ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY) == 1);
+      CHECK(grpc_auth_context_set_peer_identity_property_name(
+                ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY) == 1);
     }
     // Add alts context to auth context.
     if (strcmp(tsi_prop->name, TSI_ALTS_CONTEXT) == 0) {
@@ -269,7 +266,7 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
     }
   }
   if (!grpc_auth_context_peer_is_authenticated(ctx.get())) {
-    gpr_log(GPR_ERROR, "Invalid unauthenticated peer.");
+    LOG(ERROR) << "Invalid unauthenticated peer.";
     ctx.reset(DEBUG_LOCATION, "test");
     return nullptr;
   }
@@ -285,9 +282,8 @@ grpc_alts_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const char* target_name) {
   if (channel_creds == nullptr || target_name == nullptr) {
-    gpr_log(
-        GPR_ERROR,
-        "Invalid arguments to grpc_alts_channel_security_connector_create()");
+    LOG(ERROR)
+        << "Invalid arguments to grpc_alts_channel_security_connector_create()";
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_alts_channel_security_connector>(
@@ -298,9 +294,8 @@ grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_alts_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_creds) {
   if (server_creds == nullptr) {
-    gpr_log(
-        GPR_ERROR,
-        "Invalid arguments to grpc_alts_server_security_connector_create()");
+    LOG(ERROR)
+        << "Invalid arguments to grpc_alts_server_security_connector_create()";
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_alts_server_security_connector>(

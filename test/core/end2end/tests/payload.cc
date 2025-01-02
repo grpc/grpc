@@ -16,14 +16,13 @@
 //
 //
 
+#include <grpc/status.h>
+
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -38,9 +37,9 @@ void RequestResponseWithPayload(CoreEnd2endTest& test) {
 
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(60)).Create();
 
-  CoreEnd2endTest::IncomingMetadata server_initial_md;
-  CoreEnd2endTest::IncomingMessage server_message;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_md;
+  IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage(request_slice.Ref())
@@ -53,12 +52,12 @@ void RequestResponseWithPayload(CoreEnd2endTest& test) {
   test.Expect(101, true);
   test.Step();
 
-  CoreEnd2endTest::IncomingMessage client_message;
+  IncomingMessage client_message;
   s.NewBatch(102).SendInitialMetadata({}).RecvMessage(client_message);
   test.Expect(102, true);
   test.Step();
 
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(103)
       .RecvCloseOnServer(client_close)
       .SendMessage(response_slice.Ref())

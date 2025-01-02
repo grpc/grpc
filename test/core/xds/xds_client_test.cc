@@ -18,47 +18,50 @@
 // - tests for DumpClientConfigBinary()
 // - tests for load-reporting APIs?  (or maybe move those out of XdsClient?)
 
-#include "src/core/ext/xds/xds_client.h"
+#include "src/core/xds/xds_client/xds_client.h"
 
+#include <google/protobuf/any.pb.h>
+#include <google/protobuf/struct.pb.h>
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
 #include <stdint.h>
 
 #include <algorithm>
 #include <deque>
+#include <fstream>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
-
-#include <google/protobuf/any.pb.h>
-#include <google/protobuf/struct.pb.h>
+#include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "envoy/config/core/v3/base.pb.h"
+#include "envoy/service/discovery/v3/discovery.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "upb/reflection/def.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-#include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
-
-#include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_args.h"
-#include "src/core/lib/json/json_object_loader.h"
-#include "src/core/lib/json/json_reader.h"
-#include "src/core/lib/json/json_writer.h"
-#include "src/proto/grpc/testing/xds/v3/base.pb.h"
-#include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
-#include "test/core/util/scoped_env_var.h"
-#include "test/core/util/test_config.h"
+#include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
+#include "src/core/util/match.h"
+#include "src/core/util/sync.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_resource_type_impl.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/test_util/scoped_env_var.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/xds/xds_client_test_peer.h"
 #include "test/core/xds/xds_transport_fake.h"
+#include "upb/reflection/def.h"
 
 // IWYU pragma: no_include <google/protobuf/message.h>
 // IWYU pragma: no_include <google/protobuf/stubs/status.h>
@@ -69,10 +72,13 @@
 
 using envoy::service::discovery::v3::DiscoveryRequest;
 using envoy::service::discovery::v3::DiscoveryResponse;
+using grpc_event_engine::experimental::FuzzingEventEngine;
 
 namespace grpc_core {
 namespace testing {
 namespace {
+
+constexpr absl::string_view kDefaultXdsServerUrl = "default_xds_server";
 
 class XdsClientTest : public ::testing::Test {
  protected:
@@ -122,6 +128,11 @@ class XdsClientTest : public ::testing::Test {
 
     class FakeXdsServer : public XdsServer {
      public:
+      explicit FakeXdsServer(
+          absl::string_view server_uri = kDefaultXdsServerUrl,
+          bool ignore_resource_deletion = false)
+          : server_uri_(server_uri),
+            ignore_resource_deletion_(ignore_resource_deletion) {}
       const std::string& server_uri() const override { return server_uri_; }
       bool IgnoreResourceDeletion() const override {
         return ignore_resource_deletion_;
@@ -131,23 +142,23 @@ class XdsClientTest : public ::testing::Test {
         return server_uri_ == o.server_uri_ &&
                ignore_resource_deletion_ == o.ignore_resource_deletion_;
       }
-
-      void set_server_uri(std::string server_uri) {
-        server_uri_ = std::move(server_uri);
-      }
-      void set_ignore_resource_deletion(bool ignore_resource_deletion) {
-        ignore_resource_deletion_ = ignore_resource_deletion;
+      std::string Key() const override {
+        return absl::StrCat(server_uri_, "#", ignore_resource_deletion_);
       }
 
      private:
-      std::string server_uri_ = "default_xds_server";
+      std::string server_uri_;
       bool ignore_resource_deletion_ = false;
     };
 
     class FakeAuthority : public Authority {
      public:
-      const XdsServer* server() const override {
-        return server_.has_value() ? &*server_ : nullptr;
+      std::vector<const XdsServer*> servers() const override {
+        if (server_.has_value()) {
+          return {&*server_};
+        } else {
+          return {};
+        };
       }
 
       void set_server(absl::optional<FakeXdsServer> server) {
@@ -161,7 +172,6 @@ class XdsClientTest : public ::testing::Test {
     class Builder {
      public:
       Builder() { node_.emplace(); }
-
       Builder& set_node_id(std::string id) {
         if (!node_.has_value()) node_.emplace();
         node_->set_id(std::move(id));
@@ -171,27 +181,35 @@ class XdsClientTest : public ::testing::Test {
         authorities_[std::move(name)] = std::move(authority);
         return *this;
       }
-      Builder& set_ignore_resource_deletion(bool ignore_resource_deletion) {
-        server_.set_ignore_resource_deletion(ignore_resource_deletion);
+      Builder& SetServers(absl::Span<const FakeXdsServer> servers) {
+        servers_.assign(servers.begin(), servers.end());
         return *this;
       }
       std::unique_ptr<XdsBootstrap> Build() {
         auto bootstrap = std::make_unique<FakeXdsBootstrap>();
-        bootstrap->server_ = std::move(server_);
+        bootstrap->servers_ = std::move(servers_);
         bootstrap->node_ = std::move(node_);
         bootstrap->authorities_ = std::move(authorities_);
         return bootstrap;
       }
 
      private:
-      FakeXdsServer server_;
+      std::vector<FakeXdsServer> servers_ = {FakeXdsServer()};
       absl::optional<FakeNode> node_;
       std::map<std::string, FakeAuthority> authorities_;
     };
 
     std::string ToString() const override { return "<fake>"; }
 
-    const XdsServer& server() const override { return server_; }
+    std::vector<const XdsServer*> servers() const override {
+      std::vector<const XdsServer*> result;
+      result.reserve(servers_.size());
+      for (size_t i = 0; i < servers_.size(); ++i) {
+        result.emplace_back(&servers_[i]);
+      }
+      return result;
+    }
+
     const Node* node() const override {
       return node_.has_value() ? &*node_ : nullptr;
     }
@@ -200,21 +218,9 @@ class XdsClientTest : public ::testing::Test {
       if (it == authorities_.end()) return nullptr;
       return &it->second;
     }
-    const XdsServer* FindXdsServer(const XdsServer& server) const override {
-      const auto& fake_server = static_cast<const FakeXdsServer&>(server);
-      if (fake_server == server_) return &server_;
-      for (const auto& p : authorities_) {
-        const auto* authority_server =
-            static_cast<const FakeXdsServer*>(p.second.server());
-        if (authority_server != nullptr && *authority_server == fake_server) {
-          return authority_server;
-        }
-      }
-      return nullptr;
-    }
 
    private:
-    FakeXdsServer server_;
+    std::vector<FakeXdsServer> servers_;
     absl::optional<FakeNode> node_;
     std::map<std::string, FakeAuthority> authorities_;
   };
@@ -246,10 +252,25 @@ class XdsClientTest : public ::testing::Test {
                                             all_resources_required_in_sotw>,
                         ResourceStruct>::WatcherInterface {
      public:
-      // Returns true if no event is received during the timeout period.
-      bool ExpectNoEvent(absl::Duration timeout) {
+      explicit Watcher(std::shared_ptr<FuzzingEventEngine> event_engine)
+          : event_engine_(std::move(event_engine)) {}
+
+      ~Watcher() override {
         MutexLock lock(&mu_);
-        return !WaitForEventLocked(timeout);
+        EXPECT_THAT(queue_, ::testing::IsEmpty())
+            << this << " "
+            << Match(
+                   queue_[0],
+                   [&](const ResourceAndReadDelayHandle& resource) {
+                     return absl::StrFormat("Resource %s",
+                                            resource.resource->name);
+                   },
+                   [&](const absl::Status& status) {
+                     return status.ToString();
+                   },
+                   [&](const DoesNotExist& /* tag */) -> std::string {
+                     return "<Does not exist>";
+                   });
       }
 
       bool HasEvent() {
@@ -257,31 +278,43 @@ class XdsClientTest : public ::testing::Test {
         return !queue_.empty();
       }
 
+      // Returns true if no event is received after draining the fuzzing
+      // EE queue.
+      bool ExpectNoEvent() {
+        event_engine_->TickUntilIdle();
+        return !HasEvent();
+      }
+
       absl::optional<ResourceAndReadDelayHandle> WaitForNextResourceAndHandle(
-          absl::Duration timeout = absl::Seconds(1),
           SourceLocation location = SourceLocation()) {
-        MutexLock lock(&mu_);
-        if (!WaitForEventLocked(timeout)) return absl::nullopt;
-        Event& event = queue_.front();
-        if (!absl::holds_alternative<ResourceAndReadDelayHandle>(event)) {
-          EXPECT_TRUE(false)
-              << "got unexpected event "
-              << (absl::holds_alternative<absl::Status>(event)
-                      ? "error"
-                      : "does-not-exist")
-              << " at " << location.file() << ":" << location.line();
-          return absl::nullopt;
+        while (true) {
+          {
+            MutexLock lock(&mu_);
+            if (!queue_.empty()) {
+              Event& event = queue_.front();
+              if (!absl::holds_alternative<ResourceAndReadDelayHandle>(event)) {
+                EXPECT_TRUE(false)
+                    << "got unexpected event "
+                    << (absl::holds_alternative<absl::Status>(event)
+                            ? "error"
+                            : "does-not-exist")
+                    << " at " << location.file() << ":" << location.line();
+                return absl::nullopt;
+              }
+              auto resource_and_handle =
+                  std::move(absl::get<ResourceAndReadDelayHandle>(event));
+              queue_.pop_front();
+              return resource_and_handle;
+            }
+            if (event_engine_->IsIdle()) return absl::nullopt;
+          }
+          event_engine_->Tick();
         }
-        auto foo = std::move(absl::get<ResourceAndReadDelayHandle>(event));
-        queue_.pop_front();
-        return foo;
       }
 
       std::shared_ptr<const ResourceStruct> WaitForNextResource(
-          absl::Duration timeout = absl::Seconds(1),
           SourceLocation location = SourceLocation()) {
-        auto resource_and_handle =
-            WaitForNextResourceAndHandle(timeout, location);
+        auto resource_and_handle = WaitForNextResourceAndHandle(location);
         if (!resource_and_handle.has_value()) {
           return nullptr;
         }
@@ -289,40 +322,54 @@ class XdsClientTest : public ::testing::Test {
       }
 
       absl::optional<absl::Status> WaitForNextError(
-          absl::Duration timeout = absl::Seconds(1),
           SourceLocation location = SourceLocation()) {
-        MutexLock lock(&mu_);
-        if (!WaitForEventLocked(timeout)) return absl::nullopt;
-        Event& event = queue_.front();
-        if (!absl::holds_alternative<absl::Status>(event)) {
-          EXPECT_TRUE(false)
-              << "got unexpected event "
-              << (absl::holds_alternative<ResourceAndReadDelayHandle>(event)
-                      ? "resource"
-                      : "does-not-exist")
-              << " at " << location.file() << ":" << location.line();
-          return absl::nullopt;
+        while (true) {
+          {
+            MutexLock lock(&mu_);
+            if (!queue_.empty()) {
+              Event& event = queue_.front();
+              if (!absl::holds_alternative<absl::Status>(event)) {
+                EXPECT_TRUE(false)
+                    << "got unexpected event "
+                    << (absl::holds_alternative<ResourceAndReadDelayHandle>(
+                            event)
+                            ? "resource"
+                            : "does-not-exist")
+                    << " at " << location.file() << ":" << location.line();
+                return absl::nullopt;
+              }
+              absl::Status error = std::move(absl::get<absl::Status>(event));
+              queue_.pop_front();
+              return std::move(error);
+            }
+            if (event_engine_->IsIdle()) return absl::nullopt;
+          }
+          event_engine_->Tick();
         }
-        absl::Status error = std::move(absl::get<absl::Status>(event));
-        queue_.pop_front();
-        return std::move(error);
       }
 
-      bool WaitForDoesNotExist(absl::Duration timeout,
-                               SourceLocation location = SourceLocation()) {
-        MutexLock lock(&mu_);
-        if (!WaitForEventLocked(timeout)) return false;
-        Event& event = queue_.front();
-        if (!absl::holds_alternative<DoesNotExist>(event)) {
-          EXPECT_TRUE(false)
-              << "got unexpected event "
-              << (absl::holds_alternative<absl::Status>(event) ? "error"
-                                                               : "resource")
-              << " at " << location.file() << ":" << location.line();
-          return false;
+      bool WaitForDoesNotExist(SourceLocation location = SourceLocation()) {
+        while (true) {
+          {
+            MutexLock lock(&mu_);
+            if (!queue_.empty()) {
+              Event& event = queue_.front();
+              if (!absl::holds_alternative<DoesNotExist>(event)) {
+                EXPECT_TRUE(false)
+                    << "got unexpected event "
+                    << (absl::holds_alternative<absl::Status>(event)
+                            ? "error"
+                            : "resource")
+                    << " at " << location.file() << ":" << location.line();
+                return false;
+              }
+              queue_.pop_front();
+              return true;
+            }
+            if (event_engine_->IsIdle()) return false;
+          }
+          event_engine_->Tick();
         }
-        queue_.pop_front();
-        return true;
       }
 
      private:
@@ -337,7 +384,6 @@ class XdsClientTest : public ::testing::Test {
         ResourceAndReadDelayHandle event_details = {
             std::move(foo), std::move(read_delay_handle)};
         queue_.emplace_back(std::move(event_details));
-        cv_.Signal();
       }
 
       void OnError(
@@ -346,7 +392,6 @@ class XdsClientTest : public ::testing::Test {
           override {
         MutexLock lock(&mu_);
         queue_.push_back(std::move(status));
-        cv_.Signal();
       }
 
       void OnResourceDoesNotExist(
@@ -354,24 +399,11 @@ class XdsClientTest : public ::testing::Test {
           override {
         MutexLock lock(&mu_);
         queue_.push_back(DoesNotExist());
-        cv_.Signal();
       }
 
-      // Returns true if an event was received, or false if the timeout
-      // expires before any event is received.
-      bool WaitForEventLocked(absl::Duration timeout)
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) {
-        while (queue_.empty()) {
-          if (cv_.WaitWithTimeout(&mu_,
-                                  timeout * grpc_test_slowdown_factor())) {
-            return false;
-          }
-        }
-        return true;
-      }
+      std::shared_ptr<FuzzingEventEngine> event_engine_;
 
       Mutex mu_;
-      CondVar cv_;
       std::deque<Event> queue_ ABSL_GUARDED_BY(&mu_);
     };
 
@@ -595,25 +627,153 @@ class XdsClientTest : public ::testing::Test {
     DiscoveryResponse response_;
   };
 
+  class MetricsReporter : public XdsMetricsReporter {
+   public:
+    using ResourceUpdateMap = std::map<
+        std::pair<std::string /*xds_server*/, std::string /*resource_type*/>,
+        uint64_t>;
+    using ServerFailureMap = std::map<std::string /*xds_server*/, uint64_t>;
+
+    explicit MetricsReporter(std::shared_ptr<FuzzingEventEngine> event_engine)
+        : event_engine_(std::move(event_engine)) {}
+
+    ResourceUpdateMap resource_updates_valid() const {
+      MutexLock lock(&mu_);
+      return resource_updates_valid_;
+    }
+    ResourceUpdateMap resource_updates_invalid() const {
+      MutexLock lock(&mu_);
+      return resource_updates_invalid_;
+    }
+    const ServerFailureMap& server_failures() const { return server_failures_; }
+
+    // Returns true if matchers return true before the timeout.
+    // Runs matchers once as soon as it is called and then again
+    // every time the metrics reporter sees an update.
+    bool WaitForMetricsReporterData(
+        ::testing::Matcher<ResourceUpdateMap> resource_updates_valid_matcher,
+        ::testing::Matcher<ResourceUpdateMap> resource_updates_invalid_matcher,
+        ::testing::Matcher<ServerFailureMap> server_failures_matcher,
+        SourceLocation location = SourceLocation()) {
+      while (true) {
+        {
+          MutexLock lock(&mu_);
+          if (::testing::Matches(resource_updates_valid_matcher)(
+                  resource_updates_valid_) &&
+              ::testing::Matches(resource_updates_invalid_matcher)(
+                  resource_updates_invalid_) &&
+              ::testing::Matches(server_failures_matcher)(server_failures_)) {
+            return true;
+          }
+          if (event_engine_->IsIdle()) {
+            EXPECT_THAT(resource_updates_valid_, resource_updates_valid_matcher)
+                << location.file() << ":" << location.line();
+            EXPECT_THAT(resource_updates_invalid_,
+                        resource_updates_invalid_matcher)
+                << location.file() << ":" << location.line();
+            EXPECT_THAT(server_failures_, server_failures_matcher)
+                << location.file() << ":" << location.line();
+            return false;
+          }
+        }
+        event_engine_->Tick();
+      }
+    }
+
+   private:
+    void ReportResourceUpdates(absl::string_view xds_server,
+                               absl::string_view resource_type,
+                               uint64_t num_resources_valid,
+                               uint64_t num_resources_invalid) override {
+      MutexLock lock(&mu_);
+      auto key =
+          std::make_pair(std::string(xds_server), std::string(resource_type));
+      if (num_resources_valid > 0) {
+        resource_updates_valid_[key] += num_resources_valid;
+      }
+      if (num_resources_invalid > 0) {
+        resource_updates_invalid_[key] += num_resources_invalid;
+      }
+      cond_.SignalAll();
+    }
+
+    void ReportServerFailure(absl::string_view xds_server) override {
+      MutexLock lock(&mu_);
+      ++server_failures_[std::string(xds_server)];
+      cond_.SignalAll();
+    }
+
+    std::shared_ptr<FuzzingEventEngine> event_engine_;
+
+    mutable Mutex mu_;
+    ResourceUpdateMap resource_updates_valid_ ABSL_GUARDED_BY(mu_);
+    ResourceUpdateMap resource_updates_invalid_ ABSL_GUARDED_BY(mu_);
+    ServerFailureMap server_failures_ ABSL_GUARDED_BY(mu_);
+    CondVar cond_;
+  };
+
+  using ResourceCounts =
+      std::vector<std::pair<XdsClientTestPeer::ResourceCountLabels, uint64_t>>;
+  ResourceCounts GetResourceCounts() {
+    ResourceCounts resource_counts;
+    XdsClientTestPeer(xds_client_.get())
+        .TestReportResourceCounts(
+            [&](const XdsClientTestPeer::ResourceCountLabels& labels,
+                uint64_t count) {
+              resource_counts.emplace_back(labels, count);
+            });
+    return resource_counts;
+  }
+
+  using ServerConnectionMap = std::map<std::string, bool>;
+  ServerConnectionMap GetServerConnections() {
+    ServerConnectionMap server_connection_map;
+    XdsClientTestPeer(xds_client_.get())
+        .TestReportServerConnections(
+            [&](absl::string_view xds_server, bool connected) {
+              std::string server(xds_server);
+              EXPECT_EQ(server_connection_map.find(server),
+                        server_connection_map.end());
+              server_connection_map[std::move(server)] = connected;
+            });
+    return server_connection_map;
+  }
+
+  void SetUp() override {
+    event_engine_ = std::make_shared<FuzzingEventEngine>(
+        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
+    grpc_timer_manager_set_start_threaded(false);
+    grpc_init();
+  }
+
+  void TearDown() override {
+    transport_factory_.reset();
+    xds_client_.reset();
+    event_engine_->FuzzingDone();
+    event_engine_->TickUntilIdle();
+    event_engine_->UnsetGlobalHooks();
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        std::move(event_engine_));
+    grpc_shutdown_blocking();
+  }
+
   // Sets transport_factory_ and initializes xds_client_ with the
   // specified bootstrap config.
-  void InitXdsClient(
-      FakeXdsBootstrap::Builder bootstrap_builder = FakeXdsBootstrap::Builder(),
-      Duration resource_request_timeout = Duration::Seconds(15)) {
-    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>(
-        []() { FAIL() << "Multiple concurrent reads"; });
-    transport_factory_ =
-        transport_factory->Ref().TakeAsSubclass<FakeXdsTransportFactory>();
+  void InitXdsClient(FakeXdsBootstrap::Builder bootstrap_builder =
+                         FakeXdsBootstrap::Builder()) {
+    transport_factory_ = MakeRefCounted<FakeXdsTransportFactory>(
+        []() { FAIL() << "Multiple concurrent reads"; }, event_engine_);
+    auto metrics_reporter = std::make_unique<MetricsReporter>(event_engine_);
+    metrics_reporter_ = metrics_reporter.get();
     xds_client_ = MakeRefCounted<XdsClient>(
-        bootstrap_builder.Build(), std::move(transport_factory),
-        grpc_event_engine::experimental::GetDefaultEventEngine(), "foo agent",
-        "foo version", resource_request_timeout * grpc_test_slowdown_factor());
+        bootstrap_builder.Build(), transport_factory_, event_engine_,
+        std::move(metrics_reporter), "foo agent", "foo version");
   }
 
   // Starts and cancels a watch for a Foo resource.
   RefCountedPtr<XdsFooResourceType::Watcher> StartFooWatch(
       absl::string_view resource_name) {
-    auto watcher = MakeRefCounted<XdsFooResourceType::Watcher>();
+    auto watcher = MakeRefCounted<XdsFooResourceType::Watcher>(event_engine_);
     XdsFooResourceType::StartWatch(xds_client_.get(), resource_name, watcher);
     return watcher;
   }
@@ -627,7 +787,7 @@ class XdsClientTest : public ::testing::Test {
   // Starts and cancels a watch for a Bar resource.
   RefCountedPtr<XdsBarResourceType::Watcher> StartBarWatch(
       absl::string_view resource_name) {
-    auto watcher = MakeRefCounted<XdsBarResourceType::Watcher>();
+    auto watcher = MakeRefCounted<XdsBarResourceType::Watcher>(event_engine_);
     XdsBarResourceType::StartWatch(xds_client_.get(), resource_name, watcher);
     return watcher;
   }
@@ -641,7 +801,8 @@ class XdsClientTest : public ::testing::Test {
   // Starts and cancels a watch for a WildcardCapable resource.
   RefCountedPtr<XdsWildcardCapableResourceType::Watcher>
   StartWildcardCapableWatch(absl::string_view resource_name) {
-    auto watcher = MakeRefCounted<XdsWildcardCapableResourceType::Watcher>();
+    auto watcher =
+        MakeRefCounted<XdsWildcardCapableResourceType::Watcher>(event_engine_);
     XdsWildcardCapableResourceType::StartWatch(xds_client_.get(), resource_name,
                                                watcher);
     return watcher;
@@ -654,35 +815,25 @@ class XdsClientTest : public ::testing::Test {
   }
 
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream(
-      const XdsBootstrap::XdsServer& server,
-      absl::Duration timeout = absl::Seconds(5)) {
-    const auto* xds_server = xds_client_->bootstrap().FindXdsServer(server);
-    GPR_ASSERT(xds_server != nullptr);
+      const XdsBootstrap::XdsServer& xds_server) {
     return transport_factory_->WaitForStream(
-        *xds_server, FakeXdsTransportFactory::kAdsMethod,
-        timeout * grpc_test_slowdown_factor());
+        xds_server, FakeXdsTransportFactory::kAdsMethod);
   }
 
-  void TriggerConnectionFailure(const XdsBootstrap::XdsServer& server,
+  RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream() {
+    return WaitForAdsStream(*xds_client_->bootstrap().servers().front());
+  }
+
+  void TriggerConnectionFailure(const XdsBootstrap::XdsServer& xds_server,
                                 absl::Status status) {
-    const auto* xds_server = xds_client_->bootstrap().FindXdsServer(server);
-    GPR_ASSERT(xds_server != nullptr);
-    transport_factory_->TriggerConnectionFailure(*xds_server,
-                                                 std::move(status));
-  }
-
-  RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream(
-      absl::Duration timeout = absl::Seconds(5)) {
-    return WaitForAdsStream(xds_client_->bootstrap().server(), timeout);
+    transport_factory_->TriggerConnectionFailure(xds_server, std::move(status));
   }
 
   // Gets the latest request sent to the fake xDS server.
   absl::optional<DiscoveryRequest> WaitForRequest(
       FakeXdsTransportFactory::FakeStreamingCall* stream,
-      absl::Duration timeout = absl::Seconds(3),
       SourceLocation location = SourceLocation()) {
-    auto message =
-        stream->WaitForMessageFromClient(timeout * grpc_test_slowdown_factor());
+    auto message = stream->WaitForMessageFromClient();
     if (!message.has_value()) return absl::nullopt;
     DiscoveryRequest request;
     bool success = request.ParseFromString(*message);
@@ -767,14 +918,49 @@ class XdsClientTest : public ::testing::Test {
         << location.file() << ":" << location.line();
   }
 
+  std::shared_ptr<FuzzingEventEngine> event_engine_;
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
   RefCountedPtr<XdsClient> xds_client_;
+  MetricsReporter* metrics_reporter_ = nullptr;
 };
+
+MATCHER_P3(ResourceCountLabelsEq, xds_authority, resource_type, cache_state,
+           "equals ResourceCountLabels") {
+  bool ok = true;
+  ok &= ::testing::ExplainMatchResult(xds_authority, arg.xds_authority,
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(resource_type, arg.resource_type,
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(cache_state, arg.cache_state,
+                                      result_listener);
+  return ok;
+}
 
 TEST_F(XdsClientTest, BasicWatch) {
   InitXdsClient();
+  // Metrics should initially be empty.
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(GetResourceCounts(), ::testing::ElementsAre());
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->server_failures(), ::testing::ElementsAre());
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
+  // Check metrics.
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
@@ -800,6 +986,21 @@ TEST_F(XdsClientTest, BasicWatch) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -809,7 +1010,16 @@ TEST_F(XdsClientTest, BasicWatch) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(GetResourceCounts(), ::testing::ElementsAre());
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre());
 }
 
 TEST_F(XdsClientTest, UpdateFromServer) {
@@ -841,6 +1051,19 @@ TEST_F(XdsClientTest, UpdateFromServer) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -860,6 +1083,19 @@ TEST_F(XdsClientTest, UpdateFromServer) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          2)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -869,7 +1105,7 @@ TEST_F(XdsClientTest, UpdateFromServer) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
@@ -901,6 +1137,19 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -934,6 +1183,19 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          2)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -947,7 +1209,7 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
   ASSERT_FALSE(WaitForRequest(stream.get()));
   // Now cancel the second watcher.
   CancelFooWatch(watcher2.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, SubscribeToMultipleResources) {
@@ -956,6 +1218,17 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
+  // Check metrics.
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -979,6 +1252,19 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -988,6 +1274,19 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
                /*resource_names=*/{"foo1"});
   // Start a watch for "foo2".
   auto watcher2 = StartFooWatch("foo2");
+  // Check metric data.
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(
+          ::testing::Pair(ResourceCountLabelsEq(
+                              XdsClient::kOldStyleAuthority,
+                              XdsFooResourceType::Get()->type_url(), "acked"),
+                          1),
+          ::testing::Pair(
+              ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                    XdsFooResourceType::Get()->type_url(),
+                                    "requested"),
+              1)));
   // XdsClient should have sent a subscription request on the ADS stream.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1007,6 +1306,19 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo2");
   EXPECT_EQ(resource->value, 7);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          2)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          2)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1016,6 +1328,13 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
                /*resource_names=*/{"foo1", "foo2"});
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
+  // Check metric data.
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should send an unsubscription request.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1024,7 +1343,7 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
   // Now cancel watch for "foo2".
   CancelFooWatch(watcher2.get(), "foo2");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
@@ -1084,6 +1403,19 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo2");
   EXPECT_EQ(resource->value, 7);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          2)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          2)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1103,6 +1435,19 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          3)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          2)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1120,13 +1465,24 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
   // Now cancel watch for "foo2".
   CancelFooWatch(watcher2.get(), "foo2");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, ResourceValidationFailure) {
   InitXdsClient();
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
+  // Check metric data.
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
@@ -1156,6 +1512,20 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
             "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
             "[field:value error:is not a number] (node ID:xds_client_test)")
       << *error;
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(),
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::_));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "nacked"),
+                  1)));
   // XdsClient should NACK the update.
   // Note that version_info is not populated in the request.
   request = WaitForRequest(stream.get());
@@ -1195,6 +1565,23 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1205,7 +1592,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
@@ -1214,6 +1601,17 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
+  // Check metric data.
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -1227,6 +1625,15 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   CheckRequestNode(*request);  // Should be present on the first request.
   // Before the server responds, add a watch for another resource.
   auto watcher2 = StartFooWatch("foo2");
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  2)));
   // Client should send another request.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1236,6 +1643,15 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
                /*resource_names=*/{"foo1", "foo2"});
   // Add a watch for a third resource.
   auto watcher3 = StartFooWatch("foo3");
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  3)));
   // Client should send another request.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1245,6 +1661,15 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
                /*resource_names=*/{"foo1", "foo2", "foo3"});
   // Add a watch for a fourth resource.
   auto watcher4 = StartFooWatch("foo4");
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  4)));
   // Client should send another request.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1303,6 +1728,36 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo4");
   EXPECT_EQ(resource->value, 5);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          5)),
+      ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(
+          // foo4
+          ::testing::Pair(ResourceCountLabelsEq(
+                              XdsClient::kOldStyleAuthority,
+                              XdsFooResourceType::Get()->type_url(), "acked"),
+                          1),
+          // foo1 and foo3
+          ::testing::Pair(ResourceCountLabelsEq(
+                              XdsClient::kOldStyleAuthority,
+                              XdsFooResourceType::Get()->type_url(), "nacked"),
+                          2),
+          // did not recognize response for foo2
+          ::testing::Pair(
+              ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                    XdsFooResourceType::Get()->type_url(),
+                                    "requested"),
+              1)));
   // XdsClient should NACK the update.
   // There was one good resource, so the version will be updated.
   request = WaitForRequest(stream.get());
@@ -1336,7 +1791,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   CancelFooWatch(watcher2.get(), "foo2", /*delay_unsubscription=*/true);
   CancelFooWatch(watcher3.get(), "foo3", /*delay_unsubscription=*/true);
   CancelFooWatch(watcher4.get(), "foo4");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
@@ -1368,6 +1823,19 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1391,6 +1859,23 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
             "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
             "[field:value error:is not a number] (node ID:xds_client_test)")
       << *error;
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::_));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "nacked_but_cached"),
+                  1)));
   // XdsClient should NACK the update.
   // Note that version_info is set to the previous version in this request,
   // because there were no valid resources in it.
@@ -1421,7 +1906,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, WildcardCapableResponseWithEmptyResource) {
@@ -1455,6 +1940,24 @@ TEST_F(XdsClientTest, WildcardCapableResponseWithEmptyResource) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsWildcardCapableResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsWildcardCapableResourceType::Get()->type_url()),
+          1)),
+      ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(
+              XdsClient::kOldStyleAuthority,
+              XdsWildcardCapableResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should NACK the update.
   // There was one good resource, so the version will be updated.
   request = WaitForRequest(stream.get());
@@ -1470,7 +1973,7 @@ TEST_F(XdsClientTest, WildcardCapableResponseWithEmptyResource) {
                /*resource_names=*/{"wc1"});
   // Cancel watch.
   CancelWildcardCapableWatch(watcher.get(), "wc1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 // This tests resource removal triggered by the server when using a
@@ -1505,6 +2008,20 @@ TEST_F(XdsClientTest, ResourceDeletion) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsWildcardCapableResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(
+              XdsClient::kOldStyleAuthority,
+              XdsWildcardCapableResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1520,11 +2037,25 @@ TEST_F(XdsClientTest, ResourceDeletion) {
           .set_nonce("B")
           .Serialize());
   // Watcher should see the does-not-exist event.
-  EXPECT_TRUE(watcher->WaitForDoesNotExist(absl::Seconds(1)));
+  EXPECT_TRUE(watcher->WaitForDoesNotExist());
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsWildcardCapableResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(
+                      XdsClient::kOldStyleAuthority,
+                      XdsWildcardCapableResourceType::Get()->type_url(),
+                      "does_not_exist"),
+                  1)));
   // Start a new watcher for the same resource.  It should immediately
   // receive the same does-not-exist notification.
   auto watcher2 = StartWildcardCapableWatch("wc1");
-  EXPECT_TRUE(watcher2->WaitForDoesNotExist(absl::Seconds(1)));
+  EXPECT_TRUE(watcher2->WaitForDoesNotExist());
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1548,6 +2079,20 @@ TEST_F(XdsClientTest, ResourceDeletion) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 7);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsWildcardCapableResourceType::Get()->type_url()),
+          2)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(
+              XdsClient::kOldStyleAuthority,
+              XdsWildcardCapableResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1558,13 +2103,14 @@ TEST_F(XdsClientTest, ResourceDeletion) {
   // Cancel watch.
   CancelWildcardCapableWatch(watcher.get(), "wc1");
   CancelWildcardCapableWatch(watcher2.get(), "wc1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 // This tests that when we ignore resource deletions from the server
 // when configured to do so.
 TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
-  InitXdsClient(FakeXdsBootstrap::Builder().set_ignore_resource_deletion(true));
+  InitXdsClient(FakeXdsBootstrap::Builder().SetServers(
+      {FakeXdsBootstrap::FakeXdsServer(kDefaultXdsServerUrl, true)}));
   // Start a watch for "wc1".
   auto watcher = StartWildcardCapableWatch("wc1");
   // Watcher should initially not see any resource reported.
@@ -1592,6 +2138,20 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsWildcardCapableResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(
+              XdsClient::kOldStyleAuthority,
+              XdsWildcardCapableResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1608,7 +2168,21 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
           .Serialize());
   // Watcher should not see any update, since we should have ignored the
   // deletion.
-  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(1)));
+  EXPECT_TRUE(watcher->ExpectNoEvent());
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsWildcardCapableResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(
+              XdsClient::kOldStyleAuthority,
+              XdsWildcardCapableResourceType::Get()->type_url(), "acked"),
+          1)));
   // Start a new watcher for the same resource.  It should immediately
   // receive the cached resource.
   auto watcher2 = StartWildcardCapableWatch("wc1");
@@ -1639,6 +2213,20 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 7);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsWildcardCapableResourceType::Get()->type_url()),
+          2)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(
+              XdsClient::kOldStyleAuthority,
+              XdsWildcardCapableResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1649,13 +2237,18 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
   // Cancel watch.
   CancelWildcardCapableWatch(watcher.get(), "wc1");
   CancelWildcardCapableWatch(watcher2.get(), "wc1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, StreamClosedByServer) {
   InitXdsClient();
+  // Metrics should initially be empty.
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre());
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
+  // Check metric data.
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
@@ -1693,7 +2286,10 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
   // XdsClient should NOT report error to watcher, because we saw a
   // response on the stream before it failed.
   // Stream should be orphaned.
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
+  // Check metric data.
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
   // XdsClient should create a new stream.
   stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -1734,13 +2330,19 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
   // Cancel watcher.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
   InitXdsClient();
+  // Metrics should initially be empty.
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre());
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
+  // Check metric data.
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
+  EXPECT_THAT(metrics_reporter_->server_failures(), ::testing::ElementsAre());
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
@@ -1756,6 +2358,12 @@ TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
   CheckRequestNode(*request);  // Should be present on the first request.
   // Server closes the stream without sending a response.
   stream->MaybeSendStatusToClient(absl::UnavailableError("ugh"));
+  // Check metric data.
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, false)));
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::_, ::testing::_,
+      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
   // XdsClient should report an error to the watcher.
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
@@ -1776,6 +2384,12 @@ TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
   CheckRequestNode(*request);  // Should be present on the first request.
+  // Connection still reported as unhappy until we get a response.
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, false)));
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::_, ::testing::_,
+      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
   // Server now sends the requested resource.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
@@ -1788,6 +2402,9 @@ TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Connection now reported as happy.
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
   // XdsClient sends an ACK.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1797,18 +2414,22 @@ TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
                /*resource_names=*/{"foo1"});
   // Cancel watcher.
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, ConnectionFails) {
-  // Lower resources-does-not-exist timeout, to make sure that we're not
-  // triggering that here.
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
+  InitXdsClient();
   // Tell transport to let us manually trigger completion of the
   // send_message ops to XdsClient.
   transport_factory_->SetAutoCompleteMessagesFromClient(false);
+  // Metrics should initially be empty.
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->server_failures(), ::testing::ElementsAre());
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
+  // Check metric data.
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
@@ -1823,7 +2444,7 @@ TEST_F(XdsClientTest, ConnectionFails) {
                /*resource_names=*/{"foo1"});
   CheckRequestNode(*request);  // Should be present on the first request.
   // Transport reports connection failure.
-  TriggerConnectionFailure(xds_client_->bootstrap().server(),
+  TriggerConnectionFailure(*xds_client_->bootstrap().servers().front(),
                            absl::UnavailableError("connection failed"));
   // XdsClient should report an error to the watcher.
   auto error = watcher->WaitForNextError();
@@ -1833,9 +2454,15 @@ TEST_F(XdsClientTest, ConnectionFails) {
             "xDS channel for server default_xds_server: "
             "connection failed (node ID:xds_client_test)")
       << *error;
+  // Connection reported as unhappy.
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, false)));
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::_, ::testing::_,
+      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
   // We should not see a resource-does-not-exist event, because the
   // timer should not be running while the channel is disconnected.
-  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(4)));
+  EXPECT_TRUE(watcher->ExpectNoEvent());
   // Start a new watch.  This watcher should be given the same error,
   // since we have not yet recovered.
   auto watcher2 = StartFooWatch("foo1");
@@ -1858,6 +2485,9 @@ TEST_F(XdsClientTest, ConnectionFails) {
           .set_nonce("A")
           .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
+  // Connection now reported as happy.
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
   // XdsClient should have delivered the response to the watchers.
   auto resource = watcher->WaitForNextResource();
   ASSERT_NE(resource, nullptr);
@@ -1878,15 +2508,26 @@ TEST_F(XdsClientTest, ConnectionFails) {
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(1));
+  InitXdsClient();
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
+  // Check metric data.
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -1900,11 +2541,20 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
   CheckRequestNode(*request);  // Should be present on the first request.
   // Do not send a response, but wait for the resource to be reported as
   // not existing.
-  EXPECT_TRUE(watcher->WaitForDoesNotExist(absl::Seconds(5)));
+  EXPECT_TRUE(watcher->WaitForDoesNotExist());
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "does_not_exist"),
+                  1)));
   // Start a new watcher for the same resource.  It should immediately
   // receive the same does-not-exist notification.
   auto watcher2 = StartFooWatch("foo1");
-  EXPECT_TRUE(watcher2->WaitForDoesNotExist(absl::Seconds(1)));
+  EXPECT_TRUE(watcher2->WaitForDoesNotExist());
   // Now server sends a response.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
@@ -1921,6 +2571,19 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1931,14 +2594,30 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
-  // Lower resources-does-not-exist timeout so test finishes faster.
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
+  InitXdsClient();
+  // Metrics should initially be empty.
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(GetResourceCounts(), ::testing::ElementsAre());
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
+  // Check metric data.
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
@@ -1963,6 +2642,15 @@ TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
             "with no responses received; status: UNAVAILABLE: ugh "
             "(node ID:xds_client_test)")
       << *error;
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
   // XdsClient should create a new stream.
   stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -1976,7 +2664,16 @@ TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
   CheckRequestNode(*request);  // Should be present on the first request.
   // Server does NOT send a response immediately.
   // Client should receive a resource does-not-exist.
-  ASSERT_TRUE(watcher->WaitForDoesNotExist(absl::Seconds(4)));
+  ASSERT_TRUE(watcher->WaitForDoesNotExist());
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "does_not_exist"),
+                  1)));
   // Server now sends the requested resource.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
@@ -1989,6 +2686,19 @@ TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient sends an ACK.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1998,13 +2708,11 @@ TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
                /*resource_names=*/{"foo1"});
   // Cancel watcher.
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
-  // Lower resources-does-not-exist timeout, to make sure that we're not
-  // triggering that here.
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
+  InitXdsClient();
   // Tell transport to let us manually trigger completion of the
   // send_message ops to XdsClient.
   transport_factory_->SetAutoCompleteMessagesFromClient(false);
@@ -2026,13 +2734,27 @@ TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
   // Server does NOT send a response.
   // We should not see a resource-does-not-exist event, because the
   // timer should not be running while the channel is disconnected.
-  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(4)));
+  EXPECT_TRUE(watcher->ExpectNoEvent());
+  // Check metric data.
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
   // The ADS stream uses wait_for_ready inside the XdsTransport interface,
   // so when the channel connects, the already-started stream will proceed.
   stream->CompleteSendMessageFromClient();
   // Server does NOT send a response.
   // Watcher should see a does-not-exist event.
-  EXPECT_TRUE(watcher->WaitForDoesNotExist(absl::Seconds(4)));
+  EXPECT_TRUE(watcher->WaitForDoesNotExist());
+  // Check metric data.
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "does_not_exist"),
+                  1)));
   // Now server sends a response.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
@@ -2045,6 +2767,13 @@ TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2055,7 +2784,7 @@ TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
   stream->CompleteSendMessageFromClient();
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 // In https://github.com/grpc/grpc/issues/29583, we ran into a case
@@ -2066,7 +2795,7 @@ TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
 // update containing that resource.
 TEST_F(XdsClientTest,
        ResourceDoesNotExistUnsubscribeAndResubscribeWhileSendMessagePending) {
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(1));
+  InitXdsClient();
   // Tell transport to let us manually trigger completion of the
   // send_message ops to XdsClient.
   transport_factory_->SetAutoCompleteMessagesFromClient(false);
@@ -2098,6 +2827,19 @@ TEST_F(XdsClientTest,
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2110,6 +2852,19 @@ TEST_F(XdsClientTest,
   auto watcher2 = StartFooWatch("foo2");
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher2->HasEvent());
+  // Check metric data.
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(
+          ::testing::Pair(ResourceCountLabelsEq(
+                              XdsClient::kOldStyleAuthority,
+                              XdsFooResourceType::Get()->type_url(), "acked"),
+                          1),
+          ::testing::Pair(
+              ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                    XdsFooResourceType::Get()->type_url(),
+                                    "requested"),
+              1)));
   // XdsClient sends a request to subscribe to the new resource.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2121,7 +2876,19 @@ TEST_F(XdsClientTest,
   // complete.
   // Unsubscribe from foo1 and then re-subscribe to it.
   CancelFooWatch(watcher.get(), "foo1");
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
   watcher = StartFooWatch("foo1");
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  2)));
   // Now send a response from the server containing both foo1 and foo2.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
@@ -2142,6 +2909,19 @@ TEST_F(XdsClientTest,
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo2");
   EXPECT_EQ(resource->value, 7);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          3)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          2)));
   // Now we finally tell XdsClient that its previous send_message op is
   // complete.
   stream->CompleteSendMessageFromClient();
@@ -2156,17 +2936,15 @@ TEST_F(XdsClientTest,
                /*resource_names=*/{"foo1", "foo2"});
   stream->CompleteSendMessageFromClient();
   // Make sure the watcher for foo1 does not see a does-not-exist event.
-  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(5)));
+  EXPECT_TRUE(watcher->ExpectNoEvent());
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1", /*delay_unsubscription=*/true);
   CancelFooWatch(watcher2.get(), "foo2");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
-  // Lower resources-does-not-exist timeout, to make sure that we're not
-  // triggering that here.
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
+  InitXdsClient();
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
@@ -2194,6 +2972,19 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2220,7 +3011,20 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
   // We should not see a resource-does-not-exist event, because the
   // resource was already cached, so the server can optimize by not
   // resending it.
-  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(4)));
+  EXPECT_TRUE(watcher->ExpectNoEvent());
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // Now server sends a response.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
@@ -2229,7 +3033,22 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
           .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // Watcher will not see any update, since the resource is unchanged.
-  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(1)));
+  EXPECT_TRUE(watcher->ExpectNoEvent());
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          2)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2239,7 +3058,7 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
@@ -2272,6 +3091,19 @@ TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2281,7 +3113,7 @@ TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, MultipleResourceTypes) {
@@ -2313,6 +3145,19 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2343,6 +3188,29 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource2->name, "bar1");
   EXPECT_EQ(resource2->value, "whee");
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(
+          ::testing::Pair(
+              ::testing::Pair(kDefaultXdsServerUrl,
+                              XdsBarResourceType::Get()->type_url()),
+              1),
+          ::testing::Pair(
+              ::testing::Pair(kDefaultXdsServerUrl,
+                              XdsFooResourceType::Get()->type_url()),
+              1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::UnorderedElementsAre(
+          ::testing::Pair(ResourceCountLabelsEq(
+                              XdsClient::kOldStyleAuthority,
+                              XdsBarResourceType::Get()->type_url(), "acked"),
+                          1),
+          ::testing::Pair(ResourceCountLabelsEq(
+                              XdsClient::kOldStyleAuthority,
+                              XdsFooResourceType::Get()->type_url(), "acked"),
+                          1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2358,27 +3226,74 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
                /*version_info=*/"1", /*response_nonce=*/"A",
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  // Now cancel watch for "bar1".
+  // Server sends an empty response for the resource type.
+  // (The server doesn't need to do this, but it may.)
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("C")
+          .Serialize());
+  // Client should ACK.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"C",
+               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  // Now subscribe to foo2.
+  watcher = StartFooWatch("foo2");
+  // Client sends a subscription request, which retains the nonce and
+  // version seen previously.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"C",
+               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
+  // Server sends foo2.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("D")
+          .AddFooResource(XdsFooResource("foo2", 8))
+          .Serialize());
+  // Watcher receives the resource.
+  resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo2");
+  EXPECT_EQ(resource->value, 8);
+  // Client ACKs.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"D",
+               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
+  // Cancel watches.
+  CancelFooWatch(watcher.get(), "foo2", /*delay_unsubscription=*/true);
   CancelBarWatch(watcher2.get(), "bar1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, Federation) {
   constexpr char kAuthority[] = "xds.example.com";
   const std::string kXdstpResourceName = absl::StrCat(
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");
-  FakeXdsBootstrap::FakeXdsServer authority_server;
-  authority_server.set_server_uri("other_xds_server");
+  FakeXdsBootstrap::FakeXdsServer authority_server("other_xds_server");
   FakeXdsBootstrap::FakeAuthority authority;
   authority.set_server(authority_server);
   InitXdsClient(
       FakeXdsBootstrap::Builder().AddAuthority(kAuthority, authority));
+  // Metrics should initially be empty.
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(GetResourceCounts(), ::testing::ElementsAre());
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre());
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream to the top-level xDS server.
-  auto stream = WaitForAdsStream(xds_client_->bootstrap().server());
+  auto stream = WaitForAdsStream(*xds_client_->bootstrap().servers().front());
   ASSERT_TRUE(stream != nullptr);
   // XdsClient should have sent a subscription request on the ADS stream.
   auto request = WaitForRequest(stream.get());
@@ -2400,6 +3315,21 @@ TEST_F(XdsClientTest, Federation) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2411,6 +3341,22 @@ TEST_F(XdsClientTest, Federation) {
   auto watcher2 = StartFooWatch(kXdstpResourceName);
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher2->HasEvent());
+  // Check metric data.
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(
+          ::testing::Pair(ResourceCountLabelsEq(
+                              XdsClient::kOldStyleAuthority,
+                              XdsFooResourceType::Get()->type_url(), "acked"),
+                          1),
+          ::testing::Pair(ResourceCountLabelsEq(
+                              kAuthority, XdsFooResourceType::Get()->type_url(),
+                              "requested"),
+                          1)));
+  EXPECT_THAT(GetServerConnections(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(kDefaultXdsServerUrl, true),
+                  ::testing::Pair(authority_server.server_uri(), true)));
   // XdsClient will create a new stream to the server for this authority.
   auto stream2 = WaitForAdsStream(authority_server);
   ASSERT_TRUE(stream2 != nullptr);
@@ -2436,6 +3382,33 @@ TEST_F(XdsClientTest, Federation) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, kXdstpResourceName);
   EXPECT_EQ(resource->value, 3);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(
+          ::testing::Pair(
+              ::testing::Pair(kDefaultXdsServerUrl,
+                              XdsFooResourceType::Get()->type_url()),
+              1),
+          ::testing::Pair(
+              ::testing::Pair(authority_server.server_uri(),
+                              XdsFooResourceType::Get()->type_url()),
+              1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(
+          ::testing::Pair(ResourceCountLabelsEq(
+                              XdsClient::kOldStyleAuthority,
+                              XdsFooResourceType::Get()->type_url(), "acked"),
+                          1),
+          ::testing::Pair(
+              ResourceCountLabelsEq(
+                  kAuthority, XdsFooResourceType::Get()->type_url(), "acked"),
+              1)));
+  EXPECT_THAT(GetServerConnections(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(kDefaultXdsServerUrl, true),
+                  ::testing::Pair(authority_server.server_uri(), true)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream2.get());
   ASSERT_TRUE(request.has_value());
@@ -2445,10 +3418,10 @@ TEST_F(XdsClientTest, Federation) {
                /*resource_names=*/{kXdstpResourceName});
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
-  EXPECT_TRUE(stream2->Orphaned());
+  EXPECT_TRUE(stream2->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
@@ -2464,7 +3437,7 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream to the top-level xDS server.
-  auto stream = WaitForAdsStream(xds_client_->bootstrap().server());
+  auto stream = WaitForAdsStream(*xds_client_->bootstrap().servers().front());
   ASSERT_TRUE(stream != nullptr);
   // XdsClient should have sent a subscription request on the ADS stream.
   auto request = WaitForRequest(stream.get());
@@ -2486,6 +3459,21 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2518,6 +3506,26 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, kXdstpResourceName);
   EXPECT_EQ(resource->value, 3);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          2)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(
+          ::testing::Pair(ResourceCountLabelsEq(
+                              XdsClient::kOldStyleAuthority,
+                              XdsFooResourceType::Get()->type_url(), "acked"),
+                          1),
+          ::testing::Pair(
+              ResourceCountLabelsEq(
+                  kAuthority, XdsFooResourceType::Get()->type_url(), "acked"),
+              1)));
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2536,7 +3544,7 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
                /*resource_names=*/{kXdstpResourceName});
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, FederationWithUnknownAuthority) {
@@ -2616,15 +3624,14 @@ TEST_F(XdsClientTest, FederationDisabledWithNewStyleName) {
                /*resource_names=*/{kXdstpResourceName});
   // Cancel watch.
   CancelFooWatch(watcher.get(), kXdstpResourceName);
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   constexpr char kAuthority[] = "xds.example.com";
   const std::string kXdstpResourceName = absl::StrCat(
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");
-  FakeXdsBootstrap::FakeXdsServer authority_server;
-  authority_server.set_server_uri("other_xds_server");
+  FakeXdsBootstrap::FakeXdsServer authority_server("other_xds_server");
   FakeXdsBootstrap::FakeAuthority authority;
   authority.set_server(authority_server);
   InitXdsClient(
@@ -2634,7 +3641,7 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream to the top-level xDS server.
-  auto stream = WaitForAdsStream(xds_client_->bootstrap().server());
+  auto stream = WaitForAdsStream(*xds_client_->bootstrap().servers().front());
   ASSERT_TRUE(stream != nullptr);
   // XdsClient should have sent a subscription request on the ADS stream.
   auto request = WaitForRequest(stream.get());
@@ -2656,6 +3663,21 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2665,6 +3687,11 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
                /*resource_names=*/{"foo1"});
   // Start a watch for the xdstp resource name.
   auto watcher2 = StartFooWatch(kXdstpResourceName);
+  // Check metric data.
+  EXPECT_THAT(GetServerConnections(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(kDefaultXdsServerUrl, true),
+                  ::testing::Pair(authority_server.server_uri(), true)));
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher2->HasEvent());
   // XdsClient will create a new stream to the server for this authority.
@@ -2692,6 +3719,33 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, kXdstpResourceName);
   EXPECT_EQ(resource->value, 3);
+  // Check metric data.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(
+          ::testing::Pair(
+              ::testing::Pair(kDefaultXdsServerUrl,
+                              XdsFooResourceType::Get()->type_url()),
+              1),
+          ::testing::Pair(
+              ::testing::Pair(authority_server.server_uri(),
+                              XdsFooResourceType::Get()->type_url()),
+              1)),
+      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(
+          ::testing::Pair(ResourceCountLabelsEq(
+                              XdsClient::kOldStyleAuthority,
+                              XdsFooResourceType::Get()->type_url(), "acked"),
+                          1),
+          ::testing::Pair(
+              ResourceCountLabelsEq(
+                  kAuthority, XdsFooResourceType::Get()->type_url(), "acked"),
+              1)));
+  EXPECT_THAT(GetServerConnections(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(kDefaultXdsServerUrl, true),
+                  ::testing::Pair(authority_server.server_uri(), true)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream2.get());
   ASSERT_TRUE(request.has_value());
@@ -2712,12 +3766,21 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
       << *error;
   // The watcher for "foo1" should not see any error.
   EXPECT_FALSE(watcher->HasEvent());
+  // Check metric data.
+  EXPECT_THAT(GetServerConnections(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(kDefaultXdsServerUrl, true),
+                  ::testing::Pair(authority_server.server_uri(), false)));
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::_, ::testing::_,
+      ::testing::ElementsAre(
+          ::testing::Pair(authority_server.server_uri(), 1))));
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
-  EXPECT_TRUE(stream2->Orphaned());
+  EXPECT_TRUE(stream2->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
@@ -2773,11 +3836,11 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
                /*version_info=*/"1", /*response_nonce=*/"A",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
-  EXPECT_EQ(stream->reads_started(), 1);
+  EXPECT_TRUE(stream->WaitForReadsStarted(1));
   resource1->read_delay_handle.reset();
-  EXPECT_EQ(stream->reads_started(), 1);
+  EXPECT_TRUE(stream->WaitForReadsStarted(1));
   resource2->read_delay_handle.reset();
-  EXPECT_EQ(stream->reads_started(), 2);
+  EXPECT_TRUE(stream->WaitForReadsStarted(2));
   resource1 = watcher1->WaitForNextResourceAndHandle();
   ASSERT_NE(resource1, absl::nullopt);
   EXPECT_EQ(resource1->resource->name, "foo1");
@@ -2790,9 +3853,9 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
                /*version_info=*/"2", /*response_nonce=*/"B",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
-  EXPECT_EQ(stream->reads_started(), 2);
+  EXPECT_TRUE(stream->WaitForReadsStarted(2));
   resource1->read_delay_handle.reset();
-  EXPECT_EQ(stream->reads_started(), 3);
+  EXPECT_TRUE(stream->WaitForReadsStarted(3));
   // Cancel watch.
   CancelFooWatch(watcher1.get(), "foo1");
   request = WaitForRequest(stream.get());
@@ -2802,7 +3865,376 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo2"});
   CancelFooWatch(watcher2.get(), "foo2");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
+}
+
+TEST_F(XdsClientTest, FallbackAndRecover) {
+  FakeXdsBootstrap::FakeXdsServer primary_server(kDefaultXdsServerUrl);
+  FakeXdsBootstrap::FakeXdsServer fallback_server("fallback_xds_server");
+  // Regular operation
+  InitXdsClient(FakeXdsBootstrap::Builder().SetServers(
+      {primary_server, fallback_server}));
+  // Start a watch for "foo1".
+  auto watcher = StartFooWatch("foo1");
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::IsEmpty(), ::testing::_, ::testing::ElementsAre()));
+  // XdsClient should have created an ADS stream.
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Input: Get initial response from primary server.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("20")
+          .set_nonce("O")
+          .AddFooResource(XdsFooResource("foo1", 6))
+          .Serialize());
+  // Result (local): Resource is delivered to watcher.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  // Result (local): Metrics show 1 resource update and 1 cached resource.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(::testing::Pair(
+          ::testing::Pair(kDefaultXdsServerUrl,
+                          XdsFooResourceType::Get()->type_url()),
+          1)),
+      ::testing::_, ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
+  // Result (remote): Client sends ACK to server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"20", /*response_nonce=*/"O",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Input: Trigger connection failure to primary.
+  TriggerConnectionFailure(primary_server,
+                           absl::UnavailableError("Server down"));
+  // Result (local): The error is reported to the watcher.
+  auto error = watcher->WaitForNextError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
+  EXPECT_EQ(error->message(),
+            "xDS channel for server default_xds_server: Server down (node "
+            "ID:xds_client_test)");
+  // Result (local): The metrics show the channel as being unhealthy.
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, false)));
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::_, ::testing::_,
+      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
+  // Input: Trigger stream failure.
+  stream->MaybeSendStatusToClient(absl::UnavailableError("Stream failure"));
+  // Result (local): The metrics still show the channel as being unhealthy.
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, false)));
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::_, ::testing::_,
+      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
+  // Result (remote): The client starts a new stream and sends a subscription
+  //   message. Note that the server does not respond, so the channel will still
+  //   have non-OK status.
+  stream = WaitForAdsStream();
+  ASSERT_NE(stream, nullptr);
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"20", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Input: Start second watch for foo1 (already cached).
+  auto watcher_cached = StartFooWatch("foo1");
+  // Result (local): New watcher gets the cached resource.
+  resource = watcher_cached->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  // Result (local): New watcher gets the error from the channel state.
+  error = watcher_cached->WaitForNextError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(error->message(),
+            "xDS channel for server default_xds_server: Server down (node "
+            "ID:xds_client_test)")
+      << error->message();
+  CancelFooWatch(watcher_cached.get(), "foo1");
+  // Input: Start watch for foo2 (not already cached).
+  auto watcher2 = StartFooWatch("foo2");
+  // Result (local): Metrics show a healthy channel to the fallback server.
+  EXPECT_THAT(GetServerConnections(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(kDefaultXdsServerUrl, false),
+                  ::testing::Pair(fallback_server.server_uri(), true)));
+  // Result (remote): Client sent a new request for both resources on the
+  //   stream to the primary.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"20", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+  // Result (remote): Client created a stream to the fallback server and sent a
+  //   request on that stream for both resources.
+  auto stream2 = WaitForAdsStream(fallback_server);
+  ASSERT_TRUE(stream2 != nullptr);
+  request = WaitForRequest(stream2.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+  // Input: Fallback server sends a response with both resources.
+  stream2->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("5")
+          .set_nonce("A")
+          .AddFooResource(XdsFooResource("foo1", 20))
+          .AddFooResource(XdsFooResource("foo2", 30))
+          .Serialize());
+  // Result (local): Resources are delivered to watchers.
+  resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 20);
+  resource = watcher2->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo2");
+  EXPECT_EQ(resource->value, 30);
+  // Result (local): Metrics show an update from fallback server.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(
+          ::testing::Pair(
+              ::testing::Pair(kDefaultXdsServerUrl,
+                              XdsFooResourceType::Get()->type_url()),
+              1),
+          ::testing::Pair(
+              ::testing::Pair(fallback_server.server_uri(),
+                              XdsFooResourceType::Get()->type_url()),
+              2)),
+      ::testing::_, ::testing::_));
+  EXPECT_THAT(GetServerConnections(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(kDefaultXdsServerUrl, false),
+                  ::testing::Pair(fallback_server.server_uri(), true)));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          2)));
+  // Result (remote): Client sends ACK to fallback server.
+  request = WaitForRequest(stream2.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"5", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+  // Input: Primary server sends a response containing both resources.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("15")
+          .set_nonce("B")
+          .AddFooResource(XdsFooResource("foo1", 35))
+          .AddFooResource(XdsFooResource("foo2", 25))
+          .Serialize());
+  // Result (local): Metrics show that we've closed the channel to the fallback
+  //   server and received resource updates from the primary server.
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::ElementsAre(
+          ::testing::Pair(
+              ::testing::Pair(kDefaultXdsServerUrl,
+                              XdsFooResourceType::Get()->type_url()),
+              3),
+          ::testing::Pair(
+              ::testing::Pair(fallback_server.server_uri(),
+                              XdsFooResourceType::Get()->type_url()),
+              2)),
+      ::testing::_,
+      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
+  // Result (remote): The stream to the fallback server has been orphaned.
+  EXPECT_TRUE(stream2->IsOrphaned());
+  // Result (local): Resources are delivered to watchers.
+  resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 35);
+  resource = watcher2->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo2");
+  EXPECT_EQ(resource->value, 25);
+  // Result (remote): Client sends ACK to server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"15", /*response_nonce=*/"B",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+  // Clean up.
+  CancelFooWatch(watcher.get(), "foo1", /*delay_unsubscription=*/true);
+  CancelFooWatch(watcher2.get(), "foo2");
+  // Result (remote): The stream to the primary server has been orphaned.
+  EXPECT_TRUE(stream->IsOrphaned());
+}
+
+// Test for both servers being unavailable
+TEST_F(XdsClientTest, FallbackReportsError) {
+  FakeXdsBootstrap::FakeXdsServer primary_server(kDefaultXdsServerUrl);
+  FakeXdsBootstrap::FakeXdsServer fallback_server("fallback_xds_server");
+  InitXdsClient(FakeXdsBootstrap::Builder().SetServers(
+      {primary_server, fallback_server}));
+  auto watcher = StartFooWatch("foo1");
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
+  TriggerConnectionFailure(primary_server,
+                           absl::UnavailableError("Server down"));
+  EXPECT_THAT(GetServerConnections(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(kDefaultXdsServerUrl, false),
+                  ::testing::Pair(fallback_server.server_uri(), true)));
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::_, ::testing::_,
+      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
+  // Fallback happens now
+  stream = WaitForAdsStream(fallback_server);
+  ASSERT_NE(stream, nullptr);
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  TriggerConnectionFailure(fallback_server,
+                           absl::UnavailableError("Another server down"));
+  EXPECT_THAT(GetServerConnections(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(kDefaultXdsServerUrl, false),
+                  ::testing::Pair(fallback_server.server_uri(), false)));
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::_, ::testing::_,
+      ::testing::ElementsAre(
+          ::testing::Pair(kDefaultXdsServerUrl, 1),
+          ::testing::Pair(fallback_server.server_uri(), 1))));
+  auto error = watcher->WaitForNextError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_THAT(error->code(), absl::StatusCode::kUnavailable);
+  EXPECT_EQ(error->message(),
+            "xDS channel for server fallback_xds_server: Another server down "
+            "(node ID:xds_client_test)")
+      << error->message();
+}
+
+TEST_F(XdsClientTest, FallbackOnStartup) {
+  FakeXdsBootstrap::FakeXdsServer primary_server;
+  FakeXdsBootstrap::FakeXdsServer fallback_server("fallback_xds_server");
+  // Regular operation
+  InitXdsClient(FakeXdsBootstrap::Builder().SetServers(
+      {primary_server, fallback_server}));
+  // Start a watch for "foo1".
+  auto watcher = StartFooWatch("foo1");
+  auto primary_stream = WaitForAdsStream(primary_server);
+  ASSERT_NE(primary_stream, nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(primary_stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  TriggerConnectionFailure(primary_server,
+                           absl::UnavailableError("Primary server is down"));
+  // XdsClient should have created an ADS stream.
+  auto fallback_stream = WaitForAdsStream(fallback_server);
+  ASSERT_NE(fallback_stream, nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  request = WaitForRequest(fallback_stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Send a response.
+  fallback_stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddFooResource(XdsFooResource("foo1", 6))
+          .Serialize());
+  EXPECT_THAT(GetServerConnections(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(kDefaultXdsServerUrl, false),
+                  ::testing::Pair(fallback_server.server_uri(), true)));
+  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+      ::testing::_, ::testing::_,
+      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
+  // XdsClient should have delivered the response to the watcher.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  // Client sends an ACK.
+  request = WaitForRequest(fallback_stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Recover to primary
+  primary_stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("5")
+          .set_nonce("D")
+          .AddFooResource(XdsFooResource("foo1", 42))
+          .Serialize());
+  EXPECT_TRUE(fallback_stream->IsOrphaned());
+  resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 42);
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
+  request = WaitForRequest(primary_stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"5", /*response_nonce=*/"D",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
 }
 
 }  // namespace
@@ -2812,8 +4244,5 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }

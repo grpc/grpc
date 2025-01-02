@@ -86,6 +86,19 @@ function toolchain() {
   fi
 }
 
+# When we mount and reuse the existing repo from host machine inside docker
+# container, the `tools/bazel.rc` file is shared to the docker container and 
+# the Bazel override written to `bazel.rc` from tools/.../grpc_build_submodule_at_head.sh 
+# (outside docker container) forces bazel to look for the same host location
+# inside the docker container, which doesn't exist.
+# Hence overriding it again with the working directory inside the container 
+# should solve this issue
+BAZEL_DEP_PATH="$(pwd)/third_party/protobuf"
+BAZEL_DEP_NAME="com_google_protobuf"
+echo "bazel override_repository is set for ${BAZEL_DEP_NAME} to ${BAZEL_DEP_PATH}"
+echo "build --override_repository=${BAZEL_DEP_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
+echo "query --override_repository=${BAZEL_DEP_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
+
 ####################
 # Script Arguments #
 ####################
@@ -124,9 +137,9 @@ if [[ "$(inside_venv)" ]]; then
 else
   # Instantiate the virtualenv from the Python version passed in.
   $PYTHON -m pip install --user virtualenv==20.25.0
-  # Use --no-seed to prevent virtualenv from installing seed packages.
-  # Otherwise it might not find cython module while building grpcio.
-  $PYTHON -m virtualenv --no-seed "$VENV"
+  # Skip wheel and setuptools and manually install later. Otherwise we might
+  # not find cython module while building grpcio.
+  $PYTHON -m virtualenv --no-wheel --no-setuptools "$VENV"
   VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
 fi
 
@@ -134,9 +147,9 @@ pip_install() {
   $VENV_PYTHON -m pip install "$@"
 }
 
-$VENV_PYTHON -m ensurepip --upgrade
+pip_install --upgrade pip
 pip_install --upgrade wheel
-pip_install --upgrade setuptools==66.1.0
+pip_install --upgrade setuptools==70.1.1
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
@@ -158,8 +171,8 @@ pip_install_dir_and_deps() {
 
 pip_install -U gevent
 
-pip_install --upgrade 'cython<3.0.0rc1'
-pip_install --upgrade six 'protobuf>=4.21.3rc1,!=4.22.0.*'
+pip_install --upgrade 'cython>=3.0.0'
+pip_install --upgrade six 'protobuf>=5.26.1,<6.0dev'
 
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then
@@ -178,6 +191,7 @@ if [ "$(is_mingw)" ] || [ "$(is_darwin)" ]; then
 else
   $VENV_PYTHON "$ROOT/src/python/grpcio_observability/make_grpcio_observability.py"
   pip_install_dir_and_deps "$ROOT/src/python/grpcio_observability"
+  pip_install_dir_and_deps "$ROOT/src/python/grpcio_csm_observability"
 fi
 
 # Build/install Channelz
@@ -202,7 +216,7 @@ pip_install_dir "$ROOT/src/python/grpcio_status"
 
 
 # Build/install status proto mapping
-$VENV_PYTHON "$ROOT/tools/distrib/python/xds_protos/build.py"
+# build.py is invoked as part of generate_projects.sh
 pip_install_dir "$ROOT/tools/distrib/python/xds_protos"
 
 # Build/install csds
@@ -215,9 +229,11 @@ pip_install_dir "$ROOT/src/python/grpcio_admin"
 pip_install_dir "$ROOT/src/python/grpcio_testing"
 
 # Build/install tests
+# shellcheck disable=SC2261
 pip_install coverage==7.2.0 oauth2client==4.1.0 \
             google-auth>=1.35.0 requests==2.31.0 \
-            googleapis-common-protos>=1.5.5 rsa==4.0 absl-py==1.4.0
+            rsa==4.0 absl-py==1.4.0 \
+            opentelemetry-sdk==1.21.0
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_tests"

@@ -18,18 +18,18 @@
 
 #include "test/cpp/end2end/test_service_impl.h"
 
-#include <string>
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
+#include <string>
+#include <thread>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
 
@@ -94,7 +94,7 @@ int GetIntValueFromMetadataHelper(
   if (metadata.find(key) != metadata.end()) {
     std::istringstream iss(ToString(metadata.find(key)->second));
     iss >> default_value;
-    gpr_log(GPR_INFO, "%s : %d", key, default_value);
+    LOG(INFO) << key << " : " << default_value;
   }
 
   return default_value;
@@ -110,7 +110,7 @@ int GetIntValueFromMetadata(
 void ServerTryCancel(ServerContext* context) {
   EXPECT_FALSE(context->IsCancelled());
   context->TryCancel();
-  gpr_log(GPR_INFO, "Server called TryCancel() to cancel the request");
+  LOG(INFO) << "Server called TryCancel() to cancel the request";
   // Now wait until it's really canceled
   while (!context->IsCancelled()) {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
@@ -121,8 +121,7 @@ void ServerTryCancel(ServerContext* context) {
 void ServerTryCancelNonblocking(CallbackServerContext* context) {
   EXPECT_FALSE(context->IsCancelled());
   context->TryCancel();
-  gpr_log(GPR_INFO,
-          "Server called TryCancelNonblocking() to cancel the request");
+  LOG(INFO) << "Server called TryCancelNonblocking() to cancel the request";
 }
 
 }  // namespace internal
@@ -209,8 +208,8 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         return;
       }
       if (req_->has_param() && req_->param().server_die()) {
-        gpr_log(GPR_ERROR, "The request should not reach application handler.");
-        GPR_ASSERT(0);
+        LOG(ERROR) << "The request should not reach application handler.";
+        CHECK(0);
       }
       if (req_->has_param() && req_->param().has_expected_error()) {
         const auto& error = req_->param().expected_error();
@@ -227,7 +226,7 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         // RPC as long as server_try_cancel is not DO_NOT_CANCEL
         EXPECT_FALSE(ctx_->IsCancelled());
         ctx_->TryCancel();
-        gpr_log(GPR_INFO, "Server called TryCancel() to cancel the request");
+        LOG(INFO) << "Server called TryCancel() to cancel the request";
         FinishWhenCancelledAsync();
         return;
       }
@@ -289,7 +288,7 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         }
       }
       if (req_->has_param() &&
-          (req_->param().expected_client_identity().length() > 0 ||
+          (!req_->param().expected_client_identity().empty() ||
            req_->param().check_auth_context())) {
         internal::CheckServerAuthContext(
             ctx_, req_->param().expected_transport_security_type(),
@@ -396,7 +395,7 @@ ServerReadReactor<EchoRequest>* CallbackTestServiceImpl::RequestStream(
         num_msgs_read_++;
         StartRead(&request_);
       } else {
-        gpr_log(GPR_INFO, "Read: %d messages", num_msgs_read_);
+        LOG(INFO) << "Read: " << num_msgs_read_ << " messages";
 
         if (server_try_cancel_ == CANCEL_DURING_PROCESSING) {
           // Let OnCancel recover this

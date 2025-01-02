@@ -13,11 +13,24 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
 grpc_package(name = "test/core/promise")
+
+grpc_cc_library(
+    name = "poll_matcher",
+    testonly = True,
+    hdrs = ["poll_matcher.h"],
+    external_deps = ["gtest"],
+    visibility = [
+        "//fuzztest/core:__subpackages__",
+        "//test/core:__subpackages__",
+    ],
+    deps = ["//src/core:poll"],
+)
 
 grpc_cc_library(
     name = "test_wakeup_schedulers",
@@ -115,7 +128,7 @@ grpc_cc_test(
         "//src/core:event_engine_memory_allocator",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )
 
@@ -136,8 +149,27 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "poll_matcher",
         "//:promise",
         "//src/core:map",
+    ],
+)
+
+grpc_cc_test(
+    name = "match_promise_test",
+    srcs = ["match_promise_test.cc"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "poll_matcher",
+        "//:promise",
+        "//src/core:match_promise",
     ],
 )
 
@@ -231,6 +263,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "poll_matcher",
         "//src/core:join",
         "//src/core:poll",
     ],
@@ -283,7 +316,10 @@ grpc_cc_test(
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:try_seq"],
+    deps = [
+        "poll_matcher",
+        "//src/core:try_seq",
+    ],
 )
 
 grpc_cc_test(
@@ -477,10 +513,31 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "poll_matcher",
         "//:gpr",
         "//:promise",
         "//src/core:activity",
         "//src/core:mpsc",
+    ],
+)
+
+grpc_cc_test(
+    name = "observable_test",
+    srcs = ["observable_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "poll_matcher",
+        "//src/core:loop",
+        "//src/core:map",
+        "//src/core:notification",
+        "//src/core:observable",
     ],
 )
 
@@ -490,6 +547,7 @@ grpc_proto_fuzzer(
     corpus = "promise_fuzzer_corpus",
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/status",
         "absl/types:optional",
     ],
@@ -506,6 +564,7 @@ grpc_proto_fuzzer(
         "//src/core:poll",
         "//src/core:race",
         "//src/core:seq",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -569,7 +628,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "sleep_test",
     srcs = ["sleep_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -622,6 +684,7 @@ grpc_cc_test(
     srcs = ["party_test.cc"],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:log",
         "gtest",
     ],
     language = "c++",
@@ -645,5 +708,16 @@ grpc_cc_test(
         "//src/core:seq",
         "//src/core:sleep",
         "//src/core:time",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_party",
+    srcs = ["bm_party.cc"],
+    monitoring = HISTORY,
+    deps = [
+        "//:grpc",
+        "//src/core:1999",
+        "//src/core:default_event_engine",
     ],
 )

@@ -18,17 +18,16 @@
 
 // Test various closure related operations
 
-#include <sstream>
-
 #include <benchmark/benchmark.h>
-
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gpr/spinlock.h"
+#include <sstream>
+
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/spinlock.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 

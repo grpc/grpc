@@ -18,28 +18,26 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/slice_buffer.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <memory>
 #include <string>
 
+#include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
-
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "test/core/util/parse_hexstring.h"
-#include "test/core/util/slice_splitter.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "test/core/test_util/parse_hexstring.h"
+#include "test/core/test_util/slice_splitter.h"
+#include "test/core/test_util/test_config.h"
 
 grpc_core::HPackCompressor* g_compressor;
 
@@ -93,37 +91,37 @@ static void verify_frames(grpc_slice_buffer& output, bool header_is_eof) {
 
     // Verifications
     if (first_frame && type != GRPC_CHTTP2_FRAME_HEADER) {
-      gpr_log(GPR_ERROR, "expected first frame to be of type header");
-      gpr_log(GPR_ERROR, "EXPECT: 0x%x", GRPC_CHTTP2_FRAME_HEADER);
-      gpr_log(GPR_ERROR, "GOT:    0x%x", type);
+      LOG(ERROR) << "expected first frame to be of type header";
+      LOG(ERROR) << "EXPECT: " << GRPC_CHTTP2_FRAME_HEADER;
+      LOG(ERROR) << "GOT:    " << type;
       EXPECT_TRUE(false);
     } else if (first_frame && header_is_eof &&
                !(flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM)) {
-      gpr_log(GPR_ERROR, "missing END_STREAM flag in HEADER frame");
+      LOG(ERROR) << "missing END_STREAM flag in HEADER frame";
       EXPECT_TRUE(false);
     }
     if (is_closed &&
         (type == GRPC_CHTTP2_FRAME_DATA || type == GRPC_CHTTP2_FRAME_HEADER)) {
-      gpr_log(GPR_ERROR,
-              "stream is closed; new frame headers and data are not allowed");
+      LOG(ERROR)
+          << "stream is closed; new frame headers and data are not allowed";
       EXPECT_TRUE(false);
     }
     if (end_header && (type == GRPC_CHTTP2_FRAME_HEADER ||
                        type == GRPC_CHTTP2_FRAME_CONTINUATION)) {
-      gpr_log(GPR_ERROR,
-              "frame header is ended; new headers and continuations are not "
-              "allowed");
+      LOG(ERROR)
+          << "frame header is ended; new headers and continuations are not "
+             "allowed";
       EXPECT_TRUE(false);
     }
     if (in_header &&
         (type == GRPC_CHTTP2_FRAME_DATA || type == GRPC_CHTTP2_FRAME_HEADER)) {
-      gpr_log(GPR_ERROR,
-              "parsing frame header; new headers and data are not allowed");
+      LOG(ERROR)
+          << "parsing frame header; new headers and data are not allowed";
       EXPECT_TRUE(false);
     }
     if (flags & ~(GRPC_CHTTP2_DATA_FLAG_END_STREAM |
                   GRPC_CHTTP2_DATA_FLAG_END_HEADERS)) {
-      gpr_log(GPR_ERROR, "unexpected frame flags: 0x%x", flags);
+      LOG(ERROR) << "unexpected frame flags: " << flags;
       EXPECT_TRUE(false);
     }
 
@@ -137,7 +135,7 @@ static void verify_frames(grpc_slice_buffer& output, bool header_is_eof) {
     if (flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
       is_closed = true;
       if (type == GRPC_CHTTP2_FRAME_CONTINUATION) {
-        gpr_log(GPR_ERROR, "unexpected END_STREAM flag in CONTINUATION frame");
+        LOG(ERROR) << "unexpected END_STREAM flag in CONTINUATION frame";
         EXPECT_TRUE(false);
       }
     }
@@ -148,18 +146,45 @@ static void CrashOnAppendError(absl::string_view, const grpc_core::Slice&) {
   abort();
 }
 
+namespace grpc_core {
+
+class FakeCallTracer final : public CallTracerInterface {
+ public:
+  void RecordIncomingBytes(
+      const TransportByteSize& transport_byte_size) override {}
+  void RecordOutgoingBytes(
+      const TransportByteSize& transport_byte_size) override {}
+  void RecordSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) override {}
+  void RecordSendTrailingMetadata(
+      grpc_metadata_batch* send_trailing_metadata) override {}
+  void RecordSendMessage(const SliceBuffer& send_message) override {}
+  void RecordSendCompressedMessage(
+      const SliceBuffer& send_compressed_message) override {}
+  void RecordReceivedInitialMetadata(
+      grpc_metadata_batch* recv_initial_metadata) override {}
+  void RecordReceivedMessage(const SliceBuffer& recv_message) override {}
+  void RecordReceivedDecompressedMessage(
+      const SliceBuffer& recv_decompressed_message) override {}
+  void RecordCancel(grpc_error_handle cancel_error) override {}
+  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
+    return nullptr;
+  }
+  void RecordAnnotation(absl::string_view annotation) override {}
+  void RecordAnnotation(const Annotation& annotation) override {}
+  std::string TraceId() override { return ""; }
+  std::string SpanId() override { return ""; }
+  bool IsSampled() override { return false; }
+};
+
+}  // namespace grpc_core
+
 grpc_slice EncodeHeaderIntoBytes(
     bool is_eof,
     const std::vector<std::pair<std::string, std::string>>& header_fields) {
   std::unique_ptr<grpc_core::HPackCompressor> compressor =
       std::make_unique<grpc_core::HPackCompressor>();
-
-  grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
-  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
 
   for (const auto& field : header_fields) {
     b.Append(field.first,
@@ -167,14 +192,13 @@ grpc_slice EncodeHeaderIntoBytes(
              CrashOnAppendError);
   }
 
-  grpc_transport_one_way_stats stats = {};
+  grpc_core::FakeCallTracer call_tracer;
   grpc_core::HPackCompressor::EncodeHeaderOptions hopt{
       0xdeadbeef,  // stream_id
       is_eof,      // is_eof
       false,       // use_true_binary_metadata
       16384,       // max_frame_size
-      &stats       // stats
-  };
+      &call_tracer};
   grpc_slice_buffer output;
   grpc_slice_buffer_init(&output);
 
@@ -307,20 +331,18 @@ static void verify_continuation_headers(const char* key, const char* value,
       grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
-  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_slice_buffer output;
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
   b.Append(key, grpc_core::Slice::FromStaticString(value), CrashOnAppendError);
   grpc_slice_buffer_init(&output);
 
-  grpc_transport_one_way_stats stats;
-  stats = {};
+  grpc_core::FakeCallTracer call_tracer;
   grpc_core::HPackCompressor::EncodeHeaderOptions hopt = {
       0xdeadbeef,  // stream_id
       is_eof,      // is_eof
       false,       // use_true_binary_metadata
       150,         // max_frame_size
-      &stats /* stats */};
+      &call_tracer};
   g_compressor->EncodeHeaders(hopt, b, &output);
   verify_frames(output, is_eof);
   grpc_slice_buffer_destroy(&output);
@@ -344,20 +366,14 @@ TEST(HpackEncoderTest, TestContinuationHeaders) {
 }
 
 TEST(HpackEncoderTest, EncodeBinaryAsBase64) {
-  grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
-  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
   // Haiku by Bard
   b.Append("grpc-trace-bin",
            grpc_core::Slice::FromStaticString(
                "Base64, a tool\nTo encode binary data into "
                "text\nSo it can be shared."),
            CrashOnAppendError);
-  grpc_transport_one_way_stats stats;
-  stats = {};
+  grpc_core::FakeCallTracer call_tracer;
   grpc_slice_buffer output;
   grpc_slice_buffer_init(&output);
   grpc_core::HPackCompressor::EncodeHeaderOptions hopt = {
@@ -365,7 +381,7 @@ TEST(HpackEncoderTest, EncodeBinaryAsBase64) {
       true,        // is_eof
       false,       // use_true_binary_metadata
       150,         // max_frame_size
-      &stats};
+      &call_tracer};
   grpc_core::HPackCompressor compressor;
   compressor.EncodeHeaders(hopt, b, &output);
   grpc_slice_buffer_destroy(&output);
@@ -374,20 +390,14 @@ TEST(HpackEncoderTest, EncodeBinaryAsBase64) {
 }
 
 TEST(HpackEncoderTest, EncodeBinaryAsTrueBinary) {
-  grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
-  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
   // Haiku by Bard
   b.Append("grpc-trace-bin",
            grpc_core::Slice::FromStaticString(
                "Base64, a tool\nTo encode binary data into "
                "text\nSo it can be shared."),
            CrashOnAppendError);
-  grpc_transport_one_way_stats stats;
-  stats = {};
+  grpc_core::FakeCallTracer call_tracer;
   grpc_slice_buffer output;
   grpc_slice_buffer_init(&output);
   grpc_core::HPackCompressor::EncodeHeaderOptions hopt = {
@@ -395,7 +405,7 @@ TEST(HpackEncoderTest, EncodeBinaryAsTrueBinary) {
       true,        // is_eof
       true,        // use_true_binary_metadata
       150,         // max_frame_size
-      &stats};
+      &call_tracer};
   grpc_core::HPackCompressor compressor;
   compressor.EncodeHeaders(hopt, b, &output);
   grpc_slice_buffer_destroy(&output);

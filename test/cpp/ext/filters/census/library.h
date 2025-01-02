@@ -19,6 +19,9 @@
 #ifndef GRPC_TEST_CPP_EXT_FILTERS_CENSUS_LIBRARY_H
 #define GRPC_TEST_CPP_EXT_FILTERS_CENSUS_LIBRARY_H
 
+#include <grpc++/grpc++.h>
+#include <grpcpp/opencensus.h>
+
 #include <string>
 #include <thread>  // NOLINT
 #include <vector>
@@ -27,16 +30,12 @@
 #include "gtest/gtest.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/trace/exporter/span_exporter.h"
-
-#include <grpc++/grpc++.h>
-#include <grpcpp/opencensus.h>
-
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/cpp/client/client_stats_interceptor.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/test_lb_policies.h"
+#include "test/core/test_util/test_lb_policies.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 namespace opencensus {

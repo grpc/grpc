@@ -15,19 +15,19 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_SECURE_FIXTURE_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_SECURE_FIXTURE_H
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+
 #include <string>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
-
+#include "absl/log/check.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/util/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 // Base class for a fixture that just needs to select cred types (or mutate
 // client/server channel args).
@@ -58,7 +58,7 @@ class SecureFixture : public grpc_core::CoreTestFixture {
     auto* creds = MakeServerCreds(args);
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
-    GPR_ASSERT(grpc_server_add_http2_port(server, localaddr_.c_str(), creds));
+    CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), creds));
     grpc_server_credentials_release(creds);
     pre_server_start(server);
     grpc_server_start(server);
@@ -70,7 +70,7 @@ class SecureFixture : public grpc_core::CoreTestFixture {
     auto* creds = MakeClientCreds(args);
     auto* client =
         grpc_channel_create(localaddr_.c_str(), creds, args.ToC().get());
-    GPR_ASSERT(client != nullptr);
+    CHECK_NE(client, nullptr);
     grpc_channel_credentials_release(creds);
     return client;
   }

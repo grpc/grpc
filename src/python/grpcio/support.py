@@ -18,7 +18,13 @@ import shutil
 import sys
 import tempfile
 
-from setuptools import errors
+try:
+    from setuptools.errors import CompileError
+except ImportError:
+    # CompileError only exist for setuptools>=59.0.1, which becomes standard library
+    # after Python 3.10.6.
+    # TODO(xuanwn): Remove this once Python version floor is higher than 3.10.
+    from distutils.errors import CompileError
 
 import commands
 
@@ -58,7 +64,7 @@ def _compile(compiler, source_string):
         cfile.write(source_string)
     try:
         compiler.compile([cpath])
-    except errors.CompileError as error:
+    except CompileError as error:
         return error
     finally:
         shutil.rmtree(tempdir)
@@ -108,7 +114,7 @@ def diagnose_attribute_error(build_ext, error):
 
 
 _ERROR_DIAGNOSES = {
-    errors.CompileError: diagnose_compile_error,
+    CompileError: diagnose_compile_error,
     AttributeError: diagnose_attribute_error,
 }
 

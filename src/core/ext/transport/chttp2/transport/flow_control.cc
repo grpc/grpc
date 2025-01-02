@@ -16,10 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <algorithm>
@@ -29,18 +28,15 @@
 #include <tuple>
 #include <vector>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-
-grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 namespace chttp2 {
@@ -186,7 +182,7 @@ TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
   // and a value t such that t_min <= t <= t_max, return the value on the line
   // segment at t.
   auto lerp = [](double t, double t_min, double t_max, double a, double b) {
-    return a + (b - a) * (t - t_min) / (t_max - t_min);
+    return a + ((b - a) * (t - t_min) / (t_max - t_min));
   };
   // We split memory pressure into three broad regions:
   // 1. Low memory pressure, the "anything goes" case - we assume no memory
@@ -230,19 +226,14 @@ TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
 }
 
 void TransportFlowControl::UpdateSetting(
-    grpc_chttp2_setting_id id, int64_t* desired_value,
-    uint32_t new_desired_value, FlowControlAction* action,
+    absl::string_view name, int64_t* desired_value, uint32_t new_desired_value,
+    FlowControlAction* action,
     FlowControlAction& (FlowControlAction::*set)(FlowControlAction::Urgency,
                                                  uint32_t)) {
-  new_desired_value =
-      Clamp(new_desired_value, grpc_chttp2_settings_parameters[id].min_value,
-            grpc_chttp2_settings_parameters[id].max_value);
   if (new_desired_value != *desired_value) {
-    if (grpc_flowctl_trace.enabled()) {
-      gpr_log(GPR_INFO, "[flowctl] UPDATE SETTING %s from %" PRId64 " to %d",
-              grpc_chttp2_settings_parameters[id].name, *desired_value,
-              new_desired_value);
-    }
+    GRPC_TRACE_LOG(flowctl, INFO)
+        << "[flowctl] UPDATE SETTING " << name << " from " << *desired_value
+        << " to " << new_desired_value;
     // Reaching zero can only happen for initial window size, and if it occurs
     // we really want to wake up writes and ensure all the queued stream
     // window updates are flushed, since stream flow control operates
@@ -290,26 +281,29 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     }
     // Though initial window 'could' drop to 0, we keep the floor at
     // kMinInitialWindowSize
-    UpdateSetting(GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
-                  &target_initial_window_size_, target, &action,
-                  &FlowControlAction::set_send_initial_window_update);
+    UpdateSetting(Http2Settings::initial_window_size_name(),
+                  &target_initial_window_size_,
+                  std::min(target, Http2Settings::max_initial_window_size()),
+                  &action, &FlowControlAction::set_send_initial_window_update);
     // we target the max of BDP or bandwidth in microseconds.
-    UpdateSetting(GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE, &target_frame_size_,
-                  target, &action,
-                  &FlowControlAction::set_send_max_frame_size_update);
+    UpdateSetting(Http2Settings::max_frame_size_name(), &target_frame_size_,
+                  Clamp(target, Http2Settings::min_max_frame_size(),
+                        Http2Settings::max_max_frame_size()),
+                  &action, &FlowControlAction::set_send_max_frame_size_update);
 
     if (IsTcpFrameSizeTuningEnabled()) {
       // Advertise PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to peer. By advertising
       // PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to the peer, we are informing the
       // peer that we have tcp frame size tuning enabled and we inform it of our
-      // prefered rx frame sizes. The prefered rx frame size is determined as:
+      // preferred rx frame sizes. The preferred rx frame size is determined as:
       // Clamp(target_frame_size_ * 2, 16384, 0x7fffffff). In the future, this
       // maybe updated to a different function of the memory pressure.
       UpdateSetting(
-          GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE,
+          Http2Settings::preferred_receive_crypto_message_size_name(),
           &target_preferred_rx_crypto_frame_size_,
-          Clamp(static_cast<unsigned int>(target_frame_size_ * 2), 16384u,
-                0x7ffffffu),
+          Clamp(static_cast<unsigned int>(target_frame_size_ * 2),
+                Http2Settings::min_preferred_receive_crypto_message_size(),
+                Http2Settings::max_preferred_receive_crypto_message_size()),
           &action,
           &FlowControlAction::set_preferred_rx_crypto_frame_size_update);
     }
@@ -338,7 +332,7 @@ void StreamFlowControl::SentUpdate(uint32_t announce) {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
   pending_size_ = absl::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
-  GPR_ASSERT(DesiredAnnounceSize() == 0);
+  CHECK_EQ(DesiredAnnounceSize(), 0u);
   std::ignore = tfc_upd.MakeAction();
 }
 
@@ -388,7 +382,7 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
 
 void StreamFlowControl::IncomingUpdateContext::SetPendingSize(
     int64_t pending_size) {
-  GPR_ASSERT(pending_size >= 0);
+  CHECK_GE(pending_size, 0);
   sfc_->pending_size_ = pending_size;
 }
 

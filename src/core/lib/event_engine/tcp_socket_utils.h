@@ -14,14 +14,13 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_TCP_SOCKET_UTILS_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_TCP_SOCKET_UTILS_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
 #include <string>
 
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -57,8 +56,8 @@ void ResolvedAddressSetPort(EventEngine::ResolvedAddress& resolved_addr,
                             int port);
 
 // Returns the port number associated with the address if the given address is
-// not a wildcard ipv6 or ipv6 address. Otherwise returns absl::nullopt
-absl::optional<int> ResolvedAddressIsWildcard(
+// a wildcard ipv4 or ipv6 address. Otherwise returns absl::nullopt
+absl::optional<int> MaybeGetWildcardPortFromAddress(
     const EventEngine::ResolvedAddress& addr);
 
 // Returns true if resolved_addr is an VSOCK address. Otherwise returns false.

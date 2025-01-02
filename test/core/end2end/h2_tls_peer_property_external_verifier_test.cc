@@ -15,15 +15,7 @@
 // limitations under the License.
 //
 //
-#include <stdint.h>
-#include <string.h>
-
-#include <string>
-
-#include <gtest/gtest.h>
-
-#include "absl/types/optional.h"
-
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
@@ -31,20 +23,25 @@
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <gtest/gtest.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <string>
+
+#include "absl/log/check.h"
+#include "absl/types/optional.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/useful.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define CLIENT_CERT_PATH "src/core/tsi/test_creds/client.pem"
@@ -66,26 +63,18 @@ gpr_timespec five_seconds_time() { return grpc_timeout_seconds_to_deadline(5); }
 grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr,
                            grpc_tls_certificate_provider** server_provider,
                            grpc_tls_certificate_verifier** verifier) {
-  grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-  const char* server_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  const char* server_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  std::string ca_cert = grpc_core::testing::GetFileContents(CA_CERT_PATH);
+  std::string server_cert =
+      grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
+  std::string server_key = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
 
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   // Set credential provider.
   grpc_tls_identity_pairs* server_pairs = grpc_tls_identity_pairs_create();
-  grpc_tls_identity_pairs_add_pair(server_pairs, server_key, server_cert);
-  *server_provider =
-      grpc_tls_certificate_provider_static_data_create(ca_cert, server_pairs);
+  grpc_tls_identity_pairs_add_pair(server_pairs, server_key.c_str(),
+                                   server_cert.c_str());
+  *server_provider = grpc_tls_certificate_provider_static_data_create(
+      ca_cert.c_str(), server_pairs);
   grpc_tls_credentials_options_set_certificate_provider(options,
                                                         *server_provider);
   grpc_tls_credentials_options_watch_root_certs(options);
@@ -103,40 +92,29 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr,
 
   grpc_server* server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);
-  GPR_ASSERT(grpc_server_add_http2_port(server, server_addr, creds));
+  CHECK(grpc_server_add_http2_port(server, server_addr, creds));
   grpc_server_credentials_release(creds);
 
   grpc_server_start(server);
 
-  grpc_slice_unref(cert_slice);
-  grpc_slice_unref(key_slice);
-  grpc_slice_unref(ca_slice);
   return server;
 }
 
 grpc_channel* client_create(const char* server_addr,
                             grpc_tls_certificate_provider** client_provider,
                             grpc_tls_certificate_verifier** verifier) {
-  grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(CLIENT_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CLIENT_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-  const char* client_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  const char* client_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  std::string ca_cert = grpc_core::testing::GetFileContents(CA_CERT_PATH);
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(CLIENT_CERT_PATH);
+  std::string client_key = grpc_core::testing::GetFileContents(CLIENT_KEY_PATH);
 
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   // Set credential provider.
   grpc_tls_identity_pairs* client_pairs = grpc_tls_identity_pairs_create();
-  grpc_tls_identity_pairs_add_pair(client_pairs, client_key, client_cert);
-  *client_provider =
-      grpc_tls_certificate_provider_static_data_create(ca_cert, client_pairs);
+  grpc_tls_identity_pairs_add_pair(client_pairs, client_key.c_str(),
+                                   client_cert.c_str());
+  *client_provider = grpc_tls_certificate_provider_static_data_create(
+      ca_cert.c_str(), client_pairs);
 
   grpc_tls_credentials_options_set_certificate_provider(options,
                                                         *client_provider);
@@ -163,7 +141,7 @@ grpc_channel* client_create(const char* server_addr,
       grpc_channel_args_copy_and_add(nullptr, args, GPR_ARRAY_SIZE(args));
 
   grpc_channel* client = grpc_channel_create(server_addr, creds, client_args);
-  GPR_ASSERT(client != nullptr);
+  CHECK_NE(client, nullptr);
   grpc_channel_credentials_release(creds);
 
   {
@@ -171,9 +149,6 @@ grpc_channel* client_create(const char* server_addr,
     grpc_channel_args_destroy(client_args);
   }
 
-  grpc_slice_unref(cert_slice);
-  grpc_slice_unref(key_slice);
-  grpc_slice_unref(ca_slice);
   return client;
 }
 
@@ -199,7 +174,7 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   grpc_call* c = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
-  GPR_ASSERT(c);
+  CHECK(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -231,12 +206,12 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
                                 nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   grpc_call* s;
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq, tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(tag(101), true);
   cqv.Verify();
 
@@ -260,7 +235,7 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
                                 nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(tag(103), true);
   cqv.Expect(tag(1), true);
@@ -300,9 +275,9 @@ TEST(H2TlsPeerPropertyExternalVerifier, PeerPropertyExternalVerifierTest) {
 
   do_round_trip(cq, server, server_addr.c_str());
 
-  GPR_ASSERT(grpc_completion_queue_next(
-                 cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
-                 .type == GRPC_QUEUE_TIMEOUT);
+  CHECK(grpc_completion_queue_next(
+            cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
+            .type == GRPC_QUEUE_TIMEOUT);
 
   grpc_server_shutdown_and_notify(server, cq, tag(1000));
   grpc_event ev;

@@ -1,0 +1,34 @@
+name: EXPERIMENTAL -- Update artifacts branch
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+      - name: Setup git user
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "<EMAIL>"
+      - name: Update artifacts branch
+        run: |
+          git checkout master
+          git fetch origin
+          git checkout artifacts
+          git reset master .
+          git clean -fd
+          git rev-parse master > .source-revision
+          git add .
+          git commit -m "Update artifacts branch"
+          git push origin artifacts

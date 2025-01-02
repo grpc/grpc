@@ -15,18 +15,15 @@
 // limitations under the License.
 //
 //
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/resolve_address.h"
-
-#include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/no_destruct.h"
+#include "absl/strings/str_cat.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/no_destruct.h"
 
 namespace grpc_core {
 const char* kDefaultSecurePort = "https";

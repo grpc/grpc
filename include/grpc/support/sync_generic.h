@@ -21,17 +21,15 @@
 
 /* Generic type definitions for gpr_sync. */
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 
 /* gpr_event */
 typedef struct {
   gpr_atm state;
 } gpr_event;
 
-#define GPR_EVENT_INIT \
-  { 0 }
+#define GPR_EVENT_INIT {0}
 
 /* gpr_refcount */
 typedef struct {
@@ -43,7 +41,6 @@ typedef struct {
   gpr_atm value;
 } gpr_stats_counter;
 
-#define GPR_STATS_INIT \
-  { 0 }
+#define GPR_STATS_INIT {0}
 
 #endif /* GRPC_SUPPORT_SYNC_GENERIC_H */

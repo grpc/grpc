@@ -16,24 +16,21 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
+
+#include <grpc/support/port_platform.h>
 
 #include <cstring>
 #include <memory>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 //
 // grpc_composite_channel_credentials
@@ -127,13 +124,12 @@ composite_call_credentials_create(
 grpc_call_credentials* grpc_composite_call_credentials_create(
     grpc_call_credentials* creds1, grpc_call_credentials* creds2,
     void* reserved) {
-  GRPC_API_TRACE(
-      "grpc_composite_call_credentials_create(creds1=%p, creds2=%p, "
-      "reserved=%p)",
-      3, (creds1, creds2, reserved));
-  GPR_ASSERT(reserved == nullptr);
-  GPR_ASSERT(creds1 != nullptr);
-  GPR_ASSERT(creds2 != nullptr);
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_composite_call_credentials_create(creds1=" << creds1
+      << ", creds2=" << creds2 << ", reserved=" << reserved << ")";
+  CHECK_EQ(reserved, nullptr);
+  CHECK_NE(creds1, nullptr);
+  CHECK_NE(creds2, nullptr);
 
   return composite_call_credentials_create(creds1->Ref(), creds2->Ref())
       .release();
@@ -145,7 +141,8 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_composite_channel_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target, grpc_core::ChannelArgs* args) {
-  GPR_ASSERT(inner_creds_ != nullptr && call_creds_ != nullptr);
+  CHECK(inner_creds_ != nullptr);
+  CHECK(call_creds_ != nullptr);
   // If we are passed a call_creds, create a call composite to pass it
   // downstream.
   if (call_creds != nullptr) {
@@ -160,12 +157,12 @@ grpc_composite_channel_credentials::create_security_connector(
 grpc_channel_credentials* grpc_composite_channel_credentials_create(
     grpc_channel_credentials* channel_creds, grpc_call_credentials* call_creds,
     void* reserved) {
-  GPR_ASSERT(channel_creds != nullptr && call_creds != nullptr &&
-             reserved == nullptr);
-  GRPC_API_TRACE(
-      "grpc_composite_channel_credentials_create(channel_creds=%p, "
-      "call_creds=%p, reserved=%p)",
-      3, (channel_creds, call_creds, reserved));
+  CHECK(channel_creds != nullptr && call_creds != nullptr &&
+        reserved == nullptr);
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_composite_channel_credentials_create(channel_creds="
+      << channel_creds << ", call_creds=" << call_creds
+      << ", reserved=" << reserved << ")";
   return new grpc_composite_channel_credentials(channel_creds->Ref(),
                                                 call_creds->Ref());
 }

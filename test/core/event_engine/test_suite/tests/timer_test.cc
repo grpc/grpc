@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/event_engine.h>
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -26,15 +28,13 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/bind_front.h"
 #include "absl/functional/function_ref.h"
+#include "absl/log/log.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/event_engine/time_util.h"
+#include "src/core/util/sync.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 
 using ::testing::ElementsAre;
@@ -147,7 +147,10 @@ void EventEngineTimerTest::ScheduleCheckCB(
     std::chrono::steady_clock::time_point when, std::atomic<int>* call_count,
     std::atomic<int>* fail_count, int total_expected) {
   auto now = std::chrono::steady_clock::now();
-  EXPECT_LE(when, now);
+  EXPECT_LE(when, now) << "Callback was run "
+                       << grpc_event_engine::experimental::Milliseconds(when -
+                                                                        now)
+                       << " ms too early: ";
   if (when > now) ++(*fail_count);
   if (++(*call_count) == total_expected) {
     grpc_core::MutexLock lock(&mu_);
@@ -193,8 +196,8 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
     cv_.Wait(&mu_);
   }
   if (failed_call_count.load() != 0) {
-    gpr_log(GPR_DEBUG, "failed timer count: %d of %d", failed_call_count.load(),
-            thread_count * call_count);
+    VLOG(2) << "failed timer count: " << failed_call_count.load() << " of "
+            << (thread_count * call_count);
   }
   ASSERT_EQ(0, failed_call_count.load());
 }

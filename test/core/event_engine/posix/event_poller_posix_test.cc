@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/grpc.h>
 #include <stdint.h>
 #include <sys/select.h>
 
@@ -28,15 +29,12 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <ratio>
@@ -46,29 +44,27 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/strerror.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 static gpr_mu g_mu;
 static std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
@@ -235,8 +231,8 @@ void ListenCb(server* sv, absl::Status status) {
     listen_em_fd->NotifyOnRead(sv->listen_closure);
     return;
   } else if (fd < 0) {
-    gpr_log(GPR_ERROR, "Failed to acceot a connection, returned error: %s",
-            grpc_core::StrError(errno).c_str());
+    LOG(ERROR) << "Failed to accept a connection, returned error: "
+               << grpc_core::StrError(errno);
   }
   EXPECT_GE(fd, 0);
   EXPECT_LT(fd, FD_SETSIZE);
@@ -349,7 +345,7 @@ void ClientStart(client* cl, int port) {
       pfd.events = POLLOUT;
       pfd.revents = 0;
       if (poll(&pfd, 1, -1) == -1) {
-        gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d", errno);
+        LOG(ERROR) << "poll() failed during connect; errno=" << errno;
         abort();
       }
     } else {
@@ -389,7 +385,7 @@ class EventPollerTest : public ::testing::Test {
     EXPECT_NE(engine_, nullptr);
     scheduler_->ChangeCurrentEventEngine(engine_.get());
     if (g_event_poller != nullptr) {
-      gpr_log(GPR_INFO, "Using poller: %s", g_event_poller->Name().c_str());
+      LOG(INFO) << "Using poller: " << g_event_poller->Name();
     }
   }
 
@@ -527,8 +523,8 @@ std::atomic<int> kTotalActiveWakeupFdHandles{0};
 // A helper class representing one file descriptor. Its implemented using
 // a WakeupFd. It registers itself with the poller and waits to be notified
 // of read events. Upon receiving a read event, (1) it processes it,
-// (2) registes to be notified of the next read event and (3) schedules
-// generation of the next read event. The Fd orphanes itself after processing
+// (2) registers to be notified of the next read event and (3) schedules
+// generation of the next read event. The Fd orphans itself after processing
 // a specified number of read events.
 class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
  public:
@@ -585,7 +581,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
 
   ~WakeupFdHandle() override { delete on_read_; }
 
-  void Orphan() override {
+  void Orphaned() override {
     // Once the handle has orphaned itself, decrement
     // kTotalActiveWakeupFdHandles. Once all handles have orphaned themselves,
     // send a Kick to the poller.
@@ -650,7 +646,7 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
     }
     WeakRef().release();
   }
-  void Orphan() override { signal.Notify(); }
+  void Orphaned() override { signal.Notify(); }
   void Start() {
     // Start executing Work(..).
     scheduler_->Run([this]() { Work(); });

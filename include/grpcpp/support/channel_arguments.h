@@ -19,16 +19,16 @@
 #ifndef GRPCPP_SUPPORT_CHANNEL_ARGUMENTS_H
 #define GRPCPP_SUPPORT_CHANNEL_ARGUMENTS_H
 
-#include <list>
-#include <vector>
-
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/support/config.h>
 
+#include <list>
+#include <vector>
+
 namespace grpc {
-class SecureChannelCredentials;
+class ChannelCredentials;
 namespace testing {
 class ChannelArgumentsTest;
 }  // namespace testing
@@ -120,7 +120,7 @@ class ChannelArguments {
   }
 
  private:
-  friend class grpc::SecureChannelCredentials;
+  friend class grpc::ChannelCredentials;
   friend class grpc::testing::ChannelArgumentsTest;
 
   /// Default pointer argument operations.

@@ -69,6 +69,9 @@ const grpc_completion_queue_attributes kCompletionQueueAttr = {
             case GRPC_QUEUE_SHUTDOWN:
               grpc_completion_queue_destroy(unmanagedQueue);
               return;
+            case GRPC_QUEUE_TIMEOUT:
+              NSLog(@"GRPC_QUEUE_TIMEOUT, success: %d, tag: %p", event.success, event.tag);
+              break;
             default:
               [NSException raise:@"Unrecognized completion type" format:@""];
           }

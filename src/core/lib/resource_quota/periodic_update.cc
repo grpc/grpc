@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/resource_quota/periodic_update.h"
+
+#include <grpc/support/port_platform.h>
 
 #include <atomic>
 
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 
@@ -32,7 +32,7 @@ bool PeriodicUpdate::MaybeEndPeriod(absl::FunctionRef<void(Duration)> f) {
   // the decrementer that got us there.
   // We can now safely mutate any non-atomic mutable variables (we've got a
   // guarantee that no other thread will), and by the time this function returns
-  // we must store a postive number into updates_remaining_.
+  // we must store a positive number into updates_remaining_.
   auto now = Timestamp::Now();
   Duration time_so_far = now - period_start_;
   if (time_so_far < period_) {
@@ -68,8 +68,8 @@ bool PeriodicUpdate::MaybeEndPeriod(absl::FunctionRef<void(Duration)> f) {
   expected_updates_per_period_ =
       period_.seconds() * expected_updates_per_period_ / time_so_far.seconds();
   if (expected_updates_per_period_ < 1) expected_updates_per_period_ = 1;
-  period_start_ = now;
   f(time_so_far);
+  period_start_ = Timestamp::Now();
   updates_remaining_.store(expected_updates_per_period_,
                            std::memory_order_release);
   return true;

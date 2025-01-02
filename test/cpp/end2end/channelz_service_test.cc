@@ -16,15 +16,10 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/memory/memory.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -34,20 +29,23 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+#include "absl/memory/memory.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/env.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
-#include "test/core/util/port.h"
-#include "test/core/util/resolve_localhost_ip46.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
@@ -66,6 +64,7 @@ using grpc::channelz::v1::GetSubchannelRequest;
 using grpc::channelz::v1::GetSubchannelResponse;
 using grpc::channelz::v1::GetTopChannelsRequest;
 using grpc::channelz::v1::GetTopChannelsResponse;
+using grpc_core::testing::GetFileContents;
 
 namespace grpc {
 namespace testing {
@@ -94,7 +93,7 @@ class Proxy : public grpc::testing::EchoTestService::Service {
     std::unique_ptr<ClientContext> client_context =
         ClientContext::FromServerContext(*server_context);
     size_t idx = request->param().backend_channel_idx();
-    GPR_ASSERT(idx < stubs_.size());
+    CHECK_LT(idx, stubs_.size());
     return stubs_[idx]->Echo(client_context.get(), *request, response);
   }
 
@@ -134,15 +133,6 @@ constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
 constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 
-std::string ReadFile(const char* file_path) {
-  grpc_slice slice;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_path, 0, &slice)));
-  std::string file_contents(grpc_core::StringViewFromSlice(slice));
-  grpc_slice_unref(slice);
-  return file_contents;
-}
-
 std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials(
     CredentialsType type, ChannelArguments* args) {
   if (type == CredentialsType::kInsecure) {
@@ -150,11 +140,11 @@ std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials(
   }
   args->SetSslTargetNameOverride("foo.test.google.fr");
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
-      {ReadFile(kClientKeyPath), ReadFile(kClientCertPath)}};
+      {GetFileContents(kClientKeyPath), GetFileContents(kClientCertPath)}};
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(
       std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-          ReadFile(kCaCertPath), identity_key_cert_pairs));
+          GetFileContents(kCaCertPath), identity_key_cert_pairs));
   if (type == CredentialsType::kMtls) {
     options.watch_identity_key_cert_pairs();
   }
@@ -168,10 +158,10 @@ std::shared_ptr<grpc::ServerCredentials> GetServerCredentials(
     return InsecureServerCredentials();
   }
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
-      {ReadFile(kServerKeyPath), ReadFile(kServerCertPath)}};
+      {GetFileContents(kServerKeyPath), GetFileContents(kServerCertPath)}};
   auto certificate_provider =
       std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-          ReadFile(kCaCertPath), identity_key_cert_pairs);
+          GetFileContents(kCaCertPath), identity_key_cert_pairs);
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
   options.watch_root_certs();
   options.watch_identity_key_cert_pairs();
@@ -226,7 +216,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     backends_.clear();
     proxy_service_.reset();
     // Ensure all pending callbacks are handled before finishing the test
-    // to ensure hygene between test cases.
+    // to ensure hygiene between test cases.
     // (requires any grpc-object-holding values be cleared out first).
     grpc_event_engine::experimental::WaitForSingleOwner(
         grpc_event_engine::experimental::GetDefaultEventEngine());
@@ -711,7 +701,7 @@ TEST_P(ChannelzServerTest, ManySubchannelsAndSockets) {
         EXPECT_EQ(
             RemoveWhitespaces(
                 get_socket_resp.socket().security().tls().remote_certificate()),
-            RemoveWhitespaces(ReadFile(kServerCertPath)));
+            RemoveWhitespaces(GetFileContents(kServerCertPath)));
         break;
     }
   }
@@ -777,7 +767,7 @@ TEST_P(ChannelzServerTest, StreamingRPC) {
                                       .security()
                                       .tls()
                                       .remote_certificate()),
-                RemoveWhitespaces(ReadFile(kServerCertPath)));
+                RemoveWhitespaces(GetFileContents(kServerCertPath)));
       break;
   }
 }
@@ -829,7 +819,7 @@ TEST_P(ChannelzServerTest, GetServerSocketsTest) {
                                         .security()
                                         .tls()
                                         .remote_certificate()),
-                  RemoveWhitespaces(ReadFile(kClientCertPath)));
+                  RemoveWhitespaces(GetFileContents(kClientCertPath)));
       } else {
         EXPECT_TRUE(get_socket_response.socket()
                         .security()

@@ -16,13 +16,12 @@
 //
 //
 
+#include <grpc/status.h>
+
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -35,7 +34,7 @@ namespace {
 void ClientStreaming(CoreEnd2endTest& test, int messages) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
 
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1).SendInitialMetadata({}).RecvInitialMetadata(
       server_initial_metadata);
   auto s = test.RequestCall(100);
@@ -48,7 +47,7 @@ void ClientStreaming(CoreEnd2endTest& test, int messages) {
   // Client writes bunch of messages and server reads them
   for (int i = 0; i < messages; i++) {
     c.NewBatch(2).SendMessage("hello world");
-    CoreEnd2endTest::IncomingMessage client_message;
+    IncomingMessage client_message;
     s.NewBatch(102).RecvMessage(client_message);
     test.Expect(2, true);
     test.Expect(102, true);
@@ -69,7 +68,7 @@ void ClientStreaming(CoreEnd2endTest& test, int messages) {
   test.Step();
 
   // Client sends close and requests status
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingStatusOnClient server_status;
   c.NewBatch(4).SendCloseFromClient().RecvStatusOnClient(server_status);
   test.Expect(4, true);
   test.Step();

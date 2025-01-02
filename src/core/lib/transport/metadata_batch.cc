@@ -12,19 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/metadata_batch.h"
 
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
+#include <string>
 
+#include "absl/base/no_destructor.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
 #include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
@@ -35,15 +36,82 @@ void DebugStringBuilder::Add(absl::string_view key, absl::string_view value) {
   absl::StrAppend(&out_, absl::CEscape(key), ": ", absl::CEscape(value));
 }
 
+void DebugStringBuilder::AddAfterRedaction(absl::string_view key,
+                                           absl::string_view value) {
+  if (IsAllowListed(key)) {
+    Add(key, value);
+  } else {
+    // If the type of metadata is not in the allow list, we want to prevent it
+    // from getting logged. Custom metadata types may have sensitive information
+    // that should never be logged. Programatically, we have no way to know
+    // which data is sensitive and which is not. So we redact all values which
+    // are not in the allow list.
+    Add(key,
+        absl::StrCat(value.size(), " bytes redacted for security reasons."));
+  }
+}
+
+bool DebugStringBuilder::IsAllowListed(const absl::string_view key) const {
+  // We have intentionally not allowed for any way to add to the allow list at
+  // run time, (using a flag or some other setting) because such workarounds
+  // may lead to security issues.
+  static const absl::NoDestructor<absl::flat_hash_set<std::string>> allow_list(
+      [] {
+        absl::flat_hash_set<std::string> allow_list;
+        // go/keep-sorted start
+        allow_list.insert(std::string(ContentTypeMetadata::key()));
+        allow_list.insert(std::string(EndpointLoadMetricsBinMetadata::key()));
+        allow_list.insert(std::string(GrpcAcceptEncodingMetadata::key()));
+        allow_list.insert(std::string(GrpcEncodingMetadata::key()));
+        allow_list.insert(std::string(GrpcInternalEncodingRequest::key()));
+        allow_list.insert(std::string(GrpcLbClientStatsMetadata::key()));
+        allow_list.insert(std::string(GrpcMessageMetadata::key()));
+        allow_list.insert(std::string(GrpcPreviousRpcAttemptsMetadata::key()));
+        allow_list.insert(std::string(GrpcRetryPushbackMsMetadata::key()));
+        allow_list.insert(std::string(GrpcServerStatsBinMetadata::key()));
+        allow_list.insert(std::string(GrpcStatusMetadata::key()));
+        allow_list.insert(std::string(GrpcTagsBinMetadata::key()));
+        allow_list.insert(std::string(GrpcTimeoutMetadata::key()));
+        allow_list.insert(std::string(GrpcTraceBinMetadata::key()));
+        allow_list.insert(std::string(HostMetadata::key()));
+        allow_list.insert(std::string(HttpAuthorityMetadata::key()));
+        allow_list.insert(std::string(HttpMethodMetadata::key()));
+        allow_list.insert(std::string(HttpPathMetadata::key()));
+        allow_list.insert(std::string(HttpSchemeMetadata::key()));
+        allow_list.insert(std::string(HttpStatusMetadata::key()));
+        allow_list.insert(std::string(LbCostBinMetadata::key()));
+        allow_list.insert(std::string(LbTokenMetadata::key()));
+        allow_list.insert(std::string(TeMetadata::key()));
+        allow_list.insert(std::string(UserAgentMetadata::key()));
+        allow_list.insert(std::string(W3CTraceParentMetadata::key()));
+        allow_list.insert(std::string(XEnvoyPeerMetadata::key()));
+        // go/keep-sorted end
+        // go/keep-sorted start
+        allow_list.insert(std::string(GrpcCallWasCancelled::DebugKey()));
+        allow_list.insert(std::string(GrpcRegisteredMethod::DebugKey()));
+        allow_list.insert(std::string(GrpcStatusContext::DebugKey()));
+        allow_list.insert(std::string(GrpcStatusFromWire::DebugKey()));
+        allow_list.insert(std::string(GrpcStreamNetworkState::DebugKey()));
+        allow_list.insert(std::string(GrpcTarPit::DebugKey()));
+        allow_list.insert(std::string(GrpcTrailersOnly::DebugKey()));
+        allow_list.insert(std::string(PeerString::DebugKey()));
+        allow_list.insert(std::string(WaitForReady::DebugKey()));
+        // go/keep-sorted end
+        return allow_list;
+      }());
+  return allow_list->contains(key);
+}
+
 void UnknownMap::Append(absl::string_view key, Slice value) {
-  unknown_.EmplaceBack(Slice::FromCopiedString(key), value.Ref());
+  unknown_.emplace_back(Slice::FromCopiedString(key), value.Ref());
 }
 
 void UnknownMap::Remove(absl::string_view key) {
-  unknown_.SetEnd(std::remove_if(unknown_.begin(), unknown_.end(),
-                                 [key](const std::pair<Slice, Slice>& p) {
-                                   return p.first.as_string_view() == key;
-                                 }));
+  unknown_.erase(std::remove_if(unknown_.begin(), unknown_.end(),
+                                [key](const std::pair<Slice, Slice>& p) {
+                                  return p.first.as_string_view() == key;
+                                }),
+                 unknown_.end());
 }
 
 absl::optional<absl::string_view> UnknownMap::GetStringValue(
@@ -64,7 +132,7 @@ absl::optional<absl::string_view> UnknownMap::GetStringValue(
 }  // namespace metadata_detail
 
 ContentTypeMetadata::MementoType ContentTypeMetadata::ParseMemento(
-    Slice value, bool, MetadataParseErrorFn on_error) {
+    Slice value, bool, MetadataParseErrorFn /*on_error*/) {
   auto out = kInvalid;
   auto value_string = value.as_string_view();
   if (value_string == "application/grpc") {
@@ -76,7 +144,9 @@ ContentTypeMetadata::MementoType ContentTypeMetadata::ParseMemento(
   } else if (value_string.empty()) {
     out = kEmpty;
   } else {
-    on_error("invalid value", value);
+    // We are intentionally not invoking on_error here since the spec is not
+    // clear on what the behavior should be here, so to avoid breaking anyone,
+    // we should continue to accept this.
   }
   return out;
 }

@@ -118,7 +118,8 @@ describe GRPC::Core::Channel do
       deadline = Time.now + 5
 
       blk = proc do
-        ch.create_call(nil, nil, 'phony_method', nil, deadline)
+        call = ch.create_call(nil, nil, 'phony_method', nil, deadline)
+        call.close
       end
       expect(&blk).to_not raise_error
     end
@@ -132,8 +133,9 @@ describe GRPC::Core::Channel do
 
       deadline = Time.now + 5
       blk = proc do
-        ch.create_call(nil, nil, 'phony_method', nil, deadline)
+        call = ch.create_call(nil, nil, 'phony_method', nil, deadline)
         STDERR.puts "#{Time.now}: created call"
+        call.close
       end
       expect(&blk).to raise_error(RuntimeError)
       STDERR.puts "#{Time.now}: finished: raises an error if called on a closed channel"

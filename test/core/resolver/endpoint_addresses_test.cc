@@ -14,24 +14,22 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
+#include "src/core/resolver/endpoint_addresses.h"
 
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include <grpc/support/port_platform.h>
 
 #include <set>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/uri/uri_parser.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/uri.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -39,9 +37,9 @@ namespace {
 
 grpc_resolved_address MakeAddress(absl::string_view address_uri) {
   auto uri = URI::Parse(address_uri);
-  GPR_ASSERT(uri.ok());
+  CHECK(uri.ok());
   grpc_resolved_address address;
-  GPR_ASSERT(grpc_parse_uri(*uri, &address));
+  CHECK(grpc_parse_uri(*uri, &address));
   return address;
 }
 

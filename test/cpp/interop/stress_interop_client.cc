@@ -18,16 +18,16 @@
 
 #include "test/cpp/interop/stress_interop_client.h"
 
+#include <grpcpp/create_channel.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/log.h>
-#include <grpcpp/create_channel.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/metrics_server.h"
 
@@ -65,7 +65,7 @@ TestCaseType WeightedRandomTestSelector::GetNextTest() const {
   }
 
   // It is a bug in the logic if no test is selected at this point
-  GPR_ASSERT(selected_test != UNKNOWN_TEST);
+  CHECK(selected_test != UNKNOWN_TEST);
   return selected_test;
 }
 
@@ -85,8 +85,8 @@ StressTestInteropClient::StressTestInteropClient(
 
 void StressTestInteropClient::MainLoop(
     const std::shared_ptr<QpsGauge>& qps_gauge) {
-  gpr_log(GPR_INFO, "Running test %d. ServerAddr: %s", test_id_,
-          server_address_.c_str());
+  LOG(INFO) << "Running test " << test_id_
+            << ". ServerAddr: " << server_address_;
 
   gpr_timespec test_end_time;
   if (test_duration_secs_ < 0) {
@@ -102,7 +102,7 @@ void StressTestInteropClient::MainLoop(
   while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), test_end_time) < 0) {
     // Select the test case to execute based on the weights and execute it
     TestCaseType test_case = test_selector_.GetNextTest();
-    gpr_log(GPR_DEBUG, "%d - Executing the test case %d", test_id_, test_case);
+    VLOG(2) << test_id_ << " - Executing the test case " << test_case;
     RunTest(test_case);
 
     qps_gauge->Incr();

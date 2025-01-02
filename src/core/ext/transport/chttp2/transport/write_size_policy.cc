@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
+
+#include <grpc/support/port_platform.h>
 
 #include <algorithm>
 
-#include <grpc/support/log.h>
+#include "absl/log/check.h"
 
 namespace grpc_core {
 
 size_t Chttp2WriteSizePolicy::WriteTargetSize() { return current_target_; }
 
 void Chttp2WriteSizePolicy::BeginWrite(size_t size) {
-  GPR_ASSERT(experiment_start_time_ == Timestamp::InfFuture());
+  CHECK(experiment_start_time_ == Timestamp::InfFuture());
   if (size < current_target_ * 7 / 10) {
     // If we were trending fast but stopped getting enough data to verify, then
     // reset back to the default state.

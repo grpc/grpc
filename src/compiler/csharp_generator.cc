@@ -82,7 +82,13 @@ bool GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer* printer,
         printer->Print("///\n");
       }
       last_was_empty = false;
-      printer->Print("///$line$\n", "line", *it);
+      // If the comment has an extra slash at the start then this can cause the
+      // C# compiler to complain when generating the XML documentation Issue
+      // [https://github.com/grpc/grpc/issues/35905](https://www.google.com/url?q=https://github.com/grpc/grpc/issues/35905&sa=D)
+      if (line[0] == '/') {
+        line.replace(0, 1, "&#x2F;");
+      }
+      printer->Print("///$line$\n", "line", line);
     }
   }
   printer->Print("/// </summary>\n");
@@ -183,15 +189,15 @@ void GenerateDocCommentClientMethod(grpc::protobuf::io::Printer* printer,
 }
 
 std::string GetServiceClassName(const ServiceDescriptor* service) {
-  return service->name();
+  return std::string(service->name());
 }
 
 std::string GetClientClassName(const ServiceDescriptor* service) {
-  return service->name() + "Client";
+  return std::string(service->name()) + "Client";
 }
 
 std::string GetServerClassName(const ServiceDescriptor* service) {
-  return service->name() + "Base";
+  return std::string(service->name()) + "Base";
 }
 
 std::string GetCSharpMethodType(const MethodDescriptor* method) {
@@ -230,11 +236,12 @@ std::string GetServiceNameFieldName() { return "__ServiceName"; }
 
 std::string GetMarshallerFieldName(const Descriptor* message) {
   return "__Marshaller_" +
-         grpc_generator::StringReplace(message->full_name(), ".", "_", true);
+         grpc_generator::StringReplace(std::string(message->full_name()), ".",
+                                       "_", true);
 }
 
 std::string GetMethodFieldName(const MethodDescriptor* method) {
-  return "__Method_" + method->name();
+  return "__Method_" + std::string(method->name());
 }
 
 std::string GetMethodRequestParamMaybe(const MethodDescriptor* method,
@@ -582,7 +589,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
       out->Print("}\n");
     }
 
-    std::string method_name = method->name();
+    std::string method_name(method->name());
     if (!method->client_streaming() && !method->server_streaming()) {
       method_name += "Async";  // prevent name clash with synchronous method.
     }

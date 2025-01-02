@@ -32,22 +32,23 @@ class ReflectionServicer(BaseReflectionServicer):
         # pylint: disable=unused-argument
         for request in request_iterator:
             if request.HasField("file_by_filename"):
-                yield self._file_by_filename(request.file_by_filename)
+                yield self._file_by_filename(request, request.file_by_filename)
             elif request.HasField("file_containing_symbol"):
                 yield self._file_containing_symbol(
-                    request.file_containing_symbol
+                    request, request.file_containing_symbol
                 )
             elif request.HasField("file_containing_extension"):
                 yield self._file_containing_extension(
+                    request,
                     request.file_containing_extension.containing_type,
                     request.file_containing_extension.extension_number,
                 )
             elif request.HasField("all_extension_numbers_of_type"):
                 yield self._all_extension_numbers_of_type(
-                    request.all_extension_numbers_of_type
+                    request, request.all_extension_numbers_of_type
                 )
             elif request.HasField("list_services"):
-                yield self._list_services()
+                yield self._list_services(request)
             else:
                 yield _reflection_pb2.ServerReflectionResponse(
                     error_response=_reflection_pb2.ErrorResponse(
@@ -55,7 +56,8 @@ class ReflectionServicer(BaseReflectionServicer):
                         error_message=grpc.StatusCode.INVALID_ARGUMENT.value[
                             1
                         ].encode(),
-                    )
+                    ),
+                    original_request=request,
                 )
 
 

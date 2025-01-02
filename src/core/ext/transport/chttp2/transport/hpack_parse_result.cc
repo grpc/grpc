@@ -12,18 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
-
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/status_helper.h"
 
 namespace grpc_core {
 
@@ -53,7 +52,7 @@ class MetadataSizeLimitExceededEncoder {
 };
 
 absl::Status MakeStreamError(absl::Status error) {
-  GPR_DEBUG_ASSERT(!error.ok());
+  DCHECK(!error.ok());
   return grpc_error_set_int(std::move(error), StatusIntProperty::kStreamId, 0);
 }
 }  // namespace

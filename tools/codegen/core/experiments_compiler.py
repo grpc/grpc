@@ -192,6 +192,7 @@ class ExperimentDefinition(object):
             print("Failed to create experiment definition")
             return
         self._allow_in_fuzzing_config = True
+        self._uses_polling = False
         self._name = attributes["name"]
         self._description = attributes["description"]
         self._expiry = attributes["expiry"]
@@ -199,6 +200,9 @@ class ExperimentDefinition(object):
         self._additional_constraints = {}
         self._test_tags = []
         self._requires = set()
+
+        if "uses_polling" in attributes:
+            self._uses_polling = attributes["uses_polling"]
 
         if "allow_in_fuzzing_config" in attributes:
             self._allow_in_fuzzing_config = attributes[
@@ -214,16 +218,27 @@ class ExperimentDefinition(object):
     def IsValid(self, check_expiry=False):
         if self._error:
             return False
-        if not check_expiry:
-            return True
         if (
             self._name == "monitoring_experiment"
             and self._expiry == "never-ever"
         ):
             return True
+        expiry = datetime.datetime.strptime(self._expiry, "%Y/%m/%d").date()
+        if (
+            expiry.month == 11
+            or expiry.month == 12
+            or (expiry.month == 1 and expiry.day < 15)
+        ):
+            print(
+                "For experiment %s: Experiment expiration is not allowed between Nov 1 and Jan 15 (experiment lists %s)."
+                % (self._name, self._expiry)
+            )
+            self._error = True
+            return False
+        if not check_expiry:
+            return True
         today = datetime.date.today()
         two_quarters_from_now = today + datetime.timedelta(days=180)
-        expiry = datetime.datetime.strptime(self._expiry, "%Y/%m/%d").date()
         if expiry < today:
             print(
                 "WARNING: experiment %s expired on %s"
@@ -257,16 +272,17 @@ class ExperimentDefinition(object):
             )
             self._error = True
             return False
-        is_dict = isinstance(rollout_attributes["default"], dict)
         for platform in allowed_platforms:
-            if is_dict:
+            if isinstance(rollout_attributes["default"], dict):
                 value = rollout_attributes["default"].get(platform, False)
+                if isinstance(value, dict):
+                    # debug is assumed for all rollouts with additional constraints
+                    self._default[platform] = "debug"
+                    self._additional_constraints[platform] = value
+                    continue
             else:
                 value = rollout_attributes["default"]
-            if isinstance(value, dict):
-                self._default[platform] = "debug"
-                self._additional_constraints[platform] = value
-            elif value not in allowed_defaults:
+            if value not in allowed_defaults:
                 print(
                     "ERROR: default for experiment %s on platform %s "
                     "is of incorrect format"
@@ -274,9 +290,8 @@ class ExperimentDefinition(object):
                 )
                 self._error = True
                 return False
-            else:
-                self._default[platform] = value
-                self._additional_constraints[platform] = {}
+            self._default[platform] = value
+            self._additional_constraints[platform] = {}
         return True
 
     @property
@@ -452,7 +467,7 @@ class ExperimentsCompiler(object):
                 )
                 print(
                     "inline bool Is%sEnabled() { return"
-                    " Is%sExperimentEnabled(kExperimentId%s); }"
+                    " Is%sExperimentEnabled<kExperimentId%s>(); }"
                     % (
                         SnakeToPascal(exp.name),
                         "Test" if mode == "test" else "",
@@ -625,6 +640,22 @@ class ExperimentsCompiler(object):
                 test_body += _EXPERIMENT_CHECK_TEXT(SnakeToPascal(exp.name))
             print(_EXPERIMENTS_TEST_SKELETON(defs, test_body), file=C)
 
+    def _ExperimentEnableSet(self, name):
+        s = set()
+        s.add(name)
+        for exp in self._experiment_definitions[name]._requires:
+            for req in self._ExperimentEnableSet(exp):
+                s.add(req)
+        return s
+
+    def EnsureNoDebugExperiments(self):
+        for name, exp in self._experiment_definitions.items():
+            for platform, default in exp._default.items():
+                if default == "debug":
+                    raise ValueError(
+                        f"Debug experiments are prohibited. '{name}' is configured with {exp._default}"
+                    )
+
     def GenExperimentsBzl(self, mode, output_file):
         assert self._FinalizeExperiments()
         if self._bzl_list_for_defaults is None:
@@ -676,12 +707,22 @@ class ExperimentsCompiler(object):
             else:
                 print("EXPERIMENT_ENABLES = {", file=B)
             for name, exp in self._experiment_definitions.items():
-                enables = exp._requires.copy()
-                enables.add(name)
                 print(
-                    f"    \"{name}\": \"{','.join(sorted(enables))}\",", file=B
+                    f"    \"{name}\": \"{','.join(sorted(self._ExperimentEnableSet(name)))}\",",
+                    file=B,
                 )
             print("}", file=B)
+
+            # Generate a list of experiments that use polling.
+            print(file=B)
+            if mode == "test":
+                print("TEST_EXPERIMENT_POLLERS = [", file=B)
+            else:
+                print("EXPERIMENT_POLLERS = [", file=B)
+            for name, exp in self._experiment_definitions.items():
+                if exp._uses_polling:
+                    print(f'    "{name}",', file=B)
+            print("]", file=B)
 
             print(file=B)
             if mode == "test":

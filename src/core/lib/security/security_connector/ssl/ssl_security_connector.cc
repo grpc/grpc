@@ -16,29 +16,25 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
+#include "src/core/handshaker/handshaker.h"
+#include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -50,11 +46,13 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
-#include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 
 namespace {
 grpc_error_handle ssl_check_peer(
@@ -112,8 +110,8 @@ class grpc_ssl_channel_security_connector final
         /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0, &tsi_hs);
     if (result != TSI_OK) {
-      gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
-              tsi_result_to_string(result));
+      LOG(ERROR) << "Handshaker creation failed with error "
+                 << tsi_result_to_string(result);
       return;
     }
     // Create handshakers.
@@ -204,8 +202,7 @@ class grpc_ssl_server_security_connector
     if (has_cert_config_fetcher()) {
       // Load initial credentials from certificate_config_fetcher:
       if (!try_fetch_ssl_server_credentials()) {
-        gpr_log(GPR_ERROR,
-                "Failed loading SSL server credentials from fetcher.");
+        LOG(ERROR) << "Failed loading SSL server credentials from fetcher.";
         return GRPC_SECURITY_ERROR;
       }
     } else {
@@ -236,8 +233,8 @@ class grpc_ssl_server_security_connector
               &options, &server_handshaker_factory_);
       gpr_free(alpn_protocol_strings);
       if (result != TSI_OK) {
-        gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
-                tsi_result_to_string(result));
+        LOG(ERROR) << "Handshaker factory creation failed with "
+                   << tsi_result_to_string(result);
         return GRPC_SECURITY_ERROR;
       }
     }
@@ -254,8 +251,8 @@ class grpc_ssl_server_security_connector
         server_handshaker_factory_, /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0, &tsi_hs);
     if (result != TSI_OK) {
-      gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
-              tsi_result_to_string(result));
+      LOG(ERROR) << "Handshaker creation failed with error "
+                 << tsi_result_to_string(result);
       return;
     }
     // Create handshakers.
@@ -299,9 +296,8 @@ class grpc_ssl_server_security_connector
       status = try_replace_server_handshaker_factory(certificate_config);
     } else {
       // Log error, continue using previously-loaded credentials.
-      gpr_log(GPR_ERROR,
-              "Failed fetching new server credentials, continuing to "
-              "use previously-loaded credentials.");
+      LOG(ERROR) << "Failed fetching new server credentials, continuing to "
+                    "use previously-loaded credentials.";
       status = false;
     }
 
@@ -318,12 +314,12 @@ class grpc_ssl_server_security_connector
   bool try_replace_server_handshaker_factory(
       const grpc_ssl_server_certificate_config* config) {
     if (config == nullptr) {
-      gpr_log(GPR_ERROR,
-              "Server certificate config callback returned invalid (NULL) "
-              "config.");
+      LOG(ERROR)
+          << "Server certificate config callback returned invalid (NULL) "
+             "config.";
       return false;
     }
-    gpr_log(GPR_DEBUG, "Using new server certificate config (%p).", config);
+    VLOG(2) << "Using new server certificate config (" << config << ").";
 
     size_t num_alpn_protocols = 0;
     const char** alpn_protocol_strings =
@@ -331,7 +327,7 @@ class grpc_ssl_server_security_connector
     tsi_ssl_server_handshaker_factory* new_handshaker_factory = nullptr;
     const grpc_ssl_server_credentials* server_creds =
         static_cast<const grpc_ssl_server_credentials*>(this->server_creds());
-    GPR_DEBUG_ASSERT(config->pem_root_certs != nullptr);
+    DCHECK_NE(config->pem_root_certs, nullptr);
     tsi_ssl_server_handshaker_options options;
     options.pem_key_cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
         config->pem_key_cert_pairs, config->num_key_cert_pairs);
@@ -351,8 +347,8 @@ class grpc_ssl_server_security_connector
     gpr_free(alpn_protocol_strings);
 
     if (result != TSI_OK) {
-      gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
-              tsi_result_to_string(result));
+      LOG(ERROR) << "Handshaker factory creation failed with "
+                 << tsi_result_to_string(result);
       return false;
     }
     set_server_handshaker_factory(new_handshaker_factory);
@@ -380,7 +376,7 @@ grpc_ssl_channel_security_connector_create(
     const char* overridden_target_name,
     tsi_ssl_client_handshaker_factory* client_factory) {
   if (config == nullptr || target_name == nullptr) {
-    gpr_log(GPR_ERROR, "An ssl channel needs a config and a target name.");
+    LOG(ERROR) << "An ssl channel needs a config and a target name.";
     return nullptr;
   }
 
@@ -395,7 +391,7 @@ grpc_ssl_channel_security_connector_create(
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials) {
-  GPR_ASSERT(server_credentials != nullptr);
+  CHECK(server_credentials != nullptr);
   grpc_core::RefCountedPtr<grpc_ssl_server_security_connector> c =
       grpc_core::MakeRefCounted<grpc_ssl_server_security_connector>(
           std::move(server_credentials));

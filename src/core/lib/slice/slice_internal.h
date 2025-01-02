@@ -19,25 +19,22 @@
 #ifndef GRPC_SRC_CORE_LIB_SLICE_SLICE_INTERNAL_H
 #define GRPC_SRC_CORE_LIB_SLICE_SLICE_INTERNAL_H
 
+#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <cstddef>
 #include <string>
 
 #include "absl/hash/hash.h"
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/util/memory.h"
 
 // Returns a pointer to the first slice in the slice buffer without giving
 // ownership to or a reference count on that slice.
 inline grpc_slice* grpc_slice_buffer_peek_first(grpc_slice_buffer* sb) {
-  GPR_DEBUG_ASSERT(sb->count > 0);
+  DCHECK_GT(sb->count, 0u);
   return &sb->slices[0];
 }
 
@@ -66,6 +63,13 @@ grpc_slice grpc_slice_from_cpp_string(std::string str);
 // itself. This means that inlined and slices from static strings will return
 // 0. All other slices will return the size of the allocated chars.
 size_t grpc_slice_memory_usage(grpc_slice s);
+
+grpc_slice grpc_slice_split_tail_maybe_ref_no_inline(
+    grpc_slice* source, size_t split, grpc_slice_ref_whom ref_whom);
+
+grpc_slice grpc_slice_split_tail_no_inline(grpc_slice* source, size_t split);
+
+grpc_slice grpc_slice_split_head_no_inline(grpc_slice* source, size_t split);
 
 namespace grpc_core {
 

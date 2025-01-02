@@ -21,6 +21,8 @@ $LOAD_PATH.unshift(grpc_lib_dir) unless $LOAD_PATH.include?(grpc_lib_dir)
 $LOAD_PATH.unshift(protos_lib_dir) unless $LOAD_PATH.include?(protos_lib_dir)
 $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
+require 'sanity_check_dlopen'
+
 GC.stress = 0x04
 
 require 'grpc'

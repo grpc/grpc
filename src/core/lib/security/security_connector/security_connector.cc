@@ -16,23 +16,19 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/security_connector/security_connector.h"
 
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <utility>
 
-#include <grpc/support/log.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/security/credentials/credentials.h"
-
-grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount(
-    false, "security_connector_refcount");
+#include "src/core/util/debug_location.h"
+#include "src/core/util/useful.h"
 
 grpc_channel_security_connector::grpc_channel_security_connector(
     absl::string_view url_scheme,
@@ -46,8 +42,8 @@ int grpc_channel_security_connector::channel_security_connector_cmp(
     const grpc_channel_security_connector* other) const {
   const grpc_channel_security_connector* other_sc =
       static_cast<const grpc_channel_security_connector*>(other);
-  GPR_ASSERT(channel_creds() != nullptr);
-  GPR_ASSERT(other_sc->channel_creds() != nullptr);
+  CHECK_NE(channel_creds(), nullptr);
+  CHECK_NE(other_sc->channel_creds(), nullptr);
   int c = channel_creds()->cmp(other_sc->channel_creds());
   if (c != 0) return c;
   return grpc_core::QsortCompare(request_metadata_creds(),
@@ -68,8 +64,8 @@ int grpc_server_security_connector::server_security_connector_cmp(
     const grpc_server_security_connector* other) const {
   const grpc_server_security_connector* other_sc =
       static_cast<const grpc_server_security_connector*>(other);
-  GPR_ASSERT(server_creds() != nullptr);
-  GPR_ASSERT(other_sc->server_creds() != nullptr);
+  CHECK_NE(server_creds(), nullptr);
+  CHECK_NE(other_sc->server_creds(), nullptr);
   return grpc_core::QsortCompare(server_creds(), other_sc->server_creds());
 }
 
@@ -107,8 +103,8 @@ grpc_arg grpc_security_connector_to_arg(grpc_security_connector* sc) {
 grpc_security_connector* grpc_security_connector_from_arg(const grpc_arg* arg) {
   if (strcmp(arg->key, GRPC_ARG_SECURITY_CONNECTOR) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
-    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
-            GRPC_ARG_SECURITY_CONNECTOR);
+    LOG(ERROR) << "Invalid type " << arg->type << " for arg "
+               << GRPC_ARG_SECURITY_CONNECTOR;
     return nullptr;
   }
   return static_cast<grpc_security_connector*>(arg->value.pointer.p);

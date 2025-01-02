@@ -18,13 +18,7 @@
 
 #include "test/cpp/interop/xds_interop_server_lib.h"
 
-#include <memory>
-
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
-
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/ext/admin_services.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
@@ -33,6 +27,11 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/xds_server_builder.h>
 
+#include <memory>
+
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -81,7 +80,7 @@ class TestServiceImpl : public TestService::Service {
                            absl::string_view server_id)
       : hostname_(hostname), server_id_(server_id) {}
 
-  Status UnaryCall(ServerContext* context, const SimpleRequest* /*request*/,
+  Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) override {
     response->set_server_id(server_id_);
     for (const auto& rpc_behavior : GetRpcBehaviorMetadata(context)) {
@@ -90,6 +89,11 @@ class TestServiceImpl : public TestService::Service {
       if (maybe_status.has_value()) {
         return *maybe_status;
       }
+    }
+    if (request->response_size() > 0) {
+      std::string payload(request->response_size(), '0');
+      response->mutable_payload()->set_body(payload.c_str(),
+                                            request->response_size());
     }
     response->set_hostname(hostname_);
     context->AddInitialMetadata("hostname", hostname_);
@@ -169,15 +173,11 @@ class MaintenanceServices {
         grpc::health::v1::HealthCheckResponse::SERVING);
   }
 
-  std::unique_ptr<ServerBuilder> InitializeServerBuilder(int port) {
-    auto builder = std::make_unique<ServerBuilder>();
+  void AddToServerBuilder(ServerBuilder* builder) {
     builder->RegisterService(&health_check_service_);
     builder->RegisterService(&update_health_service_);
     builder->RegisterService(&hook_service_);
-    grpc::AddAdminServices(builder.get());
-    builder->AddListeningPort(absl::StrCat("0.0.0.0:", port),
-                              grpc::InsecureServerCredentials());
-    return builder;
+    grpc::AddAdminServices(builder);
   }
 
  private:
@@ -191,7 +191,7 @@ absl::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
     absl::string_view header_value, absl::string_view hostname) {
   for (auto part : absl::StrSplit(header_value, ' ')) {
     if (absl::ConsumePrefix(&part, kHostnameRpcBehaviorFilter)) {
-      gpr_log(GPR_INFO, "%s", std::string(part).c_str());
+      LOG(INFO) << part;
       if (part.empty()) {
         return Status(
             grpc::StatusCode::INVALID_ARGUMENT,
@@ -199,10 +199,8 @@ absl::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
                          header_value));
       }
       if (part != hostname) {
-        gpr_log(
-            GPR_DEBUG,
-            "RPC behavior for a different host: \"%s\", this one is: \"%s\"",
-            std::string(part).c_str(), std::string(hostname).c_str());
+        VLOG(2) << "RPC behavior for a different host: \"" << std::string(part)
+                << "\", this one is: \"" << hostname << "\"";
         return absl::nullopt;
       }
     } else if (absl::ConsumePrefix(&part, kErrorCodeRpcBehavior)) {
@@ -227,7 +225,7 @@ absl::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
   return absl::nullopt;
 }
 
-void RunServer(bool secure_mode, const int port, const int maintenance_port,
+void RunServer(bool secure_mode, int port, const int maintenance_port,
                absl::string_view hostname, absl::string_view server_id,
                const std::function<void(Server*)>& server_callback) {
   std::unique_ptr<Server> xds_enabled_server;
@@ -236,7 +234,6 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
 
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   MaintenanceServices maintenance_services;
-  ServerBuilder builder;
   if (secure_mode) {
     XdsServerBuilder xds_builder;
     xds_builder.RegisterService(&service);
@@ -244,15 +241,23 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
         absl::StrCat("0.0.0.0:", port),
         grpc::XdsServerCredentials(grpc::InsecureServerCredentials()));
     xds_enabled_server = xds_builder.BuildAndStart();
-    gpr_log(GPR_INFO, "Server starting on 0.0.0.0:%d", port);
-    server = maintenance_services.InitializeServerBuilder(maintenance_port)
-                 ->BuildAndStart();
-    gpr_log(GPR_INFO, "Maintenance server listening on 0.0.0.0:%d",
-            maintenance_port);
+    LOG(INFO) << "Server starting on 0.0.0.0:" << port;
+    ServerBuilder builder;
+    maintenance_services.AddToServerBuilder(&builder);
+    server = builder
+                 .AddListeningPort(absl::StrCat("0.0.0.0:", maintenance_port),
+                                   grpc::InsecureServerCredentials())
+                 .BuildAndStart();
+    LOG(INFO) << "Maintenance server listening on 0.0.0.0:" << maintenance_port;
   } else {
-    auto builder = maintenance_services.InitializeServerBuilder(port);
-    server = builder->RegisterService(&service).BuildAndStart();
-    gpr_log(GPR_INFO, "Server listening on 0.0.0.0:%d", port);
+    ServerBuilder builder;
+    maintenance_services.AddToServerBuilder(&builder);
+    server = builder
+                 .AddListeningPort(absl::StrCat("0.0.0.0:", port),
+                                   grpc::InsecureServerCredentials())
+                 .RegisterService(&service)
+                 .BuildAndStart();
+    LOG(INFO) << "Server listening on 0.0.0.0:" << port;
   }
   server_callback(server.get());
   server->Wait();

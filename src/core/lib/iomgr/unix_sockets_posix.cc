@@ -24,22 +24,32 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifdef GPR_WINDOWS
+// clang-format off
+#include <ws2def.h>
+#include <afunix.h>
+// clang-format on
+#else
 #include <sys/un.h>
-
-#include "absl/strings/str_cat.h"
+#endif  // GPR_WINDOWS
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
+#include "absl/log/check.h"
+#include "absl/strings/str_cat.h"
 #include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/useful.h"
 
 void grpc_create_socketpair_if_unix(int sv[2]) {
-  GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
+#ifdef GPR_WINDOWS
+  grpc_core::Crash("AF_UNIX socket pairs are not supported on Windows");
+#else
+  CHECK_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
+#endif
 }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
@@ -86,10 +96,12 @@ void grpc_unlink_if_unix_domain_socket(
     return;
   }
 
+#ifndef GPR_WINDOWS
   struct stat st;
   if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
     unlink(un->sun_path);
   }
+#endif
 }
 
 #endif

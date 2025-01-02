@@ -13,30 +13,30 @@
 // limitations under the License.
 //
 
+#include <gmock/gmock.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
+#include <gtest/gtest.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpcpp/create_channel.h>
-#include <grpcpp/security/credentials.h>
-
-#include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/cpp/client/secure_credentials.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
-#include "test/core/util/resolve_localhost_ip46.h"
-#include "test/core/util/test_config.h"
+#include "absl/strings/strip.h"
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/config/endpoint/v3/endpoint.pb.h"
+#include "envoy/config/listener/v3/listener.pb.h"
+#include "envoy/config/route/v3/route.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "src/core/client_channel/backup_poller.h"
+#include "src/core/config/config_vars.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "test/cpp/util/credentials.h"
 
 #ifndef DISABLED_XDS_PROTO_IN_CC
 
@@ -245,8 +245,7 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
         grpc_core::LocalIpAndPort(admin_server_thread_->port());
     admin_channel_ = grpc::CreateChannel(
         admin_server_address,
-        std::make_shared<SecureChannelCredentials>(
-            grpc_fake_transport_security_credentials_create()));
+        std::make_shared<FakeTransportSecurityChannelCredentials>());
     csds_stub_ =
         envoy::service::status::v3::ClientStatusDiscoveryService::NewStub(
             admin_channel_);
@@ -343,8 +342,8 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   // Fetches the client config
   auto csds_response = FetchCsdsResponse();
-  gpr_log(GPR_INFO, "xDS config dump: %s", csds_response.DebugString().c_str());
-  EXPECT_EQ(1, csds_response.config_size());
+  LOG(INFO) << "xDS config dump: " << csds_response.DebugString();
+  ASSERT_EQ(1, csds_response.config_size());
   const auto& client_config = csds_response.config(0);
   // Validate the Node information
   EXPECT_THAT(client_config.node(),
@@ -615,11 +614,87 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
                       ClientResourceStatus::REQUESTED, ::testing::_))));
 }
 
+TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpMultiClient) {
+  Listener listener = default_listener_;
+  const char* kServer2Name = "server2.example.com";
+  listener.set_name(kServer2Name);
+  balancer_->ads_service()->SetLdsResource(listener);
+  SetListenerAndRouteConfiguration(balancer_.get(), listener,
+                                   default_route_config_);
+  CreateAndStartBackends(1);
+  const size_t kNumRpcs = 5;
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Send several RPCs to ensure the xDS setup works
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
+  // Connect to a second server
+  auto channel2 = CreateChannel(0, kServer2Name);
+  channel2->GetState(/*try_to_connect=*/true);
+  ASSERT_TRUE(channel2->WaitForConnected(grpc_timeout_seconds_to_deadline(1)));
+  // Fetches the client config
+  auto csds_response = FetchCsdsResponse();
+  ASSERT_EQ(2, csds_response.config_size());
+  std::vector<std::string> scopes;
+  for (const auto& client_config : csds_response.config()) {
+    // Validate the Node information
+    EXPECT_THAT(client_config.node(),
+                EqNode("xds_end2end_test", ::testing::HasSubstr("C-core"),
+                       ::testing::HasSubstr(grpc_version_string()),
+                       ::testing::ElementsAre(
+                           "envoy.lb.does_not_support_overprovisioning")));
+    scopes.emplace_back(client_config.client_scope());
+    absl::string_view server = client_config.client_scope();
+    // Listener matcher depends on whether RDS is enabled.
+    ::testing::Matcher<google::protobuf::Any> api_listener_matcher;
+    if (GetParam().enable_rds_testing()) {
+      api_listener_matcher = IsRdsEnabledHCM();
+    } else {
+      api_listener_matcher =
+          EqNoRdsHCM(kDefaultRouteConfigurationName, kDefaultClusterName);
+    }
+    // Construct list of all matchers.
+    std::vector<::testing::Matcher<
+        envoy::service::status::v3::ClientConfig_GenericXdsConfig>>
+        matchers = {
+            // Listener
+            EqGenericXdsConfig(
+                kLdsTypeUrl, absl::StripPrefix(server, "xds:"), "3",
+                UnpackListener(EqListener(absl::StripPrefix(server, "xds:"),
+                                          api_listener_matcher)),
+                ClientResourceStatus::ACKED, ::testing::_),
+            // Cluster
+            EqGenericXdsConfig(kCdsTypeUrl, kDefaultClusterName, "1",
+                               UnpackCluster(EqCluster(kDefaultClusterName)),
+                               ClientResourceStatus::ACKED, ::testing::_),
+            // ClusterLoadAssignment
+            EqGenericXdsConfig(
+                kEdsTypeUrl, kDefaultEdsServiceName, "1",
+                UnpackClusterLoadAssignment(EqClusterLoadAssignment(
+                    kDefaultEdsServiceName, backends_[0]->port(),
+                    kDefaultLocalityWeight)),
+                ClientResourceStatus::ACKED, ::testing::_),
+        };
+    // If RDS is enabled, add matcher for RDS resource.
+    if (GetParam().enable_rds_testing()) {
+      matchers.push_back(EqGenericXdsConfig(
+          kRdsTypeUrl, kDefaultRouteConfigurationName, "2",
+          UnpackRouteConfiguration(EqRouteConfiguration(
+              kDefaultRouteConfigurationName, kDefaultClusterName)),
+          ClientResourceStatus::ACKED, ::testing::_));
+    }
+    // Validate the dumped xDS configs
+    EXPECT_THAT(client_config.generic_xds_configs(),
+                ::testing::UnorderedElementsAreArray(matchers));
+  }
+  EXPECT_THAT(scopes, ::testing::UnorderedElementsAre(
+                          "xds:server.example.com", "xds:server2.example.com"));
+}
+
 class CsdsShortAdsTimeoutTest : public ClientStatusDiscoveryServiceTest {
  protected:
   void SetUp() override {
     // Shorten the ADS subscription timeout to speed up the test run.
-    InitClient(XdsBootstrapBuilder(), /*lb_expected_authority=*/"",
+    InitClient(absl::nullopt, /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/2000);
   }
 };

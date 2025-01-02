@@ -12,42 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
-
-#include "absl/status/statusor.h"
-#include "absl/types/optional.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 
+#include <string>
+
+#include "absl/log/check.h"
+#include "absl/status/statusor.h"
+#include "absl/types/optional.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/config.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/env.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
 #include "test/core/end2end/fuzzers/network_input.h"
-#include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/mock_endpoint.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/mock_endpoint.h"
+#include "test/core/test_util/test_config.h"
 
 bool squelch = true;
 bool leak_check = true;
 
 static void discard_write(grpc_slice /*slice*/) {}
-
-static void dont_log(gpr_log_func_args* /*args*/) {}
 
 namespace grpc_core {
 namespace testing {
@@ -55,24 +55,30 @@ namespace testing {
 class ClientFuzzer final : public BasicFuzzer {
  public:
   explicit ClientFuzzer(const fuzzer_input::Msg& msg)
-      : BasicFuzzer(msg.event_engine_actions()) {
+      : BasicFuzzer(msg.event_engine_actions()),
+        mock_endpoint_controller_(
+            grpc_event_engine::experimental::MockEndpointController::Create(
+                engine())) {
     ExecCtx exec_ctx;
-    UpdateMinimumRunTime(
-        ScheduleReads(msg.network_input(), mock_endpoint_, engine()));
+    UpdateMinimumRunTime(ScheduleReads(
+        msg.network_input()[0], mock_endpoint_controller_, engine().get()));
     ChannelArgs args =
         CoreConfiguration::Get()
             .channel_args_preconditioning()
             .PreconditionChannelArgs(nullptr)
             .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, "test-authority");
-    Transport* transport =
-        grpc_create_chttp2_transport(args, mock_endpoint_, true);
-    channel_ = Channel::Create("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
-                               transport)
+    Transport* transport = grpc_create_chttp2_transport(
+        args,
+        OrphanablePtr<grpc_endpoint>(
+            mock_endpoint_controller_->TakeCEndpoint()),
+        true);
+    channel_ = ChannelCreate("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
+                             transport)
                    ->release()
                    ->c_ptr();
   }
 
-  ~ClientFuzzer() { GPR_ASSERT(channel_ == nullptr); }
+  ~ClientFuzzer() { CHECK_EQ(channel_, nullptr); }
 
  private:
   Result CreateChannel(const api_fuzzer::CreateChannel&) override {
@@ -90,7 +96,8 @@ class ClientFuzzer final : public BasicFuzzer {
   grpc_server* server() override { return nullptr; }
   grpc_channel* channel() override { return channel_; }
 
-  grpc_endpoint* mock_endpoint_ = grpc_mock_endpoint_create(discard_write);
+  std::shared_ptr<grpc_event_engine::experimental::MockEndpointController>
+      mock_endpoint_controller_;
   grpc_channel* channel_ = nullptr;
 };
 
@@ -99,8 +106,9 @@ class ClientFuzzer final : public BasicFuzzer {
 
 DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_set_log_function(dont_log);
+    grpc_disable_all_absl_logs();
   }
+  if (msg.network_input().size() != 1) return;
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_core::testing::ClientFuzzer(msg).Run(msg.api_actions());

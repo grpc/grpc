@@ -28,11 +28,11 @@
 #include <sys/wait.h>
 #endif
 
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
-#include "test/core/util/port.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
+#include "test/core/test_util/port.h"
 #include "test/cpp/util/subprocess.h"
 
 using grpc::SubProcess;
@@ -69,13 +69,13 @@ static void register_sighandler() {
 
 static void LogStatus(int status, const char* label) {
   if (WIFEXITED(status)) {
-    gpr_log(GPR_INFO, "%s: subprocess exited with status %d", label,
-            WEXITSTATUS(status));
+    LOG(INFO) << label << ": subprocess exited with status "
+              << WEXITSTATUS(status);
   } else if (WIFSIGNALED(status)) {
-    gpr_log(GPR_INFO, "%s: subprocess terminated with signal %d", label,
-            WTERMSIG(status));
+    LOG(INFO) << label << ": subprocess terminated with signal "
+              << WTERMSIG(status);
   } else {
-    gpr_log(GPR_INFO, "%s: unknown subprocess status: %d", label, status);
+    LOG(INFO) << label << ": unknown subprocess status: " << status;
   }
 }
 
@@ -134,5 +134,5 @@ int main(int argc, char** argv) {
       delete g_workers[i];
     }
   }
-  GPR_ASSERT(driver_join_status == 0);
+  CHECK_EQ(driver_join_status, 0);
 }

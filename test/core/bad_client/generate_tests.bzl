@@ -44,8 +44,12 @@ def grpc_bad_client_tests():
         hdrs = ["bad_client.h"],
         language = "C++",
         testonly = 1,
+        external_deps = [
+            "absl/log:check",
+            "absl/log:log",
+        ],
         deps = [
-            "//test/core/util:grpc_test_util",
+            "//test/core/test_util:grpc_test_util",
             "//:grpc",
             "//:gpr",
             "//test/core/end2end:cq_verifier",
@@ -59,6 +63,7 @@ def grpc_bad_client_tests():
             deps = [":bad_client_test"],
             tags = ["bad_client_test"],
             external_deps = [
+                "absl/log:check",
                 "gtest",
             ],
         )

@@ -19,24 +19,21 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_CLOSURE_H
 #define GRPC_SRC_CORE_LIB_IOMGR_CLOSURE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <assert.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <stdbool.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/mpscq.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/manual_constructor.h"
+#include "src/core/util/mpscq.h"
 
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
-
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_closure;
 
 typedef struct grpc_closure_list {
   grpc_closure* head;
@@ -215,7 +212,9 @@ inline grpc_closure* grpc_closure_create(grpc_iomgr_cb_func cb, void* cb_arg) {
 #endif
 
 #define GRPC_CLOSURE_LIST_INIT \
-  { nullptr, nullptr }
+  {                            \
+    nullptr, nullptr           \
+  }
 
 inline void grpc_closure_list_init(grpc_closure_list* closure_list) {
   closure_list->head = closure_list->tail = nullptr;
@@ -293,18 +292,15 @@ class Closure {
       return;
     }
 #ifndef NDEBUG
-    if (grpc_trace_closure.enabled()) {
-      gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: run [%s:%d]",
-              closure, closure->file_created, closure->line_created,
-              location.file(), location.line());
-    }
-    GPR_ASSERT(closure->cb != nullptr);
+    GRPC_TRACE_VLOG(closure, 2)
+        << "running closure " << closure << ": created ["
+        << closure->file_created << ":" << closure->line_created << "]: run ["
+        << location.file() << ":" << location.line() << "]";
+    CHECK_NE(closure->cb, nullptr);
 #endif
     closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG
-    if (grpc_trace_closure.enabled()) {
-      gpr_log(GPR_DEBUG, "closure %p finished", closure);
-    }
+    GRPC_TRACE_VLOG(closure, 2) << "closure " << closure << " finished";
 #endif
   }
 };

@@ -16,26 +16,23 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <algorithm>
 #include <memory>
 
+#include "absl/log/log.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/alts/frame_protector/alts_crypter.h"
 #include "src/core/tsi/alts/frame_protector/frame_handler.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/util/memory.h"
 
 constexpr size_t kMinFrameLength = 1024;
 constexpr size_t kDefaultFrameLength = 16 * 1024;
@@ -71,7 +68,7 @@ static tsi_result seal(alts_frame_protector* impl) {
       &output_size, &error_details);
   impl->in_place_protect_bytes_buffered = output_size;
   if (status != GRPC_STATUS_OK) {
-    gpr_log(GPR_ERROR, "%s", error_details);
+    LOG(ERROR) << error_details;
     gpr_free(error_details);
     return TSI_INTERNAL_ERROR;
   }
@@ -89,7 +86,7 @@ static tsi_result alts_protect_flush(tsi_frame_protector* self,
   if (self == nullptr || protected_output_frames == nullptr ||
       protected_output_frames_size == nullptr ||
       still_pending_size == nullptr) {
-    gpr_log(GPR_ERROR, "Invalid nullptr arguments to alts_protect_flush().");
+    LOG(ERROR) << "Invalid nullptr arguments to alts_protect_flush().";
     return TSI_INVALID_ARGUMENT;
   }
   alts_frame_protector* impl = reinterpret_cast<alts_frame_protector*>(self);
@@ -114,7 +111,7 @@ static tsi_result alts_protect_flush(tsi_frame_protector* self,
     }
     if (!alts_reset_frame_writer(impl->writer, impl->in_place_protect_buffer,
                                  impl->in_place_protect_bytes_buffered)) {
-      gpr_log(GPR_ERROR, "Couldn't reset frame writer.");
+      LOG(ERROR) << "Couldn't reset frame writer.";
       return TSI_INTERNAL_ERROR;
     }
   }
@@ -127,7 +124,7 @@ static tsi_result alts_protect_flush(tsi_frame_protector* self,
   size_t written_frame_bytes = *protected_output_frames_size;
   if (!alts_write_frame_bytes(impl->writer, protected_output_frames,
                               &written_frame_bytes)) {
-    gpr_log(GPR_ERROR, "Couldn't write frame bytes.");
+    LOG(ERROR) << "Couldn't write frame bytes.";
     return TSI_INTERNAL_ERROR;
   }
   *protected_output_frames_size = written_frame_bytes;
@@ -150,7 +147,7 @@ static tsi_result alts_protect(tsi_frame_protector* self,
   if (self == nullptr || unprotected_bytes == nullptr ||
       unprotected_bytes_size == nullptr || protected_output_frames == nullptr ||
       protected_output_frames_size == nullptr) {
-    gpr_log(GPR_ERROR, "Invalid nullptr arguments to alts_protect().");
+    LOG(ERROR) << "Invalid nullptr arguments to alts_protect().";
     return TSI_INVALID_ARGUMENT;
   }
   alts_frame_protector* impl = reinterpret_cast<alts_frame_protector*>(self);
@@ -203,7 +200,7 @@ static tsi_result unseal(alts_frame_protector* impl) {
       impl->max_unprotected_frame_size,
       alts_get_output_bytes_read(impl->reader), &output_size, &error_details);
   if (status != GRPC_STATUS_OK) {
-    gpr_log(GPR_ERROR, "%s", error_details);
+    LOG(ERROR) << error_details;
     gpr_free(error_details);
     return TSI_DATA_CORRUPTED;
   }
@@ -242,7 +239,7 @@ static tsi_result alts_unprotect(tsi_frame_protector* self,
   if (self == nullptr || protected_frames_bytes == nullptr ||
       protected_frames_bytes_size == nullptr || unprotected_bytes == nullptr ||
       unprotected_bytes_size == nullptr) {
-    gpr_log(GPR_ERROR, "Invalid nullptr arguments to alts_unprotect().");
+    LOG(ERROR) << "Invalid nullptr arguments to alts_unprotect().";
     return TSI_INVALID_ARGUMENT;
   }
   alts_frame_protector* impl = reinterpret_cast<alts_frame_protector*>(self);
@@ -257,7 +254,7 @@ static tsi_result alts_unprotect(tsi_frame_protector* self,
         impl->in_place_unprotect_bytes_processed + impl->overhead_length))) {
     if (!alts_reset_frame_reader(impl->reader,
                                  impl->in_place_unprotect_buffer)) {
-      gpr_log(GPR_ERROR, "Couldn't reset frame reader.");
+      LOG(ERROR) << "Couldn't reset frame reader.";
       return TSI_INTERNAL_ERROR;
     }
     impl->in_place_unprotect_bytes_processed = 0;
@@ -277,7 +274,7 @@ static tsi_result alts_unprotect(tsi_frame_protector* self,
     size_t read_frames_bytes_size = *protected_frames_bytes_size;
     if (!alts_read_frame_bytes(impl->reader, protected_frames_bytes,
                                &read_frames_bytes_size)) {
-      gpr_log(GPR_ERROR, "Failed to process frame.");
+      LOG(ERROR) << "Failed to process frame.";
       return TSI_INTERNAL_ERROR;
     }
     *protected_frames_bytes_size = read_frames_bytes_size;
@@ -371,8 +368,7 @@ tsi_result alts_create_frame_protector(const uint8_t* key, size_t key_size,
                                        size_t* max_protected_frame_size,
                                        tsi_frame_protector** self) {
   if (key == nullptr || self == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to alts_create_frame_protector().");
+    LOG(ERROR) << "Invalid nullptr arguments to alts_create_frame_protector().";
     return TSI_INTERNAL_ERROR;
   }
   char* error_details = nullptr;
@@ -380,8 +376,9 @@ tsi_result alts_create_frame_protector(const uint8_t* key, size_t key_size,
   grpc_status_code status = create_alts_crypters(
       key, key_size, is_client, is_rekey, impl, &error_details);
   if (status != GRPC_STATUS_OK) {
-    gpr_log(GPR_ERROR, "Failed to create ALTS crypters, %s.", error_details);
+    LOG(ERROR) << "Failed to create ALTS crypters, " << error_details;
     gpr_free(error_details);
+    gpr_free(impl);
     return TSI_INTERNAL_ERROR;
   }
   ///

@@ -18,7 +18,6 @@
 #define GRPC_SUPPORT_JSON_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <map>

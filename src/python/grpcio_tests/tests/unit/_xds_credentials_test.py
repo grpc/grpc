@@ -24,18 +24,20 @@ import grpc.experimental
 from tests.unit import resources
 from tests.unit import test_common
 
+_SERVICE_NAME = "test"
+_METHOD = "method"
 
-class _GenericHandler(grpc.GenericRpcHandler):
-    def service(self, handler_call_details):
-        return grpc.unary_unary_rpc_method_handler(
-            lambda request, unused_context: request
-        )
+_METHOD_HANDLERS = {
+    _METHOD: grpc.unary_unary_rpc_method_handler(
+        lambda request, unused_context: request
+    )
+}
 
 
 @contextlib.contextmanager
 def xds_channel_server_without_xds(server_fallback_creds):
     server = grpc.server(futures.ThreadPoolExecutor())
-    server.add_generic_rpc_handlers((_GenericHandler(),))
+    server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
     server_server_fallback_creds = grpc.ssl_server_credentials(
         ((resources.private_key(), resources.certificate_chain()),)
     )
@@ -71,9 +73,10 @@ class XdsCredentialsTest(unittest.TestCase):
                 server_address, channel_creds, options=override_options
             ) as channel:
                 request = b"abc"
-                response = channel.unary_unary("/test/method")(
-                    request, wait_for_ready=True
-                )
+                response = channel.unary_unary(
+                    grpc._common.fully_qualified_method(_SERVICE_NAME, _METHOD),
+                    _registered_method=True,
+                )(request, wait_for_ready=True)
                 self.assertEqual(response, request)
 
     def test_xds_creds_fallback_insecure(self):
@@ -89,14 +92,15 @@ class XdsCredentialsTest(unittest.TestCase):
             channel_creds = grpc.xds_channel_credentials(channel_fallback_creds)
             with grpc.secure_channel(server_address, channel_creds) as channel:
                 request = b"abc"
-                response = channel.unary_unary("/test/method")(
-                    request, wait_for_ready=True
-                )
+                response = channel.unary_unary(
+                    "/test/method",
+                    _registered_method=True,
+                )(request, wait_for_ready=True)
                 self.assertEqual(response, request)
 
     def test_start_xds_server(self):
         server = grpc.server(futures.ThreadPoolExecutor(), xds=True)
-        server.add_generic_rpc_handlers((_GenericHandler(),))
+        server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
         server_fallback_creds = grpc.insecure_server_credentials()
         server_creds = grpc.xds_server_credentials(server_fallback_creds)
         port = server.add_secure_port("localhost:0", server_creds)

@@ -20,14 +20,12 @@
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_VERIFIER_H
 
 #include <grpc/support/port_platform.h>
-
+#include <grpc/support/time.h>
 #include <stddef.h>
 
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/json/json.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/time.h"
 
 // --- Constants. ---
 

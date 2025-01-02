@@ -15,6 +15,8 @@
 
 #include "test/cpp/end2end/xds/xds_utils.h"
 
+#include <grpcpp/security/tls_certificate_provider.h>
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -24,25 +26,22 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpcpp/security/tls_certificate_provider.h>
-
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/ext/xds/xds_channel_args.h"
-#include "src/core/ext/xds/xds_client_grpc.h"
-#include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
+#include "src/core/util/env.h"
+#include "src/core/util/tmpfile.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
+#include "src/core/xds/xds_client/xds_channel_args.h"
 #include "src/cpp/client/secure_credentials.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "test/core/util/resolve_localhost_ip46.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
 
 namespace grpc {
 namespace testing {
@@ -61,7 +60,7 @@ using ::envoy::extensions::filters::network::http_connection_manager::v3::
 
 std::string XdsBootstrapBuilder::Build() {
   std::vector<std::string> fields;
-  fields.push_back(MakeXdsServersText(top_server_));
+  fields.push_back(MakeXdsServersText(servers_));
   if (!client_default_listener_resource_name_template_.empty()) {
     fields.push_back(
         absl::StrCat("  \"client_default_listener_resource_name_template\": \"",
@@ -79,28 +78,39 @@ std::string XdsBootstrapBuilder::Build() {
 }
 
 std::string XdsBootstrapBuilder::MakeXdsServersText(
-    absl::string_view server_uri) {
+    absl::Span<const std::string> server_uris) {
   constexpr char kXdsServerTemplate[] =
-      "      \"xds_servers\": [\n"
       "        {\n"
       "          \"server_uri\": \"<SERVER_URI>\",\n"
       "          \"channel_creds\": [\n"
       "            {\n"
-      "              \"type\": \"<SERVER_CREDS_TYPE>\"\n"
+      "              \"type\": \"<SERVER_CREDS_TYPE>\"<SERVER_CREDS_CONFIG>\n"
       "            }\n"
       "          ],\n"
       "          \"server_features\": [<SERVER_FEATURES>]\n"
-      "        }\n"
-      "      ]";
+      "        }";
   std::vector<std::string> server_features;
   if (ignore_resource_deletion_) {
     server_features.push_back("\"ignore_resource_deletion\"");
   }
-  return absl::StrReplaceAll(
-      kXdsServerTemplate,
-      {{"<SERVER_URI>", server_uri},
-       {"<SERVER_CREDS_TYPE>", xds_channel_creds_type_},
-       {"<SERVER_FEATURES>", absl::StrJoin(server_features, ", ")}});
+  if (trusted_xds_server_) {
+    server_features.push_back("\"trusted_xds_server\"");
+  }
+  std::vector<std::string> servers;
+  for (absl::string_view server_uri : server_uris) {
+    servers.emplace_back(absl::StrReplaceAll(
+        kXdsServerTemplate,
+        {{"<SERVER_URI>", server_uri},
+         {"<SERVER_CREDS_TYPE>", xds_channel_creds_type_},
+         {"<SERVER_CREDS_CONFIG>",
+          xds_channel_creds_config_.empty()
+              ? ""
+              : absl::StrCat(",\n              \"config\": ",
+                             xds_channel_creds_config_)},
+         {"<SERVER_FEATURES>", absl::StrJoin(server_features, ", ")}}));
+  }
+  return absl::StrCat("      \"xds_servers\": [\n",
+                      absl::StrJoin(servers, ",\n"), "\n      ]");
 }
 
 std::string XdsBootstrapBuilder::MakeNodeText() {
@@ -149,7 +159,7 @@ std::string XdsBootstrapBuilder::MakeAuthorityText() {
     const std::string& name = p.first;
     const AuthorityInfo& authority_info = p.second;
     std::vector<std::string> fields = {
-        MakeXdsServersText(authority_info.server)};
+        MakeXdsServersText(authority_info.servers)};
     if (!authority_info.client_listener_resource_name_template.empty()) {
       fields.push_back(absl::StrCat(
           "\"client_listener_resource_name_template\": \"",
@@ -318,6 +328,12 @@ void XdsResourceUtils::SetRouteConfiguration(
   }
 }
 
+std::string XdsResourceUtils::LocalityNameString(absl::string_view sub_zone) {
+  return absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
+                         kDefaultLocalityRegion, kDefaultLocalityZone,
+                         sub_zone);
+}
+
 ClusterLoadAssignment XdsResourceUtils::BuildEdsResource(
     const EdsResourceArgs& args, absl::string_view eds_service_name) {
   ClusterLoadAssignment assignment;
@@ -351,6 +367,19 @@ ClusterLoadAssignment XdsResourceUtils::BuildEdsResource(
                              ->mutable_socket_address();
         socket_address->set_address(grpc_core::LocalIp());
         socket_address->set_port_value(port);
+      }
+      if (!endpoint.hostname.empty()) {
+        endpoint_proto->set_hostname(endpoint.hostname);
+      }
+      if (!endpoint.metadata.empty()) {
+        auto& filter_map =
+            *lb_endpoints->mutable_metadata()->mutable_filter_metadata();
+        for (const auto& p : endpoint.metadata) {
+          absl::Status status = grpc::protobuf::json::JsonStringToMessage(
+              p.second, &filter_map[p.first],
+              grpc::protobuf::json::JsonParseOptions());
+          CHECK(status.ok()) << status;
+        }
       }
     }
   }

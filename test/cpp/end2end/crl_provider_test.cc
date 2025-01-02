@@ -15,20 +15,8 @@
 // limitations under the License.
 //
 //
-#include <memory>
-#include <string>
-#include <vector>
-
-#include <gtest/gtest.h>
-
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
-
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -41,14 +29,27 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/status.h>
+#include <gtest/gtest.h>
 
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
+// CRL Providers not supported for <1.1
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
 namespace grpc {
 namespace testing {
 namespace {
@@ -59,7 +60,8 @@ const char* kRevokedCertPath = "test/core/tsi/test_creds/crl_data/revoked.pem";
 const char* kValidKeyPath = "test/core/tsi/test_creds/crl_data/valid.key";
 const char* kValidCertPath = "test/core/tsi/test_creds/crl_data/valid.pem";
 const char* kRootCrlPath = "test/core/tsi/test_creds/crl_data/crls/current.crl";
-const char* kCrlDirectoryPath = "test/core/tsi/test_creds/crl_data/crls/";
+const char* kCrlDirectoryPath =
+    "test/core/tsi/test_creds/crl_data/crl_provider_test_dir/";
 constexpr char kMessage[] = "Hello";
 
 // This test must be at the top of the file because the
@@ -98,7 +100,7 @@ class CrlProviderTest : public ::testing::Test {
     options.set_cert_request_type(
         GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
     auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-    GPR_ASSERT(server_credentials.get() != nullptr);
+    CHECK_NE(server_credentials.get(), nullptr);
 
     grpc::ServerBuilder builder;
     TestServiceImpl service_;
@@ -138,13 +140,13 @@ void DoRpc(const std::string& server_addr,
   grpc::testing::EchoResponse response;
   request.set_message(kMessage);
   ClientContext context;
-  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/10));
+  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/15));
   grpc::Status result = stub->Echo(&context, request, &response);
   if (expect_success) {
     EXPECT_TRUE(result.ok());
     if (!result.ok()) {
-      gpr_log(GPR_ERROR, "%s, %s", result.error_message().c_str(),
-              result.error_details().c_str());
+      LOG(ERROR) << result.error_message().c_str() << ", "
+                 << result.error_details().c_str();
     }
     EXPECT_EQ(response.message(), kMessage);
   } else {
@@ -279,6 +281,8 @@ TEST_F(CrlProviderTest, CrlProviderValidReloaderProvider) {
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
+
+#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);

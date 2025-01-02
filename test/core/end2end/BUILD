@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
 load("grpc_core_end2end_test.bzl", "grpc_core_end2end_test")
 
 licenses(["notice"])
@@ -27,6 +27,8 @@ grpc_cc_library(
     external_deps = [
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
+        "absl/log:check",
+        "absl/log:log",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:variant",
@@ -40,7 +42,7 @@ grpc_cc_library(
         "//:grpc",
         "//src/core:match",
         "//src/core:time",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -62,11 +64,14 @@ grpc_cc_library(
     srcs = ["fixtures/http_proxy_fixture.cc"],
     hdrs = ["fixtures/http_proxy_fixture.h"],
     external_deps = [
+        "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],
     language = "C++",
+    visibility = ["//test/cpp/end2end/xds:__subpackages__"],
     deps = [
         "//:config",
         "//:exec_ctx",
@@ -86,7 +91,7 @@ grpc_cc_library(
         "//src/core:slice_refcount",
         "//src/core:status_helper",
         "//src/core:time",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -94,6 +99,10 @@ grpc_cc_library(
     name = "proxy",
     srcs = ["fixtures/proxy.cc"],
     hdrs = ["fixtures/proxy.h"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+    ],
     language = "C++",
     deps = [
         "//:channel_arg_names",
@@ -101,7 +110,7 @@ grpc_cc_library(
         "//:grpc",
         "//:grpc_public_hdrs",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -116,6 +125,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:check",
+        "absl/log:log",
         "absl/memory",
         "absl/meta:type_traits",
         "absl/random",
@@ -137,8 +148,9 @@ grpc_cc_library(
         "//src/core:no_destruct",
         "//src/core:slice",
         "//src/core:time",
+        "//test/core/call:batch_builder",
         "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -159,6 +171,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -184,7 +197,7 @@ grpc_cc_library(
         "//src/core:grpc_tls_credentials",
         "//src/core:grpc_transport_inproc",
         "//src/core:slice",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -197,6 +210,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/meta:type_traits",
         "absl/random",
         "absl/status",
@@ -216,12 +230,14 @@ grpc_cc_library(
         "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//src/core:channel_args",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
         "//src/core:env",
         "//src/core:error",
         "//src/core:grpc_fake_credentials",
         "//src/core:iomgr_port",
         "//src/core:no_destruct",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
     alwayslink = 1,
 )
@@ -244,7 +260,36 @@ grpc_cc_library(
         "end2end_test_suites",
         "fixture_support",
         "//:config_vars",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "end2end_test_fuzzer",
+    testonly = 1,
+    srcs = [
+        "end2end_test_fuzzer.cc",
+    ],
+    hdrs = [
+        "end2end_test_fuzzer.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/log:check",
+        "absl/strings",
+        "absl/types:optional",
+        "gtest",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "end2end_test_fuzzer_cc_proto",
+        "end2end_test_lib",
+        "end2end_test_suites",
+        "fixture_support",
+        "//:config_vars",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -268,6 +313,7 @@ grpc_core_end2end_test(
 
 grpc_core_end2end_test(
     name = "cancel_after_invoke",
+    flaky = True,
     shard_count = 50,
 )
 
@@ -280,7 +326,10 @@ grpc_core_end2end_test(name = "cancel_before_invoke")
 
 grpc_core_end2end_test(name = "cancel_in_a_vacuum")
 
-grpc_core_end2end_test(name = "cancel_with_status")
+grpc_core_end2end_test(
+    name = "cancel_with_status",
+    flaky = True,
+)
 
 grpc_core_end2end_test(name = "channelz")
 
@@ -300,8 +349,6 @@ grpc_core_end2end_test(name = "disappearing_server")
 grpc_core_end2end_test(name = "empty_batch")
 
 grpc_core_end2end_test(name = "filter_causes_close")
-
-grpc_core_end2end_test(name = "filter_context")
 
 grpc_core_end2end_test(name = "filter_init_fails")
 
@@ -463,6 +510,10 @@ grpc_core_end2end_test(name = "write_buffering_at_end")
 grpc_cc_test(
     name = "bad_server_response_test",
     srcs = ["bad_server_response_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+    ],
     language = "C++",
     deps = [
         "cq_verifier",
@@ -478,13 +529,17 @@ grpc_cc_test(
         "//src/core:notification",
         "//src/core:slice",
         "//src/core:status_helper",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "connection_refused_test",
     srcs = ["connection_refused_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+    ],
     language = "C++",
     deps = [
         "cq_verifier",
@@ -493,7 +548,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc_public_hdrs",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -501,6 +556,8 @@ grpc_cc_test(
     name = "dualstack_socket_test",
     srcs = ["dualstack_socket_test.cc"],
     external_deps = [
+        "absl/log:check",
+        "absl/log:log",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
@@ -516,7 +573,7 @@ grpc_cc_test(
         "//src/core:error",
         "//src/core:iomgr_port",
         "//src/core:resolved_address",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -524,6 +581,8 @@ grpc_cc_test(
     name = "goaway_server_test",
     srcs = ["goaway_server_test.cc"],
     external_deps = [
+        "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -543,24 +602,29 @@ grpc_cc_test(
         "//src/core:closure",
         "//src/core:default_event_engine",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:resolved_address",
         "//src/core:time",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "invalid_call_argument_test",
     srcs = ["invalid_call_argument_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+    ],
     language = "C++",
     deps = [
         "cq_verifier",
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_public_hdrs",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -571,7 +635,7 @@ grpc_cc_test(
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -579,6 +643,8 @@ grpc_cc_test(
     name = "no_server_test",
     srcs = ["no_server_test.cc"],
     external_deps = [
+        "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/time",
@@ -595,7 +661,7 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:grpc_service_config",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -607,6 +673,8 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:check",
+        "absl/log:log",
         "absl/memory",
         "absl/meta:type_traits",
         "absl/strings",
@@ -633,7 +701,7 @@ grpc_cc_test(
         "//src/core:slice",
         "//src/core:time",
         "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -648,6 +716,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/types:optional",
         "gtest",
     ],
@@ -663,7 +732,7 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:error",
         "//src/core:useful",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -678,6 +747,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/types:optional",
         "gtest",
     ],
@@ -693,16 +763,20 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:error",
         "//src/core:useful",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
-grpc_proto_library(
+grpc_internal_proto_library(
     name = "end2end_test_fuzzer_proto",
     srcs = ["end2end_test_fuzzer.proto"],
-    has_services = False,
     deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
-        "//test/core/util:fuzz_config_vars_proto",
+        "//test/core/test_util:fuzz_config_vars_proto",
     ],
+)
+
+grpc_cc_proto_library(
+    name = "end2end_test_fuzzer_cc_proto",
+    deps = ["end2end_test_fuzzer_proto"],
 )

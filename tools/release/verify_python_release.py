@@ -44,6 +44,8 @@ _DEFAULT_PACKAGES = [
     "grpcio-testing",
     "grpcio-admin",
     "grpcio-csds",
+    "grpcio-observability",
+    "grpcio-csm-observability",
     "xds-protos",
 ]
 

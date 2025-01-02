@@ -3,10 +3,11 @@
  *     envoy/type/v3/percent.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_V3_PERCENT_PROTO_UPB_MINITABLE_H_
-#define ENVOY_TYPE_V3_PERCENT_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_TYPE_V3_PERCENT_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_TYPE_V3_PERCENT_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -18,7 +19,9 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__type__v3__Percent_msg_init;
+extern const upb_MiniTable* envoy__type__v3__Percent_msg_init_ptr;
 extern const upb_MiniTable envoy__type__v3__FractionalPercent_msg_init;
+extern const upb_MiniTable* envoy__type__v3__FractionalPercent_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_type_v3_percent_proto_upb_file_layout;
 
@@ -28,4 +31,4 @@ extern const upb_MiniTableFile envoy_type_v3_percent_proto_upb_file_layout;
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_V3_PERCENT_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_TYPE_V3_PERCENT_PROTO_UPB_H__UPB_MINITABLE_H_ */

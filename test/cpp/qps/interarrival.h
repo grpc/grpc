@@ -19,12 +19,12 @@
 #ifndef GRPC_TEST_CPP_QPS_INTERARRIVAL_H
 #define GRPC_TEST_CPP_QPS_INTERARRIVAL_H
 
+#include <grpcpp/support/config.h>
+
 #include <chrono>
 #include <cmath>
 #include <random>
 #include <vector>
-
-#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace testing {
@@ -87,7 +87,7 @@ class InterarrivalTimer {
       thread_posns_.push_back(random_table_.begin() + (entries * i) / threads);
     }
   }
-  virtual ~InterarrivalTimer(){};
+  virtual ~InterarrivalTimer() {};
 
   int64_t next(int thread_num) {
     auto ret = *(thread_posns_[thread_num]++);

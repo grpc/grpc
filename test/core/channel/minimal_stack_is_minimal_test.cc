@@ -29,23 +29,22 @@
 // configurations and assess whether such a change is correct and desirable.
 //
 
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -53,7 +52,7 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace {
 class FakeTransport final : public grpc_core::Transport {
@@ -73,7 +72,6 @@ class FakeTransport final : public grpc_core::Transport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override {}
-  grpc_endpoint* GetEndpoint() override { return nullptr; }
   void Orphan() override {}
 
  private:
@@ -95,15 +93,13 @@ std::vector<std::string> MakeStack(const char* transport_name,
   builder.SetTarget("foo.test.google.fr");
   {
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
+    CHECK(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
         &builder));
   }
 
   std::vector<std::string> parts;
   for (const auto& entry : *builder.mutable_stack()) {
-    const char* name = entry->name;
-    if (name == nullptr) continue;
-    parts.push_back(name);
+    parts.push_back(std::string(entry->name.name()));
   }
 
   return parts;
@@ -137,33 +133,31 @@ TEST(ChannelStackFilters, LooksAsExpected) {
 
   // tests with a default stack
 
-  EXPECT_EQ(MakeStack("unknown", no_args, GRPC_CLIENT_DIRECT_CHANNEL),
-            std::vector<std::string>(
-                {"authority", "message_size", "deadline", "connected"}));
+  EXPECT_EQ(
+      MakeStack("unknown", no_args, GRPC_CLIENT_DIRECT_CHANNEL),
+      std::vector<std::string>({"authority", "message_size", "connected"}));
   EXPECT_EQ(
       MakeStack("unknown", no_args, GRPC_CLIENT_SUBCHANNEL),
       std::vector<std::string>({"authority", "message_size", "connected"}));
   EXPECT_EQ(MakeStack("unknown", no_args, GRPC_SERVER_CHANNEL),
-            std::vector<std::string>({"server", "message_size", "deadline",
-                                      "server_call_tracer", "connected"}));
+            std::vector<std::string>(
+                {"server", "message_size", "server_call_tracer", "connected"}));
 
   EXPECT_EQ(
       MakeStack("chttp2", no_args, GRPC_CLIENT_DIRECT_CHANNEL),
-      std::vector<std::string>({"authority", "message_size", "deadline",
-                                "http-client", "compression", "connected"}));
+      std::vector<std::string>({"authority", "message_size", "http-client",
+                                "compression", "connected"}));
   EXPECT_EQ(
       MakeStack("chttp2", no_args, GRPC_CLIENT_SUBCHANNEL),
       std::vector<std::string>({"authority", "message_size", "http-client",
                                 "compression", "connected"}));
 
   EXPECT_EQ(MakeStack("chttp2", no_args, GRPC_SERVER_CHANNEL),
-            std::vector<std::string>({"server", "message_size", "deadline",
-                                      "http-server", "compression",
-                                      "server_call_tracer", "connected"}));
+            std::vector<std::string>({"server", "message_size", "http-server",
+                                      "compression", "server_call_tracer",
+                                      "connected"}));
   EXPECT_EQ(MakeStack(nullptr, no_args, GRPC_CLIENT_CHANNEL),
-            grpc_core::IsClientIdlenessEnabled()
-                ? std::vector<std::string>({"client_idle", "client-channel"})
-                : std::vector<std::string>({"client-channel"}));
+            std::vector<std::string>({"client_idle", "client-channel"}));
 }
 
 int main(int argc, char** argv) {

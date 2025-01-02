@@ -58,7 +58,7 @@ add_library(%(name)s %(type)s
 target_include_directories(%(name)s %(keyword)s
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../cmake>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINRARY_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 """
 
@@ -238,6 +238,8 @@ class BuildFileFunctions(object):
   def alias(self, **kwargs):
     pass
 
+  def package(self, **kwargs):
+    pass
 
 class Converter(object):
   def __init__(self):
@@ -292,11 +294,9 @@ class Converter(object):
     endif()
 
     if(NOT TARGET utf8_range)
-      if(EXISTS ../../external/utf8_range)
+      if(EXISTS ../../third_party/utf8_range)
         # utf8_range is already installed
-        include_directories(../external/utf8_range)
-      elseif(EXISTS ../../utf8_range)
-        include_directories(../../utf8_range)
+        include_directories(../../third_party/utf8_range)
       else()
         include(FetchContent)
         FetchContent_Declare(

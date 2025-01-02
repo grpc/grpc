@@ -30,7 +30,7 @@ class LoadBalancerStatsServiceStub {
      * Gets the backend distribution for RPCs sent by a test client.
      * @param \Grpc\Testing\LoadBalancerStatsRequest $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\LoadBalancerStatsResponse for response data, null if if error occured
+     * @return \Grpc\Testing\LoadBalancerStatsResponse for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function GetClientStats(
@@ -45,7 +45,7 @@ class LoadBalancerStatsServiceStub {
      * Gets the accumulated stats for RPCs sent by a test client.
      * @param \Grpc\Testing\LoadBalancerAccumulatedStatsRequest $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\LoadBalancerAccumulatedStatsResponse for response data, null if if error occured
+     * @return \Grpc\Testing\LoadBalancerAccumulatedStatsResponse for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function GetClientAccumulatedStats(

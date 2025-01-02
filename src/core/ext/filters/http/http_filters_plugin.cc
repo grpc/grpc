@@ -19,14 +19,12 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/match.h"
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/message_compress/compression_filter.h"
-#include "src/core/ext/filters/http/message_compress/legacy_compression_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
@@ -40,49 +38,32 @@ bool IsBuildingHttpLikeTransport(const ChannelArgs& args) {
 }  // namespace
 
 void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
-  if (IsV3CompressionFilterEnabled()) {
-    builder->channel_init()
-        ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
-                         &ClientCompressionFilter::kFilter)
-        .If(IsBuildingHttpLikeTransport)
-        .After({&HttpClientFilter::kFilter, &ClientMessageSizeFilter::kFilter});
-    builder->channel_init()
-        ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
-                         &ClientCompressionFilter::kFilter)
-        .If(IsBuildingHttpLikeTransport)
-        .After({&HttpClientFilter::kFilter, &ClientMessageSizeFilter::kFilter});
-    builder->channel_init()
-        ->RegisterFilter(GRPC_SERVER_CHANNEL, &ServerCompressionFilter::kFilter)
-        .If(IsBuildingHttpLikeTransport)
-        .After({&HttpServerFilter::kFilter, &ServerMessageSizeFilter::kFilter});
-  } else {
-    builder->channel_init()
-        ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
-                         &LegacyClientCompressionFilter::kFilter)
-        .If(IsBuildingHttpLikeTransport)
-        .After({&HttpClientFilter::kFilter, &ClientMessageSizeFilter::kFilter});
-    builder->channel_init()
-        ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
-                         &LegacyClientCompressionFilter::kFilter)
-        .If(IsBuildingHttpLikeTransport)
-        .After({&HttpClientFilter::kFilter, &ClientMessageSizeFilter::kFilter});
-    builder->channel_init()
-        ->RegisterFilter(GRPC_SERVER_CHANNEL,
-                         &LegacyServerCompressionFilter::kFilter)
-        .If(IsBuildingHttpLikeTransport)
-        .After({&HttpServerFilter::kFilter, &ServerMessageSizeFilter::kFilter});
-  }
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &HttpClientFilter::kFilter)
+      ->RegisterFilter<ClientCompressionFilter>(GRPC_CLIENT_SUBCHANNEL)
       .If(IsBuildingHttpLikeTransport)
-      .After({&ClientMessageSizeFilter::kFilter});
+      .After<HttpClientFilter>()
+      .After<ClientMessageSizeFilter>();
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL, &HttpClientFilter::kFilter)
+      ->RegisterFilter<ClientCompressionFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .If(IsBuildingHttpLikeTransport)
-      .After({&ClientMessageSizeFilter::kFilter});
+      .After<HttpClientFilter>()
+      .After<ClientMessageSizeFilter>();
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &HttpServerFilter::kFilter)
+      ->RegisterFilter<ServerCompressionFilter>(GRPC_SERVER_CHANNEL)
       .If(IsBuildingHttpLikeTransport)
-      .After({&ServerMessageSizeFilter::kFilter});
+      .After<HttpServerFilter>()
+      .After<ServerMessageSizeFilter>();
+  builder->channel_init()
+      ->RegisterFilter<HttpClientFilter>(GRPC_CLIENT_SUBCHANNEL)
+      .If(IsBuildingHttpLikeTransport)
+      .After<ClientMessageSizeFilter>();
+  builder->channel_init()
+      ->RegisterFilter<HttpClientFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
+      .If(IsBuildingHttpLikeTransport)
+      .After<ClientMessageSizeFilter>();
+  builder->channel_init()
+      ->RegisterFilter<HttpServerFilter>(GRPC_SERVER_CHANNEL)
+      .If(IsBuildingHttpLikeTransport)
+      .After<ServerMessageSizeFilter>();
 }
 }  // namespace grpc_core

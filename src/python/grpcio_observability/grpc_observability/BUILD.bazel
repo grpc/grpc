@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:cython_library.bzl", "pyx_library")
 
 package(default_visibility = ["//visibility:private"])
@@ -20,8 +22,9 @@ cc_library(
     name = "observability",
     srcs = [
         "client_call_tracer.cc",
+        "metadata_exchange.cc",
         "observability_util.cc",
-        "python_census_context.cc",
+        "python_observability_context.cc",
         "rpc_encoding.cc",
         "sampler.cc",
         "server_call_tracer.cc",
@@ -29,8 +32,9 @@ cc_library(
     hdrs = [
         "client_call_tracer.h",
         "constants.h",
+        "metadata_exchange.h",
         "observability_util.h",
-        "python_census_context.h",
+        "python_observability_context.h",
         "rpc_encoding.h",
         "sampler.h",
         "server_call_tracer.h",
@@ -52,17 +56,25 @@ pyx_library(
     ],
 )
 
-# Since `opencensus` and `opencensus-ext-stackdriver` are non-hermetic,
+# Since `opentelemetry-api` is non-hermetic,
 # pyobservability is for internal use only.
+py_library(
+    name = "_opentelemetry_observability",
+    srcs = [
+        "_open_telemetry_measures.py",
+        "_open_telemetry_observability.py",
+        "_open_telemetry_plugin.py",
+    ],
+    deps = [
+        requirement("opentelemetry-api"),
+    ],
+)
+
 py_library(
     name = "pyobservability",
     srcs = [
         "__init__.py",
-        "_gcp_observability.py",
-        "_measures.py",
         "_observability.py",
-        "_observability_config.py",
-        "_views.py",
     ],
     imports = [
         ".",
@@ -73,6 +85,7 @@ py_library(
         "//:__subpackages__",
     ],
     deps = [
+        ":_opentelemetry_observability",
         ":cyobservability",
     ],
 )

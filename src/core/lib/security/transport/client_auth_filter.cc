@@ -16,8 +16,12 @@
 //
 //
 
+#include <grpc/credentials.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
-
+#include <grpc/support/string_util.h>
 #include <string.h>
 
 #include <functional>
@@ -27,20 +31,11 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/promise.h"
@@ -53,6 +48,8 @@
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 #define MAX_CREDENTIALS_METADATA_COUNT 4
 
@@ -110,8 +107,7 @@ ClientAuthFilter::ClientAuthFilter(
 
 ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
     CallArgs call_args) {
-  auto* ctx = static_cast<grpc_client_security_context*>(
-      GetContext<grpc_call_context_element>()[GRPC_CONTEXT_SECURITY].value);
+  auto* ctx = GetContext<grpc_client_security_context>();
   grpc_call_credentials* channel_call_creds =
       args_.security_connector->mutable_request_metadata_creds();
   const bool call_creds_has_md = (ctx != nullptr) && (ctx->creds != nullptr);
@@ -178,17 +174,13 @@ ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
 
 ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  auto* legacy_ctx = GetContext<grpc_call_context_element>();
-  if (legacy_ctx[GRPC_CONTEXT_SECURITY].value == nullptr) {
-    legacy_ctx[GRPC_CONTEXT_SECURITY].value =
-        grpc_client_security_context_create(GetContext<Arena>(),
-                                            /*creds=*/nullptr);
-    legacy_ctx[GRPC_CONTEXT_SECURITY].destroy =
-        grpc_client_security_context_destroy;
+  auto* sec_ctx = MaybeGetContext<grpc_client_security_context>();
+  if (sec_ctx == nullptr) {
+    sec_ctx = grpc_client_security_context_create(GetContext<Arena>(),
+                                                  /*creds=*/nullptr);
+    SetContext<SecurityContext>(sec_ctx);
   }
-  static_cast<grpc_client_security_context*>(
-      legacy_ctx[GRPC_CONTEXT_SECURITY].value)
-      ->auth_context = args_.auth_context;
+  sec_ctx->auth_context = args_.auth_context;
 
   auto* host =
       call_args.client_initial_metadata->get_pointer(HttpAuthorityMetadata());
@@ -204,7 +196,7 @@ ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
       next_promise_factory);
 }
 
-absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(
+absl::StatusOr<std::unique_ptr<ClientAuthFilter>> ClientAuthFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
   auto* sc = args.GetObject<grpc_security_connector>();
   if (sc == nullptr) {
@@ -216,12 +208,12 @@ absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(
     return absl::InvalidArgumentError(
         "Auth context missing from client auth filter args");
   }
-  return ClientAuthFilter(sc->RefAsSubclass<grpc_channel_security_connector>(),
-                          auth_context->Ref());
+  return std::make_unique<ClientAuthFilter>(
+      sc->RefAsSubclass<grpc_channel_security_connector>(),
+      auth_context->Ref());
 }
 
 const grpc_channel_filter ClientAuthFilter::kFilter =
-    MakePromiseBasedFilter<ClientAuthFilter, FilterEndpoint::kClient>(
-        "client-auth-filter");
+    MakePromiseBasedFilter<ClientAuthFilter, FilterEndpoint::kClient>();
 
 }  // namespace grpc_core

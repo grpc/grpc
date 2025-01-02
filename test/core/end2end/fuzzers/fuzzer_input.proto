@@ -18,8 +18,11 @@ package fuzzer_input;
 
 import "test/core/end2end/fuzzers/api_fuzzer.proto";
 import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
-import "test/core/util/fuzz_config_vars.proto";
-import "test/core/util/fuzzing_channel_args.proto";
+import "test/core/test_util/fuzz_config_vars.proto";
+import "test/core/test_util/fuzzing_channel_args.proto";
+import "src/core/ext/transport/chaotic_good/chaotic_good_frame.proto";
+
+message Empty{};
 
 message H2DataFrame {
     uint32 stream_id = 1;
@@ -63,6 +66,10 @@ message SimpleHeaders {
     optional string grpclb_client_stats = 24;
     optional string lb_token = 25;
     optional string lb_cost_bin = 26;
+
+    optional string chaotic_good_connection_type = 27;
+    optional string chaotic_good_connection_id = 28;
+    optional string chaotic_good_alignment = 29;
 }
 
 message H2HeaderFrame {
@@ -115,7 +122,74 @@ message H2WindowUpdateFrame {
     uint32 increment = 2;
 }
 
+message H2SecurityFrame {
+    bytes payload = 1;
+}
+
 message H2ClientPrefix {}
+
+message ChaoticGoodServerFragment {
+    uint32 stream_id = 1;
+    oneof headers {
+        Empty headers_none = 11;
+        bytes headers_raw_bytes = 12;
+        SimpleHeaders headers_simple_header = 13;
+    }
+    oneof data {
+        Empty none = 21;
+        uint32 length = 22;
+    }
+    oneof trailers {
+        Empty trailers_none = 31;
+        bytes trailers_raw_bytes = 32;
+        SimpleHeaders trailers_simple_header = 33;
+    }
+}
+
+message ChaoticGoodPayloadOtherConnection {
+    uint32 connection_id = 1;
+    uint32 length = 2;
+}
+
+message ChaoticGoodFrame {
+    enum FrameType {
+        SETTINGS = 0;
+        CLIENT_INITIAL_METADATA = 1;
+        MESSAGE = 2;
+        CLIENT_END_OF_STREAM = 3;
+        SERVER_INITIAL_METADATA = 4;
+        SERVER_TRAILING_METADATA = 5;
+        CANCEL = 6;
+    };
+    uint32 stream_id = 1;
+    oneof frame_type {
+        FrameType known_type = 2;
+        uint32 unknown_type = 3;
+    }
+    oneof payload {
+        ChaoticGoodPayloadOtherConnection payload_other_connection_id = 10;
+        Empty payload_none = 11;
+        bytes payload_raw_bytes = 12;
+        uint32 payload_empty_of_length = 13;
+        chaotic_good_frame.Settings settings = 14;
+        chaotic_good_frame.ClientMetadata client_metadata = 15;
+        chaotic_good_frame.ServerMetadata server_metadata = 16;
+    }
+}
+
+message FakeTransportFrame {
+    enum MessageString {
+        CLIENT_INIT = 0;
+        SERVER_INIT = 1;
+        CLIENT_FINISHED = 2;
+        SERVER_FINISHED = 3;
+    }
+
+    oneof payload {
+        bytes raw_bytes = 1;
+        MessageString message_string = 2;
+    }
+}
 
 message InputSegment {
     int32 delay_ms = 1;
@@ -131,6 +205,9 @@ message InputSegment {
         H2WindowUpdateFrame window_update = 10;
         H2ClientPrefix client_prefix = 11;
         uint32 repeated_zeros = 12;
+        ChaoticGoodFrame chaotic_good = 13;
+        FakeTransportFrame fake_transport_frame = 14;
+        H2SecurityFrame security_frame = 15;
     }
 }
 
@@ -139,16 +216,27 @@ message InputSegments {
 }
 
 message NetworkInput {
+    int32 connect_delay_ms = 3;
+    int32 connect_timeout_ms = 4;
+    grpc.testing.FuzzingChannelArgs endpoint_config = 5;
     oneof value {
         bytes single_read_bytes = 1;
         InputSegments input_segments = 2;
     }
 }
 
+// Only for connector fuzzer, when to drop the connector
+message ShutdownConnector {
+    int32 delay_ms = 1;
+    int32 shutdown_status = 2;
+    string shutdown_message = 3;
+}
+
 message Msg {
-    NetworkInput network_input = 1;
+    repeated NetworkInput network_input = 1;
     repeated api_fuzzer.Action api_actions = 2;
     fuzzing_event_engine.Actions event_engine_actions = 3;
     grpc.testing.FuzzConfigVars config_vars = 4;
     grpc.testing.FuzzingChannelArgs channel_args = 5;
+    ShutdownConnector shutdown_connector = 6;
 }

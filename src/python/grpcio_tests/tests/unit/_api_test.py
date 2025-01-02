@@ -112,20 +112,61 @@ class ChannelConnectivityTest(unittest.TestCase):
 
 
 class ChannelTest(unittest.TestCase):
-    def test_secure_channel(self):
-        channel_credentials = grpc.ssl_channel_credentials()
-        channel = grpc.secure_channel("google.com:443", channel_credentials)
+    def compute_engine_channel_credentials(self):
+        class TestCallCredentials(grpc.AuthMetadataPlugin):
+            def __call__(self, context, callback):
+                callback((), None)
+
+        test_call_credentials = TestCallCredentials()
+        call_credentials = grpc.metadata_call_credentials(
+            test_call_credentials, "test call credentials"
+        )
+        return grpc.compute_engine_channel_credentials(call_credentials)
+
+    def test_ssl_secure_channel(self):
+        channel = grpc.secure_channel(
+            "google.com:443", grpc.ssl_channel_credentials()
+        )
         channel.close()
 
-    def test_multiple_secure_channel(self):
+    def test_compute_engine_secure_channel(self):
+        channel = grpc.secure_channel(
+            "google.com:443", self.compute_engine_channel_credentials()
+        )
+        channel.close()
+
+    def test_multiple_ssl_secure_channel(self):
         _THREAD_COUNT = 10
         wait_group = test_common.WaitGroup(_THREAD_COUNT)
 
         def create_secure_channel():
-            channel_credentials = grpc.ssl_channel_credentials()
             wait_group.done()
             wait_group.wait()
-            channel = grpc.secure_channel("google.com:443", channel_credentials)
+            channel = grpc.secure_channel(
+                "google.com:443", grpc.ssl_channel_credentials()
+            )
+            channel.close()
+
+        threads = []
+        for _ in range(_THREAD_COUNT):
+            thread = threading.Thread(target=create_secure_channel)
+            thread.setDaemon(True)
+            thread.start()
+            threads.append(thread)
+
+        for thread in threads:
+            thread.join()
+
+    def test_multiple_compute_engine_secure_channel(self):
+        _THREAD_COUNT = 10
+        wait_group = test_common.WaitGroup(_THREAD_COUNT)
+
+        def create_secure_channel():
+            wait_group.done()
+            wait_group.wait()
+            channel = grpc.secure_channel(
+                "google.com:443", self.compute_engine_channel_credentials()
+            )
             channel.close()
 
         threads = []

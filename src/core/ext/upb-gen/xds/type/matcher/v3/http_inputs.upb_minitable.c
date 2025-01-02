@@ -3,7 +3,8 @@
  *     xds/type/matcher/v3/http_inputs.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -13,12 +14,17 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 const upb_MiniTable xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init = {
   NULL,
   NULL,
-  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.type.matcher.v3.HttpAttributesCelMatchInput",
+#endif
 };
 
+const upb_MiniTable* xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init_ptr = &xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init,
 };

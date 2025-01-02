@@ -42,6 +42,45 @@ TEST(Context, WithContext) {
   EXPECT_TRUE(test.done);
 }
 
+class BaseContext {
+ public:
+  virtual int Answer() = 0;
+
+ protected:
+  ~BaseContext() = default;
+};
+
+class CorrectContext final : public BaseContext {
+ public:
+  int Answer() override { return 42; }
+};
+
+class IncorrectContext final : public BaseContext {
+ public:
+  int Answer() override { return 0; }
+};
+
+template <>
+struct ContextType<BaseContext> {};
+template <>
+struct ContextSubclass<CorrectContext> {
+  using Base = BaseContext;
+};
+template <>
+struct ContextSubclass<IncorrectContext> {
+  using Base = BaseContext;
+};
+
+TEST(Context, ContextSubclass) {
+  CorrectContext correct;
+  IncorrectContext incorrect;
+  EXPECT_EQ(42,
+            WithContext([]() { return GetContext<BaseContext>()->Answer(); },
+                        &correct)());
+  EXPECT_EQ(0, WithContext([]() { return GetContext<BaseContext>()->Answer(); },
+                           &incorrect)());
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

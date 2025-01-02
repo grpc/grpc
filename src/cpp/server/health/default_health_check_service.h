@@ -19,14 +19,6 @@
 #ifndef GRPC_SRC_CPP_SERVER_HEALTH_DEFAULT_HEALTH_CHECK_SERVICE_H
 #define GRPC_SRC_CPP_SERVER_HEALTH_DEFAULT_HEALTH_CHECK_SERVICE_H
 
-#include <stddef.h>
-
-#include <map>
-#include <memory>
-#include <string>
-
-#include "absl/base/thread_annotations.h"
-
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/service_type.h>
@@ -34,9 +26,15 @@
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/status.h>
+#include <stddef.h>
 
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include <map>
+#include <memory>
+#include <string>
+
+#include "absl/base/thread_annotations.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc {
 

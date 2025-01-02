@@ -19,30 +19,29 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/port_platform.h>
 
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/impl/grpc_types.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/unique_type_name.h"
 
 // --- Constants. ---
 
@@ -137,7 +136,7 @@ struct grpc_channel_credentials
   // two different `grpc_channel_credentials` objects are used but they compare
   // as equal (assuming other channel args match).
   int cmp(const grpc_channel_credentials* other) const {
-    GPR_ASSERT(other != nullptr);
+    CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return cmp_impl(other);
@@ -183,7 +182,7 @@ using CredentialsMetadataArray = std::vector<std::pair<Slice, Slice>>;
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.
 struct grpc_call_credentials
-    : public grpc_core::RefCounted<grpc_call_credentials> {
+    : public grpc_core::DualRefCounted<grpc_call_credentials> {
  public:
   // TODO(roth): Consider whether security connector actually needs to
   // be part of this interface.  Currently, it is here only for the
@@ -218,7 +217,7 @@ struct grpc_call_credentials
   // If this method returns 0, it means that gRPC can treat the two call
   // credentials as effectively the same..
   int cmp(const grpc_call_credentials* other) const {
-    GPR_ASSERT(other != nullptr);
+    CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return cmp_impl(other);

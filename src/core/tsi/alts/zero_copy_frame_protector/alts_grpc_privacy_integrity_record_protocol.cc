@@ -16,18 +16,17 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "absl/log/log.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
+#include "src/core/util/crash.h"
 
 // Privacy-integrity alts_grpc_record_protocol object uses the same struct
 // defined in alts_grpc_record_protocol_common.h.
@@ -40,8 +39,8 @@ static tsi_result alts_grpc_privacy_integrity_protect(
   // Input sanity check.
   if (rp == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to alts_grpc_record_protocol protect.");
+    LOG(ERROR)
+        << "Invalid nullptr arguments to alts_grpc_record_protocol protect.";
     return TSI_INVALID_ARGUMENT;
   }
   // Allocates memory for output frame. In privacy-integrity protect, the
@@ -61,7 +60,7 @@ static tsi_result alts_grpc_privacy_integrity_protect(
           rp->iovec_rp, rp->iovec_buf, unprotected_slices->count,
           protected_iovec, &error_details);
   if (status != GRPC_STATUS_OK) {
-    gpr_log(GPR_ERROR, "Failed to protect, %s", error_details);
+    LOG(ERROR) << "Failed to protect, " << error_details;
     gpr_free(error_details);
     grpc_core::CSliceUnref(protected_slice);
     return TSI_INTERNAL_ERROR;
@@ -77,15 +76,14 @@ static tsi_result alts_grpc_privacy_integrity_unprotect(
   // Input sanity check.
   if (rp == nullptr || protected_slices == nullptr ||
       unprotected_slices == nullptr) {
-    gpr_log(
-        GPR_ERROR,
-        "Invalid nullptr arguments to alts_grpc_record_protocol unprotect.");
+    LOG(ERROR)
+        << "Invalid nullptr arguments to alts_grpc_record_protocol unprotect.";
     return TSI_INVALID_ARGUMENT;
   }
   // Allocates memory for output frame. In privacy-integrity unprotect, the
   // unprotected data are stored in a newly allocated buffer.
   if (protected_slices->length < rp->header_length + rp->tag_length) {
-    gpr_log(GPR_ERROR, "Protected slices do not have sufficient data.");
+    LOG(ERROR) << "Protected slices do not have sufficient data.";
     return TSI_INVALID_ARGUMENT;
   }
   size_t unprotected_frame_size =
@@ -106,7 +104,7 @@ static tsi_result alts_grpc_privacy_integrity_unprotect(
           rp->iovec_rp, header_iovec, rp->iovec_buf, protected_slices->count,
           unprotected_iovec, &error_details);
   if (status != GRPC_STATUS_OK) {
-    gpr_log(GPR_ERROR, "Failed to unprotect, %s", error_details);
+    LOG(ERROR) << "Failed to unprotect, " << error_details;
     gpr_free(error_details);
     grpc_core::CSliceUnref(unprotected_slice);
     return TSI_INTERNAL_ERROR;
@@ -126,8 +124,8 @@ tsi_result alts_grpc_privacy_integrity_record_protocol_create(
     gsec_aead_crypter* crypter, size_t overflow_size, bool is_client,
     bool is_protect, alts_grpc_record_protocol** rp) {
   if (crypter == nullptr || rp == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to alts_grpc_record_protocol create.");
+    LOG(ERROR)
+        << "Invalid nullptr arguments to alts_grpc_record_protocol create.";
     return TSI_INVALID_ARGUMENT;
   }
   auto* impl = static_cast<alts_grpc_record_protocol*>(

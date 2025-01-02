@@ -64,6 +64,10 @@ struct Parameters {
   std::string message_header_extension;
   // Whether to include headers corresponding to imports in source file.
   bool include_import_headers;
+  // Whether to expose synchronous server API.
+  bool allow_sync_server_api;
+  // Whether to generate completion queue API.
+  bool allow_cq_api;
 };
 
 // Return the prologue of the generated header file.

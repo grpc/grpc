@@ -17,8 +17,9 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
-
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
@@ -42,27 +43,24 @@ void CreateSockpair(SOCKET sockpair[2], DWORD flags) {
   int addr_len = sizeof(addr);
 
   lst_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, flags);
-  GPR_ASSERT(lst_sock != INVALID_SOCKET);
+  CHECK(lst_sock != INVALID_SOCKET);
 
-  GPR_ASSERT(bind(lst_sock, (sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR);
-  GPR_ASSERT(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
-  GPR_ASSERT(getsockname(lst_sock, (sockaddr*)&addr, &addr_len) !=
-             SOCKET_ERROR);
+  CHECK(bind(lst_sock, (sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR);
+  CHECK(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
+  CHECK(getsockname(lst_sock, (sockaddr*)&addr, &addr_len) != SOCKET_ERROR);
 
   cli_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, flags);
-  GPR_ASSERT(cli_sock != INVALID_SOCKET);
+  CHECK(cli_sock != INVALID_SOCKET);
 
   auto result =
       WSAConnect(cli_sock, (sockaddr*)&addr, addr_len, NULL, NULL, NULL, NULL);
   if (result != 0) {
-    gpr_log(GPR_DEBUG, "%s",
-            GRPC_WSA_ERROR(WSAGetLastError(), "Failed in WSAConnect")
-                .ToString()
-                .c_str());
+    VLOG(2)
+        << GRPC_WSA_ERROR(WSAGetLastError(), "Failed in WSAConnect").ToString();
     abort();
   }
   svr_sock = accept(lst_sock, (sockaddr*)&addr, &addr_len);
-  GPR_ASSERT(svr_sock != INVALID_SOCKET);
+  CHECK(svr_sock != INVALID_SOCKET);
   closesocket(lst_sock);
   // TODO(hork): see if we can migrate this to IPv6, or break up the socket prep
   // stages.
@@ -72,13 +70,11 @@ void CreateSockpair(SOCKET sockpair[2], DWORD flags) {
   // logged status. WSAEINVAL is expected.
   auto status = PrepareSocket(cli_sock);
   // if (!status.ok()) {
-  //   gpr_log(GPR_DEBUG, "Error preparing client socket: %s",
-  //           status.ToString().c_str());
+  //   VLOG(2) << "Error preparing client socket: " << status.ToString();
   // }
   status = PrepareSocket(svr_sock);
   // if (!status.ok()) {
-  //   gpr_log(GPR_DEBUG, "Error preparing server socket: %s",
-  //           status.ToString().c_str());
+  //   VLOG(2) << "Error preparing server socket: " << status.ToString();
   // }
 
   sockpair[0] = svr_sock;

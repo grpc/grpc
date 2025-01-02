@@ -13,15 +13,13 @@
 // limitations under the License.
 
 #include "absl/flags/flag.h"
-
-#include <grpc/support/log.h>
-
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
-#include "src/core/lib/iomgr/load_file.h"
+#include "absl/log/log.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 #include "src/proto/grpc/testing/control.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/qps/benchmark_config.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/parse_json.h"
@@ -36,14 +34,11 @@ namespace grpc {
 namespace testing {
 
 static void RunScenario() {
-  grpc_slice buffer;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(absl::GetFlag(FLAGS_loadtest_config).c_str(),
-                                  0, &buffer)));
-  std::string json_str(grpc_core::StringViewFromSlice(buffer));
+  std::string json_str =
+      grpc_core::testing::GetFileContents(absl::GetFlag(FLAGS_loadtest_config));
   Scenarios scenarios;
   ParseJson(json_str, "grpc.testing.Scenarios", &scenarios);
-  gpr_log(GPR_INFO, "Running %s", scenarios.scenarios(0).name().c_str());
+  LOG(INFO) << "Running " << scenarios.scenarios(0).name();
   const auto result =
       RunScenario(scenarios.scenarios(0).client_config(), 1,
                   scenarios.scenarios(0).server_config(), 1,
@@ -52,8 +47,8 @@ static void RunScenario() {
                   kInsecureCredentialsType, {}, false, 0);
   GetReporter()->ReportQPS(*result);
   GetReporter()->ReportLatency(*result);
-  gpr_log(GPR_ERROR, "Global Stats:\n%s",
-          StatsAsJson(grpc_core::global_stats().Collect().get()).c_str());
+  LOG(ERROR) << "Global Stats:\n"
+             << StatsAsJson(grpc_core::global_stats().Collect().get());
 }
 
 }  // namespace testing

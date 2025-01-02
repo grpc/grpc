@@ -3,10 +3,11 @@
  *     envoy/type/v3/http_status.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_V3_HTTP_STATUS_PROTO_UPB_H_
-#define ENVOY_TYPE_V3_HTTP_STATUS_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_V3_HTTP_STATUS_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_V3_HTTP_STATUS_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -23,7 +24,7 @@
 extern "C" {
 #endif
 
-typedef struct envoy_type_v3_HttpStatus envoy_type_v3_HttpStatus;
+typedef struct envoy_type_v3_HttpStatus { upb_Message UPB_PRIVATE(base); } envoy_type_v3_HttpStatus;
 
 typedef enum {
   envoy_type_v3_Empty = 0,
@@ -95,7 +96,8 @@ UPB_INLINE envoy_type_v3_HttpStatus* envoy_type_v3_HttpStatus_new(upb_Arena* are
 UPB_INLINE envoy_type_v3_HttpStatus* envoy_type_v3_HttpStatus_parse(const char* buf, size_t size, upb_Arena* arena) {
   envoy_type_v3_HttpStatus* ret = envoy_type_v3_HttpStatus_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy__type__v3__HttpStatus_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__type__v3__HttpStatus_msg_init, NULL, 0, arena) !=
+      kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -105,38 +107,39 @@ UPB_INLINE envoy_type_v3_HttpStatus* envoy_type_v3_HttpStatus_parse_ex(const cha
                            int options, upb_Arena* arena) {
   envoy_type_v3_HttpStatus* ret = envoy_type_v3_HttpStatus_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy__type__v3__HttpStatus_msg_init, extreg, options, arena) !=
-      kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__type__v3__HttpStatus_msg_init, extreg, options,
+                 arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
 UPB_INLINE char* envoy_type_v3_HttpStatus_serialize(const envoy_type_v3_HttpStatus* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy__type__v3__HttpStatus_msg_init, 0, arena, &ptr, len);
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__HttpStatus_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* envoy_type_v3_HttpStatus_serialize_ex(const envoy_type_v3_HttpStatus* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy__type__v3__HttpStatus_msg_init, options, arena, &ptr, len);
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__v3__HttpStatus_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE void envoy_type_v3_HttpStatus_clear_code(envoy_type_v3_HttpStatus* msg) {
-  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_ClearNonExtensionField(msg, &field);
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE int32_t envoy_type_v3_HttpStatus_code(const envoy_type_v3_HttpStatus* msg) {
   int32_t default_val = 0;
   int32_t ret;
-  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
   return ret;
 }
 
 UPB_INLINE void envoy_type_v3_HttpStatus_set_code(envoy_type_v3_HttpStatus *msg, int32_t value) {
-  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField(msg, &field, &value);
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 #ifdef __cplusplus
@@ -145,4 +148,4 @@ UPB_INLINE void envoy_type_v3_HttpStatus_set_code(envoy_type_v3_HttpStatus *msg,
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_V3_HTTP_STATUS_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_V3_HTTP_STATUS_PROTO_UPB_H__UPB_H_ */

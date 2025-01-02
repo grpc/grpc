@@ -41,7 +41,8 @@ grpc_cc_library(
     deps = [
         "//:grpc++",
         "//src/cpp/ext/otel:otel_plugin",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/end2end:test_service_impl",
     ],
 )
@@ -62,7 +63,7 @@ grpc_cc_test(
         ":otel_test_library",
         "//:grpc++",
         "//src/cpp/ext/otel:otel_plugin",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/end2end:test_service_impl",
     ],
 )

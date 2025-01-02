@@ -25,59 +25,81 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/external/aws_request_signer.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
+#include "src/core/util/http_client/httpcli.h"
+#include "src/core/util/http_client/parser.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 
 class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
-  static RefCountedPtr<AwsExternalAccountCredentials> Create(
+  static absl::StatusOr<RefCountedPtr<AwsExternalAccountCredentials>> Create(
       Options options, std::vector<std::string> scopes,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr);
+
+  AwsExternalAccountCredentials(
+      Options options, std::vector<std::string> scopes,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine,
       grpc_error_handle* error);
 
-  AwsExternalAccountCredentials(Options options,
-                                std::vector<std::string> scopes,
-                                grpc_error_handle* error);
+  std::string debug_string() override;
+
+  static UniqueTypeName Type();
+
+  UniqueTypeName type() const override { return Type(); }
 
  private:
-  bool ShouldUseMetadataServer();
-  void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const Options& options,
-      std::function<void(std::string, grpc_error_handle)> cb) override;
+  // A FetchBody impl that itself performs a sequence of FetchBody operations.
+  class AwsFetchBody : public FetchBody {
+   public:
+    AwsFetchBody(absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done,
+                 AwsExternalAccountCredentials* creds, Timestamp deadline);
 
-  void RetrieveRegion();
-  static void OnRetrieveRegion(void* arg, grpc_error_handle error);
-  void OnRetrieveRegionInternal(grpc_error_handle error);
+   private:
+    void Shutdown() override;
 
-  void RetrieveImdsV2SessionToken();
-  static void OnRetrieveImdsV2SessionToken(void* arg, grpc_error_handle error);
-  void OnRetrieveImdsV2SessionTokenInternal(grpc_error_handle error);
+    void AsyncFinish(absl::StatusOr<std::string> result);
+    bool MaybeFail(absl::Status status) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
-  void RetrieveRoleName();
-  static void OnRetrieveRoleName(void* arg, grpc_error_handle error);
-  void OnRetrieveRoleNameInternal(grpc_error_handle error);
+    void Start();
+    void RetrieveImdsV2SessionToken() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+    void RetrieveRegion() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+    void RetrieveRoleName() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+    void RetrieveSigningKeys() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+    void OnRetrieveSigningKeys(std::string result)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+    void BuildSubjectToken() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
-  void RetrieveSigningKeys();
-  static void OnRetrieveSigningKeys(void* arg, grpc_error_handle error);
-  void OnRetrieveSigningKeysInternal(grpc_error_handle error);
+    void AddMetadataRequestHeaders(grpc_http_request* request);
 
-  void BuildSubjectToken();
-  void FinishRetrieveSubjectToken(std::string subject_token,
-                                  grpc_error_handle error);
+    AwsExternalAccountCredentials* creds_;
+    Timestamp deadline_;
 
-  void AddMetadataRequestHeaders(grpc_http_request* request);
+    Mutex mu_;
+    OrphanablePtr<FetchBody> fetch_body_ ABSL_GUARDED_BY(&mu_);
+
+    // Information required by request signer
+    std::string region_;
+    std::string role_name_;
+    std::string access_key_id_;
+    std::string secret_access_key_;
+    std::string token_;
+    std::string imdsv2_session_token_;
+  };
+
+  OrphanablePtr<FetchBody> RetrieveSubjectToken(
+      Timestamp deadline,
+      absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) override;
 
   absl::string_view CredentialSourceType() override;
 
   std::string audience_;
-  OrphanablePtr<HttpRequest> http_request_;
 
   // Fields of credential source
   std::string region_url_;
@@ -85,19 +107,9 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
   std::string regional_cred_verification_url_;
   std::string imdsv2_session_token_url_;
 
-  // Information required by request signer
-  std::string region_;
-  std::string role_name_;
-  std::string access_key_id_;
-  std::string secret_access_key_;
-  std::string token_;
-  std::string imdsv2_session_token_;
-
+  // These fields are set on the first fetch attempt and cached after that.
   std::unique_ptr<AwsRequestSigner> signer_;
   std::string cred_verification_url_;
-
-  HTTPRequestContext* ctx_ = nullptr;
-  std::function<void(std::string, grpc_error_handle)> cb_ = nullptr;
 };
 
 }  // namespace grpc_core

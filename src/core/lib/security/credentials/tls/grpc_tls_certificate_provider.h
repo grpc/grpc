@@ -17,30 +17,27 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
 
+#include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
-
+#include <grpc/support/sync.h>
 #include <stdint.h>
 
 #include <map>
 #include <string>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
+#include "src/core/util/unique_type_name.h"
+#include "src/core/util/useful.h"
 
 // Interface for a grpc_tls_certificate_provider that handles the process to
 // fetch credentials and validation contexts. Implementations are free to rely
@@ -66,7 +63,7 @@ struct grpc_tls_certificate_provider
   // be reused when two different `grpc_tls_certificate_provider` objects are
   // used but they compare as equal (assuming other channel args match).
   int Compare(const grpc_tls_certificate_provider* other) const {
-    GPR_ASSERT(other != nullptr);
+    CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return CompareImpl(other);
@@ -109,6 +106,8 @@ class StaticDataCertificateProvider final
 
   UniqueTypeName type() const override;
 
+  absl::Status ValidateCredentials() const;
+
  private:
   struct WatcherInfo {
     bool root_being_watched = false;
@@ -148,6 +147,8 @@ class FileWatcherCertificateProvider final
 
   UniqueTypeName type() const override;
 
+  absl::Status ValidateCredentials() const;
+
   int64_t TestOnlyGetRefreshIntervalSecond() const;
 
  private:
@@ -184,7 +185,7 @@ class FileWatcherCertificateProvider final
   gpr_event shutdown_event_;
 
   // Guards members below.
-  Mutex mu_;
+  mutable Mutex mu_;
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
   std::string root_certificate_ ABSL_GUARDED_BY(mu_);

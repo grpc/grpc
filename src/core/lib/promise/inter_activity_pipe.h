@@ -16,7 +16,6 @@
 #define GRPC_SRC_CORE_LIB_PROMISE_INTER_ACTIVITY_PIPE_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <array>
@@ -24,17 +23,34 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/types/optional.h"
-
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
 template <typename T, uint8_t kQueueSize>
 class InterActivityPipe {
+ public:
+  class NextResult {
+   public:
+    template <typename... Args>
+    explicit NextResult(Args&&... args) : value_(std::forward<Args>(args)...) {}
+    using value_type = T;
+    void reset() { value_.reset(); }
+    bool cancelled() const { return false; }
+    bool has_value() const { return value_.has_value(); }
+    const T& value() const { return value_.value(); }
+    T& value() { return value_.value(); }
+    const T& operator*() const { return *value_; }
+    T& operator*() { return *value_; }
+
+   private:
+    absl::optional<T> value_;
+  };
+
  private:
   class Center : public RefCounted<Center, NonPolymorphicRefCount> {
    public:
@@ -42,7 +58,7 @@ class InterActivityPipe {
       ReleasableMutexLock lock(&mu_);
       if (closed_) return false;
       if (count_ == kQueueSize) {
-        on_available_ = Activity::current()->MakeNonOwningWaker();
+        on_available_ = GetContext<Activity>()->MakeNonOwningWaker();
         return Pending{};
       }
       queue_[(first_ + count_) % kQueueSize] = std::move(value);
@@ -55,11 +71,11 @@ class InterActivityPipe {
       return true;
     }
 
-    Poll<absl::optional<T>> Next() {
+    Poll<NextResult> Next() {
       ReleasableMutexLock lock(&mu_);
       if (count_ == 0) {
         if (closed_) return absl::nullopt;
-        on_occupied_ = Activity::current()->MakeNonOwningWaker();
+        on_occupied_ = GetContext<Activity>()->MakeNonOwningWaker();
         return Pending{};
       }
       auto value = std::move(queue_[first_]);
@@ -113,9 +129,9 @@ class InterActivityPipe {
       if (center_ != nullptr) center_->MarkClosed();
     }
 
-    bool IsClose() { return center_->IsClosed(); }
+    bool IsClosed() { return center_->IsClosed(); }
 
-    void MarkClose() {
+    void MarkClosed() {
       if (center_ != nullptr) center_->MarkClosed();
     }
 
@@ -144,6 +160,12 @@ class InterActivityPipe {
 
     auto Next() {
       return [center = center_]() { return center->Next(); };
+    }
+
+    bool IsClose() { return center_->IsClosed(); }
+
+    void MarkClose() {
+      if (center_ != nullptr) center_->MarkClosed();
     }
 
    private:

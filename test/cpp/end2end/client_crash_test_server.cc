@@ -16,18 +16,17 @@
 //
 //
 
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+
 #include <iostream>
 #include <memory>
 #include <string>
 
 #include "absl/flags/flag.h"
-
-#include <grpc/support/log.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-#include <grpcpp/server_context.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "absl/log/log.h"
+#include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/test_config.h"
 
@@ -46,7 +45,7 @@ class ServiceImpl final : public grpc::testing::EchoTestService::Service {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
-      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
+      LOG(INFO) << "recv msg " << request.message();
       response.set_message(request.message());
       stream->Write(response);
     }

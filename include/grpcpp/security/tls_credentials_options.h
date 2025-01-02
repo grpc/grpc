@@ -19,17 +19,16 @@
 #ifndef GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 #define GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 
-#include <memory>
-#include <vector>
-
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/security/tls_crl_provider.h>
 #include <grpcpp/support/config.h>
+
+#include <memory>
+#include <vector>
 
 namespace grpc {
 namespace experimental {
@@ -45,6 +44,12 @@ class TlsCredentialsOptions {
   // will be used in the TLS handshake
   TlsCredentialsOptions();
   ~TlsCredentialsOptions();
+
+  // Copy constructor does a deep copy of the underlying pointer. No assignment
+  // permitted
+  TlsCredentialsOptions(const TlsCredentialsOptions& other);
+  TlsCredentialsOptions& operator=(const TlsCredentialsOptions& other) = delete;
+
   // ---- Setters for member fields ----
   // Sets the certificate provider used to store root certs and identity certs.
   void set_certificate_provider(
@@ -97,6 +102,8 @@ class TlsCredentialsOptions {
   // call is covered by the cert that the peer presented.
   // We will perform such checks by default. This should be disabled if
   // verifiers other than the host name verifier is used.
+  // Deprecated: This function will be removed in the 1.66 release. This will be
+  // replaced by and handled within the custom verifier settings.
   void set_check_call_host(bool check_call_host);
 
   // Deprecated in favor of set_crl_provider. The
@@ -105,6 +112,8 @@ class TlsCredentialsOptions {
   // If set, gRPC will read all hashed x.509 CRL files in the directory and
   // enforce the CRL files on all TLS handshakes. Only supported for OpenSSL
   // version > 1.1.
+  // Deprecated: This function will be removed in the 1.66 release. Use the
+  // set_crl_provider function instead.
   void set_crl_directory(const std::string& path);
 
   void set_crl_provider(std::shared_ptr<CrlProvider> crl_provider);
@@ -178,6 +187,7 @@ class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
   // WARNING: This API is extremely dangerous and should not be used. If the
   // server's trust bundle is too large, then the TLS server will be unable to
   // form a ServerHello, and hence will be unusable.
+  // Deprecated: This function will be removed in the 1.66 release.
   void set_send_client_ca_list(bool send_client_ca_list);
 
  private:

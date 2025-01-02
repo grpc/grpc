@@ -16,22 +16,21 @@
 //
 //
 
+#include <benchmark/benchmark.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <string.h>
 
 #include <atomic>
 
-#include <benchmark/benchmark.h>
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/time.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/time.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
@@ -75,14 +74,14 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
                                       grpc_pollset_worker** /*worker*/,
                                       grpc_core::Timestamp deadline) {
   if (deadline == grpc_core::Timestamp::ProcessEpoch()) {
-    gpr_log(GPR_DEBUG, "no-op");
+    VLOG(2) << "no-op";
     return absl::OkStatus();
   }
 
   gpr_mu_unlock(&ps->mu);
 
   void* tag = reinterpret_cast<void*>(10);  // Some random number
-  GPR_ASSERT(grpc_cq_begin_op(g_cq, tag));
+  CHECK(grpc_cq_begin_op(g_cq, tag));
   grpc_cq_end_op(
       g_cq, tag, absl::OkStatus(), cq_done_cb, nullptr,
       static_cast<grpc_cq_completion*>(gpr_malloc(sizeof(grpc_cq_completion))));
@@ -117,9 +116,8 @@ static grpc_event_engine_vtable make_engine_vtable(const char* name) {
 
 static void setup() {
   grpc_init();
-  GPR_ASSERT(strcmp(grpc_get_poll_strategy_name(), "none") == 0 ||
-             strcmp(grpc_get_poll_strategy_name(), "bm_cq_multiple_threads") ==
-                 0);
+  CHECK(strcmp(grpc_get_poll_strategy_name(), "none") == 0 ||
+        strcmp(grpc_get_poll_strategy_name(), "bm_cq_multiple_threads") == 0);
 
   g_cq = grpc_completion_queue_create_for_next(nullptr);
 }
@@ -176,8 +174,8 @@ static void BM_Cq_Throughput(benchmark::State& state) {
   gpr_mu_unlock(&g_mu);
 
   for (auto _ : state) {
-    GPR_ASSERT(grpc_completion_queue_next(g_cq, deadline, nullptr).type ==
-               GRPC_OP_COMPLETE);
+    CHECK(grpc_completion_queue_next(g_cq, deadline, nullptr).type ==
+          GRPC_OP_COMPLETE);
   }
 
   state.SetItemsProcessed(state.iterations());

@@ -40,11 +40,9 @@ if(UPB_ENABLE_UBSAN)
 endif()
 
 if(NOT TARGET utf8_range)
-  if(EXISTS ../../external/utf8_range)
+  if(EXISTS ../../third_party/utf8_range)
     # utf8_range is already installed
-    include_directories(../external/utf8_range)
-  elseif(EXISTS ../../utf8_range)
-    include_directories(../../utf8_range)
+    include_directories(../../third_party/utf8_range)
   else()
     include(FetchContent)
     FetchContent_Declare(
@@ -69,37 +67,22 @@ endif()
 enable_testing()
 
 
-add_library(upb INTERFACE
-    
-)
-target_include_directories(upb INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../cmake>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINRARY_DIR}>
-)
-target_link_libraries(upb INTERFACE
-  base
-  mem)
-
 add_library(generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me INTERFACE
     
 )
 target_include_directories(generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../cmake>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINRARY_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 target_link_libraries(generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me INTERFACE
   base
   mem
   message
-  message_accessors
-  message_accessors_internal
-  message_internal
   mini_descriptor
   mini_table
   wire
-  wire_internal)
+  /upb/message:internal)
 
 add_library(generated_cpp_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me INTERFACE
     
@@ -107,20 +90,7 @@ add_library(generated_cpp_support__only_for_generated_code_do_not_use__i_give_pe
 target_include_directories(generated_cpp_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../cmake>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINRARY_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
-
-add_library(generated_reflection_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me INTERFACE
-    
-)
-target_include_directories(generated_reflection_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../cmake>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINRARY_DIR}>
-)
-target_link_libraries(generated_reflection_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me INTERFACE
-  mem
-  mini_descriptor
-  reflection_internal)
 
 

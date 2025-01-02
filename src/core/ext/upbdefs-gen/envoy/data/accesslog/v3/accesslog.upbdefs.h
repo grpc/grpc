@@ -3,21 +3,19 @@
  *     envoy/data/accesslog/v3/accesslog.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_DATA_ACCESSLOG_V3_ACCESSLOG_PROTO_UPBDEFS_H_
-#define ENVOY_DATA_ACCESSLOG_V3_ACCESSLOG_PROTO_UPBDEFS_H_
+#ifndef ENVOY_DATA_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_DATA_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
-#include "upb/port/def.inc"
+
+#include "upb/port/def.inc" // Must be last.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "upb/reflection/def.h"
-
-#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init envoy_data_accesslog_v3_accesslog_proto_upbdefinit;
 
@@ -107,4 +105,4 @@ UPB_INLINE const upb_MessageDef *envoy_data_accesslog_v3_HTTPResponseProperties_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_DATA_ACCESSLOG_V3_ACCESSLOG_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_DATA_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H__UPBDEFS_H_ */

@@ -14,49 +14,46 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <functional>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-
-#include "src/core/ext/filters/deadline/deadline_filter.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/service_config/service_config_call_data.h"
+#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
 
 const NoInterceptor ClientMessageSizeFilter::Call::OnClientInitialMetadata;
 const NoInterceptor ClientMessageSizeFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ClientMessageSizeFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ClientMessageSizeFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ClientMessageSizeFilter::Call::OnFinalize;
 const NoInterceptor ServerMessageSizeFilter::Call::OnClientInitialMetadata;
 const NoInterceptor ServerMessageSizeFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ServerMessageSizeFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ServerMessageSizeFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ServerMessageSizeFilter::Call::OnFinalize;
 
 //
@@ -64,11 +61,8 @@ const NoInterceptor ServerMessageSizeFilter::Call::OnFinalize;
 //
 
 const MessageSizeParsedConfig* MessageSizeParsedConfig::GetFromCallContext(
-    const grpc_call_context_element* context,
-    size_t service_config_parser_index) {
-  if (context == nullptr) return nullptr;
-  auto* svc_cfg_call_data = static_cast<ServiceConfigCallData*>(
-      context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+    Arena* arena, size_t service_config_parser_index) {
+  auto* svc_cfg_call_data = arena->GetContext<ServiceConfigCallData>();
   if (svc_cfg_call_data == nullptr) return nullptr;
   return static_cast<const MessageSizeParsedConfig*>(
       svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index));
@@ -141,40 +135,39 @@ size_t MessageSizeParser::ParserIndex() {
 const grpc_channel_filter ClientMessageSizeFilter::kFilter =
     MakePromiseBasedFilter<ClientMessageSizeFilter, FilterEndpoint::kClient,
                            kFilterExaminesOutboundMessages |
-                               kFilterExaminesInboundMessages>("message_size");
+                               kFilterExaminesInboundMessages>();
+
 const grpc_channel_filter ServerMessageSizeFilter::kFilter =
     MakePromiseBasedFilter<ServerMessageSizeFilter, FilterEndpoint::kServer,
                            kFilterExaminesOutboundMessages |
-                               kFilterExaminesInboundMessages>("message_size");
+                               kFilterExaminesInboundMessages>();
 
-absl::StatusOr<ClientMessageSizeFilter> ClientMessageSizeFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args) {
-  return ClientMessageSizeFilter(args);
+absl::StatusOr<std::unique_ptr<ClientMessageSizeFilter>>
+ClientMessageSizeFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
+  return std::make_unique<ClientMessageSizeFilter>(args);
 }
 
-absl::StatusOr<ServerMessageSizeFilter> ServerMessageSizeFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args) {
-  return ServerMessageSizeFilter(args);
+absl::StatusOr<std::unique_ptr<ServerMessageSizeFilter>>
+ServerMessageSizeFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
+  return std::make_unique<ServerMessageSizeFilter>(args);
 }
 
 namespace {
 ServerMetadataHandle CheckPayload(const Message& msg,
                                   absl::optional<uint32_t> max_length,
-                                  bool is_send) {
+                                  bool is_client, bool is_send) {
   if (!max_length.has_value()) return nullptr;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_call_trace)) {
-    gpr_log(GPR_INFO, "%s[message_size] %s len:%" PRIdPTR " max:%d",
-            Activity::current()->DebugTag().c_str(), is_send ? "send" : "recv",
-            msg.payload()->Length(), *max_length);
-  }
+  GRPC_TRACE_LOG(call, INFO)
+      << GetContext<Activity>()->DebugTag() << "[message_size] "
+      << (is_send ? "send" : "recv") << " len:" << msg.payload()->Length()
+      << " max:" << *max_length;
   if (msg.payload()->Length() <= *max_length) return nullptr;
-  auto r = GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
-  r->Set(GrpcStatusMetadata(), GRPC_STATUS_RESOURCE_EXHAUSTED);
-  r->Set(GrpcMessageMetadata(), Slice::FromCopiedString(absl::StrFormat(
-                                    "%s message larger than max (%u vs. %d)",
-                                    is_send ? "Sent" : "Received",
-                                    msg.payload()->Length(), *max_length)));
-  return r;
+  return ServerMetadataFromStatus(
+      GRPC_STATUS_RESOURCE_EXHAUSTED,
+      absl::StrFormat("%s: %s message larger than max (%u vs. %d)",
+                      is_client ? "CLIENT" : "SERVER",
+                      is_send ? "Sent" : "Received", msg.payload()->Length(),
+                      *max_length));
 }
 }  // namespace
 
@@ -186,20 +179,19 @@ ClientMessageSizeFilter::Call::Call(ClientMessageSizeFilter* filter)
   // size to the receive limit.
   const MessageSizeParsedConfig* config_from_call_context =
       MessageSizeParsedConfig::GetFromCallContext(
-          GetContext<grpc_call_context_element>(),
-          filter->service_config_parser_index_);
+          GetContext<Arena>(), filter->service_config_parser_index_);
   if (config_from_call_context != nullptr) {
     absl::optional<uint32_t> max_send_size = limits_.max_send_size();
     absl::optional<uint32_t> max_recv_size = limits_.max_recv_size();
     if (config_from_call_context->max_send_size().has_value() &&
         (!max_send_size.has_value() ||
          *config_from_call_context->max_send_size() < *max_send_size)) {
-      max_send_size = *config_from_call_context->max_send_size();
+      max_send_size = config_from_call_context->max_send_size();
     }
     if (config_from_call_context->max_recv_size().has_value() &&
         (!max_recv_size.has_value() ||
          *config_from_call_context->max_recv_size() < *max_recv_size)) {
-      max_recv_size = *config_from_call_context->max_recv_size();
+      max_recv_size = config_from_call_context->max_recv_size();
     }
     limits_ = MessageSizeParsedConfig(max_send_size, max_recv_size);
   }
@@ -207,22 +199,34 @@ ClientMessageSizeFilter::Call::Call(ClientMessageSizeFilter* filter)
 
 ServerMetadataHandle ServerMessageSizeFilter::Call::OnClientToServerMessage(
     const Message& message, ServerMessageSizeFilter* filter) {
-  return CheckPayload(message, filter->parsed_config_.max_recv_size(), false);
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "ServerMessageSizeFilter::Call::OnClientToServerMessage");
+  return CheckPayload(message, filter->parsed_config_.max_recv_size(),
+                      /*is_client=*/false, false);
 }
 
 ServerMetadataHandle ServerMessageSizeFilter::Call::OnServerToClientMessage(
     const Message& message, ServerMessageSizeFilter* filter) {
-  return CheckPayload(message, filter->parsed_config_.max_send_size(), true);
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "ServerMessageSizeFilter::Call::OnServerToClientMessage");
+  return CheckPayload(message, filter->parsed_config_.max_send_size(),
+                      /*is_client=*/false, true);
 }
 
 ServerMetadataHandle ClientMessageSizeFilter::Call::OnClientToServerMessage(
     const Message& message) {
-  return CheckPayload(message, limits_.max_send_size(), true);
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "ClientMessageSizeFilter::Call::OnClientToServerMessage");
+  return CheckPayload(message, limits_.max_send_size(), /*is_client=*/true,
+                      true);
 }
 
 ServerMetadataHandle ClientMessageSizeFilter::Call::OnServerToClientMessage(
     const Message& message) {
-  return CheckPayload(message, limits_.max_recv_size(), false);
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "ClientMessageSizeFilter::Call::OnServerToClientMessage");
+  return CheckPayload(message, limits_.max_recv_size(), /*is_client=*/true,
+                      false);
 }
 
 namespace {
@@ -240,25 +244,15 @@ bool HasMessageSizeLimits(const ChannelArgs& channel_args) {
 void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder) {
   MessageSizeParser::Register(builder);
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
-                       &ClientMessageSizeFilter::kFilter)
+      ->RegisterFilter<ClientMessageSizeFilter>(GRPC_CLIENT_SUBCHANNEL)
       .ExcludeFromMinimalStack();
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
-                       &ClientMessageSizeFilter::kFilter)
+      ->RegisterFilter<ClientMessageSizeFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .ExcludeFromMinimalStack()
-      .If(HasMessageSizeLimits)
-      // TODO(ctiller): ordering constraint is here to match the ordering that
-      // existed prior to ordering constraints did. Re-examine the ordering of
-      // filters from first principles.
-      .Before({&grpc_client_deadline_filter});
+      .If(HasMessageSizeLimits);
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &ServerMessageSizeFilter::kFilter)
+      ->RegisterFilter<ServerMessageSizeFilter>(GRPC_SERVER_CHANNEL)
       .ExcludeFromMinimalStack()
-      .If(HasMessageSizeLimits)
-      // TODO(ctiller): ordering constraint is here to match the ordering that
-      // existed prior to ordering constraints did. Re-examine the ordering of
-      // filters from first principles.
-      .Before({&grpc_server_deadline_filter});
+      .If(HasMessageSizeLimits);
 }
 }  // namespace grpc_core

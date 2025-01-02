@@ -3,10 +3,11 @@
  *     xds/type/matcher/v3/http_inputs.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_H_
-#define XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_H_
+#ifndef XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_H__UPB_H_
+#define XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -21,7 +22,7 @@
 extern "C" {
 #endif
 
-typedef struct xds_type_matcher_v3_HttpAttributesCelMatchInput xds_type_matcher_v3_HttpAttributesCelMatchInput;
+typedef struct xds_type_matcher_v3_HttpAttributesCelMatchInput { upb_Message UPB_PRIVATE(base); } xds_type_matcher_v3_HttpAttributesCelMatchInput;
 
 
 
@@ -33,7 +34,8 @@ UPB_INLINE xds_type_matcher_v3_HttpAttributesCelMatchInput* xds_type_matcher_v3_
 UPB_INLINE xds_type_matcher_v3_HttpAttributesCelMatchInput* xds_type_matcher_v3_HttpAttributesCelMatchInput_parse(const char* buf, size_t size, upb_Arena* arena) {
   xds_type_matcher_v3_HttpAttributesCelMatchInput* ret = xds_type_matcher_v3_HttpAttributesCelMatchInput_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init, NULL, 0, arena) !=
+      kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -43,21 +45,21 @@ UPB_INLINE xds_type_matcher_v3_HttpAttributesCelMatchInput* xds_type_matcher_v3_
                            int options, upb_Arena* arena) {
   xds_type_matcher_v3_HttpAttributesCelMatchInput* ret = xds_type_matcher_v3_HttpAttributesCelMatchInput_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init, extreg, options, arena) !=
-      kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init, extreg, options,
+                 arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
 UPB_INLINE char* xds_type_matcher_v3_HttpAttributesCelMatchInput_serialize(const xds_type_matcher_v3_HttpAttributesCelMatchInput* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init, 0, arena, &ptr, len);
+  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_HttpAttributesCelMatchInput_serialize_ex(const xds_type_matcher_v3_HttpAttributesCelMatchInput* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init, options, arena, &ptr, len);
+  (void)upb_Encode(UPB_UPCAST(msg), &xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 
@@ -68,4 +70,4 @@ UPB_INLINE char* xds_type_matcher_v3_HttpAttributesCelMatchInput_serialize_ex(co
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_H_ */
+#endif  /* XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_H__UPB_H_ */

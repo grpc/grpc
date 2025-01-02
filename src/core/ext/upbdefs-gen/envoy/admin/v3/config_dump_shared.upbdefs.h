@@ -3,21 +3,19 @@
  *     envoy/admin/v3/config_dump_shared.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPBDEFS_H_
-#define ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPBDEFS_H_
+#ifndef ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
-#include "upb/port/def.inc"
+
+#include "upb/port/def.inc" // Must be last.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "upb/reflection/def.h"
-
-#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init envoy_admin_v3_config_dump_shared_proto_upbdefinit;
 
@@ -122,4 +120,4 @@ UPB_INLINE const upb_MessageDef *envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_H__UPBDEFS_H_ */

@@ -12,24 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <benchmark/benchmark.h>
+#include <grpc/support/cpu.h>
+#include <grpcpp/impl/grpc_library.h>
+
 #include <atomic>
 #include <cmath>
 #include <memory>
 #include <vector>
 
-#include <benchmark/benchmark.h>
-
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/cpu.h>
-#include <grpcpp/impl/grpc_library.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/useful.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
@@ -135,7 +134,7 @@ FanoutParameters GetFanoutParameters(benchmark::State& state) {
         (1 - std::pow(params.fanout, params.depth + 1)) / (1 - params.fanout);
   }
   // sanity checking
-  GPR_ASSERT(params.limit >= params.fanout * params.depth);
+  CHECK(params.limit >= params.fanout * params.depth);
   return params;
 }
 
@@ -155,7 +154,7 @@ void FanOutCallback(std::shared_ptr<ThreadPool> pool,
     signal.Notify();
     return;
   }
-  GPR_DEBUG_ASSERT(local_cnt < params.limit);
+  DCHECK_LT(local_cnt, params.limit);
   if (params.depth == processing_layer) return;
   for (int i = 0; i < params.fanout; i++) {
     pool->Run([pool, params, processing_layer, &count, &signal]() {
@@ -221,7 +220,7 @@ void BM_ThreadPool_Closure_FanOut(benchmark::State& state) {
         }));
   }
   for (auto _ : state) {
-    GPR_DEBUG_ASSERT(count.load(std::memory_order_relaxed) == 0);
+    DCHECK_EQ(count.load(std::memory_order_relaxed), 0);
     pool->Run(closures[params.depth + 1]);
     do {
       signal->WaitForNotification();

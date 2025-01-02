@@ -25,38 +25,40 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/http_client/httpcli.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/uri.h"
 
 namespace grpc_core {
 
 class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
-  static RefCountedPtr<UrlExternalAccountCredentials> Create(
+  static absl::StatusOr<RefCountedPtr<UrlExternalAccountCredentials>> Create(
       Options options, std::vector<std::string> scopes,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr);
+
+  UrlExternalAccountCredentials(
+      Options options, std::vector<std::string> scopes,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine,
       grpc_error_handle* error);
 
-  UrlExternalAccountCredentials(Options options,
-                                std::vector<std::string> scopes,
-                                grpc_error_handle* error);
+  std::string debug_string() override;
+
+  static UniqueTypeName Type();
+
+  UniqueTypeName type() const override { return Type(); }
 
  private:
-  void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const Options& options,
-      std::function<void(std::string, grpc_error_handle)> cb) override;
+  OrphanablePtr<FetchBody> RetrieveSubjectToken(
+      Timestamp deadline,
+      absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) override;
 
   absl::string_view CredentialSourceType() override;
-
-  static void OnRetrieveSubjectToken(void* arg, grpc_error_handle error);
-  void OnRetrieveSubjectTokenInternal(grpc_error_handle error);
-
-  void FinishRetrieveSubjectToken(std::string subject_token,
-                                  grpc_error_handle error);
 
   // Fields of credential source
   URI url_;
@@ -64,10 +66,6 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
   std::map<std::string, std::string> headers_;
   std::string format_type_;
   std::string format_subject_token_field_name_;
-
-  OrphanablePtr<HttpRequest> http_request_;
-  HTTPRequestContext* ctx_ = nullptr;
-  std::function<void(std::string, grpc_error_handle)> cb_ = nullptr;
 };
 
 }  // namespace grpc_core

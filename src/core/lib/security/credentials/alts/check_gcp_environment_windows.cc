@@ -20,17 +20,15 @@
 
 #ifdef GPR_WINDOWS
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
 #include <shellapi.h>
 #include <stdio.h>
 #include <tchar.h>
 #include <windows.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_core {
 namespace internal {

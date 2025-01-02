@@ -18,17 +18,17 @@
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 
-#include <string.h>
-
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
+#include <string.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include "absl/log/check.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/util/useful.h"
 #include "test/core/bad_ssl/server_common.h"
+#include "test/core/test_util/tls_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -53,22 +53,17 @@ size_t grpc_chttp2_num_alpn_versions(void) {
 }
 
 const char* grpc_chttp2_get_alpn_version_index(size_t i) {
-  GPR_ASSERT(i < GPR_ARRAY_SIZE(fake_versions));
+  CHECK(i < GPR_ARRAY_SIZE(fake_versions));
   return fake_versions[i];
 }
 
 int main(int argc, char** argv) {
   const char* addr = bad_ssl_addr(argc, argv);
-  grpc_slice cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-  const char* server_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  const char* server_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
+  std::string server_cert =
+      grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
+  std::string server_key = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
+  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key.c_str(),
+                                                  server_cert.c_str()};
   grpc_server_credentials* ssl_creds;
   grpc_server* server;
 
@@ -76,12 +71,10 @@ int main(int argc, char** argv) {
   ssl_creds = grpc_ssl_server_credentials_create(nullptr, &pem_key_cert_pair, 1,
                                                  0, nullptr);
   server = grpc_server_create(nullptr, nullptr);
-  GPR_ASSERT(grpc_server_add_http2_port(server, addr, ssl_creds));
+  CHECK(grpc_server_add_http2_port(server, addr, ssl_creds));
   grpc_server_credentials_release(ssl_creds);
 
   bad_ssl_run(server);
-  grpc_slice_unref(cert_slice);
-  grpc_slice_unref(key_slice);
   grpc_shutdown();
 
   return 0;

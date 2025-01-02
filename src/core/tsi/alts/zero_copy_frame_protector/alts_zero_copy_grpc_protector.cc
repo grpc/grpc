@@ -16,18 +16,17 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <memory>
 #include <utility>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h"
@@ -85,14 +84,14 @@ static bool read_frame_size(const grpc_slice_buffer* sb,
       remaining -= slice_length;
     }
   }
-  GPR_ASSERT(remaining == 0);
+  CHECK_EQ(remaining, 0u);
   // Gets little-endian frame size.
   uint32_t frame_size = (static_cast<uint32_t>(frame_size_buffer[3]) << 24) |
                         (static_cast<uint32_t>(frame_size_buffer[2]) << 16) |
                         (static_cast<uint32_t>(frame_size_buffer[1]) << 8) |
                         static_cast<uint32_t>(frame_size_buffer[0]);
   if (frame_size > kMaxFrameLength) {
-    gpr_log(GPR_ERROR, "Frame size is larger than maximum frame size");
+    LOG(ERROR) << "Frame size is larger than maximum frame size";
     return false;
   }
   // Returns frame size including frame length field.
@@ -123,7 +122,7 @@ static tsi_result create_alts_grpc_record_protocol(
                                             kAesGcmTagLength, &crypter,
                                             &error_details);
   if (status != GRPC_STATUS_OK) {
-    gpr_log(GPR_ERROR, "Failed to create AEAD crypter, %s", error_details);
+    LOG(ERROR) << "Failed to create AEAD crypter, " << error_details;
     gpr_free(error_details);
     return TSI_INTERNAL_ERROR;
   }
@@ -152,12 +151,12 @@ static tsi_result alts_zero_copy_grpc_protector_protect(
     grpc_slice_buffer* protected_slices) {
   if (self == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
-    gpr_log(GPR_ERROR, "Invalid nullptr arguments to zero-copy grpc protect.");
+    LOG(ERROR) << "Invalid nullptr arguments to zero-copy grpc protect.";
     return TSI_INVALID_ARGUMENT;
   }
   alts_zero_copy_grpc_protector* protector =
       reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
-  // Calls alts_grpc_record_protocol protect repeatly.
+  // Calls alts_grpc_record_protocol protect repeatedly.
   while (unprotected_slices->length > protector->max_unprotected_data_size) {
     grpc_slice_buffer_move_first(unprotected_slices,
                                  protector->max_unprotected_data_size,
@@ -178,8 +177,7 @@ static tsi_result alts_zero_copy_grpc_protector_unprotect(
     grpc_slice_buffer* unprotected_slices, int* min_progress_size) {
   if (self == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to zero-copy grpc unprotect.");
+    LOG(ERROR) << "Invalid nullptr arguments to zero-copy grpc unprotect.";
     return TSI_INVALID_ARGUMENT;
   }
   alts_zero_copy_grpc_protector* protector =
@@ -264,9 +262,8 @@ tsi_result alts_zero_copy_grpc_protector_create(
     size_t* max_protected_frame_size,
     tsi_zero_copy_grpc_protector** protector) {
   if (protector == nullptr) {
-    gpr_log(
-        GPR_ERROR,
-        "Invalid nullptr arguments to alts_zero_copy_grpc_protector create.");
+    LOG(ERROR)
+        << "Invalid nullptr arguments to alts_zero_copy_grpc_protector create.";
     return TSI_INVALID_ARGUMENT;
   }
   // Creates alts_zero_copy_protector.
@@ -295,7 +292,7 @@ tsi_result alts_zero_copy_grpc_protector_create(
       impl->max_unprotected_data_size =
           alts_grpc_record_protocol_max_unprotected_data_size(
               impl->record_protocol, max_protected_frame_size_to_set);
-      GPR_ASSERT(impl->max_unprotected_data_size > 0);
+      CHECK_GT(impl->max_unprotected_data_size, 0u);
       // Allocates internal slice buffers.
       grpc_slice_buffer_init(&impl->unprotected_staging_sb);
       grpc_slice_buffer_init(&impl->protected_sb);

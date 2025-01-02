@@ -15,12 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_PRECONDITIONING_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_PRECONDITIONING_H
 
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
 #include <functional>
 #include <vector>
-
-#include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_args.h"
 
@@ -28,7 +27,7 @@ namespace grpc_core {
 
 // Registry of mutators for channel args.
 // Surface APIs should call into this with channel args received from outside
-// of gRPC, in order to prepare those channel args for the expections of the
+// of gRPC, in order to prepare those channel args for the expectations of the
 // gRPC internals.
 class ChannelArgsPreconditioning {
  public:

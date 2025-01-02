@@ -14,11 +14,10 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_QUERY_EXTENSIONS_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_QUERY_EXTENSIONS_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/event_engine.h>
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -45,23 +44,40 @@ struct QueryExtensionRecursion<Querying> {
 
 // A helper class to derive from some set of base classes and export
 // QueryExtension for them all.
-// Endpoint implementations which need to support different extensions just need
-// to derive from ExtendedEndpoint class.
-template <typename... Exports>
-class ExtendedEndpoint : public EventEngine::Endpoint, public Exports... {
+// EventEngine Extensible object implementations which need to support different
+// extensions just need to derive from this class.
+template <typename EEClass, typename... Exports>
+class ExtendedType : public EEClass, public Exports... {
  public:
   void* QueryExtension(absl::string_view id) override {
-    return endpoint_detail::QueryExtensionRecursion<ExtendedEndpoint,
+    return endpoint_detail::QueryExtensionRecursion<ExtendedType,
                                                     Exports...>::Query(id,
                                                                        this);
   }
 };
 
-/// A helper method which returns a valid pointer if the extension is supported
-/// by the endpoint.
+/// A helper method which returns a valid pointer if the extension is
+/// supported by the endpoint.
 template <typename T>
 T* QueryExtension(EventEngine::Endpoint* endpoint) {
+  if (endpoint == nullptr) return nullptr;
   return static_cast<T*>(endpoint->QueryExtension(T::EndpointExtensionName()));
+}
+
+/// A helper method which returns a valid pointer if the extension is
+/// supported by the listener.
+template <typename T>
+T* QueryExtension(EventEngine::Listener* listener) {
+  if (listener == nullptr) return nullptr;
+  return static_cast<T*>(listener->QueryExtension(T::EndpointExtensionName()));
+}
+
+/// A helper method which returns a valid pointer if the extension is
+/// supported by the EventEngine.
+template <typename T>
+T* QueryExtension(EventEngine* engine) {
+  if (engine == nullptr) return nullptr;
+  return static_cast<T*>(engine->QueryExtension(T::EndpointExtensionName()));
 }
 
 }  // namespace experimental

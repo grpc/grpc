@@ -3,10 +3,11 @@
  *     xds/core/v3/context_params.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_CORE_V3_CONTEXT_PARAMS_PROTO_UPB_H_
-#define XDS_CORE_V3_CONTEXT_PARAMS_PROTO_UPB_H_
+#ifndef XDS_CORE_V3_CONTEXT_PARAMS_PROTO_UPB_H__UPB_H_
+#define XDS_CORE_V3_CONTEXT_PARAMS_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -21,8 +22,8 @@
 extern "C" {
 #endif
 
-typedef struct xds_core_v3_ContextParams xds_core_v3_ContextParams;
-typedef struct xds_core_v3_ContextParams_ParamsEntry xds_core_v3_ContextParams_ParamsEntry;
+typedef struct xds_core_v3_ContextParams { upb_Message UPB_PRIVATE(base); } xds_core_v3_ContextParams;
+typedef struct xds_core_v3_ContextParams_ParamsEntry { upb_Message UPB_PRIVATE(base); } xds_core_v3_ContextParams_ParamsEntry;
 
 
 
@@ -34,7 +35,8 @@ UPB_INLINE xds_core_v3_ContextParams* xds_core_v3_ContextParams_new(upb_Arena* a
 UPB_INLINE xds_core_v3_ContextParams* xds_core_v3_ContextParams_parse(const char* buf, size_t size, upb_Arena* arena) {
   xds_core_v3_ContextParams* ret = xds_core_v3_ContextParams_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &xds__core__v3__ContextParams_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &xds__core__v3__ContextParams_msg_init, NULL, 0, arena) !=
+      kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -44,66 +46,81 @@ UPB_INLINE xds_core_v3_ContextParams* xds_core_v3_ContextParams_parse_ex(const c
                            int options, upb_Arena* arena) {
   xds_core_v3_ContextParams* ret = xds_core_v3_ContextParams_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &xds__core__v3__ContextParams_msg_init, extreg, options, arena) !=
-      kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &xds__core__v3__ContextParams_msg_init, extreg, options,
+                 arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
 UPB_INLINE char* xds_core_v3_ContextParams_serialize(const xds_core_v3_ContextParams* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &xds__core__v3__ContextParams_msg_init, 0, arena, &ptr, len);
+  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__ContextParams_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* xds_core_v3_ContextParams_serialize_ex(const xds_core_v3_ContextParams* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &xds__core__v3__ContextParams_msg_init, options, arena, &ptr, len);
+  (void)upb_Encode(UPB_UPCAST(msg), &xds__core__v3__ContextParams_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE void xds_core_v3_ContextParams_clear_params(xds_core_v3_ContextParams* msg) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_ClearNonExtensionField(msg, &field);
+  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE size_t xds_core_v3_ContextParams_params_size(const xds_core_v3_ContextParams* msg) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  const upb_Map* map = upb_Message_GetMap(msg, &field);
+  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   return map ? _upb_Map_Size(map) : 0;
 }
 UPB_INLINE bool xds_core_v3_ContextParams_params_get(const xds_core_v3_ContextParams* msg, upb_StringView key, upb_StringView* val) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  const upb_Map* map = upb_Message_GetMap(msg, &field);
+  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams__ParamsEntry_msg_init);
+  const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Get(map, &key, 0, val, 0);
 }
 UPB_INLINE const xds_core_v3_ContextParams_ParamsEntry* xds_core_v3_ContextParams_params_next(const xds_core_v3_ContextParams* msg, size_t* iter) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  const upb_Map* map = upb_Message_GetMap(msg, &field);
+  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams__ParamsEntry_msg_init);
+  const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return NULL;
   return (const xds_core_v3_ContextParams_ParamsEntry*)_upb_map_next(map, iter);
 }
+UPB_INLINE const upb_Map* _xds_core_v3_ContextParams_params_upb_map(xds_core_v3_ContextParams* msg) {
+  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams__ParamsEntry_msg_init);
+  return upb_Message_GetMap(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE upb_Map* _xds_core_v3_ContextParams_params_mutable_upb_map(xds_core_v3_ContextParams* msg, upb_Arena* a) {
+  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams__ParamsEntry_msg_init);
+  return _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg), &field, 0, 0, a);
+}
 
 UPB_INLINE void xds_core_v3_ContextParams_params_clear(xds_core_v3_ContextParams* msg) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Map* map = (upb_Map*)upb_Message_GetMap(msg, &field);
+  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return;
   _upb_Map_Clear(map);
 }
 UPB_INLINE bool xds_core_v3_ContextParams_params_set(xds_core_v3_ContextParams* msg, upb_StringView key, upb_StringView val, upb_Arena* a) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Map* map = _upb_Message_GetOrCreateMutableMap(msg, &field, 0, 0, a);
+  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams__ParamsEntry_msg_init);
+  upb_Map* map = _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg),
+                                                    &field, 0, 0, a);
   return _upb_Map_Insert(map, &key, 0, &val, 0, a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
 UPB_INLINE bool xds_core_v3_ContextParams_params_delete(xds_core_v3_ContextParams* msg, upb_StringView key) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Map* map = (upb_Map*)upb_Message_GetMap(msg, &field);
+  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, 0, NULL);
 }
 UPB_INLINE xds_core_v3_ContextParams_ParamsEntry* xds_core_v3_ContextParams_params_nextmutable(xds_core_v3_ContextParams* msg, size_t* iter) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Map* map = (upb_Map*)upb_Message_GetMap(msg, &field);
+  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams__ParamsEntry_msg_init);
+  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return NULL;
   return (xds_core_v3_ContextParams_ParamsEntry*)_upb_map_next(map, iter);
 }
@@ -131,4 +148,4 @@ UPB_INLINE void xds_core_v3_ContextParams_ParamsEntry_set_value(xds_core_v3_Cont
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_CORE_V3_CONTEXT_PARAMS_PROTO_UPB_H_ */
+#endif  /* XDS_CORE_V3_CONTEXT_PARAMS_PROTO_UPB_H__UPB_H_ */

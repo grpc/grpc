@@ -14,24 +14,26 @@
 // limitations under the License.
 //
 
-#include <memory>
-
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/security/tls_crl_provider.h>
+#include <gtest/gtest.h>
 
-#include "test/core/util/test_config.h"
+#include <memory>
+
+#include "absl/log/check.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/tls_test_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 #define CRL_DIR_PATH "test/core/tsi/test_creds/crl_data/crls"
+#define MALFORMED_CERT_PATH "src/core/tsi/test_creds/malformed-cert.pem"
 
 namespace {
 
@@ -48,6 +50,7 @@ using ::grpc::experimental::NoOpCertificateVerifier;
 using ::grpc::experimental::StaticDataCertificateProvider;
 using ::grpc::experimental::TlsServerCredentials;
 using ::grpc::experimental::TlsServerCredentialsOptions;
+using ::grpc_core::testing::GetFileContents;
 
 }  // namespace
 
@@ -73,7 +76,7 @@ TEST(
   options.set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-  GPR_ASSERT(server_credentials.get() != nullptr);
+  CHECK_NE(server_credentials.get(), nullptr);
 }
 
 // ServerCredentials should always have identity credential presented.
@@ -95,7 +98,7 @@ TEST(CredentialsTest,
   options.set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-  GPR_ASSERT(server_credentials.get() != nullptr);
+  CHECK_NE(server_credentials.get(), nullptr);
 }
 
 TEST(
@@ -111,7 +114,41 @@ TEST(
   options.set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-  GPR_ASSERT(server_credentials.get() != nullptr);
+  CHECK_NE(server_credentials.get(), nullptr);
+}
+
+TEST(CredentialsTest,
+     StaticDataCertificateProviderValidationSuccessWithAllCredentials) {
+  std::string root_certificates = GetFileContents(CA_CERT_PATH);
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = GetFileContents(SERVER_KEY_PATH);
+  key_cert_pair.certificate_chain = GetFileContents(SERVER_CERT_PATH);
+  StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
+  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
+}
+
+TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedRoot) {
+  std::string root_certificates = GetFileContents(MALFORMED_CERT_PATH);
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = GetFileContents(SERVER_KEY_PATH);
+  key_cert_pair.certificate_chain = GetFileContents(SERVER_CERT_PATH);
+  StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::FailedPreconditionError("Invalid PEM."));
+}
+
+TEST(CredentialsTest,
+     FileWatcherCertificateProviderValidationSuccessWithAllCredentials) {
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
+                                          CA_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
+}
+
+TEST(CredentialsTest, FileWatcherCertificateProviderWithMalformedRoot) {
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
+                                          MALFORMED_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::FailedPreconditionError("Invalid PEM."));
 }
 
 TEST(CredentialsTest, TlsServerCredentialsWithCrlChecking) {
@@ -126,7 +163,7 @@ TEST(CredentialsTest, TlsServerCredentialsWithCrlChecking) {
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   options.set_crl_directory(CRL_DIR_PATH);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-  GPR_ASSERT(server_credentials.get() != nullptr);
+  CHECK_NE(server_credentials.get(), nullptr);
 }
 
 // ServerCredentials should always have identity credential presented.
@@ -142,7 +179,7 @@ TEST(
   options.set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-  GPR_ASSERT(server_credentials.get() != nullptr);
+  CHECK_NE(server_credentials.get(), nullptr);
 }
 
 TEST(CredentialsTest, TlsServerCredentialsWithSyncExternalVerifier) {
@@ -159,7 +196,7 @@ TEST(CredentialsTest, TlsServerCredentialsWithSyncExternalVerifier) {
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   options.set_certificate_verifier(verifier);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-  GPR_ASSERT(server_credentials.get() != nullptr);
+  CHECK_NE(server_credentials.get(), nullptr);
 }
 
 TEST(CredentialsTest, TlsServerCredentialsWithAsyncExternalVerifier) {
@@ -176,7 +213,7 @@ TEST(CredentialsTest, TlsServerCredentialsWithAsyncExternalVerifier) {
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   options.set_certificate_verifier(verifier);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-  GPR_ASSERT(server_credentials.get() != nullptr);
+  CHECK_NE(server_credentials.get(), nullptr);
 }
 
 TEST(CredentialsTest, TlsServerCredentialsWithCrlProvider) {
@@ -187,7 +224,7 @@ TEST(CredentialsTest, TlsServerCredentialsWithCrlProvider) {
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
   options.set_crl_provider(*provider);
   auto channel_credentials = grpc::experimental::TlsServerCredentials(options);
-  GPR_ASSERT(channel_credentials.get() != nullptr);
+  CHECK_NE(channel_credentials.get(), nullptr);
 }
 
 TEST(CredentialsTest, TlsServerCredentialsWithCrlProviderAndDirectory) {
@@ -201,7 +238,7 @@ TEST(CredentialsTest, TlsServerCredentialsWithCrlProviderAndDirectory) {
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
   //   TODO(gtcooke94) - behavior might change to make this return nullptr in
   //   the future
-  GPR_ASSERT(server_credentials != nullptr);
+  CHECK_NE(server_credentials, nullptr);
 }
 
 TEST(CredentialsTest, TlsCredentialsOptionsDoesNotLeak) {

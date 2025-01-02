@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:cython_library.bzl", "pyx_library")
 load("grpcio_tools.bzl", "internal_copied_filegroup")
 
@@ -28,6 +29,7 @@ cc_library(
     includes = ["."],
     deps = [
         "//src/compiler:grpc_plugin_support",
+        "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protoc_lib",
     ],
 )
@@ -49,6 +51,7 @@ py_library(
     name = "grpc_tools",
     srcs = [
         "grpc_tools/__init__.py",
+        "grpc_tools/grpc_version.py",
         "grpc_tools/protoc.py",
     ],
     data = [":well_known_protos"],

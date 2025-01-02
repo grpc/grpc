@@ -15,10 +15,14 @@
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_EVENT_ENGINE_TEST_UTILS_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_EVENT_ENGINE_TEST_UTILS_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice_buffer.h>
+
 #include <functional>
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -26,13 +30,9 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice_buffer.h>
-
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/sync.h"
 
 using EventEngineFactory = std::function<
     std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>;
@@ -51,6 +51,14 @@ std::string GetNextSendMessage();
 // Usage: WaitForSingleOwner(std::move(engine))
 void WaitForSingleOwner(std::shared_ptr<EventEngine> engine);
 
+// Waits until the use_count of the EventEngine shared_ptr has reached 1
+// and returns.
+// Callers must give up their ref, or this method will block forever.
+// This version will CRASH after the given timeout
+// Usage: WaitForSingleOwner(std::move(engine), 30s)
+void WaitForSingleOwnerWithTimeout(std::shared_ptr<EventEngine> engine,
+                                   EventEngine::Duration timeout);
+
 // A helper method to exchange data between two endpoints. It is assumed
 // that both endpoints are connected. The data (specified as a string) is
 // written by the sender_endpoint and read by the receiver_endpoint. It
@@ -63,7 +71,7 @@ absl::Status SendValidatePayload(absl::string_view data,
 // A helper class to create clients/listeners and connections between them.
 // The clients and listeners can be created by the oracle EventEngine
 // or the EventEngine under test. The class provides handles into the
-// connections that are created. Inidividual tests can test expected behavior by
+// connections that are created. Individual tests can test expected behavior by
 // exchanging arbitrary data over these connections.
 class ConnectionManager {
  public:
@@ -157,6 +165,70 @@ class NotifyOnDelete {
 
  private:
   grpc_core::Notification* signal_;
+};
+
+// An endpoint implementation that supports Read and Write via std::threads.
+// Passing a grpc_core::Notification will allow owners to know when all
+// in-flight callbacks have been run, and all endpoint state has been destroyed.
+class ThreadedNoopEndpoint : public EventEngine::Endpoint {
+ public:
+  explicit ThreadedNoopEndpoint(grpc_core::Notification* destroyed)
+      : state_(std::make_shared<EndpointState>(destroyed)) {}
+  ~ThreadedNoopEndpoint() override {
+    std::thread deleter([state = state_]() {
+      CleanupThread(state->read);
+      CleanupThread(state->write);
+    });
+    deleter.detach();
+  }
+
+  bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+            const ReadArgs* /* args */) override {
+    buffer->Clear();
+    CleanupThread(state_->read);
+    state_->read = new std::thread([cb = std::move(on_read)]() mutable {
+      cb(absl::UnknownError("test"));
+    });
+    return false;
+  }
+
+  bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+             SliceBuffer* data, const WriteArgs* /* args */) override {
+    data->Clear();
+    CleanupThread(state_->write);
+    state_->write = new std::thread([cb = std::move(on_writable)]() mutable {
+      cb(absl::UnknownError("test"));
+    });
+    return false;
+  }
+
+  const EventEngine::ResolvedAddress& GetPeerAddress() const override {
+    return peer_;
+  }
+
+  const EventEngine::ResolvedAddress& GetLocalAddress() const override {
+    return local_;
+  }
+
+ private:
+  struct EndpointState {
+    explicit EndpointState(grpc_core::Notification* deleter)
+        : delete_notifier_(deleter) {}
+    std::thread* read = nullptr;
+    std::thread* write = nullptr;
+    NotifyOnDelete delete_notifier_;
+  };
+
+  static void CleanupThread(std::thread* thd) {
+    if (thd != nullptr) {
+      thd->join();
+      delete thd;
+    }
+  }
+
+  std::shared_ptr<EndpointState> state_;
+  EventEngine::ResolvedAddress peer_;
+  EventEngine::ResolvedAddress local_;
 };
 
 }  // namespace experimental

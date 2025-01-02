@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/resource_quota/thread_quota.h"
 
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+
+#include "absl/log/check.h"
 
 namespace grpc_core {
 
@@ -38,7 +38,7 @@ bool ThreadQuota::Reserve(size_t num_threads) {
 
 void ThreadQuota::Release(size_t num_threads) {
   MutexLock lock(&mu_);
-  GPR_ASSERT(num_threads <= allocated_);
+  CHECK(num_threads <= allocated_);
   allocated_ -= num_threads;
 }
 

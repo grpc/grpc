@@ -16,58 +16,46 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
+#include <functional>
+#include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
-
-#include <grpc/support/alloc.h>
-
+#include "absl/strings/str_cat.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/surface/call_trace.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
-
-bool ChannelStackBuilderImpl::IsPromising() const {
-  for (const auto* filter : stack()) {
-    if (filter->make_call_promise == nullptr) return false;
-  }
-  return true;
-}
 
 absl::StatusOr<RefCountedPtr<grpc_channel_stack>>
 ChannelStackBuilderImpl::Build() {
   std::vector<const grpc_channel_filter*> stack;
-  const bool is_promising = IsPromising();
-  const bool is_client =
-      grpc_channel_stack_type_is_client(channel_stack_type());
-  const bool client_promise_tracing =
-      is_client && is_promising && grpc_call_trace.enabled();
-  const bool server_promise_tracing =
-      !is_client && is_promising && grpc_call_trace.enabled();
 
   for (const auto* filter : this->stack()) {
-    if (client_promise_tracing) {
-      stack.push_back(PromiseTracingFilterFor(filter));
-    }
     stack.push_back(filter);
-    if (server_promise_tracing) {
-      stack.push_back(PromiseTracingFilterFor(filter));
-    }
-  }
-  if (server_promise_tracing) {
-    stack.pop_back();  // connected_channel must be last => can't be traced
   }
 
   // calculate the size of the channel stack
@@ -87,7 +75,7 @@ ChannelStackBuilderImpl::Build() {
         gpr_free(stk);
       },
       channel_stack, stack.data(), stack.size(), channel_args(), name(),
-      channel_stack);
+      channel_stack, old_blackboard_, new_blackboard_);
 
   if (!error.ok()) {
     grpc_channel_stack_destroy(channel_stack);

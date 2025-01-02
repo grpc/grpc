@@ -19,6 +19,8 @@
 #ifndef GRPC_GRPC_CRL_PROVIDER_H
 #define GRPC_GRPC_CRL_PROVIDER_H
 
+#include <grpc/credentials.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
 #include <memory>
@@ -26,8 +28,6 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc_security.h>
 
 namespace grpc_core {
 namespace experimental {
@@ -47,6 +47,7 @@ class CertificateInfo {
  public:
   virtual ~CertificateInfo() = default;
   virtual absl::string_view Issuer() const = 0;
+  virtual absl::string_view AuthorityKeyIdentifier() const = 0;
 };
 
 // The base class for CRL Provider implementations.
@@ -81,7 +82,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
 }  // namespace experimental
 }  // namespace grpc_core
 
-// TODO(gtcooke94) - Mark with api macro when all wrapped langauges support C++
+// TODO(gtcooke94) - Mark with api macro when all wrapped languages support C++
 // in core APIs
 /**
  * EXPERIMENTAL API - Subject to change

@@ -8,6 +8,7 @@ See [CONTRIBUTING.md](https://github.com/grpc/grpc-community/blob/master/CONTRIB
 for general contribution guidelines.
 
 ## Maintainers (in alphabetical order)
+<!-- go/keep-sorted start case=no -->
 - [a11r](https://github.com/a11r), Google LLC
 - [apolcyn](https://github.com/apolcyn), Google LLC
 - [arjunroy](https://github.com/arjunroy), Google LLC
@@ -27,20 +28,26 @@ for general contribution guidelines.
 - [matthewstevenson88](https://github.com/matthewstevenson88), Google LLC
 - [murgatroid99](https://github.com/murgatroid99), Google LLC
 - [nanahpang](https://github.com/nanahpang), Google LLC
+- [pawbhard](https://github.com/pawbhard), Google LLC
 - [pfreixes](https://github.com/pfreixes), Skyscanner Ltd
 - [ran-su](https://github.com/ran-su), Google LLC
 - [sanjaypujare](https://github.com/sanjaypujare), Google LLC
+- [sastryvp](https://github.com/sastryvp), Google LLC
 - [sergiitk](https://github.com/sergiitk), Google LLC
 - [soheilhy](https://github.com/soheilhy), Google LLC
 - [stanley-cheung](https://github.com/stanley-cheung), Google LLC
 - [thisisnotapril](https://github.com/thisisnotapril), Google LLC
+- [tjagtap](https://github.com/tjagtap), Google LLC
 - [veblush](https://github.com/veblush), Google LLC
 - [vishalpowar](https://github.com/vishalpowar), Google LLC
 - [wenbozhu](https://github.com/wenbozhu), Google LLC
 - [yashykt](https://github.com/yashykt), Google LLC
+- [yijiem](https://github.com/yijiem), Google LLC
 - [ZhouyihaiDing](https://github.com/ZhouyihaiDing), Google LLC
+<!-- go/keep-sorted end -->
 
 ## Emeritus Maintainers (in alphabetical order)
+<!-- go/keep-sorted start case=no -->
 - [adelez](https://github.com/adelez), Google LLC
 - [AspirinSJL](https://github.com/AspirinSJL), Google LLC
 - [billfeng327](https://github.com/billfeng327), Google LLC
@@ -87,3 +94,4 @@ for general contribution guidelines.
 - [yihuazhang](https://github.com/yihuazhang), Google LLC
 - [zpencer](https://github.com/zpencer), Google LLC
 - [ZhenLian](https://github.com/ZhenLian), Google LLC
+<!-- go/keep-sorted end -->

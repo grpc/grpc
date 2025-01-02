@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
@@ -22,35 +23,32 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
-
-#include "src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/config.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/resolver/resolver.h"
-#include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
+#include "src/core/resolver/resolver.h"
+#include "src/core/resolver/resolver_factory.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/uri.h"
+#include "src/core/util/work_serializer.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/event_engine/util/aborting_event_engine.h"
 #include "test/core/ext/filters/event_engine_client_channel_resolver/resolver_fuzzer.pb.h"
-#include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/fuzzing_channel_args.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzzing_channel_args.h"
+#include "test/core/test_util/test_config.h"
 
 bool squelch = true;
-static void dont_log(gpr_log_func_args* /*args*/) {}
 
 namespace {
 
@@ -66,7 +64,7 @@ constexpr char g_grpc_config_prefix[] = "grpc_config=";
 absl::Status ErrorToAbslStatus(
     const event_engine_client_channel_resolver::Error& error) {
   // clamp error.code() in (0, 16]
-  return absl::Status(static_cast<absl::StatusCode>(error.code() % 16 + 1),
+  return absl::Status(static_cast<absl::StatusCode>((error.code() % 16) + 1),
                       error.message());
 }
 
@@ -96,6 +94,9 @@ class FuzzingResolverEventEngine
     } else if (msg.has_srv_response()) {
       srv_responses_.emplace();
       for (const auto& srv_record : msg.srv_response().srv_records()) {
+        if (srv_responses_->size() == 1024) {
+          break;
+        }
         EventEngine::DNSResolver::SRVRecord final_r;
         final_r.host = srv_record.host();
         final_r.port = srv_record.port();
@@ -241,7 +242,7 @@ grpc_core::ResolverArgs ConstructResolverArgs(
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   grpc_core::ResolverArgs resolver_args;
   auto uri = grpc_core::URI::Parse("dns:localhost");
-  GPR_ASSERT(uri.ok());
+  CHECK(uri.ok());
   resolver_args.uri = *uri;
   resolver_args.args = channel_args;
   resolver_args.pollset_set = nullptr;
@@ -254,7 +255,9 @@ grpc_core::ResolverArgs ConstructResolverArgs(
 }  // namespace
 
 DEFINE_PROTO_FUZZER(const event_engine_client_channel_resolver::Msg& msg) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    grpc_disable_all_absl_logs();
+  }
   bool done_resolving = false;
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();

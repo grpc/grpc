@@ -29,10 +29,12 @@ gcp_utils_dir = os.path.abspath(
 sys.path.append(gcp_utils_dir)
 import big_query_utils
 
-_PROJECT_ID = "grpc-testing"
+_DEFAULT_PROJECT_ID = "grpc-testing"
 
 
-def _upload_netperf_latency_csv_to_bigquery(dataset_id, table_id, result_file):
+def _upload_netperf_latency_csv_to_bigquery(
+    project_id, dataset_id, table_id, result_file
+):
     with open(result_file, "r") as f:
         (col1, col2, col3) = f.read().split(",")
         latency50 = float(col1.strip()) * 1000
@@ -49,16 +51,17 @@ def _upload_netperf_latency_csv_to_bigquery(dataset_id, table_id, result_file):
         }
 
     bq = big_query_utils.create_big_query()
-    _create_results_table(bq, dataset_id, table_id)
+    _create_results_table(bq, project_id, dataset_id, table_id)
 
     if not _insert_result(
-        bq, dataset_id, table_id, scenario_result, flatten=False
+        bq, project_id, dataset_id, table_id, scenario_result, flatten=False
     ):
         print("Error uploading result to bigquery.")
         sys.exit(1)
 
 
 def _upload_scenario_result_to_bigquery(
+    project_id,
     dataset_id,
     table_id,
     result_file,
@@ -70,10 +73,11 @@ def _upload_scenario_result_to_bigquery(
         scenario_result = json.loads(f.read())
 
     bq = big_query_utils.create_big_query()
-    _create_results_table(bq, dataset_id, table_id)
+    _create_results_table(bq, project_id, dataset_id, table_id)
 
     if not _insert_scenario_result(
         bq,
+        project_id,
         dataset_id,
         table_id,
         scenario_result,
@@ -85,18 +89,21 @@ def _upload_scenario_result_to_bigquery(
         sys.exit(1)
 
 
-def _insert_result(bq, dataset_id, table_id, scenario_result, flatten=True):
+def _insert_result(
+    bq, project_id, dataset_id, table_id, scenario_result, flatten=True
+):
     if flatten:
         _flatten_result_inplace(scenario_result)
     _populate_metadata_inplace(scenario_result)
     row = big_query_utils.make_row(str(uuid.uuid4()), scenario_result)
     return big_query_utils.insert_rows(
-        bq, _PROJECT_ID, dataset_id, table_id, [row]
+        bq, project_id, dataset_id, table_id, [row]
     )
 
 
 def _insert_scenario_result(
     bq,
+    project_id,
     dataset_id,
     table_id,
     scenario_result,
@@ -114,18 +121,18 @@ def _insert_scenario_result(
     )
     row = big_query_utils.make_row(str(uuid.uuid4()), scenario_result)
     return big_query_utils.insert_rows(
-        bq, _PROJECT_ID, dataset_id, table_id, [row]
+        bq, project_id, dataset_id, table_id, [row]
     )
 
 
-def _create_results_table(bq, dataset_id, table_id):
+def _create_results_table(bq, project_id, dataset_id, table_id):
     with open(
         os.path.dirname(__file__) + "/scenario_result_schema.json", "r"
     ) as f:
         table_schema = json.loads(f.read())
     desc = "Results of performance benchmarks."
     return big_query_utils.create_table2(
-        bq, _PROJECT_ID, dataset_id, table_id, table_schema, desc
+        bq, project_id, dataset_id, table_id, table_schema, desc
     )
 
 
@@ -333,7 +340,7 @@ argp.add_argument(
     required=True,
     default=None,
     type=str,
-    help='Bigquery "dataset.table" to upload results to.',
+    help='Bigquery "dataset.table" or "project.dataset.table" to upload results to. The default project is "grpc-testing".',
 )
 argp.add_argument(
     "--file_to_upload",
@@ -368,14 +375,25 @@ argp.add_argument(
 
 args = argp.parse_args()
 
-dataset_id, table_id = args.bq_result_table.split(".", 2)
+bq_words = args.bq_result_table.split(".", 2)
+if len(bq_words) == 3:
+    project_id, dataset_id, table_id = bq_words
+elif len(bq_words) == 2:
+    project_id = _DEFAULT_PROJECT_ID
+    dataset_id, table_id = bq_words
+else:
+    print(
+        "BigQuery table must be in the format dataset.table or project.dataset.table."
+    )
+    sys.exit(1)
 
 if args.file_format == "netperf_latency_csv":
     _upload_netperf_latency_csv_to_bigquery(
-        dataset_id, table_id, args.file_to_upload
+        project_id, dataset_id, table_id, args.file_to_upload
     )
 else:
     _upload_scenario_result_to_bigquery(
+        project_id,
         dataset_id,
         table_id,
         args.file_to_upload,

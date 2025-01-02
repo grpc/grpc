@@ -33,7 +33,7 @@ grpc_cc_test(
         ":alts_crypt_test_util",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 

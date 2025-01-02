@@ -11,17 +11,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+load("@rules_python//python:defs.bzl", "py_test")
 load("//bazel:cython_library.bzl", "pyx_library")
 
 pyx_library(
     name = "native_debug",
     srcs = ["native_debug.pyx"],
+    visibility = [
+        "//src/python/grpcio_tests/tests/observability:__subpackages__",
+        "//src/python/grpcio_tests/tests_py3_only/interop:__subpackages__",
+    ],
     deps = ["@com_google_absl//absl/debugging:failure_signal_handler"],
 )
 
 py_test(
     name = "fork_test",
     srcs = glob(["*.py"]),
+    # TODO(yijiem): remove this to test EventEngine fork support
+    env = {"GRPC_EXPERIMENTS": "-event_engine_client"},
     imports = ["../.."],
     main = "_fork_interop_test.py",
     python_version = "PY3",

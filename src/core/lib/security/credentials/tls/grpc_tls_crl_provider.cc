@@ -16,10 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 
+#include <grpc/support/port_platform.h>
 #include <limits.h>
 
 // IWYU pragma: no_include <ratio>
@@ -35,33 +34,38 @@
 #include <openssl/x509.h>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/directory_reader.h"
-#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/directory_reader.h"
+#include "src/core/util/load_file.h"
 
 namespace grpc_core {
 namespace experimental {
 
 namespace {
-std::string IssuerFromCrl(X509_CRL* crl) {
+// TODO(gtcooke94) Move ssl_transport_security_utils to it's own BUILD target
+// and add this to it.
+absl::StatusOr<std::string> IssuerFromCrl(X509_CRL* crl) {
   if (crl == nullptr) {
-    return "";
+    return absl::InvalidArgumentError("crl cannot be null");
   }
-  char* buf = X509_NAME_oneline(X509_CRL_get_issuer(crl), nullptr, 0);
-  std::string ret;
-  if (buf != nullptr) {
-    ret = buf;
+  X509_NAME* issuer = X509_CRL_get_issuer(crl);
+  if (issuer == nullptr) {
+    return absl::InvalidArgumentError("crl cannot have null issuer");
   }
+  unsigned char* buf = nullptr;
+  int len = i2d_X509_NAME(issuer, &buf);
+  if (len < 0 || buf == nullptr) {
+    return absl::InvalidArgumentError("crl cannot have null issuer");
+  }
+  std::string ret(reinterpret_cast<char const*>(buf), len);
   OPENSSL_free(buf);
   return ret;
 }
@@ -103,11 +107,11 @@ absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
 }
 
 absl::StatusOr<std::unique_ptr<CrlImpl>> CrlImpl::Create(X509_CRL* crl) {
-  std::string issuer = IssuerFromCrl(crl);
-  if (issuer.empty()) {
-    return absl::InvalidArgumentError("Issuer of crl cannot be empty");
+  absl::StatusOr<std::string> issuer = IssuerFromCrl(crl);
+  if (!issuer.ok()) {
+    return issuer.status();
   }
-  return std::make_unique<CrlImpl>(crl, issuer);
+  return std::make_unique<CrlImpl>(crl, *issuer);
 }
 
 CrlImpl::~CrlImpl() { X509_CRL_free(crl_); }
@@ -123,9 +127,8 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
     }
     bool inserted = crl_map.emplace((*crl)->Issuer(), std::move(*crl)).second;
     if (!inserted) {
-      gpr_log(GPR_ERROR,
-              "StaticCrlProvider received multiple CRLs with the same issuer. "
-              "The first one in the span will be used.");
+      LOG(ERROR) << "StaticCrlProvider received multiple CRLs with the same "
+                    "issuer. The first one in the span will be used.";
     }
   }
   StaticCrlProvider provider = StaticCrlProvider(std::move(crl_map));

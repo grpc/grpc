@@ -66,11 +66,7 @@ GRPCIO_OBSERVABILITY_ROOT_PREFIX = "src/python/grpcio_observability/"
 COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("include", "grpc_root/include"),
     ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
-    ("src/core/lib", "grpc_root/src/core/lib"),
-    (
-        "src/core/ext/filters/client_channel/lb_policy",
-        "grpc_root/src/core/ext/filters/client_channel/lb_policy",
-    ),
+    ("src/core", "grpc_root/src/core"),
 ]
 
 # grpc repo root
@@ -95,7 +91,9 @@ BAZEL_DEPS = os.path.join(
 
 # the bazel target to scrape to get list of sources for the build
 BAZEL_DEPS_QUERIES = [
+    "//src/core:experiments",
     "//src/core:slice",
+    "//src/core:ref_counted_string",
 ]
 
 

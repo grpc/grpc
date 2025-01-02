@@ -18,7 +18,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
-
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 

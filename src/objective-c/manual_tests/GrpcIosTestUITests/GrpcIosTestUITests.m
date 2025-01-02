@@ -75,8 +75,7 @@ int const kNumIterations = 1;
     [NSThread sleepForTimeInterval:1];
   }
   // Wait until all events in run loop have been processed
-  while (CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, true) == kCFRunLoopRunHandledSource)
-    ;
+  while (CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, true) == kCFRunLoopRunHandledSource);
 
   NSLog(@"Pressing button: %@", name);
   [testApp.buttons[name] tap];

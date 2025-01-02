@@ -17,26 +17,27 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_EXTERNAL_ACCOUNT_CREDENTIALS_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_EXTERNAL_ACCOUNT_CREDENTIALS_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
+#include "src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.h"
+#include "src/core/util/http_client/httpcli.h"
+#include "src/core/util/http_client/parser.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -44,8 +45,7 @@ namespace grpc_core {
 // exchanging external account credentials for GCP access token to authorize
 // requests to GCP APIs. The specific logic of retrieving subject token is
 // implemented in subclasses.
-class ExternalAccountCredentials
-    : public grpc_oauth2_token_fetcher_credentials {
+class ExternalAccountCredentials : public TokenFetcherCredentials {
  public:
   struct ServiceAccountImpersonation {
     int32_t token_lifetime_seconds;
@@ -66,72 +66,140 @@ class ExternalAccountCredentials
     std::string workforce_pool_user_project;
   };
 
-  static RefCountedPtr<ExternalAccountCredentials> Create(
+  static absl::StatusOr<RefCountedPtr<ExternalAccountCredentials>> Create(
       const Json& json, std::vector<std::string> scopes,
-      grpc_error_handle* error);
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr);
 
-  ExternalAccountCredentials(Options options, std::vector<std::string> scopes);
+  ExternalAccountCredentials(
+      Options options, std::vector<std::string> scopes,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr);
   ~ExternalAccountCredentials() override;
-  std::string debug_string() override;
 
  protected:
-  // This is a helper struct to pass information between multiple callback based
-  // asynchronous calls.
-  struct HTTPRequestContext {
-    HTTPRequestContext(grpc_polling_entity* pollent, Timestamp deadline)
-        : pollent(pollent), deadline(deadline) {}
-    ~HTTPRequestContext() { grpc_http_response_destroy(&response); }
+  // A base class for a cancellable fetch operation.
+  class FetchBody : public InternallyRefCounted<FetchBody> {
+   public:
+    explicit FetchBody(
+        absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done)
+        : on_done_(std::move(on_done)) {}
 
-    // Contextual parameters passed from
-    // grpc_oauth2_token_fetcher_credentials::fetch_oauth2().
-    grpc_polling_entity* pollent;
-    Timestamp deadline;
+    void Orphan() override {
+      Shutdown();
+      Unref();
+    }
 
-    // Reusable token fetch http response and closure.
-    grpc_closure closure;
-    grpc_http_response response;
+   protected:
+    // The subclass must call this when the fetch is complete, even if
+    // cancelled.
+    void Finish(absl::StatusOr<std::string> result) {
+      std::exchange(on_done_, nullptr)(std::move(result));
+    }
+
+   private:
+    virtual void Shutdown() = 0;
+
+    absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done_;
   };
 
-  // Subclasses of base external account credentials need to override this
-  // method to implement the specific subject token retrieval logic.
-  // Once the subject token is ready, subclasses need to invoke
-  // the callback function (cb) to pass the subject token (or error)
-  // back.
-  virtual void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const Options& options,
-      std::function<void(std::string, grpc_error_handle)> cb) = 0;
+  // A simple no-op implementation, used for async execution of the
+  // on_done callback.
+  class NoOpFetchBody final : public FetchBody {
+   public:
+    NoOpFetchBody(grpc_event_engine::experimental::EventEngine& event_engine,
+                  absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done,
+                  absl::StatusOr<std::string> result);
+
+   private:
+    void Shutdown() override {}
+  };
+
+  // An implementation for HTTP requests.
+  class HttpFetchBody final : public FetchBody {
+   public:
+    HttpFetchBody(
+        absl::FunctionRef<OrphanablePtr<HttpRequest>(grpc_http_response*,
+                                                     grpc_closure*)>
+            start_http_request,
+        absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done);
+
+    ~HttpFetchBody() override { grpc_http_response_destroy(&response_); }
+
+   private:
+    void Shutdown() override { http_request_.reset(); }
+
+    static void OnHttpResponse(void* arg, grpc_error_handle error);
+
+    OrphanablePtr<HttpRequest> http_request_;
+    grpc_http_response response_;
+    grpc_closure on_http_response_;
+  };
+
+  // An implementation of TokenFetcherCredentials::FetchRequest that
+  // executes a series of FetchBody operations to ultimately get to a
+  // token result.
+  class ExternalFetchRequest : public FetchRequest {
+   public:
+    ExternalFetchRequest(
+        ExternalAccountCredentials* creds, Timestamp deadline,
+        absl::AnyInvocable<
+            void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
+            on_done);
+
+    void Orphan() override;
+
+   protected:
+    Timestamp deadline() const { return deadline_; }
+    grpc_polling_entity* pollent() const { return creds_->pollent(); }
+    const Options& options() const { return creds_->options_; }
+
+   private:
+    void ExchangeToken(absl::StatusOr<std::string> subject_token);
+    void MaybeImpersonateServiceAccount(
+        absl::StatusOr<std::string> response_body);
+    void OnImpersonateServiceAccount(absl::StatusOr<std::string> response_body);
+
+    void FinishTokenFetch(absl::StatusOr<std::string> response_body);
+
+    // If status is non-OK or we've been shut down, calls FinishTokenFetch()
+    // and returns true.
+    bool MaybeFailLocked(absl::Status status)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+
+    ExternalAccountCredentials* creds_;
+    Timestamp deadline_;
+    absl::AnyInvocable<void(
+        absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
+        on_done_;
+
+    Mutex mu_;
+    OrphanablePtr<FetchBody> fetch_body_ ABSL_GUARDED_BY(&mu_);
+  };
 
   virtual absl::string_view CredentialSourceType();
 
   std::string MetricsHeaderValue();
 
+  absl::string_view audience() const { return options_.audience; }
+
  private:
-  // This method implements the common token fetch logic and it will be called
-  // when grpc_oauth2_token_fetcher_credentials request a new access token.
-  void fetch_oauth2(grpc_credentials_metadata_request* req,
-                    grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
-                    Timestamp deadline) override;
+  OrphanablePtr<FetchRequest> FetchToken(
+      Timestamp deadline,
+      absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done)
+      final;
 
-  void OnRetrieveSubjectTokenInternal(absl::string_view subject_token,
-                                      grpc_error_handle error);
-
-  void ExchangeToken(absl::string_view subject_token);
-  static void OnExchangeToken(void* arg, grpc_error_handle error);
-  void OnExchangeTokenInternal(grpc_error_handle error);
-
-  void ImpersenateServiceAccount();
-  static void OnImpersenateServiceAccount(void* arg, grpc_error_handle error);
-  void OnImpersenateServiceAccountInternal(grpc_error_handle error);
-
-  void FinishTokenFetch(grpc_error_handle error);
+  // Subclasses of ExternalAccountCredentials need to override this
+  // method to implement the specific-subject token retrieval logic.
+  // The caller will save the resulting FetchBody object, which will
+  // be orphaned upon cancellation.  The FetchBody object must
+  // eventually invoke on_done.
+  virtual OrphanablePtr<FetchBody> RetrieveSubjectToken(
+      Timestamp deadline,
+      absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) = 0;
 
   Options options_;
   std::vector<std::string> scopes_;
-
-  OrphanablePtr<HttpRequest> http_request_;
-  HTTPRequestContext* ctx_ = nullptr;
-  grpc_credentials_metadata_request* metadata_req_ = nullptr;
-  grpc_iomgr_cb_func response_cb_ = nullptr;
 };
 
 }  // namespace grpc_core

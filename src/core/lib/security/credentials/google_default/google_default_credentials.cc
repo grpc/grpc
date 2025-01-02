@@ -16,49 +16,36 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 #include <string.h>
 
 #include <memory>
 #include <string>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc_security.h>  // IWYU pragma: keep
-#include <grpc/grpc_security_constants.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
@@ -67,9 +54,21 @@
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/load_balancing/grpclb/grpclb.h"
+#include "src/core/load_balancing/xds/xds_channel_args.h"
+#include "src/core/util/env.h"
+#include "src/core/util/http_client/httpcli.h"
+#include "src/core/util/http_client/parser.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/load_file.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uri.h"
 
 using grpc_core::Json;
 
@@ -136,7 +135,7 @@ grpc_google_default_channel_credentials::create_security_connector(
                         is_xds_non_cfe_cluster;
   // Return failure if ALTS is selected but not running on GCE.
   if (use_alts && alts_creds_ == nullptr) {
-    gpr_log(GPR_ERROR, "ALTS is selected, but not running on GCE.");
+    LOG(ERROR) << "ALTS is selected, but not running on GCE.";
     return nullptr;
   }
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
@@ -144,7 +143,7 @@ grpc_google_default_channel_credentials::create_security_connector(
           ? alts_creds_->create_security_connector(call_creds, target, args)
           : ssl_creds_->create_security_connector(call_creds, target, args);
   // grpclb-specific channel args are removed from the channel args set
-  // to ensure backends and fallback adresses will have the same set of channel
+  // to ensure backends and fallback addresses will have the same set of channel
   // args. By doing that, it guarantees the connections to backends will not be
   // torn down and re-connected when switching in and out of fallback mode.
   //
@@ -161,8 +160,7 @@ grpc_google_default_channel_credentials::update_arguments(
   return args.SetIfUnset(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
 }
 
-grpc_core::UniqueTypeName grpc_google_default_channel_credentials::type()
-    const {
+grpc_core::UniqueTypeName grpc_google_default_channel_credentials::Type() {
   static grpc_core::UniqueTypeName::Factory kFactory("GoogleDefault");
   return kFactory.Create();
 }
@@ -215,7 +213,7 @@ static int is_metadata_server_reachable() {
   auto uri =
       grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_DETECTION_HOST, "/",
                              {} /* query params */, "" /* fragment */);
-  GPR_ASSERT(uri.ok());  // params are hardcoded
+  CHECK(uri.ok());  // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &detector.pollent, &request,
       grpc_core::Timestamp::Now() + max_detection_delay,
@@ -257,68 +255,54 @@ static int is_metadata_server_reachable() {
 static grpc_error_handle create_default_creds_from_path(
     const std::string& creds_path,
     grpc_core::RefCountedPtr<grpc_call_credentials>* creds) {
-  grpc_auth_json_key key;
-  grpc_auth_refresh_token token;
-  grpc_core::RefCountedPtr<grpc_call_credentials> result;
-  grpc_slice creds_data = grpc_empty_slice();
-  grpc_error_handle error;
-  Json json;
   if (creds_path.empty()) {
-    error = GRPC_ERROR_CREATE("creds_path unset");
-    goto end;
+    return GRPC_ERROR_CREATE("creds_path unset");
   }
-  error = grpc_load_file(creds_path.c_str(), 0, &creds_data);
-  if (!error.ok()) goto end;
-  {
-    auto json_or =
-        grpc_core::JsonParse(grpc_core::StringViewFromSlice(creds_data));
-    if (!json_or.ok()) {
-      error = absl_status_to_grpc_error(json_or.status());
-      goto end;
-    }
-    json = std::move(*json_or);
+  auto creds_data =
+      grpc_core::LoadFile(creds_path, /*add_null_terminator=*/false);
+  if (!creds_data.ok()) {
+    return absl_status_to_grpc_error(creds_data.status());
   }
-  if (json.type() != Json::Type::kObject) {
-    error = grpc_error_set_str(GRPC_ERROR_CREATE("Failed to parse JSON"),
-                               grpc_core::StatusStrProperty::kRawBytes,
-                               grpc_core::StringViewFromSlice(creds_data));
-    goto end;
+  auto json = grpc_core::JsonParse(creds_data->as_string_view());
+  if (!json.ok()) {
+    return absl_status_to_grpc_error(json.status());
   }
-
+  if (json->type() != Json::Type::kObject) {
+    return GRPC_ERROR_CREATE(absl::StrCat("Failed to parse JSON \"",
+                                          creds_data->as_string_view(), "\""));
+  }
   // First, try an auth json key.
-  key = grpc_auth_json_key_create_from_json(json);
+  grpc_auth_json_key key = grpc_auth_json_key_create_from_json(*json);
   if (grpc_auth_json_key_is_valid(&key)) {
-    result =
+    *creds =
         grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
             key, grpc_max_auth_token_lifetime());
-    if (result == nullptr) {
-      error = GRPC_ERROR_CREATE(
+    if (*creds == nullptr) {
+      return GRPC_ERROR_CREATE(
           "grpc_service_account_jwt_access_credentials_create_from_auth_json_"
           "key failed");
     }
-    goto end;
+    return absl::OkStatus();
   }
-
   // Then try a refresh token if the auth json key was invalid.
-  token = grpc_auth_refresh_token_create_from_json(json);
+  grpc_auth_refresh_token token =
+      grpc_auth_refresh_token_create_from_json(*json);
   if (grpc_auth_refresh_token_is_valid(&token)) {
-    result =
+    *creds =
         grpc_refresh_token_credentials_create_from_auth_refresh_token(token);
-    if (result == nullptr) {
-      error = GRPC_ERROR_CREATE(
+    if (*creds == nullptr) {
+      return GRPC_ERROR_CREATE(
           "grpc_refresh_token_credentials_create_from_auth_refresh_token "
           "failed");
     }
-    goto end;
+    return absl::OkStatus();
   }
-
-  result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
-
-end:
-  GPR_ASSERT((result == nullptr) + (error.ok()) == 1);
-  grpc_core::CSliceUnref(creds_data);
-  *creds = result;
-  return error;
+  // Use external creds.
+  auto external_creds =
+      grpc_core::ExternalAccountCredentials::Create(*json, {});
+  if (!external_creds.ok()) return external_creds.status();
+  *creds = std::move(*external_creds);
+  return absl::OkStatus();
 }
 
 static void update_tenancy() {
@@ -383,8 +367,8 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
   grpc_error_handle error;
   grpc_core::ExecCtx exec_ctx;
 
-  GRPC_API_TRACE("grpc_google_default_credentials_create(%p)", 1,
-                 (call_credentials));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_google_default_credentials_create(" << call_credentials << ")";
 
   if (call_creds == nullptr) {
     call_creds = make_default_call_creds(&error);
@@ -394,7 +378,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
     // Create google default credentials.
     grpc_channel_credentials* ssl_creds =
         grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
-    GPR_ASSERT(ssl_creds != nullptr);
+    CHECK_NE(ssl_creds, nullptr);
     grpc_alts_credentials_options* options =
         grpc_alts_credentials_client_options_create();
     grpc_channel_credentials* alts_creds =
@@ -406,10 +390,10 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
             grpc_core::RefCountedPtr<grpc_channel_credentials>(ssl_creds));
     result = grpc_composite_channel_credentials_create(
         creds.get(), call_creds.get(), nullptr);
-    GPR_ASSERT(result != nullptr);
+    CHECK_NE(result, nullptr);
   } else {
-    gpr_log(GPR_ERROR, "Could not create google default credentials: %s",
-            grpc_core::StatusToString(error).c_str());
+    LOG(ERROR) << "Could not create google default credentials: "
+               << grpc_core::StatusToString(error);
   }
   return result;
 }

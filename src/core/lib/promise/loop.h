@@ -22,10 +22,10 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
-
-#include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
 
@@ -46,13 +46,17 @@ struct LoopTraits;
 template <typename T>
 struct LoopTraits<LoopCtl<T>> {
   using Result = T;
-  static LoopCtl<T> ToLoopCtl(LoopCtl<T> value) { return value; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static LoopCtl<T> ToLoopCtl(
+      LoopCtl<T> value) {
+    return value;
+  }
 };
 
 template <typename T>
 struct LoopTraits<absl::StatusOr<LoopCtl<T>>> {
   using Result = absl::StatusOr<T>;
-  static LoopCtl<Result> ToLoopCtl(absl::StatusOr<LoopCtl<T>> value) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static LoopCtl<Result> ToLoopCtl(
+      absl::StatusOr<LoopCtl<T>> value) {
     if (!value.ok()) return value.status();
     auto& inner = *value;
     if (absl::holds_alternative<Continue>(inner)) return Continue{};
@@ -63,7 +67,7 @@ struct LoopTraits<absl::StatusOr<LoopCtl<T>>> {
 template <>
 struct LoopTraits<absl::StatusOr<LoopCtl<absl::Status>>> {
   using Result = absl::Status;
-  static LoopCtl<Result> ToLoopCtl(
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static LoopCtl<Result> ToLoopCtl(
       absl::StatusOr<LoopCtl<absl::Status>> value) {
     if (!value.ok()) return value.status();
     const auto& inner = *value;
@@ -82,12 +86,13 @@ class Loop {
  public:
   using Result = typename LoopTraits<PromiseResult>::Result;
 
-  explicit Loop(F f) : factory_(std::move(f)) {}
-  ~Loop() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Loop(F f)
+      : factory_(std::move(f)) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Loop() {
     if (started_) Destruct(&promise_);
   }
 
-  Loop(Loop&& loop) noexcept
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Loop(Loop&& loop) noexcept
       : factory_(std::move(loop.factory_)), started_(loop.started_) {
     if (started_) Construct(&promise_, std::move(loop.promise_));
   }
@@ -95,7 +100,9 @@ class Loop {
   Loop(const Loop& loop) = delete;
   Loop& operator=(const Loop& loop) = delete;
 
-  Poll<Result> operator()() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
+    GRPC_TRACE_LOG(promise_primitives, INFO)
+        << "loop[" << this << "] begin poll started=" << started_;
     if (!started_) {
       started_ = true;
       Construct(&promise_, factory_.Make());
@@ -109,14 +116,20 @@ class Loop {
         //  from our factory.
         auto lc = LoopTraits<PromiseResult>::ToLoopCtl(std::move(*p));
         if (absl::holds_alternative<Continue>(lc)) {
+          GRPC_TRACE_LOG(promise_primitives, INFO)
+              << "loop[" << this << "] iteration complete, continue";
           Destruct(&promise_);
           Construct(&promise_, factory_.Make());
           continue;
         }
+        GRPC_TRACE_LOG(promise_primitives, INFO)
+            << "loop[" << this << "] iteration complete, return";
         //  - otherwise there's our result... return it out.
         return absl::get<Result>(std::move(lc));
       } else {
         // Otherwise the inner promise was pending, so we are pending.
+        GRPC_TRACE_LOG(promise_primitives, INFO)
+            << "loop[" << this << "] pending";
         return Pending();
       }
     }
@@ -136,7 +149,7 @@ class Loop {
 // Expects F returns LoopCtl<T> - if it's Continue, then run the loop again -
 // otherwise yield the returned value as the result of the loop.
 template <typename F>
-promise_detail::Loop<F> Loop(F f) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Loop<F> Loop(F f) {
   return promise_detail::Loop<F>(std::move(f));
 }
 

@@ -16,14 +16,8 @@
 //
 //
 
-#include <mutex>
-#include <thread>
-
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -33,19 +27,27 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
+#include <mutex>
+#include <thread>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
+#include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/test_tcp_server.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/test_tcp_server.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
@@ -83,7 +85,7 @@ std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
 void TestScenario::Log() const {
   std::ostringstream out;
   out << *this;
-  gpr_log(GPR_ERROR, "%s", out.str().c_str());
+  LOG(ERROR) << out.str();
 }
 
 // Set up a test tcp server which is in charge of accepting connections and
@@ -94,9 +96,11 @@ class TestTcpServer {
       : shutdown_(false),
         queue_data_(false),
         port_(grpc_pick_unused_port_or_die()) {
-    std::ostringstream server_address;
-    server_address << "localhost:" << port_;
-    address_ = server_address.str();
+    grpc_init();  // needed by LocalIpAndPort()
+    // This test does not do well with multiple connection attempts at the same
+    // time to the same tcp server, so use the local IP address instead of
+    // "localhost" which can result in two connections (ipv4 and ipv6).
+    address_ = grpc_core::LocalIpAndPort(port_);
     test_tcp_server_init(&tcp_server_, &TestTcpServer::OnConnect, this);
     GRPC_CLOSURE_INIT(&on_fd_released_, &TestTcpServer::OnFdReleased, this,
                       grpc_schedule_on_exec_ctx);
@@ -106,6 +110,7 @@ class TestTcpServer {
     running_thread_.join();
     test_tcp_server_destroy(&tcp_server_);
     grpc_recycle_unused_port(port_);
+    grpc_shutdown();
   }
 
   // Read some data before handing off the connection.
@@ -113,7 +118,7 @@ class TestTcpServer {
 
   void Start() {
     test_tcp_server_start(&tcp_server_, port_);
-    gpr_log(GPR_INFO, "Test TCP server started at %s", address_.c_str());
+    LOG(INFO) << "Test TCP server started at " << address_;
   }
 
   const std::string& address() { return address_; }
@@ -158,7 +163,7 @@ class TestTcpServer {
   void OnConnect(grpc_endpoint* tcp, grpc_pollset* /*accepting_pollset*/,
                  grpc_tcp_server_acceptor* acceptor) {
     std::string peer(grpc_endpoint_get_peer(tcp));
-    gpr_log(GPR_INFO, "Got incoming connection! from %s", peer.c_str());
+    LOG(INFO) << "Got incoming connection! from " << peer;
     EXPECT_FALSE(acceptor->external_connection);
     listener_fd_ = grpc_tcp_server_port_fd(
         acceptor->from_server, acceptor->port_index, acceptor->fd_index);
@@ -166,7 +171,7 @@ class TestTcpServer {
     grpc_tcp_destroy_and_release_fd(tcp, &fd_, &on_fd_released_);
   }
 
-  void OnFdReleased(grpc_error_handle err) {
+  void OnFdReleased(const absl::Status& err) {
     EXPECT_EQ(absl::OkStatus(), err);
     experimental::ExternalConnectionAcceptor::NewConnectionParameters p;
     p.listener_fd = listener_fd_;
@@ -180,8 +185,9 @@ class TestTcpServer {
       Slice data(buf, read_bytes);
       p.read_buffer = ByteBuffer(&data, 1);
     }
-    gpr_log(GPR_INFO, "Handing off fd %d with data size %d from listener fd %d",
-            fd_, static_cast<int>(p.read_buffer.Length()), listener_fd_);
+    LOG(INFO) << "Handing off fd " << fd_ << " with data size "
+              << static_cast<int>(p.read_buffer.Length())
+              << " from listener fd " << listener_fd_;
     connection_acceptor_->HandleNewConnection(&p);
   }
 
@@ -222,8 +228,7 @@ class PortSharingEnd2endTest : public ::testing::TestWithParam<TestScenario> {
       auto creds = GetCredentialsProvider()->GetServerCredentials(
           GetParam().credentials_type);
       builder.AddListeningPort(server_address_.str(), creds);
-      gpr_log(GPR_INFO, "gRPC server listening on %s",
-              server_address_.str().c_str());
+      LOG(INFO) << "gRPC server listening on " << server_address_.str();
     }
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
         GetParam().credentials_type);
@@ -325,7 +330,7 @@ std::vector<TestScenario> CreateTestScenarios() {
     credentials_types.push_back(kInsecureCredentialsType);
   }
 
-  GPR_ASSERT(!credentials_types.empty());
+  CHECK(!credentials_types.empty());
   for (const auto& cred : credentials_types) {
     for (auto server_has_port : {true, false}) {
       for (auto queue_pending_data : {true, false}) {

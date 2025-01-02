@@ -18,18 +18,25 @@
 
 #ifdef GPR_WINDOWS
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+
 #include <list>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/port.h"
+#include "src/core/util/sync.h"
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
+// clang-format off
+#include <ws2def.h>
+#include <afunix.h>
+// clang-format on
+#endif
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -120,9 +127,15 @@ class WindowsEventEngineListener : public EventEngine::Listener {
 
     // The cached AcceptEx for that port.
     LPFN_ACCEPTEX AcceptEx;
+    // Buffer to hold the local and remote address.
     // This seemingly magic number comes from AcceptEx's documentation. each
     // address buffer needs to have at least 16 more bytes at their end.
+#ifdef GRPC_HAVE_UNIX_SOCKET
+    // unix addr is larger than ip addr.
+    uint8_t addresses_[(sizeof(sockaddr_un) + 16) * 2] = {};
+#else
     uint8_t addresses_[(sizeof(sockaddr_in6) + 16) * 2] = {};
+#endif
     // The parent listener
     WindowsEventEngineListener* listener_;
     // shared state for asynchronous cleanup of overlapped operations

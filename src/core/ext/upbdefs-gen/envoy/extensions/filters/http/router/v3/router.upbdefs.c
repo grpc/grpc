@@ -3,7 +3,8 @@
  *     envoy/extensions/filters/http/router/v3/router.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include "upb/reflection/def.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
@@ -13,10 +14,11 @@ extern _upb_DefPool_Init envoy_config_accesslog_v3_accesslog_proto_upbdefinit;
 extern _upb_DefPool_Init envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
-static const char descriptor[1672] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 'f', 'i', 'l', 't', 'e', 'r', 
+static const char descriptor[1722] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 'f', 'i', 'l', 't', 'e', 'r', 
 's', '/', 'h', 't', 't', 'p', '/', 'r', 'o', 'u', 't', 'e', 'r', '/', 'v', '3', '/', 'r', 'o', 'u', 't', 'e', 'r', '.', 'p', 
 'r', 'o', 't', 'o', '\022', '\'', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 'f', 'i', 
 'l', 't', 'e', 'r', 's', '.', 'h', 't', 't', 'p', '.', 'r', 'o', 'u', 't', 'e', 'r', '.', 'v', '3', '\032', ')', 'e', 'n', 'v', 
@@ -27,15 +29,17 @@ static const char descriptor[1672] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', '
 'h', 't', 't', 'p', '_', 'c', 'o', 'n', 'n', 'e', 'c', 't', 'i', 'o', 'n', '_', 'm', 'a', 'n', 'a', 'g', 'e', 'r', '.', 'p', 
 'r', 'o', 't', 'o', '\032', '\036', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 'u', 'r', 
 'a', 't', 'i', 'o', 'n', '.', 'p', 'r', 'o', 't', 'o', '\032', '\036', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 
-'b', 'u', 'f', '/', 'w', 'r', 'a', 'p', 'p', 'e', 'r', 's', '.', 'p', 'r', 'o', 't', 'o', '\032', '\035', 'u', 'd', 'p', 'a', '/', 
-'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\032', 
-'!', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'v', 'e', 'r', 's', 'i', 'o', 'n', 
-'i', 'n', 'g', '.', 'p', 'r', 'o', 't', 'o', '\032', '\027', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '/', 'v', 'a', 'l', 'i', 'd', 
-'a', 't', 'e', '.', 'p', 'r', 'o', 't', 'o', '\"', '\323', '\010', '\n', '\006', 'R', 'o', 'u', 't', 'e', 'r', '\022', '?', '\n', '\r', 'd', 
-'y', 'n', 'a', 'm', 'i', 'c', '_', 's', 't', 'a', 't', 's', '\030', '\001', ' ', '\001', '(', '\013', '2', '\032', '.', 'g', 'o', 'o', 'g', 
-'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'B', 'o', 'o', 'l', 'V', 'a', 'l', 'u', 'e', 'R', '\014', 'd', 'y', 
-'n', 'a', 'm', 'i', 'c', 'S', 't', 'a', 't', 's', '\022', '(', '\n', '\020', 's', 't', 'a', 'r', 't', '_', 'c', 'h', 'i', 'l', 'd', 
-'_', 's', 'p', 'a', 'n', '\030', '\002', ' ', '\001', '(', '\010', 'R', '\016', 's', 't', 'a', 'r', 't', 'C', 'h', 'i', 'l', 'd', 'S', 'p', 
+'b', 'u', 'f', '/', 'w', 'r', 'a', 'p', 'p', 'e', 'r', 's', '.', 'p', 'r', 'o', 't', 'o', '\032', '#', 'e', 'n', 'v', 'o', 'y', 
+'/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'd', 'e', 'p', 'r', 'e', 'c', 'a', 't', 'i', 'o', 'n', '.', 
+'p', 'r', 'o', 't', 'o', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 
+'t', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\032', '!', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 
+'i', 'o', 'n', 's', '/', 'v', 'e', 'r', 's', 'i', 'o', 'n', 'i', 'n', 'g', '.', 'p', 'r', 'o', 't', 'o', '\032', '\027', 'v', 'a', 
+'l', 'i', 'd', 'a', 't', 'e', '/', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '.', 'p', 'r', 'o', 't', 'o', '\"', '\340', '\010', '\n', 
+'\006', 'R', 'o', 'u', 't', 'e', 'r', '\022', '?', '\n', '\r', 'd', 'y', 'n', 'a', 'm', 'i', 'c', '_', 's', 't', 'a', 't', 's', '\030', 
+'\001', ' ', '\001', '(', '\013', '2', '\032', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'B', 
+'o', 'o', 'l', 'V', 'a', 'l', 'u', 'e', 'R', '\014', 'd', 'y', 'n', 'a', 'm', 'i', 'c', 'S', 't', 'a', 't', 's', '\022', '5', '\n', 
+'\020', 's', 't', 'a', 'r', 't', '_', 'c', 'h', 'i', 'l', 'd', '_', 's', 'p', 'a', 'n', '\030', '\002', ' ', '\001', '(', '\010', 'B', '\013', 
+'\030', '\001', '\222', '\307', '\206', '\330', '\004', '\003', '3', '.', '0', 'R', '\016', 's', 't', 'a', 'r', 't', 'C', 'h', 'i', 'l', 'd', 'S', 'p', 
 'a', 'n', '\022', 'G', '\n', '\014', 'u', 'p', 's', 't', 'r', 'e', 'a', 'm', '_', 'l', 'o', 'g', '\030', '\003', ' ', '\003', '(', '\013', '2', 
 '$', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '.', 
 'v', '3', '.', 'A', 'c', 'c', 'e', 's', 's', 'L', 'o', 'g', 'R', '\013', 'u', 'p', 's', 't', 'r', 'e', 'a', 'm', 'L', 'o', 'g', 
@@ -85,11 +89,12 @@ static const char descriptor[1672] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', '
 'u', 't', 'e', 'r', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static _upb_DefPool_Init *deps[8] = {
+static _upb_DefPool_Init *deps[9] = {
   &envoy_config_accesslog_v3_accesslog_proto_upbdefinit,
   &envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
   &google_protobuf_wrappers_proto_upbdefinit,
+  &envoy_annotations_deprecation_proto_upbdefinit,
   &udpa_annotations_status_proto_upbdefinit,
   &udpa_annotations_versioning_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
@@ -100,5 +105,5 @@ _upb_DefPool_Init envoy_extensions_filters_http_router_v3_router_proto_upbdefini
   deps,
   &envoy_extensions_filters_http_router_v3_router_proto_upb_file_layout,
   "envoy/extensions/filters/http/router/v3/router.proto",
-  UPB_STRINGVIEW_INIT(descriptor, 1672)
+  UPB_STRINGVIEW_INIT(descriptor, 1722)
 };

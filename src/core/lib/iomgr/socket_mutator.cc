@@ -16,17 +16,15 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/socket_mutator.h"
 
 #include <grpc/impl/grpc_types.h>
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/useful.h"
 
 void grpc_socket_mutator_init(grpc_socket_mutator* mutator,
                               const grpc_socket_mutator_vtable* vtable) {

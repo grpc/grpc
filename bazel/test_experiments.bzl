@@ -23,6 +23,9 @@ TEST_EXPERIMENT_ENABLES = {
     "test_experiment_4": "test_experiment_4",
 }
 
+TEST_EXPERIMENT_POLLERS = [
+]
+
 TEST_EXPERIMENTS = {
     "windows": {
         "dbg": {

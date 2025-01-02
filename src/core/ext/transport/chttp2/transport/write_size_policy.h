@@ -16,11 +16,10 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_WRITE_SIZE_POLICY_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -40,7 +39,7 @@ class Chttp2WriteSizePolicy {
     return Duration::Milliseconds(300);
   }
 
-  // What size should be targetted for the next write.
+  // What size should be targeted for the next write.
   size_t WriteTargetSize();
   // Notify the policy that a write of some size has begun.
   // EndWrite must be called when the write completes.

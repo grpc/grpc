@@ -15,7 +15,7 @@
 
 set -e
 cd $(dirname $0)/../..
-tools/codegen/core/gen_experiments.py --check
+tools/codegen/core/gen_experiments.py --check --no_dbg_experiments
 # clang format
 TEST='' \
     CHANGED_FILES="$(git status --porcelain | awk '{print $2}' | tr '\n' ' ')" \

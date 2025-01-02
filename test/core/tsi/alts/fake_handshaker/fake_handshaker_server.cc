@@ -17,14 +17,7 @@
 //
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
 
-#include <memory>
-#include <sstream>
-#include <string>
-
-#include "absl/strings/str_format.h"
-
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
@@ -32,7 +25,14 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/async_stream.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include <memory>
+#include <sstream>
+#include <string>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
+#include "src/core/util/crash.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.grpc.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/transport_security_common.pb.h"
@@ -68,7 +68,7 @@ class FakeHandshakerService : public HandshakerService::Service {
     HandshakerContext context;
     HandshakerReq request;
     HandshakerResp response;
-    gpr_log(GPR_DEBUG, "Start a new handshake.");
+    VLOG(2) << "Start a new handshake.";
     while (stream->Read(&request)) {
       status = ProcessRequest(&context, request, &response);
       if (!status.ok()) return WriteErrorResponse(stream, status);
@@ -96,16 +96,17 @@ class FakeHandshakerService : public HandshakerService::Service {
   Status ProcessRequest(HandshakerContext* context,
                         const HandshakerReq& request,
                         HandshakerResp* response) {
-    GPR_ASSERT(context != nullptr && response != nullptr);
+    CHECK(context != nullptr);
+    CHECK_NE(response, nullptr);
     response->Clear();
     if (request.has_client_start()) {
-      gpr_log(GPR_DEBUG, "Process client start request.");
+      VLOG(2) << "Process client start request.";
       return ProcessClientStart(context, request.client_start(), response);
     } else if (request.has_server_start()) {
-      gpr_log(GPR_DEBUG, "Process server start request.");
+      VLOG(2) << "Process server start request.";
       return ProcessServerStart(context, request.server_start(), response);
     } else if (request.has_next()) {
-      gpr_log(GPR_DEBUG, "Process next request.");
+      VLOG(2) << "Process next request.";
       return ProcessNext(context, request.next(), response);
     }
     return Status(StatusCode::INVALID_ARGUMENT, "Request is empty.");
@@ -114,7 +115,8 @@ class FakeHandshakerService : public HandshakerService::Service {
   Status ProcessClientStart(HandshakerContext* context,
                             const StartClientHandshakeReq& request,
                             HandshakerResp* response) {
-    GPR_ASSERT(context != nullptr && response != nullptr);
+    CHECK(context != nullptr);
+    CHECK_NE(response, nullptr);
     // Checks request.
     if (context->state != INITIAL) {
       return Status(StatusCode::FAILED_PRECONDITION, kWrongStateError);
@@ -140,7 +142,8 @@ class FakeHandshakerService : public HandshakerService::Service {
   Status ProcessServerStart(HandshakerContext* context,
                             const StartServerHandshakeReq& request,
                             HandshakerResp* response) {
-    GPR_ASSERT(context != nullptr && response != nullptr);
+    CHECK(context != nullptr);
+    CHECK_NE(response, nullptr);
     // Checks request.
     if (context->state != INITIAL) {
       return Status(StatusCode::FAILED_PRECONDITION, kWrongStateError);
@@ -176,7 +179,8 @@ class FakeHandshakerService : public HandshakerService::Service {
   Status ProcessNext(HandshakerContext* context,
                      const NextHandshakeMessageReq& request,
                      HandshakerResp* response) {
-    GPR_ASSERT(context != nullptr && response != nullptr);
+    CHECK(context != nullptr);
+    CHECK_NE(response, nullptr);
     if (context->is_client) {
       // Processes next request on client side.
       if (context->state != SENT) {
@@ -222,7 +226,7 @@ class FakeHandshakerService : public HandshakerService::Service {
   Status WriteErrorResponse(
       ServerReaderWriter<HandshakerResp, HandshakerReq>* stream,
       const Status& status) {
-    GPR_ASSERT(!status.ok());
+    CHECK(!status.ok());
     HandshakerResp response;
     response.mutable_status()->set_code(status.error_code());
     response.mutable_status()->set_details(status.error_message());

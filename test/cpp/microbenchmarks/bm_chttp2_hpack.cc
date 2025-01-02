@@ -18,29 +18,27 @@
 
 // Microbenchmarks around CHTTP2 HPACK operations
 
+#include <benchmark/benchmark.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
 #include <string.h>
 
 #include <memory>
 #include <sstream>
 
-#include <benchmark/benchmark.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/random/random.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/timeout_encoding.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/time.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
@@ -52,6 +50,39 @@ static grpc_slice MakeSlice(const std::vector<uint8_t>& bytes) {
   }
   return s;
 }
+
+namespace grpc_core {
+
+class FakeCallTracer final : public CallTracerInterface {
+ public:
+  void RecordIncomingBytes(
+      const TransportByteSize& transport_byte_size) override {}
+  void RecordOutgoingBytes(
+      const TransportByteSize& transport_byte_size) override {}
+  void RecordSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) override {}
+  void RecordSendTrailingMetadata(
+      grpc_metadata_batch* send_trailing_metadata) override {}
+  void RecordSendMessage(const SliceBuffer& send_message) override {}
+  void RecordSendCompressedMessage(
+      const SliceBuffer& send_compressed_message) override {}
+  void RecordReceivedInitialMetadata(
+      grpc_metadata_batch* recv_initial_metadata) override {}
+  void RecordReceivedMessage(const SliceBuffer& recv_message) override {}
+  void RecordReceivedDecompressedMessage(
+      const SliceBuffer& recv_decompressed_message) override {}
+  void RecordCancel(grpc_error_handle cancel_error) override {}
+  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
+    return nullptr;
+  }
+  void RecordAnnotation(absl::string_view annotation) override {}
+  void RecordAnnotation(const Annotation& annotation) override {}
+  std::string TraceId() override { return ""; }
+  std::string SpanId() override { return ""; }
+  bool IsSampled() override { return false; }
+};
+
+}  // namespace grpc_core
 
 ////////////////////////////////////////////////////////////////////////////////
 // HPACK encoder
@@ -74,14 +105,12 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
       grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
-  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
   b.Set(grpc_core::GrpcTimeoutMetadata(),
         saved_now + grpc_core::Duration::Seconds(30));
 
   grpc_core::HPackCompressor c;
-  grpc_transport_one_way_stats stats;
-  stats = {};
+  grpc_core::FakeCallTracer call_tracer;
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
@@ -91,7 +120,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
             true,
             false,
             size_t{1024},
-            &stats,
+            &call_tracer,
         },
         b, &outbuf);
     grpc_slice_buffer_reset_and_unref(&outbuf);
@@ -106,17 +135,11 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   static bool logged_representative_output = false;
 
-  grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
-  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
   Fixture::Prepare(&b);
 
   grpc_core::HPackCompressor c;
-  grpc_transport_one_way_stats stats;
-  stats = {};
+  grpc_core::FakeCallTracer call_tracer;
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
@@ -127,14 +150,14 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
             state.range(0) != 0,
             Fixture::kEnableTrueBinary,
             static_cast<size_t>(state.range(1) + kEnsureMaxFrameAtLeast),
-            &stats,
+            &call_tracer,
         },
         b, &outbuf);
     if (!logged_representative_output && state.iterations() > 3) {
       logged_representative_output = true;
       for (size_t i = 0; i < outbuf.count; i++) {
         char* s = grpc_dump_slice(outbuf.slices[i], GPR_DUMP_HEX);
-        gpr_log(GPR_DEBUG, "%" PRIdPTR ": %s", i, s);
+        VLOG(2) << i << ": " << s;
         gpr_free(s);
       }
     }
@@ -344,14 +367,8 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
   grpc_core::ExecCtx exec_ctx;
   grpc_core::HPackParser p;
-  const int kArenaSize = 4096 * 4096;
-  grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
-  auto* arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
   grpc_core::ManualConstructor<grpc_metadata_batch> b;
-  b.Init(arena);
+  b.Init();
   p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
                std::numeric_limits<uint32_t>::max(),
                grpc_core::HPackParser::Boundary::None,
@@ -364,7 +381,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       auto error =
           p.Parse(slices[i], i == slices.size() - 1, absl::BitGenRef(bitgen),
                   /*call_tracer=*/nullptr);
-      GPR_ASSERT(error.ok());
+      CHECK_OK(error);
     }
   };
   parse_vec(init_slices);
@@ -372,25 +389,11 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
     b->Clear();
     parse_vec(benchmark_slices);
     grpc_core::ExecCtx::Get()->Flush();
-    // Recreate arena every 4k iterations to avoid oom
-    if (0 == (state.iterations() & 0xfff)) {
-      b.Destroy();
-      arena->Destroy();
-      arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
-      b.Init(arena);
-      p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
-                   std::numeric_limits<uint32_t>::max(),
-                   grpc_core::HPackParser::Boundary::None,
-                   grpc_core::HPackParser::Priority::None,
-                   grpc_core::HPackParser::LogInfo{
-                       1, grpc_core::HPackParser::LogInfo::kHeaders, false});
-    }
   }
   // Clean up
   b.Destroy();
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
-  arena->Destroy();
 }
 
 namespace hpack_parser_fixtures {
@@ -404,19 +407,12 @@ class FromEncoderFixture {
  private:
   static std::vector<grpc_slice> Generate(int iteration) {
     grpc_core::ExecCtx exec_ctx;
-
-    grpc_core::MemoryAllocator memory_allocator =
-        grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                       ->memory_quota()
-                                       ->CreateMemoryAllocator("test"));
-    auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-    grpc_metadata_batch b(arena.get());
+    grpc_metadata_batch b;
     EncoderFixture::Prepare(&b);
 
     grpc_core::HPackCompressor c;
-    grpc_transport_one_way_stats stats;
+    grpc_core::FakeCallTracer call_tracer;
     std::vector<grpc_slice> out;
-    stats = {};
     bool done = false;
     int i = 0;
     while (!done) {
@@ -428,7 +424,7 @@ class FromEncoderFixture {
               false,
               EncoderFixture::kEnableTrueBinary,
               1024 * 1024,
-              &stats,
+              &call_tracer,
           },
           b, &outbuf);
       if (i == iteration) {
@@ -443,8 +439,8 @@ class FromEncoderFixture {
       i++;
     }
     // Remove the HTTP header.
-    GPR_ASSERT(!out.empty());
-    GPR_ASSERT(GRPC_SLICE_LENGTH(out[0]) > 9);
+    CHECK(!out.empty());
+    CHECK_GT(GRPC_SLICE_LENGTH(out[0]), 9);
     out[0] = grpc_slice_sub_no_ref(out[0], 9, GRPC_SLICE_LENGTH(out[0]));
     return out;
   }

@@ -20,10 +20,9 @@
 #define GRPC_TEST_CPP_INTEROP_PRE_STOP_HOOK_SERVER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <grpcpp/server.h>
 
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 

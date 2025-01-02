@@ -18,19 +18,16 @@
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
 
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
 #include <gtest/gtest.h>
 
 #include "absl/types/span.h"
-
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
 #include "src/core/tsi/transport_security_grpc.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
-#include "test/core/util/test_config.h"
 
 // TODO(unknown): tests zero_copy_grpc_protector under TSI test library, which
 // has more comprehensive tests.

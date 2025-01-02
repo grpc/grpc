@@ -14,10 +14,11 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/gcp/observability_config.h"
 
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -29,19 +30,15 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/slice.h>
-#include <grpc/status.h>
-
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/env.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/load_file.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/validation_errors.h"
 
 namespace grpc {
 namespace internal {
@@ -56,17 +53,12 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
   std::string contents_str;
   auto path = grpc_core::GetEnv("GRPC_GCP_OBSERVABILITY_CONFIG_FILE");
   if (path.has_value() && !path.value().empty()) {
-    grpc_slice contents;
-    grpc_error_handle error =
-        grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
-    if (!error.ok()) {
-      return grpc_error_to_absl_status(
-          grpc_error_set_int(error, grpc_core::StatusIntProperty::kRpcStatus,
-                             GRPC_STATUS_FAILED_PRECONDITION));
+    auto contents = grpc_core::LoadFile(*path, /*add_null_terminator=*/true);
+    if (!contents.ok()) {
+      return absl::FailedPreconditionError(absl::StrCat(
+          "error loading file ", *path, ": ", contents.status().ToString()));
     }
-    std::string contents_str(grpc_core::StringViewFromSlice(contents));
-    grpc_slice_unref(contents);
-    return std::move(contents_str);
+    return std::string(contents->as_string_view());
   }
   // Next, try GRPC_GCP_OBSERVABILITY_CONFIG env var.
   auto env_config = grpc_core::GetEnv("GRPC_GCP_OBSERVABILITY_CONFIG");
@@ -83,7 +75,7 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
 // Tries to get the GCP Project ID from environment variables, or returns an
 // empty string if not found.
 std::string GetProjectIdFromGcpEnvVar() {
-  // First check GCP_PROEJCT
+  // First check GCP_PROJECT
   absl::optional<std::string> project_id = grpc_core::GetEnv("GCP_PROJECT");
   if (project_id.has_value() && !project_id->empty()) {
     return project_id.value();

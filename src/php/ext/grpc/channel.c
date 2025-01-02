@@ -29,6 +29,7 @@
 #include <ext/spl/spl_exceptions.h>
 #include <zend_exceptions.h>
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -271,12 +272,16 @@ void create_and_add_channel_to_persistent_list(
       // If no channel can be deleted from the persistent map,
       // do not persist this one.
       create_channel(channel, target, args, creds);
-      gpr_log(GPR_INFO, "[Warning] The number of channel for the"
-                 " target %s is maxed out bounded.\n", target);
-      gpr_log(GPR_INFO, "[Warning] Target upper bound: %d. Current size: %d.\n",
-                 target_bound_status->upper_bound,
-                 target_bound_status->current_count);
-      gpr_log(GPR_INFO, "[Warning] Target %s will not be persisted.\n", target);
+      grpc_absl_log_str(GPR_INFO,
+        "[Warning] The number of channel for the target is maxed out bounded."
+        " Target will not be persisted. Target : ",
+        target);
+      grpc_absl_log_int(GPR_INFO,
+        "[Warning] Target upper bound: ",
+        target_bound_status->upper_bound);
+      grpc_absl_log_int(GPR_INFO,
+        "[Warning] Current size: ",
+        target_bound_status->current_count);
       return;
     }
   }

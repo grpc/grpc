@@ -16,35 +16,35 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
 
+#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/random/distributions.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
-
-#include "src/core/ext/transport/chttp2/transport/http_trace.h"
+#include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/status_helper.h"
 
-grpc_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
-                                         grpc_transport_one_way_stats* stats) {
+grpc_slice grpc_chttp2_rst_stream_create(
+    uint32_t id, uint32_t code, grpc_core::CallTracerInterface* call_tracer) {
   static const size_t frame_size = 13;
   grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
-  if (stats != nullptr) stats->framing_bytes += frame_size;
+  if (call_tracer != nullptr) {
+    call_tracer->RecordOutgoingBytes({frame_size, 0, 0});
+  }
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
   // Frame size.
@@ -71,10 +71,10 @@ grpc_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
 
 void grpc_chttp2_add_rst_stream_to_next_write(
     grpc_chttp2_transport* t, uint32_t id, uint32_t code,
-    grpc_transport_one_way_stats* stats) {
+    grpc_core::CallTracerInterface* call_tracer) {
   t->num_pending_induced_frames++;
   grpc_slice_buffer_add(&t->qbuf,
-                        grpc_chttp2_rst_stream_create(id, code, stats));
+                        grpc_chttp2_rst_stream_create(id, code, call_tracer));
 }
 
 grpc_error_handle grpc_chttp2_rst_stream_parser_begin_frame(
@@ -103,19 +103,18 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
     cur++;
     p->byte++;
   }
-  s->stats.incoming.framing_bytes += static_cast<uint64_t>(end - cur);
+  uint64_t framing_bytes = static_cast<uint64_t>(end - cur);
+  s->call_tracer_wrapper.RecordIncomingBytes({framing_bytes, 0, 0});
 
   if (p->byte == 4) {
-    GPR_ASSERT(is_last);
+    CHECK(is_last);
     uint32_t reason = ((static_cast<uint32_t>(p->reason_bytes[0])) << 24) |
                       ((static_cast<uint32_t>(p->reason_bytes[1])) << 16) |
                       ((static_cast<uint32_t>(p->reason_bytes[2])) << 8) |
                       ((static_cast<uint32_t>(p->reason_bytes[3])));
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-      gpr_log(GPR_INFO,
-              "[chttp2 transport=%p stream=%p] received RST_STREAM(reason=%d)",
-              t, s, reason);
-    }
+    GRPC_TRACE_LOG(http, INFO)
+        << "[chttp2 transport=" << t << " stream=" << s
+        << "] received RST_STREAM(reason=" << reason << ")";
     grpc_error_handle error;
     if (reason != GRPC_HTTP2_NO_ERROR || s->trailing_metadata_buffer.empty()) {
       error = grpc_error_set_int(

@@ -15,11 +15,10 @@
 #ifndef GRPC_IMPL_CALL_H
 #define GRPC_IMPL_CALL_H
 
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
 #include "absl/functional/any_invocable.h"
-
-#include <grpc/grpc.h>
 
 // Run a callback in the call's EventEngine.
 // Internal-only

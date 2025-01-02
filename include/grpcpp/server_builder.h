@@ -19,23 +19,26 @@
 #ifndef GRPCPP_SERVER_BUILDER_H
 #define GRPCPP_SERVER_BUILDER_H
 
+#include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/passive_listener.h>
+#include <grpc/support/cpu.h>
 #include <grpc/support/port_platform.h>
+#include <grpc/support/workaround_list.h>
+#include <grpcpp/impl/channel_argument_option.h>
+#include <grpcpp/impl/server_builder_option.h>
+#include <grpcpp/impl/server_builder_plugin.h>
+#include <grpcpp/passive_listener.h>
+#include <grpcpp/security/authorization_policy_provider.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/support/config.h>
+#include <grpcpp/support/server_interceptor.h>
 
 #include <climits>
 #include <map>
 #include <memory>
 #include <vector>
-
-#include <grpc/compression.h>
-#include <grpc/support/cpu.h>
-#include <grpc/support/workaround_list.h>
-#include <grpcpp/impl/channel_argument_option.h>
-#include <grpcpp/impl/server_builder_option.h>
-#include <grpcpp/impl/server_builder_plugin.h>
-#include <grpcpp/security/authorization_policy_provider.h>
-#include <grpcpp/server.h>
-#include <grpcpp/support/config.h>
-#include <grpcpp/support/server_interceptor.h>
 
 struct grpc_resource_quota;
 
@@ -292,6 +295,18 @@ class ServerBuilder {
     void EnableCallMetricRecording(
         experimental::ServerMetricRecorder* server_metric_recorder = nullptr);
 
+    // Creates a passive listener for Server Endpoint injection.
+    ///
+    /// \a PassiveListener lets applications provide pre-established connections
+    /// to gRPC Servers. The server will behave as if it accepted the connection
+    /// itself on its own listening addresses.
+    ///
+    /// This can be called multiple times to create passive listeners with
+    /// different server credentials.
+    ServerBuilder& AddPassiveListener(
+        std::shared_ptr<grpc::ServerCredentials> creds,
+        std::unique_ptr<grpc::experimental::PassiveListener>& passive_listener);
+
    private:
     ServerBuilder* builder_;
   };
@@ -365,6 +380,17 @@ class ServerBuilder {
  private:
   friend class grpc::testing::ServerBuilderPluginTest;
 
+  struct UnstartedPassiveListener {
+    std::weak_ptr<grpc_core::experimental::PassiveListenerImpl>
+        passive_listener;
+    std::shared_ptr<grpc::ServerCredentials> credentials;
+    UnstartedPassiveListener(
+        std::weak_ptr<grpc_core::experimental::PassiveListenerImpl> listener,
+        std::shared_ptr<grpc::ServerCredentials> creds)
+        : passive_listener(std::move(listener)),
+          credentials(std::move(creds)) {}
+  };
+
   struct SyncServerSettings {
     SyncServerSettings()
         : num_cqs(1), min_pollers(1), max_pollers(2), cq_timeout_msec(10000) {}
@@ -389,6 +415,7 @@ class ServerBuilder {
   std::vector<std::unique_ptr<grpc::ServerBuilderOption>> options_;
   std::vector<std::unique_ptr<NamedService>> services_;
   std::vector<Port> ports_;
+  std::vector<UnstartedPassiveListener> unstarted_passive_listeners_;
 
   SyncServerSettings sync_server_settings_;
 

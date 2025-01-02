@@ -16,17 +16,17 @@
 
 #include "test/cpp/interop/istio_echo_server_lib.h"
 
+#include <grpcpp/client_context.h>
+#include <grpcpp/grpcpp.h>
+
 #include <thread>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 #include "absl/synchronization/blocking_counter.h"
-
-#include <grpcpp/client_context.h>
-#include <grpcpp/grpcpp.h>
-
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/istio_echo.pb.h"
 
 using proto::EchoRequest;
@@ -109,7 +109,7 @@ Status EchoTestServiceImpl::Echo(ServerContext* context,
   absl::StrAppend(&s, kHostnameField, "=", this->hostname_, "\n");
   absl::StrAppend(&s, "Echo=", request->message(), "\n");
   response->set_message(s);
-  gpr_log(GPR_INFO, "Echo response:\n%s", s.c_str());
+  LOG(INFO) << "Echo response:\n" << s;
   return Status::OK;
 }
 
@@ -129,8 +129,7 @@ Status EchoTestServiceImpl::ForwardEcho(ServerContext* context,
   if (scheme == "xds") {
     // We can optionally add support for TLS creds, but we are primarily
     // concerned with proxyless-grpc here.
-    gpr_log(GPR_INFO, "Creating channel to %s using xDS Creds",
-            raw_url.c_str());
+    LOG(INFO) << "Creating channel to " << raw_url << " using xDS Creds";
     channel =
         CreateChannel(raw_url, XdsCredentials(InsecureChannelCredentials()));
   } else if (scheme == "grpc") {
@@ -138,11 +137,11 @@ Status EchoTestServiceImpl::ForwardEcho(ServerContext* context,
     // this to be supported. If we ever decide to add support for this properly,
     // we would need to add support for TLS creds here.
     absl::string_view address = absl::StripPrefix(raw_url, "grpc://");
-    gpr_log(GPR_INFO, "Creating channel to %s", std::string(address).c_str());
+    LOG(INFO) << "Creating channel to " << address;
     channel = CreateChannel(std::string(address), InsecureChannelCredentials());
   } else {
-    gpr_log(GPR_INFO, "Protocol %s not supported. Forwarding to %s",
-            scheme.c_str(), forwarding_address_.c_str());
+    LOG(INFO) << "Protocol " << scheme << " not supported. Forwarding to "
+              << forwarding_address_;
     ClientContext forwarding_ctx;
     forwarding_ctx.set_deadline(context->deadline());
     return forwarding_stub_->ForwardEcho(&forwarding_ctx, *request, response);
@@ -197,11 +196,10 @@ Status EchoTestServiceImpl::ForwardEcho(ServerContext* context,
         absl::StrAppend(&body, absl::StrFormat("[%d body] %s\n", i, line));
       }
       response->add_output(body);
-      gpr_log(GPR_INFO, "Forward Echo response:%d\n%s", i, body.c_str());
+      LOG(INFO) << "Forward Echo response:" << i << "\n" << body;
     } else {
-      gpr_log(GPR_ERROR, "RPC %d failed %d: %s", i,
-              calls[i].status.error_code(),
-              calls[i].status.error_message().c_str());
+      LOG(ERROR) << "RPC " << i << " failed " << calls[i].status.error_code()
+                 << ": " << calls[i].status.error_message();
       response->clear_output();
       return calls[i].status;
     }

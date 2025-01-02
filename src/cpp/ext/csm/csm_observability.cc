@@ -16,33 +16,105 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/csm/csm_observability.h"
+
+#include <grpc/support/port_platform.h>
+#include <grpcpp/ext/csm_observability.h>
 
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "google/cloud/opentelemetry/resource_detector.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/resource/resource.h"
 #include "opentelemetry/sdk/resource/resource_detector.h"
-
-#include <grpc/support/log.h>
-#include <grpcpp/ext/csm_observability.h>
-
-#include "src/core/ext/xds/xds_enabled_server.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
+#include "src/core/xds/grpc/xds_enabled_server.h"
 #include "src/cpp/ext/csm/metadata_exchange.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
-namespace experimental {
+
+namespace internal {
+
+namespace {
+std::atomic<bool> g_csm_plugin_enabled(false);
+}
+
+bool CsmServerSelector(const grpc_core::ChannelArgs& /*args*/) {
+  return g_csm_plugin_enabled;
+}
+
+bool CsmChannelTargetSelector(absl::string_view target) {
+  if (!g_csm_plugin_enabled) return false;
+  auto uri = grpc_core::URI::Parse(target);
+  if (!uri.ok()) {
+    LOG(ERROR) << "Failed to parse URI: " << target;
+    return false;
+  }
+  // CSM channels should have an "xds" scheme
+  if (uri->scheme() != "xds") {
+    return false;
+  }
+  // If set, the authority should be TD
+  if (!uri->authority().empty() &&
+      uri->authority() != "traffic-director-global.xds.googleapis.com") {
+    return false;
+  }
+  return true;
+}
+
+class CsmOpenTelemetryPluginOption
+    : public grpc::internal::InternalOpenTelemetryPluginOption {
+ public:
+  CsmOpenTelemetryPluginOption()
+      : labels_injector_(std::make_unique<internal::ServiceMeshLabelsInjector>(
+            google::cloud::otel::MakeResourceDetector()
+                ->Detect()
+                .GetAttributes())) {}
+
+  bool IsActiveOnClientChannel(absl::string_view target) const override {
+    return CsmChannelTargetSelector(target);
+  }
+
+  bool IsActiveOnServer(const grpc_core::ChannelArgs& args) const override {
+    return CsmServerSelector(args);
+  }
+
+  const grpc::internal::LabelsInjector* labels_injector() const override {
+    return labels_injector_.get();
+  }
+
+ private:
+  std::unique_ptr<internal::ServiceMeshLabelsInjector> labels_injector_;
+};
+
+}  // namespace internal
+
+//
+// CsmObservability
+//
+
+CsmObservability::~CsmObservability() {
+  if (valid_) {
+    internal::g_csm_plugin_enabled = false;
+  }
+}
+
+CsmObservability::CsmObservability(CsmObservability&& other) noexcept {
+  other.valid_ = false;
+}
+CsmObservability& CsmObservability::operator=(
+    CsmObservability&& other) noexcept {
+  other.valid_ = false;
+  return *this;
+}
 
 //
 // CsmObservabilityBuilder
@@ -55,8 +127,7 @@ CsmObservabilityBuilder::CsmObservabilityBuilder()
 CsmObservabilityBuilder::~CsmObservabilityBuilder() = default;
 
 CsmObservabilityBuilder& CsmObservabilityBuilder::SetMeterProvider(
-    std::shared_ptr<opentelemetry::sdk::metrics::MeterProvider>
-        meter_provider) {
+    std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider) {
   builder_->SetMeterProvider(meter_provider);
   return *this;
 }
@@ -78,40 +149,14 @@ CsmObservabilityBuilder::SetGenericMethodAttributeFilter(
 }
 
 absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
-  builder_->SetServerSelector([](const grpc_core::ChannelArgs& args) {
-    return args.GetBool(GRPC_ARG_XDS_ENABLED_SERVER).value_or(false);
-  });
-  builder_->SetTargetSelector(internal::CsmChannelTargetSelector);
-  builder_->SetLabelsInjector(
-      std::make_unique<internal::ServiceMeshLabelsInjector>(
-          google::cloud::otel::MakeResourceDetector()
-              ->Detect()
-              .GetAttributes()));
-  builder_->BuildAndRegisterGlobal();
+  builder_->AddPluginOption(
+      std::make_unique<grpc::internal::CsmOpenTelemetryPluginOption>());
+  auto status = builder_->BuildAndRegisterGlobal();
+  internal::g_csm_plugin_enabled = true;
+  if (!status.ok()) {
+    return status;
+  }
   return CsmObservability();
 }
 
-}  // namespace experimental
-
-namespace internal {
-
-bool CsmChannelTargetSelector(absl::string_view target) {
-  auto uri = grpc_core::URI::Parse(target);
-  if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "Failed to parse URI: %s", std::string(target).c_str());
-    return false;
-  }
-  // CSM channels should have an "xds" scheme
-  if (uri->scheme() != "xds") {
-    return false;
-  }
-  // If set, the authority should be TD
-  if (!uri->authority().empty() &&
-      uri->authority() != "traffic-director-global.xds.googleapis.com") {
-    return false;
-  }
-  return true;
-}
-
-}  // namespace internal
 }  // namespace grpc

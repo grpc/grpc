@@ -14,13 +14,13 @@
 """Implementation of the metadata abstraction for gRPC Asyncio Python."""
 from collections import OrderedDict
 from collections import abc
-from typing import Any, Iterator, List, Tuple, Union
+from typing import Any, Iterator, List, Optional, Tuple, Union
 
 MetadataKey = str
 MetadataValue = Union[str, bytes]
 
 
-class Metadata(abc.Mapping):
+class Metadata(abc.Collection):
     """Metadata abstraction for the asynchronous calls and interceptors.
 
     The metadata is a mapping from str -> List[str]
@@ -88,6 +88,23 @@ class Metadata(abc.Mapping):
         for key, values in self._metadata.items():
             for value in values:
                 yield (key, value)
+
+    def keys(self) -> abc.KeysView:
+        return abc.KeysView(self)
+
+    def values(self) -> abc.ValuesView:
+        return abc.ValuesView(self)
+
+    def items(self) -> abc.ItemsView:
+        return abc.ItemsView(self)
+
+    def get(
+        self, key: MetadataKey, default: MetadataValue = None
+    ) -> Optional[MetadataValue]:
+        try:
+            return self[key]
+        except KeyError:
+            return default
 
     def get_all(self, key: MetadataKey) -> List[MetadataValue]:
         """For compatibility with other Metadata abstraction objects (like in Java),

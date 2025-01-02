@@ -21,7 +21,7 @@
 
 #include <benchmark/benchmark.h>
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 static void BM_NoOp(benchmark::State& state) {
   for (auto _ : state) {

@@ -16,7 +16,7 @@
 set -e
 
 # directories to run against
-DIRS="examples/cpp examples/android/binder src/core/lib src/core/tsi src/core/ext src/cpp test/core test/cpp include src/compiler src/ruby src/objective-c tools/distrib/python src/python/grpcio_observability"
+DIRS="examples/cpp src/core src/cpp test/core test/cpp include src/compiler src/ruby src/objective-c tools/distrib/python src/python/grpcio_observability"
 
 # file matching patterns to check
 GLOB="*.h *.c *.cc *.m *.mm"
@@ -51,6 +51,8 @@ do
     -and -not -name grpc_tls_credentials_options.h \
     -and -not -name grpc_tls_credentials_options_comparator_test.cc \
     -and -not -path '*/cmake/build/*' \
+    -and -not -path '*/third_party/*' \
+    -and -not -path '*/src/python/grpcio_observability/grpc_root/*' \
     `"
   done
 done

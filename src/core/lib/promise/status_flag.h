@@ -17,81 +17,206 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <ostream>
+
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/promise/detail/status.h"
 
 namespace grpc_core {
 
-struct Failure {};
-struct Success {};
+struct Failure {
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, Failure) {
+    sink.Append("failed");
+  }
+};
+struct Success {
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, Success) {
+    sink.Append("ok");
+  }
+};
 
-inline bool IsStatusOk(Failure) { return false; }
-inline bool IsStatusOk(Success) { return true; }
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool IsStatusOk(Failure) {
+  return false;
+}
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool IsStatusOk(Success) {
+  return true;
+}
 
 template <>
 struct StatusCastImpl<absl::Status, Success> {
-  static absl::Status Cast(Success) { return absl::OkStatus(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Cast(Success) {
+    return absl::OkStatus();
+  }
+};
+
+template <>
+struct StatusCastImpl<absl::Status, Success&> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Cast(Success) {
+    return absl::OkStatus();
+  }
 };
 
 template <>
 struct StatusCastImpl<absl::Status, const Success&> {
-  static absl::Status Cast(Success) { return absl::OkStatus(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Cast(Success) {
+    return absl::OkStatus();
+  }
 };
 
 template <>
 struct StatusCastImpl<absl::Status, Failure> {
-  static absl::Status Cast(Failure) { return absl::CancelledError(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Cast(Failure) {
+    return absl::CancelledError();
+  }
 };
 
 template <typename T>
 struct StatusCastImpl<absl::StatusOr<T>, Failure> {
-  static absl::StatusOr<T> Cast(Failure) { return absl::CancelledError(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::StatusOr<T> Cast(Failure) {
+    return absl::CancelledError();
+  }
 };
 
 // A boolean representing whether an operation succeeded (true) or failed
 // (false).
 class StatusFlag {
  public:
-  StatusFlag() : value_(true) {}
-  explicit StatusFlag(bool value) : value_(value) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION StatusFlag() : value_(true) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit StatusFlag(bool value)
+      : value_(value) {}
   // NOLINTNEXTLINE(google-explicit-constructor)
-  StatusFlag(Failure) : value_(false) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION StatusFlag(Failure) : value_(false) {}
   // NOLINTNEXTLINE(google-explicit-constructor)
-  StatusFlag(Success) : value_(true) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION StatusFlag(Success) : value_(true) {}
 
-  bool ok() const { return value_; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ok() const { return value_; }
 
-  bool operator==(StatusFlag other) const { return value_ == other.value_; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator==(StatusFlag other) const {
+    return value_ == other.value_;
+  }
+  std::string ToString() const { return value_ ? "ok" : "failed"; }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, StatusFlag flag) {
+    if (flag.ok()) {
+      sink.Append("ok");
+    } else {
+      sink.Append("failed");
+    }
+  }
 
  private:
   bool value_;
 };
 
-inline bool IsStatusOk(const StatusFlag& flag) { return flag.ok(); }
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool operator==(StatusFlag flag,
+                                                            Failure) {
+  return !flag.ok();
+}
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool operator==(Failure,
+                                                            StatusFlag flag) {
+  return !flag.ok();
+}
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool operator==(StatusFlag flag,
+                                                            Success) {
+  return flag.ok();
+}
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool operator==(Success,
+                                                            StatusFlag flag) {
+  return flag.ok();
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool operator!=(StatusFlag flag,
+                                                            Failure) {
+  return flag.ok();
+}
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool operator!=(Failure,
+                                                            StatusFlag flag) {
+  return flag.ok();
+}
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool operator!=(StatusFlag flag,
+                                                            Success) {
+  return !flag.ok();
+}
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool operator!=(Success,
+                                                            StatusFlag flag) {
+  return !flag.ok();
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool IsStatusOk(
+    const StatusFlag& flag) {
+  return flag.ok();
+}
 
 template <>
 struct StatusCastImpl<absl::Status, StatusFlag> {
-  static absl::Status Cast(StatusFlag flag) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Cast(
+      StatusFlag flag) {
     return flag.ok() ? absl::OkStatus() : absl::CancelledError();
   }
 };
 
 template <>
 struct StatusCastImpl<absl::Status, StatusFlag&> {
-  static absl::Status Cast(StatusFlag flag) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Cast(
+      StatusFlag flag) {
     return flag.ok() ? absl::OkStatus() : absl::CancelledError();
   }
 };
 
 template <>
 struct StatusCastImpl<absl::Status, const StatusFlag&> {
-  static absl::Status Cast(StatusFlag flag) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Cast(
+      StatusFlag flag) {
     return flag.ok() ? absl::OkStatus() : absl::CancelledError();
+  }
+};
+
+template <>
+struct StatusCastImpl<StatusFlag, Success> {
+  static StatusFlag Cast(Success) { return StatusFlag(true); }
+};
+
+template <>
+struct StatusCastImpl<StatusFlag, Failure> {
+  static StatusFlag Cast(Failure) { return StatusFlag(false); }
+};
+
+template <>
+struct FailureStatusCastImpl<StatusFlag, Failure> {
+  static StatusFlag Cast(Failure) { return StatusFlag(false); }
+};
+
+template <typename T>
+struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::StatusOr<T> Cast(
+      StatusFlag flag) {
+    DCHECK(!flag.ok());
+    return absl::CancelledError();
+  }
+};
+
+template <typename T>
+struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag&> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::StatusOr<T> Cast(
+      StatusFlag flag) {
+    DCHECK(!flag.ok());
+    return absl::CancelledError();
+  }
+};
+
+template <typename T>
+struct FailureStatusCastImpl<absl::StatusOr<T>, const StatusFlag&> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::StatusOr<T> Cast(
+      StatusFlag flag) {
+    DCHECK(!flag.ok());
+    return absl::CancelledError();
   }
 };
 
@@ -104,22 +229,60 @@ class ValueOrFailure {
   // NOLINTNEXTLINE(google-explicit-constructor)
   ValueOrFailure(Failure) {}
   // NOLINTNEXTLINE(google-explicit-constructor)
-  ValueOrFailure(StatusFlag status) { GPR_ASSERT(!status.ok()); }
+  ValueOrFailure(StatusFlag status) { CHECK(!status.ok()); }
 
-  static ValueOrFailure FromOptional(absl::optional<T> value) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure FromOptional(
+      absl::optional<T> value) {
     return ValueOrFailure{std::move(value)};
   }
 
-  bool ok() const { return value_.has_value(); }
-  StatusFlag status() const { return StatusFlag(ok()); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ok() const {
+    return value_.has_value();
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION StatusFlag status() const {
+    return StatusFlag(ok());
+  }
 
-  const T& value() const { return value_.value(); }
-  T& value() { return value_.value(); }
-  const T& operator*() const { return *value_; }
-  T& operator*() { return *value_; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T& value() const {
+    return value_.value();
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() { return value_.value(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T& operator*() const {
+    return *value_;
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& operator*() { return *value_; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T* operator->() const {
+    return &*value_;
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* operator->() { return &*value_; }
 
-  bool operator==(const ValueOrFailure& other) const {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator==(
+      const ValueOrFailure& other) const {
     return value_ == other.value_;
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator!=(
+      const ValueOrFailure& other) const {
+    return value_ != other.value_;
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator==(const T& other) const {
+    return value_ == other;
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator!=(const T& other) const {
+    return value_ != other;
+  }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const ValueOrFailure& value) {
+    if (value.ok()) {
+      sink.Append("Success(");
+      sink.Append(absl::StrCat(*value));
+      sink.Append(")");
+    } else {
+      sink.Append("Failure");
+    }
   }
 
  private:
@@ -127,18 +290,31 @@ class ValueOrFailure {
 };
 
 template <typename T>
-inline bool IsStatusOk(const ValueOrFailure<T>& value) {
+inline std::ostream& operator<<(std::ostream& os,
+                                const ValueOrFailure<T>& value) {
+  if (value.ok()) {
+    return os << "Success(" << *value << ")";
+  } else {
+    return os << "Failure";
+  }
+}
+
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool IsStatusOk(
+    const ValueOrFailure<T>& value) {
   return value.ok();
 }
 
 template <typename T>
-inline T TakeValue(ValueOrFailure<T>&& value) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
+    ValueOrFailure<T>&& value) {
   return std::move(value.value());
 }
 
 template <typename T>
 struct StatusCastImpl<absl::StatusOr<T>, ValueOrFailure<T>> {
-  static absl::StatusOr<T> Cast(ValueOrFailure<T> value) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::StatusOr<T> Cast(
+      ValueOrFailure<T> value) {
     return value.ok() ? absl::StatusOr<T>(std::move(value.value()))
                       : absl::CancelledError();
   }
@@ -146,23 +322,25 @@ struct StatusCastImpl<absl::StatusOr<T>, ValueOrFailure<T>> {
 
 template <typename T>
 struct StatusCastImpl<ValueOrFailure<T>, Failure> {
-  static ValueOrFailure<T> Cast(Failure) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure<T> Cast(Failure) {
     return ValueOrFailure<T>(Failure{});
   }
 };
 
 template <typename T>
 struct StatusCastImpl<ValueOrFailure<T>, StatusFlag&> {
-  static ValueOrFailure<T> Cast(StatusFlag f) {
-    GPR_ASSERT(!f.ok());
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure<T> Cast(
+      StatusFlag f) {
+    CHECK(!f.ok());
     return ValueOrFailure<T>(Failure{});
   }
 };
 
 template <typename T>
 struct StatusCastImpl<ValueOrFailure<T>, StatusFlag> {
-  static ValueOrFailure<T> Cast(StatusFlag f) {
-    GPR_ASSERT(!f.ok());
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure<T> Cast(
+      StatusFlag f) {
+    CHECK(!f.ok());
     return ValueOrFailure<T>(Failure{});
   }
 };

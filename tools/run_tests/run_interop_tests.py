@@ -1220,7 +1220,7 @@ def build_interop_image_jobspec(language, tag=None):
         cmdline=["tools/run_tests/dockerize/build_interop_image.sh"],
         environ=env,
         shortname="build_docker_%s" % (language),
-        timeout_seconds=30 * 60,
+        timeout_seconds=45 * 60,
     )
     build_job.tag = tag
     return build_job
@@ -1423,16 +1423,6 @@ argp.add_argument(
     action="store_const",
     const=True,
     help="Skip auth tests requiring access to compute engine credentials.",
-)
-argp.add_argument(
-    "--internal_ci",
-    default=False,
-    action="store_const",
-    const=True,
-    help=(
-        "(Deprecated, has no effect) Put reports into subdirectories to improve"
-        " presentation of results by Internal CI."
-    ),
 )
 argp.add_argument(
     "--bq_result_table",

@@ -12,79 +12,59 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/experiments/config.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/transport.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
+#include "src/core/util/env.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
 #include "test/core/end2end/fuzzers/network_input.h"
-#include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/fuzzing_channel_args.h"
-#include "test/core/util/mock_endpoint.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/test_config.h"
 
 bool squelch = true;
 bool leak_check = true;
-
-static void discard_write(grpc_slice /*slice*/) {}
-
-static void dont_log(gpr_log_func_args* /*args*/) {}
 
 namespace grpc_core {
 namespace testing {
 
 class ServerFuzzer final : public BasicFuzzer {
  public:
-  explicit ServerFuzzer(const fuzzer_input::Msg& msg)
+  explicit ServerFuzzer(
+      const fuzzer_input::Msg& msg,
+      absl::FunctionRef<void(grpc_server*, int, const ChannelArgs&)>
+          server_setup)
       : BasicFuzzer(msg.event_engine_actions()) {
     ExecCtx exec_ctx;
-    UpdateMinimumRunTime(
-        ScheduleReads(msg.network_input(), mock_endpoint_, engine()));
     grpc_server_register_completion_queue(server_, cq(), nullptr);
     // TODO(ctiller): add more registered methods (one for POST, one for PUT)
     grpc_server_register_method(server_, "/reg", nullptr, {}, 0);
-    grpc_server_start(server_);
-    ChannelArgs channel_args =
+    server_setup(
+        server_, 1234,
         CoreConfiguration::Get()
             .channel_args_preconditioning()
             .PreconditionChannelArgs(
                 CreateChannelArgsFromFuzzingConfiguration(
                     msg.channel_args(), FuzzingEnvironment{resource_quota()})
                     .ToC()
-                    .get());
-    Transport* transport =
-        grpc_create_chttp2_transport(channel_args, mock_endpoint_, false);
-    transport_setup_ok_ =
-        Server::FromC(server_)
-            ->SetupTransport(transport, nullptr, channel_args, nullptr)
-            .ok();
-    if (transport_setup_ok_) {
-      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
-    } else {
-      DestroyServer();
+                    .get()));
+    grpc_server_start(server_);
+    for (const auto& input : msg.network_input()) {
+      UpdateMinimumRunTime(ScheduleConnection(
+          input, engine().get(), FuzzingEnvironment{resource_quota()}, 1234));
     }
   }
 
-  ~ServerFuzzer() { GPR_ASSERT(server_ == nullptr); }
-
-  bool transport_setup_ok() const { return transport_setup_ok_; }
+  ~ServerFuzzer() { CHECK_EQ(server_, nullptr); }
 
  private:
   Result CreateChannel(
@@ -104,21 +84,27 @@ class ServerFuzzer final : public BasicFuzzer {
   grpc_server* server() override { return server_; }
   grpc_channel* channel() override { return nullptr; }
 
-  grpc_endpoint* mock_endpoint_ = grpc_mock_endpoint_create(discard_write);
   grpc_server* server_ = grpc_server_create(nullptr, nullptr);
-  bool transport_setup_ok_ = false;
 };
 
 }  // namespace testing
-}  // namespace grpc_core
 
-DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
-  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_set_log_function(dont_log);
+void RunServerFuzzer(
+    const fuzzer_input::Msg& msg,
+    absl::FunctionRef<void(grpc_server*, int, const ChannelArgs&)>
+        server_setup) {
+  if (squelch && !GetEnv("GRPC_TRACE_FUZZER").has_value()) {
+    grpc_disable_all_absl_logs();
   }
-  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
-  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
-  grpc_core::testing::ServerFuzzer server_fuzzer(msg);
-  if (!server_fuzzer.transport_setup_ok()) return;
-  server_fuzzer.Run(msg.api_actions());
+  static const int once = []() {
+    ForceEnableExperiment("event_engine_client", true);
+    ForceEnableExperiment("event_engine_listener", true);
+    return 42;
+  }();
+  CHECK_EQ(once, 42);  // avoid unused variable warning
+  ApplyFuzzConfigVars(msg.config_vars());
+  TestOnlyReloadExperimentsFromConfigVariables();
+  testing::ServerFuzzer(msg, server_setup).Run(msg.api_actions());
 }
+
+}  // namespace grpc_core

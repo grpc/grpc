@@ -3,21 +3,19 @@
  *     envoy/config/route/v3/route.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_ROUTE_V3_ROUTE_PROTO_UPBDEFS_H_
-#define ENVOY_CONFIG_ROUTE_V3_ROUTE_PROTO_UPBDEFS_H_
+#ifndef ENVOY_CONFIG_ROUTE_V3_ROUTE_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_CONFIG_ROUTE_V3_ROUTE_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
-#include "upb/port/def.inc"
+
+#include "upb/port/def.inc" // Must be last.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "upb/reflection/def.h"
-
-#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init envoy_config_route_v3_route_proto_upbdefinit;
 
@@ -42,4 +40,4 @@ UPB_INLINE const upb_MessageDef *envoy_config_route_v3_Vhds_getmsgdef(upb_DefPoo
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_ROUTE_V3_ROUTE_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_CONFIG_ROUTE_V3_ROUTE_PROTO_UPB_H__UPBDEFS_H_ */

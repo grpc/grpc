@@ -16,26 +16,26 @@
 //
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/status.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include <memory>
+
+#include "gtest/gtest.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(CoreEnd2endTest, EarlyServerShutdownFinishesInflightCalls) {
+  SKIP_IF_V3();
   SKIP_IF_FUZZING();
 
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -44,7 +44,7 @@ CORE_END2END_TEST(CoreEnd2endTest, EarlyServerShutdownFinishesInflightCalls) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102).RecvCloseOnServer(client_close);
 
   // Make sure we don't shutdown the server while HTTP/2 PING frames are still

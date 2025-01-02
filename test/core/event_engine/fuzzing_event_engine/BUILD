@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
 
 licenses(["notice"])
 
@@ -25,19 +25,28 @@ grpc_cc_library(
     name = "fuzzing_event_engine",
     srcs = ["fuzzing_event_engine.cc"],
     hdrs = ["fuzzing_event_engine.h"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+    ],
     deps = [
-        ":fuzzing_event_engine_proto",
+        ":fuzzing_event_engine_cc_proto",
         "//:event_engine_base_hdrs",
         "//src/core:default_event_engine",
+        "//src/core:native_posix_dns_resolver",
         "//src/core:time",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
-grpc_proto_library(
+grpc_internal_proto_library(
     name = "fuzzing_event_engine_proto",
     srcs = ["fuzzing_event_engine.proto"],
-    has_services = False,
+)
+
+grpc_cc_proto_library(
+    name = "fuzzing_event_engine_cc_proto",
+    deps = [":fuzzing_event_engine_proto"],
 )
 
 grpc_cc_test(

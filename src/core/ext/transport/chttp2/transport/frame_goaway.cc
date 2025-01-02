@@ -16,21 +16,18 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
-
-#include <string.h>
-
-#include "absl/base/attributes.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <string.h>
 
+#include "absl/base/attributes.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
 void grpc_chttp2_goaway_parser_init(grpc_chttp2_goaway_parser* p) {
@@ -137,7 +134,7 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
         memcpy(p->debug_data + p->debug_pos, cur,
                static_cast<size_t>(end - cur));
       }
-      GPR_ASSERT((size_t)(end - cur) < UINT32_MAX - p->debug_pos);
+      CHECK((size_t)(end - cur) < UINT32_MAX - p->debug_pos);
       p->debug_pos += static_cast<uint32_t>(end - cur);
       p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
       if (is_last) {
@@ -158,7 +155,7 @@ void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
   grpc_slice header = GRPC_SLICE_MALLOC(9 + 4 + 4);
   uint8_t* p = GRPC_SLICE_START_PTR(header);
   uint32_t frame_length;
-  GPR_ASSERT(GRPC_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
+  CHECK(GRPC_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
   frame_length = 4 + 4 + static_cast<uint32_t> GRPC_SLICE_LENGTH(debug_data);
 
   // frame header: length
@@ -184,7 +181,7 @@ void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
   *p++ = static_cast<uint8_t>(error_code >> 16);
   *p++ = static_cast<uint8_t>(error_code >> 8);
   *p++ = static_cast<uint8_t>(error_code);
-  GPR_ASSERT(p == GRPC_SLICE_END_PTR(header));
+  CHECK(p == GRPC_SLICE_END_PTR(header));
   grpc_slice_buffer_add(slice_buffer, header);
   grpc_slice_buffer_add(slice_buffer, debug_data);
 }

@@ -19,14 +19,6 @@
 #ifndef GRPC_SUPPORT_PORT_PLATFORM_H
 #define GRPC_SUPPORT_PORT_PLATFORM_H
 
-/*
- * Define GPR_BACKWARDS_COMPATIBILITY_MODE to try harder to be ABI
- * compatible with older platforms (currently only on Linux)
- * Causes:
- *  - some libc calls to be gotten via dlsym
- *  - some syscalls to be made directly
- */
-
 // [[deprecated]] attribute is only available since C++14
 #if __cplusplus >= 201402L
 #define GRPC_DEPRECATED(reason) [[deprecated(reason)]]
@@ -180,7 +172,6 @@
 #if __ANDROID_API__ < 21
 #error "Requires Android API v21 and above"
 #endif
-#define GPR_SUPPORT_BINDER_TRANSPORT 1
 // TODO(apolcyn): re-evaluate support for c-ares
 // on android after upgrading our c-ares dependency.
 // See https://github.com/grpc/grpc/issues/18038.
@@ -203,6 +194,12 @@
 #define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
+#if defined(__has_include)
+#if __has_include(<android/ndk-version.h>)
+#include <android/ndk-version.h>
+#endif /* __has_include(<android/ndk-version.h>) */
+#endif /* defined(__has_include) */
+#include <linux/version.h>
 #elif defined(__linux__)
 #define GPR_PLATFORM_STRING "linux"
 #ifndef _BSD_SOURCE
@@ -280,6 +277,9 @@
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
 #define GRPC_CFSTREAM 1
+#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
+#define GRPC_IOS_EVENT_ENGINE_CLIENT 1
+#endif /* GRPC_IOS_EVENT_ENGINE_CLIENT */
 /* the c-ares resolver isn't safe to enable on iOS */
 #define GRPC_ARES 0
 #else /* TARGET_OS_IPHONE */
@@ -525,18 +525,6 @@
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
 
-#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
-/*
- * For backward compatibility mode, reset _FORTIFY_SOURCE to prevent
- * a library from having non-standard symbols such as __asprintf_chk.
- * This helps non-glibc systems such as alpine using musl to find symbols.
- */
-#if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0
-#undef _FORTIFY_SOURCE
-#define _FORTIFY_SOURCE 0
-#endif
-#endif
-
 #if defined(__has_include)
 #if __has_include(<atomic>)
 #define GRPC_HAS_CXX11_ATOMIC
@@ -690,6 +678,18 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif
 
+#ifndef GRPC_REINITIALIZES
+#if defined(__clang__)
+#if GPR_HAS_CPP_ATTRIBUTE(clang::reinitializes)
+#define GRPC_REINITIALIZES [[clang::reinitializes]]
+#else
+#define GRPC_REINITIALIZES
+#endif
+#else
+#define GRPC_REINITIALIZES
+#endif
+#endif
+
 #ifndef GPR_HAS_ATTRIBUTE
 #ifdef __has_attribute
 #define GPR_HAS_ATTRIBUTE(a) __has_attribute(a)
@@ -750,6 +750,22 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 #define GPR_ATTRIBUTE_NOINLINE
 #endif
 #endif /* GPR_ATTRIBUTE_NOINLINE */
+
+#ifndef GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+#ifdef __cplusplus
+#if GPR_HAS_CPP_ATTRIBUTE(clang::always_inline)
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION [[clang::always_inline]]
+#elif GPR_HAS_ATTRIBUTE(always_inline)
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION __attribute__((always_inline))
+#else
+// TODO(ctiller): add __forceinline for MSVC
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+#endif
+#else
+// Disable for C code
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+#endif
+#endif /* GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION */
 
 #ifndef GPR_NO_UNIQUE_ADDRESS
 #if GPR_HAS_CPP_ATTRIBUTE(no_unique_address)
@@ -824,6 +840,12 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 #endif /* __EXCEPTIONS */
 #endif /* __GPR_WINDOWS */
 #endif /* GRPC_ALLOW_EXCEPTIONS */
+
+#ifdef __has_builtin
+#define GRPC_HAS_BUILTIN(a) __has_builtin(a)
+#else
+#define GRPC_HAS_BUILTIN(a) 0
+#endif
 
 /* Use GPR_LIKELY only in cases where you are sure that a certain outcome is the
  * most likely. Ideally, also collect performance numbers to justify the claim.

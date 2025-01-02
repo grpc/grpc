@@ -18,8 +18,8 @@ syntax = "proto3";
 
 package envoy.service.status.v3;
 
-import "src/proto/grpc/testing/xds/v3/config_dump.proto";
-import "src/proto/grpc/testing/xds/v3/base.proto";
+import "envoy/admin/v3/config_dump_shared.proto";
+import "envoy/config/core/v3/base.proto";
 
 import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
@@ -132,6 +132,11 @@ message ClientConfig {
   // Represents generic xDS config and the exact config structure depends on
   // the type URL (like Cluster if it is CDS)
   repeated GenericXdsConfig generic_xds_configs = 3;
+
+  // For xDS clients, the scope in which the data is used.
+  // For example, gRPC indicates the data plane target or that the data is
+  // associated with gRPC server(s).
+  string client_scope = 4;
 }
 
 message ClientStatusResponse {

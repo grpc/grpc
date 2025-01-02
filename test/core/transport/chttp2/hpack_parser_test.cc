@@ -18,6 +18,12 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+
 #include <memory>
 #include <string>
 
@@ -29,25 +35,18 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "test/core/util/parse_hexstring.h"
-#include "test/core/util/slice_splitter.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
+#include "test/core/test_util/parse_hexstring.h"
+#include "test/core/test_util/slice_splitter.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
@@ -107,10 +106,6 @@ class ParseTest : public ::testing::TestWithParam<Test> {
                   absl::optional<size_t> max_metadata_size,
                   std::string hexstring, absl::StatusOr<std::string> expect,
                   uint32_t flags) {
-    MemoryAllocator memory_allocator = MemoryAllocator(
-        ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-            "test"));
-    auto arena = MakeScopedArena(1024, &memory_allocator);
     ExecCtx exec_ctx;
     auto input = ParseHexstring(hexstring);
     grpc_slice* slices;
@@ -118,7 +113,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     size_t i;
     absl::BitGen bitgen;
 
-    grpc_metadata_batch b(arena.get());
+    grpc_metadata_batch b;
 
     parser_->BeginFrame(
         &b, max_metadata_size.value_or(4096), max_metadata_size.value_or(4096),
@@ -440,19 +435,82 @@ INSTANTIATE_TEST_SUITE_P(
         Test{"Base64LegalEncoding",
              {},
              {},
-             {// Binary metadata: created using:
-              // tools/codegen/core/gen_header_frame.py
-              //    --compression inc --no_framing --output hexstr
-              //    < test/core/transport/chttp2/bad-base64.headers
-              {"4009612e622e632d62696e1c6c75636b696c7920666f722075732c206974"
-               "27732074756573646179",
-               absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
-                                   "illegal base64 encoding"),
-               0},
-              {"be",
-               absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
-                                   "illegal base64 encoding"),
-               0}}},
+             {
+                 // Binary metadata: created using:
+                 // tools/codegen/core/gen_header_frame.py
+                 //    --compression inc --no_framing --output hexstr
+                 //    < test/core/transport/chttp2/bad-base64.headers
+                 {"4009612e622e632d62696e1c6c75636b696c7920666f722075732c206974"
+                  "27732074756573646179",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  0},
+                 {"be",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  kEndOfHeaders},
+                 {"82", ":method: GET\n", 0},
+             }},
+        Test{"Base64LegalEncodingWorksAfterFailure",
+             {},
+             {},
+             {
+                 // Binary metadata: created using:
+                 // tools/codegen/core/gen_header_frame.py
+                 //    --compression inc --no_framing --output hexstr
+                 //    < test/core/transport/chttp2/bad-base64.headers
+                 {"4009612e622e632d62696e1c6c75636b696c7920666f722075732c206974"
+                  "27732074756573646179",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  0},
+                 {"be",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  0},
+                 {"400e636f6e74656e742d6c656e6774680135",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  kEndOfHeaders},
+                 {"be", "content-length: 5\n", 0},
+             }},
+        Test{"Base64LegalEncodingWorksAfterFailure2",
+             {},
+             {},
+             {
+                 {// Generated with: tools/codegen/core/gen_header_frame.py
+                  // --compression inc --output hexstr --no_framing <
+                  // test/core/transport/chttp2/MiXeD-CaSe.headers
+                  "400a4d695865442d436153651073686f756c64206e6f74207061727365",
+                  absl::InternalError("Illegal header key: MiXeD-CaSe"), 0},
+                 // Binary metadata: created using:
+                 // tools/codegen/core/gen_header_frame.py
+                 //    --compression inc --no_framing --output hexstr
+                 //    < test/core/transport/chttp2/bad-base64.headers
+                 {"4009612e622e632d62696e1c6c75636b696c7920666f722075732c206974"
+                  "27732074756573646179",
+                  absl::InternalError("Illegal header key: MiXeD-CaSe"), 0},
+                 {"be", absl::InternalError("Illegal header key: MiXeD-CaSe"),
+                  0},
+                 {"400e636f6e74656e742d6c656e6774680135",
+                  absl::InternalError("Illegal header key: MiXeD-CaSe"),
+                  kEndOfHeaders},
+                 {"be", "content-length: 5\n", 0},
+                 {"bf",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  0},
+                 // Only the first error in each frame is reported, so we should
+                 // still see the same error here...
+                 {"c0",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  kEndOfHeaders},
+                 // ... but if we look at the next frame we should see the
+                 // stored error
+                 {"c0", absl::InternalError("Illegal header key: MiXeD-CaSe"),
+                  kEndOfHeaders},
+             }},
         Test{"TeIsTrailers",
              {},
              {},
@@ -637,7 +695,7 @@ INSTANTIATE_TEST_SUITE_P(
                  "makes "
                  "it text.\nUseful for storing files.\n",
                  0},
-                // Third entry should be unprobable (it's no longer in the
+                // Third entry should be improbable (it's no longer in the
                 // table!)
                 {"c0", absl::InternalError("Invalid HPACK index received"),
                  kFailureIsConnectionError},
@@ -695,7 +753,7 @@ INSTANTIATE_TEST_SUITE_P(
                  "makes "
                  "it text.\nUseful for storing files.\n",
                  0},
-                // Third entry should be unprobable (it's no longer in the
+                // Third entry should be improbable (it's no longer in the
                 // table!)
                 {"c0", absl::InternalError("Invalid HPACK index received"),
                  kFailureIsConnectionError},

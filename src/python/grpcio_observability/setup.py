@@ -22,7 +22,6 @@ from subprocess import PIPE
 import sys
 import sysconfig
 
-import pkg_resources
 import setuptools
 from setuptools import Extension
 from setuptools.command import build_ext
@@ -35,31 +34,45 @@ sys.path.insert(0, os.path.abspath("."))
 
 import _parallel_compile_patch
 import observability_lib_deps
+import python_version
 
 import grpc_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 
 CLASSIFIERS = [
-    "Private :: Do Not Upload",
+    "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
 ]
 
 O11Y_CC_SRCS = [
-    "server_call_tracer.cc",
     "client_call_tracer.cc",
+    "metadata_exchange.cc",
     "observability_util.cc",
-    "python_census_context.cc",
-    "sampler.cc",
+    "python_observability_context.cc",
     "rpc_encoding.cc",
+    "sampler.cc",
+    "server_call_tracer.cc",
 ]
 
 
 def _env_bool_value(env_name, default):
     """Parses a bool option from an environment variable"""
     return os.environ.get(env_name, default).upper() not in ["FALSE", "0", ""]
+
+
+def _is_alpine():
+    """Checks if it's building Alpine"""
+    os_release_content = ""
+    try:
+        with open("/etc/os-release", "r") as f:
+            os_release_content = f.read()
+        if "alpine" in os_release_content:
+            return True
+    except Exception:
+        return False
 
 
 # Environment variable to determine whether or not the Cython extension should
@@ -87,7 +100,7 @@ def check_linker_need_libatomic():
     )
     cxx = shlex.split(os.environ.get("CXX", "c++"))
     cpp_test = subprocess.Popen(
-        cxx + ["-x", "c++", "-std=c++14", "-"],
+        cxx + ["-x", "c++", "-std=c++17", "-"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -98,7 +111,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        cxx + ["-x", "c++", "-std=c++14", "-", "-latomic"],
+        cxx + ["-x", "c++", "-std=c++17", "-", "-latomic"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -125,6 +138,21 @@ class BuildExt(build_ext.build_ext):
         return filename
 
 
+# When building extensions for macOS on a system running macOS 10.14 or newer,
+# make sure they target macOS 10.14 or newer to use C++17 stdlib properly.
+# This overrides the default behavior of distutils, which targets the macOS
+# version Python was built on. You can further customize the target macOS
+# version by setting the MACOSX_DEPLOYMENT_TARGET environment variable before
+# running setup.py.
+if sys.platform == "darwin":
+    if "MACOSX_DEPLOYMENT_TARGET" not in os.environ:
+        target_ver = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
+        if target_ver == "" or tuple(int(p) for p in target_ver.split(".")) < (
+            10,
+            14,
+        ):
+            os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.14"
+
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
 # We use these environment variables to thus get around that without locking
@@ -135,7 +163,7 @@ class BuildExt(build_ext.build_ext):
 EXTRA_ENV_COMPILE_ARGS = os.environ.get("GRPC_PYTHON_CFLAGS", None)
 EXTRA_ENV_LINK_ARGS = os.environ.get("GRPC_PYTHON_LDFLAGS", None)
 if EXTRA_ENV_COMPILE_ARGS is None:
-    EXTRA_ENV_COMPILE_ARGS = "-std=c++14"
+    EXTRA_ENV_COMPILE_ARGS = "-std=c++17"
     if "win32" in sys.platform:
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
@@ -155,6 +183,10 @@ if EXTRA_ENV_LINK_ARGS is None:
 # Note that it does not work for MSCV on windows.
 if "win32" not in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += " -flto"
+    # Compile with fail with error: `lto-wrapper failed` when lto flag was enabled in Alpine using musl libc.
+    # As a work around we need to disable ipa-cp.
+    if _is_alpine():
+        EXTRA_ENV_COMPILE_ARGS += " -fno-ipa-cp"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
@@ -192,7 +224,7 @@ elif "linux" in sys.platform or "darwin" in sys.platform:
 
 # Fix for Cython build issue in aarch64.
 # It's required to define this macro before include <inttypes.h>.
-# <inttypes.h> was included in core/lib/channel/call_tracer.h.
+# <inttypes.h> was included in core/telemetry/call_tracer.h.
 # This macro should already be defined in grpc/grpc.h through port_platform.h,
 # but we're still having issue in aarch64, so we manually define the macro here.
 # TODO(xuanwn): Figure out what's going on in the aarch64 build so we can support
@@ -205,22 +237,6 @@ DEFINE_MACROS += (("__STDC_FORMAT_MACROS", None),)
 if "linux" in sys.platform or "darwin" in sys.platform:
     pymodinit = 'extern "C" __attribute__((visibility ("default"))) PyObject*'
     DEFINE_MACROS += (("PyMODINIT_FUNC", pymodinit),)
-
-# By default, Python3 distutils enforces compatibility of
-# c plugins (.so files) with the OSX version Python was built with.
-# We need OSX 10.10, the oldest which supports C++ thread_local.
-if "darwin" in sys.platform:
-    mac_target = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
-    if mac_target and (
-        pkg_resources.parse_version(mac_target)
-        < pkg_resources.parse_version("10.10.0")
-    ):
-        os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.10"
-        os.environ["_PYTHON_HOST_PLATFORM"] = re.sub(
-            r"macosx-[0-9]+\.[0-9]+-(.+)",
-            r"macosx-10.10-\1",
-            sysconfig.get_platform(),
-        )
 
 
 def extension_modules():
@@ -274,6 +290,7 @@ setuptools.setup(
     name="grpcio-observability",
     version=grpc_version.VERSION,
     description="gRPC Python observability package",
+    long_description_content_type="text/x-rst",
     long_description=open(README_PATH, "r").read(),
     author="The gRPC Authors",
     author_email="grpc-io@googlegroups.com",
@@ -286,12 +303,11 @@ setuptools.setup(
     classifiers=CLASSIFIERS,
     ext_modules=extension_modules(),
     packages=list(PACKAGES),
-    python_requires=">=3.7",
+    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=[
         "grpcio=={version}".format(version=grpc_version.VERSION),
         "setuptools>=59.6.0",
-        "opentelemetry-sdk==1.21.0",
-        "opentelemetry-api==1.21.0",
+        "opentelemetry-api>=1.21.0",
     ],
     cmdclass={
         "build_ext": BuildExt,

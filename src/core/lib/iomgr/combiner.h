@@ -19,11 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_COMBINER_H
 #define GRPC_SRC_CORE_LIB_IOMGR_COMBINER_H
 
-#include <grpc/support/port_platform.h>
-
-#include <stddef.h>
-
 #include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
+#include <stddef.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -43,7 +41,7 @@ class Combiner {
   // either:
   // a pointer to the initiating exec ctx if that is the only exec_ctx that has
   // ever queued to this combiner, or NULL. If this is non-null, it's not
-  // dereferencable (since the initiating exec_ctx may have gone out of scope)
+  // dereferenceable (since the initiating exec_ctx may have gone out of scope)
   gpr_atm initiating_exec_ctx_or_null;
   // state is:
   // lower bit - zero if orphaned (STATE_UNORPHANED)
@@ -88,7 +86,5 @@ grpc_core::Combiner* grpc_combiner_ref(
 void grpc_combiner_unref(grpc_core::Combiner* lock GRPC_COMBINER_DEBUG_ARGS);
 
 bool grpc_combiner_continue_exec_ctx();
-
-extern grpc_core::DebugOnlyTraceFlag grpc_combiner_trace;
 
 #endif  // GRPC_SRC_CORE_LIB_IOMGR_COMBINER_H

@@ -3,10 +3,11 @@
  *     xds/core/v3/collection_entry.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPB_MINITABLE_H_
-#define XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPB_MINITABLE_H_
+#ifndef XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPB_H__UPB_MINITABLE_H_
+#define XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -18,7 +19,9 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable xds__core__v3__CollectionEntry_msg_init;
+extern const upb_MiniTable* xds__core__v3__CollectionEntry_msg_init_ptr;
 extern const upb_MiniTable xds__core__v3__CollectionEntry__InlineEntry_msg_init;
+extern const upb_MiniTable* xds__core__v3__CollectionEntry__InlineEntry_msg_init_ptr;
 
 extern const upb_MiniTableFile xds_core_v3_collection_entry_proto_upb_file_layout;
 
@@ -28,4 +31,4 @@ extern const upb_MiniTableFile xds_core_v3_collection_entry_proto_upb_file_layou
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPB_MINITABLE_H_ */
+#endif  /* XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPB_H__UPB_MINITABLE_H_ */

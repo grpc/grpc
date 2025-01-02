@@ -22,7 +22,7 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN mkdir /artifacts
 
 COPY . .
-RUN OVERRIDE_BAZEL_VERSION=5.4.0 tools/bazel build //examples/cpp/csm:csm_greeter_client
+RUN tools/bazel build //examples/cpp/csm:csm_greeter_client
 RUN cp -rL /workdir/bazel-bin/examples/cpp/csm/csm_greeter_client /artifacts/
 
 FROM python:3.9-slim-bookworm

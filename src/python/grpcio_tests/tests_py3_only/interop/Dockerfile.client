@@ -11,6 +11,10 @@ COPY . .
 RUN tools/bazel build -c dbg //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
 RUN cp -rL /workdir/bazel-bin/src/python/grpcio_tests/tests_py3_only/interop/xds_interop_client* /artifacts/
 
+ENV TINI_VERSION v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+
 FROM python:3.9-slim-bookworm
 
 ENV GRPC_VERBOSITY="DEBUG"
@@ -25,4 +29,7 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 
 COPY --from=0 /artifacts ./
 
-ENTRYPOINT ["/xds_interop_client"]
+# tini serves as PID 1 and enables the server to properly respond to signals.
+COPY --from=0 /tini /tini
+
+ENTRYPOINT ["/tini", "-g", "-vv",  "--",  "/xds_interop_client"]

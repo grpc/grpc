@@ -19,12 +19,12 @@
 #ifndef GRPC_TEST_CPP_QPS_REPORT_H
 #define GRPC_TEST_CPP_QPS_REPORT_H
 
+#include <grpcpp/channel.h>
+#include <grpcpp/support/config.h>
+
 #include <memory>
 #include <set>
 #include <vector>
-
-#include <grpcpp/channel.h>
-#include <grpcpp/support/config.h>
 
 #include "src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.h"
 #include "test/cpp/qps/driver.h"
@@ -90,7 +90,7 @@ class CompositeReporter : public Reporter {
   std::vector<std::unique_ptr<Reporter> > reporters_;
 };
 
-/// Reporter to gpr_log(GPR_INFO).
+///  Reporter to LOG(INFO).
 class GprLogReporter : public Reporter {
  public:
   explicit GprLogReporter(const string& name) : Reporter(name) {}

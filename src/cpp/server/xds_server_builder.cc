@@ -22,7 +22,7 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include "src/core/ext/xds/xds_enabled_server.h"
+#include "src/core/xds/grpc/xds_enabled_server.h"
 
 namespace grpc {
 

@@ -16,14 +16,13 @@
 //
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include <memory>
+
+#include "gtest/gtest.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -32,7 +31,7 @@ namespace {
 CORE_END2END_TEST(WriteBufferingTest, WriteBufferingAtEnd) {
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   c.NewBatch(1).SendInitialMetadata({});
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(2).RecvInitialMetadata(server_initial_metadata);
 
   auto s = RequestCall(101);
@@ -43,7 +42,7 @@ CORE_END2END_TEST(WriteBufferingTest, WriteBufferingAtEnd) {
   c.NewBatch(3).SendMessage("hello world", GRPC_WRITE_BUFFER_HINT);
   s.NewBatch(102).SendInitialMetadata({});
   // recv message should not succeed yet - it's buffered at the client still
-  CoreEnd2endTest::IncomingMessage request_payload_recv1;
+  IncomingMessage request_payload_recv1;
   s.NewBatch(103).RecvMessage(request_payload_recv1);
   Expect(2, true);
   Expect(3, true);
@@ -58,14 +57,14 @@ CORE_END2END_TEST(WriteBufferingTest, WriteBufferingAtEnd) {
   Step();
 
   // and the next recv should be ready immediately also (and empty)
-  CoreEnd2endTest::IncomingMessage request_payload_recv2;
+  IncomingMessage request_payload_recv2;
   s.NewBatch(104).RecvMessage(request_payload_recv2);
   Expect(104, true);
   Step();
 
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingStatusOnClient server_status;
   c.NewBatch(4).RecvStatusOnClient(server_status);
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(105)
       .RecvCloseOnServer(client_close)
       .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {});
@@ -80,5 +79,6 @@ CORE_END2END_TEST(WriteBufferingTest, WriteBufferingAtEnd) {
   EXPECT_EQ(request_payload_recv1.payload(), "hello world");
   EXPECT_TRUE(request_payload_recv2.is_end_of_stream());
 }
+
 }  // namespace
 }  // namespace grpc_core

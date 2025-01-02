@@ -32,11 +32,12 @@ def generate_resolver_component_tests():
                 "address_sorting_test.cc",
             ],
             external_deps = [
+                "absl/log:check",
                 "gtest",
             ],
             deps = [
                 "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
-                "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
+                "//test/core/test_util:grpc_test_util%s" % unsecure_build_config_suffix,
                 "//:grpc++%s" % unsecure_build_config_suffix,
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",
@@ -53,13 +54,14 @@ def generate_resolver_component_tests():
                 "resolver_component_test.cc",
             ],
             external_deps = [
+                "absl/log:check",
                 "gtest",
             ],
             deps = [
                 "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
-                "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
-                "//test/core/util:fake_udp_and_tcp_server%s" % unsecure_build_config_suffix,
-                "//test/core/util:socket_use_after_close_detector%s" % unsecure_build_config_suffix,
+                "//test/core/test_util:grpc_test_util%s" % unsecure_build_config_suffix,
+                "//test/core/test_util:fake_udp_and_tcp_server%s" % unsecure_build_config_suffix,
+                "//test/core/test_util:socket_use_after_close_detector%s" % unsecure_build_config_suffix,
                 "//:grpc++%s" % unsecure_build_config_suffix,
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",
@@ -75,11 +77,12 @@ def generate_resolver_component_tests():
             ],
             external_deps = [
                 "absl/flags:flag",
+                "absl/log:check",
                 "absl/strings",
             ],
             deps = [
                 "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
-                "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
+                "//test/core/test_util:grpc_test_util%s" % unsecure_build_config_suffix,
                 "//:grpc++%s" % unsecure_build_config_suffix,
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",

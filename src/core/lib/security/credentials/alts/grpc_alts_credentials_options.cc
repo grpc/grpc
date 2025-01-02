@@ -16,12 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+
+#include "absl/log/log.h"
 
 grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
     const grpc_alts_credentials_options* options) {
@@ -30,8 +30,7 @@ grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
     return options->vtable->copy(options);
   }
   // An error occurred.
-  gpr_log(GPR_ERROR,
-          "Invalid arguments to grpc_alts_credentials_options_copy()");
+  LOG(ERROR) << "Invalid arguments to grpc_alts_credentials_options_copy()";
   return nullptr;
 }
 

@@ -14,19 +14,18 @@
 #ifndef GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 #define GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/extensible.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/port.h>
+#include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 
-#include <functional>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/port.h>
-#include <grpc/event_engine/slice_buffer.h>
 
 // TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {
@@ -100,7 +99,8 @@ namespace experimental {
 /// application state synchronization must be managed by the application.
 ///
 ////////////////////////////////////////////////////////////////////////////////
-class EventEngine : public std::enable_shared_from_this<EventEngine> {
+class EventEngine : public std::enable_shared_from_this<EventEngine>,
+                    public Extensible {
  public:
   /// A duration between two events.
   ///
@@ -132,8 +132,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   struct TaskHandle {
     intptr_t keys[2];
     static const GRPC_DLL TaskHandle kInvalid;
-    friend bool operator==(const TaskHandle& lhs, const TaskHandle& rhs);
-    friend bool operator!=(const TaskHandle& lhs, const TaskHandle& rhs);
   };
   /// A handle to a cancellable connection attempt.
   ///
@@ -141,10 +139,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   struct ConnectionHandle {
     intptr_t keys[2];
     static const GRPC_DLL ConnectionHandle kInvalid;
-    friend bool operator==(const ConnectionHandle& lhs,
-                           const ConnectionHandle& rhs);
-    friend bool operator!=(const ConnectionHandle& lhs,
-                           const ConnectionHandle& rhs);
   };
   /// Thin wrapper around a platform-specific sockaddr type. A sockaddr struct
   /// exists on all platforms that gRPC supports.
@@ -176,7 +170,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// allocations. gRPC allows applications to set memory constraints per
   /// Channel or Server, and the implementation depends on all dynamic memory
   /// allocation being handled by the quota system.
-  class Endpoint {
+  class Endpoint : public Extensible {
    public:
     /// Shuts down all connections and invokes all pending read or write
     /// callbacks with an error status.
@@ -200,9 +194,12 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// on_read callback is not executed. Otherwise it returns false and the \a
     /// on_read callback executes asynchronously when the read completes. The
     /// caller must ensure that the callback has access to the buffer when it
-    /// executes. Ownership of the buffer is not transferred. Valid slices *may*
-    /// be placed into the buffer even if the callback is invoked with a non-OK
-    /// Status.
+    /// executes. Ownership of the buffer is not transferred. Either an error is
+    /// passed to the callback (like socket closed), or valid data is available
+    /// in the buffer, but never both at the same time. Implementations that
+    /// receive valid data must not throw that data away - that is, if valid
+    /// data is received on the underlying endpoint, a callback will be made
+    /// with that data available and an ok status.
     ///
     /// There can be at most one outstanding read per Endpoint at any given
     /// time. An outstanding read is one in which the \a on_read callback has
@@ -255,45 +252,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// values are expected to remain valid for the life of the Endpoint.
     virtual const ResolvedAddress& GetPeerAddress() const = 0;
     virtual const ResolvedAddress& GetLocalAddress() const = 0;
-
-    /// A method which allows users to query whether an Endpoint implementation
-    /// supports a specified extension. The name of the extension is provided
-    /// as an input.
-    ///
-    /// An extension could be any type with a unique string id. Each extension
-    /// may support additional capabilities and if the Endpoint implementation
-    /// supports the queried extension, it should return a valid pointer to the
-    /// extension type.
-    ///
-    /// E.g., use case of an EventEngine::Endpoint supporting a custom
-    /// extension.
-    ///
-    /// class CustomEndpointExtension {
-    ///  public:
-    ///    static constexpr std::string name = "my.namespace.extension_name";
-    ///    void Process() { ... }
-    /// }
-    ///
-    ///
-    /// class CustomEndpoint :
-    ///        public EventEngine::Endpoint, CustomEndpointExtension {
-    ///   public:
-    ///     void* QueryExtension(absl::string_view id) override {
-    ///       if (id == CustomEndpointExtension::name) {
-    ///         return static_cast<CustomEndpointExtension*>(this);
-    ///       }
-    ///       return nullptr;
-    ///     }
-    ///     ...
-    /// }
-    ///
-    /// auto ext_ =
-    /// static_cast<CustomEndpointExtension*>(
-    ///   endpoint->QueryExtension(CustomrEndpointExtension::name));
-    /// if (ext_ != nullptr) { ext_->Process(); }
-    ///
-    ///
-    virtual void* QueryExtension(absl::string_view /*id*/) { return nullptr; }
   };
 
   /// Called when a new connection is established.
@@ -307,7 +265,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
 
   /// Listens for incoming connection requests from gRPC clients and initiates
   /// request processing once connections are established.
-  class Listener {
+  class Listener : public Extensible {
    public:
     /// Called when the listener has accepted a new client connection.
     using AcceptCallback = absl::AnyInvocable<void(
@@ -482,6 +440,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   ///
   /// Implementations must not execute the closure in the calling thread before
   /// \a RunAfter returns.
+  ///
+  /// Implementations may return a \a kInvalid handle if the callback can be
+  /// immediately executed, and is therefore not cancellable.
   virtual TaskHandle RunAfter(Duration when, Closure* closure) = 0;
   /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
@@ -531,6 +492,33 @@ void SetEventEngineFactory(
 void EventEngineFactoryReset();
 /// Create an EventEngine using the default factory.
 std::unique_ptr<EventEngine> CreateEventEngine();
+
+bool operator==(const EventEngine::TaskHandle& lhs,
+                const EventEngine::TaskHandle& rhs);
+bool operator!=(const EventEngine::TaskHandle& lhs,
+                const EventEngine::TaskHandle& rhs);
+std::ostream& operator<<(std::ostream& out,
+                         const EventEngine::TaskHandle& handle);
+bool operator==(const EventEngine::ConnectionHandle& lhs,
+                const EventEngine::ConnectionHandle& rhs);
+bool operator!=(const EventEngine::ConnectionHandle& lhs,
+                const EventEngine::ConnectionHandle& rhs);
+std::ostream& operator<<(std::ostream& out,
+                         const EventEngine::ConnectionHandle& handle);
+
+namespace detail {
+std::string FormatHandleString(uint64_t key1, uint64_t key2);
+}
+
+template <typename Sink>
+void AbslStringify(Sink& out, const EventEngine::ConnectionHandle& handle) {
+  out.Append(detail::FormatHandleString(handle.keys[0], handle.keys[1]));
+}
+
+template <typename Sink>
+void AbslStringify(Sink& out, const EventEngine::TaskHandle& handle) {
+  out.Append(detail::FormatHandleString(handle.keys[0], handle.keys[1]));
+}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

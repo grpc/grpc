@@ -16,105 +16,85 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include <string>
 #include <type_traits>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/config/config_vars.h"
+#include "absl/strings/strip.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/util/glob.h"
 
 int grpc_tracer_set_enabled(const char* name, int enabled);
 
 namespace grpc_core {
-
-TraceFlag* TraceFlagList::root_tracer_ = nullptr;
-
-bool TraceFlagList::Set(absl::string_view name, bool enabled) {
-  TraceFlag* t;
-  if (name == "all") {
-    for (t = root_tracer_; t; t = t->next_tracer_) {
-      t->set_enabled(enabled);
-    }
-  } else if (name == "list_tracers") {
-    LogAllTracers();
-  } else if (name == "refcount") {
-    for (t = root_tracer_; t; t = t->next_tracer_) {
-      if (absl::StrContains(t->name_, "refcount")) {
-        t->set_enabled(enabled);
-      }
-    }
-  } else {
-    bool found = false;
-    for (t = root_tracer_; t; t = t->next_tracer_) {
-      if (name == t->name_) {
-        t->set_enabled(enabled);
-        found = true;
-      }
-    }
-    // check for unknowns, but ignore "", to allow to GRPC_TRACE=
-    if (!found && !name.empty()) {
-      gpr_log(GPR_ERROR, "Unknown trace var: '%s'", std::string(name).c_str());
-      return false;  // early return
-    }
-  }
-  return true;
-}
-
-void TraceFlagList::Add(TraceFlag* flag) {
-  flag->next_tracer_ = root_tracer_;
-  root_tracer_ = flag;
-}
-
-void TraceFlagList::LogAllTracers() {
-  gpr_log(GPR_DEBUG, "available tracers:");
-  for (TraceFlag* t = root_tracer_; t != nullptr; t = t->next_tracer_) {
-    gpr_log(GPR_DEBUG, "\t%s", t->name_);
+namespace {
+void LogAllTracers() {
+  VLOG(2) << "available tracers:";
+  for (const auto& name : GetAllTraceFlags()) {
+    LOG(INFO) << "  " << name.first;
   }
 }
 
-void TraceFlagList::SaveTo(std::map<std::string, bool>& values) {
-  for (TraceFlag* t = root_tracer_; t != nullptr; t = t->next_tracer_) {
-    values[t->name_] = t->enabled();
-  }
-}
+}  // namespace
 
 // Flags register themselves on the list during construction
 TraceFlag::TraceFlag(bool default_enabled, const char* name) : name_(name) {
   static_assert(std::is_trivially_destructible<TraceFlag>::value,
                 "TraceFlag needs to be trivially destructible.");
   set_enabled(default_enabled);
-  TraceFlagList::Add(this);
 }
 
-SavedTraceFlags::SavedTraceFlags() { TraceFlagList::SaveTo(values_); }
+SavedTraceFlags::SavedTraceFlags() {
+  for (const auto& flag : GetAllTraceFlags()) {
+    values_[flag.first] = {flag.second->enabled(), flag.second};
+  }
+}
 
 void SavedTraceFlags::Restore() {
   for (const auto& flag : values_) {
-    TraceFlagList::Set(flag.first, flag.second);
+    flag.second.second->set_enabled(flag.second.first);
   }
 }
 
-namespace {
-void ParseTracers(absl::string_view tracers) {
-  for (auto s : absl::StrSplit(tracers, ',', absl::SkipWhitespace())) {
-    if (s[0] == '-') {
-      TraceFlagList::Set(s.substr(1), false);
-    } else {
-      TraceFlagList::Set(s, true);
+bool ParseTracers(absl::string_view tracers) {
+  std::string enabled_tracers;
+  bool some_trace_was_found = false;
+  for (auto trace_glob : absl::StrSplit(tracers, ',', absl::SkipWhitespace())) {
+    if (trace_glob == "list_tracers") {
+      LogAllTracers();
+      continue;
     }
+    bool enabled = !absl::ConsumePrefix(&trace_glob, "-");
+    if (trace_glob == "all") trace_glob = "*";
+    if (trace_glob == "refcount") trace_glob = "*refcount*";
+    bool found = false;
+    for (const auto& flag : GetAllTraceFlags()) {
+      if (GlobMatch(flag.first, trace_glob)) {
+        flag.second->set_enabled(enabled);
+        if (enabled) absl::StrAppend(&enabled_tracers, flag.first, ", ");
+        found = true;
+        some_trace_was_found = true;
+      }
+    }
+    if (!found) LOG(ERROR) << "Unknown tracer: " << trace_glob;
   }
+  if (!enabled_tracers.empty()) {
+    absl::string_view enabled_tracers_view(enabled_tracers);
+    absl::ConsumeSuffix(&enabled_tracers_view, ", ");
+    LOG(INFO) << "gRPC Tracers: " << enabled_tracers_view;
+  }
+  return some_trace_was_found;
 }
-}  // namespace
 
 }  // namespace grpc_core
 
@@ -123,5 +103,6 @@ void grpc_tracer_init() {
 }
 
 int grpc_tracer_set_enabled(const char* name, int enabled) {
-  return grpc_core::TraceFlagList::Set(name, enabled != 0);
+  if (enabled != 0) return grpc_core::ParseTracers(name);
+  return grpc_core::ParseTracers(absl::StrCat("-", name));
 }

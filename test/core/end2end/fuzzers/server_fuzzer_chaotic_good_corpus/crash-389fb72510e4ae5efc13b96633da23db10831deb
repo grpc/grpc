@@ -1,0 +1,20 @@
+network_input {
+  input_segments {
+    segments {
+      header {
+        simple_header {
+          chaotic_good_alignment: "X"
+        }
+      }
+    }
+  }
+}
+config_vars {
+  stacktrace_minloglevel: ""
+  trace: ""
+}
+channel_args {
+  args {
+    i: 8
+  }
+}
