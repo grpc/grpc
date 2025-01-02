@@ -1023,6 +1023,9 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
   }
   // Update resource state based on whether the resource is valid.
   if (!decode_status.ok()) {
+    ++context->num_invalid_resources;
+    absl::Status status = absl::InvalidArgumentError(
+        absl::StrCat("invalid resource: ", decode_status.ToString()));
     // If the fail_on_data_errors server feature is present, drop the
     // existing cached resource, if any.
     const bool drop_cached_resource = XdsDataErrorHandlingEnabled() &&
