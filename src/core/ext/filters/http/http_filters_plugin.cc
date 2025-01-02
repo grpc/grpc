@@ -18,53 +18,52 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
-
+#include "absl/strings/match.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/message_compress/compression_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/surface/channel_init.h"
+#include "src/core/ext/filters/message_size/message_size_filter.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
-
-static bool is_building_http_like_transport(
-    grpc_core::ChannelStackBuilder* builder) {
-  grpc_transport* t = builder->transport();
-  return t != nullptr && strstr(t->vtable->name, "http");
-}
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
+namespace {
+bool IsBuildingHttpLikeTransport(const ChannelArgs& args) {
+  auto* t = args.GetObject<Transport>();
+  return t != nullptr && absl::StrContains(t->GetTransportName(), "http");
+}
+}  // namespace
+
 void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
-  auto compression = [builder](grpc_channel_stack_type channel_type,
-                               const grpc_channel_filter* filter) {
-    builder->channel_init()->RegisterStage(
-        channel_type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-        [filter](ChannelStackBuilder* builder) {
-          if (!is_building_http_like_transport(builder)) return true;
-          builder->PrependFilter(filter);
-          return true;
-        });
-  };
-  auto http = [builder](grpc_channel_stack_type channel_type,
-                        const grpc_channel_filter* filter) {
-    builder->channel_init()->RegisterStage(
-        channel_type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-        [filter](ChannelStackBuilder* builder) {
-          if (is_building_http_like_transport(builder)) {
-            builder->PrependFilter(filter);
-          }
-          return true;
-        });
-  };
-  compression(GRPC_CLIENT_SUBCHANNEL, &ClientCompressionFilter::kFilter);
-  compression(GRPC_CLIENT_DIRECT_CHANNEL, &ClientCompressionFilter::kFilter);
-  compression(GRPC_SERVER_CHANNEL, &ServerCompressionFilter::kFilter);
-  http(GRPC_CLIENT_SUBCHANNEL, &HttpClientFilter::kFilter);
-  http(GRPC_CLIENT_DIRECT_CHANNEL, &HttpClientFilter::kFilter);
-  http(GRPC_SERVER_CHANNEL, &HttpServerFilter::kFilter);
+  builder->channel_init()
+      ->RegisterFilter<ClientCompressionFilter>(GRPC_CLIENT_SUBCHANNEL)
+      .If(IsBuildingHttpLikeTransport)
+      .After<HttpClientFilter>()
+      .After<ClientMessageSizeFilter>();
+  builder->channel_init()
+      ->RegisterFilter<ClientCompressionFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
+      .If(IsBuildingHttpLikeTransport)
+      .After<HttpClientFilter>()
+      .After<ClientMessageSizeFilter>();
+  builder->channel_init()
+      ->RegisterFilter<ServerCompressionFilter>(GRPC_SERVER_CHANNEL)
+      .If(IsBuildingHttpLikeTransport)
+      .After<HttpServerFilter>()
+      .After<ServerMessageSizeFilter>();
+  builder->channel_init()
+      ->RegisterFilter<HttpClientFilter>(GRPC_CLIENT_SUBCHANNEL)
+      .If(IsBuildingHttpLikeTransport)
+      .After<ClientMessageSizeFilter>();
+  builder->channel_init()
+      ->RegisterFilter<HttpClientFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
+      .If(IsBuildingHttpLikeTransport)
+      .After<ClientMessageSizeFilter>();
+  builder->channel_init()
+      ->RegisterFilter<HttpServerFilter>(GRPC_SERVER_CHANNEL)
+      .If(IsBuildingHttpLikeTransport)
+      .After<ServerMessageSizeFilter>();
 }
 }  // namespace grpc_core

@@ -116,6 +116,27 @@ module Grpc
 
       Stub = Service.rpc_stub_class
     end
+    module HookService
+      # Hook service. Used to keep Kubernetes from shutting the pod down.
+      class Service
+
+        include ::GRPC::GenericService
+
+        self.marshal_class_method = :encode
+        self.unmarshal_class_method = :decode
+        self.service_name = 'grpc.testing.HookService'
+
+        # Sends a request that will "hang" until the return status is set by a call
+        # to a SetReturnStatus
+        rpc :Hook, ::Grpc::Testing::Empty, ::Grpc::Testing::Empty
+        # Sets a return status for pending and upcoming calls to Hook
+        rpc :SetReturnStatus, ::Grpc::Testing::SetReturnStatusRequest, ::Grpc::Testing::Empty
+        # Clears the return status. Incoming calls to Hook will "hang"
+        rpc :ClearReturnStatus, ::Grpc::Testing::Empty, ::Grpc::Testing::Empty
+      end
+
+      Stub = Service.rpc_stub_class
+    end
     module XdsUpdateHealthService
       # A service to remotely control health status of an xDS test server.
       class Service
@@ -128,6 +149,7 @@ module Grpc
 
         rpc :SetServing, ::Grpc::Testing::Empty, ::Grpc::Testing::Empty
         rpc :SetNotServing, ::Grpc::Testing::Empty, ::Grpc::Testing::Empty
+        rpc :SendHookRequest, ::Grpc::Testing::HookRequest, ::Grpc::Testing::HookResponse
       end
 
       Stub = Service.rpc_stub_class

@@ -19,6 +19,9 @@
 
 #include "test/cpp/util/test_credentials_provider.h"
 
+#include <grpc/support/sync.h>
+#include <grpcpp/security/server_credentials.h>
+
 #include <cstdio>
 #include <fstream>
 #include <iostream>
@@ -26,12 +29,9 @@
 #include <unordered_map>
 
 #include "absl/flags/flag.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpcpp/security/server_credentials.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "src/core/util/crash.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
 ABSL_FLAG(std::string, tls_cert_file, "",
@@ -103,7 +103,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       auto it(std::find(added_secure_type_names_.begin(),
                         added_secure_type_names_.end(), type));
       if (it == added_secure_type_names_.end()) {
-        gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
+        LOG(ERROR) << "Unsupported credentials type " << type;
         return nullptr;
       }
       return added_secure_type_providers_[it - added_secure_type_names_.begin()]
@@ -136,7 +136,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       auto it(std::find(added_secure_type_names_.begin(),
                         added_secure_type_names_.end(), type));
       if (it == added_secure_type_names_.end()) {
-        gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
+        LOG(ERROR) << "Unsupported credentials type " << type;
         return nullptr;
       }
       return added_secure_type_providers_[it - added_secure_type_names_.begin()]
@@ -176,7 +176,7 @@ CredentialsProvider* GetCredentialsProvider() {
 
 void SetCredentialsProvider(CredentialsProvider* provider) {
   // For now, forbids overriding provider.
-  GPR_ASSERT(g_provider == nullptr);
+  CHECK_EQ(g_provider, nullptr);
   g_provider = provider;
 }
 

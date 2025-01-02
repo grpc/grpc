@@ -19,13 +19,11 @@
 #ifndef GRPCPP_IMPL_PROTO_UTILS_H
 #define GRPCPP_IMPL_PROTO_UTILS_H
 
-#include <type_traits>
-
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
+#include <grpcpp/impl/generic_serialize.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/proto_buffer_reader.h>
@@ -33,65 +31,13 @@
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
 
+#include <type_traits>
+
 /// This header provides serialization and deserialization between gRPC
 /// messages serialized using protobuf and the C++ objects they represent.
 
 namespace grpc {
 
-// ProtoBufferWriter must be a subclass of ::protobuf::io::ZeroCopyOutputStream.
-template <class ProtoBufferWriter, class T>
-Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
-                        bool* own_buffer) {
-  static_assert(std::is_base_of<protobuf::io::ZeroCopyOutputStream,
-                                ProtoBufferWriter>::value,
-                "ProtoBufferWriter must be a subclass of "
-                "::protobuf::io::ZeroCopyOutputStream");
-  *own_buffer = true;
-  int byte_size = static_cast<int>(msg.ByteSizeLong());
-  if (static_cast<size_t>(byte_size) <= GRPC_SLICE_INLINED_SIZE) {
-    Slice slice(byte_size);
-    // We serialize directly into the allocated slices memory
-    GPR_ASSERT(slice.end() == msg.SerializeWithCachedSizesToArray(
-                                  const_cast<uint8_t*>(slice.begin())));
-    ByteBuffer tmp(&slice, 1);
-    bb->Swap(&tmp);
-
-    return grpc::Status::OK;
-  }
-  ProtoBufferWriter writer(bb, kProtoBufferWriterMaxBufferLength, byte_size);
-  return msg.SerializeToZeroCopyStream(&writer)
-             ? grpc::Status::OK
-             : Status(StatusCode::INTERNAL, "Failed to serialize message");
-}
-
-// BufferReader must be a subclass of ::protobuf::io::ZeroCopyInputStream.
-template <class ProtoBufferReader, class T>
-Status GenericDeserialize(ByteBuffer* buffer,
-                          grpc::protobuf::MessageLite* msg) {
-  static_assert(std::is_base_of<protobuf::io::ZeroCopyInputStream,
-                                ProtoBufferReader>::value,
-                "ProtoBufferReader must be a subclass of "
-                "::protobuf::io::ZeroCopyInputStream");
-  if (buffer == nullptr) {
-    return Status(StatusCode::INTERNAL, "No payload");
-  }
-  Status result = grpc::Status::OK;
-  {
-    ProtoBufferReader reader(buffer);
-    if (!reader.status().ok()) {
-      return reader.status();
-    }
-    if (!msg->ParseFromZeroCopyStream(&reader)) {
-      result = Status(StatusCode::INTERNAL, msg->InitializationErrorString());
-    }
-  }
-  buffer->Clear();
-  return result;
-}
-
-// this is needed so the following class does not conflict with protobuf
-// serializers that utilize internal-only tools.
-#ifdef GRPC_OPEN_SOURCE_PROTO
 // This class provides a protobuf serializer. It translates between protobuf
 // objects and grpc_byte_buffers. More information about SerializationTraits can
 // be found in include/grpcpp/impl/codegen/serialization_traits.h.
@@ -110,7 +56,6 @@ class SerializationTraits<
     return GenericDeserialize<ProtoBufferReader, T>(buffer, msg);
   }
 };
-#endif
 
 }  // namespace grpc
 

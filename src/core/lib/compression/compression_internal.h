@@ -19,20 +19,17 @@
 #ifndef GRPC_SRC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H
 #define GRPC_SRC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H
 
+#include <grpc/impl/compression_types.h>
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <initializer_list>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/compression_types.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/bitset.h"
 
 namespace grpc_core {
 
@@ -87,6 +84,9 @@ class CompressionAlgorithmSet {
  private:
   BitSet<GRPC_COMPRESS_ALGORITHMS_COUNT> set_;
 };
+
+grpc_compression_options CompressionOptionsFromChannelArgs(
+    const ChannelArgs& args);
 
 }  // namespace grpc_core
 

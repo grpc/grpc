@@ -1,40 +1,22 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
-#include "upb/reflection/def_builder_internal.h"
+#include "upb/reflection/internal/method_def.h"
+
 #include "upb/reflection/def_type.h"
-#include "upb/reflection/method_def_internal.h"
+#include "upb/reflection/internal/def_builder.h"
 #include "upb/reflection/service_def.h"
 
 // Must be last.
 #include "upb/port/def.inc"
 
 struct upb_MethodDef {
-  const UPB_DESC(MethodOptions) * opts;
+  const UPB_DESC(MethodOptions*) opts;
+  const UPB_DESC(FeatureSet*) resolved_features;
   upb_ServiceDef* service;
   const char* full_name;
   const upb_MessageDef* input_type;
@@ -58,6 +40,11 @@ const UPB_DESC(MethodOptions) * upb_MethodDef_Options(const upb_MethodDef* m) {
 
 bool upb_MethodDef_HasOptions(const upb_MethodDef* m) {
   return m->opts != (void*)kUpbDefOptDefault;
+}
+
+const UPB_DESC(FeatureSet) *
+    upb_MethodDef_ResolvedFeatures(const upb_MethodDef* m) {
+  return m->resolved_features;
 }
 
 const char* upb_MethodDef_FullName(const upb_MethodDef* m) {
@@ -87,8 +74,14 @@ bool upb_MethodDef_ServerStreaming(const upb_MethodDef* m) {
 }
 
 static void create_method(upb_DefBuilder* ctx,
-                          const UPB_DESC(MethodDescriptorProto) * method_proto,
+                          const UPB_DESC(MethodDescriptorProto*) method_proto,
+                          const UPB_DESC(FeatureSet*) parent_features,
                           upb_ServiceDef* s, upb_MethodDef* m) {
+  UPB_DEF_SET_OPTIONS(m->opts, MethodDescriptorProto, MethodOptions,
+                      method_proto);
+  m->resolved_features = _upb_DefBuilder_ResolveFeatures(
+      ctx, parent_features, UPB_DESC(MethodOptions_features)(m->opts));
+
   upb_StringView name = UPB_DESC(MethodDescriptorProto_name)(method_proto);
 
   m->service = s;
@@ -106,18 +99,17 @@ static void create_method(upb_DefBuilder* ctx,
       ctx, m->full_name, m->full_name,
       UPB_DESC(MethodDescriptorProto_output_type)(method_proto),
       UPB_DEFTYPE_MSG);
-
-  UPB_DEF_SET_OPTIONS(m->opts, MethodDescriptorProto, MethodOptions,
-                      method_proto);
 }
 
 // Allocate and initialize an array of |n| method defs belonging to |s|.
-upb_MethodDef* _upb_MethodDefs_New(
-    upb_DefBuilder* ctx, int n,
-    const UPB_DESC(MethodDescriptorProto) * const* protos, upb_ServiceDef* s) {
+upb_MethodDef* _upb_MethodDefs_New(upb_DefBuilder* ctx, int n,
+                                   const UPB_DESC(MethodDescriptorProto*)
+                                       const* protos,
+                                   const UPB_DESC(FeatureSet*) parent_features,
+                                   upb_ServiceDef* s) {
   upb_MethodDef* m = _upb_DefBuilder_Alloc(ctx, sizeof(upb_MethodDef) * n);
   for (int i = 0; i < n; i++) {
-    create_method(ctx, protos[i], s, &m[i]);
+    create_method(ctx, protos[i], parent_features, s, &m[i]);
     m[i].index = i;
   }
   return m;

@@ -20,10 +20,9 @@
 #define GRPC_TEST_CPP_INTEROP_BACKEND_METRICS_LB_POLICY_H
 
 #include <grpc/support/port_platform.h>
-
 #include <grpcpp/support/channel_arguments.h>
 
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 
 namespace grpc {

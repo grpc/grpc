@@ -19,14 +19,12 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_ENDPOINT_H
 #define GRPC_SRC_CORE_LIB_IOMGR_ENDPOINT_H
 
-#include <grpc/support/port_platform.h>
-
-#include "absl/strings/string_view.h"
-
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include "absl/strings/string_view.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
@@ -44,7 +42,6 @@ struct grpc_endpoint_vtable {
   void (*add_to_pollset)(grpc_endpoint* ep, grpc_pollset* pollset);
   void (*add_to_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
   void (*delete_from_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
-  void (*shutdown)(grpc_endpoint* ep, grpc_error_handle why);
   void (*destroy)(grpc_endpoint* ep);
   absl::string_view (*get_peer)(grpc_endpoint* ep);
   absl::string_view (*get_local_address)(grpc_endpoint* ep);
@@ -87,7 +84,6 @@ void grpc_endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
 // Causes any pending and future read/write callbacks to run immediately with
 // success==0
-void grpc_endpoint_shutdown(grpc_endpoint* ep, grpc_error_handle why);
 void grpc_endpoint_destroy(grpc_endpoint* ep);
 
 // Add an endpoint to a pollset or pollset_set, so that when the pollset is
@@ -104,6 +100,8 @@ bool grpc_endpoint_can_track_err(grpc_endpoint* ep);
 
 struct grpc_endpoint {
   const grpc_endpoint_vtable* vtable;
+
+  void Orphan() { grpc_endpoint_destroy(this); }
 };
 
 #endif  // GRPC_SRC_CORE_LIB_IOMGR_ENDPOINT_H

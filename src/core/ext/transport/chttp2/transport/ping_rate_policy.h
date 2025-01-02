@@ -16,14 +16,14 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_PING_RATE_POLICY_H
 
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
 
 #include <iosfwd>
 #include <string>
 
 #include "absl/types/variant.h"
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -51,17 +51,31 @@ class Chttp2PingRatePolicy {
   using RequestSendPingResult =
       absl::variant<SendGranted, TooManyRecentPings, TooSoon>;
 
-  RequestSendPingResult RequestSendPing(Duration next_allowed_ping_interval);
+  // Request that one ping be sent.
+  // Returns:
+  //  - SendGranted if a ping can be sent.
+  //  - TooManyRecentPings if too many pings have been sent recently and we
+  //    should wait for some future write.
+  //  - TooSoon if we should wait for some time before sending the ping.
+  RequestSendPingResult RequestSendPing(Duration next_allowed_ping_interval,
+                                        size_t inflight_pings) const;
+  // Notify the policy that one ping has been sent.
+  void SentPing();
+  // Notify the policy that some data has been sent and so we should no longer
+  // block pings on that basis.
   void ResetPingsBeforeDataRequired();
+  // Notify the policy that we've received some data.
   void ReceivedDataFrame();
   std::string GetDebugString() const;
 
-  int TestOnlyMaxPingsWithoutData() const { return max_pings_without_data_; }
+  int TestOnlyMaxPingsWithoutData() const {
+    return max_pings_without_data_sent_;
+  }
 
  private:
-  const int max_pings_without_data_;
-  // No pings allowed before receiving a header or data frame.
-  int pings_before_data_required_ = 0;
+  const int max_pings_without_data_sent_;
+  const int max_inflight_pings_;
+  int pings_before_data_sending_required_ = 0;
   Timestamp last_ping_sent_time_ = Timestamp::InfPast();
 };
 

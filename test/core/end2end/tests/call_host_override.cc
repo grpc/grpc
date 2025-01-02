@@ -16,14 +16,15 @@
 //
 //
 
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -38,8 +39,8 @@ CORE_END2END_TEST(CoreClientChannelTest, CallHostOverride) {
                .Host("foo.test.google.fr:1234")
                .Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -50,7 +51,7 @@ CORE_END2END_TEST(CoreClientChannelTest, CallHostOverride) {
   Step();
   EXPECT_NE(s.GetPeer(), absl::nullopt);
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})

@@ -14,6 +14,7 @@
 
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_EPOLL1_LINUX_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_EPOLL1_LINUX_H
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
 #include <list>
@@ -24,16 +25,12 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/sync.h"
 
 #ifdef GRPC_LINUX_EPOLL
 #include <sys/epoll.h>
@@ -47,7 +44,7 @@ namespace experimental {
 class Epoll1EventHandle;
 
 // Definition of epoll1 based poller.
-class Epoll1Poller : public PosixEventPoller, public Forkable {
+class Epoll1Poller : public PosixEventPoller {
  public:
   explicit Epoll1Poller(Scheduler* scheduler);
   EventHandle* CreateHandle(int fd, absl::string_view name,
@@ -104,17 +101,17 @@ class Epoll1Poller : public PosixEventPoller, public Forkable {
   friend class Epoll1EventHandle;
 #ifdef GRPC_LINUX_EPOLL
   struct EpollSet {
-    int epfd;
+    int epfd = -1;
 
     // The epoll_events after the last call to epoll_wait()
-    struct epoll_event events[MAX_EPOLL_EVENTS];
+    struct epoll_event events[MAX_EPOLL_EVENTS]{};
 
     // The number of epoll_events after the last call to epoll_wait()
-    int num_events;
+    int num_events = 0;
 
     // Index of the first event in epoll_events that has to be processed. This
     // field is only valid if num_events > 0
-    int cursor;
+    int cursor = 0;
   };
 #else
   struct EpollSet {};
@@ -131,7 +128,7 @@ class Epoll1Poller : public PosixEventPoller, public Forkable {
 
 // Return an instance of a epoll1 based poller tied to the specified event
 // engine.
-Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler);
+std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

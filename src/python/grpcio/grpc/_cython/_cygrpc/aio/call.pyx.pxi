@@ -214,7 +214,7 @@ cdef class _AioCall(GrpcCallWrapper):
         """Returns if the RPC call has finished.
 
         Checks if the status has been provided, either
-        because the RPC finished or because was cancelled..
+        because the RPC finished or because was cancelled.
 
         Returns:
             True if the RPC can be considered finished.
@@ -235,7 +235,7 @@ cdef class _AioCall(GrpcCallWrapper):
     async def status(self):
         """Returns the status of the RPC call.
 
-        It returns the finshed status of the RPC. If the RPC
+        It returns the finished status of the RPC. If the RPC
         has not finished yet this function will wait until the RPC
         gets finished.
 
@@ -277,7 +277,7 @@ cdef class _AioCall(GrpcCallWrapper):
         """Returns if the RPC was cancelled locally.
 
         Returns:
-            True when was cancelled locally, False when was cancelled remotelly or
+            True when was cancelled locally, False when was cancelled remotely or
             is still ongoing.
         """
         if self._is_locally_cancelled:
@@ -285,14 +285,24 @@ cdef class _AioCall(GrpcCallWrapper):
 
         return False
 
+    def set_internal_error(self, str error_str):
+        self._set_status(AioRpcStatus(
+            StatusCode.internal,
+            'Internal error from Core',
+            (),
+            error_str,
+        ))
+
     async def unary_unary(self,
                           bytes request,
-                          tuple outbound_initial_metadata):
+                          tuple outbound_initial_metadata,
+                          object context = None):
         """Performs a unary unary RPC.
 
         Args:
           request: the serialized requests in bytes.
           outbound_initial_metadata: optional outbound metadata.
+          context: instrumentation context.
         """
         cdef tuple ops
 
@@ -305,6 +315,8 @@ cdef class _AioCall(GrpcCallWrapper):
         cdef ReceiveMessageOperation receive_message_op = ReceiveMessageOperation(_EMPTY_FLAGS)
         cdef ReceiveStatusOnClientOperation receive_status_on_client_op = ReceiveStatusOnClientOperation(_EMPTY_FLAGS)
 
+        if context is not None:
+            set_instrumentation_context_on_call_aio(self, context)
         ops = (initial_metadata_op, send_message_op, send_close_op,
                receive_initial_metadata_op, receive_message_op,
                receive_status_on_client_op)
@@ -382,9 +394,10 @@ cdef class _AioCall(GrpcCallWrapper):
 
     async def initiate_unary_stream(self,
                            bytes request,
-                           tuple outbound_initial_metadata):
+                           tuple outbound_initial_metadata,
+                           object context = None):
         """Implementation of the start of a unary-stream call."""
-        # Peer may prematurely end this RPC at any point. We need a corutine
+        # Peer may prematurely end this RPC at any point. We need a coroutine
         # that watches if the server sends the final status.
         status_task = self._loop.create_task(self._handle_status_once_received())
 
@@ -398,6 +411,8 @@ cdef class _AioCall(GrpcCallWrapper):
         cdef Operation send_close_op = SendCloseFromClientOperation(
             _EMPTY_FLAGS)
 
+        if context is not None:
+            set_instrumentation_context_on_call_aio(self, context)
         outbound_ops = (
             initial_metadata_op,
             send_message_op,
@@ -421,7 +436,8 @@ cdef class _AioCall(GrpcCallWrapper):
 
     async def stream_unary(self,
                            tuple outbound_initial_metadata,
-                           object metadata_sent_observer):
+                           object metadata_sent_observer,
+                           object context = None):
         """Actual implementation of the complete unary-stream call.
 
         Needs to pay extra attention to the raise mechanism. If we want to
@@ -452,6 +468,9 @@ cdef class _AioCall(GrpcCallWrapper):
         cdef tuple inbound_ops
         cdef ReceiveMessageOperation receive_message_op = ReceiveMessageOperation(_EMPTY_FLAGS)
         cdef ReceiveStatusOnClientOperation receive_status_on_client_op = ReceiveStatusOnClientOperation(_EMPTY_FLAGS)
+
+        if context is not None:
+            set_instrumentation_context_on_call_aio(self, context)
         inbound_ops = (receive_message_op, receive_status_on_client_op)
 
         # Executes all operations in one batch.
@@ -476,16 +495,20 @@ cdef class _AioCall(GrpcCallWrapper):
 
     async def initiate_stream_stream(self,
                            tuple outbound_initial_metadata,
-                           object metadata_sent_observer):
+                           object metadata_sent_observer,
+                           object context = None):
         """Actual implementation of the complete stream-stream call.
 
         Needs to pay extra attention to the raise mechanism. If we want to
         propagate the final status exception, then we have to raise it.
         Othersize, it would end normally and raise `StopAsyncIteration()`.
         """
-        # Peer may prematurely end this RPC at any point. We need a corutine
+        # Peer may prematurely end this RPC at any point. We need a coroutine
         # that watches if the server sends the final status.
         status_task = self._loop.create_task(self._handle_status_once_received())
+
+        if context is not None:
+            set_instrumentation_context_on_call_aio(self, context)
 
         try:
             # Sends out initial_metadata ASAP.

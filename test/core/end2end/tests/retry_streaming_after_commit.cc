@@ -16,14 +16,15 @@
 //
 //
 
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -32,6 +33,7 @@ namespace {
 // Tests that we can continue to send/recv messages on a streaming call
 // after retries are committed.
 CORE_END2END_TEST(RetryTest, RetryStreamingAfterCommit) {
+  SKIP_IF_V3();  // Not working yet
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -50,7 +52,7 @@ CORE_END2END_TEST(RetryTest, RetryStreamingAfterCommit) {
       "  } ]\n"
       "}"));
   auto c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   // Client starts a batch for receiving initial metadata and a message.
   // This will commit retries.

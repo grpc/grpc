@@ -4,6 +4,7 @@ require 'rspec/core/rake_task'
 require 'rubocop/rake_task'
 require 'bundler/gem_tasks'
 require 'fileutils'
+require 'tmpdir'
 
 require_relative 'build_config.rb'
 
@@ -29,9 +30,8 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.cross_compile = true
   ext.cross_platform = [
     'x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt',
-    'x86_64-linux', 'x86-linux', 'aarch64-linux', 
+    'x86_64-linux', 'x86-linux', 'aarch64-linux',
     'x86_64-darwin', 'arm64-darwin',
-    'universal-darwin'
   ]
   ext.cross_compiling do |spec|
     spec.files = spec.files.select {
@@ -104,12 +104,11 @@ task 'dlls', [:plat] do |t, args|
 
   env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DNTDDI_VERSION=0x06000000 -DUNICODE -D_UNICODE -Wno-unused-variable -Wno-unused-result -DCARES_STATICLIB -Wno-error=conversion -Wno-sign-compare -Wno-parentheses -Wno-format -DWIN32_LEAN_AND_MEAN" '
   env += 'CFLAGS="-Wno-incompatible-pointer-types" '
-  env += 'CXXFLAGS="-std=c++14 -fno-exceptions" '
+  env += 'CXXFLAGS="-std=c++17 -fno-exceptions" '
   env += 'LDFLAGS=-static '
   env += 'SYSTEM=MINGW32 '
   env += 'EMBED_ZLIB=true '
   env += 'EMBED_OPENSSL=true '
-  env += 'EMBED_CARES=true '
   env += 'BUILDDIR=/tmp '
   env += "V=#{verbose} "
   env += "GRPC_RUBY_BUILD_PROCS=#{nproc_override} "
@@ -144,7 +143,7 @@ task 'gem:native', [:plat] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  ruby_cc_versions = ['3.2.0', '3.1.0', '3.0.0', '2.7.0', '2.6.0'].join(':')
+  ruby_cc_versions = ['3.3.0', '3.2.0', '3.1.0', '3.0.0'].join(':')
   selected_plat = "#{args[:plat]}"
 
   # use env variable to set artifact build paralellism
@@ -185,7 +184,7 @@ task 'gem:native', [:plat] do |t, args|
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
-      bundle && \
+      bundle update && \
       bundle exec rake clean && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
         RUBY_CC_VERSION=#{ruby_cc_versions} \
@@ -201,18 +200,38 @@ task 'gem:native', [:plat] do |t, args|
   File.truncate('grpc_c.64-msvcrt.ruby', 0)
   File.truncate('grpc_c.64-ucrt.ruby', 0)
 
+  `mkdir -p src/ruby/nativedebug/symbols`
+  # TODO(apolcyn): make debug symbols work on apple platforms.
+  # Currently we hit "objcopy: grpc_c.bundle: file format not recognized"
+  # TODO(apolcyn): make debug symbols work on aarch64 linux.
+  # Currently we hit "objcopy: Unable to recognise the format of the input file `grpc_c.so'"
+  unix_platforms_without_debug_symbols = ['x86_64-darwin', 'arm64-darwin', 'aarch64-linux']
+
   unix_platforms.each do |plat|
+    if unix_platforms_without_debug_symbols.include?(plat)
+      debug_symbols_dir = ''
+    else
+      debug_symbols_dir = File.join(Dir.pwd, 'src/ruby/nativedebug/symbols')
+    end
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
-      bundle && \
+      bundle update && \
       bundle exec rake clean && \
+      export GRPC_RUBY_DEBUG_SYMBOLS_OUTPUT_DIR=#{debug_symbols_dir} && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
         RUBY_CC_VERSION=#{ruby_cc_versions} \
         V=#{verbose} \
         GRPC_CONFIG=#{grpc_config} \
         GRPC_RUBY_BUILD_PROCS=#{nproc_override}
     EOT
+  end
+  # Generate debug symbol packages to complement the native libraries we just built
+  unix_platforms.each do |plat|
+    unless unix_platforms_without_debug_symbols.include?(plat)
+      `bash src/ruby/nativedebug/build_package.sh #{plat}`
+      `cp src/ruby/nativedebug/pkg/*.gem pkg/`
+    end
   end
 end
 

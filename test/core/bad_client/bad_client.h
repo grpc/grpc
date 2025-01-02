@@ -19,11 +19,10 @@
 #ifndef GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
 #define GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #define GRPC_BAD_CLIENT_REGISTERED_METHOD "/registered/bar"
 #define GRPC_BAD_CLIENT_REGISTERED_HOST "localhost"
@@ -47,6 +46,7 @@ struct grpc_bad_client_arg {
 // Flags for grpc_run_bad_client_test
 #define GRPC_BAD_CLIENT_DISCONNECT 1
 #define GRPC_BAD_CLIENT_LARGE_REQUEST 2
+#define GRPC_BAD_CLIENT_MAX_CONCURRENT_REQUESTS_OF_ONE 4
 
 // Test runner.
 //

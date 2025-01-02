@@ -23,7 +23,6 @@
 
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
-
 #include "src/cpp/server/load_reporter/constants.h"
 
 namespace grpc {

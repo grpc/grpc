@@ -30,8 +30,21 @@ class RubyGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   ~RubyGrpcGenerator() {}
 
   uint64_t GetSupportedFeatures() const override {
-    return FEATURE_PROTO3_OPTIONAL;
+    return FEATURE_PROTO3_OPTIONAL
+#ifdef GRPC_PROTOBUF_EDITION_SUPPORT
+           | FEATURE_SUPPORTS_EDITIONS
+#endif
+        ;
   }
+
+#ifdef GRPC_PROTOBUF_EDITION_SUPPORT
+  grpc::protobuf::Edition GetMinimumEdition() const override {
+    return grpc::protobuf::Edition::EDITION_PROTO2;
+  }
+  grpc::protobuf::Edition GetMaximumEdition() const override {
+    return grpc::protobuf::Edition::EDITION_2023;
+  }
+#endif
 
   bool Generate(const grpc::protobuf::FileDescriptor* file,
                 const std::string& /*parameter*/,

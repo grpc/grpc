@@ -16,23 +16,22 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSE_RESULT_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <memory>
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 
@@ -128,10 +127,18 @@ class HpackParseResult {
  public:
   HpackParseResult() : HpackParseResult{HpackParseStatus::kOk} {}
 
-  bool ok() const { return status_.get() == HpackParseStatus::kOk; }
-  bool stream_error() const { return IsStreamError(status_.get()); }
-  bool connection_error() const { return IsConnectionError(status_.get()); }
-  bool ephemeral() const { return IsEphemeralError(status_.get()); }
+  bool ok() const {
+    return state_ == nullptr || state_->status.get() == HpackParseStatus::kOk;
+  }
+  bool stream_error() const {
+    return state_ != nullptr && IsStreamError(state_->status.get());
+  }
+  bool connection_error() const {
+    return state_ != nullptr && IsConnectionError(state_->status.get());
+  }
+  bool ephemeral() const {
+    return state_ != nullptr && IsEphemeralError(state_->status.get());
+  }
 
   std::unique_ptr<HpackParseResult> PersistentStreamErrorOrNullptr() const {
     if (ok() || connection_error() || ephemeral()) return nullptr;
@@ -154,20 +161,22 @@ class HpackParseResult {
   static HpackParseResult FromStatusWithKey(HpackParseStatus status,
                                             absl::string_view key) {
     auto r = FromStatus(status);
-    r.key_ = std::string(key);
+    if (r.state_ != nullptr) {
+      r.state_->key = std::string(key);
+    }
     return r;
   }
 
   static HpackParseResult MetadataParseError(absl::string_view key) {
     HpackParseResult r{HpackParseStatus::kMetadataParseError};
-    r.key_ = std::string(key);
+    r.state_->key = std::string(key);
     return r;
   }
 
   static HpackParseResult AddBeforeTableSizeUpdated(uint32_t current_size,
                                                     uint32_t max_size) {
     HpackParseResult p{HpackParseStatus::kAddBeforeTableSizeUpdated};
-    p.illegal_table_size_change_ =
+    p.state_->illegal_table_size_change =
         IllegalTableSizeChange{current_size, max_size};
     return p;
   }
@@ -182,10 +191,10 @@ class HpackParseResult {
 
   static HpackParseResult InvalidMetadataError(ValidateMetadataResult result,
                                                absl::string_view key) {
-    GPR_DEBUG_ASSERT(result != ValidateMetadataResult::kOk);
+    DCHECK(result != ValidateMetadataResult::kOk);
     HpackParseResult p{HpackParseStatus::kInvalidMetadata};
-    p.key_ = std::string(key);
-    p.validate_metadata_result_ = result;
+    p.state_->key = std::string(key);
+    p.state_->validate_metadata_result = result;
     return p;
   }
 
@@ -196,20 +205,21 @@ class HpackParseResult {
   static HpackParseResult VarintOutOfRangeError(uint32_t value,
                                                 uint8_t last_byte) {
     HpackParseResult p{HpackParseStatus::kVarintOutOfRange};
-    p.varint_out_of_range_ = VarintOutOfRange{last_byte, value};
+    p.state_->varint_out_of_range = VarintOutOfRange{last_byte, value};
     return p;
   }
 
   static HpackParseResult InvalidHpackIndexError(uint32_t index) {
     HpackParseResult p{HpackParseStatus::kInvalidHpackIndex};
-    p.invalid_hpack_index_ = index;
+    p.state_->invalid_hpack_index = index;
     return p;
   }
 
   static HpackParseResult IllegalTableSizeChangeError(uint32_t new_size,
                                                       uint32_t max_size) {
     HpackParseResult p{HpackParseStatus::kIllegalTableSizeChange};
-    p.illegal_table_size_change_ = IllegalTableSizeChange{new_size, max_size};
+    p.state_->illegal_table_size_change =
+        IllegalTableSizeChange{new_size, max_size};
     return p;
   }
 
@@ -220,7 +230,7 @@ class HpackParseResult {
   static HpackParseResult SoftMetadataLimitExceededError(
       grpc_metadata_batch* metadata, uint32_t frame_length, uint32_t limit) {
     HpackParseResult p{HpackParseStatus::kSoftMetadataLimitExceeded};
-    p.metadata_limit_exceeded_ =
+    p.state_->metadata_limit_exceeded =
         MetadataLimitExceeded{frame_length, limit, metadata};
     return p;
   }
@@ -228,7 +238,7 @@ class HpackParseResult {
   static HpackParseResult HardMetadataLimitExceededError(
       grpc_metadata_batch* metadata, uint32_t frame_length, uint32_t limit) {
     HpackParseResult p{HpackParseStatus::kHardMetadataLimitExceeded};
-    p.metadata_limit_exceeded_ =
+    p.state_->metadata_limit_exceeded =
         MetadataLimitExceeded{frame_length, limit, metadata};
     return p;
   }
@@ -236,7 +246,7 @@ class HpackParseResult {
   static HpackParseResult HardMetadataLimitExceededByKeyError(
       uint32_t key_length, uint32_t limit) {
     HpackParseResult p{HpackParseStatus::kHardMetadataLimitExceededByKey};
-    p.metadata_limit_exceeded_by_atom_ =
+    p.state_->metadata_limit_exceeded_by_atom =
         MetadataLimitExceededByAtom{key_length, limit};
     return p;
   }
@@ -244,9 +254,9 @@ class HpackParseResult {
   static HpackParseResult HardMetadataLimitExceededByValueError(
       absl::string_view key, uint32_t value_length, uint32_t limit) {
     HpackParseResult p{HpackParseStatus::kHardMetadataLimitExceededByValue};
-    p.metadata_limit_exceeded_by_atom_ =
+    p.state_->metadata_limit_exceeded_by_atom =
         MetadataLimitExceededByAtom{value_length, limit};
-    p.key_ = std::string(key);
+    p.state_->key = std::string(key);
     return p;
   }
 
@@ -255,7 +265,13 @@ class HpackParseResult {
   absl::Status Materialize() const;
 
  private:
-  explicit HpackParseResult(HpackParseStatus status) : status_(status) {}
+  explicit HpackParseResult(HpackParseStatus status) {
+    // Dynamically allocate state if status is not ok.
+    if (status != HpackParseStatus::kOk) {
+      state_ = MakeRefCounted<HpackParseResultState>(status);
+    }
+  }
+
   absl::Status BuildMaterialized() const;
 
   struct VarintOutOfRange {
@@ -300,25 +316,31 @@ class HpackParseResult {
     HpackParseStatus status_;
   };
 
-  StatusWrapper status_;
-  union {
-    // Set if status == kInvalidMetadata
-    ValidateMetadataResult validate_metadata_result_;
-    // Set if status == kVarintOutOfRange
-    VarintOutOfRange varint_out_of_range_;
-    // Set if status == kInvalidHpackIndex
-    uint32_t invalid_hpack_index_;
-    // Set if status == kHardMetadataLimitExceeded or
-    // kSoftMetadataLimitExceeded
-    MetadataLimitExceeded metadata_limit_exceeded_;
-    // Set if status == kHardMetadataLimitExceededByKey or
-    // kHardMetadataLimitExceededByValue
-    MetadataLimitExceededByAtom metadata_limit_exceeded_by_atom_;
-    // Set if status == kIllegalTableSizeChange
-    IllegalTableSizeChange illegal_table_size_change_;
+  struct HpackParseResultState : public RefCounted<HpackParseResultState> {
+    explicit HpackParseResultState(HpackParseStatus incoming_status)
+        : status(incoming_status) {}
+    StatusWrapper status;
+    union {
+      // Set if status == kInvalidMetadata
+      ValidateMetadataResult validate_metadata_result;
+      // Set if status == kVarintOutOfRange
+      VarintOutOfRange varint_out_of_range;
+      // Set if status == kInvalidHpackIndex
+      uint32_t invalid_hpack_index;
+      // Set if status == kHardMetadataLimitExceeded or
+      // kSoftMetadataLimitExceeded
+      MetadataLimitExceeded metadata_limit_exceeded;
+      // Set if status == kHardMetadataLimitExceededByKey or
+      // kHardMetadataLimitExceededByValue
+      MetadataLimitExceededByAtom metadata_limit_exceeded_by_atom;
+      // Set if status == kIllegalTableSizeChange
+      IllegalTableSizeChange illegal_table_size_change;
+    };
+    std::string key;
+    mutable absl::optional<absl::Status> materialized_status;
   };
-  std::string key_;
-  mutable absl::optional<absl::Status> materialized_status_;
+
+  RefCountedPtr<HpackParseResultState> state_ = nullptr;
 };
 
 }  // namespace grpc_core

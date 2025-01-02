@@ -14,18 +14,13 @@
 
 #include "src/core/lib/promise/map_pipe.h"
 
-#include <stdint.h>
+#include <grpc/event_engine/memory_allocator.h>
 
-#include <initializer_list>
 #include <memory>
 #include <utility>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/join.h"
@@ -36,6 +31,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::Mock;
@@ -50,7 +46,7 @@ class Delayed {
   explicit Delayed(T x) : x_(x) {}
 
   Poll<T> operator()() {
-    Activity::current()->ForceImmediateRepoll();
+    GetContext<Activity>()->ForceImmediateRepoll();
     ++polls_;
     if (polls_ == 10) return std::move(x_);
     return Pending();
@@ -61,13 +57,7 @@ class Delayed {
   T x_;
 };
 
-class MapPipeTest : public ::testing::Test {
- protected:
-  MemoryAllocator memory_allocator_ = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-};
-
-TEST_F(MapPipeTest, SendThriceWithPipeInterceptingReceive) {
+TEST(MapPipeTest, SendThriceWithPipeInterceptingReceive) {
   int num_received = 0;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -102,12 +92,12 @@ TEST_F(MapPipeTest, SendThriceWithPipeInterceptingReceive) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
   Mock::VerifyAndClearExpectations(&on_done);
   EXPECT_EQ(num_received, 3);
 }
 
-TEST_F(MapPipeTest, SendThriceWithPipeInterceptingSend) {
+TEST(MapPipeTest, SendThriceWithPipeInterceptingSend) {
   int num_received = 0;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -142,7 +132,7 @@ TEST_F(MapPipeTest, SendThriceWithPipeInterceptingSend) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
   Mock::VerifyAndClearExpectations(&on_done);
   EXPECT_EQ(num_received, 3);
 }

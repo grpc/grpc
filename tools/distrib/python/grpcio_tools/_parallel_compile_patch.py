@@ -1,4 +1,4 @@
-# Copyright 2018 The gRPC Authors
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,13 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Patches the compile() to allow enable parallel compilation of C/C++.
+#
+# This file has been automatically generated from a template file.
+# Please make modifications to
+# `$REPO_ROOT/templates/tools/distrib/python/grpcio_tools/_parallel_compile_patch.py.template`
+# instead. This file can be regenerated from the template by running
+# `tools/buildgen/generate_projects.sh`.
+
+"""Patches the compile() to enable parallel compilation of C/C++.
 
 build_ext has lots of C/C++ files and normally them one by one.
 Enabling parallel build helps a lot.
 """
 
-import distutils.ccompiler
 import os
 
 try:
@@ -28,6 +34,8 @@ except KeyError:
     import multiprocessing
 
     BUILD_EXT_COMPILER_JOBS = multiprocessing.cpu_count()
+except ValueError:
+    BUILD_EXT_COMPILER_JOBS = 1
 
 
 # monkey-patch for parallel compilation
@@ -45,7 +53,7 @@ def _parallel_compile(
     # setup the same way as distutils.ccompiler.CCompiler
     # https://github.com/python/cpython/blob/31368a4f0e531c19affe2a1becd25fc316bc7501/Lib/distutils/ccompiler.py#L564
     macros, objects, extra_postargs, pp_opts, build = self._setup_compile(
-        output_dir, macros, include_dirs, sources, depends, extra_postargs
+        str(output_dir), macros, include_dirs, sources, depends, extra_postargs
     )
     cc_args = self._get_cc_args(pp_opts, debug, extra_preargs)
 
@@ -66,6 +74,12 @@ def _parallel_compile(
 
 
 def monkeypatch_compile_maybe():
-    """Monkeypatching is dumb, but the build speed gain is worth it."""
-    if BUILD_EXT_COMPILER_JOBS > 1:
+    """
+    Monkeypatching is dumb, but the build speed gain is worth it.
+    After python 3.12, we won't find distutils if SETUPTOOLS_USE_DISTUTILS=stdlib.
+    """
+    use_distutils = os.environ.get("SETUPTOOLS_USE_DISTUTILS", "")
+    if BUILD_EXT_COMPILER_JOBS > 1 and use_distutils != "stdlib":
+        import distutils.ccompiler  # pylint: disable=wrong-import-position
+
         distutils.ccompiler.CCompiler.compile = _parallel_compile

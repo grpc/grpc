@@ -14,19 +14,18 @@
 #ifndef GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 #define GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/extensible.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/port.h>
+#include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 
-#include <functional>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/port.h>
-#include <grpc/event_engine/slice_buffer.h>
 
 // TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {
@@ -79,7 +78,7 @@ namespace experimental {
 ///
 ///
 /// Blocking EventEngine Callbacks
-/// -----------------------------
+/// ------------------------------
 ///
 /// Doing blocking work in EventEngine callbacks is generally not advisable.
 /// While gRPC's default EventEngine implementations have some capacity to scale
@@ -90,8 +89,18 @@ namespace experimental {
 /// *Best Practice* : Occasional blocking work may be fine, but we do not
 /// recommend running a mostly blocking workload in EventEngine threads.
 ///
+///
+/// Thread-safety guarantees
+/// ------------------------
+///
+/// All EventEngine methods are guaranteed to be thread-safe, no external
+/// synchronization is required to call any EventEngine method. Please note that
+/// this does not apply to application callbacks, which may be run concurrently;
+/// application state synchronization must be managed by the application.
+///
 ////////////////////////////////////////////////////////////////////////////////
-class EventEngine : public std::enable_shared_from_this<EventEngine> {
+class EventEngine : public std::enable_shared_from_this<EventEngine>,
+                    public Extensible {
  public:
   /// A duration between two events.
   ///
@@ -122,20 +131,14 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// \a Cancel method.
   struct TaskHandle {
     intptr_t keys[2];
-    static const TaskHandle kInvalid;
-    friend bool operator==(const TaskHandle& lhs, const TaskHandle& rhs);
-    friend bool operator!=(const TaskHandle& lhs, const TaskHandle& rhs);
+    static const GRPC_DLL TaskHandle kInvalid;
   };
   /// A handle to a cancellable connection attempt.
   ///
   /// Returned by \a Connect, and can be passed to \a CancelConnect.
   struct ConnectionHandle {
     intptr_t keys[2];
-    static const ConnectionHandle kInvalid;
-    friend bool operator==(const ConnectionHandle& lhs,
-                           const ConnectionHandle& rhs);
-    friend bool operator!=(const ConnectionHandle& lhs,
-                           const ConnectionHandle& rhs);
+    static const GRPC_DLL ConnectionHandle kInvalid;
   };
   /// Thin wrapper around a platform-specific sockaddr type. A sockaddr struct
   /// exists on all platforms that gRPC supports.
@@ -167,7 +170,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// allocations. gRPC allows applications to set memory constraints per
   /// Channel or Server, and the implementation depends on all dynamic memory
   /// allocation being handled by the quota system.
-  class Endpoint {
+  class Endpoint : public Extensible {
    public:
     /// Shuts down all connections and invokes all pending read or write
     /// callbacks with an error status.
@@ -191,9 +194,12 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// on_read callback is not executed. Otherwise it returns false and the \a
     /// on_read callback executes asynchronously when the read completes. The
     /// caller must ensure that the callback has access to the buffer when it
-    /// executes. Ownership of the buffer is not transferred. Valid slices *may*
-    /// be placed into the buffer even if the callback is invoked with a non-OK
-    /// Status.
+    /// executes. Ownership of the buffer is not transferred. Either an error is
+    /// passed to the callback (like socket closed), or valid data is available
+    /// in the buffer, but never both at the same time. Implementations that
+    /// receive valid data must not throw that data away - that is, if valid
+    /// data is received on the underlying endpoint, a callback will be made
+    /// with that data available and an ok status.
     ///
     /// There can be at most one outstanding read per Endpoint at any given
     /// time. An outstanding read is one in which the \a on_read callback has
@@ -259,7 +265,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
 
   /// Listens for incoming connection requests from gRPC clients and initiates
   /// request processing once connections are established.
-  class Listener {
+  class Listener : public Extensible {
    public:
     /// Called when the listener has accepted a new client connection.
     using AcceptCallback = absl::AnyInvocable<void(
@@ -318,7 +324,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   ///
   /// If the associated connection has not been completed, it will be cancelled,
   /// and this method will return true. The \a OnConnectCallback will not be
-  /// called.
+  /// called, and \a on_connect will be destroyed before this method returns.
   virtual bool CancelConnect(ConnectionHandle handle) = 0;
   /// Provides asynchronous resolution.
   ///
@@ -405,8 +411,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
 
   /// Asynchronously executes a task as soon as possible.
   ///
-  /// \a Closures scheduled with \a Run cannot be cancelled. The \a closure will
-  /// not be deleted after it has been run, ownership remains with the caller.
+  /// \a Closures passed to \a Run cannot be cancelled. The \a closure will not
+  /// be deleted after it has been run, ownership remains with the caller.
   ///
   /// Implementations must not execute the closure in the calling thread before
   /// \a Run returns. For example, if the caller must release a lock before the
@@ -415,9 +421,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   virtual void Run(Closure* closure) = 0;
   /// Asynchronously executes a task as soon as possible.
   ///
-  /// \a Closures scheduled with \a Run cannot be cancelled. Unlike the
-  /// overloaded \a Closure alternative, the absl::AnyInvocable version's \a
-  /// closure will be deleted by the EventEngine after the closure has been run.
+  /// \a Closures passed to \a Run cannot be cancelled. Unlike the overloaded \a
+  /// Closure alternative, the absl::AnyInvocable version's \a closure will be
+  /// deleted by the EventEngine after the closure has been run.
   ///
   /// This version of \a Run may be less performant than the \a Closure version
   /// in some scenarios. This overload is useful in situations where performance
@@ -434,6 +440,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   ///
   /// Implementations must not execute the closure in the calling thread before
   /// \a RunAfter returns.
+  ///
+  /// Implementations may return a \a kInvalid handle if the callback can be
+  /// immediately executed, and is therefore not cancellable.
   virtual TaskHandle RunAfter(Duration when, Closure* closure) = 0;
   /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
@@ -453,17 +462,12 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
                               absl::AnyInvocable<void()> closure) = 0;
   /// Request cancellation of a task.
   ///
-  /// If the associated closure has already been scheduled to run, it will not
-  /// be cancelled, and this function will return false.
+  /// If the associated closure cannot be cancelled for any reason, this
+  /// function will return false.
   ///
-  /// If the associated closure has not been scheduled to run, it will be
-  /// cancelled, and the associated absl::AnyInvocable or \a Closure* will not
-  /// be executed. In this case, Cancel will return true.
-  ///
-  /// Implementation note: closures should be destroyed in a timely manner after
-  /// execution or cancellation (milliseconds), since any state bound to the
-  /// closure may need to be destroyed for things to progress (e.g., if a
-  /// closure holds a ref to some ref-counted object).
+  /// If the associated closure can be cancelled, the associated callback will
+  /// never be run, and this method will return true. If the callback type was
+  /// an absl::AnyInvocable, it will be destroyed before the method returns.
   virtual bool Cancel(TaskHandle handle) = 0;
 };
 
@@ -488,6 +492,33 @@ void SetEventEngineFactory(
 void EventEngineFactoryReset();
 /// Create an EventEngine using the default factory.
 std::unique_ptr<EventEngine> CreateEventEngine();
+
+bool operator==(const EventEngine::TaskHandle& lhs,
+                const EventEngine::TaskHandle& rhs);
+bool operator!=(const EventEngine::TaskHandle& lhs,
+                const EventEngine::TaskHandle& rhs);
+std::ostream& operator<<(std::ostream& out,
+                         const EventEngine::TaskHandle& handle);
+bool operator==(const EventEngine::ConnectionHandle& lhs,
+                const EventEngine::ConnectionHandle& rhs);
+bool operator!=(const EventEngine::ConnectionHandle& lhs,
+                const EventEngine::ConnectionHandle& rhs);
+std::ostream& operator<<(std::ostream& out,
+                         const EventEngine::ConnectionHandle& handle);
+
+namespace detail {
+std::string FormatHandleString(uint64_t key1, uint64_t key2);
+}
+
+template <typename Sink>
+void AbslStringify(Sink& out, const EventEngine::ConnectionHandle& handle) {
+  out.Append(detail::FormatHandleString(handle.keys[0], handle.keys[1]));
+}
+
+template <typename Sink>
+void AbslStringify(Sink& out, const EventEngine::TaskHandle& handle) {
+  out.Append(detail::FormatHandleString(handle.keys[0], handle.keys[1]));
+}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

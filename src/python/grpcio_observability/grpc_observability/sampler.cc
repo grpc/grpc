@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/python/grpcio_observability/grpc_observability/sampler.h"
+#include "sampler.h"
 
 #include <cmath>
 #include <cstdint>

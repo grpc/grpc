@@ -16,8 +16,28 @@ import os
 import sys
 
 from grpc_tools import protoc
-import pkg_resources
 import setuptools
+
+if sys.version_info >= (3, 9, 0):
+    from importlib import resources
+else:
+    import pkg_resources
+
+
+def _get_resource_file_name(
+    package_or_requirement: str, resource_name: str
+) -> str:
+    """Obtain the filename for a resource on the file system."""
+    file_name = None
+    if sys.version_info >= (3, 9, 0):
+        file_name = (
+            resources.files(package_or_requirement) / resource_name
+        ).resolve()
+    else:
+        file_name = pkg_resources.resource_filename(
+            package_or_requirement, resource_name
+        )
+    return str(file_name)
 
 
 def build_package_protos(package_root, strict_mode=False):
@@ -30,9 +50,7 @@ def build_package_protos(package_root, strict_mode=False):
                     os.path.abspath(os.path.join(root, filename))
                 )
 
-    well_known_protos_include = pkg_resources.resource_filename(
-        "grpc_tools", "_proto"
-    )
+    well_known_protos_include = _get_resource_file_name("grpc_tools", "_proto")
 
     for proto_file in proto_files:
         command = [

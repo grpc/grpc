@@ -50,7 +50,7 @@ server = grpc.server(futures.ThreadPoolExecutor(),
 
 ```python
 def SayHello(self, request, context):
-    context.set_response_compression(grpc.Compression.NoCompression)
+    context.set_compression(grpc.Compression.NoCompression)
     return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
 ```
 

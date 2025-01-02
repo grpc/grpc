@@ -24,13 +24,11 @@
 #include <algorithm>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/event_engine/posix_engine/timer.h"
-#include "src/core/lib/gprpp/bitset.h"
+#include "src/core/util/bitset.h"
 
 using testing::Contains;
 using testing::Not;
@@ -52,7 +50,7 @@ std::vector<Timer> CreateTestElements(size_t num_elements) {
 void CheckValid(TimerHeap* pq) {
   const std::vector<Timer*>& timers = pq->TestOnlyGetTimers();
   for (size_t i = 0; i < timers.size(); ++i) {
-    size_t left_child = 1u + 2u * i;
+    size_t left_child = 1u + (2u * i);
     size_t right_child = left_child + 1u;
     if (left_child < timers.size()) {
       EXPECT_LE(timers[i]->deadline, timers[left_child]->deadline);
@@ -169,7 +167,7 @@ TEST(TimerHeapTest, RandomMutations) {
         pq.Pop();
         for (size_t i = 0; i < elems_size; i++) {
           if (top == &elems[i].elem) {
-            GPR_ASSERT(elems[i].inserted);
+            CHECK(elems[i].inserted);
             elems[i].inserted = false;
           }
         }
@@ -191,7 +189,7 @@ TEST(TimerHeapTest, RandomMutations) {
           }
         }
       }
-      GPR_ASSERT(pq.Top()->deadline == *min_deadline);
+      CHECK(pq.Top()->deadline == *min_deadline);
     }
   }
 }

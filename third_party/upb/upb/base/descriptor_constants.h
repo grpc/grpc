@@ -1,29 +1,9 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #ifndef UPB_BASE_DESCRIPTOR_CONSTANTS_H_
 #define UPB_BASE_DESCRIPTOR_CONSTANTS_H_
@@ -40,7 +20,7 @@ typedef enum {
   kUpb_CType_Float = 2,
   kUpb_CType_Int32 = 3,
   kUpb_CType_UInt32 = 4,
-  kUpb_CType_Enum = 5,  // Enum values are int32. TODO(b/279178239): rename
+  kUpb_CType_Enum = 5,  // Enum values are int32. TODO: rename
   kUpb_CType_Message = 6,
   kUpb_CType_Double = 7,
   kUpb_CType_Int64 = 8,
@@ -84,7 +64,34 @@ typedef enum {
 extern "C" {
 #endif
 
-UPB_INLINE bool upb_FieldType_IsPackable(upb_FieldType type) {
+// Convert from upb_FieldType to upb_CType
+UPB_INLINE upb_CType upb_FieldType_CType(upb_FieldType field_type) {
+  static const upb_CType c_type[] = {
+      kUpb_CType_Double,   // kUpb_FieldType_Double
+      kUpb_CType_Float,    // kUpb_FieldType_Float
+      kUpb_CType_Int64,    // kUpb_FieldType_Int64
+      kUpb_CType_UInt64,   // kUpb_FieldType_UInt64
+      kUpb_CType_Int32,    // kUpb_FieldType_Int32
+      kUpb_CType_UInt64,   // kUpb_FieldType_Fixed64
+      kUpb_CType_UInt32,   // kUpb_FieldType_Fixed32
+      kUpb_CType_Bool,     // kUpb_FieldType_Bool
+      kUpb_CType_String,   // kUpb_FieldType_String
+      kUpb_CType_Message,  // kUpb_FieldType_Group
+      kUpb_CType_Message,  // kUpb_FieldType_Message
+      kUpb_CType_Bytes,    // kUpb_FieldType_Bytes
+      kUpb_CType_UInt32,   // kUpb_FieldType_UInt32
+      kUpb_CType_Enum,     // kUpb_FieldType_Enum
+      kUpb_CType_Int32,    // kUpb_FieldType_SFixed32
+      kUpb_CType_Int64,    // kUpb_FieldType_SFixed64
+      kUpb_CType_Int32,    // kUpb_FieldType_SInt32
+      kUpb_CType_Int64,    // kUpb_FieldType_SInt64
+  };
+
+  // -1 here because the enum is one-based but the table is zero-based.
+  return c_type[field_type - 1];
+}
+
+UPB_INLINE bool upb_FieldType_IsPackable(upb_FieldType field_type) {
   // clang-format off
   const unsigned kUnpackableTypes =
       (1 << kUpb_FieldType_String) |
@@ -92,7 +99,7 @@ UPB_INLINE bool upb_FieldType_IsPackable(upb_FieldType type) {
       (1 << kUpb_FieldType_Message) |
       (1 << kUpb_FieldType_Group);
   // clang-format on
-  return (1 << type) & ~kUnpackableTypes;
+  return (1 << field_type) & ~kUnpackableTypes;
 }
 
 #ifdef __cplusplus

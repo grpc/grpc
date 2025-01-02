@@ -27,7 +27,7 @@ class GreeterStub {
      * Sends a greeting
      * @param \Helloworld\HelloRequest $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Helloworld\HelloReply for response data, null if if error occured
+     * @return \Helloworld\HelloReply for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function SayHello(

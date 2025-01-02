@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/filters/census/context.h"
+
+#include <grpc/support/port_platform.h>
 
 #include <new>
 
@@ -26,7 +26,6 @@
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/trace/context_util.h"
 #include "opencensus/trace/propagation/grpc_trace_bin.h"
-
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/rpc_encoding.h"

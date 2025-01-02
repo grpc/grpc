@@ -22,10 +22,8 @@
 
 #ifdef GRPC_WINSOCK_SOCKET
 
-#include <grpc/support/log.h>
-
+#include "absl/log/check.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
@@ -36,6 +34,7 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/util/crash.h"
 
 extern grpc_tcp_server_vtable grpc_windows_tcp_server_vtable;
 extern grpc_tcp_server_vtable grpc_windows_event_engine_tcp_server_vtable;
@@ -51,12 +50,12 @@ extern grpc_pollset_set_vtable grpc_windows_pollset_set_vtable;
 static void winsock_init(void) {
   WSADATA wsaData;
   int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
-  GPR_ASSERT(status == 0);
+  CHECK_EQ(status, 0);
 }
 
 static void winsock_shutdown(void) {
   int status = WSACleanup();
-  GPR_ASSERT(status == 0);
+  CHECK_EQ(status, 0);
 }
 
 static void iomgr_platform_init(void) {
@@ -108,6 +107,8 @@ void grpc_set_default_iomgr_platform() {
   grpc_set_iomgr_platform_vtable(&vtable);
 }
 
-bool grpc_iomgr_run_in_background() { return false; }
+bool grpc_iomgr_run_in_background() {
+  return grpc_core::IsEventEngineCallbackCqEnabled();
+}
 
 #endif  // GRPC_WINSOCK_SOCKET

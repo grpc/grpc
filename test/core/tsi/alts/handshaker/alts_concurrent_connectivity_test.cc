@@ -16,9 +16,18 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <fcntl.h>
+#include <gmock/gmock.h>
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
+#include <grpcpp/impl/service_type.h>
+#include <grpcpp/server_builder.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,35 +40,25 @@
 #include <set>
 #include <thread>
 
-#include <gmock/gmock.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-#include <grpcpp/impl/service_type.h>
-#include <grpcpp/server_builder.h>
-
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/thd.h"
+#include "src/core/util/useful.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/test_util/build.h"
+#include "test/core/test_util/fake_udp_and_tcp_server.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
-#include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
 
 namespace {
 
@@ -112,8 +111,7 @@ class FakeHandshakeServer {
     // TODO(apolcyn): when removing the global concurrent handshake limiting
     // queue, set MAX_CONCURRENT_STREAMS on this server.
     server_ = builder.BuildAndStart();
-    gpr_log(GPR_INFO, "Fake handshaker server listening on %s",
-            address_.c_str());
+    LOG(INFO) << "Fake handshaker server listening on " << address_;
   }
 
   ~FakeHandshakeServer() {
@@ -143,17 +141,16 @@ class TestServer {
     grpc_server_register_completion_queue(server_, server_cq_, nullptr);
     int port = grpc_pick_unused_port_or_die();
     server_addr_ = grpc_core::JoinHostPort("localhost", port);
-    GPR_ASSERT(grpc_server_add_http2_port(server_, server_addr_.c_str(),
-                                          server_creds));
+    CHECK(grpc_server_add_http2_port(server_, server_addr_.c_str(),
+                                     server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
-    gpr_log(GPR_DEBUG, "Start TestServer %p. listen on %s", this,
-            server_addr_.c_str());
+    VLOG(2) << "Start TestServer " << this << ". listen on " << server_addr_;
     server_thd_ = std::make_unique<std::thread>(PollUntilShutdown, this);
   }
 
   ~TestServer() {
-    gpr_log(GPR_DEBUG, "Begin dtor of TestServer %p", this);
+    VLOG(2) << "Begin dtor of TestServer " << this;
     grpc_server_shutdown_and_notify(server_, server_cq_, this);
     server_thd_->join();
     grpc_server_destroy(server_);
@@ -167,9 +164,9 @@ class TestServer {
   static void PollUntilShutdown(const TestServer* self) {
     grpc_event ev = grpc_completion_queue_next(
         self->server_cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-    GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-    GPR_ASSERT(ev.tag == self);
-    gpr_log(GPR_DEBUG, "TestServer %p stop polling", self);
+    CHECK(ev.type == GRPC_OP_COMPLETE);
+    CHECK(ev.tag == self);
+    VLOG(2) << "TestServer " << self << " stop polling";
   }
 
  private:
@@ -209,7 +206,7 @@ class ConnectLoopRunner {
 
   static void ConnectLoop(const ConnectLoopRunner* self) {
     for (size_t i = 0; i < self->loops_; i++) {
-      gpr_log(GPR_DEBUG, "runner:%p connect_loop begin loop %ld", self, i);
+      VLOG(2) << "runner:" << self << " connect_loop begin loop " << i;
       grpc_completion_queue* cq =
           grpc_completion_queue_create_for_next(nullptr);
       grpc_channel* channel = create_secure_channel_for_test(
@@ -258,7 +255,7 @@ class ConnectLoopRunner {
       grpc_completion_queue_shutdown(cq);
       drain_cq(cq);
       grpc_completion_queue_destroy(cq);
-      gpr_log(GPR_DEBUG, "runner:%p connect_loop finished loop %ld", self, i);
+      VLOG(2) << "runner:" << self << " connect_loop finished loop " << i;
     }
   }
 
@@ -280,8 +277,8 @@ TEST(AltsConcurrentConnectivityTest, TestBasicClientServerHandshakes) {
   {
     ConnectLoopRunner runner(
         test_server.address(), fake_handshake_server.address(),
-        10 /* per connect deadline seconds */, 10 /* loops */,
-        GRPC_CHANNEL_READY /* expected connectivity states */,
+        10 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+        10 /* loops */, GRPC_CHANNEL_READY /* expected connectivity states */,
         0 /* reconnect_backoff_ms unset */);
   }
 }
@@ -294,19 +291,20 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
   {
     TestServer test_server;
     size_t num_concurrent_connects = 50;
+    if (BuiltUnderMsan()) {
+      num_concurrent_connects = 25;
+    }
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
-    gpr_log(GPR_DEBUG,
-            "start performing concurrent expected-to-succeed connects");
+    VLOG(2) << "start performing concurrent expected-to-succeed connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           test_server.address(), fake_handshake_server.address(),
-          15 /* per connect deadline seconds */, 5 /* loops */,
-          GRPC_CHANNEL_READY /* expected connectivity states */,
+          15 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          5 /* loops */, GRPC_CHANNEL_READY /* expected connectivity states */,
           0 /* reconnect_backoff_ms unset */));
     }
     connect_loop_runners.clear();
-    gpr_log(GPR_DEBUG,
-            "done performing concurrent expected-to-succeed connects");
+    VLOG(2) << "done performing concurrent expected-to-succeed connects";
   }
 }
 
@@ -335,16 +333,17 @@ TEST(AltsConcurrentConnectivityTest,
   {
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
     size_t num_concurrent_connects = 100;
-    gpr_log(GPR_DEBUG, "start performing concurrent expected-to-fail connects");
+    VLOG(2) << "start performing concurrent expected-to-fail connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
-          10 /* per connect deadline seconds */, 3 /* loops */,
+          10 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          3 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
           0 /* reconnect_backoff_ms unset */));
     }
     connect_loop_runners.clear();
-    gpr_log(GPR_DEBUG, "done performing concurrent expected-to-fail connects");
+    VLOG(2) << "done performing concurrent expected-to-fail connects";
   }
 }
 
@@ -367,16 +366,17 @@ TEST(AltsConcurrentConnectivityTest,
   {
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
     size_t num_concurrent_connects = 100;
-    gpr_log(GPR_DEBUG, "start performing concurrent expected-to-fail connects");
+    VLOG(2) << "start performing concurrent expected-to-fail connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
-          20 /* per connect deadline seconds */, 2 /* loops */,
+          20 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          2 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
           0 /* reconnect_backoff_ms unset */));
     }
     connect_loop_runners.clear();
-    gpr_log(GPR_DEBUG, "done performing concurrent expected-to-fail connects");
+    VLOG(2) << "done performing concurrent expected-to-fail connects";
   }
 }
 
@@ -399,16 +399,17 @@ TEST(AltsConcurrentConnectivityTest,
   {
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
     size_t num_concurrent_connects = 100;
-    gpr_log(GPR_DEBUG, "start performing concurrent expected-to-fail connects");
+    VLOG(2) << "start performing concurrent expected-to-fail connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
-          10 /* per connect deadline seconds */, 2 /* loops */,
+          10 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          2 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
           100 /* reconnect_backoff_ms */));
     }
     connect_loop_runners.clear();
-    gpr_log(GPR_DEBUG, "done performing concurrent expected-to-fail connects");
+    VLOG(2) << "done performing concurrent expected-to-fail connects";
   }
 }
 

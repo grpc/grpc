@@ -11,11 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+
 py_binary(
     name = "xds_interop_client",
     srcs = ["xds_interop_client.py"],
     python_version = "PY3",
-    deps = [
+    # csm_observability dependency was added first because we have another opentelemetry module in xds_protos,
+    # Since we need the actual opentelemetry module, we need include csm_observability before grpc_admin.
+    deps = ["//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability"] + [
         "//src/proto/grpc/testing:empty_py_pb2",
         "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:py_test_proto",
@@ -23,6 +29,8 @@ py_binary(
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_admin/grpc_admin",
         "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+        "//src/python/grpcio_tests/tests/fork:native_debug",
+        requirement("opentelemetry-exporter-prometheus"),
     ],
 )
 
@@ -37,8 +45,11 @@ py_binary(
         "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+        "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",
         "//src/python/grpcio_health_checking/grpc_health/v1:grpc_health",
         "//src/python/grpcio_reflection/grpc_reflection/v1alpha:grpc_reflection",
+        "//src/python/grpcio_tests/tests/fork:native_debug",
+        requirement("opentelemetry-exporter-prometheus"),
     ],
 )
 

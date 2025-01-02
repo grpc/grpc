@@ -19,29 +19,27 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_H2_TLS_COMMON_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_H2_TLS_COMMON_H
 
-#include <stdint.h>
-#include <string.h>
-
-#include <string>
-
-#include "absl/strings/string_view.h"
-
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <string>
+
+#include "absl/log/check.h"
+#include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/tls_utils.h"
 
 // For normal TLS connections.
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
@@ -63,7 +61,7 @@ inline void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
                                  size_t /*md_count*/,
                                  grpc_process_auth_metadata_done_cb cb,
                                  void* user_data) {
-  GPR_ASSERT(state == nullptr);
+  CHECK_EQ(state, nullptr);
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
@@ -84,19 +82,12 @@ class TlsFixture : public SecureFixture {
     }
     switch (provider_type) {
       case SecurityPrimitives::ProviderType::STATIC_PROVIDER: {
-        grpc_slice root_slice, cert_slice, key_slice;
-        GPR_ASSERT(GRPC_LOG_IF_ERROR(
-            "load_file", grpc_load_file(CA_CERT_PATH, 1, &root_slice)));
         std::string root_cert =
-            std::string(grpc_core::StringViewFromSlice(root_slice));
-        GPR_ASSERT(GRPC_LOG_IF_ERROR(
-            "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+            grpc_core::testing::GetFileContents(CA_CERT_PATH);
         std::string identity_cert =
-            std::string(grpc_core::StringViewFromSlice(cert_slice));
-        GPR_ASSERT(GRPC_LOG_IF_ERROR(
-            "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+            grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
         std::string private_key =
-            std::string(grpc_core::StringViewFromSlice(key_slice));
+            grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
         grpc_tls_identity_pairs* client_pairs =
             grpc_tls_identity_pairs_create();
         grpc_tls_identity_pairs_add_pair(client_pairs, private_key.c_str(),
@@ -109,9 +100,6 @@ class TlsFixture : public SecureFixture {
                                          identity_cert.c_str());
         server_provider_ = grpc_tls_certificate_provider_static_data_create(
             root_cert.c_str(), server_pairs);
-        grpc_slice_unref(root_slice);
-        grpc_slice_unref(cert_slice);
-        grpc_slice_unref(key_slice);
         break;
       }
       case SecurityPrimitives::ProviderType::FILE_PROVIDER: {

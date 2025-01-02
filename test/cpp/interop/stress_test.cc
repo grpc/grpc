@@ -16,6 +16,11 @@
 // is % allowed in string
 //
 
+#include <grpc/support/time.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/grpcpp.h>
+#include <limits.h>
+
 #include <memory>
 #include <string>
 #include <thread>
@@ -23,13 +28,10 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/grpcpp.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "absl/log/check.h"
+#include "absl/log/globals.h"
+#include "absl/log/log.h"
+#include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
 #include "test/cpp/interop/interop_client.h"
@@ -37,8 +39,6 @@
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
-
-extern void gpr_default_log(gpr_log_func_args* args);
 
 ABSL_FLAG(int32_t, metrics_port, 8081, "The metrics server port.");
 
@@ -92,11 +92,14 @@ ABSL_FLAG(std::string, test_cases, "",
           " 'large_unary', 10% of the time and 'empty_stream' the remaining"
           " 70% of the time");
 
-ABSL_FLAG(int32_t, log_level, GPR_LOG_SEVERITY_INFO,
-          "Severity level of messages that should be logged. Any messages "
-          "greater than or equal to the level set here will be logged. "
-          "The choices are: 0 (GPR_LOG_SEVERITY_DEBUG), 1 "
-          "(GPR_LOG_SEVERITY_INFO) and 2 (GPR_LOG_SEVERITY_ERROR)");
+ABSL_FLAG(
+    int32_t, absl_min_log_level,
+    static_cast<int32_t>(absl::LogSeverityAtLeast::kInfo),
+    "Severity level of messages that should be logged by absl::SetMinLogLevel");
+
+ABSL_FLAG(int32_t, absl_vlog_level, -1,
+          "Severity level of messages that should be logged. Set using "
+          "absl::SetVLogLevel");
 
 ABSL_FLAG(bool, do_not_abort_on_transient_failures, true,
           "If set to 'true', abort() is not called in case of transient "
@@ -122,15 +125,9 @@ using grpc::testing::transport_security;
 using grpc::testing::UNKNOWN_TEST;
 using grpc::testing::WeightedRandomTestSelector;
 
-static int log_level = GPR_LOG_SEVERITY_DEBUG;
-
-// A simple wrapper to grp_default_log() function. This only logs messages at or
-// above the current log level (set in 'log_level' variable)
-void TestLogFunction(gpr_log_func_args* args) {
-  if (args->severity >= log_level) {
-    gpr_default_log(args);
-  }
-}
+static int absl_vlog_level = -1;
+static absl::LogSeverityAtLeast absl_min_log_level =
+    absl::LogSeverityAtLeast::kInfo;
 
 TestCaseType GetTestTypeFromName(const std::string& test_name) {
   TestCaseType test_case = UNKNOWN_TEST;
@@ -175,7 +172,7 @@ bool ParseTestCasesString(const std::string& test_cases,
     // Token is in the form <test_name>:<test_weight>
     size_t colon_pos = it->find(':');
     if (colon_pos == std::string::npos) {
-      gpr_log(GPR_ERROR, "Error in parsing test case string: %s", it->c_str());
+      LOG(ERROR) << "Error in parsing test case string: " << it->c_str();
       is_success = false;
       break;
     }
@@ -184,7 +181,7 @@ bool ParseTestCasesString(const std::string& test_cases,
     int weight = std::stoi(it->substr(colon_pos + 1));
     TestCaseType test_case = GetTestTypeFromName(test_name);
     if (test_case == UNKNOWN_TEST) {
-      gpr_log(GPR_ERROR, "Unknown test case: %s", test_name.c_str());
+      LOG(ERROR) << "Unknown test case: " << test_name;
       is_success = false;
       break;
     }
@@ -198,51 +195,54 @@ bool ParseTestCasesString(const std::string& test_cases,
 // For debugging purposes
 void LogParameterInfo(const std::vector<std::string>& addresses,
                       const std::vector<std::pair<TestCaseType, int>>& tests) {
-  gpr_log(GPR_INFO, "server_addresses: %s",
-          absl::GetFlag(FLAGS_server_addresses).c_str());
-  gpr_log(GPR_INFO, "test_cases : %s", absl::GetFlag(FLAGS_test_cases).c_str());
-  gpr_log(GPR_INFO, "sleep_duration_ms: %d",
-          absl::GetFlag(FLAGS_sleep_duration_ms));
-  gpr_log(GPR_INFO, "test_duration_secs: %d",
-          absl::GetFlag(FLAGS_test_duration_secs));
-  gpr_log(GPR_INFO, "num_channels_per_server: %d",
-          absl::GetFlag(FLAGS_num_channels_per_server));
-  gpr_log(GPR_INFO, "num_stubs_per_channel: %d",
-          absl::GetFlag(FLAGS_num_stubs_per_channel));
-  gpr_log(GPR_INFO, "log_level: %d", absl::GetFlag(FLAGS_log_level));
-  gpr_log(GPR_INFO, "do_not_abort_on_transient_failures: %s",
-          absl::GetFlag(FLAGS_do_not_abort_on_transient_failures) ? "true"
-                                                                  : "false");
+  LOG(INFO) << "server_addresses: " << absl::GetFlag(FLAGS_server_addresses);
+  LOG(INFO) << "test_cases : " << absl::GetFlag(FLAGS_test_cases);
+  LOG(INFO) << "sleep_duration_ms: " << absl::GetFlag(FLAGS_sleep_duration_ms);
+  LOG(INFO) << "test_duration_secs: "
+            << absl::GetFlag(FLAGS_test_duration_secs);
+  LOG(INFO) << "num_channels_per_server: "
+            << absl::GetFlag(FLAGS_num_channels_per_server);
+  LOG(INFO) << "num_stubs_per_channel: "
+            << absl::GetFlag(FLAGS_num_stubs_per_channel);
+  LOG(INFO) << "absl_vlog_level: " << absl::GetFlag(FLAGS_absl_vlog_level);
+  LOG(INFO) << "absl_min_log_level: "
+            << absl::GetFlag(FLAGS_absl_min_log_level);
+  LOG(INFO) << "do_not_abort_on_transient_failures: "
+            << (absl::GetFlag(FLAGS_do_not_abort_on_transient_failures)
+                    ? "true"
+                    : "false");
 
   int num = 0;
   for (auto it = addresses.begin(); it != addresses.end(); it++) {
-    gpr_log(GPR_INFO, "%d:%s", ++num, it->c_str());
+    LOG(INFO) << ++num << ":" << it->c_str();
   }
 
   num = 0;
   for (auto it = tests.begin(); it != tests.end(); it++) {
     TestCaseType test_case = it->first;
     int weight = it->second;
-    gpr_log(GPR_INFO, "%d. TestCaseType: %d, Weight: %d", ++num, test_case,
-            weight);
+    LOG(INFO) << ++num << ". TestCaseType: " << test_case
+              << ", Weight: " << weight;
   }
+}
+
+void SetLogLevels() {
+  absl_vlog_level = absl::GetFlag(FLAGS_absl_vlog_level);
+  CHECK_LE(-1, absl_vlog_level);
+  CHECK_LE(absl_vlog_level, (INT_MAX - 1));
+  absl::SetVLogLevel("*grpc*/*", absl_vlog_level);
+
+  absl_min_log_level = static_cast<absl::LogSeverityAtLeast>(
+      absl::GetFlag(FLAGS_absl_min_log_level));
+  CHECK_LE(absl::LogSeverityAtLeast::kInfo, absl_min_log_level);
+  CHECK_LE(absl_min_log_level, absl::LogSeverityAtLeast::kInfinity);
+  absl::SetMinLogLevel(absl_min_log_level);
 }
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
-  if (absl::GetFlag(FLAGS_log_level) > GPR_LOG_SEVERITY_ERROR ||
-      absl::GetFlag(FLAGS_log_level) < GPR_LOG_SEVERITY_DEBUG) {
-    gpr_log(GPR_ERROR, "log_level should be an integer between %d and %d",
-            GPR_LOG_SEVERITY_DEBUG, GPR_LOG_SEVERITY_ERROR);
-    return 1;
-  }
-
-  // Change the default log function to TestLogFunction which respects the
-  // log_level setting.
-  log_level = absl::GetFlag(FLAGS_log_level);
-  gpr_set_log_function(TestLogFunction);
-
+  SetLogLevels();
   srand(time(nullptr));
 
   // Parse the server addresses
@@ -251,15 +251,15 @@ int main(int argc, char** argv) {
                             server_addresses);
 
   // Parse test cases and weights
-  if (absl::GetFlag(FLAGS_test_cases).length() == 0) {
-    gpr_log(GPR_ERROR, "No test cases supplied");
+  if (absl::GetFlag(FLAGS_test_cases).empty()) {
+    LOG(ERROR) << "No test cases supplied";
     return 1;
   }
 
   std::vector<std::pair<TestCaseType, int>> tests;
   if (!ParseTestCasesString(absl::GetFlag(FLAGS_test_cases), tests)) {
-    gpr_log(GPR_ERROR, "Error in parsing test cases string %s ",
-            absl::GetFlag(FLAGS_test_cases).c_str());
+    LOG(ERROR) << "Error in parsing test cases string "
+               << absl::GetFlag(FLAGS_test_cases);
     return 1;
   }
 
@@ -268,7 +268,7 @@ int main(int argc, char** argv) {
   WeightedRandomTestSelector test_selector(tests);
   MetricsServiceImpl metrics_service;
 
-  gpr_log(GPR_INFO, "Starting test(s)..");
+  LOG(INFO) << "Starting test(s)..";
 
   std::vector<std::thread> test_threads;
   std::vector<std::unique_ptr<StressTestInteropClient>> clients;
@@ -294,8 +294,8 @@ int main(int argc, char** argv) {
     for (int channel_idx = 0;
          channel_idx < absl::GetFlag(FLAGS_num_channels_per_server);
          channel_idx++) {
-      gpr_log(GPR_INFO, "Starting test with %s channel_idx=%d..", it->c_str(),
-              channel_idx);
+      LOG(INFO) << "Starting test with " << it->c_str()
+                << " channel_idx=" << channel_idx << "..";
       grpc::testing::ChannelCreationFunc channel_creation_func =
           std::bind(static_cast<std::shared_ptr<grpc::Channel> (*)(
                         const std::string&, const std::string&,
@@ -324,7 +324,7 @@ int main(int argc, char** argv) {
             metrics_service.CreateQpsGauge(buffer, &is_already_created)));
 
         // The QpsGauge should not have been already created
-        GPR_ASSERT(!is_already_created);
+        CHECK(!is_already_created);
       }
     }
   }

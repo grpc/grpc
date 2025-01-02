@@ -16,6 +16,9 @@
 //
 //
 
+#include <grpc++/grpc++.h>
+#include <grpcpp/support/status.h>
+
 #include <chrono>
 #include <thread>  // NOLINT
 
@@ -24,17 +27,14 @@
 #include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
-
-#include <grpc++/grpc++.h>
-#include <grpcpp/support/status.h>
-
 #include "src/core/ext/filters/logging/logging_filter.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/dump_args.h"
+#include "src/core/util/sync.h"
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/filters/logging/library.h"
 
@@ -62,7 +62,7 @@ TEST_F(LoggingTest, SimpleRpc) {
   context.AddMetadata("key", "value");
   grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
-  g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5));
+  ASSERT_TRUE(g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5)));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
@@ -246,7 +246,7 @@ TEST_F(LoggingTest, SimpleRpcNoMetadata) {
   grpc::ClientContext context;
   grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
-  g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5));
+  ASSERT_TRUE(g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5)));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
@@ -447,7 +447,7 @@ TEST_F(LoggingTest, MetadataTruncated) {
   context.AddMetadata("key-2", "value-2");
   grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
-  g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5));
+  ASSERT_TRUE(g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5)));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
@@ -630,7 +630,7 @@ TEST_F(LoggingTest, PayloadTruncated) {
   grpc::ClientContext context;
   grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
-  g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5));
+  ASSERT_TRUE(g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5)));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
@@ -843,7 +843,7 @@ TEST_F(LoggingTest, CancelledRpc) {
       break;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    EXPECT_LT(absl::Now() - initial_time, absl::Seconds(10));
+    ASSERT_LT(absl::Now() - initial_time, absl::Seconds(10));
   }
 }
 
@@ -852,16 +852,16 @@ TEST_F(LoggingTest, ServerCancelsRpc) {
   EchoRequest request;
   request.set_message("foo");
   auto* error = request.mutable_param()->mutable_expected_error();
-  error->set_code(25);
+  error->set_code(11);
   error->set_error_message("error message");
   error->set_binary_error_details("binary error details");
   EchoResponse response;
   grpc::ClientContext context;
   grpc::Status status = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(status.error_code(), 25);
+  EXPECT_EQ(status.error_code(), 11);
   EXPECT_EQ(status.error_message(), "error message");
   EXPECT_EQ(status.error_details(), "binary error details");
-  g_test_logging_sink->WaitForNumEntries(9, absl::Seconds(5));
+  ASSERT_TRUE(g_test_logging_sink->WaitForNumEntries(9, absl::Seconds(5)));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
@@ -908,7 +908,7 @@ TEST_F(LoggingTest, ServerCancelsRpc) {
                 Field("payload", &LoggingSink::Entry::payload,
                       AllOf(Field("payload",
                                   &LoggingSink::Entry::Payload::status_code,
-                                  Eq(25)),
+                                  Eq(11)),
                             Field("payload",
                                   &LoggingSink::Entry::Payload::status_message,
                                   Eq("error message"))))),
@@ -965,7 +965,7 @@ TEST_F(LoggingTest, ServerCancelsRpc) {
                 Field("payload", &LoggingSink::Entry::payload,
                       AllOf(Field("payload",
                                   &LoggingSink::Entry::Payload::status_code,
-                                  Eq(25)),
+                                  Eq(11)),
                             Field("payload",
                                   &LoggingSink::Entry::Payload::status_message,
                                   Eq("error message")))))));

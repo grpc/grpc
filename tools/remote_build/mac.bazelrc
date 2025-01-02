@@ -16,10 +16,6 @@ build --remote_upload_local_results=false
 build --test_tag_filters=-no_mac
 build --build_tag_filters=-no_mac
 
-# Enable strict warnings to keep it warning-free.
-# TODO(jtattermusch): this option is only used on mac. Is it actually useful?
-build --define=use_strict_warning=true
-
 # Dynamic link cause issues like: `dyld: malformed mach-o: load commands size (59272) > 32768`
 # https://github.com/bazelbuild/bazel/issues/9190
 build --dynamic_mode=off

@@ -16,30 +16,21 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/combiner.h"
 
 #include <assert.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/mpscq.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
-
-grpc_core::DebugOnlyTraceFlag grpc_combiner_trace(false, "combiner");
-
-#define GRPC_COMBINER_TRACE(fn)          \
-  do {                                   \
-    if (grpc_combiner_trace.enabled()) { \
-      fn;                                \
-    }                                    \
-  } while (0)
+#include "src/core/util/crash.h"
+#include "src/core/util/mpscq.h"
 
 #define STATE_UNORPHANED 1
 #define STATE_ELEM_COUNT_LOW_BIT 2
@@ -50,41 +41,40 @@ static void combiner_finally_exec(grpc_core::Combiner* lock,
                                   grpc_closure* closure,
                                   grpc_error_handle error);
 
-static void offload(void* arg, grpc_error_handle error);
-
-grpc_core::Combiner* grpc_combiner_create(void) {
+grpc_core::Combiner* grpc_combiner_create(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine) {
   grpc_core::Combiner* lock = new grpc_core::Combiner();
+  lock->event_engine = event_engine;
   gpr_ref_init(&lock->refs, 1);
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   grpc_closure_list_init(&lock->final_list);
-  GRPC_CLOSURE_INIT(&lock->offload, offload, lock, nullptr);
-  GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p create", lock));
+  GRPC_TRACE_LOG(combiner, INFO) << "C:" << lock << " create";
   return lock;
 }
 
 static void really_destroy(grpc_core::Combiner* lock) {
-  GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p really_destroy", lock));
-  GPR_ASSERT(gpr_atm_no_barrier_load(&lock->state) == 0);
+  GRPC_TRACE_LOG(combiner, INFO) << "C:" << lock << " really_destroy";
+  CHECK_EQ(gpr_atm_no_barrier_load(&lock->state), 0);
   delete lock;
 }
 
 static void start_destroy(grpc_core::Combiner* lock) {
   gpr_atm old_state = gpr_atm_full_fetch_add(&lock->state, -STATE_UNORPHANED);
-  GRPC_COMBINER_TRACE(gpr_log(
-      GPR_INFO, "C:%p really_destroy old_state=%" PRIdPTR, lock, old_state));
+  GRPC_TRACE_LOG(combiner, INFO)
+      << "C:" << lock << " really_destroy old_state=" << old_state;
   if (old_state == 1) {
     really_destroy(lock);
   }
 }
 
 #ifndef NDEBUG
-#define GRPC_COMBINER_DEBUG_SPAM(op, delta)                                \
-  if (grpc_combiner_trace.enabled()) {                                     \
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,                            \
-            "C:%p %s %" PRIdPTR " --> %" PRIdPTR " %s", lock, (op),        \
-            gpr_atm_no_barrier_load(&lock->refs.count),                    \
-            gpr_atm_no_barrier_load(&lock->refs.count) + (delta), reason); \
-  }
+#define GRPC_COMBINER_DEBUG_SPAM(op, delta)                          \
+  GRPC_TRACE_VLOG(combiner, 2).AtLocation(file, line)                \
+      << "C:" << lock << " " << (op) << " "                          \
+      << gpr_atm_no_barrier_load(&lock->refs.count) << " --> "       \
+      << gpr_atm_no_barrier_load(&lock->refs.count) + (delta) << " " \
+      << reason;
 #else
 #define GRPC_COMBINER_DEBUG_SPAM(op, delta)
 #endif
@@ -128,9 +118,8 @@ static void push_first_on_exec_ctx(grpc_core::Combiner* lock) {
 static void combiner_exec(grpc_core::Combiner* lock, grpc_closure* cl,
                           grpc_error_handle error) {
   gpr_atm last = gpr_atm_full_fetch_add(&lock->state, STATE_ELEM_COUNT_LOW_BIT);
-  GRPC_COMBINER_TRACE(gpr_log(GPR_INFO,
-                              "C:%p grpc_combiner_execute c=%p last=%" PRIdPTR,
-                              lock, cl, last));
+  GRPC_TRACE_LOG(combiner, INFO)
+      << "C:" << lock << " grpc_combiner_execute c=" << cl << " last=" << last;
   if (last == 1) {
     gpr_atm_no_barrier_store(
         &lock->initiating_exec_ctx_or_null,
@@ -148,7 +137,7 @@ static void combiner_exec(grpc_core::Combiner* lock, grpc_closure* cl,
       gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null, 0);
     }
   }
-  GPR_ASSERT(last & STATE_UNORPHANED);  // ensure lock has not been destroyed
+  CHECK(last & STATE_UNORPHANED);  // ensure lock has not been destroyed
   assert(cl->cb);
   cl->error_data.error = grpc_core::internal::StatusAllocHeapPtr(error);
   lock->queue.Push(cl->next_data.mpscq_node.get());
@@ -164,15 +153,18 @@ static void move_next() {
   }
 }
 
-static void offload(void* arg, grpc_error_handle /*error*/) {
-  grpc_core::Combiner* lock = static_cast<grpc_core::Combiner*>(arg);
-  push_last_on_exec_ctx(lock);
-}
-
 static void queue_offload(grpc_core::Combiner* lock) {
   move_next();
-  GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p queue_offload", lock));
-  grpc_core::Executor::Run(&lock->offload, absl::OkStatus());
+  // Make the combiner look uncontended by storing a non-null value here, so
+  // that we don't immediately offload again.
+  gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null, 1);
+  GRPC_TRACE_LOG(combiner, INFO) << "C:" << lock << " queue_offload";
+  lock->event_engine->Run([lock] {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx(0);
+    push_last_on_exec_ctx(lock);
+    exec_ctx.Flush();
+  });
 }
 
 bool grpc_combiner_continue_exec_ctx() {
@@ -185,23 +177,16 @@ bool grpc_combiner_continue_exec_ctx() {
   bool contended =
       gpr_atm_no_barrier_load(&lock->initiating_exec_ctx_or_null) == 0;
 
-  GRPC_COMBINER_TRACE(gpr_log(GPR_INFO,
-                              "C:%p grpc_combiner_continue_exec_ctx "
-                              "contended=%d "
-                              "exec_ctx_ready_to_finish=%d "
-                              "time_to_execute_final_list=%d",
-                              lock, contended,
-                              grpc_core::ExecCtx::Get()->IsReadyToFinish(),
-                              lock->time_to_execute_final_list));
+  GRPC_TRACE_LOG(combiner, INFO)
+      << "C:" << lock << " grpc_combiner_continue_exec_ctx "
+      << "contended=" << contended << " exec_ctx_ready_to_finish="
+      << grpc_core::ExecCtx::Get()->IsReadyToFinish()
+      << " time_to_execute_final_list=" << lock->time_to_execute_final_list;
 
-  // offload only if all the following conditions are true:
-  // 1. the combiner is contended and has more than one closure to execute
-  // 2. the current execution context needs to finish as soon as possible
-  // 3. the current thread is not a worker for any background poller
-  // 4. the DEFAULT executor is threaded
-  if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish() &&
-      !grpc_iomgr_platform_is_any_background_poller_thread() &&
-      grpc_core::Executor::IsThreadedDefault()) {
+  // offload only if both (1) the combiner is contended and has more than one
+  // closure to execute, and (2) the current execution context needs to finish
+  // as soon as possible
+  if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish()) {
     // this execution context wants to move on: schedule remaining work to be
     // picked up on the executor
     queue_offload(lock);
@@ -213,8 +198,9 @@ bool grpc_combiner_continue_exec_ctx() {
       // priority
       (gpr_atm_acq_load(&lock->state) >> 1) > 1) {
     grpc_core::MultiProducerSingleConsumerQueue::Node* n = lock->queue.Pop();
-    GRPC_COMBINER_TRACE(
-        gpr_log(GPR_INFO, "C:%p maybe_finish_one n=%p", lock, n));
+    GRPC_TRACE_LOG(combiner, INFO)
+        << "C:" << lock << " maybe_finish_one n=" << n;
+
     if (n == nullptr) {
       // queue is in an inconsistent state: use this as a cue that we should
       // go off and do something else for a while (and come back later)
@@ -231,12 +217,12 @@ bool grpc_combiner_continue_exec_ctx() {
     cl->cb(cl->cb_arg, std::move(cl_err));
   } else {
     grpc_closure* c = lock->final_list.head;
-    GPR_ASSERT(c != nullptr);
+    CHECK_NE(c, nullptr);
     grpc_closure_list_init(&lock->final_list);
     int loops = 0;
     while (c != nullptr) {
-      GRPC_COMBINER_TRACE(
-          gpr_log(GPR_INFO, "C:%p execute_final[%d] c=%p", lock, loops, c));
+      GRPC_TRACE_LOG(combiner, INFO)
+          << "C:" << lock << " execute_final[" << loops << "] c=" << c;
       grpc_closure* next = c->next_data.next;
 #ifndef NDEBUG
       c->scheduled = false;
@@ -253,12 +239,12 @@ bool grpc_combiner_continue_exec_ctx() {
   lock->time_to_execute_final_list = false;
   gpr_atm old_state =
       gpr_atm_full_fetch_add(&lock->state, -STATE_ELEM_COUNT_LOW_BIT);
-  GRPC_COMBINER_TRACE(
-      gpr_log(GPR_INFO, "C:%p finish old_state=%" PRIdPTR, lock, old_state));
+  GRPC_TRACE_LOG(combiner, INFO)
+      << "C:" << lock << " finish old_state=" << old_state;
 // Define a macro to ease readability of the following switch statement.
 #define OLD_STATE_WAS(orphaned, elem_count) \
   (((orphaned) ? 0 : STATE_UNORPHANED) |    \
-   ((elem_count)*STATE_ELEM_COUNT_LOW_BIT))
+   ((elem_count) * STATE_ELEM_COUNT_LOW_BIT))
   // Depending on what the previous state was, we need to perform different
   // actions.
   switch (old_state) {
@@ -294,10 +280,10 @@ static void enqueue_finally(void* closure, grpc_error_handle error);
 static void combiner_finally_exec(grpc_core::Combiner* lock,
                                   grpc_closure* closure,
                                   grpc_error_handle error) {
-  GPR_ASSERT(lock != nullptr);
-  GRPC_COMBINER_TRACE(gpr_log(
-      GPR_INFO, "C:%p grpc_combiner_execute_finally c=%p; ac=%p", lock, closure,
-      grpc_core::ExecCtx::Get()->combiner_data()->active_combiner));
+  CHECK_NE(lock, nullptr);
+  GRPC_TRACE_LOG(combiner, INFO)
+      << "C:" << lock << " grpc_combiner_execute_finally c=" << closure
+      << "; ac=" << grpc_core::ExecCtx::Get()->combiner_data()->active_combiner;
   if (grpc_core::ExecCtx::Get()->combiner_data()->active_combiner != lock) {
     // Using error_data.scratch to store the combiner so that it can be accessed
     // in enqueue_finally.
@@ -328,4 +314,10 @@ void Combiner::Run(grpc_closure* closure, grpc_error_handle error) {
 void Combiner::FinallyRun(grpc_closure* closure, grpc_error_handle error) {
   combiner_finally_exec(this, closure, error);
 }
+
+void Combiner::ForceOffload() {
+  gpr_atm_no_barrier_store(&initiating_exec_ctx_or_null, 0);
+  ExecCtx::Get()->SetReadyToFinishFlag();
+}
+
 }  // namespace grpc_core

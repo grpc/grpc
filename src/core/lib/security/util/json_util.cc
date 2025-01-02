@@ -16,19 +16,17 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/util/json_util.h"
+
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 
 #include <map>
 #include <string>
 #include <utility>
 
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/json.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/iomgr/error.h"
 
 const char* grpc_json_get_string_property(const grpc_core::Json& json,

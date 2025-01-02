@@ -19,17 +19,15 @@
 #ifndef GRPC_TEST_CPP_MICROBENCHMARKS_HELPERS_H
 #define GRPC_TEST_CPP_MICROBENCHMARKS_HELPERS_H
 
+#include <benchmark/benchmark.h>
 #include <grpc/support/port_platform.h>
+#include <grpcpp/impl/grpc_library.h>
 
 #include <sstream>
 #include <vector>
 
-#include <benchmark/benchmark.h>
-
-#include <grpcpp/impl/grpc_library.h>
-
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 
 class LibraryInitializer {
  public:

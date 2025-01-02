@@ -19,20 +19,18 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H
 #define GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H
 
+#include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include "absl/container/inlined_vector.h"
-
-#include <grpc/support/atm.h>
-
-#include "src/core/lib/gprpp/mpscq.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/dynamic_annotations.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/mpscq.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 // A simple, lock-free mechanism for serializing activity related to a
 // single call.  This is similar to a combiner but is more lightweight.
@@ -44,8 +42,6 @@
 // callback.
 
 namespace grpc_core {
-
-extern DebugOnlyTraceFlag grpc_call_combiner_trace;
 
 class CallCombiner {
  public:
@@ -84,7 +80,7 @@ class CallCombiner {
   ///
   /// The closure will be scheduled in the following cases:
   /// - If Cancel() was called prior to registering the closure, it will be
-  ///   scheduled immediately with the cancelation error.
+  ///   scheduled immediately with the cancellation error.
   /// - If Cancel() is called after registering the closure, the closure will
   ///   be scheduled with the cancellation error.
   /// - If SetNotifyOnCancel() is called again to register a new cancellation
@@ -168,13 +164,12 @@ class CallCombinerClosureList {
       GRPC_CALL_COMBINER_START(call_combiner, closure.closure, closure.error,
                                closure.reason);
     }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-      gpr_log(GPR_INFO,
-              "CallCombinerClosureList executing closure while already "
-              "holding call_combiner %p: closure=%s error=%s reason=%s",
-              call_combiner, closures_[0].closure->DebugString().c_str(),
-              StatusToString(closures_[0].error).c_str(), closures_[0].reason);
-    }
+    GRPC_TRACE_LOG(call_combiner, INFO)
+        << "CallCombinerClosureList executing closure while already "
+           "holding call_combiner "
+        << call_combiner << ": closure=" << closures_[0].closure->DebugString()
+        << " error=" << StatusToString(closures_[0].error)
+        << " reason=" << closures_[0].reason;
     // This will release the call combiner.
     ExecCtx::Run(DEBUG_LOCATION, closures_[0].closure, closures_[0].error);
     closures_.clear();

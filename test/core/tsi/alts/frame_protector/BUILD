@@ -26,21 +26,24 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/test_util:grpc_test_util",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
-        "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "alts_crypter_test",
     srcs = ["alts_crypter_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/types:span",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/test_util:grpc_test_util",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
-        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -52,9 +55,9 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/test_util:grpc_test_util",
         "//test/core/tsi:transport_security_test_lib",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
-        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -66,7 +69,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/test_util:grpc_test_util",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
-        "//test/core/util:grpc_test_util",
     ],
 )

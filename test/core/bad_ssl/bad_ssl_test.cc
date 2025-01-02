@@ -16,11 +16,7 @@
 //
 //
 
-#include <stdio.h>
-#include <string.h>
-
-#include <string>
-
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -28,16 +24,20 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include <stdio.h>
+#include <string.h>
 
-#include "src/core/lib/gpr/subprocess.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include <string>
+
+#include "absl/log/check.h"
+#include "src/core/util/env.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/subprocess.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 static void run_test(const char* target, size_t nops) {
   grpc_channel_credentials* ssl_creds =
@@ -100,12 +100,12 @@ static void run_test(const char* target, size_t nops) {
   op++;
   error = grpc_call_start_batch(c, ops, nops, grpc_core::CqVerifier::tag(1),
                                 nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
-  GPR_ASSERT(status != GRPC_STATUS_OK);
+  CHECK(status != GRPC_STATUS_OK);
 
   grpc_call_unref(c);
   grpc_slice_unref(details);

@@ -16,22 +16,22 @@
 
 #ifdef GPR_APPLE
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+
 #include <thread>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 using namespace std::chrono_literals;
 
@@ -41,7 +41,7 @@ namespace experimental {
 TEST(CFEventEngineTest, TestConnectionTimeout) {
   // use a non-routable IP so connection will timeout
   auto resolved_addr = URIToResolvedAddress("ipv4:10.255.255.255:1234");
-  GPR_ASSERT(resolved_addr.ok());
+  CHECK_OK(resolved_addr);
 
   grpc_core::MemoryQuota memory_quota("cf_engine_test");
   grpc_core::Notification client_signal;
@@ -63,7 +63,7 @@ TEST(CFEventEngineTest, TestConnectionTimeout) {
 TEST(CFEventEngineTest, TestConnectionCancelled) {
   // use a non-routable IP so to cancel connection before timeout
   auto resolved_addr = URIToResolvedAddress("ipv4:10.255.255.255:1234");
-  GPR_ASSERT(resolved_addr.ok());
+  CHECK_OK(resolved_addr);
 
   grpc_core::MemoryQuota memory_quota("cf_engine_test");
   grpc_core::Notification client_signal;
@@ -263,6 +263,58 @@ TEST(CFEventEngineTest, TestResolveCanceled) {
 
   dns_resolver.reset();
   resolve_signal.WaitForNotification();
+}
+
+TEST(CFEventEngineTest, TestResolveAgainInCallback) {
+  std::atomic<int> times{2};
+  grpc_core::Notification resolve_signal;
+
+  auto cf_engine = std::make_shared<CFEventEngine>();
+  auto dns_resolver = std::move(cf_engine->GetDNSResolver({})).value();
+
+  dns_resolver->LookupHostname(
+      [&resolve_signal, &times, &dns_resolver](auto result) {
+        EXPECT_TRUE(result.status().ok());
+        EXPECT_THAT(ResolvedAddressesToStrings(result.value()),
+                    testing::UnorderedElementsAre("127.0.0.1:80", "[::1]:80"));
+
+        dns_resolver->LookupHostname(
+            [&resolve_signal, &times](auto result) {
+              EXPECT_TRUE(result.status().ok());
+              EXPECT_THAT(
+                  ResolvedAddressesToStrings(result.value()),
+                  testing::UnorderedElementsAre("127.0.0.1:443", "[::1]:443"));
+
+              if (--times == 0) {
+                resolve_signal.Notify();
+              }
+            },
+            "localhost", "443");
+
+        if (--times == 0) {
+          resolve_signal.Notify();
+        }
+      },
+      "localhost", "80");
+
+  resolve_signal.WaitForNotification();
+}
+
+TEST(CFEventEngineTest, TestLockOrder) {
+  auto cf_engine = std::make_shared<CFEventEngine>();
+  auto dns_resolver = std::move(cf_engine->GetDNSResolver({})).value();
+  grpc_core::Mutex mutex;
+
+  {
+    grpc_core::MutexLock lock(&mutex);
+    dns_resolver->LookupHostname(
+        [&mutex](auto result) { grpc_core::MutexLock lock2(&mutex); },
+        "google.com", "80");
+  }
+
+  dns_resolver.reset();
+
+  sleep(1);
 }
 
 TEST(CFEventEngineTest, TestResolveMany) {

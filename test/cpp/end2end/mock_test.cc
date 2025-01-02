@@ -16,16 +16,8 @@
 //
 //
 
-#include <climits>
-#include <iostream>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/types/optional.h"
-
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -35,13 +27,19 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/test/default_reactor_test_peer.h>
 #include <grpcpp/test/mock_stream.h>
+#include <gtest/gtest.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include <climits>
+#include <iostream>
+
+#include "absl/log/log.h"
+#include "absl/types/optional.h"
+#include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_mock.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 using std::vector;
 using ::testing::_;
@@ -167,7 +165,7 @@ class CallbackTestServiceImpl : public EchoTestService::CallbackService {
     // adding this variance in Status return value just to improve coverage in
     // this test.
     auto* reactor = context->DefaultReactor();
-    if (request->message().length() > 0) {
+    if (!request->message().empty()) {
       response->set_message(request->message());
       reactor->Finish(Status::OK);
     } else {
@@ -253,7 +251,7 @@ class TestServiceImpl : public EchoTestService::Service {
     EchoRequest request;
     std::string resp;
     while (reader->Read(&request)) {
-      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
+      LOG(INFO) << "recv msg " << request.message();
       resp.append(request.message());
     }
     response->set_message(resp);
@@ -277,7 +275,7 @@ class TestServiceImpl : public EchoTestService::Service {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
-      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
+      LOG(INFO) << "recv msg " << request.message();
       response.set_message(request.message());
       stream->Write(response);
     }

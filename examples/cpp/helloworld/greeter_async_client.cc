@@ -16,15 +16,15 @@
  *
  */
 
+#include <grpcpp/grpcpp.h>
+
 #include <iostream>
 #include <memory>
 #include <string>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-
-#include <grpc/support/log.h>
-#include <grpcpp/grpcpp.h>
+#include "absl/log/check.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -81,14 +81,14 @@ class GreeterClient {
     // Block until the next result is available in the completion queue "cq".
     // The return value of Next should always be checked. This return value
     // tells us whether there is any kind of event or the cq_ is shutting down.
-    GPR_ASSERT(cq.Next(&got_tag, &ok));
+    CHECK(cq.Next(&got_tag, &ok));
 
     // Verify that the result from "cq" corresponds, by its tag, our previous
     // request.
-    GPR_ASSERT(got_tag == (void*)1);
+    CHECK_EQ(got_tag, (void*)1);
     // ... and that the request was completed successfully. Note that "ok"
     // corresponds solely to the request for updates introduced by Finish().
-    GPR_ASSERT(ok);
+    CHECK(ok);
 
     // Act upon the status of the actual RPC.
     if (status.ok()) {

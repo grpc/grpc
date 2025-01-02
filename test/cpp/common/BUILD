@@ -27,8 +27,8 @@ grpc_cc_test(
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows RBE
     deps = [
         "//:grpc++_unsecure",
-        "//test/core/util:grpc_test_util_base",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )
 
@@ -36,13 +36,14 @@ grpc_cc_test(
     name = "timer_test",
     srcs = ["timer_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     flaky = True,
     deps = [
         "//:grpc++",
         "//src/core:closure",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -50,6 +51,7 @@ grpc_cc_test(
     name = "time_jump_test",
     srcs = ["time_jump_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = [
@@ -63,7 +65,7 @@ grpc_cc_test(
     deps = [
         "//:grpc++",
         "//src/core:closure",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -77,7 +79,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc++",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )
@@ -92,21 +94,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc++",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "channel_filter_test",
-    srcs = ["channel_filter_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:grpc++",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -118,7 +106,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )
@@ -131,7 +119,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++_alts",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )

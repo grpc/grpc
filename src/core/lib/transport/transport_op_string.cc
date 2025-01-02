@@ -18,24 +18,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <initializer_list>
 #include <memory>
 #include <string>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/status_helper.h"
 
 // These routines are here to facilitate debugging - they produce string
 // representations of various transport data structures
@@ -148,11 +142,4 @@ std::string grpc_transport_op_string(grpc_transport_op* op) {
   }
 
   return out;
-}
-
-void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
-                      grpc_call_element* elem,
-                      grpc_transport_stream_op_batch* op) {
-  gpr_log(file, line, severity, "OP[%s:%p]: %s", elem->filter->name, elem,
-          grpc_transport_stream_op_batch_string(op, false).c_str());
 }

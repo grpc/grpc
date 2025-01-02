@@ -16,38 +16,37 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
 
 #include <algorithm>
 #include <cstdint>
 
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
-#include "src/core/ext/transport/chttp2/transport/http_trace.h"
+#include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_core {
 
 namespace {
 
-constexpr size_t kDataFrameHeaderSize = 9;
+constexpr size_t kHeadersFrameHeaderSize = 9;
 
 }  // namespace
 
-// fills p (which is expected to be kDataFrameHeaderSize bytes long)
-// with a data frame header
+// fills p (which is expected to be kHeadersFrameHeaderSize bytes long)
+// with a headers frame header
 static void FillHeader(uint8_t* p, uint8_t type, uint32_t id, size_t len,
                        uint8_t flags) {
   // len is the current frame size (i.e. for the frame we're finishing).
@@ -62,7 +61,7 @@ static void FillHeader(uint8_t* p, uint8_t type, uint32_t id, size_t len,
   // max_frame_size is derived from GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
   // which has a max allowable value of 16777215 (see chttp_transport.cc).
   // Thus, the following assert can be a debug assert.
-  GPR_DEBUG_ASSERT(len <= 16777216);
+  DCHECK_LE(len, 16777216u);
   *p++ = static_cast<uint8_t>(len >> 16);
   *p++ = static_cast<uint8_t>(len >> 8);
   *p++ = static_cast<uint8_t>(len);
@@ -87,7 +86,7 @@ void HPackCompressor::Frame(const EncodeHeaderOptions& options,
   if (options.is_end_of_stream) {
     flags |= GRPC_CHTTP2_DATA_FLAG_END_STREAM;
   }
-  options.stats->header_bytes += raw.Length();
+  options.call_tracer->RecordOutgoingBytes({0, 0, raw.Length()});
   while (frame_type == GRPC_CHTTP2_FRAME_HEADER || raw.Length() > 0) {
     // per the HTTP/2 spec:
     //   A HEADERS frame without the END_HEADERS flag set MUST be followed by
@@ -99,9 +98,9 @@ void HPackCompressor::Frame(const EncodeHeaderOptions& options,
     } else {
       len = options.max_frame_size;
     }
-    FillHeader(grpc_slice_buffer_tiny_add(output, kDataFrameHeaderSize),
+    FillHeader(grpc_slice_buffer_tiny_add(output, kHeadersFrameHeaderSize),
                frame_type, options.stream_id, len, flags);
-    options.stats->framing_bytes += kDataFrameHeaderSize;
+    options.call_tracer->RecordOutgoingBytes({kHeadersFrameHeaderSize, 0, 0});
     grpc_slice_buffer_move_first(raw.c_slice_buffer(), len, output);
 
     frame_type = GRPC_CHTTP2_FRAME_CONTINUATION;
@@ -117,10 +116,8 @@ void HPackCompressor::SetMaxUsableSize(uint32_t max_table_size) {
 void HPackCompressor::SetMaxTableSize(uint32_t max_table_size) {
   if (table_.SetMaxSize(std::min(max_usable_size_, max_table_size))) {
     advertise_table_size_change_ = true;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-      gpr_log(GPR_INFO, "set max table size from encoder to %d",
-              max_table_size);
-    }
+    GRPC_TRACE_LOG(http, INFO)
+        << "set max table size from encoder to " << max_table_size;
   }
 }
 
@@ -331,7 +328,7 @@ void SliceIndex::EmitTo(absl::string_view key, const Slice& value,
   for (It it = values_.begin(); it != values_.end(); ++it) {
     if (value == it->value) {
       // Got a hit... is it still in the decode table?
-      if (table.ConvertableToDynamicIndex(it->index)) {
+      if (table.ConvertibleToDynamicIndex(it->index)) {
         // Yes, emit the index and proceed to cleanup.
         encoder->EmitIndexed(table.DynamicIndex(it->index));
       } else {
@@ -345,7 +342,7 @@ void SliceIndex::EmitTo(absl::string_view key, const Slice& value,
       // If there are entries at the end of the array, and those entries are no
       // longer in the table, remove them.
       while (!values_.empty() &&
-             !table.ConvertableToDynamicIndex(values_.back().index)) {
+             !table.ConvertibleToDynamicIndex(values_.back().index)) {
         values_.pop_back();
       }
       // All done, early out.
@@ -377,7 +374,8 @@ void Compressor<HttpSchemeMetadata, HttpSchemeCompressor>::EncodeWith(
       encoder->EmitIndexed(7);  // :scheme: https
       break;
     case HttpSchemeMetadata::ValueType::kInvalid:
-      Crash("invalid http scheme encoding");
+      LOG(ERROR) << "Not encoding bad http scheme";
+      encoder->NoteEncodingError();
       break;
   }
 }
@@ -434,14 +432,15 @@ void Compressor<HttpMethodMetadata, HttpMethodCompressor>::EncodeWith(
           Slice::FromStaticString(":method"), Slice::FromStaticString("PUT"));
       break;
     case HttpMethodMetadata::ValueType::kInvalid:
-      Crash("invalid http method encoding");
+      LOG(ERROR) << "Not encoding bad http method";
+      encoder->NoteEncodingError();
       break;
   }
 }
 
 void Encoder::EncodeAlwaysIndexed(uint32_t* index, absl::string_view key,
                                   Slice value, size_t) {
-  if (compressor_->table_.ConvertableToDynamicIndex(*index)) {
+  if (compressor_->table_.ConvertibleToDynamicIndex(*index)) {
     EmitIndexed(compressor_->table_.DynamicIndex(*index));
   } else {
     *index = EmitLitHdrWithNonBinaryStringKeyIncIdx(
@@ -452,7 +451,7 @@ void Encoder::EncodeAlwaysIndexed(uint32_t* index, absl::string_view key,
 void Encoder::EncodeIndexedKeyWithBinaryValue(uint32_t* index,
                                               absl::string_view key,
                                               Slice value) {
-  if (compressor_->table_.ConvertableToDynamicIndex(*index)) {
+  if (compressor_->table_.ConvertibleToDynamicIndex(*index)) {
     EmitLitHdrWithBinaryStringKeyNotIdx(
         compressor_->table_.DynamicIndex(*index), std::move(value));
   } else {
@@ -475,31 +474,25 @@ void Encoder::EncodeRepeatingSliceValue(const absl::string_view& key,
 
 void TimeoutCompressorImpl::EncodeWith(absl::string_view key,
                                        Timestamp deadline, Encoder* encoder) {
-  Timeout timeout = Timeout::FromDuration(deadline - Timestamp::Now());
+  const Timeout timeout = Timeout::FromDuration(deadline - Timestamp::Now());
   auto& table = encoder->hpack_table();
-  for (auto it = previous_timeouts_.begin(); it != previous_timeouts_.end();
-       ++it) {
-    double ratio = timeout.RatioVersus(it->timeout);
+  for (size_t i = 0; i < kNumPreviousValues; i++) {
+    const auto& previous = previous_timeouts_[i];
+    if (!table.ConvertibleToDynamicIndex(previous.index)) continue;
+    const double ratio = timeout.RatioVersus(previous.timeout);
     // If the timeout we're sending is shorter than a previous timeout, but
     // within 3% of it, we'll consider sending it.
-    if (ratio > -3 && ratio <= 0 &&
-        table.ConvertableToDynamicIndex(it->index)) {
-      encoder->EmitIndexed(table.DynamicIndex(it->index));
-      // Put this timeout to the front of the queue - forces common timeouts to
-      // be considered earlier.
-      std::swap(*it, *previous_timeouts_.begin());
+    if (ratio > -3 && ratio <= 0) {
+      encoder->EmitIndexed(table.DynamicIndex(previous.index));
       return;
     }
-  }
-  // Clean out some expired timeouts.
-  while (!previous_timeouts_.empty() &&
-         !table.ConvertableToDynamicIndex(previous_timeouts_.back().index)) {
-    previous_timeouts_.pop_back();
   }
   Slice encoded = timeout.Encode();
   uint32_t index = encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(
       Slice::FromStaticString(key), std::move(encoded));
-  previous_timeouts_.push_back(PreviousTimeout{timeout, index});
+  uint32_t i = next_previous_value_;
+  ++next_previous_value_;
+  previous_timeouts_[i % kNumPreviousValues] = PreviousTimeout{timeout, index};
 }
 
 Encoder::Encoder(HPackCompressor* compressor, bool use_true_binary_metadata,

@@ -15,23 +15,23 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_H2_OAUTH2_COMMON_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_H2_OAUTH2_COMMON_H
 
-#include <string.h>
-
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
+#include <string.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
+#include "test/core/test_util/tls_utils.h"
 
 class Oauth2Fixture : public SecureFixture {
  public:
@@ -72,7 +72,7 @@ class Oauth2Fixture : public SecureFixture {
                                      void* user_data) {
     const grpc_metadata* oauth2 =
         find_metadata(md, md_count, "authorization", oauth2_md());
-    GPR_ASSERT(oauth2 != nullptr);
+    CHECK_NE(oauth2, nullptr);
     cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_OK, nullptr);
   }
 
@@ -82,8 +82,8 @@ class Oauth2Fixture : public SecureFixture {
                                      void* user_data) {
     const grpc_metadata* oauth2 =
         find_metadata(md, md_count, "authorization", oauth2_md());
-    GPR_ASSERT(state != nullptr);
-    GPR_ASSERT(oauth2 != nullptr);
+    CHECK_NE(state, nullptr);
+    CHECK_NE(oauth2, nullptr);
     cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
   }
 
@@ -109,13 +109,10 @@ class Oauth2Fixture : public SecureFixture {
 
   grpc_channel_credentials* MakeClientCreds(
       const grpc_core::ChannelArgs&) override {
-    grpc_slice ca_slice;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                                 grpc_load_file(CaCertPath(), 1, &ca_slice)));
-    const char* test_root_cert =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-    grpc_channel_credentials* ssl_creds =
-        grpc_ssl_credentials_create(test_root_cert, nullptr, nullptr, nullptr);
+    std::string test_root_cert =
+        grpc_core::testing::GetFileContents(CaCertPath());
+    grpc_channel_credentials* ssl_creds = grpc_ssl_credentials_create(
+        test_root_cert.c_str(), nullptr, nullptr, nullptr);
     if (ssl_creds != nullptr) {
       // Set the min and max TLS version.
       grpc_ssl_credentials* creds =
@@ -130,22 +127,17 @@ class Oauth2Fixture : public SecureFixture {
                                                   nullptr);
     grpc_channel_credentials_release(ssl_creds);
     grpc_call_credentials_release(oauth2_creds);
-    grpc_slice_unref(ca_slice);
     return ssl_oauth2_creds;
   }
 
   grpc_server_credentials* MakeServerCreds(
       const grpc_core::ChannelArgs& args) override {
-    grpc_slice cert_slice, key_slice;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(ServerCertPath(), 1, &cert_slice)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(ServerKeyPath(), 1, &key_slice)));
-    const char* server_cert =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-    const char* server_key =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
+    std::string server_cert =
+        grpc_core::testing::GetFileContents(ServerCertPath());
+    std::string server_key =
+        grpc_core::testing::GetFileContents(ServerKeyPath());
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key.c_str(),
+                                                    server_cert.c_str()};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
     if (ssl_creds != nullptr) {
@@ -158,8 +150,6 @@ class Oauth2Fixture : public SecureFixture {
     grpc_server_credentials_set_auth_metadata_processor(
         ssl_creds,
         test_processor_create(args.Contains(FAIL_AUTH_CHECK_SERVER_ARG_NAME)));
-    grpc_slice_unref(cert_slice);
-    grpc_slice_unref(key_slice);
     return ssl_creds;
   }
 
@@ -168,7 +158,7 @@ class Oauth2Fixture : public SecureFixture {
                                    size_t /*md_count*/,
                                    grpc_process_auth_metadata_done_cb cb,
                                    void* user_data) {
-    GPR_ASSERT(state == nullptr);
+    CHECK_EQ(state, nullptr);
     cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
   }
 

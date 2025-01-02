@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@com_github_grpc_grpc//bazel:objc_grpc_library.bzl", "objc_grpc_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application")
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_application")
+load("@com_github_grpc_grpc//bazel:objc_grpc_library.bzl", "objc_grpc_library")
 
 licenses(["notice"])
 
@@ -27,10 +27,10 @@ objc_grpc_library(
     deps = ["//examples/protos:helloworld_proto"],
 )
 
-# This one works with import "external/com_github_grpc_grpc/examples/protos/Keyvaluestore.pbrpc.h"
+# This one works with import "third_party/com_github_grpc_grpc/examples/protos/Keyvaluestore.pbrpc.h"
 objc_grpc_library(
     name = "Keyvaluestore_grpc_proto_external",
-    srcs = ["//external/com_github_grpc_grpc/examples/protos:keyvaluestore.proto"],
+    srcs = ["//third_party/com_github_grpc_grpc/examples/protos:keyvaluestore.proto"],
     tags = ["manual"],
     deps = ["@com_github_grpc_grpc//examples/protos:keyvaluestore_proto"],
 )
@@ -56,7 +56,7 @@ ios_application(
         "ipad",
     ],
     infoplists = ["helloworld/HelloWorld/Info.plist"],
-    minimum_os_version = "9.0",
+    minimum_os_version = "11.0",
     tags = ["manual"],
     deps = [":HelloWorld-lib"],
 )
@@ -79,7 +79,7 @@ macos_application(
     bundle_id = "io.grpc.HelloWorld",
     entitlements = "helloworld_macos/HelloWorld/Helloworld.entitlements",
     infoplists = ["helloworld_macos/HelloWorld/Info.plist"],
-    minimum_os_version = "10.13",
+    minimum_os_version = "10.14",
     tags = ["manual"],
     deps = [":HelloWorldMacos-lib"],
 )
@@ -112,7 +112,7 @@ ios_application(
         "ipad",
     ],
     infoplists = ["route_guide/Misc/Info.plist"],
-    minimum_os_version = "9.0",
+    minimum_os_version = "11.0",
     tags = ["manual"],
     deps = [":RouteGuideClient-lib"],
 )

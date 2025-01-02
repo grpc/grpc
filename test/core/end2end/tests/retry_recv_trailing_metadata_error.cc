@@ -14,27 +14,26 @@
 // limitations under the License.
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+
+#include <memory>
 #include <new>
 
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -103,7 +102,6 @@ class InjectStatusFilter {
 
 grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
-    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
@@ -114,20 +112,8 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
-    "InjectStatusFilter",
+    GRPC_UNIQUE_TYPE_NAME_HERE("InjectStatusFilter"),
 };
-
-bool AddFilter(ChannelStackBuilder* builder) {
-  // Skip on proxy (which explicitly disables retries).
-  if (!builder->channel_args()
-           .GetBool(GRPC_ARG_ENABLE_RETRIES)
-           .value_or(true)) {
-    return true;
-  }
-  // Install filter.
-  builder->PrependFilter(&InjectStatusFilter::kFilterVtable);
-  return true;
-}
 
 // Tests that we honor the error passed to recv_trailing_metadata_ready
 // when determining the call's status, even if the op completion runs before
@@ -136,9 +122,13 @@ bool AddFilter(ChannelStackBuilder* builder) {
 // - server returns ABORTED, but filter overwrites to INVALID_ARGUMENT,
 //   so no retry is done
 CORE_END2END_TEST(RetryTest, RetryRecvTrailingMetadataError) {
+  SKIP_IF_V3();  // Need to convert filter
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, 0,
-                                           AddFilter);
+    builder->channel_init()
+        ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                         &InjectStatusFilter::kFilterVtable)
+        // Skip on proxy (which explicitly disables retries).
+        .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
   });
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(

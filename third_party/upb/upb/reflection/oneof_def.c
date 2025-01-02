@@ -1,29 +1,11 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
+
+#include "upb/reflection/internal/oneof_def.h"
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -31,17 +13,17 @@
 
 #include "upb/hash/int_table.h"
 #include "upb/hash/str_table.h"
-#include "upb/reflection/def_builder_internal.h"
 #include "upb/reflection/def_type.h"
-#include "upb/reflection/field_def_internal.h"
-#include "upb/reflection/message_def_internal.h"
-#include "upb/reflection/oneof_def_internal.h"
+#include "upb/reflection/internal/def_builder.h"
+#include "upb/reflection/internal/field_def.h"
+#include "upb/reflection/internal/message_def.h"
 
 // Must be last.
 #include "upb/port/def.inc"
 
 struct upb_OneofDef {
-  const UPB_DESC(OneofOptions) * opts;
+  const UPB_DESC(OneofOptions*) opts;
+  const UPB_DESC(FeatureSet*) resolved_features;
   const upb_MessageDef* parent;
   const char* full_name;
   int field_count;
@@ -49,9 +31,6 @@ struct upb_OneofDef {
   const upb_FieldDef** fields;
   upb_strtable ntof;  // lookup a field by name
   upb_inttable itof;  // lookup a field by number (index)
-#if UINTPTR_MAX == 0xffffffff
-  uint32_t padding;  // Increase size to a multiple of 8.
-#endif
 };
 
 upb_OneofDef* _upb_OneofDef_At(const upb_OneofDef* o, int i) {
@@ -64,6 +43,11 @@ const UPB_DESC(OneofOptions) * upb_OneofDef_Options(const upb_OneofDef* o) {
 
 bool upb_OneofDef_HasOptions(const upb_OneofDef* o) {
   return o->opts != (void*)kUpbDefOptDefault;
+}
+
+const UPB_DESC(FeatureSet) *
+    upb_OneofDef_ResolvedFeatures(const upb_OneofDef* o) {
+  return o->resolved_features;
 }
 
 const char* upb_OneofDef_FullName(const upb_OneofDef* o) {
@@ -124,7 +108,7 @@ void _upb_OneofDef_Insert(upb_DefBuilder* ctx, upb_OneofDef* o,
   const int number = upb_FieldDef_Number(f);
   const upb_value v = upb_value_constptr(f);
 
-  // TODO(salo): This lookup is unfortunate because we also perform it when
+  // TODO: This lookup is unfortunate because we also perform it when
   // inserting into the message's table. Unfortunately that step occurs after
   // this one and moving things around could be tricky so let's leave it for
   // a future refactoring.
@@ -133,10 +117,11 @@ void _upb_OneofDef_Insert(upb_DefBuilder* ctx, upb_OneofDef* o,
     _upb_DefBuilder_Errf(ctx, "oneof fields have the same number (%d)", number);
   }
 
-  // TODO(salo): More redundant work happening here.
+  // TODO: More redundant work happening here.
   const bool name_exists = upb_strtable_lookup2(&o->ntof, name, size, NULL);
   if (UPB_UNLIKELY(name_exists)) {
-    _upb_DefBuilder_Errf(ctx, "oneof fields have the same name (%s)", name);
+    _upb_DefBuilder_Errf(ctx, "oneof fields have the same name (%.*s)",
+                         (int)size, name);
   }
 
   const bool ok = upb_inttable_insert(&o->itof, number, v, ctx->arena) &&
@@ -184,9 +169,15 @@ size_t _upb_OneofDefs_Finalize(upb_DefBuilder* ctx, upb_MessageDef* m) {
 }
 
 static void create_oneofdef(upb_DefBuilder* ctx, upb_MessageDef* m,
-                            const UPB_DESC(OneofDescriptorProto) * oneof_proto,
+                            const UPB_DESC(OneofDescriptorProto*) oneof_proto,
+                            const UPB_DESC(FeatureSet*) parent_features,
                             const upb_OneofDef* _o) {
   upb_OneofDef* o = (upb_OneofDef*)_o;
+
+  UPB_DEF_SET_OPTIONS(o->opts, OneofDescriptorProto, OneofOptions, oneof_proto);
+  o->resolved_features = _upb_DefBuilder_ResolveFeatures(
+      ctx, parent_features, UPB_DESC(OneofOptions_features)(o->opts));
+
   upb_StringView name = UPB_DESC(OneofDescriptorProto_name)(oneof_proto);
 
   o->parent = m;
@@ -194,8 +185,6 @@ static void create_oneofdef(upb_DefBuilder* ctx, upb_MessageDef* m,
       _upb_DefBuilder_MakeFullName(ctx, upb_MessageDef_FullName(m), name);
   o->field_count = 0;
   o->synthetic = false;
-
-  UPB_DEF_SET_OPTIONS(o->opts, OneofDescriptorProto, OneofOptions, oneof_proto);
 
   if (upb_MessageDef_FindByNameWithSize(m, name.data, name.size, NULL, NULL)) {
     _upb_DefBuilder_Errf(ctx, "duplicate oneof name (%s)", o->full_name);
@@ -213,14 +202,16 @@ static void create_oneofdef(upb_DefBuilder* ctx, upb_MessageDef* m,
 }
 
 // Allocate and initialize an array of |n| oneof defs.
-upb_OneofDef* _upb_OneofDefs_New(
-    upb_DefBuilder* ctx, int n,
-    const UPB_DESC(OneofDescriptorProto) * const* protos, upb_MessageDef* m) {
+upb_OneofDef* _upb_OneofDefs_New(upb_DefBuilder* ctx, int n,
+                                 const UPB_DESC(OneofDescriptorProto*)
+                                     const* protos,
+                                 const UPB_DESC(FeatureSet*) parent_features,
+                                 upb_MessageDef* m) {
   _upb_DefType_CheckPadding(sizeof(upb_OneofDef));
 
   upb_OneofDef* o = _upb_DefBuilder_Alloc(ctx, sizeof(upb_OneofDef) * n);
   for (int i = 0; i < n; i++) {
-    create_oneofdef(ctx, m, protos[i], &o[i]);
+    create_oneofdef(ctx, m, protos[i], parent_features, &o[i]);
   }
   return o;
 }

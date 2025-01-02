@@ -25,21 +25,20 @@
 #include <winsock2.h>
 
 // must be included after winsock2.h
+#include <grpc/support/alloc.h>
+#include <grpc/support/log_windows.h>
 #include <mswsock.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/log_windows.h>
-
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
+#include "src/core/util/crash.h"
 
 static DWORD s_wsa_socket_flags;
 
@@ -131,8 +130,7 @@ void grpc_winsocket_shutdown(grpc_winsocket* winsocket) {
     DisconnectEx(winsocket->socket, NULL, 0, 0);
   } else {
     char* utf8_message = gpr_format_message(WSAGetLastError());
-    gpr_log(GPR_INFO, "Unable to retrieve DisconnectEx pointer : %s",
-            utf8_message);
+    VLOG(2) << "Unable to retrieve DisconnectEx pointer : " << utf8_message;
     gpr_free(utf8_message);
   }
   // Calling closesocket triggers invocation of any pending I/O operations with
@@ -159,7 +157,7 @@ void grpc_winsocket_finish(grpc_winsocket* winsocket) {
 
 void grpc_winsocket_destroy(grpc_winsocket* winsocket) {
   gpr_mu_lock(&winsocket->state_mu);
-  GPR_ASSERT(!winsocket->destroy_called);
+  CHECK(!winsocket->destroy_called);
   winsocket->destroy_called = true;
   bool should_destroy = check_destroyable(winsocket);
   gpr_mu_unlock(&winsocket->state_mu);
@@ -174,7 +172,7 @@ void grpc_winsocket_destroy(grpc_winsocket* winsocket) {
 //-) The IOCP hasn't completed yet, and we're queuing it for later.
 static void socket_notify_on_iocp(grpc_winsocket* socket, grpc_closure* closure,
                                   grpc_winsocket_callback_info* info) {
-  GPR_ASSERT(info->closure == NULL);
+  CHECK(info->closure == NULL);
   gpr_mu_lock(&socket->state_mu);
   if (info->has_pending_iocp) {
     info->has_pending_iocp = 0;
@@ -196,7 +194,7 @@ void grpc_socket_notify_on_read(grpc_winsocket* socket, grpc_closure* closure) {
 
 bool grpc_socket_become_ready(grpc_winsocket* socket,
                               grpc_winsocket_callback_info* info) {
-  GPR_ASSERT(!info->has_pending_iocp);
+  CHECK(!info->has_pending_iocp);
   if (info->closure) {
     // Only run the closure once at shutdown.
     if (!info->closure_already_executed_at_shutdown) {
@@ -216,7 +214,7 @@ static void probe_ipv6_once(void) {
   SOCKET s = socket(AF_INET6, SOCK_STREAM, 0);
   g_ipv6_loopback_available = 0;
   if (s == INVALID_SOCKET) {
-    gpr_log(GPR_INFO, "Disabling AF_INET6 sockets because socket() failed.");
+    VLOG(2) << "Disabling AF_INET6 sockets because socket() failed.";
   } else {
     grpc_sockaddr_in6 addr;
     memset(&addr, 0, sizeof(addr));
@@ -225,8 +223,7 @@ static void probe_ipv6_once(void) {
     if (bind(s, reinterpret_cast<grpc_sockaddr*>(&addr), sizeof(addr)) == 0) {
       g_ipv6_loopback_available = 1;
     } else {
-      gpr_log(GPR_INFO,
-              "Disabling AF_INET6 sockets because ::1 is not available.");
+      VLOG(2) << "Disabling AF_INET6 sockets because ::1 is not available.";
     }
     closesocket(s);
   }

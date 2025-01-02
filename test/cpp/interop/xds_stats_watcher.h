@@ -19,6 +19,8 @@
 #ifndef GRPC_TEST_CPP_INTEROP_XDS_STATS_WATCHER_H
 #define GRPC_TEST_CPP_INTEROP_XDS_STATS_WATCHER_H
 
+#include <grpcpp/grpcpp.h>
+
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -34,9 +36,6 @@
 
 #include "absl/status/status.h"
 #include "absl/types/span.h"
-
-#include <grpcpp/grpcpp.h>
-
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 
@@ -76,9 +75,11 @@ class XdsStatsWatcher {
   // Upon the completion of an RPC, we will look at the request_id, the
   // rpc_type, and the peer the RPC was sent to in order to count
   // this RPC into the right stats bin.
-  void RpcCompleted(const AsyncClientCallResult& call, const std::string& peer,
-                    const std::multimap<grpc::string_ref, grpc::string_ref>&
-                        initial_metadata);
+  void RpcCompleted(
+      const AsyncClientCallResult& call, const std::string& peer,
+      const std::multimap<grpc::string_ref, grpc::string_ref>& initial_metadata,
+      const std::multimap<grpc::string_ref, grpc::string_ref>&
+          trailing_metadata);
 
   LoadBalancerStatsResponse WaitForRpcStatsResponse(int timeout_sec);
 

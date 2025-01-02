@@ -1,29 +1,9 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 /* Test of generated code, with a special focus on features that are not used in
  * descriptor.proto or conformance.proto (since these get some testing from
@@ -33,15 +13,15 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "google/protobuf/test_messages_proto2.upb.h"
 #include "google/protobuf/test_messages_proto3.upb.h"
 #include "upb/base/status.h"
 #include "upb/base/string_view.h"
-#include "upb/collections/array.h"
-#include "upb/mem/arena.h"
+#include "upb/mem/arena.hpp"
+#include "upb/message/array.h"
+#include "upb/message/map.h"
 #include "upb/test/test.upb.h"
-#include "upb/upb.hpp"
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -727,6 +707,21 @@ TEST(GeneratedCode, Int32Map) {
 
   check_int32_map_empty(msg);
 
+  EXPECT_EQ(
+      _protobuf_test_messages_proto3_TestAllTypesProto3_map_int32_int32_upb_map(
+          msg),
+      nullptr);
+
+  upb_Map* mut_map =
+      _protobuf_test_messages_proto3_TestAllTypesProto3_map_int32_int32_mutable_upb_map(
+          msg, arena);
+  EXPECT_NE(mut_map, nullptr);
+
+  const upb_Map* const_map =
+      _protobuf_test_messages_proto3_TestAllTypesProto3_map_int32_int32_upb_map(
+          msg);
+  EXPECT_EQ(mut_map, const_map);
+
   /* Set map[test_int32] = test_int32_2 */
   protobuf_test_messages_proto3_TestAllTypesProto3_map_int32_int32_set(
       msg, test_int32, test_int32_2, arena);
@@ -928,4 +923,23 @@ TEST(GeneratedCode, Extensions) {
 
   ASSERT_EQ(size1, size2);
   ASSERT_EQ(0, memcmp(pb1, pb2, size1));
+}
+
+TEST(GeneratedCode, Maps) {
+  upb::Arena arena;
+  upb_test_ModelWithMaps* msg = upb_test_ModelWithMaps_new(arena.ptr());
+
+  auto sb = _upb_test_ModelWithMaps_map_sb_mutable_upb_map(msg, arena.ptr());
+  auto ss = _upb_test_ModelWithMaps_map_ss_mutable_upb_map(msg, arena.ptr());
+  auto ii = _upb_test_ModelWithMaps_map_ii_mutable_upb_map(msg, arena.ptr());
+
+  ASSERT_NE(sb, nullptr);
+  ASSERT_NE(ss, nullptr);
+  ASSERT_NE(ii, nullptr);
+
+  upb_MessageValue key, val;
+  key.str_val = test_str_view;
+  val.str_val = test_str_view2;
+
+  upb_Map_Set(sb, key, val, arena.ptr());
 }

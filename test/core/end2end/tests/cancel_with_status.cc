@@ -16,21 +16,23 @@
 //
 //
 
-#include "gtest/gtest.h"
-
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include <memory>
+
+#include "gtest/gtest.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus1) {
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
+  IncomingStatusOnClient server_status;
   c.NewBatch(1).RecvStatusOnClient(server_status);
   char* dynamic_string = gpr_strdup("xyz");
   c.CancelWithStatus(GRPC_STATUS_UNIMPLEMENTED, dynamic_string);
@@ -44,9 +46,9 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus1) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus2) {
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .RecvStatusOnClient(server_status)
       .RecvInitialMetadata(server_initial_metadata);
@@ -62,9 +64,14 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus2) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus3) {
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  InitClient(ChannelArgs());
+  // This is a workaround for the flakiness that if the server ever enters
+  // GracefulShutdown for whatever reason while the client has already been
+  // shutdown, the test would not timeout and fail.
+  InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
+  auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .RecvStatusOnClient(server_status)
       .RecvInitialMetadata(server_initial_metadata)
@@ -81,11 +88,14 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus3) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus4) {
-  // TODO(vigneshbabu): re-enable these before release
-  SKIP_IF_USES_EVENT_ENGINE_LISTENER();
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  InitClient(ChannelArgs());
+  // This is a workaround for the flakiness that if the server ever enters
+  // GracefulShutdown for whatever reason while the client has already been
+  // shutdown, the test would not timeout and fail.
+  InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
+  auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .RecvStatusOnClient(server_status)
       .RecvInitialMetadata(server_initial_metadata)

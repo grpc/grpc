@@ -20,7 +20,6 @@
 #define GRPCPP_XDS_SERVER_BUILDER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <grpcpp/server_builder.h>
 
 namespace grpc {
@@ -79,18 +78,7 @@ class XdsServerBuilder : public grpc::ServerBuilder {
 
  private:
   // Called at the beginning of BuildAndStart().
-  ChannelArguments BuildChannelArgs() override {
-    ChannelArguments args = ServerBuilder::BuildChannelArgs();
-    if (drain_grace_time_ms_ >= 0) {
-      args.SetInt(GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS,
-                  drain_grace_time_ms_);
-    }
-    grpc_channel_args c_channel_args = args.c_channel_args();
-    grpc_server_config_fetcher* fetcher = grpc_server_config_fetcher_xds_create(
-        {OnServingStatusUpdate, notifier_}, &c_channel_args);
-    if (fetcher != nullptr) set_fetcher(fetcher);
-    return args;
-  }
+  ChannelArguments BuildChannelArgs() override;
 
   static void OnServingStatusUpdate(void* user_data, const char* uri,
                                     grpc_serving_status_update update) {

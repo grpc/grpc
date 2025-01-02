@@ -43,6 +43,7 @@ from ._call import _RPC_HALF_CLOSED_DETAILS
 from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
+from ._typing import EOFType
 from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseIterableType
@@ -68,6 +69,13 @@ class ServerInterceptor(metaclass=ABCMeta):
         handler_call_details: grpc.HandlerCallDetails,
     ) -> grpc.RpcMethodHandler:
         """Intercepts incoming RPCs before handing them over to a handler.
+
+        State can be passed from an interceptor to downstream interceptors
+        via contextvars. The first interceptor is called from an empty
+        contextvars.Context, and the same Context is used for downstream
+        interceptors and for the final handler call. Note that there are no
+        guarantees that interceptors and handlers will be called from the
+        same thread.
 
         Args:
             continuation: A function that takes a HandlerCallDetails and
@@ -469,8 +477,8 @@ class _InterceptedStreamResponseMixin:
     _response_aiter: Optional[AsyncIterable[ResponseType]]
 
     def _init_stream_response_mixin(self) -> None:
-        # Is initalized later, otherwise if the iterator is not finnally
-        # consumed a logging warning is emmited by Asyncio.
+        # Is initialized later, otherwise if the iterator is not finally
+        # consumed a logging warning is emitted by Asyncio.
         self._response_aiter = None
 
     async def _wait_for_interceptor_task_response_iterator(
@@ -487,12 +495,15 @@ class _InterceptedStreamResponseMixin:
             )
         return self._response_aiter
 
-    async def read(self) -> ResponseType:
+    async def read(self) -> Union[EOFType, ResponseType]:
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
             )
-        return await self._response_aiter.asend(None)
+        try:
+            return await self._response_aiter.asend(None)
+        except StopAsyncIteration:
+            return cygrpc.EOF
 
 
 class _InterceptedStreamRequestMixin:
@@ -1132,10 +1143,10 @@ class _StreamCallResponseIterator:
 class UnaryStreamCallResponseIterator(
     _StreamCallResponseIterator, _base_call.UnaryStreamCall
 ):
-    """UnaryStreamCall class wich uses an alternative response iterator."""
+    """UnaryStreamCall class which uses an alternative response iterator."""
 
-    async def read(self) -> ResponseType:
-        # Behind the scenes everyting goes through the
+    async def read(self) -> Union[EOFType, ResponseType]:
+        # Behind the scenes everything goes through the
         # async iterator. So this path should not be reached.
         raise NotImplementedError()
 
@@ -1143,21 +1154,21 @@ class UnaryStreamCallResponseIterator(
 class StreamStreamCallResponseIterator(
     _StreamCallResponseIterator, _base_call.StreamStreamCall
 ):
-    """StreamStreamCall class wich uses an alternative response iterator."""
+    """StreamStreamCall class which uses an alternative response iterator."""
 
-    async def read(self) -> ResponseType:
-        # Behind the scenes everyting goes through the
+    async def read(self) -> Union[EOFType, ResponseType]:
+        # Behind the scenes everything goes through the
         # async iterator. So this path should not be reached.
         raise NotImplementedError()
 
     async def write(self, request: RequestType) -> None:
-        # Behind the scenes everyting goes through the
+        # Behind the scenes everything goes through the
         # async iterator provided by the InterceptedStreamStreamCall.
         # So this path should not be reached.
         raise NotImplementedError()
 
     async def done_writing(self) -> None:
-        # Behind the scenes everyting goes through the
+        # Behind the scenes everything goes through the
         # async iterator provided by the InterceptedStreamStreamCall.
         # So this path should not be reached.
         raise NotImplementedError()

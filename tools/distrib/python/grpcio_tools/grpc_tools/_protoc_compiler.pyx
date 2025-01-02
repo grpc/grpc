@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# distutils: language=c++
 
+cimport cpython
 from cython.operator cimport dereference
 from libc cimport stdlib
 from libcpp.string cimport string
@@ -19,6 +21,8 @@ from libcpp.utility cimport pair
 from libcpp.vector cimport vector
 
 import warnings
+
+from grpc_tools import grpc_version
 
 
 cdef extern from "grpc_tools/main.h" namespace "grpc_tools":
@@ -34,23 +38,23 @@ cdef extern from "grpc_tools/main.h" namespace "grpc_tools":
     int column
     string message
 
-  int protoc_main(int argc, char *argv[])
+  int protoc_main(int argc, char *argv[], char* version)
   int protoc_get_protos(char* protobuf_path,
                         vector[string]* include_path,
                         vector[pair[string, string]]* files_out,
                         vector[cProtocError]* errors,
-                        vector[cProtocWarning]* wrnings) nogil except +
-  int protoc_get_services(char* protobuf_path,
+                        vector[cProtocWarning]* wrnings) except + nogil
+  int protoc_get_services(char* protobuf_path, char* version,
                           vector[string]* include_path,
                           vector[pair[string, string]]* files_out,
                           vector[cProtocError]* errors,
-                          vector[cProtocWarning]* wrnings) nogil except +
+                          vector[cProtocWarning]* wrnings) except + nogil
 
 def run_main(list args not None):
   cdef char **argv = <char **>stdlib.malloc(len(args)*sizeof(char *))
   for i in range(len(args)):
     argv[i] = args[i]
-  return protoc_main(len(args), argv)
+  return protoc_main(len(args), argv, grpc_version.VERSION.encode())
 
 class ProtocError(Exception):
     def __init__(self, filename, line, column, message):
@@ -128,7 +132,8 @@ def get_services(bytes protobuf_path, list include_paths):
   cdef vector[cProtocError] errors
   # NOTE: Abbreviated name used to avoid shadowing of the module name.
   cdef vector[cProtocWarning] wrnings
-  rc = protoc_get_services(protobuf_path, &c_include_paths, &files, &errors, &wrnings)
+  version = grpc_version.VERSION.encode()
+  rc = protoc_get_services(protobuf_path, version, &c_include_paths, &files, &errors, &wrnings)
   _handle_errors(rc, &errors, &wrnings, protobuf_path)
   return files
 

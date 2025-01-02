@@ -12,24 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/promise_endpoint.h"
-
-#include <functional>
-#include <memory>
-#include <utility>
-
-#include "absl/status/status.h"
-#include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/sync.h"
+#include <atomic>
+#include <functional>
+#include <memory>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/types/optional.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
@@ -38,18 +37,12 @@ PromiseEndpoint::PromiseEndpoint(
         endpoint,
     SliceBuffer already_received)
     : endpoint_(std::move(endpoint)) {
-  GPR_ASSERT(endpoint_ != nullptr);
+  CHECK_NE(endpoint_, nullptr);
+  read_state_->endpoint = endpoint_;
   // TODO(ladynana): Replace this with `SliceBufferCast<>` when it is
   // available.
-  grpc_slice_buffer_swap(read_buffer_.c_slice_buffer(),
+  grpc_slice_buffer_swap(read_state_->buffer.c_slice_buffer(),
                          already_received.c_slice_buffer());
-}
-
-PromiseEndpoint::~PromiseEndpoint() {
-  // Last write result has not been polled.
-  GPR_ASSERT(!write_result_.has_value());
-  // Last read result has not been polled.
-  GPR_ASSERT(!read_result_.has_value());
 }
 
 const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
@@ -62,60 +55,54 @@ PromiseEndpoint::GetLocalAddress() const {
   return endpoint_->GetLocalAddress();
 }
 
-void PromiseEndpoint::WriteCallback(absl::Status status) {
-  MutexLock lock(&write_mutex_);
-  write_result_ = status;
-  write_waker_.Wakeup();
-}
-
-void PromiseEndpoint::ReadCallback(absl::Status status,
-                                   size_t num_bytes_requested) {
-  if (!status.ok()) {
-    // Invalidates all previous reads.
-    pending_read_buffer_.Clear();
-    read_buffer_.Clear();
-    MutexLock lock(&read_mutex_);
-    read_result_ = status;
-    read_waker_.Wakeup();
-  } else {
-    // Appends `pending_read_buffer_` to `read_buffer_`.
-    pending_read_buffer_.MoveFirstNBytesIntoSliceBuffer(
-        pending_read_buffer_.Length(), read_buffer_);
-    GPR_DEBUG_ASSERT(pending_read_buffer_.Count() == 0u);
-    if (read_buffer_.Length() < num_bytes_requested) {
+void PromiseEndpoint::ReadState::Complete(absl::Status status,
+                                          const size_t num_bytes_requested) {
+  while (true) {
+    if (!status.ok()) {
+      // Invalidates all previous reads.
+      pending_buffer.Clear();
+      buffer.Clear();
+      result = status;
+      auto w = std::move(waker);
+      complete.store(true, std::memory_order_release);
+      w.Wakeup();
+      return;
+    }
+    // Appends `pending_buffer` to `buffer`.
+    pending_buffer.MoveFirstNBytesIntoSliceBuffer(pending_buffer.Length(),
+                                                  buffer);
+    DCHECK(pending_buffer.Count() == 0u);
+    if (buffer.Length() < num_bytes_requested) {
       // A further read is needed.
       // Set read args with number of bytes needed as hint.
       grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs
-          read_args = {static_cast<int64_t>(num_bytes_requested -
-                                            read_buffer_.Length())};
+          read_args = {
+              static_cast<int64_t>(num_bytes_requested - buffer.Length())};
       // If `Read()` returns true immediately, the callback will not be
       // called. We still need to call our callback to pick up the result and
       // maybe do further reads.
-      if (endpoint_->Read(std::bind(&PromiseEndpoint::ReadCallback, this,
-                                    std::placeholders::_1, num_bytes_requested),
-                          &pending_read_buffer_, &read_args)) {
-        ReadCallback(absl::OkStatus(), num_bytes_requested);
+      auto ep = endpoint.lock();
+      if (ep == nullptr) {
+        status = absl::UnavailableError("Endpoint closed during read.");
+        continue;
       }
-    } else {
-      MutexLock lock(&read_mutex_);
-      read_result_ = status;
-      read_waker_.Wakeup();
+      if (ep->Read(
+              [self = Ref(), num_bytes_requested](absl::Status status) {
+                ApplicationCallbackExecCtx callback_exec_ctx;
+                ExecCtx exec_ctx;
+                self->Complete(std::move(status), num_bytes_requested);
+              },
+              &pending_buffer, &read_args)) {
+        continue;
+      }
+      return;
     }
+    result = status;
+    auto w = std::move(waker);
+    complete.store(true, std::memory_order_release);
+    w.Wakeup();
+    return;
   }
-}
-
-void PromiseEndpoint::ReadByteCallback(absl::Status status) {
-  if (!status.ok()) {
-    // invalidates all previous reads
-    pending_read_buffer_.Clear();
-    read_buffer_.Clear();
-  } else {
-    pending_read_buffer_.MoveFirstNBytesIntoSliceBuffer(
-        pending_read_buffer_.Length(), read_buffer_);
-  }
-  MutexLock lock(&read_mutex_);
-  read_result_ = status;
-  read_waker_.Wakeup();
 }
 
 }  // namespace grpc_core

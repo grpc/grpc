@@ -19,12 +19,10 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_SOCKET_MUTATOR_H
 #define GRPC_SRC_CORE_LIB_IOMGR_SOCKET_MUTATOR_H
 
-#include <grpc/support/port_platform.h>
-
-#include <stdbool.h>
-
 #include <grpc/impl/grpc_types.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include <stdbool.h>
 
 /// How is an fd to be used?
 typedef enum {

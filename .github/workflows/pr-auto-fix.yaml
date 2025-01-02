@@ -12,24 +12,24 @@ jobs:
     steps:
       # Cache bazel build
       - name: Get current time
-        uses: srfrnk/current-time@master
+        uses: srfrnk/current-time@5a4163ad035ccd9a407ec9e519c3b6ba1b633d1e # v1.1.0
         id: current-time
         with:
           format: YYYYWW
       - name: Get current time
-        uses: srfrnk/current-time@master
+        uses: srfrnk/current-time@5a4163ad035ccd9a407ec9e519c3b6ba1b633d1e # v1.1.0
         id: current-time-with-day
         with:
           format: YYYYWWd
       - name: Cache bazel
-        uses: actions/cache@v3
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
         env:
           cache-name: bazel-cache
         with:
           path: ~/.cache/bazel
           # formattedTime here is like 2021323 - the year concatenated with the week then
           # the day of that week.
-          # As this changes every day, we cycle to a new cache once per day, with lookup 
+          # As this changes every day, we cycle to a new cache once per day, with lookup
           # across the week (and then the year).
           key: ${{ runner.os }}-${{ steps.current-time-with-day.outputs.formattedTime }}
           restore-keys: |
@@ -38,22 +38,23 @@ jobs:
       # Cancel current runs if they're still running
       # (saves processing on fast pushes)
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.9.1
+        uses: styfle/cancel-workflow-action@85880fa0301c86cca9da44039ee3bb12d3bedbfa # 0.12.1
         with:
           access_token: ${{ github.token }}
       # Allow opt-out for some users
       - name: Should I Stay Or Should I Go
-        uses: actions/github-script@v4
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         id: check
         with:
           script: |
             // If you'd like not to run this code on your commits, add your github user id here:
-            NO_AUTOFIX_USERS = []
-            const { owner, repo } = context.repo
+            const NO_AUTOFIX_USERS = ["copybara-service[bot]"];
+            const { owner, repo } = context.repo;
+            console.log("Actor: " + context.actor);
             if (NO_AUTOFIX_USERS.includes(context.actor)) {
               console.log('Cancelling');
               const run_id = "${{ github.run_id }}";
-              await github.actions.cancelWorkflowRun({ owner, repo, run_id });
+              await github.rest.actions.cancelWorkflowRun({ owner, repo, run_id });
               return 'go';
             } else {
               return 'stay';
@@ -65,16 +66,16 @@ jobs:
         run: test "${{ steps.check.outputs.result }}" = "stay"
       # Setup to run sanity suite
       - name: Install Python Interpreter
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
         with:
           python-version: 3.8
       - name: Install Python Packages
         run: |
-          pip install pyyaml mako virtualenv
+          pip install pyyaml mako virtualenv absl-py
           sudo apt-get update
           sudo apt-get install python3-dev
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           submodules: True
       - name: Get the upstream code
@@ -89,7 +90,7 @@ jobs:
         run: ANDROID_NDK_HOME= ${{ github.workspace }}/tools/distrib/sanitize.sh
       # Report back with a PR if things are broken
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@5e914681df9dc83aa4e4905692ca88beb2f9e91f # v7.0.5
         with:
           delete-branch: true
           branch-suffix: short-commit-hash

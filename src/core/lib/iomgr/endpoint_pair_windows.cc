@@ -25,14 +25,14 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include <grpc/support/log.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
+#include "src/core/util/crash.h"
 
 static void create_sockets(SOCKET sv[2]) {
   SOCKET svr_sock = INVALID_SOCKET;
@@ -43,36 +43,35 @@ static void create_sockets(SOCKET sv[2]) {
 
   lst_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
                        grpc_get_default_wsa_socket_flags());
-  GPR_ASSERT(lst_sock != INVALID_SOCKET);
+  CHECK(lst_sock != INVALID_SOCKET);
 
   memset(&addr, 0, sizeof(addr));
   addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   addr.sin_family = AF_INET;
-  GPR_ASSERT(bind(lst_sock, (grpc_sockaddr*)&addr, sizeof(addr)) !=
-             SOCKET_ERROR);
-  GPR_ASSERT(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
-  GPR_ASSERT(getsockname(lst_sock, (grpc_sockaddr*)&addr, &addr_len) !=
-             SOCKET_ERROR);
+  CHECK(bind(lst_sock, (grpc_sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR);
+  CHECK(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
+  CHECK(getsockname(lst_sock, (grpc_sockaddr*)&addr, &addr_len) !=
+        SOCKET_ERROR);
 
   cli_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
                        grpc_get_default_wsa_socket_flags());
-  GPR_ASSERT(cli_sock != INVALID_SOCKET);
+  CHECK(cli_sock != INVALID_SOCKET);
 
-  GPR_ASSERT(WSAConnect(cli_sock, (grpc_sockaddr*)&addr, addr_len, NULL, NULL,
-                        NULL, NULL) == 0);
+  CHECK(WSAConnect(cli_sock, (grpc_sockaddr*)&addr, addr_len, NULL, NULL, NULL,
+                   NULL) == 0);
   svr_sock = accept(lst_sock, (grpc_sockaddr*)&addr, &addr_len);
-  GPR_ASSERT(svr_sock != INVALID_SOCKET);
+  CHECK(svr_sock != INVALID_SOCKET);
 
   closesocket(lst_sock);
   grpc_error_handle error = grpc_tcp_prepare_socket(cli_sock);
   if (!error.ok()) {
-    gpr_log(GPR_INFO, "Prepare cli_sock failed with error: %s",
-            grpc_core::StatusToString(error).c_str());
+    VLOG(2) << "Prepare cli_sock failed with error: "
+            << grpc_core::StatusToString(error);
   }
   error = grpc_tcp_prepare_socket(svr_sock);
   if (!error.ok()) {
-    gpr_log(GPR_INFO, "Prepare svr_sock failed with error: %s",
-            grpc_core::StatusToString(error).c_str());
+    VLOG(2) << "Prepare svr_sock failed with error: "
+            << grpc_core::StatusToString(error);
   }
 
   sv[1] = cli_sock;

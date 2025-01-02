@@ -16,18 +16,18 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+
 #include <memory>
 #include <thread>
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_split.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gpr/string.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/string.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/create_test_channel.h"
@@ -73,8 +73,7 @@ ABSL_FLAG(std::string, test_case, "rpc_soak",
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  gpr_log(GPR_INFO, "Testing these cases: %s",
-          absl::GetFlag(FLAGS_test_case).c_str());
+  LOG(INFO) << "Testing these cases: " << absl::GetFlag(FLAGS_test_case);
   std::string test_case = absl::GetFlag(FLAGS_test_case);
   // validate flags
   std::vector<std::string> uris =
@@ -82,15 +81,14 @@ int main(int argc, char** argv) {
   std::vector<std::string> creds =
       absl::StrSplit(absl::GetFlag(FLAGS_credentials_types), ',');
   if (uris.size() != creds.size()) {
-    gpr_log(GPR_ERROR,
-            "Number of entries in --server_uris %ld != number of entries in "
-            "--credentials_types %ld",
-            uris.size(), creds.size());
-    GPR_ASSERT(0);
+    LOG(ERROR) << "Number of entries in --server_uris " << uris.size()
+               << " != number of entries in --credentials_types "
+               << creds.size();
+    CHECK(0);
   }
   if (uris.empty()) {
-    gpr_log(GPR_ERROR, "--server_uris has zero entries");
-    GPR_ASSERT(0);
+    LOG(ERROR) << "--server_uris has zero entries";
+    CHECK(0);
   }
   // construct and start clients
   std::vector<std::thread> threads;
@@ -120,15 +118,15 @@ int main(int argc, char** argv) {
             absl::GetFlag(FLAGS_soak_request_size),
             absl::GetFlag(FLAGS_soak_response_size));
       } else {
-        gpr_log(GPR_ERROR,
-                "Invalid test case, must be either rpc_soak or channel_soak");
-        GPR_ASSERT(0);
+        LOG(ERROR)
+            << "Invalid test case, must be either rpc_soak or channel_soak";
+        CHECK(0);
       }
     }));
   }
   for (auto& thd : threads) {
     thd.join();
   }
-  gpr_log(GPR_INFO, "All clients done!");
+  LOG(INFO) << "All clients done!";
   return 0;
 }

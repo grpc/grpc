@@ -29,11 +29,10 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/sync.h"
 
 struct grpc_tls_identity_pairs {
   grpc_core::PemKeyCertPairList pem_key_cert_pairs;

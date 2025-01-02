@@ -34,10 +34,15 @@ grpc_extra_deps()
 
 ## Supported Versions
 
-In general, gRPC supports building with the latest patch release of the two most
-recent LTS versions of Bazel. However individual releases may have a broader
+gRPC supports building with the latest stable release of Bazel,
+as well as the previous major version release for at least 6 months
+after it transitions into maintenance mode.
+This is consistent with the supported build systems of
+[the Google Foundational C++ Support Policy](https://opensource.google/documentation/policies/cplusplus-support).
+However individual releases may have a broader
 compatibility range. The currently supported versions are captured by the
 following list:
 
-- [`6.3.2`](https://github.com/bazelbuild/bazel/releases/tag/6.3.2)
-- [`5.4.1`](https://github.com/bazelbuild/bazel/releases/tag/5.4.1)
+- [`7.4.1`](https://github.com/bazelbuild/bazel/releases/tag/7.4.1)
+
+NOTE: gRPC doesn't support bzlmod yet.

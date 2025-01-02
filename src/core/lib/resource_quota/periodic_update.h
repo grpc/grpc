@@ -16,14 +16,12 @@
 #define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_PERIODIC_UPDATE_H
 
 #include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 
 #include <atomic>
 
 #include "absl/functional/function_ref.h"
-
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 

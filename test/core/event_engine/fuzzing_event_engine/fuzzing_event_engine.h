@@ -15,34 +15,36 @@
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_FUZZING_EVENT_ENGINE_FUZZING_EVENT_ENGINE_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_FUZZING_EVENT_ENGINE_FUZZING_EVENT_ENGINE_H
 
-#include <stddef.h>
-
-#include <chrono>
-#include <cstdint>
-#include <map>
-#include <memory>
-#include <queue>
-#include <ratio>
-#include <set>
-#include <utility>
-#include <vector>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/types/optional.h"
-
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/time.h>
+#include <stddef.h>
 
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/sync.h"
+#include <atomic>
+#include <chrono>
+#include <cstdint>
+#include <map>
+#include <memory>
+#include <queue>
+#include <set>
+#include <thread>
+#include <utility>
+#include <vector>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/types/optional.h"
+#include "src/core/lib/event_engine/time_util.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -59,6 +61,8 @@ class FuzzingEventEngine : public EventEngine {
                               const fuzzing_event_engine::Actions& actions);
   ~FuzzingEventEngine() override { UnsetGlobalHooks(); }
 
+  using Time = std::chrono::time_point<FuzzingEventEngine, Duration>;
+
   // Once the fuzzing work is completed, this method should be called to speed
   // quiescence.
   void FuzzingDone() ABSL_LOCKS_EXCLUDED(mu_);
@@ -67,6 +71,16 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_LOCKS_EXCLUDED(mu_);
   // Repeatedly call Tick() until there is no more work to do.
   void TickUntilIdle() ABSL_LOCKS_EXCLUDED(mu_);
+  // Returns true if idle.
+  bool IsIdle() ABSL_LOCKS_EXCLUDED(mu_);
+  // Tick until some time
+  void TickUntil(Time t) ABSL_LOCKS_EXCLUDED(mu_);
+  // Tick for some duration
+  void TickForDuration(Duration d) ABSL_LOCKS_EXCLUDED(mu_);
+
+  // Sets a callback to be invoked any time RunAfter() is called.
+  // Allows tests to verify the specified duration.
+  void SetRunAfterDurationCallback(absl::AnyInvocable<void(Duration)> callback);
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
@@ -97,7 +111,8 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_LOCKS_EXCLUDED(mu_) override;
   bool Cancel(TaskHandle handle) ABSL_LOCKS_EXCLUDED(mu_) override;
 
-  using Time = std::chrono::time_point<FuzzingEventEngine, Duration>;
+  TaskHandle RunAfterExactly(Duration when, absl::AnyInvocable<void()> closure)
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   Time Now() ABSL_LOCKS_EXCLUDED(mu_);
 
@@ -106,10 +121,45 @@ class FuzzingEventEngine : public EventEngine {
   // each test.
   void UnsetGlobalHooks() ABSL_LOCKS_EXCLUDED(mu_);
 
+  Duration max_delay_write() const {
+    return max_delay_[static_cast<int>(RunType::kWrite)];
+  }
+
  private:
+  class IoToken {
+   public:
+    IoToken() : refs_(nullptr) {}
+    explicit IoToken(std::atomic<size_t>* refs) : refs_(refs) {
+      refs_->fetch_add(1, std::memory_order_relaxed);
+    }
+    ~IoToken() {
+      if (refs_ != nullptr) refs_->fetch_sub(1, std::memory_order_relaxed);
+    }
+    IoToken(const IoToken& other) : refs_(other.refs_) {
+      if (refs_ != nullptr) refs_->fetch_add(1, std::memory_order_relaxed);
+    }
+    IoToken& operator=(const IoToken& other) {
+      IoToken copy(other);
+      Swap(copy);
+      return *this;
+    }
+    IoToken(IoToken&& other) noexcept
+        : refs_(std::exchange(other.refs_, nullptr)) {}
+    IoToken& operator=(IoToken&& other) noexcept {
+      if (refs_ != nullptr) refs_->fetch_sub(1, std::memory_order_relaxed);
+      refs_ = std::exchange(other.refs_, nullptr);
+      return *this;
+    }
+    void Swap(IoToken& other) { std::swap(refs_, other.refs_); }
+
+   private:
+    std::atomic<size_t>* refs_;
+  };
+
   enum class RunType {
     kWrite,
     kRunAfter,
+    kExact,
   };
 
   // One pending task to be run.
@@ -165,6 +215,8 @@ class FuzzingEventEngine : public EventEngine {
 
   // One read that's outstanding.
   struct PendingRead {
+    // The associated io token
+    IoToken io_token;
     // Callback to invoke when the read completes.
     absl::AnyInvocable<void(absl::Status)> on_read;
     // The buffer to read into.
@@ -225,8 +277,8 @@ class FuzzingEventEngine : public EventEngine {
     // endpoint shutdown, it's believed this is a legal implementation.
     static void ScheduleDelayedWrite(
         std::shared_ptr<EndpointMiddle> middle, int index,
-        absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+        absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
+        IoToken write_token) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
     const std::shared_ptr<EndpointMiddle> middle_;
     const int index_;
   };
@@ -245,6 +297,26 @@ class FuzzingEventEngine : public EventEngine {
   int AllocatePort() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Is the given port in use by any listener?
   bool IsPortUsed(int port) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  bool IsIdleLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  // Called whenever the time is incremented, and used by
+  // ThreadedFuzzingEventEngine to insert a sleep so that real time passes at
+  // approximately the same rate as FuzzingEventEngine time.
+  // TODO(ctiller): This is very approximate and unsound and we should probably
+  // evaluate whether we want to continue supporting ThreadedFuzzingEventEngine
+  // at all.
+  virtual void OnClockIncremented(Duration) {}
+
+  // We need everything EventEngine to do reasonable timer steps -- without it
+  // we need to do a bunch of evil to make sure both timer systems are ticking
+  // each step.
+  static bool IsSaneTimerEnvironment() {
+    return grpc_core::IsEventEngineClientEnabled() &&
+           grpc_core::IsEventEngineListenerEnabled() &&
+           grpc_core::IsEventEngineDnsEnabled();
+  }
+
   // For the next connection being built, query the list of fuzzer selected
   // write size limits.
   std::queue<size_t> WriteSizesForConnection()
@@ -259,12 +331,13 @@ class FuzzingEventEngine : public EventEngine {
   static grpc_core::NoDestruct<grpc_core::Mutex> now_mu_
       ABSL_ACQUIRED_AFTER(mu_);
 
-  Duration exponential_gate_time_increment_ ABSL_GUARDED_BY(mu_) =
-      std::chrono::milliseconds(1);
   const Duration max_delay_[2];
-  intptr_t next_task_id_ ABSL_GUARDED_BY(mu_);
-  intptr_t current_tick_ ABSL_GUARDED_BY(now_mu_);
-  Time now_ ABSL_GUARDED_BY(now_mu_);
+  intptr_t next_task_id_ ABSL_GUARDED_BY(mu_) = 1;
+  // Start at 5 seconds after the epoch.
+  // This needs to be more than 1, and otherwise is kind of arbitrary.
+  // The grpc_core::Timer code special cases the zero second time period after
+  // epoch to allow for some fancy atomic stuff.
+  Time now_ ABSL_GUARDED_BY(now_mu_) = Time() + std::chrono::seconds(5);
   std::queue<Duration> task_delays_ ABSL_GUARDED_BY(mu_);
   std::map<intptr_t, std::shared_ptr<Task>> tasks_by_id_ ABSL_GUARDED_BY(mu_);
   std::multimap<Time, std::shared_ptr<Task>> tasks_by_time_
@@ -281,6 +354,47 @@ class FuzzingEventEngine : public EventEngine {
   std::queue<std::queue<size_t>> write_sizes_for_future_connections_
       ABSL_GUARDED_BY(mu_);
   grpc_pick_port_functions previous_pick_port_functions_;
+  std::atomic<size_t> outstanding_writes_{0};
+  std::atomic<size_t> outstanding_reads_{0};
+
+  // TODO(ctiller): these can be removed when IsSaneTimerEnvironment() is
+  // guaranteed to be true.
+  Duration exponential_gate_time_increment_ ABSL_GUARDED_BY(mu_) =
+      std::chrono::milliseconds(1);
+  intptr_t current_tick_ ABSL_GUARDED_BY(now_mu_) = 0;
+
+  grpc_core::Mutex run_after_duration_callback_mu_;
+  absl::AnyInvocable<void(Duration)> run_after_duration_callback_
+      ABSL_GUARDED_BY(run_after_duration_callback_mu_);
+};
+
+class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
+ public:
+  ThreadedFuzzingEventEngine()
+      : ThreadedFuzzingEventEngine(std::chrono::milliseconds(10)) {}
+
+  explicit ThreadedFuzzingEventEngine(Duration max_time)
+      : FuzzingEventEngine(FuzzingEventEngine::Options(),
+                           fuzzing_event_engine::Actions()),
+        main_([this, max_time]() {
+          while (!done_.load()) {
+            Tick(max_time);
+          }
+        }) {}
+
+  ~ThreadedFuzzingEventEngine() override {
+    done_.store(true);
+    main_.join();
+  }
+
+ private:
+  void OnClockIncremented(Duration duration) override {
+    absl::SleepFor(absl::Milliseconds(
+        1 + grpc_event_engine::experimental::Milliseconds(duration)));
+  }
+
+  std::atomic<bool> done_{false};
+  std::thread main_;
 };
 
 }  // namespace experimental

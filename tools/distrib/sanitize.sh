@@ -17,14 +17,12 @@ set -ex
 
 cd $(dirname $0)/../..
 
-tools/distrib/iwyu.sh || true
 tools/buildgen/generate_projects.sh
 tools/distrib/check_include_guards.py --fix
 tools/distrib/check_naked_includes.py --fix || true
 tools/distrib/check_copyright.py --fix
 tools/distrib/add-iwyu.py
 tools/distrib/check_trailing_newlines.sh --fix
-tools/run_tests/sanity/check_port_platform.py --fix
 tools/run_tests/sanity/check_include_style.py --fix || true
 tools/distrib/check_namespace_qualification.py --fix
 tools/distrib/black_code.sh
@@ -32,6 +30,7 @@ tools/distrib/isort_code.sh
 tools/distrib/check_redundant_namespace_qualifiers.py || true
 tools/codegen/core/gen_grpc_tls_credentials_options.py
 tools/distrib/gen_experiments_and_format.sh
+tools/codegen/core/gen_trace_flags.py
 
 # Formatters should always run last
 tools/distrib/clang_format_code.sh

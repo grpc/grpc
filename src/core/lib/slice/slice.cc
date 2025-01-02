@@ -16,21 +16,19 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice.h"
 
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <new>
 
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/memory.h"
+#include "absl/log/check.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/util/memory.h"
 
 char* grpc_slice_to_c_string(grpc_slice slice) {
   char* out = static_cast<char*>(gpr_malloc(GRPC_SLICE_LENGTH(slice) + 1));
@@ -245,11 +243,11 @@ static grpc_slice sub_no_ref(const grpc_slice& source, size_t begin,
                              size_t end) {
   grpc_slice subset;
 
-  GPR_ASSERT(end >= begin);
+  CHECK(end >= begin);
 
   if (source.refcount != nullptr) {
     // Enforce preconditions
-    GPR_ASSERT(source.data.refcounted.length >= end);
+    CHECK(source.data.refcounted.length >= end);
 
     // Build the result
     subset.refcount = source.refcount;
@@ -258,7 +256,7 @@ static grpc_slice sub_no_ref(const grpc_slice& source, size_t begin,
     subset.data.refcounted.length = end - begin;
   } else {
     // Enforce preconditions
-    GPR_ASSERT(source.data.inlined.length >= end);
+    CHECK(source.data.inlined.length >= end);
     subset.refcount = nullptr;
     subset.data.inlined.length = static_cast<uint8_t>(end - begin);
     memcpy(subset.data.inlined.bytes, source.data.inlined.bytes + begin,
@@ -289,13 +287,15 @@ grpc_slice grpc_slice_sub(grpc_slice source, size_t begin, size_t end) {
   return subset;
 }
 
-grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
-                                           grpc_slice_ref_whom ref_whom) {
+template <bool allow_inline>
+grpc_slice grpc_slice_split_tail_maybe_ref_impl(grpc_slice* source,
+                                                size_t split,
+                                                grpc_slice_ref_whom ref_whom) {
   grpc_slice tail;
 
   if (source->refcount == nullptr) {
     // inlined data, copy it out
-    GPR_ASSERT(source->data.inlined.length >= split);
+    CHECK(source->data.inlined.length >= split);
     tail.refcount = nullptr;
     tail.data.inlined.length =
         static_cast<uint8_t>(source->data.inlined.length - split);
@@ -310,8 +310,8 @@ grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
     source->data.refcounted.length = split;
   } else {
     size_t tail_length = source->data.refcounted.length - split;
-    GPR_ASSERT(source->data.refcounted.length >= split);
-    if (tail_length < sizeof(tail.data.inlined.bytes) &&
+    CHECK(source->data.refcounted.length >= split);
+    if (allow_inline && tail_length < sizeof(tail.data.inlined.bytes) &&
         ref_whom != GRPC_SLICE_REF_TAIL) {
       // Copy out the bytes - it'll be cheaper than refcounting
       tail.refcount = nullptr;
@@ -346,15 +346,31 @@ grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
   return tail;
 }
 
+grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
+                                           grpc_slice_ref_whom ref_whom) {
+  return grpc_slice_split_tail_maybe_ref_impl<true>(source, split, ref_whom);
+}
+
+grpc_slice grpc_slice_split_tail_maybe_ref_no_inline(
+    grpc_slice* source, size_t split, grpc_slice_ref_whom ref_whom) {
+  return grpc_slice_split_tail_maybe_ref_impl<false>(source, split, ref_whom);
+}
+
 grpc_slice grpc_slice_split_tail(grpc_slice* source, size_t split) {
   return grpc_slice_split_tail_maybe_ref(source, split, GRPC_SLICE_REF_BOTH);
 }
 
-grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
+grpc_slice grpc_slice_split_tail_no_inline(grpc_slice* source, size_t split) {
+  return grpc_slice_split_tail_maybe_ref_no_inline(source, split,
+                                                   GRPC_SLICE_REF_BOTH);
+}
+
+template <bool allow_inline>
+grpc_slice grpc_slice_split_head_impl(grpc_slice* source, size_t split) {
   grpc_slice head;
 
   if (source->refcount == nullptr) {
-    GPR_ASSERT(source->data.inlined.length >= split);
+    CHECK(source->data.inlined.length >= split);
 
     head.refcount = nullptr;
     head.data.inlined.length = static_cast<uint8_t>(split);
@@ -363,8 +379,8 @@ grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
         static_cast<uint8_t>(source->data.inlined.length - split);
     memmove(source->data.inlined.bytes, source->data.inlined.bytes + split,
             source->data.inlined.length);
-  } else if (split < sizeof(head.data.inlined.bytes)) {
-    GPR_ASSERT(source->data.refcounted.length >= split);
+  } else if (allow_inline && split < sizeof(head.data.inlined.bytes)) {
+    CHECK(source->data.refcounted.length >= split);
 
     head.refcount = nullptr;
     head.data.inlined.length = static_cast<uint8_t>(split);
@@ -372,7 +388,7 @@ grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
     source->data.refcounted.bytes += split;
     source->data.refcounted.length -= split;
   } else {
-    GPR_ASSERT(source->data.refcounted.length >= split);
+    CHECK(source->data.refcounted.length >= split);
 
     // Build the result
     head.refcount = source->refcount;
@@ -388,6 +404,14 @@ grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
   }
 
   return head;
+}
+
+grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
+  return grpc_slice_split_head_impl<true>(source, split);
+}
+
+grpc_slice grpc_slice_split_head_no_inline(grpc_slice* source, size_t split) {
+  return grpc_slice_split_head_impl<false>(source, split);
 }
 
 int grpc_slice_eq(grpc_slice a, grpc_slice b) {

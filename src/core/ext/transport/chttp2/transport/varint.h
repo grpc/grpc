@@ -20,11 +20,10 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_VARINT_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <grpc/support/log.h>
+#include "absl/log/check.h"
 
 // Helpers for hpack varint encoding
 
@@ -50,7 +49,7 @@ class VarintWriter {
   explicit VarintWriter(size_t value)
       : value_(value),
         length_(value < kMaxInPrefix ? 1 : VarintLength(value - kMaxInPrefix)) {
-    GPR_ASSERT(value <= UINT32_MAX);
+    CHECK(value <= UINT32_MAX);
   }
 
   size_t value() const { return value_; }

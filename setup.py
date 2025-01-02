@@ -24,9 +24,6 @@ from distutils.unixccompiler import UnixCCompiler
 UnixCCompiler.src_extensions.append(".S")
 del UnixCCompiler
 
-from distutils import cygwinccompiler
-from distutils import extension as _extension
-from distutils import util
 import os
 import os.path
 import pathlib
@@ -40,7 +37,7 @@ import sys
 import sysconfig
 
 import _metadata
-import pkg_resources
+from setuptools import Extension
 from setuptools.command import egg_info
 
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
@@ -74,11 +71,9 @@ SSL_INCLUDE = (
     os.path.join("third_party", "boringssl-with-bazel", "src", "include"),
 )
 UPB_INCLUDE = (os.path.join("third_party", "upb"),)
-UPB_GRPC_GENERATED_INCLUDE = (
-    os.path.join("src", "core", "ext", "upb-generated"),
-)
+UPB_GRPC_GENERATED_INCLUDE = (os.path.join("src", "core", "ext", "upb-gen"),)
 UPBDEFS_GRPC_GENERATED_INCLUDE = (
-    os.path.join("src", "core", "ext", "upbdefs-generated"),
+    os.path.join("src", "core", "ext", "upbdefs-gen"),
 )
 UTF8_RANGE_INCLUDE = (os.path.join("third_party", "utf8_range"),)
 XXHASH_INCLUDE = (os.path.join("third_party", "xxhash"),)
@@ -93,6 +88,7 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 import _parallel_compile_patch
 import _spawn_patch
 import grpc_core_dependencies
+import python_version
 
 import commands
 import grpc_version
@@ -100,19 +96,21 @@ import grpc_version
 _parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
 
+
 LICENSE = "Apache License 2.0"
 
-CLASSIFIERS = [
-    "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "License :: OSI Approved :: Apache Software License",
-]
+CLASSIFIERS = (
+    [
+        "Development Status :: 5 - Production/Stable",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+    ]
+    + [
+        f"Programming Language :: Python :: {x}"
+        for x in python_version.SUPPORTED_PYTHON_VERSIONS
+    ]
+    + ["License :: OSI Approved :: Apache Software License"]
+)
 
 
 def _env_bool_value(env_name, default):
@@ -126,8 +124,8 @@ BUILD_WITH_BORING_SSL_ASM = _env_bool_value(
 
 # Export this environment variable to override the platform variant that will
 # be chosen for boringssl assembly optimizations. This option is useful when
-# crosscompiling and the host platform as obtained by distutils.utils.get_platform()
-# doesn't match the platform we are targetting.
+# crosscompiling and the host platform as obtained by sysconfig.get_platform()
+# doesn't match the platform we are targeting.
 # Example value: "linux-aarch64"
 BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM = os.environ.get(
     "GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM", ""
@@ -197,12 +195,6 @@ USE_PREBUILT_GRPC_CORE = _env_bool_value(
     "GRPC_PYTHON_USE_PREBUILT_GRPC_CORE", "False"
 )
 
-# If this environmental variable is set, GRPC will not try to be compatible with
-# libc versions old than the one it was compiled against.
-DISABLE_LIBC_COMPATIBILITY = _env_bool_value(
-    "GRPC_PYTHON_DISABLE_LIBC_COMPATIBILITY", "False"
-)
-
 # Environment variable to determine whether or not to enable coverage analysis
 # in Cython modules.
 ENABLE_CYTHON_TRACING = _env_bool_value(
@@ -224,7 +216,7 @@ def check_linker_need_libatomic():
     )
     cxx = shlex.split(os.environ.get("CXX", "c++"))
     cpp_test = subprocess.Popen(
-        cxx + ["-x", "c++", "-std=c++14", "-"],
+        cxx + ["-x", "c++", "-std=c++17", "-"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -235,7 +227,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        cxx + ["-x", "c++", "-std=c++14", "-", "-latomic"],
+        cxx + ["-x", "c++", "-std=c++17", "-", "-latomic"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -243,6 +235,21 @@ def check_linker_need_libatomic():
     cpp_test.communicate(input=code_test)
     return cpp_test.returncode == 0
 
+
+# When building extensions for macOS on a system running macOS 10.14 or newer,
+# make sure they target macOS 10.14 or newer to use C++17 stdlib properly.
+# This overrides the default behavior of distutils, which targets the macOS
+# version Python was built on. You can further customize the target macOS
+# version by setting the MACOSX_DEPLOYMENT_TARGET environment variable before
+# running setup.py.
+if sys.platform == "darwin":
+    if "MACOSX_DEPLOYMENT_TARGET" not in os.environ:
+        target_ver = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
+        if target_ver == "" or tuple(int(p) for p in target_ver.split(".")) < (
+            10,
+            14,
+        ):
+            os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.14"
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
@@ -254,32 +261,22 @@ def check_linker_need_libatomic():
 EXTRA_ENV_COMPILE_ARGS = os.environ.get("GRPC_PYTHON_CFLAGS", None)
 EXTRA_ENV_LINK_ARGS = os.environ.get("GRPC_PYTHON_LDFLAGS", None)
 if EXTRA_ENV_COMPILE_ARGS is None:
-    EXTRA_ENV_COMPILE_ARGS = " -std=c++14"
+    EXTRA_ENV_COMPILE_ARGS = ""
     if "win32" in sys.platform:
-        if sys.version_info < (3, 5):
-            EXTRA_ENV_COMPILE_ARGS += " -D_hypot=hypot"
-            # We use define flags here and don't directly add to DEFINE_MACROS below to
-            # ensure that the expert user/builder has a way of turning it off (via the
-            # envvars) without adding yet more GRPC-specific envvars.
-            # See https://sourceforge.net/p/mingw-w64/bugs/363/
-            if "32" in platform.architecture()[0]:
-                EXTRA_ENV_COMPILE_ARGS += (
-                    " -D_ftime=_ftime32 -D_timeb=__timeb32"
-                    " -D_ftime_s=_ftime32_s"
-                )
-            else:
-                EXTRA_ENV_COMPILE_ARGS += (
-                    " -D_ftime=_ftime64 -D_timeb=__timeb64"
-                )
-        else:
-            # We need to statically link the C++ Runtime, only the C runtime is
-            # available dynamically
-            EXTRA_ENV_COMPILE_ARGS += " /MT"
+        # MSVC by defaults uses C++14 so C11 needs to be specified.
+        EXTRA_ENV_COMPILE_ARGS += " /std:c11"
+        # We need to statically link the C++ Runtime, only the C runtime is
+        # available dynamically
+        EXTRA_ENV_COMPILE_ARGS += " /MT"
     elif "linux" in sys.platform:
+        # GCC by defaults uses C17 so only C++14 needs to be specified.
+        EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
         EXTRA_ENV_COMPILE_ARGS += (
             " -fvisibility=hidden -fno-wrapv -fno-exceptions"
         )
     elif "darwin" in sys.platform:
+        # AppleClang by defaults uses C17 so only C++14 needs to be specified.
+        EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
         EXTRA_ENV_COMPILE_ARGS += (
             " -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions"
             " -DHAVE_UNISTD_H"
@@ -291,14 +288,13 @@ if EXTRA_ENV_LINK_ARGS is None:
         EXTRA_ENV_LINK_ARGS += " -lpthread"
         if check_linker_need_libatomic():
             EXTRA_ENV_LINK_ARGS += " -latomic"
-    elif "win32" in sys.platform and sys.version_info < (3, 5):
-        msvcr = cygwinccompiler.get_msvcr()[0]
-        EXTRA_ENV_LINK_ARGS += (
-            " -static-libgcc -static-libstdc++ -mcrtdll={msvcr}"
-            " -static -lshlwapi".format(msvcr=msvcr)
-        )
     if "linux" in sys.platform:
         EXTRA_ENV_LINK_ARGS += " -static-libgcc"
+
+# Explicitly link Core Foundation framework for MacOS to ensure no symbol is
+# missing when compiled using package managers like Conda.
+if "darwin" in sys.platform:
+    EXTRA_ENV_LINK_ARGS += " -framework CoreFoundation"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
@@ -382,7 +378,8 @@ if BUILD_WITH_SYSTEM_RE2:
     EXTENSION_LIBRARIES += ("re2",)
 if BUILD_WITH_SYSTEM_ABSL:
     EXTENSION_LIBRARIES += tuple(
-        lib.stem[3:] for lib in pathlib.Path("/usr").glob("lib*/libabsl_*.so")
+        lib.stem[3:]
+        for lib in sorted(pathlib.Path("/usr").glob("lib*/libabsl_*.so"))
     )
 
 DEFINE_MACROS = (("_WIN32_WINNT", 0x600),)
@@ -411,8 +408,13 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
     boringssl_asm_platform = (
         BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM
         if BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM
-        else util.get_platform()
+        else sysconfig.get_platform()
     )
+    if "i686" in boringssl_asm_platform:
+        print("Enabling SSE2 on %s platform" % boringssl_asm_platform)
+        EXTRA_COMPILE_ARGS.append("-msse2")
+    else:
+        print("SSE2 not enabled on %s platform" % boringssl_asm_platform)
     # BoringSSL's gas-compatible assembly files are all internally conditioned
     # by the preprocessor. Provided the platform has a gas-compatible assembler
     # (i.e. not Windows), we can include the assembly files and let BoringSSL
@@ -428,9 +430,6 @@ if asm_key:
     asm_files = grpc_core_dependencies.ASM_SOURCE_FILES[asm_key]
 else:
     DEFINE_MACROS += (("OPENSSL_NO_ASM", 1),)
-
-if not DISABLE_LIBC_COMPATIBILITY:
-    DEFINE_MACROS += (("GPR_BACKWARDS_COMPATIBILITY_MODE", 1),)
 
 if "win32" in sys.platform:
     # TODO(zyc): Re-enable c-ares on x64 and x86 windows after fixing the
@@ -460,7 +459,7 @@ DEFINE_MACROS += (("GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER", 1),)
 
 # Fix for Cython build issue in aarch64.
 # It's required to define this macro before include <inttypes.h>.
-# <inttypes.h> was included in core/lib/channel/call_tracer.h.
+# <inttypes.h> was included in core/telemetry/call_tracer.h.
 # This macro should already be defined in grpc/grpc.h through port_platform.h,
 # but we're still having issue in aarch64, so we manually define the macro here.
 # TODO(xuanwn): Figure out what's going on in the aarch64 build so we can support
@@ -476,22 +475,6 @@ if "linux" in sys.platform or "darwin" in sys.platform:
     )
     DEFINE_MACROS += (("PyMODINIT_FUNC", pymodinit),)
     DEFINE_MACROS += (("GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK", 1),)
-
-# By default, Python3 distutils enforces compatibility of
-# c plugins (.so files) with the OSX version Python was built with.
-# We need OSX 10.10, the oldest which supports C++ thread_local.
-# Python 3.9: Mac OS Big Sur sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') returns int (11)
-if "darwin" in sys.platform:
-    mac_target = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
-    if mac_target:
-        mac_target = pkg_resources.parse_version(str(mac_target))
-        if mac_target < pkg_resources.parse_version("10.10.0"):
-            os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.10"
-            os.environ["_PYTHON_HOST_PLATFORM"] = re.sub(
-                r"macosx-[0-9]+\.[0-9]+-(.+)",
-                r"macosx-10.10-\1",
-                util.get_platform(),
-            )
 
 
 def cython_extensions_and_necessity():
@@ -513,7 +496,7 @@ def cython_extensions_and_necessity():
         core_c_files = list(CORE_C_FILES)
         extra_objects = []
     extensions = [
-        _extension.Extension(
+        Extension(
             name=module_name,
             sources=(
                 [module_file]
@@ -579,7 +562,7 @@ except ImportError:
         sys.stderr.write(
             "We could not find Cython. Setup may take 10-20 minutes.\n"
         )
-        SETUP_REQUIRES += ("cython>=0.23,<3.0.0rc1",)
+        SETUP_REQUIRES += ("cython>=3.0.0",)
 
 COMMAND_CLASS = {
     "doc": commands.SphinxDocumentation,
@@ -631,7 +614,7 @@ setuptools.setup(
     packages=list(PACKAGES),
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
-    python_requires=">=3.7",
+    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,

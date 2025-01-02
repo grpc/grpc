@@ -19,12 +19,13 @@
 #ifndef GRPCPP_IMPL_SERVICE_TYPE_H
 #define GRPCPP_IMPL_SERVICE_TYPE_H
 
-#include <grpc/support/log.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/server_interface.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
+
+#include "absl/log/absl_check.h"
 
 namespace grpc {
 
@@ -150,9 +151,9 @@ class Service {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_ASSERT(methods_[idx].get() != nullptr &&
-               "Cannot mark the method as 'async' because it has already been "
-               "marked as 'generic'.");
+    ABSL_CHECK_NE(methods_[idx].get(), nullptr)
+        << "Cannot mark the method as 'async' because it has already been "
+           "marked as 'generic'.";
     methods_[idx]->SetServerApiType(internal::RpcServiceMethod::ApiType::ASYNC);
   }
 
@@ -160,9 +161,9 @@ class Service {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_ASSERT(methods_[idx].get() != nullptr &&
-               "Cannot mark the method as 'raw' because it has already "
-               "been marked as 'generic'.");
+    ABSL_CHECK_NE(methods_[idx].get(), nullptr)
+        << "Cannot mark the method as 'raw' because it has already "
+           "been marked as 'generic'.";
     methods_[idx]->SetServerApiType(internal::RpcServiceMethod::ApiType::RAW);
   }
 
@@ -170,10 +171,9 @@ class Service {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_ASSERT(
-        methods_[idx]->handler() != nullptr &&
-        "Cannot mark the method as 'generic' because it has already been "
-        "marked as 'async' or 'raw'.");
+    ABSL_CHECK_NE(methods_[idx]->handler(), nullptr)
+        << "Cannot mark the method as 'generic' because it has already been "
+           "marked as 'async' or 'raw'.";
     methods_[idx].reset();
   }
 
@@ -181,8 +181,8 @@ class Service {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_ASSERT(methods_[idx] && methods_[idx]->handler() &&
-               "Cannot mark an async or generic method Streamed");
+    ABSL_CHECK(methods_[idx] && methods_[idx]->handler())
+        << "Cannot mark an async or generic method Streamed";
     methods_[idx]->SetHandler(streamed_method);
 
     // From the server's point of view, streamed unary is a special
@@ -196,10 +196,9 @@ class Service {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_ASSERT(
-        methods_[idx].get() != nullptr &&
-        "Cannot mark the method as 'callback' because it has already been "
-        "marked as 'generic'.");
+    ABSL_CHECK_NE(methods_[idx].get(), nullptr)
+        << "Cannot mark the method as 'callback' because it has already been "
+           "marked as 'generic'.";
     methods_[idx]->SetHandler(handler);
     methods_[idx]->SetServerApiType(
         internal::RpcServiceMethod::ApiType::CALL_BACK);
@@ -209,10 +208,9 @@ class Service {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_ASSERT(
-        methods_[idx].get() != nullptr &&
-        "Cannot mark the method as 'raw callback' because it has already "
-        "been marked as 'generic'.");
+    ABSL_CHECK_NE(methods_[idx].get(), nullptr)
+        << "Cannot mark the method as 'raw callback' because it has already "
+           "been marked as 'generic'.";
     methods_[idx]->SetHandler(handler);
     methods_[idx]->SetServerApiType(
         internal::RpcServiceMethod::ApiType::RAW_CALL_BACK);

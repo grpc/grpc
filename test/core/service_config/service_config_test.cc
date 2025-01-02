@@ -14,8 +14,9 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/service_config/service_config.h"
+#include "src/core/service_config/service_config.h"
 
+#include <grpc/grpc.h>
 #include <stdint.h>
 
 #include <memory>
@@ -27,19 +28,16 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_args.h"
-#include "src/core/lib/json/json_object_loader.h"
-#include "src/core/lib/service_config/service_config_impl.h"
-#include "src/core/lib/service_config/service_config_parser.h"
-#include "test/core/util/test_config.h"
+#include "src/core/service_config/service_config_impl.h"
+#include "src/core/service_config/service_config_parser.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/validation_errors.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -368,7 +366,8 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
       << service_config.status();
 }
 
-TEST(ServiceConfigParserTest, DoubleRegistration) {
+TEST(ServiceConfigParserDeathTest, DoubleRegistration) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   CoreConfiguration::Reset();
   ASSERT_DEATH_IF_SUPPORTED(
       CoreConfiguration::WithSubstituteBuilder builder(

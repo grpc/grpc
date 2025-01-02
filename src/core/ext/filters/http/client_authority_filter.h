@@ -24,7 +24,6 @@
 #include <utility>
 
 #include "absl/status/statusor.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -34,20 +33,32 @@
 
 namespace grpc_core {
 
-class ClientAuthorityFilter final : public ChannelFilter {
+class ClientAuthorityFilter final
+    : public ImplementChannelFilter<ClientAuthorityFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ClientAuthorityFilter> Create(const ChannelArgs& args,
-                                                      ChannelFilter::Args);
+  static absl::string_view TypeName() { return "authority"; }
 
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  static absl::StatusOr<std::unique_ptr<ClientAuthorityFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args);
 
- private:
   explicit ClientAuthorityFilter(Slice default_authority)
       : default_authority_(std::move(default_authority)) {}
+
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata& md,
+                                 ClientAuthorityFilter* filter);
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+  };
+
+ private:
   Slice default_authority_;
 };
 

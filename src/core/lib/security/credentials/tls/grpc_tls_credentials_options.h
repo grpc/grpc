@@ -25,9 +25,10 @@
 
 #include "absl/container/inlined_vector.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
@@ -39,6 +40,7 @@
 struct grpc_tls_credentials_options
     : public grpc_core::RefCounted<grpc_tls_credentials_options> {
  public:
+  grpc_tls_credentials_options() = default;
   ~grpc_tls_credentials_options() override = default;
 
   // Getters for member fields.
@@ -61,6 +63,8 @@ struct grpc_tls_credentials_options
   const std::string& identity_cert_name() const { return identity_cert_name_; }
   const std::string& tls_session_key_log_file_path() const { return tls_session_key_log_file_path_; }
   const std::string& crl_directory() const { return crl_directory_; }
+  // Returns the CRL Provider
+  std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider() const { return crl_provider_; }
   bool send_client_ca_list() const { return send_client_ca_list_; }
 
   // Setters for member fields.
@@ -82,6 +86,7 @@ struct grpc_tls_credentials_options
   void set_tls_session_key_log_file_path(std::string tls_session_key_log_file_path) { tls_session_key_log_file_path_ = std::move(tls_session_key_log_file_path); }
   //  gRPC will enforce CRLs on all handshakes from all hashed CRL files inside of the crl_directory. If not set, an empty string will be used, which will not enable CRL checking. Only supported for OpenSSL version > 1.1.
   void set_crl_directory(std::string crl_directory) { crl_directory_ = std::move(crl_directory); }
+  void set_crl_provider(std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider) { crl_provider_ = std::move(crl_provider); }
   void set_send_client_ca_list(bool send_client_ca_list) { send_client_ca_list_ = send_client_ca_list; }
 
   bool operator==(const grpc_tls_credentials_options& other) const {
@@ -98,8 +103,26 @@ struct grpc_tls_credentials_options
       identity_cert_name_ == other.identity_cert_name_ &&
       tls_session_key_log_file_path_ == other.tls_session_key_log_file_path_ &&
       crl_directory_ == other.crl_directory_ &&
+      (crl_provider_ == other.crl_provider_) &&
       send_client_ca_list_ == other.send_client_ca_list_;
   }
+
+  grpc_tls_credentials_options(grpc_tls_credentials_options& other) :
+      cert_request_type_(other.cert_request_type_),
+      verify_server_cert_(other.verify_server_cert_),
+      min_tls_version_(other.min_tls_version_),
+      max_tls_version_(other.max_tls_version_),
+      certificate_verifier_(other.certificate_verifier_),
+      check_call_host_(other.check_call_host_),
+      certificate_provider_(other.certificate_provider_),
+      watch_root_cert_(other.watch_root_cert_),
+      root_cert_name_(other.root_cert_name_),
+      watch_identity_pair_(other.watch_identity_pair_),
+      identity_cert_name_(other.identity_cert_name_),
+      tls_session_key_log_file_path_(other.tls_session_key_log_file_path_),
+      crl_directory_(other.crl_directory_),
+      crl_provider_(other.crl_provider_),
+      send_client_ca_list_(other.send_client_ca_list_)  {}
 
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_ = GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
@@ -115,6 +138,7 @@ struct grpc_tls_credentials_options
   std::string identity_cert_name_;
   std::string tls_session_key_log_file_path_;
   std::string crl_directory_;
+  std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider_;
   bool send_client_ca_list_ = false;
 };
 

@@ -18,19 +18,16 @@
 
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <gtest/gtest.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
-
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/tsi/ssl_transport_security.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/crash.h"
+#include "test/core/test_util/test_config.h"
 
 TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
   grpc_ssl_pem_key_cert_pair grpc_pairs[] = {{"private_key1", "cert_chain1"},

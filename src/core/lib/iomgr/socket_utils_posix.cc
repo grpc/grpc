@@ -19,27 +19,24 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/types/optional.h"
-
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKETUTILS
 #include <fcntl.h>
+#include <grpc/impl/grpc_types.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <grpc/impl/grpc_types.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/util/crash.h"
 #endif
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/util/strerror.h"
 
 using ::grpc_event_engine::experimental::EndpointConfig;
 

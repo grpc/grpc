@@ -26,20 +26,19 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/wakeup_fd_pipe.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/strerror.h"
 
 static grpc_error_handle pipe_init(grpc_wakeup_fd* fd_info) {
   int pipefd[2];
   int r = pipe(pipefd);
   if (0 != r) {
-    gpr_log(GPR_ERROR, "pipe creation failed (%d): %s", errno,
-            grpc_core::StrError(errno).c_str());
+    LOG(ERROR) << "pipe creation failed (" << errno
+               << "): " << grpc_core::StrError(errno);
     return GRPC_OS_ERROR(errno, "pipe");
   }
   grpc_error_handle err;
@@ -99,4 +98,4 @@ const grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable = {
     pipe_init, pipe_consume, pipe_wakeup, pipe_destroy,
     pipe_check_availability};
 
-#endif  // GPR_POSIX_WAKUP_FD
+#endif  // GRPC_POSIX_WAKEUP_FD

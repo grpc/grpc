@@ -1,47 +1,41 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
+#include "upb/reflection/internal/enum_def.h"
+
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include "upb/base/status.h"
+#include "upb/base/string_view.h"
+#include "upb/hash/common.h"
 #include "upb/hash/int_table.h"
 #include "upb/hash/str_table.h"
-#include "upb/mini_table/decode.h"
-#include "upb/reflection/def_builder_internal.h"
+#include "upb/mem/arena.h"
+#include "upb/mini_descriptor/decode.h"
+#include "upb/mini_descriptor/internal/encode.h"
+#include "upb/mini_table/enum.h"
+#include "upb/mini_table/file.h"
+#include "upb/reflection/def.h"
 #include "upb/reflection/def_type.h"
-#include "upb/reflection/desc_state_internal.h"
-#include "upb/reflection/enum_def_internal.h"
-#include "upb/reflection/enum_reserved_range_internal.h"
-#include "upb/reflection/enum_value_def_internal.h"
-#include "upb/reflection/file_def_internal.h"
-#include "upb/reflection/message_def_internal.h"
+#include "upb/reflection/internal/def_builder.h"
+#include "upb/reflection/internal/desc_state.h"
+#include "upb/reflection/internal/enum_reserved_range.h"
+#include "upb/reflection/internal/enum_value_def.h"
+#include "upb/reflection/internal/file_def.h"
+#include "upb/reflection/internal/strdup2.h"
 
 // Must be last.
 #include "upb/port/def.inc"
 
 struct upb_EnumDef {
-  const UPB_DESC(EnumOptions) * opts;
+  const UPB_DESC(EnumOptions*) opts;
+  const UPB_DESC(FeatureSet*) resolved_features;
   const upb_MiniTableEnum* layout;  // Only for proto2.
   const upb_FileDef* file;
   const upb_MessageDef* containing_type;  // Could be merged with "file".
@@ -55,8 +49,10 @@ struct upb_EnumDef {
   int res_range_count;
   int res_name_count;
   int32_t defaultval;
-  bool is_closed;
   bool is_sorted;  // Whether all of the values are defined in ascending order.
+#if UINTPTR_MAX == 0xffffffff
+  uint32_t padding;  // Increase size to a multiple of 8.
+#endif
 };
 
 upb_EnumDef* _upb_EnumDef_At(const upb_EnumDef* e, int i) {
@@ -87,6 +83,11 @@ const UPB_DESC(EnumOptions) * upb_EnumDef_Options(const upb_EnumDef* e) {
 
 bool upb_EnumDef_HasOptions(const upb_EnumDef* e) {
   return e->opts != (void*)kUpbDefOptDefault;
+}
+
+const UPB_DESC(FeatureSet) *
+    upb_EnumDef_ResolvedFeatures(const upb_EnumDef* e) {
+  return e->resolved_features;
 }
 
 const char* upb_EnumDef_FullName(const upb_EnumDef* e) { return e->full_name; }
@@ -158,7 +159,15 @@ const upb_EnumValueDef* upb_EnumDef_Value(const upb_EnumDef* e, int i) {
   return _upb_EnumValueDef_At(e->values, i);
 }
 
-bool upb_EnumDef_IsClosed(const upb_EnumDef* e) { return e->is_closed; }
+bool upb_EnumDef_IsClosed(const upb_EnumDef* e) {
+  if (UPB_TREAT_CLOSED_ENUMS_LIKE_OPEN) return false;
+  return upb_EnumDef_IsSpecifiedAsClosed(e);
+}
+
+bool upb_EnumDef_IsSpecifiedAsClosed(const upb_EnumDef* e) {
+  return UPB_DESC(FeatureSet_enum_type)(e->resolved_features) ==
+         UPB_DESC(FeatureSet_CLOSED);
+}
 
 bool upb_EnumDef_MiniDescriptorEncode(const upb_EnumDef* e, upb_Arena* a,
                                       upb_StringView* out) {
@@ -177,7 +186,7 @@ bool upb_EnumDef_MiniDescriptorEncode(const upb_EnumDef* e, upb_Arena* a,
   // Duplicate values are allowed but we only encode each value once.
   uint32_t previous = 0;
 
-  for (size_t i = 0; i < e->value_count; i++) {
+  for (int i = 0; i < e->value_count; i++) {
     const uint32_t current =
         upb_EnumValueDef_Number(sorted ? sorted[i] : upb_EnumDef_Value(e, i));
     if (i != 0 && previous == current) continue;
@@ -217,7 +226,7 @@ static upb_MiniTableEnum* create_enumlayout(upb_DefBuilder* ctx,
 static upb_StringView* _upb_EnumReservedNames_New(
     upb_DefBuilder* ctx, int n, const upb_StringView* protos) {
   upb_StringView* sv = _upb_DefBuilder_Alloc(ctx, sizeof(upb_StringView) * n);
-  for (size_t i = 0; i < n; i++) {
+  for (int i = 0; i < n; i++) {
     sv[i].data =
         upb_strdup2(protos[i].data, protos[i].size, _upb_DefBuilder_Arena(ctx));
     sv[i].size = protos[i].size;
@@ -227,12 +236,17 @@ static upb_StringView* _upb_EnumReservedNames_New(
 
 static void create_enumdef(upb_DefBuilder* ctx, const char* prefix,
                            const UPB_DESC(EnumDescriptorProto) * enum_proto,
+                           const UPB_DESC(FeatureSet*) parent_features,
                            upb_EnumDef* e) {
   const UPB_DESC(EnumValueDescriptorProto)* const* values;
   const UPB_DESC(EnumDescriptorProto_EnumReservedRange)* const* res_ranges;
   const upb_StringView* res_names;
   upb_StringView name;
   size_t n_value, n_res_range, n_res_name;
+
+  UPB_DEF_SET_OPTIONS(e->opts, EnumDescriptorProto, EnumOptions, enum_proto);
+  e->resolved_features = _upb_DefBuilder_ResolveFeatures(
+      ctx, parent_features, UPB_DESC(EnumOptions_features)(e->opts));
 
   // Must happen before _upb_DefBuilder_Add()
   e->file = _upb_DefBuilder_File(ctx);
@@ -242,9 +256,6 @@ static void create_enumdef(upb_DefBuilder* ctx, const char* prefix,
   e->full_name = _upb_DefBuilder_MakeFullName(ctx, prefix, name);
   _upb_DefBuilder_Add(ctx, e->full_name,
                       _upb_DefType_Pack(e, UPB_DEFTYPE_ENUM));
-
-  e->is_closed = (!UPB_TREAT_PROTO2_ENUMS_LIKE_PROTO3) &&
-                 (upb_FileDef_Syntax(e->file) == kUpb_Syntax_Proto2);
 
   values = UPB_DESC(EnumDescriptorProto_value)(enum_proto, &n_value);
 
@@ -256,8 +267,8 @@ static void create_enumdef(upb_DefBuilder* ctx, const char* prefix,
 
   e->defaultval = 0;
   e->value_count = n_value;
-  e->values =
-      _upb_EnumValueDefs_New(ctx, prefix, n_value, values, e, &e->is_sorted);
+  e->values = _upb_EnumValueDefs_New(ctx, prefix, n_value, values,
+                                     e->resolved_features, e, &e->is_sorted);
 
   if (n_value == 0) {
     _upb_DefBuilder_Errf(ctx, "enums must contain at least one value (%s)",
@@ -274,14 +285,11 @@ static void create_enumdef(upb_DefBuilder* ctx, const char* prefix,
   e->res_name_count = n_res_name;
   e->res_names = _upb_EnumReservedNames_New(ctx, n_res_name, res_names);
 
-  UPB_DEF_SET_OPTIONS(e->opts, EnumDescriptorProto, EnumOptions, enum_proto);
-
   upb_inttable_compact(&e->iton, ctx->arena);
 
-  if (e->is_closed) {
+  if (upb_EnumDef_IsClosed(e)) {
     if (ctx->layout) {
-      UPB_ASSERT(ctx->enum_count < ctx->layout->enum_count);
-      e->layout = ctx->layout->enums[ctx->enum_count++];
+      e->layout = upb_MiniTableFile_Enum(ctx->layout, ctx->enum_count++);
     } else {
       e->layout = create_enumlayout(ctx, e);
     }
@@ -290,10 +298,11 @@ static void create_enumdef(upb_DefBuilder* ctx, const char* prefix,
   }
 }
 
-upb_EnumDef* _upb_EnumDefs_New(
-    upb_DefBuilder* ctx, int n,
-    const UPB_DESC(EnumDescriptorProto) * const* protos,
-    const upb_MessageDef* containing_type) {
+upb_EnumDef* _upb_EnumDefs_New(upb_DefBuilder* ctx, int n,
+                               const UPB_DESC(EnumDescriptorProto*)
+                                   const* protos,
+                               const UPB_DESC(FeatureSet*) parent_features,
+                               const upb_MessageDef* containing_type) {
   _upb_DefType_CheckPadding(sizeof(upb_EnumDef));
 
   // If a containing type is defined then get the full name from that.
@@ -302,8 +311,8 @@ upb_EnumDef* _upb_EnumDefs_New(
                                      : _upb_FileDef_RawPackage(ctx->file);
 
   upb_EnumDef* e = _upb_DefBuilder_Alloc(ctx, sizeof(upb_EnumDef) * n);
-  for (size_t i = 0; i < n; i++) {
-    create_enumdef(ctx, name, protos[i], &e[i]);
+  for (int i = 0; i < n; i++) {
+    create_enumdef(ctx, name, protos[i], parent_features, &e[i]);
     e[i].containing_type = containing_type;
   }
   return e;

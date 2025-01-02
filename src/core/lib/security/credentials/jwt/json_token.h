@@ -20,12 +20,10 @@
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
 
 #include <grpc/support/port_platform.h>
-
+#include <grpc/support/time.h>
 #include <openssl/crypto.h>
 
-#include <grpc/support/time.h>
-
-#include "src/core/lib/json/json.h"
+#include "src/core/util/json/json.h"
 
 // --- Constants. ---
 
@@ -38,7 +36,11 @@ struct grpc_auth_json_key {
   char* private_key_id;
   char* client_id;
   char* client_email;
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   RSA* private_key;
+#else
+  EVP_PKEY* private_key;
+#endif
 };
 // Returns 1 if the object is valid, 0 otherwise.
 int grpc_auth_json_key_is_valid(const grpc_auth_json_key* json_key);

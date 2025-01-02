@@ -16,41 +16,29 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/cronet/client/secure/cronet_channel_create.h"
 
-#include "absl/status/statusor.h"
-
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/cronet/transport/cronet_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
-
-// Cronet transport object
-typedef struct cronet_transport {
-  grpc_transport base;  // must be first element in this structure
-  void* engine;
-  char* host;
-} cronet_transport;
-
-extern grpc_transport_vtable grpc_cronet_vtable;
+#include "src/core/lib/transport/transport.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
     void* engine, const char* target, const grpc_channel_args* args,
     void* reserved) {
-  gpr_log(GPR_DEBUG,
-          "grpc_create_cronet_transport: stream_engine = %p, target=%s", engine,
-          target);
+  VLOG(2) << "grpc_create_cronet_transport: stream_engine = " << engine
+          << ", target=" << target;
 
   // Disable client authority filter when using Cronet
   auto channel_args = grpc_core::CoreConfiguration::Get()
@@ -58,11 +46,11 @@ GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
                           .PreconditionChannelArgs(args)
                           .Set(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER, 1);
 
-  grpc_transport* ct = grpc_create_cronet_transport(
+  grpc_core::Transport* ct = grpc_create_cronet_transport(
       engine, target, channel_args.ToC().get(), reserved);
 
   grpc_core::ExecCtx exec_ctx;
-  auto channel = grpc_core::Channel::Create(target, channel_args,
-                                            GRPC_CLIENT_DIRECT_CHANNEL, ct);
+  auto channel = grpc_core::ChannelCreate(target, channel_args,
+                                          GRPC_CLIENT_DIRECT_CHANNEL, ct);
   return channel.ok() ? channel->release()->c_ptr() : nullptr;
 }

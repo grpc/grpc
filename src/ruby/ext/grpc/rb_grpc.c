@@ -20,10 +20,12 @@
 
 #include "rb_grpc.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <math.h>
 #include <ruby/vm.h>
 #include <stdbool.h>
-#include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -39,10 +41,6 @@
 #include "rb_server_credentials.h"
 #include "rb_xds_channel_credentials.h"
 #include "rb_xds_server_credentials.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #ifdef GPR_LINUX
 #include <sys/syscall.h>
@@ -249,12 +247,12 @@ static pid_t g_init_pid;
 static long g_init_tid;
 
 static bool grpc_ruby_initial_pid(void) {
-  GPR_ASSERT(g_init_pid != 0);
+  GRPC_RUBY_ASSERT(g_init_pid != 0);
   return g_init_pid == getpid();
 }
 
 static bool grpc_ruby_initial_thread(void) {
-  GPR_ASSERT(g_init_tid != 0);
+  GRPC_RUBY_ASSERT(g_init_tid != 0);
   return sys_gettid() == g_init_tid;
 }
 
@@ -264,8 +262,8 @@ static void grpc_ruby_reset_init_state(void) {
 }
 
 static void grpc_ruby_basic_init(void) {
-  GPR_ASSERT(g_init_pid == 0);
-  GPR_ASSERT(g_init_tid == 0);
+  GRPC_RUBY_ASSERT(g_init_pid == 0);
+  GRPC_RUBY_ASSERT(g_init_tid == 0);
   grpc_ruby_reset_init_state();
   // TODO(apolcyn): ideally, we should share logic with C-core
   // for determining whether or not fork support is enabled, rather
@@ -329,9 +327,9 @@ static void grpc_ruby_init_threads() {
   // in gpr_once_init. In general, it appears to be unsafe to call
   // into the ruby library while holding a non-ruby mutex, because a gil yield
   // could end up trying to lock onto that same mutex and deadlocking.
-  gpr_log(GPR_INFO,
-          "GRPC_RUBY: grpc_ruby_init_threads g_bg_thread_init_done=%d",
-          g_bg_thread_init_done);
+  grpc_absl_log_int(GPR_DEBUG,
+                    "GRPC_RUBY: grpc_ruby_init_threads g_bg_thread_init_done=",
+                    g_bg_thread_init_done);
   rb_mutex_lock(g_bg_thread_init_rb_mu);
   if (!g_bg_thread_init_done) {
     grpc_rb_event_queue_thread_start();
@@ -348,11 +346,12 @@ void grpc_ruby_init() {
   grpc_ruby_fork_guard();
   grpc_init();
   grpc_ruby_init_threads();
-  // (only gpr_log after logging has been initialized)
-  gpr_log(GPR_DEBUG,
-          "GRPC_RUBY: grpc_ruby_init - g_enable_fork_support=%d prev "
-          "g_grpc_ruby_init_count:%" PRId64,
-          g_enable_fork_support, g_grpc_ruby_init_count++);
+  // (only log after logging has been initialized)
+  grpc_absl_log_int(GPR_DEBUG,
+                    "GRPC_RUBY: grpc_ruby_init - g_enable_fork_support=",
+                    g_enable_fork_support);
+  grpc_absl_log_int(GPR_DEBUG,
+                    "prev g_grpc_ruby_init_count:", g_grpc_ruby_init_count++);
 }
 
 // fork APIs, useable on linux with env var: GRPC_ENABLE_FORK_SUPPORT=1
@@ -468,6 +467,7 @@ void Init_grpc_c() {
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
   grpc_rb_sNewServerRpc = rb_struct_define(
       "NewServerRpc", "method", "host", "deadline", "metadata", "call", NULL);
+  rb_global_variable(&grpc_rb_sStatus);
   grpc_rb_sStatus = rb_const_get(rb_cStruct, rb_intern("Status"));
   sym_code = ID2SYM(rb_intern("code"));
   sym_details = ID2SYM(rb_intern("details"));

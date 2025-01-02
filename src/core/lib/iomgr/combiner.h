@@ -19,11 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_COMBINER_H
 #define GRPC_SRC_CORE_LIB_IOMGR_COMBINER_H
 
-#include <grpc/support/port_platform.h>
-
-#include <stddef.h>
-
 #include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
+#include <stddef.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -36,12 +34,14 @@ class Combiner {
   void Run(grpc_closure* closure, grpc_error_handle error);
   // TODO(yashkt) : Remove this method
   void FinallyRun(grpc_closure* closure, grpc_error_handle error);
+  // Force the next combiner execution to be offloaded
+  void ForceOffload();
   Combiner* next_combiner_on_this_exec_ctx = nullptr;
   MultiProducerSingleConsumerQueue queue;
   // either:
   // a pointer to the initiating exec ctx if that is the only exec_ctx that has
   // ever queued to this combiner, or NULL. If this is non-null, it's not
-  // dereferencable (since the initiating exec_ctx may have gone out of scope)
+  // dereferenceable (since the initiating exec_ctx may have gone out of scope)
   gpr_atm initiating_exec_ctx_or_null;
   // state is:
   // lower bit - zero if orphaned (STATE_UNORPHANED)
@@ -49,8 +49,11 @@ class Combiner {
   gpr_atm state;
   bool time_to_execute_final_list = false;
   grpc_closure_list final_list;
+  // TODO(ctiller): delete this when the combiner_offload_to_event_engine
+  // experiment is removed.
   grpc_closure offload;
   gpr_refcount refs;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
 };
 }  // namespace grpc_core
 
@@ -59,9 +62,9 @@ class Combiner {
 // The actual thread executing actions may change over time (but there will only
 // ever be one at a time).
 
-// Initialize the lock, with an optional workqueue to shift load to when
-// necessary
-grpc_core::Combiner* grpc_combiner_create(void);
+// Initialize the lock
+grpc_core::Combiner* grpc_combiner_create(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine);
 
 #ifndef NDEBUG
 #define GRPC_COMBINER_DEBUG_ARGS \
@@ -83,7 +86,5 @@ grpc_core::Combiner* grpc_combiner_ref(
 void grpc_combiner_unref(grpc_core::Combiner* lock GRPC_COMBINER_DEBUG_ARGS);
 
 bool grpc_combiner_continue_exec_ctx();
-
-extern grpc_core::DebugOnlyTraceFlag grpc_combiner_trace;
 
 #endif  // GRPC_SRC_CORE_LIB_IOMGR_COMBINER_H

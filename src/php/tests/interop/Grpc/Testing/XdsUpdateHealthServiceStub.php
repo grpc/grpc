@@ -29,7 +29,7 @@ class XdsUpdateHealthServiceStub {
     /**
      * @param \Grpc\Testing\EmptyMessage $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occured
+     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function SetServing(
@@ -43,13 +43,27 @@ class XdsUpdateHealthServiceStub {
     /**
      * @param \Grpc\Testing\EmptyMessage $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occured
+     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function SetNotServing(
         \Grpc\Testing\EmptyMessage $request,
         \Grpc\ServerContext $context
     ): ?\Grpc\Testing\EmptyMessage {
+        $context->setStatus(\Grpc\Status::unimplemented());
+        return null;
+    }
+
+    /**
+     * @param \Grpc\Testing\HookRequest $request client request
+     * @param \Grpc\ServerContext $context server request context
+     * @return \Grpc\Testing\HookResponse for response data, null if if error occurred
+     *     initial metadata (if any) and status (if not ok) should be set to $context
+     */
+    public function SendHookRequest(
+        \Grpc\Testing\HookRequest $request,
+        \Grpc\ServerContext $context
+    ): ?\Grpc\Testing\HookResponse {
         $context->setStatus(\Grpc\Status::unimplemented());
         return null;
     }
@@ -72,6 +86,12 @@ class XdsUpdateHealthServiceStub {
                 $this,
                 'SetNotServing',
                 '\Grpc\Testing\EmptyMessage',
+                \Grpc\MethodDescriptor::UNARY_CALL
+            ),
+            '/grpc.testing.XdsUpdateHealthService/SendHookRequest' => new \Grpc\MethodDescriptor(
+                $this,
+                'SendHookRequest',
+                '\Grpc\Testing\HookRequest',
                 \Grpc\MethodDescriptor::UNARY_CALL
             ),
         ];

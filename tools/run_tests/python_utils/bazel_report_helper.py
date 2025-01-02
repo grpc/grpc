@@ -133,14 +133,11 @@ def _create_bazel_wrapper(
         xml_report_path, "success_log_to_rename.xml"
     )
 
-    if _platform_string() == "windows":
-        workspace_status_command = (
-            "tools/remote_build/workspace_status_kokoro.bat"
-        )
-    else:
-        workspace_status_command = (
-            "tools/remote_build/workspace_status_kokoro.sh"
-        )
+    # invoking "bash" explicitly is important for the workspace status command
+    # to work on windows as well.
+    workspace_status_command = (
+        "bash tools/remote_build/workspace_status_kokoro.sh"
+    )
 
     # generate RC file with the bazel flags we want to use apply.
     # Using an RC file solves problems with flag ordering in the wrapper.

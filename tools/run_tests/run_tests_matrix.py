@@ -31,10 +31,13 @@ os.chdir(_ROOT)
 _DEFAULT_RUNTESTS_TIMEOUT = 1 * 60 * 60
 
 # C/C++ tests can take long time
-_CPP_RUNTESTS_TIMEOUT = 4 * 60 * 60
+_CPP_RUNTESTS_TIMEOUT = 6 * 60 * 60
 
 # Set timeout high for ObjC for Cocoapods to install pods
-_OBJC_RUNTESTS_TIMEOUT = 2 * 60 * 60
+_OBJC_RUNTESTS_TIMEOUT = 4 * 60 * 60
+
+# Set timeout high for Ruby for MacOS for slow xcodebuild
+_RUBY_RUNTESTS_TIMEOUT = 2 * 60 * 60
 
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2
@@ -226,7 +229,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     test_jobs = []
     # sanity tests
     test_jobs += _generate_jobs(
-        languages=["sanity", "clang-tidy", "iwyu"],
+        languages=["sanity", "clang-tidy"],
         configs=["dbg"],
         platforms=["linux"],
         labels=["basictests"],
@@ -302,17 +305,18 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     )
 
     test_jobs += _generate_jobs(
-        languages=["ruby", "php7"],
+        languages=["ruby", "php8"],
         configs=["dbg", "opt"],
         platforms=["linux", "macos"],
         labels=["basictests", "multilang"],
         extra_args=extra_args + ["--report_multi_target"],
         inner_jobs=inner_jobs,
+        timeout_seconds=_RUBY_RUNTESTS_TIMEOUT,
     )
 
     # ARM64 Linux Ruby and PHP tests
     test_jobs += _generate_jobs(
-        languages=["ruby", "php7"],
+        languages=["ruby", "php8"],
         configs=["dbg", "opt"],
         platforms=["linux"],
         arch="arm64",
@@ -354,13 +358,15 @@ def _create_portability_test_jobs(
 
     # portability C and C++ on x64
     for compiler in [
-        "gcc7",
-        # 'gcc10.2_openssl102', // TODO(b/283304471): Enable this later
-        "gcc12",
-        # "gcc12_openssl309", // TODO: Enable this later
+        "gcc8",
+        # TODO(b/283304471): Tests using OpenSSL's engine APIs were broken and removed
+        "gcc10.2_openssl102",
+        "gcc10.2_openssl111",
+        "gcc12_openssl309",
+        "gcc14",
         "gcc_musl",
-        "clang6",
-        "clang15",
+        "clang7",
+        "clang19",
     ]:
         test_jobs += _generate_jobs(
             languages=["c", "c++"],
@@ -368,64 +374,36 @@ def _create_portability_test_jobs(
             platforms=["linux"],
             arch="x64",
             compiler=compiler,
-            labels=["portability", "corelang"],
+            labels=["portability", "corelang"]
+            + (["openssl"] if "openssl" in compiler else []),
             extra_args=extra_args,
             inner_jobs=inner_jobs,
             timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
         )
 
-    # portability C on Windows 64-bit (x86 is the default)
+    # portability C & C++ on Windows 64-bit
     test_jobs += _generate_jobs(
-        languages=["c"],
-        configs=["dbg"],
-        platforms=["windows"],
-        arch="x64",
-        compiler="default",
-        labels=["portability", "corelang"],
-        extra_args=extra_args,
-        inner_jobs=inner_jobs,
-    )
-
-    # portability C on Windows with the "Visual Studio" cmake
-    # generator, i.e. not using Ninja (to verify that we can still build with msbuild)
-    test_jobs += _generate_jobs(
-        languages=["c"],
+        languages=["c", "c++"],
         configs=["dbg"],
         platforms=["windows"],
         arch="default",
-        compiler="cmake_vs2019",
+        compiler="cmake_ninja_vs2022",
         labels=["portability", "corelang"],
         extra_args=extra_args,
-        inner_jobs=inner_jobs,
-    )
-
-    # portability C++ on Windows
-    # TODO(jtattermusch): some of the tests are failing, so we force --build_only
-    test_jobs += _generate_jobs(
-        languages=["c++"],
-        configs=["dbg"],
-        platforms=["windows"],
-        arch="default",
-        compiler="default",
-        labels=["portability", "corelang"],
-        extra_args=extra_args + ["--build_only"],
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
     )
 
-    # portability C and C++ on Windows using VS2019 (build only)
-    # TODO(jtattermusch): The C tests with exactly the same config are already running as part of the
-    # basictests_c suite (so we force --build_only to avoid running them twice).
-    # The C++ tests aren't all passing, so also force --build_only.
-    # NOTE(veblush): This is not neded as default=cmake_ninja_vs2019
+    # portability C and C++ on Windows with the "Visual Studio 2022" cmake
+    # generator, i.e. not using Ninja (to verify that we can still build with msbuild)
     # test_jobs += _generate_jobs(
     #     languages=["c", "c++"],
     #     configs=["dbg"],
     #     platforms=["windows"],
     #     arch="x64",
-    #     compiler="cmake_ninja_vs2019",
+    #     compiler="cmake_vs2022",
     #     labels=["portability", "corelang"],
-    #     extra_args=extra_args + ["--build_only"],
+    #     extra_args=extra_args,
     #     inner_jobs=inner_jobs,
     #     timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
     # )
@@ -556,16 +534,6 @@ if __name__ == "__main__":
         type=int,
         help="Maximum amount of time to run tests for"
         + "(other tests will be skipped)",
-    )
-    argp.add_argument(
-        "--internal_ci",
-        default=False,
-        action="store_const",
-        const=True,
-        help=(
-            "(Deprecated, has no effect) Put reports into subdirectories to"
-            " improve presentation of results by Kokoro."
-        ),
     )
     argp.add_argument(
         "--bq_result_table",

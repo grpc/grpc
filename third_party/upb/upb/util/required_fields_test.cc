@@ -1,38 +1,25 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #include "upb/util/required_fields.h"
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include <stdlib.h>
+
+#include <gtest/gtest.h>
 #include "absl/strings/string_view.h"
-#include "upb/json_decode.h"
+#include "upb/base/status.hpp"
+#include "upb/base/upcast.h"
+#include "upb/json/decode.h"
+#include "upb/mem/arena.h"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/common.h"
 #include "upb/reflection/def.hpp"
-#include "upb/upb.hpp"
+#include "upb/util/required_fields_editions_test.upb.h"
+#include "upb/util/required_fields_editions_test.upbdefs.h"
 #include "upb/util/required_fields_test.upb.h"
 #include "upb/util/required_fields_test.upbdefs.h"
 
@@ -57,29 +44,63 @@ std::vector<std::string> PathsToText(upb_FieldPathEntry* entry) {
   return ret;
 }
 
-void CheckRequired(absl::string_view json,
-                   const std::vector<std::string>& missing) {
-  upb::Arena arena;
-  upb::DefPool defpool;
-  upb_util_test_TestRequiredFields* test_msg =
-      upb_util_test_TestRequiredFields_new(arena.ptr());
-  upb::MessageDefPtr m(
-      upb_util_test_TestRequiredFields_getmsgdef(defpool.ptr()));
-  upb::Status status;
-  EXPECT_TRUE(upb_JsonDecode(json.data(), json.size(), test_msg, m.ptr(),
-                             defpool.ptr(), 0, arena.ptr(), status.ptr()))
-      << status.error_message();
-  upb_FieldPathEntry* entries;
-  EXPECT_EQ(!missing.empty(), upb_util_HasUnsetRequired(
-                                  test_msg, m.ptr(), defpool.ptr(), &entries));
-  EXPECT_EQ(missing, PathsToText(entries));
-  free(entries);
+template <typename T>
+class RequiredFieldsTest : public testing::Test {
+ public:
+  void CheckRequired(absl::string_view json,
+                     const std::vector<std::string>& missing) {
+    upb::Arena arena;
+    upb::DefPool defpool;
+    auto* test_msg = T::NewMessage(arena.ptr());
+    upb::MessageDefPtr m = T::GetMessageDef(defpool.ptr());
+    upb::Status status;
+    EXPECT_TRUE(upb_JsonDecode(json.data(), json.size(), UPB_UPCAST(test_msg),
+                               m.ptr(), defpool.ptr(), 0, arena.ptr(),
+                               status.ptr()))
+        << status.error_message();
+    upb_FieldPathEntry* entries = nullptr;
+    EXPECT_EQ(!missing.empty(),
+              upb_util_HasUnsetRequired(UPB_UPCAST(test_msg), m.ptr(),
+                                        defpool.ptr(), &entries));
+    if (entries) {
+      EXPECT_EQ(missing, PathsToText(entries));
+      free(entries);
+    }
 
-  // Verify that we can pass a NULL pointer to entries when we don't care about
-  // them.
-  EXPECT_EQ(!missing.empty(),
-            upb_util_HasUnsetRequired(test_msg, m.ptr(), defpool.ptr(), NULL));
-}
+    // Verify that we can pass a NULL pointer to entries when we don't care
+    // about them.
+    EXPECT_EQ(!missing.empty(),
+              upb_util_HasUnsetRequired(UPB_UPCAST(test_msg), m.ptr(),
+                                        defpool.ptr(), nullptr));
+  }
+};
+
+class Proto2Type {
+ public:
+  using MessageType = upb_util_test_TestRequiredFields;
+  static MessageType* NewMessage(upb_Arena* arena) {
+    return upb_util_test_TestRequiredFields_new(arena);
+  }
+  static upb::MessageDefPtr GetMessageDef(upb_DefPool* defpool) {
+    return upb::MessageDefPtr(
+        upb_util_test_TestRequiredFields_getmsgdef(defpool));
+  }
+};
+
+class Edition2023Type {
+ public:
+  using MessageType = upb_util_2023_test_TestRequiredFields;
+  static MessageType* NewMessage(upb_Arena* arena) {
+    return upb_util_2023_test_TestRequiredFields_new(arena);
+  }
+  static upb::MessageDefPtr GetMessageDef(upb_DefPool* defpool) {
+    return upb::MessageDefPtr(
+        upb_util_2023_test_TestRequiredFields_getmsgdef(defpool));
+  }
+};
+
+using MyTypes = ::testing::Types<Proto2Type, Edition2023Type>;
+TYPED_TEST_SUITE(RequiredFieldsTest, MyTypes);
 
 // message HasRequiredField {
 //   required int32 required_int32 = 1;
@@ -91,10 +112,10 @@ void CheckRequired(absl::string_view json,
 //   repeated HasRequiredField repeated_message = 3;
 //   map<int32, HasRequiredField> map_int32_message = 4;
 // }
-TEST(RequiredFieldsTest, TestRequired) {
-  CheckRequired(R"json({})json", {"required_message"});
-  CheckRequired(R"json({"required_message": {}}")json", {});
-  CheckRequired(
+TYPED_TEST(RequiredFieldsTest, TestRequired) {
+  TestFixture::CheckRequired(R"json({})json", {"required_message"});
+  TestFixture::CheckRequired(R"json({"required_message": {}})json", {});
+  TestFixture::CheckRequired(
       R"json(
       {
         "optional_message": {}
@@ -103,7 +124,7 @@ TEST(RequiredFieldsTest, TestRequired) {
       {"required_message", "optional_message.required_message"});
 
   // Repeated field.
-  CheckRequired(
+  TestFixture::CheckRequired(
       R"json(
       {
         "optional_message": {
@@ -119,7 +140,7 @@ TEST(RequiredFieldsTest, TestRequired) {
        "optional_message.repeated_message[1].required_int32"});
 
   // Int32 map key.
-  CheckRequired(
+  TestFixture::CheckRequired(
       R"json(
       {
         "required_message": {},
@@ -133,7 +154,7 @@ TEST(RequiredFieldsTest, TestRequired) {
       {"map_int32_message[5].required_int32"});
 
   // Int64 map key.
-  CheckRequired(
+  TestFixture::CheckRequired(
       R"json(
       {
         "required_message": {},
@@ -147,7 +168,7 @@ TEST(RequiredFieldsTest, TestRequired) {
       {"map_int64_message[5].required_int32"});
 
   // Uint32 map key.
-  CheckRequired(
+  TestFixture::CheckRequired(
       R"json(
       {
         "required_message": {},
@@ -161,7 +182,7 @@ TEST(RequiredFieldsTest, TestRequired) {
       {"map_uint32_message[5].required_int32"});
 
   // Uint64 map key.
-  CheckRequired(
+  TestFixture::CheckRequired(
       R"json(
       {
         "required_message": {},
@@ -175,7 +196,7 @@ TEST(RequiredFieldsTest, TestRequired) {
       {"map_uint64_message[5].required_int32"});
 
   // Bool map key.
-  CheckRequired(
+  TestFixture::CheckRequired(
       R"json(
       {
         "required_message": {},
@@ -188,7 +209,7 @@ TEST(RequiredFieldsTest, TestRequired) {
       {"map_bool_message[true].required_int32"});
 
   // String map key.
-  CheckRequired(
+  TestFixture::CheckRequired(
       R"json(
       {
         "required_message": {},

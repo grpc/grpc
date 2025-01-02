@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@build_bazel_rules_apple//apple:macos.bzl", "macos_unit_test")
+load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
+load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application", "tvos_unit_test")
 load("//bazel:grpc_build_system.bzl", "grpc_sh_test")
 load(
     "//src/objective-c:grpc_objc_internal_library.bzl",
@@ -22,9 +25,6 @@ load(
     "local_objc_grpc_library",
     "proto_library_objc_wrapper",
 )
-load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
-load("@build_bazel_rules_apple//apple:macos.bzl", "macos_unit_test")
-load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application", "tvos_unit_test")
 
 licenses(["notice"])
 
@@ -85,7 +85,7 @@ tvos_application(
     name = "tvos-host",
     bundle_id = "grpc.objc.tests.tvos-host",
     infoplists = ["Hosts/ios-host/Info.plist"],
-    minimum_os_version = "10.0",
+    minimum_os_version = "13.0",
     deps = ["host-lib"],
 )
 
@@ -306,7 +306,7 @@ grpc_objc_ios_unit_test(
 
 macos_unit_test(
     name = "MacTests",
-    minimum_os_version = "10.10",
+    minimum_os_version = "10.14",
     deps = [
         ":APIv2Tests-lib",
         ":InteropTestsLocalCleartext-lib",
@@ -324,7 +324,7 @@ grpc_objc_testing_library(
     deps = [
         "//:gpr_platform",
         "//src/core:iomgr_port",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -336,7 +336,6 @@ grpc_objc_ios_unit_test(
 grpc_objc_testing_library(
     name = "EventEngineClientTests-lib",
     srcs = ["EventEngineTests/CFEventEngineClientTests.mm"],
-    # defines = ["GRPC_IOS_EVENT_ENGINE_CLIENT=1"],
     deps = [
         "//src/core:cf_event_engine",
         "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
@@ -347,7 +346,6 @@ grpc_objc_testing_library(
 grpc_objc_testing_library(
     name = "EventEngineUnitTests-lib",
     srcs = ["EventEngineTests/CFEventEngineUnitTests.mm"],
-    defines = ["GRPC_IOS_EVENT_ENGINE_CLIENT=1"],
     deps = [
         "//src/core:cf_event_engine",
         "//test/core/event_engine/cf:cf_engine_unit_test_lib",
@@ -370,7 +368,7 @@ grpc_objc_ios_unit_test(
 # See https://github.com/bazelbuild/rules_apple/blob/8d841342c238457896cd7596cc29b2d06c9a75f0/apple/testing/default_runner/tvos_test_runner.template.sh
 tvos_unit_test(
     name = "TvTests",
-    minimum_os_version = "10.0",
+    minimum_os_version = "13.0",
     test_host = ":tvos-host",
     deps = [
         ":APIv2Tests-lib",

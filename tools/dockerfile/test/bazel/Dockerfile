@@ -15,8 +15,8 @@
 # Pinned version of the base image is used to avoid regressions caused
 # by rebuilding of this docker image. To see available versions, you can run
 # "gcloud container images list-tags gcr.io/oss-fuzz-base/base-builder"
-# Image(fd89316ac4c5) is built on Aug 17, 2023
-FROM gcr.io/oss-fuzz-base/base-builder@sha256:fd89316ac4c5f3e25802ca95a00062cece14f0602c5512d71ffeedc22734c0b9
+# This base image is built on Mar 12, 2024
+FROM gcr.io/oss-fuzz-base/base-builder@sha256:c3581153788bc49f3634fec3cd36a5d6dfd26632c4afc157fb6faf8ce3af732e
 
 # -------------------------- WARNING --------------------------------------
 # If you are making changes to this file, consider changing
@@ -38,7 +38,7 @@ RUN apt-get update && apt-get -y install \
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 6.3.2
+ENV BAZEL_VERSION 7.4.1
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1
@@ -64,6 +64,17 @@ RUN BAZEL_ARCH_SUFFIX="$(uname -m | sed s/aarch64/arm64/)" \
 
 RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
+
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error. Using "--system" makes the setting work
+# for all users or even current user is not properly defined
+# (which can happen e.g. inside execution environment
+# of a bazel action)
+
+RUN git config --system --add safe.directory '*'
+RUN git config --system protocol.file.allow always
 
 
 RUN apt-get install -y gdb

@@ -1,9 +1,11 @@
+package(default_applicable_licenses = ["//:license"])
+
 cc_library(
     name = "string",
     hdrs = ["string.h"],
     deps = [
-        "//:mem",
-        "//:port",
+        "//upb:mem",
+        "//upb:port",
     ],
 )
 
@@ -14,10 +16,10 @@ cc_library(
     deps = [
         ":string",
         ":zero_copy_stream",
-        "//:base",
-        "//:lex",
-        "//:mem",
-        "//:port",
+        "//upb:base",
+        "//upb:mem",
+        "//upb:port",
+        "//upb/lex",
     ],
 )
 
@@ -28,9 +30,9 @@ cc_library(
         "zero_copy_output_stream.h",
     ],
     deps = [
-        "//:base",
-        "//:mem",
-        "//:port",
+        "//upb:base",
+        "//upb:mem",
+        "//upb:port",
     ],
 )
 
@@ -49,8 +51,8 @@ cc_library(
     ],
     deps = [
         ":zero_copy_stream",
-        "//:upb",
-        "//:port",
+        "//upb:mem",
+        "//upb:port",
     ],
 )
 
@@ -60,7 +62,8 @@ cc_test(
     srcs = ["string_test.cc"],
     deps = [
         ":string",
-        "//:upb",
+        "//upb:mem",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -74,11 +77,12 @@ cc_test(
         ":string",
         ":tokenizer",
         ":zero_copy_stream",
+        "//upb:mem",
+        "//upb:port",
+        "//upb/lex",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
-        "//:upb",
-        "//:lex",
-        "//:port",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -92,7 +96,9 @@ cc_test(
     deps = [
         ":chunked_stream",
         ":zero_copy_stream",
-        "//:upb",
+        "//upb:base",
+        "//upb:mem",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )

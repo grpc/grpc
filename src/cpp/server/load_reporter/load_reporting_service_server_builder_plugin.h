@@ -20,14 +20,13 @@
 #define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTING_SERVICE_SERVER_BUILDER_PLUGIN_H
 
 #include <grpc/support/port_platform.h>
-
-#include <memory>
-#include <string>
-
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
+
+#include <memory>
+#include <string>
 
 #include "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
 

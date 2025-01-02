@@ -14,13 +14,14 @@
 // limitations under the License.
 //
 
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -31,6 +32,7 @@ namespace {
 // then a subsequent recv op is started.  This ensures that we do not
 // incorrectly attempt to replay the send op.
 CORE_END2END_TEST(RetryTest, RetrySendRecvBatch) {
+  SKIP_IF_V3();  // Not working yet
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

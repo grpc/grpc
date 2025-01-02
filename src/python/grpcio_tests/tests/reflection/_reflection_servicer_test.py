@@ -90,6 +90,7 @@ class ReflectionServicerTest(unittest.TestCase):
                         _file_descriptor_to_proto(empty_pb2.DESCRIPTOR),
                     )
                 ),
+                original_request=requests[0],
             ),
             reflection_pb2.ServerReflectionResponse(
                 valid_host="",
@@ -97,6 +98,7 @@ class ReflectionServicerTest(unittest.TestCase):
                     error_code=grpc.StatusCode.NOT_FOUND.value[0],
                     error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
                 ),
+                original_request=requests[1],
             ),
         )
         self.assertEqual(expected_responses, responses)
@@ -119,6 +121,7 @@ class ReflectionServicerTest(unittest.TestCase):
                         _file_descriptor_to_proto(empty_pb2.DESCRIPTOR),
                     )
                 ),
+                original_request=requests[0],
             ),
             reflection_pb2.ServerReflectionResponse(
                 valid_host="",
@@ -126,6 +129,7 @@ class ReflectionServicerTest(unittest.TestCase):
                     error_code=grpc.StatusCode.NOT_FOUND.value[0],
                     error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
                 ),
+                original_request=requests[1],
             ),
         )
         self.assertEqual(expected_responses, responses)
@@ -157,6 +161,7 @@ class ReflectionServicerTest(unittest.TestCase):
                         _file_descriptor_to_proto(empty2_pb2.DESCRIPTOR),
                     )
                 ),
+                original_request=requests[0],
             ),
             reflection_pb2.ServerReflectionResponse(
                 valid_host="",
@@ -164,6 +169,7 @@ class ReflectionServicerTest(unittest.TestCase):
                     error_code=grpc.StatusCode.NOT_FOUND.value[0],
                     error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
                 ),
+                original_request=requests[1],
             ),
         )
         self.assertEqual(expected_responses, responses)
@@ -185,6 +191,7 @@ class ReflectionServicerTest(unittest.TestCase):
                     base_type_name=_EMPTY_EXTENSIONS_SYMBOL_NAME,
                     extension_number=_EMPTY_EXTENSIONS_NUMBERS,
                 ),
+                original_request=requests[0],
             ),
             reflection_pb2.ServerReflectionResponse(
                 valid_host="",
@@ -192,6 +199,7 @@ class ReflectionServicerTest(unittest.TestCase):
                     error_code=grpc.StatusCode.NOT_FOUND.value[0],
                     error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
                 ),
+                original_request=requests[1],
             ),
         )
         self.assertEqual(expected_responses, responses)
@@ -212,6 +220,7 @@ class ReflectionServicerTest(unittest.TestCase):
                         for name in _SERVICE_NAMES
                     )
                 ),
+                original_request=requests[0],
             ),
         )
         self.assertEqual(expected_responses, responses)

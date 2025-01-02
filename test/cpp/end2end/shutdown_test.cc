@@ -16,12 +16,7 @@
 //
 //
 
-#include <thread>
-
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -29,12 +24,17 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
+#include <thread>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
 namespace grpc {
@@ -77,7 +77,7 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
     return server;
   }
 
-  void TearDown() override { GPR_ASSERT(shutdown_); }
+  void TearDown() override { CHECK(shutdown_); }
 
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
@@ -99,9 +99,9 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
     EchoResponse response;
     request.set_message("Hello");
     ClientContext context;
-    GPR_ASSERT(!shutdown_);
+    CHECK(!shutdown_);
     Status s = stub_->Echo(&context, request, &response);
-    GPR_ASSERT(shutdown_);
+    CHECK(shutdown_);
   }
 
  protected:
@@ -124,13 +124,13 @@ std::vector<string> GetAllCredentialsTypeList() {
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
     credentials_types.push_back(*sec);
   }
-  GPR_ASSERT(!credentials_types.empty());
+  CHECK(!credentials_types.empty());
 
   std::string credentials_type_list("credentials types:");
   for (const string& type : credentials_types) {
     credentials_type_list.append(" " + type);
   }
-  gpr_log(GPR_INFO, "%s", credentials_type_list.c_str());
+  LOG(INFO) << credentials_type_list;
   return credentials_types;
 }
 

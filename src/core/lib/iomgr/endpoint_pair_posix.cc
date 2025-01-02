@@ -24,35 +24,33 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/support/alloc.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/resource_quota/api.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/string.h"
 
 static void create_sockets(int sv[2]) {
   int flags;
   grpc_create_socketpair_if_unix(sv);
   flags = fcntl(sv[0], F_GETFL, 0);
-  GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
+  CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
   flags = fcntl(sv[1], F_GETFL, 0);
-  GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
+  CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
+  CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
+  CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
 }
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(

@@ -193,6 +193,7 @@ class PythonDistribTest(object):
                 % (self.docker_suffix, self.arch),
                 "test/distrib/python/run_source_distrib_test.sh",
                 copy_rel_path="test/distrib",
+                timeout_seconds=45 * 60,
             )
         else:
             return create_docker_jobspec(
@@ -201,6 +202,7 @@ class PythonDistribTest(object):
                 % (self.docker_suffix, self.arch),
                 "test/distrib/python/run_binary_distrib_test.sh",
                 copy_rel_path="test/distrib",
+                timeout_seconds=45 * 60,
             )
 
     def __str__(self):
@@ -218,6 +220,7 @@ class RubyDistribTest(object):
         ruby_version=None,
         source=False,
         presubmit=False,
+        protobuf_version="",
     ):
         self.package_type = "binary"
         if source:
@@ -229,10 +232,13 @@ class RubyDistribTest(object):
             ruby_version or "unspecified",
             self.package_type,
         )
+        if not protobuf_version == "":
+            self.name += "_protobuf_%s" % protobuf_version
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
         self.ruby_version = ruby_version
+        self.protobuf_version = protobuf_version
         self.labels = ["distribtest", "ruby", platform, arch, docker_suffix]
         if presubmit:
             self.labels.append("presubmit")
@@ -259,8 +265,13 @@ class RubyDistribTest(object):
         return create_docker_jobspec(
             self.name,
             dockerfile_name,
-            "test/distrib/ruby/run_distrib_test.sh %s %s %s"
-            % (arch_to_gem_arch[self.arch], self.platform, self.package_type),
+            "test/distrib/ruby/run_distrib_test.sh %s %s %s %s"
+            % (
+                arch_to_gem_arch[self.arch],
+                self.platform,
+                self.package_type,
+                self.protobuf_version,
+            ),
             copy_rel_path="test/distrib",
         )
 
@@ -268,15 +279,15 @@ class RubyDistribTest(object):
         return self.name
 
 
-class PHP7DistribTest(object):
-    """Tests PHP7 package"""
+class PHP8DistribTest(object):
+    """Tests PHP8 package"""
 
     def __init__(self, platform, arch, docker_suffix=None, presubmit=False):
-        self.name = "php7_%s_%s_%s" % (platform, arch, docker_suffix)
+        self.name = "php8_%s_%s_%s" % (platform, arch, docker_suffix)
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
-        self.labels = ["distribtest", "php", "php7", platform, arch]
+        self.labels = ["distribtest", "php", "php8", platform, arch]
         if presubmit:
             self.labels.append("presubmit")
         if docker_suffix:
@@ -291,7 +302,7 @@ class PHP7DistribTest(object):
         if self.platform == "linux":
             return create_docker_jobspec(
                 self.name,
-                "tools/dockerfile/distribtest/php7_%s_%s"
+                "tools/dockerfile/distribtest/php8_%s_%s"
                 % (self.docker_suffix, self.arch),
                 "test/distrib/php/run_distrib_test.sh",
                 copy_rel_path="test/distrib",
@@ -301,7 +312,7 @@ class PHP7DistribTest(object):
                 self.name,
                 ["test/distrib/php/run_distrib_test_macos.sh"],
                 environ={"EXTERNAL_GIT_ROOT": "../../../.."},
-                timeout_seconds=20 * 60,
+                timeout_seconds=30 * 60,
                 use_workspace=True,
             )
         else:
@@ -359,14 +370,14 @@ class CppDistribTest(object):
                 "tools/dockerfile/distribtest/cpp_%s_%s"
                 % (self.docker_suffix, self.arch),
                 "test/distrib/cpp/run_distrib_test_%s.sh" % self.testcase,
-                timeout_seconds=45 * 60,
+                timeout_seconds=60 * 60,
             )
         elif self.platform == "windows":
             return create_jobspec(
                 self.name,
                 ["test\\distrib\\cpp\\run_distrib_test_%s.bat" % self.testcase],
                 environ={},
-                timeout_seconds=45 * 60,
+                timeout_seconds=60 * 60,
                 use_workspace=True,
             )
         else:
@@ -380,32 +391,35 @@ def targets():
     """Gets list of supported targets"""
     return [
         # C++
-        CppDistribTest("linux", "x64", "debian10", "cmake", presubmit=True),
+        # The "dummy" C++ distribtest so that the set of tasks to run isn't empty
+        # when grpc_distribtest_standalone runs on PRs.
+        CppDistribTest("linux", "x64", "debian11", "dummy", presubmit=True),
+        CppDistribTest("linux", "x64", "debian11", "cmake", presubmit=False),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_as_submodule", presubmit=True
+            "linux", "x64", "debian11", "cmake_as_submodule", presubmit=False
         ),
         CppDistribTest(
             "linux",
             "x64",
-            "debian10",
+            "debian11",
             "cmake_as_externalproject",
-            presubmit=True,
+            presubmit=False,
         ),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_fetchcontent", presubmit=True
+            "linux", "x64", "debian11", "cmake_fetchcontent", presubmit=False
         ),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_module_install", presubmit=True
+            "linux", "x64", "debian11", "cmake_module_install", presubmit=False
         ),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_pkgconfig", presubmit=True
+            "linux", "x64", "debian11", "cmake_pkgconfig", presubmit=False
         ),
         CppDistribTest(
             "linux",
             "x64",
-            "debian10_aarch64_cross",
+            "debian11_aarch64_cross",
             "cmake_aarch64_cross",
-            presubmit=True,
+            presubmit=False,
         ),
         CppDistribTest("windows", "x86", testcase="cmake", presubmit=True),
         CppDistribTest(
@@ -414,11 +428,17 @@ def targets():
             testcase="cmake_as_externalproject",
             presubmit=True,
         ),
+        CppDistribTest(
+            "windows",
+            "x86",
+            testcase="cmake_for_dll",
+            presubmit=True,
+        ),
         # C#
         CSharpDistribTest(
-            "linux", "x64", "debian10", use_dotnet_cli=True, presubmit=True
+            "linux", "x64", "debian11", use_dotnet_cli=True, presubmit=True
         ),
-        CSharpDistribTest("linux", "x64", "ubuntu1604", use_dotnet_cli=True),
+        CSharpDistribTest("linux", "x64", "ubuntu2204", use_dotnet_cli=True),
         CSharpDistribTest(
             "linux", "x64", "alpine", use_dotnet_cli=True, presubmit=True
         ),
@@ -432,12 +452,12 @@ def targets():
         CSharpDistribTest("windows", "x86", presubmit=True),
         CSharpDistribTest("windows", "x64", presubmit=True),
         # Python
-        PythonDistribTest("linux", "x64", "buster", presubmit=True),
-        PythonDistribTest("linux", "x86", "buster", presubmit=True),
-        PythonDistribTest("linux", "x64", "fedora34"),
+        PythonDistribTest("linux", "x64", "bullseye", presubmit=True),
+        PythonDistribTest("linux", "x86", "bullseye", presubmit=True),
+        PythonDistribTest("linux", "x64", "fedora39"),
         PythonDistribTest("linux", "x64", "arch"),
         PythonDistribTest("linux", "x64", "alpine"),
-        PythonDistribTest("linux", "x64", "ubuntu2004"),
+        PythonDistribTest("linux", "x64", "ubuntu2204"),
         PythonDistribTest(
             "linux", "aarch64", "python38_buster", presubmit=True
         ),
@@ -445,30 +465,46 @@ def targets():
             "linux", "x64", "alpine3.7", source=True, presubmit=True
         ),
         PythonDistribTest(
-            "linux", "x64", "buster", source=True, presubmit=True
+            "linux", "x64", "bullseye", source=True, presubmit=True
         ),
         PythonDistribTest(
-            "linux", "x86", "buster", source=True, presubmit=True
+            "linux", "x86", "bullseye", source=True, presubmit=True
         ),
-        PythonDistribTest("linux", "x64", "fedora34", source=True),
+        PythonDistribTest("linux", "x64", "fedora39", source=True),
         PythonDistribTest("linux", "x64", "arch", source=True),
-        PythonDistribTest("linux", "x64", "ubuntu2004", source=True),
+        PythonDistribTest("linux", "x64", "ubuntu2204", source=True),
         # Ruby
         RubyDistribTest(
             "linux",
             "x64",
-            "debian10",
-            ruby_version="ruby_2_6",
+            "debian11",
+            ruby_version="ruby_3_2",
             source=True,
             presubmit=True,
         ),
         RubyDistribTest(
-            "linux", "x64", "debian10", ruby_version="ruby_2_7", presubmit=True
+            "linux", "x64", "debian11", ruby_version="ruby_3_0", presubmit=True
         ),
-        RubyDistribTest("linux", "x64", "centos7"),
-        RubyDistribTest("linux", "x64", "ubuntu1604"),
-        RubyDistribTest("linux", "x64", "ubuntu1804", presubmit=True),
-        # PHP7
-        PHP7DistribTest("linux", "x64", "debian10", presubmit=True),
-        PHP7DistribTest("macos", "x64", presubmit=True),
+        RubyDistribTest(
+            "linux", "x64", "debian11", ruby_version="ruby_3_1", presubmit=True
+        ),
+        RubyDistribTest(
+            "linux", "x64", "debian11", ruby_version="ruby_3_2", presubmit=True
+        ),
+        RubyDistribTest(
+            "linux", "x64", "debian11", ruby_version="ruby_3_3", presubmit=True
+        ),
+        RubyDistribTest(
+            "linux",
+            "x64",
+            "debian11",
+            ruby_version="ruby_3_3",
+            protobuf_version="3.25",
+            presubmit=True,
+        ),
+        RubyDistribTest("linux", "x64", "ubuntu2004"),
+        RubyDistribTest("linux", "x64", "ubuntu2204", presubmit=True),
+        # PHP8
+        PHP8DistribTest("linux", "x64", "debian12", presubmit=True),
+        PHP8DistribTest("macos", "x64", presubmit=True),
     ]

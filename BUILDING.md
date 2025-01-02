@@ -55,7 +55,7 @@ installed by `brew` is being used:
 ## Windows
 
 To prepare for cmake + Microsoft Visual C++ compiler build
-- Install Visual Studio 2019 or later (Visual C++ compiler will be used).
+- Install Visual Studio 2022 or later (Visual C++ compiler will be used).
 - Install [Git](https://git-scm.com/).
 - Install [CMake](https://cmake.org/download/).
 - Install [nasm](https://www.nasm.us/) and add it to `PATH` (`choco install nasm`) - *required by boringssl*
@@ -112,6 +112,9 @@ $ bazel build :all
 $ bazel test --config=dbg //test/...
 ```
 
+NOTE: If you're using Bazel 7 or newer and working with gRPC, you'll need to turn off bzlmod.
+This is because gRPC isn't fully compatible with bzlmod yet. To do this, add --enable_bzlmod=false to your Bazel commands.
+
 NOTE: If you are a gRPC maintainer and you have access to our test cluster, you should use our [gRPC's Remote Execution environment](tools/remote_build/README.md)
 to get significant improvement to the build and test speed (and a bunch of other very useful features).
 
@@ -129,7 +132,7 @@ $ make
 
 If you want to build shared libraries (`.so` files), run `cmake` with `-DBUILD_SHARED_LIBS=ON`.
 
-### Windows, Using Visual Studio 2019 or later
+### Windows, Using Visual Studio 2022 or later
 
 When using the "Visual Studio" generator,
 cmake will generate a solution (`grpc.sln`) that contains a VS project for
@@ -140,7 +143,7 @@ you will be able to browse and build the code.
 > @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
 > md .build
 > cd .build
-> cmake .. -G "Visual Studio 16 2019"
+> cmake .. -G "Visual Studio 17 2022"
 > cmake --build . --config Release
 ```
 

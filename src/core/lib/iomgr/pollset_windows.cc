@@ -22,18 +22,14 @@
 
 #ifdef GRPC_WINSOCK_SOCKET
 
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/thd.h"
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker*)1)
-
-grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
 
 gpr_mu grpc_polling_mu;
 static grpc_pollset_worker* g_active_poller;

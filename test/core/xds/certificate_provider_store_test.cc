@@ -16,21 +16,20 @@
 //
 //
 
-#include "src/core/ext/xds/certificate_provider_store.h"
+#include "src/core/xds/grpc/certificate_provider_store.h"
+
+#include <grpc/grpc.h>
 
 #include <algorithm>
 #include <memory>
 #include <thread>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
-#include "test/core/util/test_config.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/util/unique_type_name.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -47,7 +46,7 @@ class FakeCertificateProvider : public grpc_tls_certificate_provider {
  public:
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     // never called
-    GPR_ASSERT(0);
+    CHECK(0);
     return nullptr;
   }
 

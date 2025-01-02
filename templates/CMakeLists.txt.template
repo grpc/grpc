@@ -29,6 +29,11 @@
 
   third_party_proto_prefixes = {lib.proto_prefix for lib in external_proto_libraries}
 
+  gpr_libs = ['gpr']
+  grpc_libs = ['grpc', 'grpc_unsecure']
+  grpcxx_libs = ['grpc++', 'grpc++_unsecure']
+  protoc_libs = ['benchmark_helpers', 'grpc++_reflection', 'grpcpp_channelz']
+
   def third_party_proto_import_path(path):
     """Removes third_party prefix to match ProtoBuf's relative import path."""
     for prefix in third_party_proto_prefixes:
@@ -114,7 +119,10 @@
       if lib_name == 'protobuf':
         # TODO(jtattermusch): add better way of excluding explicit protobuf dependency.
         continue
-      requires.add(lib_name)
+      if lib_name == 'opentelemetry-cpp::api':
+        requires.add('opentelemetry_api')
+      else:
+        requires.add(lib_name)
     return list(sorted(requires))
 
   def get_pkgconfig_requires_private(lib):
@@ -150,6 +158,20 @@
       private_libs.append("-l" + lib_name)
     return private_libs
 
+  def lib_type_for_lib(lib_name):
+    """Returns STATIC/SHARED to force a static or shared lib build depending on the library."""
+    # grpc_csharp_ext is loaded by C# runtime and it
+    # only makes sense as a shared lib.
+    if lib_name in ['grpc_csharp_ext']:
+      return ' SHARED'
+
+    # upb always compiles as a static library on Windows
+    elif lib_name in ['upb','upb_collections_lib','upb_json_lib','upb_textformat_lib'] + protoc_libs:
+      return ' ${_gRPC_STATIC_WIN32}'
+
+    else:
+      return ''
+
   def get_deps(target_dict):
     # TODO(jtattermusch): remove special cases based on target names
     deps = []
@@ -181,7 +203,7 @@
   def is_generate_cmake_target(lib_or_target):
     """Returns True if a cmake target should be generated for given library/target."""
     # TODO(jtattermusch): extract the metadata to a centralized location.
-    if lib_or_target.build not in ["all", "protoc", "tool", "test", "private"]:
+    if lib_or_target.build not in ["all", "plugin", "plugin_test", "protoc", "tool", "test", "private"]:
       return False
     if lib_or_target.boringssl:
       # Don't generate target for boringssl libs or tests
@@ -235,6 +257,7 @@
 
       return '\n'.join(lines)
     return _func
+
   %>
   <%
   # These files are added to a set so that they are not duplicated if multiple
@@ -252,7 +275,7 @@
         protobuf_gen_files.add(src)
   %>
 
-  cmake_minimum_required(VERSION 3.8)
+  cmake_minimum_required(VERSION 3.16)
 
   set(PACKAGE_NAME          "grpc")
   set(PACKAGE_VERSION       "${settings.cpp_version}")
@@ -265,6 +288,10 @@
   set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
   project(<%text>${PACKAGE_NAME}</%text> LANGUAGES C CXX)
 
+  if(BUILD_SHARED_LIBS AND MSVC)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  endif()
+
   set(gRPC_INSTALL_BINDIR "bin" CACHE STRING "Installation directory for executables")
   set(gRPC_INSTALL_LIBDIR "lib" CACHE STRING "Installation directory for libraries")
   set(gRPC_INSTALL_INCLUDEDIR "include" CACHE STRING "Installation directory for headers")
@@ -275,7 +302,7 @@
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
   option(gRPC_BUILD_CODEGEN "Build codegen" ON)
-  option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
+  option(gRPC_DOWNLOAD_ARCHIVES "Download archives for empty 3rd party directories" ON)
 
   set(gRPC_INSTALL_default ON)
   if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -337,11 +364,20 @@
     absl_meta
   )
 
+  # The OpenTelemetry plugin supports "package" build only at present.
+  set(gRPC_OPENTELEMETRY_PROVIDER "package")
+  #  set(gRPC_OPENTELEMETRY_PROVIDER "module" CACHE STRING "Provider of opentelemetry library")
+  #  set_property(CACHE gRPC_OPENTELEMETRY_PROVIDER PROPERTY STRINGS "module" "package")
+
   set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
   if(UNIX)
     if(<%text>${CMAKE_SYSTEM_NAME}</%text> MATCHES "Linux")
       set(_gRPC_PLATFORM_LINUX ON)
+      if(NOT CMAKE_CROSSCOMPILING AND CMAKE_SIZEOF_VOID_P EQUAL 4)
+        message("+++ Enabling SSE2 for <%text>${CMAKE_SYSTEM_PROCESSOR}</%text>")
+        set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> -msse2")
+      endif()
     elseif(<%text>${CMAKE_SYSTEM_NAME}</%text> MATCHES "Darwin")
       set(_gRPC_PLATFORM_MAC ON)
     elseif(<%text>${CMAKE_SYSTEM_NAME}</%text> MATCHES "iOS")
@@ -357,9 +393,9 @@
   endif()
 
   if (APPLE AND NOT DEFINED CMAKE_CXX_STANDARD)
-    # AppleClang defaults to C++98, so we bump it to C++14.
-    message("CMAKE_CXX_STANDARD was undefined, defaulting to C++14.")
-    set(CMAKE_CXX_STANDARD 14)
+    # AppleClang defaults to C++98, so we bump it to C++17.
+    message("CMAKE_CXX_STANDARD was undefined, defaulting to C++17.")
+    set(CMAKE_CXX_STANDARD 17)
   endif ()
 
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
@@ -389,6 +425,10 @@
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4503")
     # Tell MSVC to build grpc using utf-8
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /utf-8")
+    # Inconsistent object sizes can cause stack corruption and should be treated as an error
+    set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /we4789")
+    # To decrease the size of PDB files
+    set(CMAKE_EXE_LINKER_FLAGS "/opt:ref /opt:icf /pdbcompress")
   endif()
   if (MINGW)
     add_definitions(-D_WIN32_WINNT=0x600)
@@ -403,14 +443,6 @@
     set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
   endif()
 
-  if(gRPC_BACKWARDS_COMPATIBILITY_MODE)
-    add_definitions(-DGPR_BACKWARDS_COMPATIBILITY_MODE)
-    if(_gRPC_PLATFORM_MAC)
-      # some C++11 constructs not supported before OS X 10.10
-      set(CMAKE_OSX_DEPLOYMENT_TARGET 10.10)
-    endif()
-  endif()
-
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
     set(_gRPC_CORE_NOSTDCXX_FLAGS -fno-exceptions -fno-rtti)
   else()
@@ -423,7 +455,28 @@
     find_package(Threads)
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m Threads::Threads)
     if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-      set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> rt)
+      find_library(LIBRT rt)
+      if(LIBRT)
+        set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> rt)
+      endif()
+    endif()
+  endif()
+
+  include(CheckCXXSourceCompiles)
+
+  if(UNIX OR APPLE)
+    # Some systems require the __STDC_FORMAT_MACROS macro to be defined
+    # to get the fixed-width integer type formatter macros.
+    check_cxx_source_compiles("#include <inttypes.h>
+    #include <cstdio>
+    int main()
+    {
+      int64_t i64{};
+      std::printf(\"%\" PRId64, i64);
+    }"
+    HAVE_STDC_FORMAT_MACROS)
+    if(NOT HAVE_STDC_FORMAT_MACROS)
+      add_definitions(-D__STDC_FORMAT_MACROS)
     endif()
   endif()
 
@@ -447,6 +500,11 @@
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> <%text>${_gRPC_SYSTEMD_LIBRARIES}</%text>)
   endif()
 
+  option(gRPC_BUILD_GRPCPP_OTEL_PLUGIN "Build grpcpp_otel_plugin" OFF)
+  if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
+    include(cmake/opentelemetry-cpp.cmake)
+  endif()
+
   % for external_proto_library in external_proto_libraries:
   % if len(external_proto_library.urls) > 1:
   # Setup external proto library at ${external_proto_library.destination} with ${len(external_proto_library.urls)} download URLs
@@ -454,7 +512,7 @@
   # Setup external proto library at ${external_proto_library.destination} if it doesn't exist
   % endif
   % for download_url in external_proto_library.urls:
-  if (NOT EXISTS <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination})
+  if (NOT EXISTS <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination} AND gRPC_DOWNLOAD_ARCHIVES)
     # Download the archive via HTTP, validate the checksum, and extract to ${external_proto_library.destination}.
     download_archive(
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination}
@@ -468,7 +526,41 @@
 
   if(WIN32)
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> ws2_32 crypt32)
+    set(_gRPC_STATIC_WIN32 STATIC)
   endif()
+    
+  if(BUILD_SHARED_LIBS AND WIN32)
+
+  # Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
+  # are generated from protobuf definitions by upbc. This source code does not include
+  # annotations needed to export these functions from grpc.lib so we have to
+  # re-include a small subset of these.
+  #
+  # This is not an ideal situation because these functions will be unavailable
+  # to clients of grpc and the libraries that need this (e.g. grpc++) will
+  # include redundant duplicate code. Hence, the duplication is only activated
+  # for DLL builds - and should be completely removed when source files are
+  # generated with the necessary __declspec annotations.
+  set(gRPC_UPB_GEN_DUPL_SRC
+    src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
+    src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
+    src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  )
+
+  set(gRPC_ADDITIONAL_DLL_SRC
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc
+    src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+  )
+
+  set(gRPC_ADDITIONAL_DLL_CXX_SRC
+    src/cpp/common/tls_certificate_provider.cc
+    src/cpp/common/tls_certificate_verifier.cc
+    src/cpp/common/tls_credentials_options.cc
+  )
+
+  endif() # BUILD_SHARED_LIBS AND WIN32
 
   # Create directory for proto source files
   set(_gRPC_PROTO_SRCS_DIR <%text>${CMAKE_BINARY_DIR}/protos</%text>)
@@ -621,10 +713,24 @@
     DEPENDS tools_c tools_cxx)
 
   % for src in sorted(protobuf_gen_files):
+  % if not src.startswith('third_party/'):
   protobuf_generate_grpc_cpp_with_import_path_correction(
     ${src} ${third_party_proto_import_path(src)}
   )
+  % endif
   % endfor
+
+  # This enables CMake to build the project without requiring submodules
+  # in the third_party directory as long as test builds are disabled.
+  if (gRPC_BUILD_TESTS)
+  % for src in sorted(protobuf_gen_files):
+  % if src.startswith('third_party/'):
+  protobuf_generate_grpc_cpp_with_import_path_correction(
+    ${src} ${third_party_proto_import_path(src)}
+  )
+  % endif
+  % endfor
+  endif()
 
   if(gRPC_BUILD_TESTS)
     add_custom_target(buildtests_c)
@@ -654,12 +760,16 @@
       if not is_generate_cmake_target(lib): continue
       cmake_libs.append(lib)
   %>
+
   % for lib in cmake_libs:
   %   if lib.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)
   ${cc_library(lib)}
   endif()
   %   else:
+  %     if lib.build in ["plugin"]:
+  if(gRPC_BUILD_${lib.name.upper()})
+  %     endif
   ${cc_library(lib)}
   %     if not lib.build in ["tool"]:
   %       if any(proto_re.match(src) for src in lib.src):
@@ -670,6 +780,9 @@
   endif()
   %       endif
   %     endif
+  %     if lib.build in ["plugin"]:
+  endif()
+  %     endif
   %   endif
   % endfor
 
@@ -677,6 +790,12 @@
   % if is_generate_cmake_target(tgt):
   % if tgt.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)
+  <%block filter='platforms_condition_block(tgt.platforms)'>
+  ${cc_binary(tgt)}
+  </%block>
+  endif()
+  % elif tgt.build in ["plugin_test"]:
+  if(gRPC_BUILD_TESTS AND ${tgt.plugin_option})
   <%block filter='platforms_condition_block(tgt.platforms)'>
   ${cc_binary(tgt)}
   </%block>
@@ -709,7 +828,7 @@
   if(gRPC_BUILD_CODEGEN)
   % endif
   % endif
-  add_library(${lib.name}
+  add_library(${lib.name}${lib_type_for_lib(lib.name)}
   % for src in lib.src:
   % if not proto_re.match(src):
     ${src}
@@ -723,6 +842,15 @@
     % endif
   % endif
   % endfor
+  % if lib.name in ['grpc++_alts', 'grpc++_unsecure', 'grpc++']:
+    <%text>${gRPC_UPB_GEN_DUPL_SRC}</%text>
+  % endif
+  % if lib.name in ['grpc_unsecure']:
+    <%text>${gRPC_ADDITIONAL_DLL_SRC}</%text>
+  % endif
+  % if lib.name in ['grpc++_unsecure']:
+    <%text>${gRPC_ADDITIONAL_DLL_CXX_SRC}</%text>
+  % endif
   )
 
   target_compile_features(${lib.name} PUBLIC cxx_std_14)
@@ -740,7 +868,31 @@
   if(WIN32 AND MSVC)
     set_target_properties(${lib.name} PROPERTIES COMPILE_PDB_NAME "${lib.name}"
       COMPILE_PDB_OUTPUT_DIRECTORY <%text>"${CMAKE_BINARY_DIR}</%text>"
-    )
+    )<%
+    dll_annotations = []
+    if lib.name in gpr_libs:
+      dll_annotations.append("GPR_DLL_EXPORTS")
+    if lib.name in grpc_libs:
+      dll_annotations.append("GRPC_DLL_EXPORTS")
+    if lib.name in grpcxx_libs:
+      dll_annotations.append("GRPCXX_DLL_EXPORTS")
+    if set(gpr_libs) & set(lib.transitive_deps):
+      dll_annotations.append("GPR_DLL_IMPORTS")
+    if set(grpc_libs) & set(lib.transitive_deps):
+      dll_annotations.append("GRPC_DLL_IMPORTS")
+    if set(grpcxx_libs) & set(lib.transitive_deps):
+      dll_annotations.append("GRPCXX_DLL_IMPORTS")
+    %>
+    % if dll_annotations:
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(${lib.name}
+      PRIVATE
+    % for definition in dll_annotations:
+        "${definition}"
+    % endfor
+      )
+    endif()
+    % endif
     if(gRPC_INSTALL)
       install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>${lib.name}.pdb
         DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text> OPTIONAL
@@ -823,7 +975,27 @@
     ${proto_replace_ext(src, '.grpc.pb.h')}
   % endif
   % endfor
-  )
+  )<%
+  dll_annotations = []
+  if set(gpr_libs) & set(tgt.transitive_deps):
+    dll_annotations.append("GPR_DLL_IMPORTS")
+  if set(grpc_libs) & set(tgt.transitive_deps):
+    dll_annotations.append("GRPC_DLL_IMPORTS")
+  if set(grpcxx_libs) & set(tgt.transitive_deps):
+    dll_annotations.append("GRPCXX_DLL_IMPORTS")
+  %>
+  % if dll_annotations:
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(${tgt.name}
+      PRIVATE
+    % for definition in dll_annotations:
+        "${definition}"
+    % endfor
+      )
+    endif()
+  endif()
+  % endif
   target_compile_features(${tgt.name} PUBLIC cxx_std_14)
   target_include_directories(${tgt.name}
     PRIVATE
@@ -987,3 +1159,14 @@
     "${" ".join(get_pkgconfig_libs("grpc++_unsecure"))}"
     "${" ".join(get_pkgconfig_libs_private("grpc++_unsecure"))}"
     "grpc++_unsecure.pc")
+
+  # grpcpp_otel_plugin .pc file
+  generate_pkgconfig(
+    "gRPC++ OpenTelemetry Plugin"
+    "OpenTelemetry Plugin for gRPC C++"
+    "<%text>${gRPC_CPP_VERSION}</%text>"
+    "${" ".join(get_pkgconfig_requires("grpcpp_otel_plugin"))}"
+    "${" ".join(get_pkgconfig_requires_private("grpcpp_otel_plugin"))}"
+    "${" ".join(get_pkgconfig_libs("grpcpp_otel_plugin"))}"
+    "${" ".join(get_pkgconfig_libs_private("grpcpp_otel_plugin"))}"
+    "grpcpp_otel_plugin.pc")

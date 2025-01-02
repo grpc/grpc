@@ -16,16 +16,17 @@
 //
 //
 
-#include <atomic>
-#include <thread>
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gprpp/host_port.h"
+#include <atomic>
+#include <thread>
+
+#include "absl/log/log.h"
+#include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
@@ -171,9 +172,9 @@ class SynchronousServer final : public grpc::testing::Server {
 
     impl_ = builder->BuildAndStart();
     if (impl_ == nullptr) {
-      gpr_log(GPR_ERROR, "Server: Fail to BuildAndStart(port=%d)", port_num);
+      LOG(ERROR) << "Server: Fail to BuildAndStart(port=" << port_num << ")";
     } else {
-      gpr_log(GPR_INFO, "Server: BuildAndStart(port=%d)", port_num);
+      LOG(INFO) << "Server: BuildAndStart(port=" << port_num << ")";
     }
   }
 

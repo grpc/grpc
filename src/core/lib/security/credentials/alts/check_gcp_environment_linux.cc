@@ -20,10 +20,9 @@
 
 #ifdef GPR_LINUX
 
-#include <string.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
+#include <string.h>
 
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 

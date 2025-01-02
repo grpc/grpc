@@ -18,13 +18,12 @@
 
 #include "test/cpp/util/create_test_channel.h"
 
-#include "absl/flags/flag.h"
-
-#include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "absl/flags/flag.h"
+#include "absl/log/check.h"
+#include "src/core/util/crash.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
 ABSL_FLAG(std::string, grpc_test_use_grpclb_with_child_policy, "",
@@ -135,7 +134,7 @@ std::shared_ptr<Channel> CreateTestChannel(
   std::shared_ptr<ChannelCredentials> channel_creds =
       testing::GetCredentialsProvider()->GetChannelCredentials(credential_type,
                                                                &channel_args);
-  GPR_ASSERT(channel_creds != nullptr);
+  CHECK_NE(channel_creds, nullptr);
   if (creds.get()) {
     channel_creds = grpc::CompositeChannelCredentials(channel_creds, creds);
   }
@@ -174,7 +173,7 @@ std::shared_ptr<Channel> CreateTestChannel(
       channel_creds = testing::GetCredentialsProvider()->GetChannelCredentials(
           testing::kTlsCredentialsType, &channel_args);
     }
-    GPR_ASSERT(channel_creds != nullptr);
+    CHECK_NE(channel_creds, nullptr);
 
     const std::string& connect_to = server.empty() ? override_hostname : server;
     if (creds.get()) {
@@ -190,7 +189,7 @@ std::shared_ptr<Channel> CreateTestChannel(
   } else {
     channel_creds = testing::GetCredentialsProvider()->GetChannelCredentials(
         cred_type, &channel_args);
-    GPR_ASSERT(channel_creds != nullptr);
+    CHECK_NE(channel_creds, nullptr);
 
     if (interceptor_creators.empty()) {
       return grpc::CreateCustomChannel(server, channel_creds, channel_args);
@@ -252,7 +251,7 @@ std::shared_ptr<Channel> CreateTestChannel(
   std::shared_ptr<ChannelCredentials> channel_creds =
       testing::GetCredentialsProvider()->GetChannelCredentials(credential_type,
                                                                &channel_args);
-  GPR_ASSERT(channel_creds != nullptr);
+  CHECK_NE(channel_creds, nullptr);
   if (creds.get()) {
     channel_creds = grpc::CompositeChannelCredentials(channel_creds, creds);
   }

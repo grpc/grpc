@@ -24,9 +24,11 @@
 
 #include <gmock/gmock.h>
 
+#include <grpc/credentials.h>
+
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
@@ -75,7 +77,7 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentCertificateVerifier) {
   auto* options_1 = grpc_tls_credentials_options_create();
   auto* options_2 = grpc_tls_credentials_options_create();
   options_1->set_certificate_verifier(MakeRefCounted<HostNameCertificateVerifier>());
-  options_2->set_certificate_verifier(MakeRefCounted<XdsCertificateVerifier>(nullptr, ""));
+  options_2->set_certificate_verifier(MakeRefCounted<XdsCertificateVerifier>(nullptr));
   EXPECT_FALSE(*options_1 == *options_2);
   EXPECT_FALSE(*options_2 == *options_1);
   delete options_1;
@@ -156,6 +158,16 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentCrlDirectory) {
   auto* options_2 = grpc_tls_credentials_options_create();
   options_1->set_crl_directory("crl_directory_1");
   options_2->set_crl_directory("crl_directory_2");
+  EXPECT_FALSE(*options_1 == *options_2);
+  EXPECT_FALSE(*options_2 == *options_1);
+  delete options_1;
+  delete options_2;
+}
+TEST(TlsCredentialsOptionsComparatorTest, DifferentCrlProvider) {
+  auto* options_1 = grpc_tls_credentials_options_create();
+  auto* options_2 = grpc_tls_credentials_options_create();
+  options_1->set_crl_provider(*experimental::CreateStaticCrlProvider({}));
+  options_2->set_crl_provider(*experimental::CreateStaticCrlProvider({}));
   EXPECT_FALSE(*options_1 == *options_2);
   EXPECT_FALSE(*options_2 == *options_1);
   delete options_1;

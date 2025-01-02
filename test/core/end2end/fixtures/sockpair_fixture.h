@@ -15,33 +15,33 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_SOCKPAIR_FIXTURE_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_SOCKPAIR_FIXTURE_H
 
-#include <utility>
-
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
+#include <utility>
+
+#include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "gtest/gtest.h"
+#include "src/core/channelz/channelz.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/server/server.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -54,11 +54,9 @@ class SockpairFixture : public CoreTestFixture {
   ~SockpairFixture() override {
     ExecCtx exec_ctx;
     if (ep_.client != nullptr) {
-      grpc_endpoint_shutdown(ep_.client, absl::InternalError("done"));
       grpc_endpoint_destroy(ep_.client);
     }
     if (ep_.server != nullptr) {
-      grpc_endpoint_shutdown(ep_.server, absl::InternalError("done"));
       grpc_endpoint_destroy(ep_.server);
     }
   }
@@ -66,29 +64,33 @@ class SockpairFixture : public CoreTestFixture {
  private:
   virtual ChannelArgs MutateClientArgs(ChannelArgs args) { return args; }
   virtual ChannelArgs MutateServerArgs(ChannelArgs args) { return args; }
-  grpc_server* MakeServer(const ChannelArgs& in_args,
-                          grpc_completion_queue* cq) override {
+  grpc_server* MakeServer(
+      const ChannelArgs& in_args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     auto args = MutateServerArgs(in_args);
     ExecCtx exec_ctx;
-    grpc_transport* transport;
+    Transport* transport;
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
+    pre_server_start(server);
     grpc_server_start(server);
     auto server_channel_args = CoreConfiguration::Get()
                                    .channel_args_preconditioning()
                                    .PreconditionChannelArgs(args.ToC().get());
-    auto* server_endpoint = std::exchange(ep_.server, nullptr);
+    OrphanablePtr<grpc_endpoint> server_endpoint(
+        std::exchange(ep_.server, nullptr));
     EXPECT_NE(server_endpoint, nullptr);
+    grpc_endpoint_add_to_pollset(server_endpoint.get(), grpc_cq_pollset(cq));
     transport = grpc_create_chttp2_transport(server_channel_args,
-                                             server_endpoint, false);
-    grpc_endpoint_add_to_pollset(server_endpoint, grpc_cq_pollset(cq));
+                                             std::move(server_endpoint), false);
     Server* core_server = Server::FromC(server);
     grpc_error_handle error = core_server->SetupTransport(
         transport, nullptr, core_server->channel_args(), nullptr);
     if (error.ok()) {
-      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
+                                          nullptr);
     } else {
-      grpc_transport_destroy(transport);
+      transport->Orphan();
     }
     return server;
   }
@@ -102,23 +104,26 @@ class SockpairFixture : public CoreTestFixture {
                             .Set(GRPC_ARG_DEFAULT_AUTHORITY, "test-authority")
                             .ToC()
                             .get());
-    grpc_transport* transport;
-    auto* client_endpoint = std::exchange(ep_.client, nullptr);
+    Transport* transport;
+    OrphanablePtr<grpc_endpoint> client_endpoint(
+        std::exchange(ep_.client, nullptr));
     EXPECT_NE(client_endpoint, nullptr);
-    transport = grpc_create_chttp2_transport(args, client_endpoint, true);
-    auto channel = Channel::Create("socketpair-target", args,
-                                   GRPC_CLIENT_DIRECT_CHANNEL, transport);
+    transport =
+        grpc_create_chttp2_transport(args, std::move(client_endpoint), true);
+    auto channel = ChannelCreate("socketpair-target", args,
+                                 GRPC_CLIENT_DIRECT_CHANNEL, transport);
     grpc_channel* client;
     if (channel.ok()) {
       client = channel->release()->c_ptr();
-      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
+                                          nullptr);
     } else {
       client = grpc_lame_client_channel_create(
           nullptr, static_cast<grpc_status_code>(channel.status().code()),
           "lame channel");
-      grpc_transport_destroy(transport);
+      transport->Orphan();
     }
-    GPR_ASSERT(client);
+    CHECK(client);
     return client;
   }
 

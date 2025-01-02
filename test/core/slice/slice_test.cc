@@ -16,10 +16,10 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice.h"
 
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -30,17 +30,14 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
-#include "test/core/util/build.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/no_destruct.h"
+#include "test/core/test_util/build.h"
 
 TEST(GrpcSliceTest, MallocReturnsSomethingSensible) {
   // Calls grpc_slice_create for various lengths and verifies the internals for
@@ -183,7 +180,7 @@ TEST_P(GrpcSliceSizedTest, SliceSplitHeadWorks) {
   grpc_slice head, tail;
   size_t i;
 
-  gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
+  LOG(INFO) << "length=" << length;
 
   // Create a slice in which each byte is equal to the distance from it to the
   // beginning of the slice.
@@ -212,7 +209,7 @@ TEST_P(GrpcSliceSizedTest, SliceSplitTailWorks) {
   grpc_slice head, tail;
   size_t i;
 
-  gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
+  LOG(INFO) << "length=" << length;
 
   // Create a slice in which each byte is equal to the distance from it to the
   // beginning of the slice.
@@ -395,14 +392,19 @@ size_t SumSlice(const Slice& slice) {
 TEST(SliceTest, ExternalAsOwned) {
   auto external_string = std::make_unique<std::string>(RandomString(1024));
   Slice slice = Slice::FromExternalString(*external_string);
-  const auto initial_sum = SumSlice(slice);
+  const size_t initial_sum = SumSlice(slice);
   Slice owned = slice.AsOwned();
   EXPECT_EQ(initial_sum, SumSlice(owned));
   external_string.reset();
   // In ASAN (where we can be sure that it'll crash), go ahead and read the
   // bytes we just deleted.
   if (BuiltUnderAsan()) {
-    ASSERT_DEATH({ gpr_log(GPR_DEBUG, "%" PRIdPTR, SumSlice(slice)); }, "");
+    ASSERT_DEATH(
+        {
+          size_t sum = SumSlice(slice);
+          VLOG(2) << sum;
+        },
+        "");
   }
   EXPECT_EQ(initial_sum, SumSlice(owned));
 }

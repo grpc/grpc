@@ -18,16 +18,16 @@
 
 #include "src/core/lib/iomgr/buffer_list.h"
 
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
+#include <gtest/gtest.h>
 
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/time.h"
+#include "absl/log/check.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/time.h"
+#include "src/core/util/useful.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
 
@@ -37,7 +37,7 @@ extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 static gpr_timespec g_now;
 gpr_timespec now_impl(gpr_clock_type clock_type) {
-  GPR_ASSERT(clock_type != GPR_TIMESPAN);
+  CHECK(clock_type != GPR_TIMESPAN);
   gpr_timespec ts = g_now;
   ts.clock_type = clock_type;
   return ts;

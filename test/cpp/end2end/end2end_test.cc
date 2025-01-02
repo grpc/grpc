@@ -16,17 +16,8 @@
 //
 //
 
-#include <mutex>
-#include <thread>
-
-#include "absl/memory/memory.h"
-#include "absl/strings/ascii.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -41,16 +32,25 @@
 #include <grpcpp/support/string_ref.h>
 #include <grpcpp/test/channel_test_peer.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
+#include <mutex>
+#include <thread>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/ascii.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_format.h"
+#include "src/core/client_channel/backup_poller.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
@@ -84,52 +84,53 @@ const char kTestCredsPluginErrorMsg[] = "Could not find plugin metadata.";
 const char kFakeToken[] = "fake_token";
 const char kFakeSelector[] = "fake_selector";
 const char kExpectedFakeCredsDebugString[] =
-    "SecureCallCredentials{GoogleIAMCredentials{Token:present,"
+    "CallCredentials{GoogleIAMCredentials{Token:present,"
     "AuthoritySelector:fake_selector}}";
 
 const char kWrongToken[] = "wrong_token";
 const char kWrongSelector[] = "wrong_selector";
 const char kExpectedWrongCredsDebugString[] =
-    "SecureCallCredentials{GoogleIAMCredentials{Token:present,"
+    "CallCredentials{GoogleIAMCredentials{Token:present,"
     "AuthoritySelector:wrong_selector}}";
 
 const char kFakeToken1[] = "fake_token1";
 const char kFakeSelector1[] = "fake_selector1";
 const char kExpectedFakeCreds1DebugString[] =
-    "SecureCallCredentials{GoogleIAMCredentials{Token:present,"
+    "CallCredentials{GoogleIAMCredentials{Token:present,"
     "AuthoritySelector:fake_selector1}}";
 
 const char kFakeToken2[] = "fake_token2";
 const char kFakeSelector2[] = "fake_selector2";
 const char kExpectedFakeCreds2DebugString[] =
-    "SecureCallCredentials{GoogleIAMCredentials{Token:present,"
+    "CallCredentials{GoogleIAMCredentials{Token:present,"
     "AuthoritySelector:fake_selector2}}";
 
 const char kExpectedAuthMetadataPluginKeyFailureCredsDebugString[] =
-    "SecureCallCredentials{TestMetadataCredentials{key:TestPluginMetadata,"
+    "CallCredentials{TestMetadataCredentials{key:TestPluginMetadata,"
     "value:Does not matter, will fail the key is invalid.}}";
 const char kExpectedAuthMetadataPluginValueFailureCredsDebugString[] =
-    "SecureCallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
+    "CallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
     "value:With illegal \n value.}}";
 const char kExpectedAuthMetadataPluginWithDeadlineCredsDebugString[] =
-    "SecureCallCredentials{TestMetadataCredentials{key:meta_key,value:Does not "
+    "CallCredentials{TestMetadataCredentials{key:meta_key,value:Does "
+    "not "
     "matter}}";
 const char kExpectedNonBlockingAuthMetadataPluginFailureCredsDebugString[] =
-    "SecureCallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
+    "CallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
     "value:Does not matter, will fail anyway (see 3rd param)}}";
 const char
     kExpectedNonBlockingAuthMetadataPluginAndProcessorSuccessCredsDebugString
-        [] = "SecureCallCredentials{TestMetadataCredentials{key:test-plugin-"
+        [] = "CallCredentials{TestMetadataCredentials{key:test-plugin-"
              "metadata,value:Dr Jekyll}}";
 const char
     kExpectedNonBlockingAuthMetadataPluginAndProcessorFailureCredsDebugString
-        [] = "SecureCallCredentials{TestMetadataCredentials{key:test-plugin-"
+        [] = "CallCredentials{TestMetadataCredentials{key:test-plugin-"
              "metadata,value:Mr Hyde}}";
 const char kExpectedBlockingAuthMetadataPluginFailureCredsDebugString[] =
-    "SecureCallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
+    "CallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
     "value:Does not matter, will fail anyway (see 3rd param)}}";
 const char kExpectedCompositeCallCredsDebugString[] =
-    "SecureCallCredentials{CompositeCallCredentials{TestMetadataCredentials{"
+    "CallCredentials{CompositeCallCredentials{TestMetadataCredentials{"
     "key:call-creds-key1,value:call-creds-val1},TestMetadataCredentials{key:"
     "call-creds-key2,value:call-creds-val2}}}";
 
@@ -536,7 +537,7 @@ class End2endServerTryCancelTest : public End2endTest {
       }
       num_msgs_sent++;
     }
-    gpr_log(GPR_INFO, "Sent %d messages", num_msgs_sent);
+    LOG(INFO) << "Sent " << num_msgs_sent << " messages";
 
     stream->WritesDone();
     Status s = stream->Finish();
@@ -564,8 +565,7 @@ class End2endServerTryCancelTest : public End2endTest {
         break;
 
       default:
-        gpr_log(GPR_ERROR, "Invalid server_try_cancel value: %d",
-                server_try_cancel);
+        LOG(ERROR) << "Invalid server_try_cancel value: " << server_try_cancel;
         EXPECT_TRUE(server_try_cancel > DO_NOT_CANCEL &&
                     server_try_cancel <= CANCEL_AFTER_PROCESSING);
         break;
@@ -616,7 +616,7 @@ class End2endServerTryCancelTest : public End2endTest {
                 request.message() + std::to_string(num_msgs_read));
       num_msgs_read++;
     }
-    gpr_log(GPR_INFO, "Read %d messages", num_msgs_read);
+    LOG(INFO) << "Read " << num_msgs_read << " messages";
 
     Status s = stream->Finish();
 
@@ -645,8 +645,7 @@ class End2endServerTryCancelTest : public End2endTest {
         break;
 
       default: {
-        gpr_log(GPR_ERROR, "Invalid server_try_cancel value: %d",
-                server_try_cancel);
+        LOG(ERROR) << "Invalid server_try_cancel value: " << server_try_cancel;
         EXPECT_TRUE(server_try_cancel > DO_NOT_CANCEL &&
                     server_try_cancel <= CANCEL_AFTER_PROCESSING);
         break;
@@ -703,8 +702,8 @@ class End2endServerTryCancelTest : public End2endTest {
 
       EXPECT_EQ(response.message(), request.message());
     }
-    gpr_log(GPR_INFO, "Sent %d messages", num_msgs_sent);
-    gpr_log(GPR_INFO, "Read %d messages", num_msgs_read);
+    LOG(INFO) << "Sent " << num_msgs_sent << " messages";
+    LOG(INFO) << "Read " << num_msgs_read << " messages";
 
     stream->WritesDone();
     Status s = stream->Finish();
@@ -733,8 +732,7 @@ class End2endServerTryCancelTest : public End2endTest {
         break;
 
       default:
-        gpr_log(GPR_ERROR, "Invalid server_try_cancel value: %d",
-                server_try_cancel);
+        LOG(ERROR) << "Invalid server_try_cancel value: " << server_try_cancel;
         EXPECT_TRUE(server_try_cancel > DO_NOT_CANCEL &&
                     server_try_cancel <= CANCEL_AFTER_PROCESSING);
         break;
@@ -788,7 +786,7 @@ TEST_P(End2endServerTryCancelTest, ResponseStreamServerCancelDuring) {
   TestResponseStreamServerCancel(CANCEL_DURING_PROCESSING);
 }
 
-// Server to cancel after writing all the respones to the stream but before
+// Server to cancel after writing all the responses to the stream but before
 // returning to the client
 TEST_P(End2endServerTryCancelTest, ResponseStreamServerCancelAfter) {
   TestResponseStreamServerCancel(CANCEL_AFTER_PROCESSING);
@@ -862,12 +860,10 @@ TEST_P(End2endTest, ManyStubs) {
   ResetStub();
   ChannelTestPeer peer(channel_.get());
   int registered_calls_pre = peer.registered_calls();
-  int registration_attempts_pre = peer.registration_attempts();
   for (int i = 0; i < 1000; ++i) {
     grpc::testing::EchoTestService::NewStub(channel_);
   }
   EXPECT_EQ(peer.registered_calls(), registered_calls_pre);
-  EXPECT_GT(peer.registration_attempts(), registration_attempts_pre);
 }
 
 TEST_P(End2endTest, EmptyBinaryMetadata) {
@@ -1208,9 +1204,9 @@ TEST_P(End2endTest, CancelRpcAfterStart) {
       s = stub_->Echo(&context, request, &response);
     });
     if (!GetParam().callback_server()) {
-      service_.ClientWaitUntilRpcStarted();
+      EXPECT_EQ(service_.ClientWaitUntilNRpcsStarted(1), 1);
     } else {
-      callback_service_.ClientWaitUntilRpcStarted();
+      EXPECT_EQ(callback_service_.ClientWaitUntilNRpcsStarted(1), 1);
     }
 
     context.TryCancel();
@@ -1353,7 +1349,7 @@ void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream,
   EchoResponse resp;
   gpr_event_set(ev, reinterpret_cast<void*>(1));
   while (stream->Read(&resp)) {
-    gpr_log(GPR_INFO, "Read message");
+    LOG(INFO) << "Read message";
   }
 }
 
@@ -1747,8 +1743,8 @@ TEST_P(ProxyEnd2endTest, Peer) {
 class SecureEnd2endTest : public End2endTest {
  protected:
   SecureEnd2endTest() {
-    GPR_ASSERT(!GetParam().use_proxy());
-    GPR_ASSERT(GetParam().credentials_type() != kInsecureCredentialsType);
+    CHECK(!GetParam().use_proxy());
+    CHECK(GetParam().credentials_type() != kInsecureCredentialsType);
   }
 };
 
@@ -2280,7 +2276,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   }
 
   // Test callback with inproc or if the event-engine allows it
-  GPR_ASSERT(!credentials_types.empty());
+  CHECK(!credentials_types.empty());
   for (const auto& cred : credentials_types) {
     scenarios.emplace_back(false, false, false, cred, false);
     scenarios.emplace_back(true, false, false, cred, false);

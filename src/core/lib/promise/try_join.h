@@ -18,15 +18,16 @@
 #include <grpc/support/port_platform.h>
 
 #include <tuple>
-#include <utility>
+#include <variant>
 
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
 #include "src/core/lib/promise/detail/join_state.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/status_flag.h"
 
 namespace grpc_core {
 
@@ -44,37 +45,83 @@ T IntoResult(absl::StatusOr<T>* status) {
 inline Empty IntoResult(absl::Status*) { return Empty{}; }
 
 // Traits object to pass to BasicJoin
+template <template <typename> class Result>
 struct TryJoinTraits {
   template <typename T>
-  using ResultType = absl::StatusOr<absl::remove_reference_t<T>>;
+  using ResultType = Result<absl::remove_reference_t<T>>;
   template <typename T>
-  static bool IsOk(const absl::StatusOr<T>& x) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(
+      const absl::StatusOr<T>& x) {
+    return x.ok();
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(const absl::Status& x) {
+    return x.ok();
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(StatusFlag x) {
     return x.ok();
   }
   template <typename T>
-  static T Unwrapped(absl::StatusOr<T> x) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(
+      const ValueOrFailure<T>& x) {
+    return x.ok();
+  }
+  template <typename T>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static T Unwrapped(absl::StatusOr<T> x) {
     return std::move(*x);
   }
+  template <typename T>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static T Unwrapped(ValueOrFailure<T> x) {
+    return std::move(*x);
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Empty Unwrapped(absl::Status) {
+    return Empty{};
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Empty Unwrapped(StatusFlag) {
+    return Empty{};
+  }
   template <typename R, typename T>
-  static R EarlyReturn(absl::StatusOr<T> x) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R EarlyReturn(
+      absl::StatusOr<T> x) {
     return x.status();
+  }
+  template <typename R>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R EarlyReturn(absl::Status x) {
+    return FailureStatusCast<R>(std::move(x));
+  }
+  template <typename R>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R EarlyReturn(StatusFlag x) {
+    return FailureStatusCast<R>(x);
+  }
+  template <typename R, typename T>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R EarlyReturn(
+      const ValueOrFailure<T>& x) {
+    CHECK(!x.ok());
+    return FailureStatusCast<R>(Failure{});
+  }
+  template <typename... A>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto FinalReturn(A&&... a) {
+    return Result<std::tuple<A...>>(std::make_tuple(std::forward<A>(a)...));
   }
 };
 
 // Implementation of TryJoin combinator.
-template <typename... Promises>
+template <template <typename> class R, typename... Promises>
 class TryJoin {
  public:
-  explicit TryJoin(Promises... promises) : state_(std::move(promises)...) {}
-  auto operator()() { return state_.PollOnce(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit TryJoin(Promises... promises)
+      : state_(std::move(promises)...) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()() {
+    return state_.PollOnce();
+  }
 
  private:
-  JoinState<TryJoinTraits, Promises...> state_;
+  JoinState<TryJoinTraits<R>, Promises...> state_;
 };
 
+template <template <typename> class R>
 struct WrapInStatusOrTuple {
   template <typename T>
-  absl::StatusOr<std::tuple<T>> operator()(absl::StatusOr<T> x) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION R<std::tuple<T>> operator()(R<T> x) {
     if (!x.ok()) return x.status();
     return std::make_tuple(std::move(*x));
   }
@@ -85,14 +132,16 @@ struct WrapInStatusOrTuple {
 // Run all promises.
 // If any fail, cancel the rest and return the failure.
 // If all succeed, return Ok(tuple-of-results).
-template <typename... Promises>
-promise_detail::TryJoin<Promises...> TryJoin(Promises... promises) {
-  return promise_detail::TryJoin<Promises...>(std::move(promises)...);
+template <template <typename> class R, typename... Promises>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::TryJoin<R,
+                                                                    Promises...>
+TryJoin(Promises... promises) {
+  return promise_detail::TryJoin<R, Promises...>(std::move(promises)...);
 }
 
-template <typename F>
-auto TryJoin(F promise) {
-  return Map(promise, promise_detail::WrapInStatusOrTuple{});
+template <template <typename> class R, typename F>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TryJoin(F promise) {
+  return Map(promise, promise_detail::WrapInStatusOrTuple<R>{});
 }
 
 }  // namespace grpc_core

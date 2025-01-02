@@ -18,22 +18,19 @@
 
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
 
-#include <string.h>
-
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <gtest/gtest.h>
+#include <string.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/json/json_reader.h"
+#include "absl/strings/escaping.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
-#include "src/core/lib/slice/b64.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/http_client/httpcli.h"
+#include "src/core/util/json/json_reader.h"
+#include "test/core/test_util/test_config.h"
 
 using grpc_core::Json;
 
@@ -318,33 +315,31 @@ static grpc_http_response http_response(int status, char* body) {
 }
 
 static int httpcli_post_should_not_be_called(
-    const grpc_http_request* /*request*/, const char* /*host*/,
-    const char* /*path*/, const char* /*body_bytes*/, size_t /*body_size*/,
-    grpc_core::Timestamp /*deadline*/, grpc_closure* /*on_done*/,
-    grpc_http_response* /*response*/) {
+    const grpc_http_request* /*request*/, const grpc_core::URI& /*uri*/,
+    absl::string_view /*body*/, grpc_core::Timestamp /*deadline*/,
+    grpc_closure* /*on_done*/, grpc_http_response* /*response*/) {
   EXPECT_EQ("HTTP POST should not be called", nullptr);
   return 1;
 }
 
 static int httpcli_put_should_not_be_called(
-    const grpc_http_request* /*request*/, const char* /*host*/,
-    const char* /*path*/, const char* /*body_bytes*/, size_t /*body_size*/,
-    grpc_core::Timestamp /*deadline*/, grpc_closure* /*on_done*/,
-    grpc_http_response* /*response*/) {
+    const grpc_http_request* /*request*/, const grpc_core::URI& /*uri*/,
+    absl::string_view /*body*/, grpc_core::Timestamp /*deadline*/,
+    grpc_closure* /*on_done*/, grpc_http_response* /*response*/) {
   EXPECT_EQ("HTTP PUT should not be called", nullptr);
   return 1;
 }
 
 static int httpcli_get_google_keys_for_email(
-    const grpc_http_request* /*request*/, const char* host, const char* path,
+    const grpc_http_request* /*request*/, const grpc_core::URI& uri,
     grpc_core::Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   *response = http_response(200, good_google_email_keys());
-  EXPECT_STREQ(host, "www.googleapis.com");
-  EXPECT_STREQ(path,
-               "/robot/v1/metadata/x509/"
-               "777-abaslkan11hlb6nmim3bpspl31ud@developer."
-               "gserviceaccount.com");
+  EXPECT_EQ(uri.authority(), "www.googleapis.com");
+  EXPECT_EQ(uri.path(),
+            "/robot/v1/metadata/x509/"
+            "777-abaslkan11hlb6nmim3bpspl31ud@developer."
+            "gserviceaccount.com");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
@@ -384,12 +379,12 @@ TEST(JwtVerifierTest, JwtVerifierGoogleEmailIssuerSuccess) {
 }
 
 static int httpcli_get_custom_keys_for_email(
-    const grpc_http_request* /*request*/, const char* host, const char* path,
+    const grpc_http_request* /*request*/, const grpc_core::URI& uri,
     grpc_core::Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   *response = http_response(200, gpr_strdup(good_jwk_set));
-  EXPECT_STREQ(host, "keys.bar.com");
-  EXPECT_STREQ(path, "/jwk/foo@bar.com");
+  EXPECT_EQ(uri.authority(), "keys.bar.com");
+  EXPECT_EQ(uri.path(), "/jwk/foo@bar.com");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
@@ -419,25 +414,25 @@ TEST(JwtVerifierTest, JwtVerifierCustomEmailIssuerSuccess) {
 }
 
 static int httpcli_get_jwk_set(const grpc_http_request* /*request*/,
-                               const char* host, const char* path,
+                               const grpc_core::URI& uri,
                                grpc_core::Timestamp /*deadline*/,
                                grpc_closure* on_done,
                                grpc_http_response* response) {
   *response = http_response(200, gpr_strdup(good_jwk_set));
-  EXPECT_STREQ(host, "www.googleapis.com");
-  EXPECT_STREQ(path, "/oauth2/v3/certs");
+  EXPECT_EQ(uri.authority(), "www.googleapis.com");
+  EXPECT_EQ(uri.path(), "/oauth2/v3/certs");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
 static int httpcli_get_openid_config(const grpc_http_request* /*request*/,
-                                     const char* host, const char* path,
+                                     const grpc_core::URI& uri,
                                      grpc_core::Timestamp /*deadline*/,
                                      grpc_closure* on_done,
                                      grpc_http_response* response) {
   *response = http_response(200, gpr_strdup(good_openid_config));
-  EXPECT_STREQ(host, "accounts.google.com");
-  EXPECT_STREQ(path, GRPC_OPENID_CONFIG_URL_SUFFIX);
+  EXPECT_EQ(uri.authority(), "accounts.google.com");
+  EXPECT_EQ(uri.path(), GRPC_OPENID_CONFIG_URL_SUFFIX);
   grpc_core::HttpRequest::SetOverride(httpcli_get_jwk_set,
                                       httpcli_post_should_not_be_called,
                                       httpcli_put_should_not_be_called);
@@ -478,7 +473,7 @@ static void on_verification_key_retrieval_error(void* user_data,
 }
 
 static int httpcli_get_bad_json(const grpc_http_request* /* request */,
-                                const char* /*host*/, const char* /*path*/,
+                                const grpc_core::URI& /*uri*/,
                                 grpc_core::Timestamp /*deadline*/,
                                 grpc_closure* on_done,
                                 grpc_http_response* response) {
@@ -536,23 +531,14 @@ TEST(JwtVerifierTest, JwtVerifierBadJsonKey) {
 }
 
 static void corrupt_jwt_sig(char* jwt) {
-  grpc_slice sig;
-  char* bad_b64_sig;
-  uint8_t* sig_bytes;
   char* last_dot = strrchr(jwt, '.');
   ASSERT_NE(last_dot, nullptr);
-  {
-    grpc_core::ExecCtx exec_ctx;
-    sig = grpc_base64_decode(last_dot + 1, 1);
-  }
-  ASSERT_FALSE(GRPC_SLICE_IS_EMPTY(sig));
-  sig_bytes = GRPC_SLICE_START_PTR(sig);
-  (*sig_bytes)++;  // Corrupt first byte.
-  bad_b64_sig = grpc_base64_encode(GRPC_SLICE_START_PTR(sig),
-                                   GRPC_SLICE_LENGTH(sig), 1, 0);
-  memcpy(last_dot + 1, bad_b64_sig, strlen(bad_b64_sig));
-  gpr_free(bad_b64_sig);
-  grpc_slice_unref(sig);
+  std::string decoded;
+  absl::WebSafeBase64Unescape(last_dot + 1, &decoded);
+  ASSERT_FALSE(decoded.empty());
+  ++decoded[0];  // Corrupt first byte.
+  std::string bad_encoding = absl::WebSafeBase64Escape(decoded);
+  memcpy(last_dot + 1, bad_encoding.data(), bad_encoding.size());
 }
 
 static void on_verification_bad_signature(void* user_data,
@@ -589,9 +575,9 @@ TEST(JwtVerifierTest, JwtVerifierBadSignature) {
 }
 
 static int httpcli_get_should_not_be_called(
-    const grpc_http_request* /*request*/, const char* /*host*/,
-    const char* /*path*/, grpc_core::Timestamp /*deadline*/,
-    grpc_closure* /*on_done*/, grpc_http_response* /*response*/) {
+    const grpc_http_request* /*request*/, const grpc_core::URI& /*uri*/,
+    grpc_core::Timestamp /*deadline*/, grpc_closure* /*on_done*/,
+    grpc_http_response* /*response*/) {
   EXPECT_TRUE(0);
   return 1;
 }

@@ -14,6 +14,15 @@
 // limitations under the License.
 //
 
+#include <grpcpp/ext/admin_services.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/support/string_ref.h>
+#include <grpcpp/xds_server_builder.h>
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -30,25 +39,16 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
-
-#include <grpcpp/ext/admin_services.h>
-#include <grpcpp/ext/proto_server_reflection_plugin.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-#include <grpcpp/server_context.h>
-#include <grpcpp/support/string_ref.h>
-#include <grpcpp/xds_server_builder.h>
-
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/gethostname.h"
+#include "src/core/util/env.h"
+#include "src/core/util/gethostname.h"
+#include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/istio_echo.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/istio_echo_server_lib.h"
 #include "test/cpp/util/test_config.h"
 
@@ -114,8 +114,7 @@ void RunServer(const std::set<int>& grpc_ports, const std::set<int>& xds_ports,
     if (xds_ports.find(port) != xds_ports.end()) {
       xds_builder.AddListeningPort(
           server_address, XdsServerCredentials(InsecureServerCredentials()));
-      gpr_log(GPR_INFO, "Server listening on %s over xds",
-              server_address.c_str());
+      LOG(INFO) << "Server listening on " << server_address << " over xds";
       has_xds_listeners = true;
     } else if (tls_ports.find(port) != tls_ports.end()) {
       // Create Credentials for Tls Servers -
@@ -130,12 +129,10 @@ void RunServer(const std::set<int>& grpc_ports, const std::set<int>& xds_ports,
       options.watch_identity_key_cert_pairs();
       options.set_check_call_host(false);
       builder.AddListeningPort(server_address, TlsServerCredentials(options));
-      gpr_log(GPR_INFO, "Server listening on %s over tls",
-              server_address.c_str());
+      LOG(INFO) << "Server listening on " << server_address << " over tls";
     } else {
       builder.AddListeningPort(server_address, InsecureServerCredentials());
-      gpr_log(GPR_INFO, "Server listening on %s over insecure",
-              server_address.c_str());
+      LOG(INFO) << "Server listening on " << server_address << " over insecure";
     }
   }
   // Enable the default health check service, probably not needed though.
@@ -154,11 +151,11 @@ void RunServer(const std::set<int>& grpc_ports, const std::set<int>& xds_ports,
 
 int main(int argc, char** argv) {
   //  Preprocess argv, for two things:
-  //  1. merge duplciate flags. So "--grpc=8080 --grpc=9090" becomes
+  //  1. merge duplicate flags. So "--grpc=8080 --grpc=9090" becomes
   //  "--grpc=8080,9090".
   //  2. replace '-' to '_'. So "--istio-version=123" becomes
   //  "--istio_version=123".
-  //  3. remove --version since that is specially interpretted by absl
+  //  3. remove --version since that is specially interpreted by absl
   std::map<std::string, std::vector<std::string>> argv_dict;
   for (int i = 0; i < argc; i++) {
     std::string arg(argv[i]);
@@ -206,7 +203,7 @@ int main(int argc, char** argv) {
   for (const auto& p : absl::GetFlag(FLAGS_xds_grpc_server)) {
     int port = 0;
     if (!absl::SimpleAtoi(p, &port)) {
-      gpr_log(GPR_ERROR, "SimpleAtoi Failure: %s", p.c_str());
+      LOG(ERROR) << "SimpleAtoi Failure: " << p;
       return 1;
     }
     xds_ports.insert(port);
@@ -220,7 +217,7 @@ int main(int argc, char** argv) {
   for (const auto& p : absl::GetFlag(FLAGS_tls)) {
     int port = 0;
     if (!absl::SimpleAtoi(p, &port)) {
-      gpr_log(GPR_ERROR, "SimpleAtoi Failure: %s", p.c_str());
+      LOG(ERROR) << "SimpleAtoi Failure: " << p;
       return 1;
     }
     tls_ports.insert(port);

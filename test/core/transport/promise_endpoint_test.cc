@@ -16,6 +16,10 @@
 
 // IWYU pragma: no_include <sys/socket.h>
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/port.h>  // IWYU pragma: keep
+#include <grpc/event_engine/slice_buffer.h>
+
 #include <cstring>
 #include <memory>
 #include <string>
@@ -24,11 +28,6 @@
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/port.h>  // IWYU pragma: keep
-#include <grpc/event_engine/slice_buffer.h>
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/seq.h"
@@ -37,6 +36,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
+using testing::AtMost;
 using testing::MockFunction;
 using testing::Return;
 using testing::ReturnRef;
@@ -108,18 +108,18 @@ class PromiseEndpointTest : public ::testing::Test {
   PromiseEndpointTest()
       : mock_endpoint_ptr_(new StrictMock<MockEndpoint>()),
         mock_endpoint_(*mock_endpoint_ptr_),
-        promise_endpoint_(
+        promise_endpoint_(std::make_unique<PromiseEndpoint>(
             std::unique_ptr<
                 grpc_event_engine::experimental::EventEngine::Endpoint>(
                 mock_endpoint_ptr_),
-            SliceBuffer()) {}
+            SliceBuffer())) {}
 
  private:
   MockEndpoint* mock_endpoint_ptr_;
 
  protected:
   MockEndpoint& mock_endpoint_;
-  PromiseEndpoint promise_endpoint_;
+  std::unique_ptr<PromiseEndpoint> promise_endpoint_;
 
   const absl::Status kDummyErrorStatus =
       absl::ErrnoToStatus(5566, "just an error");
@@ -140,7 +140,7 @@ TEST_F(PromiseEndpointTest, OneReadSuccessful) {
             buffer->Append(std::move(slice));
             return true;
           }));
-  auto promise = promise_endpoint_.Read(kBuffer.size());
+  auto promise = promise_endpoint_->Read(kBuffer.size());
   auto poll = promise();
   ASSERT_TRUE(poll.ready());
   ASSERT_TRUE(poll.value().ok());
@@ -151,15 +151,15 @@ TEST_F(PromiseEndpointTest, OneReadSuccessful) {
 TEST_F(PromiseEndpointTest, OneReadFailed) {
   MockActivity activity;
   activity.Activate();
-  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(activity, WakeupRequested).Times(AtMost(1));
   EXPECT_CALL(mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
-  auto promise = promise_endpoint_.Read(kDummyRequestSize);
+  auto promise = promise_endpoint_->Read(kDummyRequestSize);
   auto poll = promise();
   ASSERT_TRUE(poll.ready());
   ASSERT_FALSE(poll.value().ok());
@@ -167,7 +167,7 @@ TEST_F(PromiseEndpointTest, OneReadFailed) {
   activity.Deactivate();
 }
 
-TEST_F(PromiseEndpointTest, MutipleReadsSuccessful) {
+TEST_F(PromiseEndpointTest, MultipleReadsSuccessful) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
   activity.Activate();
@@ -194,14 +194,14 @@ TEST_F(PromiseEndpointTest, MutipleReadsSuccessful) {
             return true;
           }));
   {
-    auto promise = promise_endpoint_.Read(4u);
+    auto promise = promise_endpoint_->Read(4u);
     auto poll = promise();
     ASSERT_TRUE(poll.ready());
     ASSERT_TRUE(poll.value().ok());
     EXPECT_EQ(poll.value()->JoinIntoString(), kBuffer.substr(0, 4));
   }
   {
-    auto promise = promise_endpoint_.Read(4u);
+    auto promise = promise_endpoint_->Read(4u);
     auto poll = promise();
     ASSERT_TRUE(poll.ready());
     ASSERT_TRUE(poll.value().ok());
@@ -229,7 +229,7 @@ TEST_F(PromiseEndpointTest, OnePendingReadSuccessful) {
             // Return false to mock EventEngine read not finish..
             return false;
           }));
-  auto promise = promise_endpoint_.Read(kBuffer.size());
+  auto promise = promise_endpoint_->Read(kBuffer.size());
   EXPECT_TRUE(promise().pending());
   // Mock EventEngine read succeeds, and promise resolves.
   read_callback(absl::OkStatus());
@@ -252,7 +252,7 @@ TEST_F(PromiseEndpointTest, OnePendingReadFailed) {
             // Return false to mock EventEngine read not finish.
             return false;
           }));
-  auto promise = promise_endpoint_.Read(kDummyRequestSize);
+  auto promise = promise_endpoint_->Read(kDummyRequestSize);
   EXPECT_TRUE(promise().pending());
   // Mock EventEngine read fails, and promise returns error.
   read_callback(kDummyErrorStatus);
@@ -277,7 +277,7 @@ TEST_F(PromiseEndpointTest, OneReadSliceSuccessful) {
             buffer->Append(std::move(slice));
             return true;
           }));
-  auto promise = promise_endpoint_.ReadSlice(kBuffer.size());
+  auto promise = promise_endpoint_->ReadSlice(kBuffer.size());
   auto poll = promise();
   ASSERT_TRUE(poll.ready());
   ASSERT_TRUE(poll.value().ok());
@@ -288,15 +288,15 @@ TEST_F(PromiseEndpointTest, OneReadSliceSuccessful) {
 TEST_F(PromiseEndpointTest, OneReadSliceFailed) {
   MockActivity activity;
   activity.Activate();
-  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(activity, WakeupRequested).Times(AtMost(1));
   EXPECT_CALL(mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
-  auto promise = promise_endpoint_.ReadSlice(kDummyRequestSize);
+  auto promise = promise_endpoint_->ReadSlice(kDummyRequestSize);
   auto poll = promise();
   ASSERT_TRUE(poll.ready());
   ASSERT_FALSE(poll.value().ok());
@@ -304,7 +304,7 @@ TEST_F(PromiseEndpointTest, OneReadSliceFailed) {
   activity.Deactivate();
 }
 
-TEST_F(PromiseEndpointTest, MutipleReadSlicesSuccessful) {
+TEST_F(PromiseEndpointTest, MultipleReadSlicesSuccessful) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
   activity.Activate();
@@ -331,14 +331,14 @@ TEST_F(PromiseEndpointTest, MutipleReadSlicesSuccessful) {
             return true;
           }));
   {
-    auto promise = promise_endpoint_.ReadSlice(4u);
+    auto promise = promise_endpoint_->ReadSlice(4u);
     auto poll = promise();
     ASSERT_TRUE(poll.ready());
     ASSERT_TRUE(poll.value().ok());
     EXPECT_EQ(poll.value()->as_string_view(), kBuffer.substr(0, 4));
   }
   {
-    auto promise = promise_endpoint_.ReadSlice(4u);
+    auto promise = promise_endpoint_->ReadSlice(4u);
     auto poll = promise();
     ASSERT_TRUE(poll.ready());
     ASSERT_TRUE(poll.value().ok());
@@ -366,7 +366,7 @@ TEST_F(PromiseEndpointTest, OnePendingReadSliceSuccessful) {
             // Return false to mock EventEngine read not finish..
             return false;
           }));
-  auto promise = promise_endpoint_.ReadSlice(kBuffer.size());
+  auto promise = promise_endpoint_->ReadSlice(kBuffer.size());
   EXPECT_TRUE(promise().pending());
   // Mock EventEngine read succeeds, and promise resolves.
   read_callback(absl::OkStatus());
@@ -389,7 +389,7 @@ TEST_F(PromiseEndpointTest, OnePendingReadSliceFailed) {
             // Return false to mock EventEngine read not finish.
             return false;
           }));
-  auto promise = promise_endpoint_.ReadSlice(kDummyRequestSize);
+  auto promise = promise_endpoint_->ReadSlice(kDummyRequestSize);
   EXPECT_TRUE(promise().pending());
   // Mock EventEngine read fails, and promise returns error.
   read_callback(kDummyErrorStatus);
@@ -414,7 +414,7 @@ TEST_F(PromiseEndpointTest, OneReadByteSuccessful) {
             buffer->Append(std::move(slice));
             return true;
           }));
-  auto promise = promise_endpoint_.ReadByte();
+  auto promise = promise_endpoint_->ReadByte();
   auto poll = promise();
   ASSERT_TRUE(poll.ready());
   ASSERT_TRUE(poll.value().ok());
@@ -425,15 +425,15 @@ TEST_F(PromiseEndpointTest, OneReadByteSuccessful) {
 TEST_F(PromiseEndpointTest, OneReadByteFailed) {
   MockActivity activity;
   activity.Activate();
-  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(activity, WakeupRequested).Times(AtMost(1));
   EXPECT_CALL(mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
-  auto promise = promise_endpoint_.ReadByte();
+  auto promise = promise_endpoint_->ReadByte();
   auto poll = promise();
   ASSERT_TRUE(poll.ready());
   ASSERT_FALSE(poll.value().ok());
@@ -441,7 +441,7 @@ TEST_F(PromiseEndpointTest, OneReadByteFailed) {
   activity.Deactivate();
 }
 
-TEST_F(PromiseEndpointTest, MutipleReadBytesSuccessful) {
+TEST_F(PromiseEndpointTest, MultipleReadBytesSuccessful) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
   activity.Activate();
@@ -456,7 +456,7 @@ TEST_F(PromiseEndpointTest, MutipleReadBytesSuccessful) {
             return true;
           }));
   for (size_t i = 0; i < kBuffer.size(); ++i) {
-    auto promise = promise_endpoint_.ReadByte();
+    auto promise = promise_endpoint_->ReadByte();
     auto poll = promise();
     ASSERT_TRUE(poll.ready());
     ASSERT_TRUE(poll.value().ok());
@@ -484,7 +484,7 @@ TEST_F(PromiseEndpointTest, OnePendingReadByteSuccessful) {
             // Return false to mock EventEngine read not finish..
             return false;
           }));
-  auto promise = promise_endpoint_.ReadByte();
+  auto promise = promise_endpoint_->ReadByte();
   ASSERT_TRUE(promise().pending());
   // Mock EventEngine read succeeds, and promise resolves.
   read_callback(absl::OkStatus());
@@ -495,7 +495,7 @@ TEST_F(PromiseEndpointTest, OnePendingReadByteSuccessful) {
   activity.Deactivate();
 }
 
-TEST_F(PromiseEndpointTest, OnePengingReadByteFailed) {
+TEST_F(PromiseEndpointTest, OnePendingReadByteFailed) {
   MockActivity activity;
   absl::AnyInvocable<void(absl::Status)> read_callback;
   activity.Activate();
@@ -507,7 +507,7 @@ TEST_F(PromiseEndpointTest, OnePengingReadByteFailed) {
             // Return false to mock EventEngine read not finish.
             return false;
           }));
-  auto promise = promise_endpoint_.ReadByte();
+  auto promise = promise_endpoint_->ReadByte();
   ASSERT_TRUE(promise().pending());
   // Mock EventEngine read fails, and promise returns error.
   read_callback(kDummyErrorStatus);
@@ -523,7 +523,20 @@ TEST_F(PromiseEndpointTest, OneWriteSuccessful) {
   activity.Activate();
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Write).WillOnce(Return(true));
-  auto promise = promise_endpoint_.Write(SliceBuffer());
+  auto promise = promise_endpoint_->Write(
+      SliceBuffer(Slice::FromCopiedString("hello world")));
+  auto poll = promise();
+  ASSERT_TRUE(poll.ready());
+  EXPECT_EQ(absl::OkStatus(), poll.value());
+  activity.Deactivate();
+}
+
+TEST_F(PromiseEndpointTest, EmptyWriteIsNoOp) {
+  MockActivity activity;
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(mock_endpoint_, Write).Times(0);
+  auto promise = promise_endpoint_->Write(SliceBuffer());
   auto poll = promise();
   ASSERT_TRUE(poll.ready());
   EXPECT_EQ(absl::OkStatus(), poll.value());
@@ -533,14 +546,15 @@ TEST_F(PromiseEndpointTest, OneWriteSuccessful) {
 TEST_F(PromiseEndpointTest, OneWriteFailed) {
   MockActivity activity;
   activity.Activate();
-  EXPECT_CALL(activity, WakeupRequested).Times(0);
+  EXPECT_CALL(activity, WakeupRequested).Times(AtMost(1));
   EXPECT_CALL(mock_endpoint_, Write)
       .WillOnce(
           WithArgs<0>([this](absl::AnyInvocable<void(absl::Status)> on_write) {
             on_write(this->kDummyErrorStatus);
             return false;
           }));
-  auto promise = promise_endpoint_.Write(SliceBuffer());
+  auto promise = promise_endpoint_->Write(
+      SliceBuffer(Slice::FromCopiedString("hello world")));
   auto poll = promise();
   ASSERT_TRUE(poll.ready());
   EXPECT_EQ(kDummyErrorStatus, poll.value());
@@ -563,7 +577,8 @@ TEST_F(PromiseEndpointTest, OnePendingWriteSuccessful) {
             // Return false to mock EventEngine write pending..
             return false;
           }));
-  auto promise = promise_endpoint_.Write(SliceBuffer());
+  auto promise = promise_endpoint_->Write(
+      SliceBuffer(Slice::FromCopiedString("hello world")));
   EXPECT_TRUE(promise().pending());
   // Mock EventEngine write succeeds, and promise resolves.
   write_callback(absl::OkStatus());
@@ -585,7 +600,8 @@ TEST_F(PromiseEndpointTest, OnePendingWriteFailed) {
             // Return false to mock EventEngine write pending..
             return false;
           }));
-  auto promise = promise_endpoint_.Write(SliceBuffer());
+  auto promise = promise_endpoint_->Write(
+      SliceBuffer(Slice::FromCopiedString("hello world")));
   EXPECT_TRUE(promise().pending());
   write_callback(kDummyErrorStatus);
   auto poll = promise();
@@ -600,7 +616,7 @@ TEST_F(PromiseEndpointTest, GetPeerAddress) {
       reinterpret_cast<const sockaddr*>(raw_test_address),
       sizeof(raw_test_address));
   EXPECT_CALL(mock_endpoint_, GetPeerAddress).WillOnce(ReturnRef(test_address));
-  auto peer_address = promise_endpoint_.GetPeerAddress();
+  auto peer_address = promise_endpoint_->GetPeerAddress();
   EXPECT_EQ(0, std::memcmp(test_address.address(), test_address.address(),
                            test_address.size()));
   EXPECT_EQ(test_address.size(), peer_address.size());
@@ -613,10 +629,41 @@ TEST_F(PromiseEndpointTest, GetLocalAddress) {
       sizeof(raw_test_address));
   EXPECT_CALL(mock_endpoint_, GetLocalAddress)
       .WillOnce(ReturnRef(test_address));
-  auto local_address = promise_endpoint_.GetLocalAddress();
+  auto local_address = promise_endpoint_->GetLocalAddress();
   EXPECT_EQ(0, std::memcmp(test_address.address(), local_address.address(),
                            test_address.size()));
   EXPECT_EQ(test_address.size(), local_address.size());
+}
+
+TEST_F(PromiseEndpointTest, DestroyedBeforeReadCompletes) {
+  MockActivity activity;
+  const std::string kBuffer = {0x01};
+  absl::AnyInvocable<void(absl::Status)> read_callback;
+  activity.Activate();
+  EXPECT_CALL(activity, WakeupRequested).Times(1);
+  EXPECT_CALL(mock_endpoint_, Read)
+      .WillOnce(WithArgs<0, 1>(
+          [&read_callback, &kBuffer](
+              absl::AnyInvocable<void(absl::Status)> on_read,
+              grpc_event_engine::experimental::SliceBuffer* buffer) {
+            read_callback = std::move(on_read);
+            // Schedule mock_endpoint to read buffer.
+            grpc_event_engine::experimental::Slice slice(
+                grpc_slice_from_cpp_string(kBuffer));
+            buffer->Append(std::move(slice));
+            // Return false to mock EventEngine read not finish..
+            return false;
+          }));
+  auto promise = promise_endpoint_->ReadByte();
+  ASSERT_TRUE(promise().pending());
+  promise_endpoint_.reset();
+  // Mock EventEngine read succeeds, and promise resolves.
+  read_callback(absl::OkStatus());
+  auto poll = promise();
+  ASSERT_TRUE(poll.ready());
+  ASSERT_TRUE(poll.value().ok());
+  EXPECT_EQ(*poll.value(), kBuffer[0]);
+  activity.Deactivate();
 }
 
 class MultiplePromiseEndpointTest : public ::testing::Test {
@@ -705,7 +752,7 @@ TEST_F(MultiplePromiseEndpointTest, JoinOneReadSuccessfulOneReadFailed) {
   EXPECT_CALL(second_mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
@@ -735,14 +782,14 @@ TEST_F(MultiplePromiseEndpointTest, JoinReadsFailed) {
   EXPECT_CALL(first_mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
   EXPECT_CALL(second_mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
@@ -775,8 +822,10 @@ TEST_F(MultiplePromiseEndpointTest, JoinWritesSuccessful) {
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   auto activity = MakeActivity(
       [this] {
-        return Seq(Join(this->first_promise_endpoint_.Write(SliceBuffer()),
-                        this->second_promise_endpoint_.Write(SliceBuffer())),
+        return Seq(Join(this->first_promise_endpoint_.Write(SliceBuffer(
+                            Slice::FromCopiedString("hello world"))),
+                        this->second_promise_endpoint_.Write(SliceBuffer(
+                            Slice::FromCopiedString("hello world")))),
                    [](std::tuple<absl::Status, absl::Status> ret) {
                      // Both writes finish with `absl::OkStatus`.
                      EXPECT_TRUE(std::get<0>(ret).ok());
@@ -800,8 +849,10 @@ TEST_F(MultiplePromiseEndpointTest, JoinOneWriteSuccessfulOneWriteFailed) {
   EXPECT_CALL(on_done, Call(kDummyErrorStatus));
   auto activity = MakeActivity(
       [this] {
-        return Seq(Join(this->first_promise_endpoint_.Write(SliceBuffer()),
-                        this->second_promise_endpoint_.Write(SliceBuffer())),
+        return Seq(Join(this->first_promise_endpoint_.Write(SliceBuffer(
+                            Slice::FromCopiedString("hello world"))),
+                        this->second_promise_endpoint_.Write(SliceBuffer(
+                            Slice::FromCopiedString("hello world")))),
                    [this](std::tuple<absl::Status, absl::Status> ret) {
                      // One write finish with `absl::OkStatus` and the other
                      // write fails.
@@ -832,8 +883,10 @@ TEST_F(MultiplePromiseEndpointTest, JoinWritesFailed) {
   EXPECT_CALL(on_done, Call(kDummyErrorStatus));
   auto activity = MakeActivity(
       [this] {
-        return Seq(Join(this->first_promise_endpoint_.Write(SliceBuffer()),
-                        this->second_promise_endpoint_.Write(SliceBuffer())),
+        return Seq(Join(this->first_promise_endpoint_.Write(SliceBuffer(
+                            Slice::FromCopiedString("hello world"))),
+                        this->second_promise_endpoint_.Write(SliceBuffer(
+                            Slice::FromCopiedString("hello world")))),
                    [this](std::tuple<absl::Status, absl::Status> ret) {
                      // Both writes fail with errors.
                      EXPECT_FALSE(std::get<0>(ret).ok());

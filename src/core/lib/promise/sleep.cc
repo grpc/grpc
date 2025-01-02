@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/sleep.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
 #include <utility>
 
-#include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/event_engine/event_engine_context.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -54,7 +53,7 @@ Poll<absl::Status> Sleep::operator()() {
 }
 
 Sleep::ActiveClosure::ActiveClosure(Timestamp deadline)
-    : waker_(Activity::current()->MakeOwningWaker()),
+    : waker_(GetContext<Activity>()->MakeOwningWaker()),
       timer_handle_(GetContext<EventEngine>()->RunAfter(
           deadline - Timestamp::Now(), this)) {}
 

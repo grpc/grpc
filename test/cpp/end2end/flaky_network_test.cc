@@ -16,23 +16,10 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
-#include <algorithm>
-#include <condition_variable>
-#include <memory>
-#include <mutex>
-#include <random>
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/memory/memory.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -41,13 +28,23 @@
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
+#include <gtest/gtest.h>
 
-#include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
+#include <algorithm>
+#include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <thread>
+
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
@@ -227,9 +224,9 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     Status status = stub->Echo(&context, request, response.get());
     auto ok = status.ok();
     if (ok) {
-      gpr_log(GPR_DEBUG, "RPC succeeded");
+      VLOG(2) << "RPC succeeded";
     } else {
-      gpr_log(GPR_DEBUG, "RPC failed: %s", status.error_message().c_str());
+      VLOG(2) << "RPC failed: " << status.error_message();
     }
     return ok;
   }
@@ -246,7 +243,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
         : port_(port), creds_(creds) {}
 
     void Start(const std::string& server_host) {
-      gpr_log(GPR_INFO, "starting server on port %d", port_);
+      LOG(INFO) << "starting server on port " << port_;
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
@@ -254,7 +251,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
           std::bind(&ServerData::Serve, this, server_host, &mu, &cond));
       cond.wait(lock, [this] { return server_ready_; });
       server_ready_ = false;
-      gpr_log(GPR_INFO, "server startup complete");
+      LOG(INFO) << "server startup complete";
     }
 
     void Serve(const std::string& server_host, std::mutex* mu,
@@ -400,7 +397,7 @@ TEST_P(FlakyNetworkTest, ServerUnreachableWithKeepalive) {
   // max time between reconnect attempts
   args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, kReconnectBackoffMs);
 
-  gpr_log(GPR_DEBUG, "FlakyNetworkTest.ServerUnreachableWithKeepalive start");
+  VLOG(2) << "FlakyNetworkTest.ServerUnreachableWithKeepalive start";
   auto channel = BuildChannel("pick_first", args);
   auto stub = BuildStub(channel);
   // Channel should be in READY state after we send an RPC
@@ -419,18 +416,18 @@ TEST_P(FlakyNetworkTest, ServerUnreachableWithKeepalive) {
   });
 
   // break network connectivity
-  gpr_log(GPR_DEBUG, "Adding iptables rule to drop packets");
+  VLOG(2) << "Adding iptables rule to drop packets";
   DropPackets();
   std::this_thread::sleep_for(std::chrono::milliseconds(10000));
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   // bring network interface back up
   RestoreNetwork();
-  gpr_log(GPR_DEBUG, "Removed iptables rule to drop packets");
+  VLOG(2) << "Removed iptables rule to drop packets";
   EXPECT_TRUE(WaitForChannelReady(channel.get()));
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
   shutdown.store(true);
   sender.join();
-  gpr_log(GPR_DEBUG, "FlakyNetworkTest.ServerUnreachableWithKeepalive end");
+  VLOG(2) << "FlakyNetworkTest.ServerUnreachableWithKeepalive end";
 }
 
 //

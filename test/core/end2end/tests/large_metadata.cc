@@ -16,19 +16,16 @@
 //
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
 #include <stdio.h>
 
 #include <string>
 
-#include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -59,11 +56,10 @@ class LargeMetadataTest {
   }
 
  private:
-  CoreEnd2endTest::IncomingStatusOnClient PerformOneRequest(
-      const size_t metadata_size) {
+  IncomingStatusOnClient PerformOneRequest(const size_t metadata_size) {
     auto c = test_.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-    CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-    CoreEnd2endTest::IncomingStatusOnClient server_status;
+    IncomingMetadata server_initial_metadata;
+    IncomingStatusOnClient server_status;
     c.NewBatch(1)
         .SendInitialMetadata({})
         .SendCloseFromClient()
@@ -73,7 +69,7 @@ class LargeMetadataTest {
     test_.Expect(101, true);
     test_.Step();
     // Server: send metadata of size `metadata_size`.
-    CoreEnd2endTest::IncomingCloseOnServer client_close;
+    IncomingCloseOnServer client_close;
     s.NewBatch(102)
         .SendInitialMetadata({{"key", std::string(metadata_size, 'a')}})
         .RecvCloseOnServer(client_close)
@@ -170,7 +166,7 @@ CORE_END2END_TEST(Http2SingleHopTest,
 // Set hard limit * 0.8 higher than default soft limit and do not set soft
 // limit. Hard limit * 0.8 should be used as soft limit.
 CORE_END2END_TEST(Http2SingleHopTest,
-                  RequestWithLargeMetadataHardLimitOverridsDefaultSoft) {
+                  RequestWithLargeMetadataHardLimitOverridesDefaultSoft) {
   const size_t hard_limit = 45 * 1024;
   const size_t metadata_size_below_soft_limit = hard_limit * 0.5;
   const size_t metadata_size_above_hard_limit = hard_limit * 1.5;

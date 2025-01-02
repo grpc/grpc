@@ -15,7 +15,6 @@
 #define GRPC_EVENT_ENGINE_MEMORY_REQUEST_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include "absl/strings/string_view.h"
@@ -45,6 +44,24 @@ class MemoryRequest {
 
   size_t min() const { return min_; }
   size_t max() const { return max_; }
+
+  bool operator==(const MemoryRequest& other) const {
+    return min_ == other.min_ && max_ == other.max_;
+  }
+  bool operator!=(const MemoryRequest& other) const {
+    return !(*this == other);
+  }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& s, const MemoryRequest& r) {
+    if (r.min_ == r.max_) {
+      s.Append(r.min_);
+    } else {
+      s.Append(r.min_);
+      s.Append("..");
+      s.Append(r.max_);
+    }
+  }
 
  private:
   size_t min_;

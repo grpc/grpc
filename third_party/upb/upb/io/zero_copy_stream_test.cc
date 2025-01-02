@@ -1,29 +1,9 @@
-/*
- * Copyright (c) 2009-2022, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 // Testing strategy:  For each type of I/O (array, string, file, etc.) we
 // create an output stream and write some data to it, then create a
@@ -34,10 +14,11 @@
 // process is run with a variety of block sizes for both the input and
 // the output.
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+#include "upb/base/status.hpp"
 #include "upb/io/chunked_input_stream.h"
 #include "upb/io/chunked_output_stream.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 namespace upb {
 namespace {
@@ -63,12 +44,6 @@ class IoTest : public testing::Test {
   // Reads text from an input stream and expects it to match what
   // WriteStuff() writes.
   void ReadStuff(upb_ZeroCopyInputStream* input, bool read_eof = true);
-
-  // Similar to WriteStuff, but performs more sophisticated testing.
-  int WriteStuffLarge(upb_ZeroCopyOutputStream* output);
-  // Reads and tests a stream that should have been written to
-  // via WriteStuffLarge().
-  void ReadStuffLarge(upb_ZeroCopyInputStream* input);
 
   static const int kBlockSizes[];
   static const int kBlockSizeCount;
@@ -174,35 +149,6 @@ void IoTest::ReadStuff(upb_ZeroCopyInputStream* input, bool read_eof) {
     uint8_t byte;
     EXPECT_EQ(ReadFromInput(input, &byte, 1), 0);
   }
-}
-
-int IoTest::WriteStuffLarge(upb_ZeroCopyOutputStream* output) {
-  WriteString(output, "Hello world!\n");
-  WriteString(output, "Some te");
-  WriteString(output, "xt.  Blah blah.");
-  WriteString(output, std::string(100000, 'x'));  // A very long string
-  WriteString(output, std::string(100000, 'y'));  // A very long string
-  WriteString(output, "01234567890123456789");
-
-  const int result = upb_ZeroCopyOutputStream_ByteCount(output);
-  EXPECT_EQ(result, 200055);
-  return result;
-}
-
-// Reads text from an input stream and expects it to match what WriteStuff()
-// writes.
-void IoTest::ReadStuffLarge(upb_ZeroCopyInputStream* input) {
-  ReadString(input, "Hello world!\nSome text.  ");
-  EXPECT_TRUE(upb_ZeroCopyInputStream_Skip(input, 5));
-  ReadString(input, "blah.");
-  EXPECT_TRUE(upb_ZeroCopyInputStream_Skip(input, 100000 - 10));
-  ReadString(input, std::string(10, 'x') + std::string(100000 - 20000, 'y'));
-  EXPECT_TRUE(upb_ZeroCopyInputStream_Skip(input, 20000 - 10));
-  ReadString(input, "yyyyyyyyyy01234567890123456789");
-  EXPECT_EQ(upb_ZeroCopyInputStream_ByteCount(input), 200055);
-
-  uint8_t byte;
-  EXPECT_EQ(ReadFromInput(input, &byte, 1), 0);
 }
 
 // ===================================================================

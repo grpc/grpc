@@ -174,8 +174,8 @@ class _Servicer(object):
             return self._received_client_metadata
 
 
-def _generic_handler(servicer):
-    method_handlers = {
+def get_method_handlers(servicer):
+    return {
         _UNARY_UNARY: grpc.unary_unary_rpc_method_handler(
             servicer.unary_unary,
             request_deserializer=_REQUEST_DESERIALIZER,
@@ -193,59 +193,66 @@ def _generic_handler(servicer):
             response_serializer=_RESPONSE_SERIALIZER,
         ),
     }
-    return grpc.method_handlers_generic_handler(_SERVICE, method_handlers)
 
 
 class MetadataCodeDetailsTest(unittest.TestCase):
     def setUp(self):
         self._servicer = _Servicer()
         self._server = test_common.test_server()
-        self._server.add_generic_rpc_handlers(
-            (_generic_handler(self._servicer),)
+        self._server.add_registered_method_handlers(
+            _SERVICE, get_method_handlers(self._servicer)
         )
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
 
         self._channel = grpc.insecure_channel("localhost:{}".format(port))
+        unary_unary_method_name = "/".join(
+            (
+                "",
+                _SERVICE,
+                _UNARY_UNARY,
+            )
+        )
         self._unary_unary = self._channel.unary_unary(
-            "/".join(
-                (
-                    "",
-                    _SERVICE,
-                    _UNARY_UNARY,
-                )
-            ),
+            unary_unary_method_name,
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,
+            _registered_method=True,
+        )
+        unary_stream_method_name = "/".join(
+            (
+                "",
+                _SERVICE,
+                _UNARY_STREAM,
+            )
         )
         self._unary_stream = self._channel.unary_stream(
-            "/".join(
-                (
-                    "",
-                    _SERVICE,
-                    _UNARY_STREAM,
-                )
-            ),
+            unary_stream_method_name,
+            _registered_method=True,
+        )
+        stream_unary_method_name = "/".join(
+            (
+                "",
+                _SERVICE,
+                _STREAM_UNARY,
+            )
         )
         self._stream_unary = self._channel.stream_unary(
-            "/".join(
-                (
-                    "",
-                    _SERVICE,
-                    _STREAM_UNARY,
-                )
-            ),
+            stream_unary_method_name,
+            _registered_method=True,
+        )
+        stream_stream_method_name = "/".join(
+            (
+                "",
+                _SERVICE,
+                _STREAM_STREAM,
+            )
         )
         self._stream_stream = self._channel.stream_stream(
-            "/".join(
-                (
-                    "",
-                    _SERVICE,
-                    _STREAM_STREAM,
-                )
-            ),
+            stream_stream_method_name,
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,
+            _registered_method=True,
         )
 
     def tearDown(self):
@@ -821,23 +828,25 @@ class InspectContextTest(unittest.TestCase):
     def setUp(self):
         self._servicer = _InspectServicer()
         self._server = test_common.test_server()
-        self._server.add_generic_rpc_handlers(
-            (_generic_handler(self._servicer),)
+        self._server.add_registered_method_handlers(
+            _SERVICE, get_method_handlers(self._servicer)
         )
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
 
         self._channel = grpc.insecure_channel("localhost:{}".format(port))
+        unary_unary_method_name = "/".join(
+            (
+                "",
+                _SERVICE,
+                _UNARY_UNARY,
+            )
+        )
         self._unary_unary = self._channel.unary_unary(
-            "/".join(
-                (
-                    "",
-                    _SERVICE,
-                    _UNARY_UNARY,
-                )
-            ),
+            unary_unary_method_name,
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,
+            _registered_method=True,
         )
 
     def tearDown(self):

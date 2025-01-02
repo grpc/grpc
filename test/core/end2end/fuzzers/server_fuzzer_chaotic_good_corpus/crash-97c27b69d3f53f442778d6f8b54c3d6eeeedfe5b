@@ -1,0 +1,13 @@
+network_input {
+  input_segments {
+    segments {
+      client_prefix {
+      }
+    }
+  }
+}
+config_vars {
+  experiments: 0
+}
+channel_args {
+}

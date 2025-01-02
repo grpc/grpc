@@ -1,1 +1,1 @@
-FROM ghcr.io/rake-compiler/rake-compiler-dock-image:1.3.0-mri-x86_64-darwin
+FROM ghcr.io/rake-compiler/rake-compiler-dock-image:1.4.0-mri-x86_64-darwin

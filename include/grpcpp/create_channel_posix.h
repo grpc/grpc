@@ -20,11 +20,10 @@
 #define GRPCPP_CREATE_CHANNEL_POSIX_H
 
 #include <grpc/support/port_platform.h>
-
-#include <memory>
-
 #include <grpcpp/channel.h>
 #include <grpcpp/support/channel_arguments.h>
+
+#include <memory>
 
 namespace grpc {
 

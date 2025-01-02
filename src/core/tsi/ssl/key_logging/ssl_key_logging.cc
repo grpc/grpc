@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
+
+#include <grpc/support/port_platform.h>
 
 #include <map>
 
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
 
 using TlsSessionKeyLogger = tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger;
 
@@ -48,15 +48,13 @@ TlsSessionKeyLoggerCache::TlsSessionKeyLogger::TlsSessionKeyLogger(
     grpc_core::RefCountedPtr<TlsSessionKeyLoggerCache> cache)
     : tls_session_key_log_file_path_(std::move(tls_session_key_log_file_path)),
       cache_(std::move(cache)) {
-  GPR_ASSERT(!tls_session_key_log_file_path_.empty());
-  GPR_ASSERT(cache_ != nullptr);
+  CHECK(!tls_session_key_log_file_path_.empty());
+  CHECK(cache_ != nullptr);
   fd_ = fopen(tls_session_key_log_file_path_.c_str(), "a");
   if (fd_ == nullptr) {
     grpc_error_handle error = GRPC_OS_ERROR(errno, "fopen");
-    gpr_log(GPR_ERROR,
-            "Ignoring TLS Key logging. ERROR Opening TLS Keylog "
-            "file: %s",
-            grpc_core::StatusToString(error).c_str());
+    LOG(ERROR) << "Ignoring TLS Key logging. ERROR Opening TLS Keylog file: "
+               << grpc_core::StatusToString(error);
   }
   cache_->tls_session_key_logger_map_.emplace(tls_session_key_log_file_path_,
                                               this);
@@ -83,13 +81,13 @@ void TlsSessionKeyLoggerCache::TlsSessionKeyLogger::LogSessionKeys(
   if (fd_ == nullptr || session_keys_info.empty()) return;
   // Append to key log file under lock
   bool err =
-      fwrite((session_keys_info + "\r\n").c_str(), sizeof(char),
+      fwrite((session_keys_info + "\n").c_str(), sizeof(char),
              session_keys_info.length() + 1, fd_) < session_keys_info.length();
 
   if (err) {
     grpc_error_handle error = GRPC_OS_ERROR(errno, "fwrite");
-    gpr_log(GPR_ERROR, "Error Appending to TLS session key log file: %s",
-            grpc_core::StatusToString(error).c_str());
+    LOG(ERROR) << "Error Appending to TLS session key log file: "
+               << grpc_core::StatusToString(error);
     fclose(fd_);
     fd_ = nullptr;  // disable future attempts to write to this file
   } else {
@@ -110,7 +108,7 @@ TlsSessionKeyLoggerCache::~TlsSessionKeyLoggerCache() {
 grpc_core::RefCountedPtr<TlsSessionKeyLogger> TlsSessionKeyLoggerCache::Get(
     std::string tls_session_key_log_file_path) {
   gpr_once_init(&g_cache_mutex_init, do_cache_mutex_init);
-  GPR_DEBUG_ASSERT(g_tls_session_key_log_cache_mu != nullptr);
+  DCHECK_NE(g_tls_session_key_log_cache_mu, nullptr);
   if (tls_session_key_log_file_path.empty()) {
     return nullptr;
   }

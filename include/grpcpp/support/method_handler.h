@@ -20,10 +20,11 @@
 #define GRPCPP_SUPPORT_METHOD_HANDLER_H
 
 #include <grpc/byte_buffer.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/sync_stream.h>
+
+#include "absl/log/absl_check.h"
 
 namespace grpc {
 
@@ -57,7 +58,7 @@ template <class Callable>
 template <class ResponseType>
 void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter& param,
                            ResponseType* rsp, grpc::Status& status) {
-  GPR_ASSERT(!param.server_context->sent_initial_metadata_);
+  ABSL_CHECK(!param.server_context->sent_initial_metadata_);
   grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                             grpc::internal::CallOpSendMessage,
                             grpc::internal::CallOpServerSendStatus>

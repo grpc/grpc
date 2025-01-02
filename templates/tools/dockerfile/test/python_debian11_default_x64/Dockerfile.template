@@ -19,11 +19,16 @@
   <%include file="../../apt_get_basic.include"/>
   <%include file="../../run_tests_addons.include"/>
 
-  <%include file="../../compile_python_36.include"/>
   <%include file="../../compile_python_37.include"/>
   <%include file="../../compile_python_38.include"/>
   <%include file="../../compile_python_310.include"/>
   <%include file="../../compile_python_311.include"/>
+  <%include file="../../compile_python_312.include"/>
+  <%include file="../../compile_python_313.include"/>
+
+  # Python test coverage requires libsqlite3, and it have
+  # to be installed before Python.
+  RUN apt-get update && apt-get install -y libsqlite3-dev
 
   # 3.9 is the default python3 version on debian11
   RUN apt-get update && apt-get install -y python3.9 python3.9-dev python3-pip

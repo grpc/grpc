@@ -17,22 +17,21 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_VERIFIER_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_VERIFIER_H
 
+#include <grpc/credentials.h>
+#include <grpc/grpc_security.h>
+#include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 
 #include <functional>
 #include <map>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
-
-#include <grpc/grpc_security.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/unique_type_name.h"
+#include "src/core/util/useful.h"
 
 // An abstraction of the verifier that all verifier subclasses should extend.
 struct grpc_tls_certificate_verifier
@@ -50,13 +49,15 @@ struct grpc_tls_certificate_verifier
                       absl::Status* sync_status) = 0;
   // Operations that will be performed when a request is cancelled.
   // This is only needed when in async mode.
+  // TODO(roth): This needs to take an absl::Status argument so that we
+  // can pass the cancellation status through to the check_peer callback.
   virtual void Cancel(grpc_tls_custom_verification_check_request* request) = 0;
 
   // Compares this grpc_tls_certificate_verifier object with \a other.
   // If this method returns 0, it means that gRPC can treat the two certificate
   // verifiers as effectively the same.
   int Compare(const grpc_tls_certificate_verifier* other) const {
-    GPR_ASSERT(other != nullptr);
+    CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return CompareImpl(other);

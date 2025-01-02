@@ -19,8 +19,8 @@
 
 #include <string>
 
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/util/ref_counted.h"
 
 namespace grpc_core {
 

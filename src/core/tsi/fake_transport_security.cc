@@ -16,21 +16,20 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/fake_transport_security.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/transport_security_grpc.h"
+#include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/memory.h"
 
 // --- Constants. ---
 #define TSI_FAKE_FRAME_HEADER_SIZE 4
@@ -90,7 +89,7 @@ static const char* tsi_fake_handshake_message_strings[] = {
 
 static const char* tsi_fake_handshake_message_to_string(int msg) {
   if (msg < 0 || msg >= TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
-    gpr_log(GPR_ERROR, "Invalid message %d", msg);
+    LOG(ERROR) << "Invalid message " << msg;
     return "UNKNOWN";
   }
   return tsi_fake_handshake_message_strings[msg];
@@ -106,7 +105,7 @@ static tsi_result tsi_fake_handshake_message_from_string(
       return TSI_OK;
     }
   }
-  gpr_log(GPR_ERROR, "Invalid handshake message.");
+  LOG(ERROR) << "Invalid handshake message.";
   if (error != nullptr) *error = "invalid handshake message";
   return TSI_DATA_CORRUPTED;
 }
@@ -121,11 +120,12 @@ static void store32_little_endian(uint32_t value, unsigned char* buf) {
   buf[3] = static_cast<unsigned char>((value >> 24) & 0xFF);
   buf[2] = static_cast<unsigned char>((value >> 16) & 0xFF);
   buf[1] = static_cast<unsigned char>((value >> 8) & 0xFF);
-  buf[0] = static_cast<unsigned char>((value)&0xFF);
+  buf[0] = static_cast<unsigned char>((value) & 0xFF);
 }
 
 static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
-  GPR_ASSERT(sb != nullptr && sb->length >= TSI_FAKE_FRAME_HEADER_SIZE);
+  CHECK(sb != nullptr);
+  CHECK(sb->length >= TSI_FAKE_FRAME_HEADER_SIZE);
   uint8_t frame_size_buffer[TSI_FAKE_FRAME_HEADER_SIZE];
   uint8_t* buf = frame_size_buffer;
   // Copies the first 4 bytes to a temporary buffer.
@@ -142,7 +142,7 @@ static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
       remaining -= slice_length;
     }
   }
-  GPR_ASSERT(remaining == 0);
+  CHECK_EQ(remaining, 0u);
   return load32_little_endian(frame_size_buffer);
 }
 
@@ -208,6 +208,8 @@ static tsi_result tsi_fake_frame_decode(const unsigned char* incoming_bytes,
     frame->offset += to_read_size;
     available_size -= to_read_size;
     frame->size = load32_little_endian(frame->data);
+    if (frame->size < 4) return TSI_DATA_CORRUPTED;
+    if (frame->size > 16 * 1024 * 1024) return TSI_DATA_CORRUPTED;
     tsi_fake_frame_ensure_size(frame);
   }
 
@@ -310,8 +312,8 @@ static tsi_result fake_protector_protect(tsi_frame_protector* self,
     result = tsi_fake_frame_decode(frame_header, &written_in_frame_size, frame,
                                    /*error=*/nullptr);
     if (result != TSI_INCOMPLETE_DATA) {
-      gpr_log(GPR_ERROR, "tsi_fake_frame_decode returned %s",
-              tsi_result_to_string(result));
+      LOG(ERROR) << "tsi_fake_frame_decode returned "
+                 << tsi_result_to_string(result);
       return result;
     }
   }
@@ -467,7 +469,7 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
     if (impl->parsed_frame_size == 0) {
       impl->parsed_frame_size = read_frame_size(&impl->protected_sb);
       if (impl->parsed_frame_size <= 4) {
-        gpr_log(GPR_ERROR, "Invalid frame size.");
+        LOG(ERROR) << "Invalid frame size.";
         return TSI_DATA_CORRUPTED;
       }
     }
@@ -637,11 +639,9 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
     if (next_message_to_send > TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
       next_message_to_send = TSI_FAKE_HANDSHAKE_MESSAGE_MAX;
     }
-    if (GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
-      gpr_log(GPR_INFO, "%s prepared %s.",
-              impl->is_client ? "Client" : "Server",
-              tsi_fake_handshake_message_to_string(impl->next_message_to_send));
-    }
+    GRPC_TRACE_LOG(tsi, INFO)
+        << (impl->is_client ? "Client" : "Server") << " prepared "
+        << tsi_fake_handshake_message_to_string(impl->next_message_to_send);
     impl->next_message_to_send = next_message_to_send;
   }
   result =
@@ -650,9 +650,7 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
   if (!impl->is_client &&
       impl->next_message_to_send == TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
     // We're done.
-    if (GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
-      gpr_log(GPR_INFO, "Server is done.");
-    }
+    GRPC_TRACE_LOG(tsi, INFO) << "Server is done.";
     impl->result = TSI_OK;
   } else {
     impl->needs_incoming_message = 1;
@@ -687,21 +685,20 @@ static tsi_result fake_handshaker_process_bytes_from_peer(
     return result;
   }
   if (received_msg != expected_msg) {
-    gpr_log(GPR_ERROR, "Invalid received message (%s instead of %s)",
-            tsi_fake_handshake_message_to_string(received_msg),
-            tsi_fake_handshake_message_to_string(expected_msg));
+    LOG(ERROR) << "Invalid received message ("
+               << tsi_fake_handshake_message_to_string(received_msg)
+               << " instead of "
+               << tsi_fake_handshake_message_to_string(expected_msg) << ")";
   }
-  if (GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
-    gpr_log(GPR_INFO, "%s received %s.", impl->is_client ? "Client" : "Server",
-            tsi_fake_handshake_message_to_string(received_msg));
-  }
+  GRPC_TRACE_LOG(tsi, INFO)
+      << (impl->is_client ? "Client" : "Server") << " received "
+      << tsi_fake_handshake_message_to_string(received_msg);
   tsi_fake_frame_reset(&impl->incoming_frame, 0 /* needs_draining */);
   impl->needs_incoming_message = 0;
   if (impl->next_message_to_send == TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
     // We're done.
-    if (GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
-      gpr_log(GPR_INFO, "%s is done.", impl->is_client ? "Client" : "Server");
-    }
+    GRPC_TRACE_LOG(tsi, INFO)
+        << (impl->is_client ? "Client" : "Server") << " is done.";
     impl->result = TSI_OK;
   }
   return TSI_OK;

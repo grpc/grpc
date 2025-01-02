@@ -16,6 +16,16 @@
 //
 //
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 
 #include <functional>
@@ -24,27 +34,15 @@
 #include <thread>
 #include <vector>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -56,8 +54,10 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/resource_quota/api.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace test {
@@ -97,10 +97,10 @@ class ServerThread {
     grpc_completion_queue* shutdown_cq =
         grpc_completion_queue_create_for_pluck(nullptr);
     grpc_server_shutdown_and_notify(server_, shutdown_cq, nullptr);
-    GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, nullptr,
-                                           grpc_timeout_seconds_to_deadline(1),
-                                           nullptr)
-                   .type == GRPC_OP_COMPLETE);
+    CHECK(grpc_completion_queue_pluck(shutdown_cq, nullptr,
+                                      grpc_timeout_seconds_to_deadline(1),
+                                      nullptr)
+              .type == GRPC_OP_COMPLETE);
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(server_);
     grpc_completion_queue_destroy(cq_);
@@ -172,17 +172,18 @@ class Client {
         break;
       }
       if (state.error() != absl::OkStatus()) break;
-      gpr_log(GPR_INFO, "client read %" PRIuPTR " bytes", read_buffer.length);
+      LOG(INFO) << "client read " << read_buffer.length << " bytes";
       grpc_slice_buffer_reset_and_unref(&read_buffer);
     }
-    grpc_endpoint_shutdown(endpoint_, GRPC_ERROR_CREATE("shutdown"));
+    grpc_endpoint_destroy(endpoint_);
+    endpoint_ = nullptr;
     grpc_slice_buffer_destroy(&read_buffer);
     return retval;
   }
 
   void Shutdown() {
     ExecCtx exec_ctx;
-    grpc_endpoint_destroy(endpoint_);
+    if (endpoint_ != nullptr) grpc_endpoint_destroy(endpoint_);
     grpc_pollset_shutdown(pollset_,
                           GRPC_CLOSURE_CREATE(&Client::PollsetDestroy, pollset_,
                                               grpc_schedule_on_exec_ctx));
@@ -208,7 +209,7 @@ class Client {
 
    private:
     static void OnEventDone(void* arg, grpc_error_handle error) {
-      gpr_log(GPR_INFO, "OnEventDone(): %s", StatusToString(error).c_str());
+      LOG(INFO) << "OnEventDone(): " << StatusToString(error);
       EventState* state = static_cast<EventState*>(arg);
       state->error_ = error;
       gpr_atm_rel_store(&state->done_atm_, 1);
@@ -253,21 +254,21 @@ TEST(SettingsTimeout, Basic) {
   const int server_port = grpc_pick_unused_port_or_die();
   std::string server_address_string = absl::StrCat("localhost:", server_port);
   // Start server.
-  gpr_log(GPR_INFO, "starting server on %s", server_address_string.c_str());
+  LOG(INFO) << "starting server on " << server_address_string;
   ServerThread server_thread(server_address_string.c_str());
   server_thread.Start();
   // Create client and connect to server.
-  gpr_log(GPR_INFO, "starting client connect");
+  LOG(INFO) << "starting client connect";
   Client client(server_address_string.c_str());
   client.Connect();
   // Client read.  Should fail due to server dropping connection.
-  gpr_log(GPR_INFO, "starting client read");
+  LOG(INFO) << "starting client read";
   EXPECT_TRUE(client.ReadUntilError());
   // Shut down client.
-  gpr_log(GPR_INFO, "shutting down client");
+  LOG(INFO) << "shutting down client";
   client.Shutdown();
   // Shut down server.
-  gpr_log(GPR_INFO, "shutting down server");
+  LOG(INFO) << "shutting down server";
   server_thread.Shutdown();
   // Clean up.
 }

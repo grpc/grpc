@@ -19,11 +19,11 @@
 #ifndef GRPC_TEST_CPP_INTEROP_STRESS_INTEROP_CLIENT_H
 #define GRPC_TEST_CPP_INTEROP_STRESS_INTEROP_CLIENT_H
 
+#include <grpcpp/create_channel.h>
+
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <grpcpp/create_channel.h>
 
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/metrics_server.h"

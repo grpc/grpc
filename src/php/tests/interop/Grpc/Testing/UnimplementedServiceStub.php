@@ -31,7 +31,7 @@ class UnimplementedServiceStub {
      * A call that no server should implement
      * @param \Grpc\Testing\EmptyMessage $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occured
+     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function UnimplementedCall(

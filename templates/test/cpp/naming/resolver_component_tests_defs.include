@@ -47,7 +47,7 @@ def test_runner_log(msg):
   sys.stderr.write('\n%s: %s\n' % (__file__, msg))
 
 def python_args(arg_list):
-  if platform.system() == 'Windows':
+  if platform.system() == 'Windows' and arg_list[0].endswith('.py'):
     return [sys.executable] + arg_list
   return arg_list
 
@@ -92,7 +92,7 @@ def wait_until_dns_server_is_up(args,
   dns_server_subprocess.kill()
   dns_server_subprocess.wait()
   test_runner_log(('Failed to reach DNS server over TCP and/or UDP. '
-                   'Exitting without running tests.'))
+                   'Exiting without running tests.'))
   test_runner_log('======= DNS server stdout '
                   '(merged stdout and stderr) =============')
   with open(dns_server_subprocess_output, 'r') as l:

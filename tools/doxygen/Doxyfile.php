@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC PHP"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.58.0-dev
+PROJECT_NUMBER         = 1.70.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -777,6 +777,7 @@ doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
 doc/grpc_release_schedule.md \
+doc/grpc_xds_bootstrap_format.md \
 doc/grpc_xds_features.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
@@ -795,6 +796,7 @@ doc/service_config.md \
 doc/ssl-performance.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
+doc/trace_flags.md \
 doc/unit_testing.md \
 doc/versioning.md \
 doc/wait-for-ready.md \
@@ -1471,7 +1473,7 @@ EXT_LINKS_IN_WINDOW    = NO
 
 FORMULA_FONTSIZE       = 10
 
-# Use the FORMULA_TRANPARENT tag to determine whether or not the images
+# Use the FORMULA_TRANSPARENT tag to determine whether or not the images
 # generated for formulas are transparent PNGs. Transparent PNGs are not
 # supported properly for IE 6.0, but are supported on all modern browsers.
 #
@@ -2046,7 +2048,7 @@ INCLUDE_FILE_PATTERNS  =
 # recursively expanded use the := operator instead of the = operator.
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
-PREDEFINED             = GRPC_FINAL= GRPC_OVERIDE=
+PREDEFINED             = GRPC_FINAL= GRPC_OVERRIDE=
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The

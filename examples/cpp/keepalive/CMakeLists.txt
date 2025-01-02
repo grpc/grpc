@@ -17,7 +17,7 @@
 # See cmake_externalproject/CMakeLists.txt for all-in-one cmake build
 # that automatically builds all the dependencies before building helloworld.
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.16)
 
 project(HelloWorld C CXX)
 
@@ -58,7 +58,7 @@ target_link_libraries(hw_grpc_proto
 
 # Targets greeter_[async_](client|server)
 foreach(_target
-  greeter_callback_client greeter_callback_server
+  greeter_callback_client greeter_callback_server)
   add_executable(${_target} "${_target}.cc")
   target_link_libraries(${_target}
     hw_grpc_proto

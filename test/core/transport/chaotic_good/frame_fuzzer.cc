@@ -12,102 +12,103 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <stddef.h>
 #include <stdint.h>
 
+#include <limits>
 #include <memory>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/random/bit_gen_ref.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/support/log.h>
-
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/promise/test_context.h"
+#include "test/core/transport/chaotic_good/frame_fuzzer.pb.h"
 
 bool squelch = false;
 
 namespace grpc_core {
 namespace chaotic_good {
 
+struct DeterministicBitGen : public std::numeric_limits<uint64_t> {
+  using result_type = uint64_t;
+  uint64_t operator()() { return 42; }
+};
+
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
-  HPackCompressor hpack_compressor;
-  auto serialized = input.Serialize(&hpack_compressor);
-  GPR_ASSERT(serialized.Length() >=
-             24);  // Initial output buffer size is 64 byte.
-  uint8_t header_bytes[24];
-  serialized.MoveFirstNBytesIntoBuffer(24, header_bytes);
-  auto header = FrameHeader::Parse(header_bytes);
-  GPR_ASSERT(header.ok());
-  GPR_ASSERT(header->type == expected_frame_type);
+  FrameHeader hdr = input.MakeHeader();
+  CHECK_EQ(hdr.type, expected_frame_type);
+  CHECK_EQ(hdr.payload_connection_id, 0);
+  SliceBuffer payload;
+  input.SerializePayload(payload);
+  CHECK_GE(hdr.payload_length, payload.Length());
   T output;
-  HPackParser hpack_parser;
-  auto deser = output.Deserialize(&hpack_parser, header.value(), serialized);
-  GPR_ASSERT(deser.ok());
-  GPR_ASSERT(output == input);
+  auto deser = output.Deserialize(hdr, std::move(payload));
+  CHECK_OK(deser);
+  CHECK_EQ(input.ToString(), output.ToString());
 }
 
 template <typename T>
-void FinishParseAndChecks(const FrameHeader& header, const uint8_t* data,
-                          size_t size) {
+void FinishParseAndChecks(const FrameHeader& header, SliceBuffer payload) {
   T parsed;
   ExecCtx exec_ctx;  // Initialized to get this_cpu() info in global_stat().
-  HPackParser hpack_parser;
-  SliceBuffer serialized;
-  serialized.Append(Slice::FromCopiedBuffer(data, size));
-  auto deser = parsed.Deserialize(&hpack_parser, header, serialized);
+  auto deser = parsed.Deserialize(header, std::move(payload));
   if (!deser.ok()) return;
   AssertRoundTrips(parsed, header.type);
 }
 
-int Run(const uint8_t* data, size_t size) {
-  if (size < 1) return 0;
-  const bool is_server = (data[0] & 1) != 0;
-  size--;
-  data++;
-  if (size < 24) return 0;
-  auto r = FrameHeader::Parse(data);
-  if (!r.ok()) return 0;
-  size -= 24;
-  data += 24;
-  MemoryAllocator memory_allocator = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  auto arena = MakeScopedArena(1024, &memory_allocator);
+void Run(const frame_fuzzer::Test& test) {
+  if (test.header().size() != FrameHeader::kFrameHeaderSize) return;
+  auto r = FrameHeader::Parse(
+      reinterpret_cast<const uint8_t*>(test.header().data()));
+  if (!r.ok()) return;
+  if (test.payload().size() != r->payload_length) return;
+  auto arena = SimpleArenaAllocator()->MakeArena();
   TestContext<Arena> ctx(arena.get());
+  SliceBuffer payload(
+      Slice::FromCopiedBuffer(test.payload().data(), test.payload().size()));
   switch (r->type) {
     default:
-      return 0;  // We don't know how to parse this frame type.
+      return;  // We don't know how to parse this frame type.
     case FrameType::kSettings:
-      FinishParseAndChecks<SettingsFrame>(*r, data, size);
+      FinishParseAndChecks<SettingsFrame>(*r, std::move(payload));
       break;
-    case FrameType::kFragment:
-      if (is_server) {
-        FinishParseAndChecks<ServerFragmentFrame>(*r, data, size);
-      } else {
-        FinishParseAndChecks<ClientFragmentFrame>(*r, data, size);
-      }
+    case FrameType::kClientInitialMetadata:
+      FinishParseAndChecks<ClientInitialMetadataFrame>(*r, std::move(payload));
+      break;
+    case FrameType::kClientEndOfStream:
+      FinishParseAndChecks<ClientEndOfStream>(*r, std::move(payload));
+      break;
+    case FrameType::kServerInitialMetadata:
+      FinishParseAndChecks<ServerInitialMetadataFrame>(*r, std::move(payload));
+      break;
+    case FrameType::kServerTrailingMetadata:
+      FinishParseAndChecks<ServerTrailingMetadataFrame>(*r, std::move(payload));
+      break;
+    case FrameType::kMessage:
+      FinishParseAndChecks<MessageFrame>(*r, std::move(payload));
       break;
     case FrameType::kCancel:
-      FinishParseAndChecks<CancelFrame>(*r, data, size);
+      FinishParseAndChecks<CancelFrame>(*r, std::move(payload));
       break;
   }
-  return 0;
 }
 
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  return grpc_core::chaotic_good::Run(data, size);
+DEFINE_PROTO_FUZZER(const frame_fuzzer::Test& test) {
+  grpc_core::chaotic_good::Run(test);
 }

@@ -19,7 +19,15 @@ from functools import partial
 import inspect
 import logging
 import traceback
-from typing import Any, AsyncIterator, Generator, Generic, Optional, Tuple
+from typing import (
+    Any,
+    AsyncIterator,
+    Generator,
+    Generic,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import grpc
 from grpc import _common
@@ -29,6 +37,7 @@ from . import _base_call
 from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
+from ._typing import EOFType
 from ._typing import MetadatumType
 from ._typing import RequestIterableType
 from ._typing import RequestType
@@ -380,7 +389,7 @@ class _StreamResponseMixin(Call):
                 raw_response, self._response_deserializer
             )
 
-    async def read(self) -> ResponseType:
+    async def read(self) -> Union[EOFType, ResponseType]:
         if self.done():
             await self._raise_for_status()
             return cygrpc.EOF
@@ -490,7 +499,8 @@ class _StreamRequestMixin(Call):
         )
         try:
             await self._cython_call.send_serialized_message(serialized_request)
-        except cygrpc.InternalError:
+        except cygrpc.InternalError as err:
+            self._cython_call.set_internal_error(str(err))
             await self._raise_for_status()
         except asyncio.CancelledError:
             if not self.cancelled():
@@ -560,6 +570,7 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
             loop,
         )
         self._request = request
+        self._context = cygrpc.build_census_context()
         self._invocation_task = loop.create_task(self._invoke())
         self._init_unary_response_mixin(self._invocation_task)
 
@@ -573,7 +584,7 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
         # https://github.com/python/cpython/blob/edad4d89e357c92f70c0324b937845d652b20afd/Lib/asyncio/tasks.py#L785
         try:
             serialized_response = await self._cython_call.unary_unary(
-                serialized_request, self._metadata
+                serialized_request, self._metadata, self._context
             )
         except asyncio.CancelledError:
             if not self.cancelled():
@@ -623,6 +634,7 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
             loop,
         )
         self._request = request
+        self._context = cygrpc.build_census_context()
         self._send_unary_request_task = loop.create_task(
             self._send_unary_request()
         )
@@ -634,7 +646,7 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
         )
         try:
             await self._cython_call.initiate_unary_stream(
-                serialized_request, self._metadata
+                serialized_request, self._metadata, self._context
             )
         except asyncio.CancelledError:
             if not self.cancelled():
@@ -678,13 +690,14 @@ class StreamUnaryCall(
             loop,
         )
 
+        self._context = cygrpc.build_census_context()
         self._init_stream_request_mixin(request_iterator)
         self._init_unary_response_mixin(loop.create_task(self._conduct_rpc()))
 
     async def _conduct_rpc(self) -> ResponseType:
         try:
             serialized_response = await self._cython_call.stream_unary(
-                self._metadata, self._metadata_sent_observer
+                self._metadata, self._metadata_sent_observer, self._context
             )
         except asyncio.CancelledError:
             if not self.cancelled():
@@ -730,6 +743,7 @@ class StreamStreamCall(
             response_deserializer,
             loop,
         )
+        self._context = cygrpc.build_census_context()
         self._initializer = self._loop.create_task(self._prepare_rpc())
         self._init_stream_request_mixin(request_iterator)
         self._init_stream_response_mixin(self._initializer)
@@ -742,7 +756,7 @@ class StreamStreamCall(
         """
         try:
             await self._cython_call.initiate_stream_stream(
-                self._metadata, self._metadata_sent_observer
+                self._metadata, self._metadata_sent_observer, self._context
             )
         except asyncio.CancelledError:
             if not self.cancelled():
