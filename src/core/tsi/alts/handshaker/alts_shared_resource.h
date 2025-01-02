@@ -19,14 +19,13 @@
 #ifndef GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_SHARED_RESOURCE_H
 #define GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_SHARED_RESOURCE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/util/thd.h"
 
 ///
 /// Main struct containing ALTS shared resources used when

@@ -42,7 +42,6 @@ def check_include_style(directory_root):
             # Skip check for upb generated code.
             if (
                 filename.endswith(".upb.h")
-                or filename.endswith(".upb.c")
                 or filename.endswith(".upbdefs.h")
                 or filename.endswith(".upbdefs.c")
             ):

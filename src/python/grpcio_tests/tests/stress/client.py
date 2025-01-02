@@ -13,11 +13,12 @@
 # limitations under the License.
 """Entry point for running stress tests."""
 
-import argparse
 from concurrent import futures
 import queue
 import threading
 
+from absl import app
+from absl.flags import argparse_flags
 import grpc
 
 from src.proto.grpc.testing import metrics_pb2_grpc
@@ -29,10 +30,8 @@ from tests.stress import metrics_server
 from tests.stress import test_runner
 
 
-def _args():
-    parser = argparse.ArgumentParser(
-        description="gRPC Python stress test client"
-    )
+def _args(argv):
+    parser = argparse_flags.ArgumentParser()
     parser.add_argument(
         "--server_addresses",
         help="comma separated list of hostname:port to run servers on",
@@ -83,7 +82,7 @@ def _args():
         help="the server host to which to claim to connect",
         type=str,
     )
-    return parser.parse_args()
+    return parser.parse_args(argv[1:])
 
 
 def _test_case_from_arg(test_case_arg):
@@ -174,4 +173,4 @@ def run_test(args):
 
 
 if __name__ == "__main__":
-    run_test(_args())
+    app.run(run_test, flags_parser=_args)

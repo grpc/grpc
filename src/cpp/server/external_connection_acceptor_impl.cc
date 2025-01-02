@@ -18,13 +18,15 @@
 
 #include "src/cpp/server/external_connection_acceptor_impl.h"
 
-#include <memory>
-#include <utility>
-
-#include <grpc/support/log.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/channel_arguments.h>
+
+#include <memory>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace internal {
@@ -49,14 +51,14 @@ ExternalConnectionAcceptorImpl::ExternalConnectionAcceptorImpl(
     ServerBuilder::experimental_type::ExternalConnectionType type,
     std::shared_ptr<ServerCredentials> creds)
     : name_(name), creds_(std::move(creds)) {
-  GPR_ASSERT(type ==
-             ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD);
+  CHECK(type ==
+        ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD);
 }
 
 std::unique_ptr<experimental::ExternalConnectionAcceptor>
 ExternalConnectionAcceptorImpl::GetAcceptor() {
   grpc_core::MutexLock lock(&mu_);
-  GPR_ASSERT(!has_acceptor_);
+  CHECK(!has_acceptor_);
   has_acceptor_ = true;
   return std::unique_ptr<experimental::ExternalConnectionAcceptor>(
       new AcceptorWrapper(shared_from_this()));
@@ -67,10 +69,8 @@ void ExternalConnectionAcceptorImpl::HandleNewConnection(
   grpc_core::MutexLock lock(&mu_);
   if (shutdown_ || !started_) {
     // TODO(yangg) clean up.
-    gpr_log(
-        GPR_ERROR,
-        "NOT handling external connection with fd %d, started %d, shutdown %d",
-        p->fd, started_, shutdown_);
+    LOG(ERROR) << "NOT handling external connection with fd " << p->fd
+               << ", started " << started_ << ", shutdown " << shutdown_;
     return;
   }
   if (handler_) {
@@ -85,9 +85,9 @@ void ExternalConnectionAcceptorImpl::Shutdown() {
 
 void ExternalConnectionAcceptorImpl::Start() {
   grpc_core::MutexLock lock(&mu_);
-  GPR_ASSERT(!started_);
-  GPR_ASSERT(has_acceptor_);
-  GPR_ASSERT(!shutdown_);
+  CHECK(!started_);
+  CHECK(has_acceptor_);
+  CHECK(!shutdown_);
   started_ = true;
 }
 

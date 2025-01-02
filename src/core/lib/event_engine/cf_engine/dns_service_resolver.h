@@ -16,17 +16,18 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_APPLE
+#include <AvailabilityMacros.h>
+#ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <dns_sd.h>
-
-#include "absl/container/flat_hash_map.h"
-
 #include <grpc/event_engine/event_engine.h>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -45,7 +46,7 @@ class DNSServiceResolverImpl
   explicit DNSServiceResolverImpl(std::shared_ptr<CFEventEngine> engine)
       : engine_(std::move((engine))) {}
   ~DNSServiceResolverImpl() override {
-    GPR_ASSERT(requests_.empty());
+    CHECK(requests_.empty());
     dispatch_release(queue_);
   }
 
@@ -112,6 +113,7 @@ class DNSServiceResolver : public EventEngine::DNSResolver {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
+#endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_CF_ENGINE_DNS_SERVICE_RESOLVER_H

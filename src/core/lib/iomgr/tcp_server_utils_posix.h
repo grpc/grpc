@@ -24,7 +24,6 @@
 #include <memory>
 
 #include "absl/container/flat_hash_map.h"
-
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/resolve_address.h"

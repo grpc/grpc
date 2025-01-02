@@ -18,6 +18,8 @@
 
 #include <grpcpp/support/status.h>
 
+#include <memory>
+
 namespace grpc {
 
 const Status& Status::OK = Status();

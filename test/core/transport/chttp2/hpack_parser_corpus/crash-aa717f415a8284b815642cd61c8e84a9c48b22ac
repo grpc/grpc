@@ -1,0 +1,11 @@
+frames {
+  end_of_stream: true
+  max_metadata_length: 4096
+  parse: "\244p\203\333\360\244\037!\203\333\360c"
+  absolute_max_metadata_length: 1
+}
+frames {
+  end_of_stream: true
+  max_metadata_length: 4096
+  parse: "\020\244\007\244\360\244\017-b\000\020content-location\000in\213c[)(?*\240\244\256@\010\020\244\037\007:"
+}

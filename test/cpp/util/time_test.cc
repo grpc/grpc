@@ -16,12 +16,11 @@
 //
 //
 
-#include <gtest/gtest.h>
-
 #include <grpc/support/time.h>
 #include <grpcpp/support/time.h>
+#include <gtest/gtest.h>
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 using std::chrono::microseconds;
 using std::chrono::system_clock;

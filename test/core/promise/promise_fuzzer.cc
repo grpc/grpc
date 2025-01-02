@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdint.h>
-
 #include <functional>
 #include <map>
 #include <memory>
@@ -22,11 +20,9 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
@@ -66,10 +62,10 @@ class Fuzzer {
         Scheduler{this},
         [this](absl::Status status) {
           // Must only be called once
-          GPR_ASSERT(!done_);
+          CHECK(!done_);
           // If we became certain of the eventual status, verify it.
           if (expected_status_.has_value()) {
-            GPR_ASSERT(status == *expected_status_);
+            CHECK(status == *expected_status_);
           }
           // Mark ourselves done.
           done_ = true;
@@ -116,7 +112,7 @@ class Fuzzer {
     ExpectCancelled();
     activity_.reset();
     if (wakeup_ != nullptr) std::exchange(wakeup_, nullptr)();
-    GPR_ASSERT(done_);
+    CHECK(done_);
   }
 
  private:
@@ -129,9 +125,8 @@ class Fuzzer {
       explicit BoundScheduler(Scheduler scheduler)
           : fuzzer_(scheduler.fuzzer) {}
       void ScheduleWakeup() {
-        GPR_ASSERT(static_cast<ActivityType*>(this) ==
-                   fuzzer_->activity_.get());
-        GPR_ASSERT(fuzzer_->wakeup_ == nullptr);
+        CHECK(static_cast<ActivityType*>(this) == fuzzer_->activity_.get());
+        CHECK(fuzzer_->wakeup_ == nullptr);
         fuzzer_->wakeup_ = [this]() {
           static_cast<ActivityType*>(this)->RunScheduledWakeup();
         };
@@ -306,10 +301,10 @@ class Fuzzer {
           if (!called) {
             if (config.owning()) {
               wakers_[config.waker()].push_back(
-                  Activity::current()->MakeOwningWaker());
+                  GetContext<Activity>()->MakeOwningWaker());
             } else {
               wakers_[config.waker()].push_back(
-                  Activity::current()->MakeNonOwningWaker());
+                  GetContext<Activity>()->MakeNonOwningWaker());
             }
             return Pending();
           }

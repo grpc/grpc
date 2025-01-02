@@ -25,14 +25,15 @@ grpc_cc_test(
     name = "grpclb_api_test",
     srcs = ["grpclb_api_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/lb/v1:load_balancer_proto",
-        "//test/core/util:grpc_test_util",
+        "//src/proto/grpc/lb/v1:load_balancer_cc_proto",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )

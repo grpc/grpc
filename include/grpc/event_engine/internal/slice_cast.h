@@ -24,7 +24,7 @@ namespace internal {
 // with `SliceCast`. Both ways need to be declared (i.e. if
 // SliceCastable<A,B> exists, you should declare
 // SliceCastable<B,A> too).
-// The type has no members, it's just the existance of the specialization that
+// The type has no members, it's just the existence of the specialization that
 // unlocks SliceCast usage for a type pair.
 template <typename Result, typename T>
 struct SliceCastable;
@@ -58,6 +58,18 @@ Result& SliceCast(T& value, SliceCastable<Result, T> = {}) {
   // types are expected to be layout compatible and actually appear to be.
   static_assert(sizeof(Result) == sizeof(T), "size mismatch");
   return reinterpret_cast<Result&>(value);
+}
+
+// Cast to `Result&&` from `T&&` without any runtime checks.
+// This is only valid if `sizeof(Result) == sizeof(T)`, and if `Result`, `T` are
+// opted in as compatible via `SliceCastable`.
+template <typename Result, typename T>
+Result&& SliceCast(T&& value, SliceCastable<Result, T> = {}) {
+  // Insist upon sizes being equal to catch mismatches.
+  // We assume if sizes are opted in and sizes are equal then yes, these two
+  // types are expected to be layout compatible and actually appear to be.
+  static_assert(sizeof(Result) == sizeof(T), "size mismatch");
+  return reinterpret_cast<Result&&>(value);
 }
 
 }  // namespace internal

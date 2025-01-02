@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Provides distutils command classes for the GRPC Python setup process."""
+"""Provides setuptools command classes for the GRPC Python setup process."""
 
 # NOTE(https://github.com/grpc/grpc/issues/24028): allow setuptools to monkey
 # patch distutils
@@ -185,7 +185,7 @@ def try_cythonize(extensions, linetracing=False, mandatory=True):
     """Attempt to cythonize the extensions.
 
     Args:
-      extensions: A list of `distutils.extension.Extension`.
+      extensions: A list of `setuptools.Extension`.
       linetracing: A bool indicating whether or not to enable linetracing.
       mandatory: Whether or not having Cython-generated files is mandatory. If it
         is, extensions will be poisoned when they can't be fully generated.
@@ -256,7 +256,7 @@ class BuildExt(build_ext.build_ext):
                 # TODO(lidiz) Remove the generated a.out for success tests.
                 cc = os.environ.get("CC", "cc")
                 cc_test = subprocess.Popen(
-                    [cc, "-x", "c", "-std=c++14", "-"],
+                    [cc, "-x", "c", "-std=c++17", "-"],
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
@@ -273,7 +273,7 @@ class BuildExt(build_ext.build_ext):
         #   behavior in gcc and clang. The clang doesn't take --stdc++11
         #   flags but gcc does. Since the setuptools of Python only support
         #   all C or all C++ compilation, the mix of C and C++ will crash.
-        #   *By default*, macOS and FreBSD use clang and Linux use gcc
+        #   *By default*, macOS and FreeBSD use clang and Linux use gcc
         #
         #   If we are not using a permissive compiler that's OK with being
         #   passed wrong std flags, swap out compile function by adding a filter
@@ -284,11 +284,11 @@ class BuildExt(build_ext.build_ext):
             def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
                 if src.endswith(".c"):
                     extra_postargs = [
-                        arg for arg in extra_postargs if not "-std=c++" in arg
+                        arg for arg in extra_postargs if "-std=c++" not in arg
                     ]
                 elif src.endswith(".cc") or src.endswith(".cpp"):
                     extra_postargs = [
-                        arg for arg in extra_postargs if not "-std=gnu99" in arg
+                        arg for arg in extra_postargs if "-std=gnu99" not in arg
                     ]
                 return old_compile(
                     obj, src, ext, cc_args, extra_postargs, pp_opts
@@ -337,12 +337,7 @@ class Gather(setuptools.Command):
         pass
 
     def run(self):
-        if self.install and self.distribution.install_requires:
-            self.distribution.fetch_build_eggs(
-                self.distribution.install_requires
-            )
-        if self.test and self.distribution.tests_require:
-            self.distribution.fetch_build_eggs(self.distribution.tests_require)
+        pass
 
 
 class Clean(setuptools.Command):
@@ -354,7 +349,7 @@ class Clean(setuptools.Command):
     ]
 
     _FILE_PATTERNS = (
-        "python_build",
+        "pyb",
         "src/python/grpcio/__pycache__/",
         "src/python/grpcio/grpc/_cython/cygrpc.cpp",
         "src/python/grpcio/grpc/_cython/*.so",

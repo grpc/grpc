@@ -1,41 +1,32 @@
-// Copyright (c) 2009-2021, Google LLC
-// All rights reserved.
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of Google LLC nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
-// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #ifndef UPB_REFLECTION_DEF_HPP_
 #define UPB_REFLECTION_DEF_HPP_
 
+#include <stdint.h>
+
 #include <cstring>
 #include <memory>
 #include <string>
-#include <vector>
 
+#include "upb/base/descriptor_constants.h"
+#include "upb/base/status.hpp"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
+#include "upb/message/value.h"
+#include "upb/mini_descriptor/decode.h"
+#include "upb/mini_table/enum.h"
+#include "upb/mini_table/field.h"
+#include "upb/mini_table/message.h"
 #include "upb/reflection/def.h"
-#include "upb/reflection/def_pool_internal.h"
-#include "upb/reflection/enum_def_internal.h"
+#include "upb/reflection/internal/def_pool.h"
+#include "upb/reflection/internal/enum_def.h"
 #include "upb/reflection/message.h"
-#include "upb/upb.hpp"
 
 // Must be last
 #include "upb/port/def.inc"
@@ -70,6 +61,13 @@ class FieldDefPtr {
     return upb_FieldDef_MiniTable(ptr_);
   }
 
+  std::string MiniDescriptorEncode() const {
+    upb::Arena arena;
+    upb_StringView md;
+    upb_FieldDef_MiniDescriptorEncode(ptr_, arena.ptr(), &md);
+    return std::string(md.data, md.size);
+  }
+
   const UPB_DESC(FieldOptions) * options() const {
     return upb_FieldDef_Options(ptr_);
   }
@@ -97,6 +95,9 @@ class FieldDefPtr {
   // been finalized.
   uint32_t index() const { return upb_FieldDef_Index(ptr_); }
 
+  // Index into msgdef->layout->fields or file->exts
+  uint32_t layout_index() const { return upb_FieldDef_LayoutIndex(ptr_); }
+
   // The MessageDef to which this field belongs (for extensions, the extended
   // message).
   MessageDefPtr containing_type() const;
@@ -111,6 +112,7 @@ class FieldDefPtr {
   OneofDefPtr real_containing_oneof() const;
 
   // Convenient field type tests.
+  bool IsEnum() const { return upb_FieldDef_IsEnum(ptr_); }
   bool IsSubMessage() const { return upb_FieldDef_IsSubMessage(ptr_); }
   bool IsString() const { return upb_FieldDef_IsString(ptr_); }
   bool IsSequence() const { return upb_FieldDef_IsRepeated(ptr_); }
@@ -210,6 +212,9 @@ class MessageDefPtr {
 
   const char* full_name() const { return upb_MessageDef_FullName(ptr_); }
   const char* name() const { return upb_MessageDef_Name(ptr_); }
+
+  // Returns the MessageDef that contains this MessageDef (or null).
+  MessageDefPtr containing_type() const;
 
   const upb_MiniTable* mini_table() const {
     return upb_MessageDef_MiniTable(ptr_);
@@ -318,8 +323,14 @@ class MessageDefPtr {
     FieldDefPtr operator*() {
       return FieldDefPtr(upb_MessageDef_Field(m_, i_));
     }
-    bool operator!=(const FieldIter& other) { return i_ != other.i_; }
-    bool operator==(const FieldIter& other) { return i_ == other.i_; }
+
+    friend bool operator==(FieldIter lhs, FieldIter rhs) {
+      return lhs.i_ == rhs.i_;
+    }
+
+    friend bool operator!=(FieldIter lhs, FieldIter rhs) {
+      return !(lhs == rhs);
+    }
 
    private:
     const upb_MessageDef* m_;
@@ -344,8 +355,14 @@ class MessageDefPtr {
     OneofDefPtr operator*() {
       return OneofDefPtr(upb_MessageDef_Oneof(m_, i_));
     }
-    bool operator!=(const OneofIter& other) { return i_ != other.i_; }
-    bool operator==(const OneofIter& other) { return i_ == other.i_; }
+
+    friend bool operator==(OneofIter lhs, OneofIter rhs) {
+      return lhs.i_ == rhs.i_;
+    }
+
+    friend bool operator!=(OneofIter lhs, OneofIter rhs) {
+      return !(lhs == rhs);
+    }
 
    private:
     const upb_MessageDef* m_;
@@ -410,9 +427,13 @@ class EnumDefPtr {
   const upb_EnumDef* ptr() const { return ptr_; }
   explicit operator bool() const { return ptr_ != nullptr; }
 
+  FileDefPtr file() const;
   const char* full_name() const { return upb_EnumDef_FullName(ptr_); }
   const char* name() const { return upb_EnumDef_Name(ptr_); }
   bool is_closed() const { return upb_EnumDef_IsClosed(ptr_); }
+
+  // Returns the MessageDef that contains this EnumDef (or null).
+  MessageDefPtr containing_type() const;
 
   // The value that is used as the default when no field default is specified.
   // If not set explicitly, the first value that was added will be used.
@@ -502,6 +523,10 @@ class FileDefPtr {
     return FieldDefPtr(upb_FileDef_TopLevelExtension(ptr_, index));
   }
 
+  bool resolves(const char* path) const {
+    return upb_FileDef_Resolves(ptr_, path);
+  }
+
   explicit operator bool() const { return ptr_ != nullptr; }
 
   friend bool operator==(FileDefPtr lhs, FileDefPtr rhs) {
@@ -560,8 +585,9 @@ class DefPool {
   std::unique_ptr<upb_DefPool, decltype(&upb_DefPool_Free)> ptr_;
 };
 
-// TODO(b/236632406): This typedef is deprecated. Delete it.
-using SymbolTable = DefPool;
+inline FileDefPtr EnumDefPtr::file() const {
+  return FileDefPtr(upb_EnumDef_File(ptr_));
+}
 
 inline FileDefPtr FieldDefPtr::file() const {
   return FileDefPtr(upb_FieldDef_File(ptr_));
@@ -569,6 +595,14 @@ inline FileDefPtr FieldDefPtr::file() const {
 
 inline FileDefPtr MessageDefPtr::file() const {
   return FileDefPtr(upb_MessageDef_File(ptr_));
+}
+
+inline MessageDefPtr MessageDefPtr::containing_type() const {
+  return MessageDefPtr(upb_MessageDef_ContainingType(ptr_));
+}
+
+inline MessageDefPtr EnumDefPtr::containing_type() const {
+  return MessageDefPtr(upb_EnumDef_ContainingType(ptr_));
 }
 
 inline EnumDefPtr MessageDefPtr::enum_type(int i) const {

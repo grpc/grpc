@@ -16,31 +16,29 @@
 //
 //
 
-#include <memory>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
 #include <grpcpp/security/credentials.h>
 
-#include "src/cpp/client/secure_credentials.h"
+#include <memory>
+
+#include "absl/log/check.h"
 
 namespace grpc {
+class XdsChannelCredentialsImpl final : public ChannelCredentials {
+ public:
+  explicit XdsChannelCredentialsImpl(
+      const std::shared_ptr<ChannelCredentials>& fallback_creds)
+      : ChannelCredentials(
+            grpc_xds_credentials_create(fallback_creds->c_creds_)) {
+    CHECK_NE(fallback_creds->c_creds_, nullptr);
+  }
+};
 
 std::shared_ptr<ChannelCredentials> XdsCredentials(
     const std::shared_ptr<ChannelCredentials>& fallback_creds) {
-  GPR_ASSERT(fallback_creds != nullptr);
-  if (fallback_creds->IsInsecure()) {
-    grpc_channel_credentials* insecure_creds =
-        grpc_insecure_credentials_create();
-    auto xds_creds = internal::WrapChannelCredentials(
-        grpc_xds_credentials_create(insecure_creds));
-    grpc_channel_credentials_release(insecure_creds);
-    return xds_creds;
-  } else {
-    return internal::WrapChannelCredentials(grpc_xds_credentials_create(
-        fallback_creds->AsSecureCredentials()->GetRawCreds()));
-  }
+  CHECK_NE(fallback_creds, nullptr);
+  return std::make_shared<XdsChannelCredentialsImpl>(fallback_creds);
 }
 
 namespace experimental {

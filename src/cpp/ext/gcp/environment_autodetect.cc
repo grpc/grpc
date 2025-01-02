@@ -16,34 +16,24 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/gcp/environment_autodetect.h"
 
-#include <algorithm>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
+#include <grpcpp/impl/grpc_library.h>
+
 #include <memory>
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/meta/type_traits.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpcpp/impl/grpc_library.h>
-
-#include "src/core/ext/gcp/metadata_query.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/load_file.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -51,14 +41,18 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
+#include "src/core/util/gcp_metadata_query.h"
+#include "src/core/util/load_file.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
 
 namespace grpc {
 namespace internal {
 
 namespace {
-
-grpc_core::TraceFlag grpc_environment_autodetect_trace(
-    false, "environment_autodetect");
 
 // This is not a definite method to get the namespace name for GKE, but it is
 // the best we have.
@@ -68,10 +62,9 @@ std::string GetNamespaceName() {
       "/var/run/secrets/kubernetes.io/serviceaccount/namespace";
   auto namespace_name = grpc_core::LoadFile(filename, false);
   if (!namespace_name.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_environment_autodetect_trace)) {
-      gpr_log(GPR_DEBUG, "Reading file %s failed: %s", filename,
-              grpc_core::StatusToString(namespace_name.status()).c_str());
-    }
+    GRPC_TRACE_VLOG(environment_autodetect, 2)
+        << "Reading file " << filename
+        << " failed: " << grpc_core::StatusToString(namespace_name.status());
     // Fallback on an environment variable
     return grpc_core::GetEnv("NAMESPACE_NAME").value_or("");
   }
@@ -204,18 +197,18 @@ class EnvironmentAutoDetectHelper
       resource_.labels.emplace("namespace_name", GetNamespaceName());
       resource_.labels.emplace("pod_name", GetPodName());
       resource_.labels.emplace("container_name", GetContainerName());
-      attributes_to_fetch_.emplace(grpc_core::MetadataQuery::kZoneAttribute,
+      attributes_to_fetch_.emplace(grpc_core::GcpMetadataQuery::kZoneAttribute,
                                    "location");
       attributes_to_fetch_.emplace(
-          grpc_core::MetadataQuery::kClusterNameAttribute, "cluster_name");
+          grpc_core::GcpMetadataQuery::kClusterNameAttribute, "cluster_name");
     }
     // Cloud Functions
     else if (grpc_core::GetEnv("FUNCTION_NAME").has_value() ||
              grpc_core::GetEnv("FUNCTION_TARGET").has_value()) {
       resource_.resource_type = "cloud_function";
       resource_.labels.emplace("function_name", GetFunctionName());
-      attributes_to_fetch_.emplace(grpc_core::MetadataQuery::kRegionAttribute,
-                                   "region");
+      attributes_to_fetch_.emplace(
+          grpc_core::GcpMetadataQuery::kRegionAttribute, "region");
     }
     // Cloud Run
     else if (grpc_core::GetEnv("K_CONFIGURATION").has_value()) {
@@ -223,15 +216,15 @@ class EnvironmentAutoDetectHelper
       resource_.labels.emplace("revision_name", GetRevisionName());
       resource_.labels.emplace("service_name", GetServiceName());
       resource_.labels.emplace("configuration_name", GetConfiguratioName());
-      attributes_to_fetch_.emplace(grpc_core::MetadataQuery::kRegionAttribute,
-                                   "location");
+      attributes_to_fetch_.emplace(
+          grpc_core::GcpMetadataQuery::kRegionAttribute, "location");
     }
     // App Engine
     else if (grpc_core::GetEnv("GAE_SERVICE").has_value()) {
       resource_.resource_type = "gae_app";
       resource_.labels.emplace("module_id", GetModuleId());
       resource_.labels.emplace("version_id", GetVersionId());
-      attributes_to_fetch_.emplace(grpc_core::MetadataQuery::kZoneAttribute,
+      attributes_to_fetch_.emplace(grpc_core::GcpMetadataQuery::kZoneAttribute,
                                    "zone");
     }
     // Assume GCE
@@ -239,8 +232,8 @@ class EnvironmentAutoDetectHelper
       assuming_gce_ = true;
       resource_.resource_type = "gce_instance";
       attributes_to_fetch_.emplace(
-          grpc_core::MetadataQuery::kInstanceIdAttribute, "instance_id");
-      attributes_to_fetch_.emplace(grpc_core::MetadataQuery::kZoneAttribute,
+          grpc_core::GcpMetadataQuery::kInstanceIdAttribute, "instance_id");
+      attributes_to_fetch_.emplace(grpc_core::GcpMetadataQuery::kZoneAttribute,
                                    "zone");
     }
     FetchMetadataServerAttributesAsynchronouslyLocked();
@@ -248,20 +241,17 @@ class EnvironmentAutoDetectHelper
 
   void FetchMetadataServerAttributesAsynchronouslyLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    GPR_ASSERT(!attributes_to_fetch_.empty());
+    CHECK(!attributes_to_fetch_.empty());
     for (auto& element : attributes_to_fetch_) {
-      queries_.push_back(grpc_core::MakeOrphanable<grpc_core::MetadataQuery>(
+      queries_.push_back(grpc_core::MakeOrphanable<grpc_core::GcpMetadataQuery>(
           element.first, &pollent_,
           [this](std::string attribute, absl::StatusOr<std::string> result) {
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_environment_autodetect_trace)) {
-              gpr_log(
-                  GPR_INFO,
-                  "Environment AutoDetect: Attribute: \"%s\" Result: \"%s\"",
-                  attribute.c_str(),
-                  result.ok()
-                      ? result.value().c_str()
-                      : grpc_core::StatusToString(result.status()).c_str());
-            }
+            GRPC_TRACE_LOG(environment_autodetect, INFO)
+                << "Environment AutoDetect: Attribute: \"" << attribute
+                << "\" Result: \""
+                << (result.ok() ? result.value()
+                                : grpc_core::StatusToString(result.status()))
+                << "\"";
             absl::optional<EnvironmentAutoDetect::ResourceType> resource;
             {
               grpc_core::MutexLock lock(&mu_);
@@ -274,22 +264,18 @@ class EnvironmentAutoDetectHelper
                 // If fetching from the MetadataServer failed and we were
                 // assuming a GCE environment, fallback to "global".
                 else if (assuming_gce_) {
-                  if (GRPC_TRACE_FLAG_ENABLED(
-                          grpc_environment_autodetect_trace)) {
-                    gpr_log(GPR_INFO,
-                            "Environment Autodetect: Falling back to global "
-                            "resource type");
-                  }
+                  GRPC_TRACE_LOG(environment_autodetect, INFO)
+                      << "Environment Autodetect: Falling back to "
+                      << "global resource type";
                   assuming_gce_ = false;
                   resource_.resource_type = "global";
                 }
                 attributes_to_fetch_.erase(it);
               } else {
                 // This should not happen
-                gpr_log(GPR_ERROR,
-                        "An unexpected attribute was seen from the "
-                        "MetadataServer: %s",
-                        attribute.c_str());
+                LOG(ERROR) << "An unexpected attribute was seen from the "
+                              "MetadataServer: "
+                           << attribute;
               }
               if (attributes_to_fetch_.empty()) {
                 resource = std::move(resource_);
@@ -319,7 +305,7 @@ class EnvironmentAutoDetectHelper
   absl::flat_hash_map<std::string /* metadata_server_attribute */,
                       std::string /* resource_attribute */>
       attributes_to_fetch_ ABSL_GUARDED_BY(mu_);
-  std::vector<grpc_core::OrphanablePtr<grpc_core::MetadataQuery>> queries_
+  std::vector<grpc_core::OrphanablePtr<grpc_core::GcpMetadataQuery>> queries_
       ABSL_GUARDED_BY(mu_);
   EnvironmentAutoDetect::ResourceType resource_ ABSL_GUARDED_BY(mu_);
   // This would be true if we are assuming the resource to be GCE. In this case,
@@ -333,7 +319,9 @@ EnvironmentAutoDetect* g_autodetect = nullptr;
 }  // namespace
 
 void EnvironmentAutoDetect::Create(std::string project_id) {
-  GPR_ASSERT(g_autodetect == nullptr && !project_id.empty());
+  CHECK_EQ(g_autodetect, nullptr);
+  CHECK(!project_id.empty());
+
   g_autodetect = new EnvironmentAutoDetect(project_id);
 }
 
@@ -341,7 +329,7 @@ EnvironmentAutoDetect& EnvironmentAutoDetect::Get() { return *g_autodetect; }
 
 EnvironmentAutoDetect::EnvironmentAutoDetect(std::string project_id)
     : project_id_(std::move(project_id)) {
-  GPR_ASSERT(!project_id_.empty());
+  CHECK(!project_id_.empty());
 }
 
 void EnvironmentAutoDetect::NotifyOnDone(absl::AnyInvocable<void()> callback) {

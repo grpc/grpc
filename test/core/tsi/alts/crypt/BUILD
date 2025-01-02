@@ -24,13 +24,16 @@ grpc_package(
 grpc_cc_test(
     name = "alts_crypt_test",
     srcs = ["aes_gcm_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/types:span",
+    ],
     language = "C++",
     deps = [
         ":alts_crypt_test_util",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 

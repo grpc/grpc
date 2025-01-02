@@ -1000,7 +1000,11 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def unary_unary(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
     ):
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
@@ -1011,6 +1015,8 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
+          _registered_method: Implementation Private. A bool representing whether the method
+            is registered.
 
         Returns:
           A UnaryUnaryMultiCallable value for the named unary-unary method.
@@ -1019,7 +1025,11 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def unary_stream(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
     ):
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
 
@@ -1030,6 +1040,8 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None is
             passed.
+          _registered_method: Implementation Private. A bool representing whether the method
+            is registered.
 
         Returns:
           A UnaryStreamMultiCallable value for the name unary-stream method.
@@ -1038,7 +1050,11 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def stream_unary(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
     ):
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
 
@@ -1049,6 +1065,8 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None is
             passed.
+          _registered_method: Implementation Private. A bool representing whether the method
+            is registered.
 
         Returns:
           A StreamUnaryMultiCallable value for the named stream-unary method.
@@ -1057,7 +1075,11 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def stream_stream(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
     ):
         """Creates a StreamStreamMultiCallable for a stream-stream method.
 
@@ -1068,6 +1090,8 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
+          _registered_method: Implementation Private. A bool representing whether the method
+            is registered.
 
         Returns:
           A StreamStreamMultiCallable value for the named stream-stream method.
@@ -1207,7 +1231,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
     def abort(self, code, details):
         """Raises an exception to terminate the RPC with a non-OK status.
 
-        The code and details passed as arguments will supercede any existing
+        The code and details passed as arguments will supersede any existing
         ones.
 
         Args:
@@ -1226,7 +1250,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
     def abort_with_status(self, status):
         """Raises an exception to terminate the RPC with a non-OK status.
 
-        The status passed as argument will supercede any existing status code,
+        The status passed as argument will supersede any existing status code,
         status message and trailing metadata.
 
         This is an EXPERIMENTAL API.
@@ -1390,6 +1414,13 @@ class ServerInterceptor(abc.ABC):
     def intercept_service(self, continuation, handler_call_details):
         """Intercepts incoming RPCs before handing them over to a handler.
 
+        State can be passed from an interceptor to downstream interceptors
+        via contextvars. The first interceptor is called from an empty
+        contextvars.Context, and the same Context is used for downstream
+        interceptors and for the final handler call. Note that there are no
+        guarantees that interceptors and handlers will be called from the
+        same thread.
+
         Args:
           continuation: A function that takes a HandlerCallDetails and
             proceeds to invoke the next interceptor in the chain, if any,
@@ -1422,6 +1453,20 @@ class Server(abc.ABC):
           used to service RPCs.
         """
         raise NotImplementedError()
+
+    def add_registered_method_handlers(self, service_name, method_handlers):
+        """Registers GenericRpcHandlers with this Server.
+
+        This method is only safe to call before the server is started.
+
+        If the same method have both generic and registered handler,
+        registered handler will take precedence.
+
+        Args:
+          service_name: The service name.
+          method_handlers: A dictionary that maps method names to corresponding
+            RpcMethodHandler.
+        """
 
     @abc.abstractmethod
     def add_insecure_port(self, address):
@@ -1469,8 +1514,9 @@ class Server(abc.ABC):
 
         This method immediately stop service of new RPCs in all cases.
 
-        If a grace period is specified, this method returns immediately
-        and all RPCs active at the end of the grace period are aborted.
+        If a grace period is specified, this method waits until all active
+        RPCs are finished or until the grace period is reached. RPCs that haven't
+        been terminated within the grace period are aborted.
         If a grace period is not specified (by passing None for `grace`),
         all existing RPCs are aborted immediately and this method
         blocks until the last RPC handler terminates.

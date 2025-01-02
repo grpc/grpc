@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,266 +12,75 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_proto_library")
+load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load(
+    "//test/core/test_util:grpc_fuzzer.bzl",
+    "grpc_fuzzer",
+    "grpc_proto_fuzzer",
+)
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
-grpc_package(
-    name = "test/core/util",
-    visibility = "public",
-)
-
-grpc_cc_library(
-    name = "grpc_suppressions",
-    data = [
-        "lsan_suppressions.txt",
-        "tsan_suppressions.txt",
-        "ubsan_suppressions.txt",
-    ],
-)
-
-TEST_UTILS_THAT_USE_GRPC_H_SOURCES = [
-    "port.cc",
-    "port_isolated_runtime_environment.cc",
-    "port_server_client.cc",
-    "reconnect_server.cc",
-    "test_config.cc",
-    "test_tcp_server.cc",
-]
-
-TEST_UTILS_THAT_USE_GRPC_H_HEADERS = [
-    "port.h",
-    "reconnect_server.h",
-    "port_server_client.h",
-    "test_config.h",
-    "test_tcp_server.h",
-]
-
-grpc_cc_library(
-    name = "grpc_test_util_base",
-    srcs = [
-        "cmdline.cc",
-        "fuzzer_util.cc",
-        "grpc_profiler.cc",
-        "histogram.cc",
-        "mock_endpoint.cc",
-        "parse_hexstring.cc",
-        "passthru_endpoint.cc",
-        "resolve_localhost_ip46.cc",
-        "slice_splitter.cc",
-        "tracer_util.cc",
-    ],
-    hdrs = [
-        "cmdline.h",
-        "evaluate_args_test_util.h",
-        "fuzzer_util.h",
-        "grpc_profiler.h",
-        "histogram.h",
-        "mock_authorization_endpoint.h",
-        "mock_endpoint.h",
-        "parse_hexstring.h",
-        "passthru_endpoint.h",
-        "resolve_localhost_ip46.h",
-        "slice_splitter.h",
-        "tracer_util.h",
-    ],
-    external_deps = [
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/strings:str_format",
-        "absl/types:span",
-    ],
-    language = "C++",
-    tags = ["nofixdeps"],
-    deps = [
-        "//:debug_location",
-        "//:gpr",
-        "//:grpc_base",
-        "//:grpc_security_base",
-        "//:grpc_trace",
-        "//:iomgr_timer",
-        "//:ref_counted_ptr",
-        "//src/core:arena",
-        "//src/core:closure",
-        "//src/core:grpc_authorization_base",
-        "//src/core:grpc_sockaddr",
-        "//src/core:iomgr_fwd",
-        "//src/core:memory_quota",
-        "//src/core:resolved_address",
-        "//src/core:resource_quota",
-        "//src/core:slice",
-        "//src/core:slice_refcount",
-        "//src/core:time",
-        "//src/core:useful",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_test_util",
-    srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES + ["tls_utils.cc"],
-    hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS + ["tls_utils.h"],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/debugging:failure_signal_handler",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/strings:str_format",
-    ],
-    language = "C++",
-    deps = [
-        "build",
-        "stack_tracer",
-        "//:config",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc",
-        "//:grpc_public_hdrs",
-        "//:grpc_security_base",
-        "//:httpcli",
-        "//:orphanable",
-        "//:ref_counted_ptr",
-        "//:tsi_ssl_credentials",
-        "//:uri_parser",
-        "//src/core:channel_args_endpoint_config",
-        "//src/core:channel_args_preconditioning",
-        "//src/core:closure",
-        "//src/core:error",
-        "//src/core:gpr_atm",
-        "//src/core:grpc_sockaddr",
-        "//src/core:iomgr_fwd",
-        "//src/core:iomgr_port",
-        "//src/core:resolved_address",
-        "//src/core:slice",
-        "//src/core:slice_refcount",
-        "//src/core:status_helper",
-        "//src/core:time",
-        "//test/core/event_engine:test_init",
-    ],
-    alwayslink = 1,
-)
-
-grpc_cc_library(
-    name = "grpc_test_util_unsecure",
-    srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES,
-    hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS,
-    external_deps = [
-        "absl/debugging:failure_signal_handler",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/strings:str_format",
-    ],
-    language = "C++",
-    deps = [
-        "build",
-        "stack_tracer",
-        "//:config",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc_security_base",
-        "//:grpc_unsecure",
-        "//:httpcli",
-        "//:orphanable",
-        "//:ref_counted_ptr",
-        "//:uri_parser",
-        "//src/core:channel_args_endpoint_config",
-        "//src/core:channel_args_preconditioning",
-        "//src/core:closure",
-        "//src/core:error",
-        "//src/core:gpr_atm",
-        "//src/core:grpc_sockaddr",
-        "//src/core:iomgr_fwd",
-        "//src/core:iomgr_port",
-        "//src/core:resolved_address",
-        "//src/core:status_helper",
-        "//src/core:time",
-        "//test/core/event_engine:test_init",
-    ],
-    alwayslink = 1,
-)
+grpc_package(name = "test/core/util")
 
 grpc_cc_test(
-    name = "cmdline_test",
-    srcs = ["cmdline_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "grpc_test_util",
-        "grpc_test_util_base",
-        "//:gpr",
-        "//src/core:useful",
+    name = "directory_reader_test",
+    srcs = ["directory_reader_test.cc"],
+    data = [
+        "//test/core/tsi/test_creds/crl_data/crls:ab06acdd.r0",
+        "//test/core/tsi/test_creds/crl_data/crls:b9322cac.r0",
+        "//test/core/tsi/test_creds/crl_data/crls:current.crl",
+        "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
     ],
-)
-
-grpc_cc_library(
-    name = "fuzzer_corpus_test",
-    testonly = 1,
-    srcs = ["fuzzer_corpus_test.cc"],
     external_deps = [
-        "absl/flags:flag",
         "gtest",
     ],
-    linkstatic = True,
-    tags = [
-        "no_windows",
-        "nofixdeps",
-    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
-        ":grpc_test_util",
-        "//:grpc",
-        "//test/cpp/util:test_config",
+        "//src/core:directory_reader",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
-    name = "histogram_test",
-    srcs = ["histogram_test.cc"],
-    external_deps = ["gtest"],
+    name = "tdigest_test",
+    srcs = ["tdigest_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/random",
+        "absl/container:flat_hash_map",
+        "benchmark",
+    ],
     language = "C++",
-    tags = ["nofixdeps"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "grpc_test_util",
-        "grpc_test_util_base",
-        "//:gpr",
+        "//src/core:tdigest",
     ],
 )
 
-sh_library(
-    name = "fuzzer_one_entry_runner",
-    srcs = ["fuzzer_one_entry_runner.sh"],
+grpc_cc_benchmark(
+    name = "bm_tdigest",
+    srcs = ["bm_tdigest.cc"],
+    external_deps = [
+    ],
+    monitoring = HISTORY,
+    deps = [
+        "//src/core:tdigest",
+    ],
 )
 
-grpc_cc_library(
-    name = "stack_tracer",
-    srcs = [
-        "stack_tracer.cc",
-    ],
-    hdrs = [
-        "stack_tracer.h",
-    ],
+grpc_cc_test(
+    name = "examine_stack_test",
+    srcs = ["examine_stack_test.cc"],
     external_deps = [
         "absl/debugging:stacktrace",
         "absl/debugging:symbolize",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr_platform",
-        "//src/core:examine_stack",
-    ],
-)
-
-grpc_cc_test(
-    name = "stack_tracer_test",
-    srcs = [
-        "stack_tracer_test.cc",
-    ],
-    external_deps = [
-        "absl/strings",
+        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -280,207 +89,708 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "grpc_test_util",
-        "stack_tracer",
         "//:gpr",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
-grpc_cc_library(
-    name = "test_lb_policies",
-    testonly = 1,
-    srcs = ["test_lb_policies.cc"],
-    hdrs = ["test_lb_policies.h"],
+grpc_cc_test(
+    name = "dump_args_test",
+    srcs = ["dump_args_test.cc"],
     external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/types:variant",
+        "gtest",
     ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
-        "//:config",
+        "//src/core:dump_args",
+    ],
+)
+
+# TODO(hork): solidify fork support requirements for EventEngines
+grpc_cc_test(
+    name = "fork_test",
+    srcs = ["fork_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = ["no_windows"],
+    uses_event_engine = True,  # engines should behave appropriately on Fork
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "bitset_test",
+    srcs = ["bitset_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:bitset",
+    ],
+)
+
+grpc_cc_test(
+    name = "if_list_test",
+    srcs = ["if_list_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:if_list",
+    ],
+)
+
+grpc_cc_test(
+    name = "no_destruct_test",
+    srcs = ["no_destruct_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:no_destruct",
+    ],
+)
+
+grpc_cc_test(
+    name = "match_test",
+    srcs = ["match_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:match",
+    ],
+)
+
+grpc_cc_test(
+    name = "overload_test",
+    srcs = ["overload_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:overload",
+    ],
+)
+
+grpc_cc_test(
+    name = "down_cast_test",
+    srcs = ["down_cast_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:down_cast",
+    ],
+)
+
+grpc_cc_test(
+    name = "table_test",
+    srcs = ["table_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/types:optional",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:table",
+    ],
+)
+
+grpc_cc_test(
+    name = "host_port_test",
+    srcs = ["host_port_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "mpscq_test",
+    srcs = ["mpscq_test.cc"],
+    exec_properties = LARGE_MACHINE,
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
+    language = "C++",
+    tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "orphanable_test",
+    srcs = ["orphanable_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:orphanable",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "ref_counted_test",
+    srcs = ["ref_counted_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//src/core:ref_counted",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "dual_ref_counted_test",
+    srcs = ["dual_ref_counted_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//src/core:dual_ref_counted",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "ref_counted_ptr_test",
+    srcs = ["ref_counted_ptr_test.cc"],
+    external_deps = [
+        "absl/container:flat_hash_set",
+        "absl/log:check",
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:ref_counted_ptr",
+        "//src/core:dual_ref_counted",
+        "//src/core:ref_counted",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "thd_test",
+    srcs = ["thd_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "stat_test",
+    srcs = ["stat_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_client_channel",
-        "//:orphanable",
-        "//:parse_address",
-        "//:ref_counted_ptr",
-        "//:server_address",
-        "//:uri_parser",
-        "//src/core:channel_args",
-        "//src/core:delegating_helper",
-        "//src/core:error",
-        "//src/core:grpc_backend_metric_data",
-        "//src/core:json",
-        "//src/core:json_util",
-        "//src/core:lb_policy",
-        "//src/core:lb_policy_factory",
-        "//src/core:lb_policy_registry",
-        "//src/core:pollset_set",
-        "//src/core:resolved_address",
-        "//src/core:status_helper",
-        "//src/core:subchannel_interface",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "status_helper_test",
+    srcs = ["status_helper_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "time_util_test",
+    srcs = ["time_util_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "cpp_impl_of_test",
+    srcs = ["cpp_impl_of_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:cpp_impl_of",
+    ],
+)
+
+grpc_cc_test(
+    name = "chunked_vector_test",
+    srcs = ["chunked_vector_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    tags = [
+        "resource_quota_test",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//src/core:chunked_vector",
+        "//src/core:resource_quota",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "chunked_vector_fuzzer",
+    srcs = ["chunked_vector_fuzzer.cc"],
+    corpus = "chunked_vector_corpora",
+    external_deps = ["absl/log:check"],
+    language = "C++",
+    proto = "chunked_vector_fuzzer.proto",
+    tags = ["no_windows"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:chunked_vector",
+        "//src/core:resource_quota",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "time_test",
+    srcs = ["time_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
         "//src/core:time",
     ],
 )
 
-grpc_cc_library(
-    name = "fake_udp_and_tcp_server",
-    srcs = ["fake_udp_and_tcp_server.cc"],
-    hdrs = ["fake_udp_and_tcp_server.h"],
+grpc_cc_test(
+    name = "single_set_ptr_test",
+    srcs = ["single_set_ptr_test.cc"],
     external_deps = [
-        "absl/status:statusor",
-        "absl/strings",
+        "absl/log:log",
+        "gtest",
     ],
-    language = "C++",
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
-        "grpc_test_util",
-        "//:gpr",
-        "//:grpc",
-        "//:sockaddr_utils",
-        "//src/core:resolved_address",
+        "//src/core:single_set_ptr",
     ],
-)
-
-grpc_cc_library(
-    name = "fake_udp_and_tcp_server_unsecure",
-    srcs = ["fake_udp_and_tcp_server.cc"],
-    hdrs = ["fake_udp_and_tcp_server.h"],
-    external_deps = [
-        "absl/status:statusor",
-        "absl/strings",
-    ],
-    language = "C++",
-    deps = [
-        "grpc_test_util_unsecure",
-        "//:gpr",
-        "//:grpc",
-        "//:sockaddr_utils",
-        "//src/core:resolved_address",
-    ],
-)
-
-grpc_cc_library(
-    name = "socket_use_after_close_detector",
-    testonly = True,
-    srcs = ["socket_use_after_close_detector.cc"],
-    hdrs = ["socket_use_after_close_detector.h"],
-    external_deps = ["gtest"],
-    language = "C++",
-    deps = [
-        "grpc_test_util",
-        "//:gpr",
-        "//:grpc",
-        "//src/core:grpc_sockaddr",
-    ],
-)
-
-grpc_cc_library(
-    name = "socket_use_after_close_detector_unsecure",
-    testonly = True,
-    srcs = ["socket_use_after_close_detector.cc"],
-    hdrs = ["socket_use_after_close_detector.h"],
-    external_deps = ["gtest"],
-    language = "C++",
-    deps = [
-        "grpc_test_util_unsecure",
-        "//:gpr",
-        "//:grpc",
-        "//src/core:grpc_sockaddr",
-    ],
-)
-
-grpc_cc_library(
-    name = "build",
-    srcs = ["build.cc"],
-    hdrs = ["build.h"],
-)
-
-grpc_cc_library(
-    name = "osa_distance",
-    srcs = ["osa_distance.cc"],
-    hdrs = ["osa_distance.h"],
-    external_deps = ["absl/strings"],
 )
 
 grpc_cc_test(
-    name = "osa_distance_test",
-    srcs = ["osa_distance_test.cc"],
+    name = "sorted_pack_test",
+    srcs = ["sorted_pack_test.cc"],
     external_deps = ["gtest"],
-    deps = ["osa_distance"],
-)
-
-grpc_cc_library(
-    name = "scoped_env_var",
-    testonly = True,
-    hdrs = ["scoped_env_var.h"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
-        "//:gpr_platform",
-        "//src/core:env",
+        "//src/core:sorted_pack",
     ],
 )
 
-grpc_proto_library(
-    name = "fuzz_config_vars_proto",
-    srcs = ["fuzz_config_vars.proto"],
-    has_services = False,
-)
-
-grpc_cc_library(
-    name = "fuzz_config_vars",
-    srcs = ["fuzz_config_vars.cc"],
-    hdrs = ["fuzz_config_vars.h"],
-    external_deps = ["absl/types:optional"],
-    deps = [
-        "fuzz_config_vars_helpers",
-        "fuzz_config_vars_proto",
-        "//:config_vars",
-        "//:gpr_platform",
-    ],
-)
-
-grpc_cc_library(
-    name = "fuzz_config_vars_helpers",
-    srcs = ["fuzz_config_vars_helpers.cc"],
-    hdrs = ["fuzz_config_vars_helpers.h"],
-    external_deps = ["absl/strings"],
-    deps = [
-        "//:gpr_platform",
-        "//src/core:experiments",
-    ],
-)
-
-grpc_cc_library(
-    name = "audit_logging_utils",
-    srcs = ["audit_logging_utils.cc"],
-    hdrs = ["audit_logging_utils.h"],
+grpc_cc_test(
+    name = "unique_type_name_test",
+    srcs = ["unique_type_name_test.cc"],
     external_deps = [
-        "absl/status:statusor",
-        "absl/strings",
+        "gtest",
+        "absl/container:flat_hash_map",
+        "absl/strings:str_format",
+    ],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:unique_type_name",
+    ],
+)
+
+grpc_cc_test(
+    name = "work_serializer_test",
+    srcs = ["work_serializer_test.cc"],
+    exec_properties = LARGE_MACHINE,
+    external_deps = [
+        "gtest",
+    ],
+    flaky = True,
+    language = "C++",
+    shard_count = 5,
+    tags = [
+        "no_windows",  # LARGE_MACHINE is not configured for windows RBE
     ],
     deps = [
         "//:gpr",
-        "//:gpr_platform",
         "//:grpc",
-        "//src/core:json_writer",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
-grpc_proto_library(
-    name = "fuzzing_channel_args_proto",
-    srcs = ["fuzzing_channel_args.proto"],
-    has_services = False,
+grpc_cc_test(
+    name = "validation_errors_test",
+    srcs = ["validation_errors_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//src/core:validation_errors",
+        "//test/core/test_util:grpc_test_util",
+    ],
 )
 
-grpc_cc_library(
-    name = "fuzzing_channel_args",
-    srcs = ["fuzzing_channel_args.cc"],
-    hdrs = ["fuzzing_channel_args.h"],
+grpc_cc_test(
+    name = "notification_test",
+    srcs = ["notification_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:notification"],
+)
+
+grpc_cc_test(
+    name = "load_file_test",
+    srcs = ["load_file_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
-        "fuzzing_channel_args_proto",
+        "//src/core:load_file",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "uuid_v4_test",
+    srcs = ["uuid_v4_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:uuid_v4",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "glob_test",
+    srcs = ["glob_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//src/core:useful",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_fuzzer(
+    name = "uri_fuzzer_test",
+    srcs = ["uri_fuzzer_test.cc"],
+    corpus = "uri_corpus",
+    language = "C++",
+    tags = [
+        "no_windows",
+        # Without "nofixdeps", "//:grpc" gets substituted with "//:event_engine_base_hdrs"
+        "nofixdeps",
+    ],
+    deps = [
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:uri",
+    ],
+)
+
+grpc_cc_test(
+    name = "uri_test",
+    srcs = ["uri_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:uri",
+        "//test/core/test_util:grpc_test_util_unsecure",
+    ],
+)
+
+grpc_cc_test(
+    name = "matchers_test",
+    srcs = ["matchers_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
+    name = "backoff_test",
+    srcs = ["backoff_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:backoff",
+        "//:exec_ctx",
+        "//:grpc",
+        "//src/core:time",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "random_early_detection_test",
+    srcs = ["random_early_detection_test.cc"],
+    external_deps = [
+        "absl/random",
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:random_early_detection"],
+)
+
+grpc_cc_test(
+    name = "alloc_test",
+    srcs = ["alloc_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "cpu_test",
+    srcs = ["cpu_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "env_test",
+    srcs = ["env_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "spinlock_test",
+    srcs = ["spinlock_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "string_test",
+    srcs = ["string_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "sync_test",
+    srcs = ["sync_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "gpr_time_test",
+    srcs = ["gpr_time_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "unique_ptr_with_bitset_test",
+    srcs = ["unique_ptr_with_bitset_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
         "//:gpr_platform",
-        "//:ref_counted_ptr",
-        "//src/core:channel_args",
-        "//src/core:resource_quota",
+        "//src/core:unique_ptr_with_bitset",
+    ],
+)
+
+grpc_cc_test(
+    name = "useful_test",
+    srcs = ["useful_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr_platform",
+        "//src/core:useful",
+    ],
+)
+
+grpc_cc_test(
+    name = "ring_buffer_test",
+    srcs = ["ring_buffer_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr_platform",
+        "//src/core:ring_buffer",
+    ],
+)
+
+grpc_cc_test(
+    name = "avl_test",
+    srcs = ["avl_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:avl",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "avl_fuzzer",
+    srcs = ["avl_fuzzer.cc"],
+    corpus = "avl_fuzzer_corpus",
+    language = "C++",
+    proto = "avl_fuzzer.proto",
+    tags = ["no_windows"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:avl",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "lru_cache_test",
+    srcs = ["lru_cache_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:lru_cache",
     ],
 )

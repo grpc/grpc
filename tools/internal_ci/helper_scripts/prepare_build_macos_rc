@@ -99,7 +99,7 @@ then
   # cocoapods
   export LANG=en_US.UTF-8
   # use "sudo" to avoid permission error on kokoro monterey image
-  time sudo gem install cocoapods --version 1.11.3 --no-document --user-install
+  time sudo gem install cocoapods --version 1.15.2 --no-document --user-install
   # pre-fetch cocoapods master repo's most recent commit only
   mkdir -p ~/.cocoapods/repos
   time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
@@ -168,6 +168,22 @@ then
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.11.0rc1-macos11.pkg -target /
   fi
+
+  # Install Python 3.12 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.12" ]; then
+    time curl -O https://www.python.org/ftp/python/3.12.0/python-3.12.0rc2-macos11.pkg
+    echo "e5dc5511b604b501b892991d257d117bb5757437  python-3.12.0rc2-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.12.0rc2-macos11.pkg -target /
+  fi
+
+  # Install Python 3.13 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.13" ]; then
+    time curl -O https://www.python.org/ftp/python/3.13.0/python-3.13.0rc2-macos11.pkg
+    echo "75579065f9ee5c25207353fbe0f79275123ff556  python-3.13.0rc2-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.13.0rc2-macos11.pkg -target /
+  fi
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]
@@ -188,19 +204,22 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
-  # php7.4 should already be installed on kokoro monterey image, so this should be instantaneous.
-  time brew install php@7.4 || true
-  export LDFLAGS="-L/usr/local/opt/php@7.4/lib ${LDFLAGS}"
-  export CPPFLAGS="-I/usr/local/opt/php@7.4/include ${CPPFLAGS}"
-  export PATH="/usr/local/opt/php@7.4/bin:/usr/local/opt/php@7.4/sbin:${PATH}"
+  time brew install php@8.1 || true
+  export LDFLAGS="-L/usr/local/opt/php@8.1/lib ${LDFLAGS}"
+  export CPPFLAGS="-I/usr/local/opt/php@8.1/include ${CPPFLAGS}"
+  export PATH="/usr/local/opt/php@8.1/bin:/usr/local/opt/php@8.1/sbin:${PATH}"
 
-  # the exit code from "brew install php@7.4" is useless
+  # the exit code from "brew install php@8.1" is useless
   # so instead we check if PHP was indeed installed successfully.
   # Failing early is better than cryptic errors later in the build process.
-  /usr/local/opt/php@7.4/bin/php --version
+  /usr/local/opt/php@8.1/bin/php --version
 
   # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
   mkdir -p /usr/local/lib/php/pecl
+
+  # Download the right version of phpunit to match PHP version
+  sudo curl -sSL https://phar.phpunit.de/phpunit-9.5.9.phar -o /usr/local/bin/phpunit
+  sudo chmod +x /usr/local/bin/phpunit
 fi
 
 # TODO(jtattermusch): better debugging of clock skew, remove once not needed

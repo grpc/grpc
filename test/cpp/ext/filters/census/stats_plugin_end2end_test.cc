@@ -16,10 +16,14 @@
 //
 //
 
+#include <grpc++/grpc++.h>
+#include <grpcpp/opencensus.h>
+
 #include <string>
 #include <thread>  // NOLINT
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
@@ -28,15 +32,12 @@
 #include "opencensus/stats/testing/test_utils.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/tags/with_tag_map.h"
-
-#include <grpc++/grpc++.h>
-#include <grpcpp/opencensus.h>
-
+#include "src/core/lib/experiments/experiments.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/ext/filters/census/library.h"
 
 namespace grpc {
@@ -260,25 +261,6 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
               ::testing::Property(&Distribution::mean, ::testing::Gt(0.0)),
               ::testing::Property(&Distribution::mean,
                                   ::testing::Lt(client_latency))))));
-
-  // Transport time is a subinterval of total latency.
-  if (grpc_core::IsTransportSuppliesClientLatencyEnabled()) {
-    const auto client_transport_latency =
-        client_transport_latency_view.GetData()
-            .distribution_data()
-            .find({client_method_name_})
-            ->second.mean();
-    EXPECT_THAT(
-        client_server_latency_view.GetData().distribution_data(),
-        ::testing::UnorderedElementsAre(::testing::Pair(
-            ::testing::ElementsAre(client_method_name_),
-            ::testing::AllOf(
-                ::testing::Property(&Distribution::count, 1),
-                ::testing::Property(&Distribution::mean, ::testing::Gt(0.0)),
-                ::testing::Property(
-                    &Distribution::mean,
-                    ::testing::Lt(client_transport_latency))))));
-  }
 
   // client api latency should be less than max time but greater than client
   // roundtrip (attempt) latency view.
@@ -535,8 +517,8 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
             ::testing::ElementsAre(client_method_name_), ::testing::Eq(0))));
     auto data = client_retry_delay_per_call_view.GetData().distribution_data();
     for (const auto& entry : data) {
-      gpr_log(GPR_ERROR, "Mean Retry Delay %s: %lf ms", entry.first[0].c_str(),
-              entry.second.mean());
+      LOG(ERROR) << "Mean Retry Delay " << entry.first[0] << ": "
+                 << entry.second.mean() << " ms";
     }
     // We expect the retry delay to be around 100ms.
     EXPECT_THAT(
@@ -681,8 +663,14 @@ TEST_F(StatsPluginEnd2EndTest,
   auto sent_span_data =
       GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
   ASSERT_NE(sent_span_data, recorded_spans.end());
-  EXPECT_TRUE(
-      IsAnnotationPresent(sent_span_data, "Delayed name resolution complete."));
+  // TODO(yijiem): the EventEngine DNS resolver might be faster in getting the
+  // result before TryCheckResolution and the call would not be queued:
+  // https://github.com/grpc/grpc/blob/master/src/core/ext/filters/client_channel/client_channel.cc#L2340.
+  // We could use a FakeResolver and introduce a delay to deflake this test.
+  if (!grpc_core::IsEventEngineDnsEnabled()) {
+    EXPECT_TRUE(IsAnnotationPresent(sent_span_data,
+                                    "Delayed name resolution complete."));
+  }
   // Check presence of trace annotation for removal from channel's pending
   // lb pick queue.
   auto attempt_span_data = GetSpanByName(
@@ -716,7 +704,7 @@ TEST_F(StatsPluginEnd2EndTest, TestMessageSizeAnnotations) {
     grpc::Status status = stub_->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok());
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  absl::SleepFor(absl::Milliseconds(1000 * grpc_test_slowdown_factor()));
   TestUtils::Flush();
   ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   traces_recorder_->StopRecording();
@@ -735,7 +723,7 @@ TEST_F(StatsPluginEnd2EndTest, TestMessageSizeAnnotations) {
   // Check presence of message size annotations in server span
   auto server_span_data =
       GetSpanByName(recorded_spans, absl::StrCat("Recv.", client_method_name_));
-  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  ASSERT_NE(server_span_data, recorded_spans.end());
   EXPECT_TRUE(IsAnnotationPresent(server_span_data, "Send message: 5 bytes"));
   EXPECT_FALSE(IsAnnotationPresent(attempt_span_data,
                                    "Send compressed message: 5 bytes"));
@@ -799,7 +787,7 @@ TEST_F(StatsPluginEnd2EndTest, TestMessageSizeWithCompressionAnnotations) {
   // Check presence of message size annotations in server span
   auto server_span_data =
       GetSpanByName(recorded_spans, absl::StrCat("Recv.", client_method_name_));
-  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  ASSERT_NE(server_span_data, recorded_spans.end());
   EXPECT_TRUE(
       IsAnnotationPresent(server_span_data, "Send message: 1026 bytes"));
   // We don't know what the exact compressed message size would be
@@ -839,8 +827,11 @@ TEST_F(StatsPluginEnd2EndTest, TestMetadataSizeAnnotations) {
   traces_recorder_->StopRecording();
   auto recorded_spans = traces_recorder_->GetAndClearSpans();
   // Check presence of metadata size annotations in client span.
-  auto sent_span_data =
-      GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
+  auto sent_span_data = GetSpanByName(
+      recorded_spans,
+      absl::StrCat(
+          grpc_core::IsCallTracerInTransportEnabled() ? "Attempt." : "Sent.",
+          client_method_name_));
   ASSERT_NE(sent_span_data, recorded_spans.end());
   EXPECT_TRUE(IsAnnotationPresent(
       sent_span_data,
@@ -852,6 +843,63 @@ TEST_F(StatsPluginEnd2EndTest, TestMetadataSizeAnnotations) {
       "gRPC metadata "
       "soft_limit:[0-9]{4,5},hard_limit:[0-9]{5},grpc-status:[0-9]{1,2},grpc-"
       "server-stats-bin:[0-9]{1,2},"));
+}
+
+// Tests that HTTP annotations are present.
+TEST_F(StatsPluginEnd2EndTest, TestHttpAnnotations) {
+  {
+    // Client spans are ended when the ClientContext's destructor is invoked.
+    EchoRequest request;
+    EchoResponse response;
+
+    grpc::ClientContext context;
+    ::opencensus::trace::AlwaysSampler always_sampler;
+    ::opencensus::trace::StartSpanOptions options;
+    options.sampler = &always_sampler;
+    auto sampling_span =
+        ::opencensus::trace::Span::StartSpan("sampling", nullptr, options);
+    grpc::CensusContext app_census_context("root", &sampling_span,
+                                           ::opencensus::tags::TagMap{});
+    context.set_census_context(
+        reinterpret_cast<census_context*>(&app_census_context));
+    context.AddMetadata(kExpectedTraceIdKey,
+                        app_census_context.Span().context().trace_id().ToHex());
+    traces_recorder_->StartRecording();
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok());
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  traces_recorder_->StopRecording();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans();
+  auto client_span_data = GetSpanByName(
+      recorded_spans,
+      absl::StrCat(
+          grpc_core::IsCallTracerInTransportEnabled() ? "Attempt." : "Sent.",
+          client_method_name_));
+  ASSERT_NE(client_span_data, recorded_spans.end());
+  EXPECT_TRUE(IsAnnotationPresent(client_span_data,
+                                  "HttpAnnotation type: Start time: .* "
+                                  "transport:\\[.*\\] stream:\\[.*\\]"));
+  EXPECT_TRUE(IsAnnotationPresent(client_span_data,
+                                  "HttpAnnotation type: HeadWritten time: .* "
+                                  "transport:\\[.*\\] stream:\\[.*\\]"));
+  EXPECT_TRUE(IsAnnotationPresent(client_span_data,
+                                  "HttpAnnotation type: End time: .* "
+                                  "transport:\\[.*\\] stream:\\[.*\\]"));
+  auto server_span_data =
+      GetSpanByName(recorded_spans, absl::StrCat("Recv.", client_method_name_));
+  ASSERT_NE(server_span_data, recorded_spans.end());
+  EXPECT_TRUE(IsAnnotationPresent(server_span_data,
+                                  "HttpAnnotation type: Start time: .* "
+                                  "transport:\\[.*\\] stream:\\[.*\\]"));
+  EXPECT_TRUE(IsAnnotationPresent(server_span_data,
+                                  "HttpAnnotation type: HeadWritten time: .* "
+                                  "transport:\\[.*\\] stream:\\[.*\\]"));
+  EXPECT_TRUE(IsAnnotationPresent(server_span_data,
+                                  "HttpAnnotation type: End time: .* "
+                                  "transport:\\[.*\\] stream:\\[.*\\]"));
 }
 
 // Test the working of GRPC_ARG_DISABLE_OBSERVABILITY.
@@ -965,95 +1013,94 @@ TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusTracing) {
 // This test verifies that users depending on src/cpp/ext/filters/census header
 // files can continue using the non-experimental names.
 TEST(StatsPluginDeclarationTest, Declarations) {
-  gpr_log(GPR_INFO, "%p", ClientMethodTagKey);
-  gpr_log(GPR_INFO, "%p", ClientStatusTagKey);
-  gpr_log(GPR_INFO, "%p", ServerMethodTagKey);
-  gpr_log(GPR_INFO, "%p", ServerStatusTagKey);
+  LOG(INFO) << ClientMethodTagKey;
+  LOG(INFO) << ClientStatusTagKey;
+  LOG(INFO) << ServerMethodTagKey;
+  LOG(INFO) << ServerStatusTagKey;
 
-  gpr_log(GPR_INFO, "%p", kRpcClientReceivedBytesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientReceivedMessagesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientRetriesPerCallMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientRetryDelayPerCallMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientRoundtripLatencyMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientSentBytesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientSentMessagesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientServerLatencyMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientStartedRpcsMeasureName.data());
-  gpr_log(GPR_INFO, "%p",
-          kRpcClientTransparentRetriesPerCallMeasureName.data());
+  LOG(INFO) << kRpcClientReceivedBytesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcClientReceivedMessagesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcClientRetriesPerCallMeasureName.data();
+  LOG(INFO) << kRpcClientRetryDelayPerCallMeasureName.data();
+  LOG(INFO) << kRpcClientRoundtripLatencyMeasureName.data();
+  LOG(INFO) << kRpcClientSentBytesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcClientSentMessagesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcClientServerLatencyMeasureName.data();
+  LOG(INFO) << kRpcClientStartedRpcsMeasureName.data();
+  LOG(INFO) << kRpcClientTransparentRetriesPerCallMeasureName.data();
 
-  gpr_log(GPR_INFO, "%p", kRpcServerReceivedBytesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcServerReceivedMessagesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcServerSentBytesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcServerSentMessagesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcServerServerLatencyMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcServerStartedRpcsMeasureName.data());
+  LOG(INFO) << kRpcServerReceivedBytesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcServerReceivedMessagesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcServerSentBytesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcServerSentMessagesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcServerServerLatencyMeasureName.data();
+  LOG(INFO) << kRpcServerStartedRpcsMeasureName.data();
 
-  gpr_log(GPR_INFO, "%p", ClientCompletedRpcsCumulative);
-  gpr_log(GPR_INFO, "%p", ClientReceivedBytesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ClientReceivedMessagesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ClientRetriesCumulative);
-  gpr_log(GPR_INFO, "%p", ClientRetriesPerCallCumulative);
-  gpr_log(GPR_INFO, "%p", ClientRetryDelayPerCallCumulative);
-  gpr_log(GPR_INFO, "%p", ClientRoundtripLatencyCumulative);
-  gpr_log(GPR_INFO, "%p", ClientSentBytesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ClientSentMessagesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ClientServerLatencyCumulative);
-  gpr_log(GPR_INFO, "%p", ClientStartedRpcsCumulative);
-  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesCumulative);
-  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesPerCallCumulative);
+  LOG(INFO) << ClientCompletedRpcsCumulative;
+  LOG(INFO) << ClientReceivedBytesPerRpcCumulative;
+  LOG(INFO) << ClientReceivedMessagesPerRpcCumulative;
+  LOG(INFO) << ClientRetriesCumulative;
+  LOG(INFO) << ClientRetriesPerCallCumulative;
+  LOG(INFO) << ClientRetryDelayPerCallCumulative;
+  LOG(INFO) << ClientRoundtripLatencyCumulative;
+  LOG(INFO) << ClientSentBytesPerRpcCumulative;
+  LOG(INFO) << ClientSentMessagesPerRpcCumulative;
+  LOG(INFO) << ClientServerLatencyCumulative;
+  LOG(INFO) << ClientStartedRpcsCumulative;
+  LOG(INFO) << ClientTransparentRetriesCumulative;
+  LOG(INFO) << ClientTransparentRetriesPerCallCumulative;
 
-  gpr_log(GPR_INFO, "%p", ServerCompletedRpcsCumulative);
-  gpr_log(GPR_INFO, "%p", ServerReceivedBytesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ServerReceivedMessagesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ServerSentBytesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ServerSentMessagesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ServerServerLatencyCumulative);
-  gpr_log(GPR_INFO, "%p", ServerStartedRpcsCumulative);
+  LOG(INFO) << ServerCompletedRpcsCumulative;
+  LOG(INFO) << ServerReceivedBytesPerRpcCumulative;
+  LOG(INFO) << ServerReceivedMessagesPerRpcCumulative;
+  LOG(INFO) << ServerSentBytesPerRpcCumulative;
+  LOG(INFO) << ServerSentMessagesPerRpcCumulative;
+  LOG(INFO) << ServerServerLatencyCumulative;
+  LOG(INFO) << ServerStartedRpcsCumulative;
 
-  gpr_log(GPR_INFO, "%p", ClientCompletedRpcsMinute);
-  gpr_log(GPR_INFO, "%p", ClientReceivedBytesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ClientReceivedMessagesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ClientRetriesMinute);
-  gpr_log(GPR_INFO, "%p", ClientRetriesPerCallMinute);
-  gpr_log(GPR_INFO, "%p", ClientRetryDelayPerCallMinute);
-  gpr_log(GPR_INFO, "%p", ClientRoundtripLatencyMinute);
-  gpr_log(GPR_INFO, "%p", ClientSentBytesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ClientSentMessagesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ClientServerLatencyMinute);
-  gpr_log(GPR_INFO, "%p", ClientStartedRpcsMinute);
-  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesMinute);
-  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesPerCallMinute);
+  LOG(INFO) << ClientCompletedRpcsMinute;
+  LOG(INFO) << ClientReceivedBytesPerRpcMinute;
+  LOG(INFO) << ClientReceivedMessagesPerRpcMinute;
+  LOG(INFO) << ClientRetriesMinute;
+  LOG(INFO) << ClientRetriesPerCallMinute;
+  LOG(INFO) << ClientRetryDelayPerCallMinute;
+  LOG(INFO) << ClientRoundtripLatencyMinute;
+  LOG(INFO) << ClientSentBytesPerRpcMinute;
+  LOG(INFO) << ClientSentMessagesPerRpcMinute;
+  LOG(INFO) << ClientServerLatencyMinute;
+  LOG(INFO) << ClientStartedRpcsMinute;
+  LOG(INFO) << ClientTransparentRetriesMinute;
+  LOG(INFO) << ClientTransparentRetriesPerCallMinute;
 
-  gpr_log(GPR_INFO, "%p", ServerCompletedRpcsMinute);
-  gpr_log(GPR_INFO, "%p", ServerReceivedBytesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ServerReceivedMessagesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ServerSentBytesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ServerSentMessagesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ServerServerLatencyMinute);
-  gpr_log(GPR_INFO, "%p", ServerStartedRpcsMinute);
+  LOG(INFO) << ServerCompletedRpcsMinute;
+  LOG(INFO) << ServerReceivedBytesPerRpcMinute;
+  LOG(INFO) << ServerReceivedMessagesPerRpcMinute;
+  LOG(INFO) << ServerSentBytesPerRpcMinute;
+  LOG(INFO) << ServerSentMessagesPerRpcMinute;
+  LOG(INFO) << ServerServerLatencyMinute;
+  LOG(INFO) << ServerStartedRpcsMinute;
 
-  gpr_log(GPR_INFO, "%p", ClientCompletedRpcsHour);
-  gpr_log(GPR_INFO, "%p", ClientReceivedBytesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ClientReceivedMessagesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ClientRetriesHour);
-  gpr_log(GPR_INFO, "%p", ClientRetriesPerCallHour);
-  gpr_log(GPR_INFO, "%p", ClientRetryDelayPerCallHour);
-  gpr_log(GPR_INFO, "%p", ClientRoundtripLatencyHour);
-  gpr_log(GPR_INFO, "%p", ClientSentBytesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ClientSentMessagesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ClientServerLatencyHour);
-  gpr_log(GPR_INFO, "%p", ClientStartedRpcsHour);
-  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesHour);
-  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesPerCallHour);
+  LOG(INFO) << ClientCompletedRpcsHour;
+  LOG(INFO) << ClientReceivedBytesPerRpcHour;
+  LOG(INFO) << ClientReceivedMessagesPerRpcHour;
+  LOG(INFO) << ClientRetriesHour;
+  LOG(INFO) << ClientRetriesPerCallHour;
+  LOG(INFO) << ClientRetryDelayPerCallHour;
+  LOG(INFO) << ClientRoundtripLatencyHour;
+  LOG(INFO) << ClientSentBytesPerRpcHour;
+  LOG(INFO) << ClientSentMessagesPerRpcHour;
+  LOG(INFO) << ClientServerLatencyHour;
+  LOG(INFO) << ClientStartedRpcsHour;
+  LOG(INFO) << ClientTransparentRetriesHour;
+  LOG(INFO) << ClientTransparentRetriesPerCallHour;
 
-  gpr_log(GPR_INFO, "%p", ServerCompletedRpcsHour);
-  gpr_log(GPR_INFO, "%p", ServerReceivedBytesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ServerReceivedMessagesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ServerSentBytesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ServerSentMessagesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ServerServerLatencyHour);
-  gpr_log(GPR_INFO, "%p", ServerStartedRpcsHour);
+  LOG(INFO) << ServerCompletedRpcsHour;
+  LOG(INFO) << ServerReceivedBytesPerRpcHour;
+  LOG(INFO) << ServerReceivedMessagesPerRpcHour;
+  LOG(INFO) << ServerSentBytesPerRpcHour;
+  LOG(INFO) << ServerSentMessagesPerRpcHour;
+  LOG(INFO) << ServerServerLatencyHour;
+  LOG(INFO) << ServerStartedRpcsHour;
 }
 
 }  // namespace
@@ -1063,6 +1110,7 @@ TEST(StatsPluginDeclarationTest, Declarations) {
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_core::ForceEnableExperiment("trace_record_callops", true);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

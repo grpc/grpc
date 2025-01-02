@@ -14,19 +14,18 @@
 // limitations under the License.
 //
 
-#include <initializer_list>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+
+#include <memory>
 
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
@@ -37,6 +36,7 @@ namespace {
 // - second attempt returns ABORTED
 // - third attempt returns OK
 CORE_END2END_TEST(RetryTest, RetryPerAttemptRecvTimeout) {
+  SKIP_IF_V3();  // Not working yet
   InitServer(ChannelArgs());
   InitClient(
       ChannelArgs()

@@ -12,19 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "gtest/gtest.h"
+#include <memory>
 
-#include "src/core/lib/channel/call_tracer.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_core {
 namespace {
 
 class TestServerCallTracerFactory : public ServerCallTracerFactory {
  public:
-  ServerCallTracer* CreateNewServerCallTracer(Arena* /*arena*/) override {
+  ServerCallTracer* CreateNewServerCallTracer(
+      Arena* /*arena*/, const ChannelArgs& /*args*/) override {
     Crash("Not implemented");
   }
 };

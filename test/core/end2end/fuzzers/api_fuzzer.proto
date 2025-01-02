@@ -17,8 +17,8 @@ syntax = "proto3";
 package api_fuzzer;
 
 import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
-import "test/core/util/fuzz_config_vars.proto";
-import "test/core/util/fuzzing_channel_args.proto";
+import "test/core/test_util/fuzz_config_vars.proto";
+import "test/core/test_util/fuzzing_channel_args.proto";
 
 message Empty {}
 
@@ -78,6 +78,13 @@ message ChannelCreds {
     }
 }
 
+message ServerCreds {
+    oneof type {
+        Empty insecure_creds = 1;
+        Empty null = 2;
+    }    
+}
+
 message Metadatum {
     StringSlice key = 1;
     ByteSlice value = 2;
@@ -87,10 +94,17 @@ message CreateChannel {
     string target = 1;
     grpc.testing.FuzzingChannelArgs channel_args = 2;
     ChannelCreds channel_creds = 3;
+    bool inproc = 4;
+}
+
+message Http2ServerPort {
+    int32 port = 1;
+    ServerCreds server_creds = 2;
 }
 
 message CreateServer {
     grpc.testing.FuzzingChannelArgs channel_args = 1;
+    repeated Http2ServerPort http2_ports = 2;
 }
 
 message CreateCall {
@@ -171,6 +185,7 @@ message Action {
         Empty request_call = 20;
         Empty destroy_call = 21;
         uint32 resize_resource_quota = 22;
+        uint32 sleep_ms = 23;
     }
 }
 

@@ -12,26 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+
 #include <string>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -39,7 +34,11 @@
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/unique_type_name.h"
+#include "src/core/util/useful.h"
 #include "test/core/filters/filter_test.h"
 
 // TODO(roth): Need to add a lot more tests here.  I created this file
@@ -57,6 +56,8 @@ class ClientAuthFilterTest : public FilterTest<ClientAuthFilter> {
     explicit FailCallCreds(absl::Status status)
         : grpc_call_credentials(GRPC_SECURITY_NONE),
           status_(std::move(status)) {}
+
+    void Orphaned() override {}
 
     UniqueTypeName type() const override {
       static UniqueTypeName::Factory kFactory("FailCallCreds");
@@ -139,8 +140,5 @@ TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
-  int retval = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return retval;
+  return RUN_ALL_TESTS();
 }

@@ -14,8 +14,8 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_HANDLE_CONTAINERS_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_HANDLE_CONTAINERS_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <cstdint>
@@ -23,8 +23,6 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"
-
-#include <grpc/event_engine/event_engine.h>
 
 namespace grpc_event_engine {
 namespace experimental {

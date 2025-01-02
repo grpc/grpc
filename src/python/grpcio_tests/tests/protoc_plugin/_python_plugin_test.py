@@ -14,7 +14,6 @@
 
 import collections
 import contextlib
-import distutils.spawn
 import errno
 import itertools
 import os
@@ -542,6 +541,17 @@ class PythonPluginTest(unittest.TestCase):
             exception_context.exception.code(),
             grpc.StatusCode.DEADLINE_EXCEEDED,
         )
+        service.server.stop(None)
+
+    def testRegisteredMethod(self):
+        """Tests that we're setting _registered_call_handle when create call using generated stub."""
+        service = _CreateService()
+        self.assertTrue(service.stub.UnaryCall._registered_call_handle)
+        self.assertTrue(
+            service.stub.StreamingOutputCall._registered_call_handle
+        )
+        self.assertTrue(service.stub.StreamingInputCall._registered_call_handle)
+        self.assertTrue(service.stub.FullDuplexCall._registered_call_handle)
         service.server.stop(None)
 
 

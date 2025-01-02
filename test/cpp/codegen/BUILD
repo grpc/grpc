@@ -28,7 +28,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc++",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -42,7 +42,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc++",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -57,7 +57,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc++",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -71,21 +71,21 @@ grpc_cc_binary(
     ],
     deps = [
         "//:grpc++",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
 )
 
 genrule(
     name = "copy_compiler_test_grpc_pb_h",
-    srcs = ["//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen"],
+    srcs = ["//src/proto/grpc/testing:_compiler_test_cc_grpc_grpc_codegen"],
     outs = ["compiler_test.grpc.pb.h"],
     cmd = "cat $(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.h > $@",
 )
 
 genrule(
     name = "copy_compiler_test_mock_grpc_pb_h",
-    srcs = ["//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen"],
+    srcs = ["//src/proto/grpc/testing:_compiler_test_cc_grpc_grpc_codegen"],
     outs = ["compiler_test_mock.grpc.pb.h"],
     cmd = "cat $(GENDIR)/src/proto/grpc/testing/compiler_test_mock.grpc.pb.h > $@",
 )

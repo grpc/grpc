@@ -16,6 +16,13 @@
  *
  */
 
+#include <grpc/grpc.h>
+#include <grpcpp/alarm.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
+
 #include <chrono>
 #include <condition_variable>
 #include <iostream>
@@ -26,13 +33,6 @@
 #include <thread>
 
 #include "helper.h"
-
-#include <grpc/grpc.h>
-#include <grpcpp/alarm.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/security/credentials.h>
 #ifdef BAZEL_BUILD
 #include "examples/protos/route_guide.grpc.pb.h"
 #else
@@ -243,7 +243,11 @@ class RouteGuideClient {
         StartRead(&server_note_);
         StartCall();
       }
-      void OnWriteDone(bool /*ok*/) override { NextWrite(); }
+      void OnWriteDone(bool ok) override {
+        if (ok) {
+          NextWrite();
+        }
+      }
       void OnReadDone(bool ok) override {
         if (ok) {
           std::cout << "Got message " << server_note_.message() << " at "

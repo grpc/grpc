@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package memory_quota_fuzzer;
 
-import "test/core/util/fuzz_config_vars.proto";
+import "test/core/test_util/fuzz_config_vars.proto";
 
 message Empty {}
 

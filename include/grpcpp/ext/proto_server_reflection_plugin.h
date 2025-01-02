@@ -22,8 +22,12 @@
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/support/config.h>
 
+#include <memory>
+
 namespace grpc {
 class ProtoServerReflection;
+class ProtoServerReflectionBackend;
+class ProtoServerReflectionV1;
 class ServerInitializer;
 
 namespace reflection {
@@ -39,7 +43,9 @@ class ProtoServerReflectionPlugin : public grpc::ServerBuilderPlugin {
   bool has_sync_methods() const override;
 
  private:
-  std::shared_ptr<grpc::ProtoServerReflection> reflection_service_;
+  std::shared_ptr<grpc::ProtoServerReflectionBackend> backend_;
+  std::shared_ptr<grpc::ProtoServerReflection> reflection_service_v1alpha_;
+  std::shared_ptr<grpc::ProtoServerReflectionV1> reflection_service_v1_;
 };
 
 /// Add proto reflection plugin to \a ServerBuilder.

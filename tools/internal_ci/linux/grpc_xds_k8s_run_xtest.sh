@@ -14,7 +14,7 @@
 # limitations under the License.
 
 ## xDS test server/client Docker images
-readonly IMAGE_REPO="gcr.io/grpc-testing/xds-interop"
+readonly IMAGE_REPO="us-docker.pkg.dev/grpc-testing/psm-interop"
 
 find_latest() {
   gcloud container images list-tags --filter='tags~v1\.\d+\.x' "${IMAGE_REPO}/${1}-${2}" --flatten='tags[]' --format='value(tags)' | sort --version-sort | tail -n 1
@@ -69,7 +69,7 @@ run_test() {
     exit 1
   fi
   # Test driver usage:
-  # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
+  # https://github.com/grpc/psm-interop#basic-usage
   local client_lang="$1"
   local client_branch="$2"
   local server_lang="$3"

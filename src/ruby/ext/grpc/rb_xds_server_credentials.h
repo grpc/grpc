@@ -21,9 +21,9 @@
 
 #include <ruby/ruby.h>
 
-#include <stdbool.h>
-
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
+#include <stdbool.h>
 
 /* Initializes the ruby XdsServerCredentials class. */
 void Init_grpc_xds_server_credentials();

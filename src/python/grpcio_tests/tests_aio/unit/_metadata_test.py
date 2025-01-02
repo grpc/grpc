@@ -15,7 +15,77 @@
 import logging
 import unittest
 
+import grpc
+from grpc.experimental import aio
 from grpc.experimental.aio import Metadata
+
+from tests_aio.unit import _common
+from tests_aio.unit._test_base import AioTestBase
+
+_TEST_UNARY_UNARY = "/test/TestUnaryUnary"
+_INITIAL_METADATA_FROM_CLIENT_TO_SERVER = aio.Metadata(
+    ("client-to-server", "question"),
+    ("client-to-server-bin", b"\x07\x07\x07"),
+)
+_INITIAL_METADATA_FROM_CLIENT_TO_SERVER_TUPLE = (
+    ("client-to-server", "question"),
+    ("client-to-server-bin", b"\x07\x07\x07"),
+)
+_INTERCEPTOR_METADATA_KEY = "interceptor-metadata-key"
+_INTERCEPTOR_METADATA_VALUE = "interceptor-metadata-value"
+_INITIAL_METADATA_FROM_CLIENT_TO_SERVER_ALL = aio.Metadata(
+    (_INTERCEPTOR_METADATA_KEY, _INTERCEPTOR_METADATA_VALUE),
+    ("client-to-server", "question"),
+    ("client-to-server-bin", b"\x07\x07\x07"),
+)
+
+_REQUEST = b"\x01" * 100
+_RESPONSE = b"\x02" * 100
+
+
+def validate_client_metadata(servicer_context):
+    invocation_metadata = servicer_context.invocation_metadata()
+    assert _common.seen_metadata(
+        _INITIAL_METADATA_FROM_CLIENT_TO_SERVER_ALL,
+        invocation_metadata,
+    )
+
+
+async def _test_unary_unary(unused_request, servicer_context):
+    validate_client_metadata(servicer_context)
+    return _RESPONSE
+
+
+_ROUTING_TABLE = {
+    _TEST_UNARY_UNARY: grpc.unary_unary_rpc_method_handler(_test_unary_unary),
+}
+
+
+class _GenericHandler(grpc.GenericRpcHandler):
+    def service(self, handler_call_details):
+        return _ROUTING_TABLE.get(handler_call_details.method)
+
+
+class UnaryUnaryAddMetadataInterceptor(aio.UnaryUnaryClientInterceptor):
+    async def intercept_unary_unary(
+        self,
+        continuation,
+        client_call_details,
+        request,
+    ):
+        client_call_details.metadata.add(
+            _INTERCEPTOR_METADATA_KEY, _INTERCEPTOR_METADATA_VALUE
+        )
+        response = await continuation(client_call_details, request)
+        return response
+
+
+async def _start_test_server(options=None):
+    server = aio.server(options=options)
+    port = server.add_insecure_port("[::]:0")
+    server.add_generic_rpc_handlers((_GenericHandler(),))
+    await server.start()
+    return f"localhost:{port}", server
 
 
 class TestTypeMetadata(unittest.TestCase):
@@ -30,7 +100,7 @@ class TestTypeMetadata(unittest.TestCase):
 
     def test_init_metadata(self):
         test_cases = {
-            "emtpy": (),
+            "empty": (),
             "with-single-data": self._DEFAULT_DATA,
             "with-multi-data": self._MULTI_ENTRY_DATA,
         }
@@ -135,6 +205,30 @@ class TestTypeMetadata(unittest.TestCase):
         for source, expected in scenarios:
             with self.subTest(raw_metadata=source, expected=expected):
                 self.assertEqual(expected, Metadata.from_tuple(source))
+
+
+class TestMetadataWithServer(AioTestBase):
+    async def setUp(self):
+        self._address, self._server = await _start_test_server()
+        self._channel = aio.insecure_channel(self._address)
+
+    async def tearDown(self):
+        await self._channel.close()
+        await self._server.stop(None)
+
+    async def test_init_metadata_with_client_interceptor(self):
+        async with aio.insecure_channel(
+            self._address,
+            interceptors=[UnaryUnaryAddMetadataInterceptor()],
+        ) as channel:
+            multicallable = channel.unary_unary(_TEST_UNARY_UNARY)
+            for metadata in [
+                _INITIAL_METADATA_FROM_CLIENT_TO_SERVER,
+                _INITIAL_METADATA_FROM_CLIENT_TO_SERVER_TUPLE,
+            ]:
+                call = multicallable(_REQUEST, metadata=metadata)
+                await call
+                self.assertEqual(grpc.StatusCode.OK, await call.code())
 
 
 if __name__ == "__main__":

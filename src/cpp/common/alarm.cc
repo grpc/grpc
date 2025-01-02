@@ -15,29 +15,27 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
-#include <atomic>
-#include <functional>
-#include <memory>
-#include <utility>
-
-#include "absl/status/status.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 
+#include <atomic>
+#include <functional>
+#include <memory>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/status/status.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/util/time.h"
 
 namespace grpc {
 
@@ -66,10 +64,10 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     GRPC_CQ_INTERNAL_REF(cq->cq(), "alarm");
     cq_ = cq->cq();
     tag_ = tag;
-    GPR_ASSERT(grpc_cq_begin_op(cq_, this));
+    CHECK(grpc_cq_begin_op(cq_, this));
     Ref();
-    GPR_ASSERT(cq_armed_.exchange(true) == false);
-    GPR_ASSERT(!callback_armed_.load());
+    CHECK(cq_armed_.exchange(true) == false);
+    CHECK(!callback_armed_.load());
     cq_timer_handle_ = event_engine_->RunAfter(
         grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
             grpc_core::ExecCtx::Get()->Now(),
@@ -80,8 +78,8 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     // Don't use any CQ at all. Instead just use the timer to fire the function
     callback_ = std::move(f);
     Ref();
-    GPR_ASSERT(callback_armed_.exchange(true) == false);
-    GPR_ASSERT(!cq_armed_.load());
+    CHECK(callback_armed_.exchange(true) == false);
+    CHECK(!cq_armed_.load());
     callback_timer_handle_ = event_engine_->RunAfter(
         grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
             grpc_core::ExecCtx::Get()->Now(),

@@ -21,7 +21,6 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 
@@ -67,6 +66,12 @@ class WaitSet final {
     auto ret = WakeupSet(std::move(pending_));
     pending_.clear();  // reinitialize after move.
     return ret;
+  }
+
+  void WakeupAsync() {
+    while (!pending_.empty()) {
+      pending_.extract(pending_.begin()).value().WakeupAsync();
+    }
   }
 
  private:

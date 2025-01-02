@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -27,7 +26,7 @@
 #include <string.h>
 #include <sys/utsname.h>
 
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/strerror.h"
 
 namespace grpc_core {
 
@@ -38,7 +37,7 @@ bool KernelSupportsErrqueue() {
     // least 4.0.0
     struct utsname buffer;
     if (uname(&buffer) != 0) {
-      gpr_log(GPR_ERROR, "uname: %s", StrError(errno).c_str());
+      LOG(ERROR) << "uname: " << StrError(errno);
       return false;
     }
     char* release = buffer.release;
@@ -49,7 +48,7 @@ bool KernelSupportsErrqueue() {
     if (strtol(release, nullptr, 10) >= 4) {
       return true;
     } else {
-      gpr_log(GPR_DEBUG, "ERRQUEUE support not enabled");
+      VLOG(2) << "ERRQUEUE support not enabled";
     }
 #endif  // GRPC_LINUX_ERRQUEUE
     return false;

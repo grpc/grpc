@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 package(default_visibility = ["//visibility:public"])
@@ -18,12 +19,12 @@ package(default_visibility = ["//visibility:public"])
 py_proto_library(
     name = "reflection_py_pb2",
     imports = ["../../"],
-    deps = ["//src/proto/grpc/reflection/v1alpha:reflection_proto_descriptor"],
+    deps = ["//src/proto/grpc/reflection/v1alpha:reflection_proto_only"],
 )
 
 py_grpc_library(
     name = "reflection_py_pb2_grpc",
-    srcs = ["//src/proto/grpc/reflection/v1alpha:reflection_proto_descriptor"],
+    srcs = ["//src/proto/grpc/reflection/v1alpha:reflection_proto_only"],
     strip_prefixes = ["src.python.grpcio_reflection."],
     deps = ["reflection_py_pb2"],
 )

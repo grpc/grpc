@@ -15,10 +15,14 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 
+#include <grpc/credentials.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
@@ -26,26 +30,20 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/json.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/credentials/call_creds_util.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/uri.h"
 
 using grpc_core::Json;
 
@@ -115,9 +113,8 @@ grpc_service_account_jwt_access_credentials::
     : key_(key) {
   gpr_timespec max_token_lifetime = grpc_max_auth_token_lifetime();
   if (gpr_time_cmp(token_lifetime, max_token_lifetime) > 0) {
-    gpr_log(GPR_INFO,
-            "Cropping token lifetime to maximum allowed value (%d secs).",
-            static_cast<int>(max_token_lifetime.tv_sec));
+    VLOG(2) << "Cropping token lifetime to maximum allowed value ("
+            << max_token_lifetime.tv_sec << " secs).";
     token_lifetime = grpc_max_auth_token_lifetime();
   }
   jwt_lifetime_ = token_lifetime;
@@ -133,7 +130,7 @@ grpc_core::RefCountedPtr<grpc_call_credentials>
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     grpc_auth_json_key key, gpr_timespec token_lifetime) {
   if (!grpc_auth_json_key_is_valid(&key)) {
-    gpr_log(GPR_ERROR, "Invalid input for jwt credentials creation");
+    LOG(ERROR) << "Invalid input for jwt credentials creation";
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_service_account_jwt_access_credentials>(
@@ -154,20 +151,17 @@ static char* redact_private_key(const char* json_key) {
 
 grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(
     const char* json_key, gpr_timespec token_lifetime, void* reserved) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(api)) {
     char* clean_json = redact_private_key(json_key);
-    gpr_log(GPR_INFO,
-            "grpc_service_account_jwt_access_credentials_create("
-            "json_key=%s, "
-            "token_lifetime="
-            "gpr_timespec { tv_sec: %" PRId64
-            ", tv_nsec: %d, clock_type: %d }, "
-            "reserved=%p)",
-            clean_json, token_lifetime.tv_sec, token_lifetime.tv_nsec,
-            static_cast<int>(token_lifetime.clock_type), reserved);
+    VLOG(2) << "grpc_service_account_jwt_access_credentials_create("
+            << "json_key=" << clean_json
+            << ", token_lifetime=gpr_timespec { tv_sec: "
+            << token_lifetime.tv_sec << ", tv_nsec: " << token_lifetime.tv_nsec
+            << ", clock_type: " << token_lifetime.clock_type
+            << " }, reserved=" << reserved << ")";
     gpr_free(clean_json);
   }
-  GPR_ASSERT(reserved == nullptr);
+  CHECK_EQ(reserved, nullptr);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_service_account_jwt_access_credentials_create_from_auth_json_key(

@@ -19,16 +19,17 @@
 #ifndef GRPCPP_IMPL_INTERCEPTOR_COMMON_H
 #define GRPCPP_IMPL_INTERCEPTOR_COMMON_H
 
-#include <array>
-#include <functional>
-
 #include <grpc/impl/grpc_types.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/intercepted_channel.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/server_interceptor.h>
+
+#include <array>
+#include <functional>
+
+#include "absl/log/absl_check.h"
 
 namespace grpc {
 namespace internal {
@@ -56,16 +57,16 @@ class InterceptorBatchMethodsImpl
     if (call_->client_rpc_info() != nullptr) {
       return ProceedClient();
     }
-    GPR_ASSERT(call_->server_rpc_info() != nullptr);
+    ABSL_CHECK_NE(call_->server_rpc_info(), nullptr);
     ProceedServer();
   }
 
   void Hijack() override {
     // Only the client can hijack when sending down initial metadata
-    GPR_ASSERT(!reverse_ && ops_ != nullptr &&
+    ABSL_CHECK(!reverse_ && ops_ != nullptr &&
                call_->client_rpc_info() != nullptr);
     // It is illegal to call Hijack twice
-    GPR_ASSERT(!ran_hijacking_interceptor_);
+    ABSL_CHECK(!ran_hijacking_interceptor_);
     auto* rpc_info = call_->client_rpc_info();
     rpc_info->hijacked_ = true;
     rpc_info->hijacked_interceptor_ = current_interceptor_index_;
@@ -80,21 +81,21 @@ class InterceptorBatchMethodsImpl
   }
 
   ByteBuffer* GetSerializedSendMessage() override {
-    GPR_ASSERT(orig_send_message_ != nullptr);
+    ABSL_CHECK_NE(orig_send_message_, nullptr);
     if (*orig_send_message_ != nullptr) {
-      GPR_ASSERT(serializer_(*orig_send_message_).ok());
+      ABSL_CHECK(serializer_(*orig_send_message_).ok());
       *orig_send_message_ = nullptr;
     }
     return send_message_;
   }
 
   const void* GetSendMessage() override {
-    GPR_ASSERT(orig_send_message_ != nullptr);
+    ABSL_CHECK_NE(orig_send_message_, nullptr);
     return *orig_send_message_;
   }
 
   void ModifySendMessage(const void* message) override {
-    GPR_ASSERT(orig_send_message_ != nullptr);
+    ABSL_CHECK_NE(orig_send_message_, nullptr);
     *orig_send_message_ = message;
   }
 
@@ -129,7 +130,7 @@ class InterceptorBatchMethodsImpl
   Status* GetRecvStatus() override { return recv_status_; }
 
   void FailHijackedSendMessage() override {
-    GPR_ASSERT(hooks_[static_cast<size_t>(
+    ABSL_CHECK(hooks_[static_cast<size_t>(
         experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)]);
     *fail_send_message_ = true;
   }
@@ -192,7 +193,7 @@ class InterceptorBatchMethodsImpl
   }
 
   void FailHijackedRecvMessage() override {
-    GPR_ASSERT(hooks_[static_cast<size_t>(
+    ABSL_CHECK(hooks_[static_cast<size_t>(
         experimental::InterceptionHookPoints::PRE_RECV_MESSAGE)]);
     *hijacked_recv_message_failed_ = true;
   }
@@ -236,7 +237,7 @@ class InterceptorBatchMethodsImpl
   // ContinueFinalizeOpsAfterInterception will be called. Note that neither of
   // them is invoked if there were no interceptors registered.
   bool RunInterceptors() {
-    GPR_ASSERT(ops_);
+    ABSL_CHECK(ops_);
     auto* client_rpc_info = call_->client_rpc_info();
     if (client_rpc_info != nullptr) {
       if (client_rpc_info->interceptors_.empty()) {
@@ -261,8 +262,8 @@ class InterceptorBatchMethodsImpl
   // SyncRequest.
   bool RunInterceptors(std::function<void(void)> f) {
     // This is used only by the server for initial call request
-    GPR_ASSERT(reverse_ == true);
-    GPR_ASSERT(call_->client_rpc_info() == nullptr);
+    ABSL_CHECK_EQ(reverse_, true);
+    ABSL_CHECK_EQ(call_->client_rpc_info(), nullptr);
     auto* server_rpc_info = call_->server_rpc_info();
     if (server_rpc_info == nullptr || server_rpc_info->interceptors_.empty()) {
       return true;
@@ -356,7 +357,7 @@ class InterceptorBatchMethodsImpl
         return ops_->ContinueFinalizeResultAfterInterception();
       }
     }
-    GPR_ASSERT(callback_);
+    ABSL_CHECK(callback_);
     callback_();
   }
 
@@ -422,112 +423,103 @@ class CancelInterceptorBatchMethods
 
   void Hijack() override {
     // Only the client can hijack when sending down initial metadata
-    GPR_ASSERT(false &&
-               "It is illegal to call Hijack on a method which has a "
-               "Cancel notification");
+    ABSL_CHECK(false) << "It is illegal to call Hijack on a method which has a "
+                         "Cancel notification";
   }
 
   ByteBuffer* GetSerializedSendMessage() override {
-    GPR_ASSERT(false &&
-               "It is illegal to call GetSendMessage on a method which "
-               "has a Cancel notification");
+    ABSL_CHECK(false)
+        << "It is illegal to call GetSendMessage on a method which "
+           "has a Cancel notification";
     return nullptr;
   }
 
   bool GetSendMessageStatus() override {
-    GPR_ASSERT(false &&
-               "It is illegal to call GetSendMessageStatus on a method which "
-               "has a Cancel notification");
+    ABSL_CHECK(false)
+        << "It is illegal to call GetSendMessageStatus on a method which "
+           "has a Cancel notification";
     return false;
   }
 
   const void* GetSendMessage() override {
-    GPR_ASSERT(false &&
-               "It is illegal to call GetOriginalSendMessage on a method which "
-               "has a Cancel notification");
+    ABSL_CHECK(false)
+        << "It is illegal to call GetOriginalSendMessage on a method which "
+           "has a Cancel notification";
     return nullptr;
   }
 
   void ModifySendMessage(const void* /*message*/) override {
-    GPR_ASSERT(false &&
-               "It is illegal to call ModifySendMessage on a method which "
-               "has a Cancel notification");
+    ABSL_CHECK(false)
+        << "It is illegal to call ModifySendMessage on a method which "
+           "has a Cancel notification";
   }
 
   std::multimap<std::string, std::string>* GetSendInitialMetadata() override {
-    GPR_ASSERT(false &&
-               "It is illegal to call GetSendInitialMetadata on a "
-               "method which has a Cancel notification");
+    ABSL_CHECK(false) << "It is illegal to call GetSendInitialMetadata on a "
+                         "method which has a Cancel notification";
     return nullptr;
   }
 
   Status GetSendStatus() override {
-    GPR_ASSERT(false &&
-               "It is illegal to call GetSendStatus on a method which "
-               "has a Cancel notification");
+    ABSL_CHECK(false)
+        << "It is illegal to call GetSendStatus on a method which "
+           "has a Cancel notification";
     return Status();
   }
 
   void ModifySendStatus(const Status& /*status*/) override {
-    GPR_ASSERT(false &&
-               "It is illegal to call ModifySendStatus on a method "
-               "which has a Cancel notification");
+    ABSL_CHECK(false) << "It is illegal to call ModifySendStatus on a method "
+                         "which has a Cancel notification";
   }
 
   std::multimap<std::string, std::string>* GetSendTrailingMetadata() override {
-    GPR_ASSERT(false &&
-               "It is illegal to call GetSendTrailingMetadata on a "
-               "method which has a Cancel notification");
+    ABSL_CHECK(false) << "It is illegal to call GetSendTrailingMetadata on a "
+                         "method which has a Cancel notification";
     return nullptr;
   }
 
   void* GetRecvMessage() override {
-    GPR_ASSERT(false &&
-               "It is illegal to call GetRecvMessage on a method which "
-               "has a Cancel notification");
+    ABSL_CHECK(false)
+        << "It is illegal to call GetRecvMessage on a method which "
+           "has a Cancel notification";
     return nullptr;
   }
 
   std::multimap<grpc::string_ref, grpc::string_ref>* GetRecvInitialMetadata()
       override {
-    GPR_ASSERT(false &&
-               "It is illegal to call GetRecvInitialMetadata on a "
-               "method which has a Cancel notification");
+    ABSL_CHECK(false) << "It is illegal to call GetRecvInitialMetadata on a "
+                         "method which has a Cancel notification";
     return nullptr;
   }
 
   Status* GetRecvStatus() override {
-    GPR_ASSERT(false &&
-               "It is illegal to call GetRecvStatus on a method which "
-               "has a Cancel notification");
+    ABSL_CHECK(false)
+        << "It is illegal to call GetRecvStatus on a method which "
+           "has a Cancel notification";
     return nullptr;
   }
 
   std::multimap<grpc::string_ref, grpc::string_ref>* GetRecvTrailingMetadata()
       override {
-    GPR_ASSERT(false &&
-               "It is illegal to call GetRecvTrailingMetadata on a "
-               "method which has a Cancel notification");
+    ABSL_CHECK(false) << "It is illegal to call GetRecvTrailingMetadata on a "
+                         "method which has a Cancel notification";
     return nullptr;
   }
 
   std::unique_ptr<ChannelInterface> GetInterceptedChannel() override {
-    GPR_ASSERT(false &&
-               "It is illegal to call GetInterceptedChannel on a "
-               "method which has a Cancel notification");
+    ABSL_CHECK(false) << "It is illegal to call GetInterceptedChannel on a "
+                         "method which has a Cancel notification";
     return std::unique_ptr<ChannelInterface>(nullptr);
   }
 
   void FailHijackedRecvMessage() override {
-    GPR_ASSERT(false &&
-               "It is illegal to call FailHijackedRecvMessage on a "
-               "method which has a Cancel notification");
+    ABSL_CHECK(false) << "It is illegal to call FailHijackedRecvMessage on a "
+                         "method which has a Cancel notification";
   }
 
   void FailHijackedSendMessage() override {
-    GPR_ASSERT(false &&
-               "It is illegal to call FailHijackedSendMessage on a "
-               "method which has a Cancel notification");
+    ABSL_CHECK(false) << "It is illegal to call FailHijackedSendMessage on a "
+                         "method which has a Cancel notification";
   }
 };
 }  // namespace internal

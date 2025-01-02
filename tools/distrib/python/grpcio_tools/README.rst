@@ -75,32 +75,6 @@ Troubleshooting
 
 Help, I ...
 
-* **... see a** :code:`pkg_resources.VersionConflict` **when I try to install
-  grpc**
-
-  This is likely because :code:`pip` doesn't own the offending dependency,
-  which in turn is likely because your operating system's package manager owns
-  it. You'll need to force the installation of the dependency:
-
-  :code:`pip install --ignore-installed $OFFENDING_DEPENDENCY`
-
-  For example, if you get an error like the following:
-
-  ::
-
-    Traceback (most recent call last):
-    File "<string>", line 17, in <module>
-     ...
-    File "/usr/lib/python2.7/dist-packages/pkg_resources.py", line 509, in find
-      raise VersionConflict(dist, req)
-    pkg_resources.VersionConflict: (six 1.8.0 (/usr/lib/python2.7/dist-packages), Requirement.parse('six>=1.10'))
-
-  You can fix it by doing:
-
-  ::
-
-    sudo pip install --ignore-installed six
-
 * **... see compiler errors on some platforms when either installing from source or from the source distribution**
 
   If you see
@@ -141,7 +115,7 @@ Given protobuf include directories :code:`$INCLUDE`, an output directory
 
   $ python -m grpc_tools.protoc -I$INCLUDE --python_out=$OUTPUT --grpc_python_out=$OUTPUT $PROTO_FILES
 
-To use as a build step in distutils-based projects, you may use the provided
+To use as a build step in setuptools-based projects, you may use the provided
 command class in your :code:`setup.py`:
 
 ::
@@ -177,5 +151,4 @@ installed). One way to work around this can be found in our
 Now including :code:`grpcio-tools` in :code:`setup_requires` will provide the
 command on-setup as desired.
 
-For more information on command classes, consult :code:`distutils` and
-:code:`setuptools` documentation.
+For more information on command classes, consult :code:`setuptools` documentation.

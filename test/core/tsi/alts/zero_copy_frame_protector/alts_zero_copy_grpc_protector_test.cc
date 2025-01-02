@@ -18,19 +18,16 @@
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
 
-#include <gtest/gtest.h>
-
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <gtest/gtest.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "absl/types/span.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
 #include "src/core/tsi/transport_security_grpc.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
-#include "test/core/util/test_config.h"
 
 // TODO(unknown): tests zero_copy_grpc_protector under TSI test library, which
 // has more comprehensive tests.
@@ -116,16 +113,20 @@ alts_zero_copy_grpc_protector_test_fixture_create(bool rekey,
   size_t actual_max_protected_frame_size;
   gsec_test_random_array(&key, key_length);
   EXPECT_EQ(alts_zero_copy_grpc_protector_create(
-                key, key_length, rekey, /*is_client=*/true, integrity_only,
-                enable_extra_copy, &max_protected_frame_size, &fixture->client),
+                grpc_core::GsecKeyFactory(absl::MakeConstSpan(key, key_length),
+                                          rekey),
+                /*is_client=*/true, integrity_only, enable_extra_copy,
+                &max_protected_frame_size, &fixture->client),
             TSI_OK);
   EXPECT_EQ(tsi_zero_copy_grpc_protector_max_frame_size(
                 fixture->client, &actual_max_protected_frame_size),
             TSI_OK);
   EXPECT_EQ(actual_max_protected_frame_size, max_protected_frame_size);
   EXPECT_EQ(alts_zero_copy_grpc_protector_create(
-                key, key_length, rekey, /*is_client=*/false, integrity_only,
-                enable_extra_copy, &max_protected_frame_size, &fixture->server),
+                grpc_core::GsecKeyFactory(absl::MakeConstSpan(key, key_length),
+                                          rekey),
+                /*is_client=*/false, integrity_only, enable_extra_copy,
+                &max_protected_frame_size, &fixture->server),
             TSI_OK);
   EXPECT_EQ(tsi_zero_copy_grpc_protector_max_frame_size(
                 fixture->server, &actual_max_protected_frame_size),

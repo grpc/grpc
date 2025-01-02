@@ -17,7 +17,7 @@ cython_debug/
 dist/
 htmlcov/
 py3*/
-python_build/
+pyb/
 python_pylint_venv/
 src/python/grpcio_*/=*
 src/python/grpcio_*/build/
@@ -143,9 +143,6 @@ perf.data
 perf.data.old
 
 # bm_diff
-bm_diff_new/
-bm_diff_old/
-bm_*.json
 bloat_diff_new/
 bloat_diff_old/
 bloaty-build/
@@ -181,3 +178,6 @@ iwyu_build/
 # fuzzer logs
 fuzz-*.log
 
+# bazel module files (MODULE.bazel will need to be removed here)
+MODULE.bazel
+MODULE.bazel.lock

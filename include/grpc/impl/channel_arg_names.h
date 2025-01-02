@@ -15,6 +15,10 @@
 #ifndef GRPC_IMPL_CHANNEL_ARG_NAMES_H
 #define GRPC_IMPL_CHANNEL_ARG_NAMES_H
 
+// IWYU pragma: private, include <grpc/grpc.h>
+// IWYU pragma: friend "src/.*"
+// IWYU pragma: friend "test/.*"
+
 /** \defgroup grpc_arg_keys
  * Channel argument keys.
  * \{
@@ -63,9 +67,6 @@
    application will see the compressed message in the byte buffer. */
 #define GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION \
   "grpc.per_message_decompression"
-/** Enable/disable support for deadline checking. Defaults to 1, unless
-    GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 */
-#define GRPC_ARG_ENABLE_DEADLINE_CHECKS "grpc.enable_deadline_checking"
 /** Initial stream ID for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
@@ -102,11 +103,19 @@
  */
 #define GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_ping_interval_without_data_ms"
+/** Maximum time to allow a request to be:
+    (1) received by the server, but
+    (2) not requested by a RequestCall (in the completion queue based API)
+    before the request is cancelled */
+#define GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS \
+  "grpc.server_max_unrequested_time_in_server"
 /** Channel arg to override the http2 :scheme header */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
-/** How many pings can the client send before needing to send a
-   data/header frame? (0 indicates that an infinite number of
-   pings can be sent without sending a data frame or header frame) */
+/** How many pings can the client send before needing to send a data/header
+   frame? (0 indicates that an infinite number of pings can be sent without
+   sending a data frame or header frame).
+   If experiment "max_pings_wo_data_throttle" is enabled, instead of pings being
+   completely blocked, they are throttled. */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
   "grpc.http2.max_pings_without_data"
 /** How many misbehaving pings the server can bear before sending goaway and
@@ -250,7 +259,7 @@
    issued by the tcp_write(). By default, this is set to 4. */
 #define GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS \
   "grpc.experimental.tcp_tx_zerocopy_max_simultaneous_sends"
-/* Overrides the TCP socket recieve buffer size, SO_RCVBUF. */
+/* Overrides the TCP socket receive buffer size, SO_RCVBUF. */
 #define GRPC_ARG_TCP_RECEIVE_BUFFER_SIZE "grpc.tcp_receive_buffer_size"
 /* Timeout in milliseconds to use for calls to the grpclb load balancer.
    If 0 or unset, the balancer calls will have no deadline. */
@@ -324,6 +333,16 @@
 /** Channel arg to set http proxy per channel. If set, the channel arg
  *  value will be preferred over the environment variable settings. */
 #define GRPC_ARG_HTTP_PROXY "grpc.http_proxy"
+/** Specifies an HTTP proxy to use for individual addresses.
+ *  The proxy must be specified as an IP address, not a DNS name.
+ *  If set, the channel arg value will be preferred over the environment
+ *  variable settings. */
+#define GRPC_ARG_ADDRESS_HTTP_PROXY "grpc.address_http_proxy"
+/** Comma separated list of addresses or address ranges that are behind the
+ *  address HTTP proxy.
+ */
+#define GRPC_ARG_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES \
+  "grpc.address_http_proxy_enabled_addresses"
 /** If set to non zero, surfaces the user agent string to the server. User
     agent is surfaced by default. */
 #define GRPC_ARG_SURFACE_USER_AGENT "grpc.surface_user_agent"
@@ -366,6 +385,23 @@
 /** Configure the Differentiated Services Code Point used on outgoing packets.
  *  Integer value ranging from 0 to 63. */
 #define GRPC_ARG_DSCP "grpc.dscp"
+/** Connection Attempt Delay for use in Happy Eyeballs, in milliseconds.
+ *  Defaults to 250ms. */
+#define GRPC_ARG_HAPPY_EYEBALLS_CONNECTION_ATTEMPT_DELAY_MS \
+  "grpc.happy_eyeballs_connection_attempt_delay_ms"
+/** It accepts a MemoryAllocatorFactory as input and If specified, it forces
+ * the default event engine to use memory allocators created using the provided
+ * factory. */
+#define GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY \
+  "grpc.event_engine_use_memory_allocator_factory"
+/** Configure the max number of allowed incoming connections to the server.
+ * If unspecified, it is unlimited */
+#define GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS \
+  "grpc.max_allowed_incoming_connections"
+/** Configure per-channel or per-server stats plugins. */
+#define GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS "grpc.experimental.stats_plugins"
+/** If non-zero, allow security frames to be sent and received. */
+#define GRPC_ARG_SECURITY_FRAME_ALLOWED "grpc.security_frame_allowed"
 /** \} */
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

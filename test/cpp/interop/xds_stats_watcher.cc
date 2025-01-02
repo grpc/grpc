@@ -17,6 +17,7 @@
 #include <map>
 
 #include "absl/algorithm/container.h"
+#include "absl/log/check.h"
 #include "absl/strings/ascii.h"
 
 namespace grpc {
@@ -24,21 +25,22 @@ namespace testing {
 
 namespace {
 
-LoadBalancerStatsResponse::RpcMetadata BuildRpcMetadata(
+void AddRpcMetadata(
+    LoadBalancerStatsResponse::RpcMetadata* rpc_metadata,
     const std::unordered_set<std::string>& included_keys, bool include_all_keys,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& initial_metadata) {
-  LoadBalancerStatsResponse::RpcMetadata rpc_metadata;
-  for (const auto& key_value : initial_metadata) {
+    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+    LoadBalancerStatsResponse::MetadataType type) {
+  for (const auto& key_value : metadata) {
     absl::string_view key(key_value.first.data(), key_value.first.length());
     if (include_all_keys ||
         included_keys.find(absl::AsciiStrToLower(key)) != included_keys.end()) {
-      auto entry = rpc_metadata.add_metadata();
+      auto entry = rpc_metadata->add_metadata();
       entry->set_key(key);
       entry->set_value(absl::string_view(key_value.second.data(),
                                          key_value.second.length()));
+      entry->set_type(type);
     }
   }
-  return rpc_metadata;
 }
 
 std::unordered_set<std::string> ToLowerCase(
@@ -48,6 +50,19 @@ std::unordered_set<std::string> ToLowerCase(
     result.emplace(absl::AsciiStrToLower(str));
   }
   return result;
+}
+
+bool HasNonEmptyMetadata(
+    const std::map<std::string, LoadBalancerStatsResponse::MetadataByPeer>&
+        metadata_by_peer) {
+  for (const auto& entry : metadata_by_peer) {
+    for (const auto& rpc_metadata : entry.second.rpc_metadata()) {
+      if (rpc_metadata.metadata_size() > 0) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 }  // namespace
@@ -65,7 +80,9 @@ XdsStatsWatcher::XdsStatsWatcher(int start_id, int end_id,
 
 void XdsStatsWatcher::RpcCompleted(
     const AsyncClientCallResult& call, const std::string& peer,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& initial_metadata) {
+    const std::multimap<grpc::string_ref, grpc::string_ref>& initial_metadata,
+    const std::multimap<grpc::string_ref, grpc::string_ref>&
+        trailing_metadata) {
   // We count RPCs for global watcher or if the request_id falls into the
   // watcher's interested range of request ids.
   if ((start_id_ == 0 && end_id_ == 0) ||
@@ -79,8 +96,11 @@ void XdsStatsWatcher::RpcCompleted(
         // RPC is counted into both per-peer bin and per-method-per-peer bin.
         rpcs_by_peer_[peer]++;
         rpcs_by_type_[call.rpc_type][peer]++;
-        *metadata_by_peer_[peer].add_rpc_metadata() = BuildRpcMetadata(
-            metadata_keys_, include_all_metadata_, initial_metadata);
+        auto* rpc_metadata = metadata_by_peer_[peer].add_rpc_metadata();
+        AddRpcMetadata(rpc_metadata, metadata_keys_, include_all_metadata_,
+                       initial_metadata, LoadBalancerStatsResponse::INITIAL);
+        AddRpcMetadata(rpc_metadata, metadata_keys_, include_all_metadata_,
+                       trailing_metadata, LoadBalancerStatsResponse::TRAILING);
       }
       rpcs_needed_--;
       // Report accumulated stats.
@@ -107,8 +127,12 @@ LoadBalancerStatsResponse XdsStatsWatcher::WaitForRpcStatsResponse(
                [this] { return rpcs_needed_ == 0; });
   response.mutable_rpcs_by_peer()->insert(rpcs_by_peer_.begin(),
                                           rpcs_by_peer_.end());
-  response.mutable_metadatas_by_peer()->insert(metadata_by_peer_.begin(),
-                                               metadata_by_peer_.end());
+  // Return metadata if at least one RPC had relevant metadata. Note that empty
+  // entries would be returned for RCPs with no relevant metadata in this case.
+  if (HasNonEmptyMetadata(metadata_by_peer_)) {
+    response.mutable_metadatas_by_peer()->insert(metadata_by_peer_.begin(),
+                                                 metadata_by_peer_.end());
+  }
   auto& response_rpcs_by_method = *response.mutable_rpcs_by_method();
   for (const auto& rpc_by_type : rpcs_by_type_) {
     std::string method_name;
@@ -117,7 +141,7 @@ LoadBalancerStatsResponse XdsStatsWatcher::WaitForRpcStatsResponse(
     } else if (rpc_by_type.first == ClientConfigureRequest::UNARY_CALL) {
       method_name = "UnaryCall";
     } else {
-      GPR_ASSERT(0);
+      CHECK(0);
     }
     // TODO(@donnadionne): When the test runner changes to accept EMPTY_CALL
     // and UNARY_CALL we will just use the name of the enum instead of the
@@ -139,14 +163,16 @@ void XdsStatsWatcher::GetCurrentRpcStats(
     StatsWatchers* stats_watchers) {
   std::unique_lock<std::mutex> lock(m_);
   response->CopyFrom(accumulated_stats_);
-  // TODO(@donnadionne): delete deprecated stats below when the test is no
+  // TODO(someone): delete deprecated stats below when the test is no
   // longer using them.
+  // NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
   auto& response_rpcs_started_by_method =
       *response->mutable_num_rpcs_started_by_method();
   auto& response_rpcs_succeeded_by_method =
       *response->mutable_num_rpcs_succeeded_by_method();
   auto& response_rpcs_failed_by_method =
       *response->mutable_num_rpcs_failed_by_method();
+  // NOLINTEND(clang-diagnostic-deprecated-declarations)
   for (const auto& rpc_by_type : rpcs_by_type_) {
     auto total_succeeded = 0;
     for (const auto& rpc_by_peer : rpc_by_type.second) {

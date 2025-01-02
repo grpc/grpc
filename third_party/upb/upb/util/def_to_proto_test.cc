@@ -1,44 +1,28 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #include "upb/util/def_to_proto.h"
 
+#include <cstddef>
 #include <memory>
 #include <string>
 
 #include "google/protobuf/descriptor.pb.h"
+#include "google/protobuf/descriptor.upb.h"
 #include "google/protobuf/descriptor.upbdefs.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include "google/protobuf/dynamic_message.h"
 #include "google/protobuf/util/message_differencer.h"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "upb/test/parse_text_proto.h"
-#include "upb/upb.hpp"
+#include "upb/util/def_to_proto_editions_test.upbdefs.h"
 #include "upb/util/def_to_proto_test.h"
 #include "upb/util/def_to_proto_test.upbdefs.h"
 
@@ -95,9 +79,9 @@ MATCHER_P2(EqualsUpbProto, proto, msgdef_func,
       AddMessageDescriptor(msgdef, &pool);
   EXPECT_TRUE(desc != nullptr);
   std::unique_ptr<google::protobuf::Message> m1(
-      ToProto(proto, msgdef.ptr(), desc, &factory));
+      ToProto(UPB_UPCAST(proto), msgdef.ptr(), desc, &factory));
   std::unique_ptr<google::protobuf::Message> m2(
-      ToProto(arg, msgdef.ptr(), desc, &factory));
+      ToProto((upb_Message*)arg, msgdef.ptr(), desc, &factory));
   std::string differences;
   google::protobuf::util::MessageDifferencer differencer;
   differencer.ReportDifferencesToString(&differences);
@@ -135,6 +119,29 @@ TEST(DefToProto, Test) {
   CheckFile(file, file_desc);
 }
 
+// Verifies that editions don't leak out legacy feature APIs (e.g. TYPE_GROUP
+// and LABEL_REQUIRED):
+//   serialized descriptor -> upb def -> serialized descriptor
+TEST(DefToProto, TestEditionsLegacyFeatures) {
+  upb::Arena arena;
+  upb::DefPool defpool;
+  upb_StringView test_file_desc =
+      upb_util_def_to_proto_editions_test_proto_upbdefinit
+          .descriptor;
+  const auto* file = google_protobuf_FileDescriptorProto_parse(
+      test_file_desc.data, test_file_desc.size, arena.ptr());
+
+  size_t size;
+  const auto* messages = google_protobuf_FileDescriptorProto_message_type(file, &size);
+  ASSERT_EQ(size, 1);
+  const auto* fields = google_protobuf_DescriptorProto_field(messages[0], &size);
+  ASSERT_EQ(size, 2);
+  EXPECT_EQ(google_protobuf_FieldDescriptorProto_label(fields[0]),
+            google_protobuf_FieldDescriptorProto_LABEL_OPTIONAL);
+  EXPECT_EQ(google_protobuf_FieldDescriptorProto_type(fields[1]),
+            google_protobuf_FieldDescriptorProto_TYPE_MESSAGE);
+}
+
 // Like the previous test, but uses a message layout built at runtime.
 TEST(DefToProto, TestRuntimeReflection) {
   upb::Arena arena;
@@ -169,11 +176,6 @@ TEST(FuzzTest, EmptyPackage2) {
 
 TEST(FuzzTest, FileNameEmbeddedNull) {
   RoundTripDescriptor(ParseTextProtoOrDie(R"pb(file { name: "\000" })pb"));
-}
-
-TEST(FuzzTest, EditionEmbeddedNull) {
-  RoundTripDescriptor(
-      ParseTextProtoOrDie(R"pb(file { name: "n" edition: "\000" })pb"));
 }
 
 TEST(FuzzTest, DuplicateOneofIndex) {
@@ -274,28 +276,6 @@ TEST(FuzzTest, DefaultWithValidHexEscapePrintable) {
            })pb"));
 }
 
-// begin:google_only
-// TEST(FuzzTest, DependencyWithEmbeddedNull) {
-//   RoundTripDescriptor(ParseTextProtoOrDie(R"pb(file {
-//                                                  name: "a"
-//                                                  dependency: "a\000"
-//                                                  options { cc_api_version: 0 }
-//                                                  weak_dependency: 0
-//                                                })pb"));
-// }
-//
-// TEST(FuzzTest, NanInOptions) {
-//   RoundTripDescriptor(
-//       ParseTextProtoOrDie(R"pb(file {
-//                                  name: ""
-//                                  service {
-//                                    name: "A"
-//                                    options { failure_detection_delay: nan }
-//                                  }
-//                                })pb"));
-// }
-// end:google_only
-
 TEST(FuzzTest, PackageStartsWithNumber) {
   RoundTripDescriptor(
       ParseTextProtoOrDie(R"pb(file { name: "" package: "0" })pb"));
@@ -329,6 +309,17 @@ TEST(FuzzTest, RoundTripDescriptorRegressionOneofSameName) {
                oneof_decl { name: "k" }
              }
            })pb"));
+}
+
+TEST(FuzzTest, NegativeOneofIndex) {
+  RoundTripDescriptor(ParseTextProtoOrDie(
+      R"pb(file {
+             message_type {
+               name: "A"
+               field { name: "A" number: 0 type_name: "" oneof_index: -1 }
+             }
+           }
+      )pb"));
 }
 
 }  // namespace upb_test

@@ -20,12 +20,10 @@
 #define GRPC_SRC_CPP_SERVER_CHANNELZ_CHANNELZ_SERVICE_H
 
 #include <grpc/support/port_platform.h>
-
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
 
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
-#include "src/proto/grpc/channelz/channelz.pb.h"
 
 namespace grpc {
 

@@ -16,24 +16,24 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <inttypes.h>
 #include <string.h>
 
 #include <algorithm>
-#include <initializer_list>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
+#include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
+#include "src/core/lib/debug/trace.h"
 
 grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   grpc_slice slice = GRPC_SLICE_MALLOC(9 + 8);
@@ -89,16 +89,28 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
   }
 
   if (p->byte == 8) {
-    GPR_ASSERT(is_last);
+    CHECK(is_last);
     if (p->is_ack) {
+      GRPC_TRACE_LOG(http2_ping, INFO)
+          << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
+          << "]: received ping ack " << p->opaque_8bytes;
       grpc_chttp2_ack_ping(t, p->opaque_8bytes);
     } else {
       if (!t->is_client) {
         const bool transport_idle =
             t->keepalive_permit_without_calls == 0 && t->stream_map.empty();
+        if (GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
+            GRPC_TRACE_FLAG_ENABLED(http)) {
+          LOG(INFO) << "SERVER[" << t << "]: received ping " << p->opaque_8bytes
+                    << ": "
+                    << t->ping_abuse_policy.GetDebugString(transport_idle);
+        }
         if (t->ping_abuse_policy.ReceivedOnePing(transport_idle)) {
           grpc_chttp2_exceeded_ping_strikes(t);
         }
+      } else {
+        GRPC_TRACE_LOG(http2_ping, INFO)
+            << "CLIENT[" << t << "]: received ping " << p->opaque_8bytes;
       }
       if (t->ack_pings) {
         if (t->ping_ack_count == t->ping_ack_capacity) {

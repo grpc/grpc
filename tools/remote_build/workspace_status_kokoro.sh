@@ -21,6 +21,11 @@
 echo "KOKORO_RESULTSTORE_URL https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
 echo "KOKORO_SPONGE_URL http://sponge.corp.google.com/${KOKORO_BUILD_ID}"
 
+# poor man's urlencode
+ENCODED_KOKORO_JOB_NAME=$(echo "${KOKORO_JOB_NAME}" | sed 's|/|%2F|g')
+# Fusion UI has the button for triggering/restarting builds.
+echo "KOKORO_FUSION_URL http://fusion2.corp.google.com/ci/kokoro/prod:${ENCODED_KOKORO_JOB_NAME}/activity/${KOKORO_BUILD_ID}"
+
 echo "KOKORO_BUILD_NUMBER ${KOKORO_BUILD_NUMBER}"
 echo "KOKORO_JOB_NAME ${KOKORO_JOB_NAME}"
 echo "KOKORO_GITHUB_COMMIT ${KOKORO_GITHUB_COMMIT}"

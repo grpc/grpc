@@ -13,9 +13,10 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 

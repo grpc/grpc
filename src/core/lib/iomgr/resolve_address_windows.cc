@@ -19,6 +19,10 @@
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_WINSOCK_SOCKET
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log_windows.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <string.h>
 #include <sys/types.h>
@@ -26,19 +30,8 @@
 #include <string>
 
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/log_windows.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -47,6 +40,10 @@
 #include "src/core/lib/iomgr/resolve_address_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/string.h"
+#include "src/core/util/thd.h"
 
 namespace grpc_core {
 namespace {
@@ -111,7 +108,7 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
   SplitHostPort(name, &host, &port);
   if (host.empty()) {
     error =
-        GRPC_ERROR_CREATE(absl::StrFormat("unparseable host:port: '%s'", name));
+        GRPC_ERROR_CREATE(absl::StrFormat("unparsable host:port: '%s'", name));
     goto done;
   }
   if (port.empty()) {

@@ -12,12 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
+#include "server_call_tracer.h"
 
-// TODO(xuanwn): clean up includes
 #include <grpc/support/port_platform.h>
-
-#include <constants.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -33,16 +30,17 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-
-#include "src/core/lib/channel/call_tracer.h"
+#include "constants.h"
+#include "observability_util.h"
+#include "python_observability_context.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/python/grpcio_observability/grpc_observability/observability_util.h"
-#include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
+#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_observability {
 
@@ -76,117 +74,32 @@ void GetO11yMetadata(const grpc_metadata_batch* b, ServerO11yMetadata* som) {
   }
 }
 
+bool KeyInLabels(std::string key, const std::vector<Label>& labels) {
+  const auto it = std::find_if(labels.begin(), labels.end(),
+                               [&key](const Label& l) { return l.key == key; });
+
+  if (it == labels.end()) {
+    return false;
+  }
+  return true;
+}
+
 }  // namespace
 
 //
 // PythonOpenCensusServerCallTracer
 //
 
-class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
- public:
-  // Maximum size of server stats that are sent on the wire.
-  static constexpr uint32_t kMaxServerStatsLen = 16;
-
-  PythonOpenCensusServerCallTracer()
-      : start_time_(absl::Now()),
-        recv_message_count_(0),
-        sent_message_count_(0) {}
-
-  std::string TraceId() override {
-    return absl::BytesToHexString(
-        absl::string_view(context_.SpanContext().TraceId()));
-  }
-
-  std::string SpanId() override {
-    return absl::BytesToHexString(
-        absl::string_view(context_.SpanContext().SpanId()));
-  }
-
-  bool IsSampled() override { return context_.SpanContext().IsSampled(); }
-
-  // Please refer to `grpc_transport_stream_op_batch_payload` for details on
-  // arguments.
-  // It's not a requirement to have this metric thus left unimplemented.
-  void RecordSendInitialMetadata(
-      grpc_metadata_batch* /*send_initial_metadata*/) override {}
-
-  void RecordSendTrailingMetadata(
-      grpc_metadata_batch* send_trailing_metadata) override;
-
-  void RecordSendMessage(const grpc_core::SliceBuffer& send_message) override {
-    RecordAnnotation(
-        absl::StrFormat("Send message: %ld bytes", send_message.Length()));
-    ++sent_message_count_;
-  }
-
-  void RecordSendCompressedMessage(
-      const grpc_core::SliceBuffer& send_compressed_message) override {
-    RecordAnnotation(absl::StrFormat("Send compressed message: %ld bytes",
-                                     send_compressed_message.Length()));
-  }
-
-  void RecordReceivedInitialMetadata(
-      grpc_metadata_batch* recv_initial_metadata) override;
-
-  void RecordReceivedMessage(
-      const grpc_core::SliceBuffer& recv_message) override {
-    RecordAnnotation(
-        absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
-    ++recv_message_count_;
-  }
-  void RecordReceivedDecompressedMessage(
-      const grpc_core::SliceBuffer& recv_decompressed_message) override {
-    RecordAnnotation(absl::StrFormat("Received decompressed message: %ld bytes",
-                                     recv_decompressed_message.Length()));
-  }
-
-  void RecordReceivedTrailingMetadata(
-      grpc_metadata_batch* /*recv_trailing_metadata*/) override {}
-
-  void RecordCancel(grpc_error_handle /*cancel_error*/) override {
-    elapsed_time_ = absl::Now() - start_time_;
-  }
-
-  void RecordEnd(const grpc_call_final_info* final_info) override;
-
-  void RecordAnnotation(absl::string_view annotation) override {
-    if (!context_.SpanContext().IsSampled()) {
-      return;
-    }
-    context_.AddSpanAnnotation(annotation);
-  }
-
-  void RecordAnnotation(const Annotation& annotation) override {
-    if (!context_.SpanContext().IsSampled()) {
-      return;
-    }
-
-    switch (annotation.type()) {
-      case AnnotationType::kMetadataSizes:
-        // This annotation is expensive to create. We should only create it if
-        // the call is being sampled, not just recorded.
-        if (IsSampled()) {
-          context_.AddSpanAnnotation(annotation.ToString());
-        }
-        break;
-      default:
-        context_.AddSpanAnnotation(annotation.ToString());
+void PythonOpenCensusServerCallTracer::RecordSendInitialMetadata(
+    grpc_metadata_batch* send_initial_metadata) {
+  // Only add labels if exchange is needed (Client send metadata with keys in
+  // MetadataExchangeKeyNames).
+  for (const auto& key : MetadataExchangeKeyNames) {
+    if (KeyInLabels(key, labels_from_peer_)) {
+      labels_injector_.AddExchangeLabelsToMetadata(send_initial_metadata);
     }
   }
-
- private:
-  PythonCensusContext context_;
-  // server method
-  grpc_core::Slice path_;
-  absl::string_view method_;
-  absl::Time start_time_;
-  absl::Duration elapsed_time_;
-  uint64_t recv_message_count_;
-  uint64_t sent_message_count_;
-  // Buffer needed for grpc_slice to reference it when adding metadata to
-  // response.
-  char stats_buf_[kMaxServerStatsLen];
-};
+}
 
 void PythonOpenCensusServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
@@ -198,10 +111,17 @@ void PythonOpenCensusServerCallTracer::RecordReceivedInitialMetadata(
   GenerateServerContext(
       tracing_enabled ? som.tracing_slice.as_string_view() : "",
       absl::StrCat("Recv.", method_), &context_);
+  registered_method_ =
+      recv_initial_metadata->get(grpc_core::GrpcRegisteredMethod())
+          .value_or(nullptr) != nullptr;
   if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kServerMethod, std::string(method_));
-    RecordIntMetric(kRpcServerStartedRpcsMeasureName, 1, context_.Labels());
+    RecordIntMetric(kRpcServerStartedRpcsMeasureName, 1, context_.Labels(),
+                    identifier_, registered_method_,
+                    /*include_exchange_labels=*/false);
   }
+
+  labels_from_peer_ = labels_injector_.GetExchangeLabels(recv_initial_metadata);
 }
 
 void PythonOpenCensusServerCallTracer::RecordSendTrailingMetadata(
@@ -220,32 +140,82 @@ void PythonOpenCensusServerCallTracer::RecordSendTrailingMetadata(
   }
 }
 
+void PythonOpenCensusServerCallTracer::RecordSendMessage(
+    const grpc_core::SliceBuffer& send_message) {
+  RecordAnnotation(
+      absl::StrFormat("Send message: %ld bytes", send_message.Length()));
+  ++sent_message_count_;
+}
+
+void PythonOpenCensusServerCallTracer::RecordSendCompressedMessage(
+    const grpc_core::SliceBuffer& send_compressed_message) {
+  RecordAnnotation(absl::StrFormat("Send compressed message: %ld bytes",
+                                   send_compressed_message.Length()));
+}
+
+void PythonOpenCensusServerCallTracer::RecordReceivedMessage(
+    const grpc_core::SliceBuffer& recv_message) {
+  RecordAnnotation(
+      absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
+  ++recv_message_count_;
+}
+
+void PythonOpenCensusServerCallTracer::RecordReceivedDecompressedMessage(
+    const grpc_core::SliceBuffer& recv_decompressed_message) {
+  RecordAnnotation(absl::StrFormat("Received decompressed message: %ld bytes",
+                                   recv_decompressed_message.Length()));
+}
+
+void PythonOpenCensusServerCallTracer::RecordCancel(
+    grpc_error_handle /*cancel_error*/) {
+  elapsed_time_ = absl::Now() - start_time_;
+}
+
 void PythonOpenCensusServerCallTracer::RecordEnd(
     const grpc_call_final_info* final_info) {
   if (PythonCensusStatsEnabled()) {
-    const uint64_t request_size = GetOutgoingDataSize(final_info);
-    const uint64_t response_size = GetIncomingDataSize(final_info);
-    double elapsed_time_ms = absl::ToDoubleMilliseconds(elapsed_time_);
+    uint64_t outgoing_bytes;
+    uint64_t incoming_bytes;
+    if (grpc_core::IsCallTracerInTransportEnabled()) {
+      outgoing_bytes = outgoing_bytes_.load();
+      incoming_bytes = incoming_bytes_.load();
+    } else {
+      outgoing_bytes = GetOutgoingDataSize(final_info);
+      incoming_bytes = GetIncomingDataSize(final_info);
+    }
+    double elapsed_time_s = absl::ToDoubleSeconds(elapsed_time_);
     context_.Labels().emplace_back(kServerMethod, std::string(method_));
     context_.Labels().emplace_back(
         kServerStatus,
         std::string(StatusCodeToString(final_info->final_status)));
+    for (const auto& label : labels_from_peer_) {
+      context_.Labels().emplace_back(label);
+    }
     RecordDoubleMetric(kRpcServerSentBytesPerRpcMeasureName,
-                       static_cast<double>(response_size), context_.Labels());
+                       static_cast<double>(outgoing_bytes), context_.Labels(),
+                       identifier_, registered_method_,
+                       /*include_exchange_labels=*/true);
     RecordDoubleMetric(kRpcServerReceivedBytesPerRpcMeasureName,
-                       static_cast<double>(request_size), context_.Labels());
-    RecordDoubleMetric(kRpcServerServerLatencyMeasureName, elapsed_time_ms,
-                       context_.Labels());
-    RecordIntMetric(kRpcServerCompletedRpcMeasureName, 1, context_.Labels());
+                       static_cast<double>(incoming_bytes), context_.Labels(),
+                       identifier_, registered_method_,
+                       /*include_exchange_labels=*/true);
+    RecordDoubleMetric(kRpcServerServerLatencyMeasureName, elapsed_time_s,
+                       context_.Labels(), identifier_, registered_method_,
+                       /*include_exchange_labels=*/true);
+    RecordIntMetric(kRpcServerCompletedRpcMeasureName, 1, context_.Labels(),
+                    identifier_, registered_method_,
+                    /*include_exchange_labels=*/true);
     RecordIntMetric(kRpcServerSentMessagesPerRpcMeasureName,
-                    sent_message_count_, context_.Labels());
+                    sent_message_count_, context_.Labels(), identifier_,
+                    registered_method_, /*include_exchange_labels=*/true);
     RecordIntMetric(kRpcServerReceivedMessagesPerRpcMeasureName,
-                    recv_message_count_, context_.Labels());
+                    recv_message_count_, context_.Labels(), identifier_,
+                    registered_method_, /*include_exchange_labels=*/true);
   }
   if (PythonCensusTracingEnabled()) {
     context_.EndSpan();
     if (IsSampled()) {
-      RecordSpan(context_.Span().ToCensusData());
+      RecordSpan(context_.GetSpan().ToCensusData());
     }
   }
 
@@ -254,17 +224,83 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
   delete this;
 }
 
+void PythonOpenCensusServerCallTracer::RecordIncomingBytes(
+    const TransportByteSize& transport_byte_size) {
+  incoming_bytes_.fetch_add(transport_byte_size.data_bytes);
+}
+
+void PythonOpenCensusServerCallTracer::RecordOutgoingBytes(
+    const TransportByteSize& transport_byte_size) {
+  outgoing_bytes_.fetch_add(transport_byte_size.data_bytes);
+}
+
+void PythonOpenCensusServerCallTracer::RecordAnnotation(
+    absl::string_view annotation) {
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
+  context_.AddSpanAnnotation(annotation);
+}
+
+void PythonOpenCensusServerCallTracer::RecordAnnotation(
+    const Annotation& annotation) {
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
+
+  switch (annotation.type()) {
+    // Annotations are expensive to create. We should only create it if the
+    // call is being sampled by default.
+    default:
+      if (IsSampled()) {
+        context_.AddSpanAnnotation(annotation.ToString());
+      }
+      break;
+  }
+}
+
+std::shared_ptr<grpc_core::TcpTracerInterface>
+PythonOpenCensusServerCallTracer::StartNewTcpTrace() {
+  return nullptr;
+}
+
+std::string PythonOpenCensusServerCallTracer::TraceId() {
+  return absl::BytesToHexString(
+      absl::string_view(context_.GetSpanContext().TraceId()));
+}
+
+std::string PythonOpenCensusServerCallTracer::SpanId() {
+  return absl::BytesToHexString(
+      absl::string_view(context_.GetSpanContext().SpanId()));
+}
+
+bool PythonOpenCensusServerCallTracer::IsSampled() {
+  return context_.GetSpanContext().IsSampled();
+}
+
 //
 // PythonOpenCensusServerCallTracerFactory
 //
 
 grpc_core::ServerCallTracer*
 PythonOpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
-    grpc_core::Arena* arena) {
+    grpc_core::Arena* arena, const grpc_core::ChannelArgs& channel_args) {
   // We don't use arena here to to ensure that memory is allocated and freed in
   // the same DLL in Windows.
   (void)arena;
-  return new PythonOpenCensusServerCallTracer();
+  (void)channel_args;
+  return new PythonOpenCensusServerCallTracer(exchange_labels_, identifier_);
 }
+
+bool PythonOpenCensusServerCallTracerFactory::IsServerTraced(
+    const grpc_core::ChannelArgs& args) {
+  // Returns true if a server is to be traced, false otherwise.
+  return true;
+}
+
+PythonOpenCensusServerCallTracerFactory::
+    PythonOpenCensusServerCallTracerFactory(
+        const std::vector<Label>& exchange_labels, const char* identifier)
+    : exchange_labels_(exchange_labels), identifier_(identifier) {}
 
 }  // namespace grpc_observability

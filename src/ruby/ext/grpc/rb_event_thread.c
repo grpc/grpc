@@ -20,16 +20,15 @@
 
 #include "rb_event_thread.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <ruby/thread.h>
 #include <stdbool.h>
 
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
 typedef struct grpc_rb_event {
   // callback will be called with argument while holding the GVL
@@ -106,17 +105,22 @@ static void* grpc_rb_wait_for_event_no_gil(void* param) {
   return NULL;
 }
 
-static void grpc_rb_event_unblocking_func(void* arg) {
+static void* grpc_rb_event_unblocking_func_wrapper(void* arg) {
   (void)arg;
   gpr_mu_lock(&event_queue.mu);
   event_queue.abort = true;
   gpr_cv_signal(&event_queue.cv);
   gpr_mu_unlock(&event_queue.mu);
+  return NULL;
+}
+
+static void grpc_rb_event_unblocking_func(void* arg) {
+  grpc_rb_event_unblocking_func_wrapper(arg);
 }
 
 /* This is the implementation of the thread that handles auth metadata plugin
  * events */
-static VALUE grpc_rb_event_thread(VALUE arg) {
+static VALUE grpc_rb_event_thread(void* arg) {
   grpc_rb_event* event;
   (void)arg;
   while (true) {
@@ -144,18 +148,20 @@ void grpc_rb_event_queue_thread_start() {
     event_queue.head = event_queue.tail = NULL;
   }
   event_queue.abort = false;
-  GPR_ASSERT(!RTEST(g_event_thread));
+  GRPC_RUBY_ASSERT(!RTEST(g_event_thread));
   g_event_thread = rb_thread_create(grpc_rb_event_thread, NULL);
 }
 
 void grpc_rb_event_queue_thread_stop() {
-  GPR_ASSERT(g_one_time_init_done);
+  GRPC_RUBY_ASSERT(g_one_time_init_done);
   if (!RTEST(g_event_thread)) {
-    gpr_log(GPR_ERROR,
-            "GRPC_RUBY: call credentials thread stop: thread not running");
+    grpc_absl_log(
+        GPR_ERROR,
+        "GRPC_RUBY: call credentials thread stop: thread not running");
     return;
   }
-  rb_thread_call_without_gvl(grpc_rb_event_unblocking_func, NULL, NULL, NULL);
+  rb_thread_call_without_gvl(grpc_rb_event_unblocking_func_wrapper, NULL, NULL,
+                             NULL);
   rb_funcall(g_event_thread, rb_intern("join"), 0);
   g_event_thread = Qnil;
 }

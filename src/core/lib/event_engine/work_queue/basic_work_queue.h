@@ -13,19 +13,16 @@
 // limitations under the License.
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_WORK_QUEUE_BASIC_WORK_QUEUE_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_WORK_QUEUE_BASIC_WORK_QUEUE_H
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <deque>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -36,7 +33,8 @@ namespace experimental {
 // closures are added to the back.
 class BasicWorkQueue : public WorkQueue {
  public:
-  BasicWorkQueue() = default;
+  BasicWorkQueue() : owner_(nullptr) {}
+  explicit BasicWorkQueue(void* owner);
   // Returns whether the queue is empty
   bool Empty() const override ABSL_LOCKS_EXCLUDED(mu_);
   // Returns the size of the queue.
@@ -59,10 +57,12 @@ class BasicWorkQueue : public WorkQueue {
   // Wraps an AnyInvocable and adds it to the the queue.
   void Add(absl::AnyInvocable<void()> invocable) override
       ABSL_LOCKS_EXCLUDED(mu_);
+  const void* owner() override { return owner_; }
 
  private:
   mutable grpc_core::Mutex mu_;
   std::deque<EventEngine::Closure*> q_ ABSL_GUARDED_BY(mu_);
+  const void* const owner_ = nullptr;
 };
 
 }  // namespace experimental

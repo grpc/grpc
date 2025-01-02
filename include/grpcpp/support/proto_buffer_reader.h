@@ -19,19 +19,19 @@
 #ifndef GRPCPP_SUPPORT_PROTO_BUFFER_READER_H
 #define GRPCPP_SUPPORT_PROTO_BUFFER_READER_H
 
-#include <type_traits>
-
-#include "absl/strings/cord.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/status.h>
+
+#include <type_traits>
+
+#include "absl/log/absl_check.h"
+#include "absl/strings/cord.h"
 
 /// This header provides an object that reads bytes directly from a
 /// grpc::ByteBuffer, via the ZeroCopyInputStream interface
@@ -75,7 +75,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
     if (backup_count_ > 0) {
       *data = GRPC_SLICE_START_PTR(*slice_) + GRPC_SLICE_LENGTH(*slice_) -
               backup_count_;
-      GPR_ASSERT(backup_count_ <= INT_MAX);
+      ABSL_CHECK_LE(backup_count_, INT_MAX);
       *size = static_cast<int>(backup_count_);
       backup_count_ = 0;
       return true;
@@ -86,7 +86,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
     }
     *data = GRPC_SLICE_START_PTR(*slice_);
     // On win x64, int is only 32bit
-    GPR_ASSERT(GRPC_SLICE_LENGTH(*slice_) <= INT_MAX);
+    ABSL_CHECK_LE(GRPC_SLICE_LENGTH(*slice_), static_cast<size_t>(INT_MAX));
     byte_count_ += * size = static_cast<int>(GRPC_SLICE_LENGTH(*slice_));
     return true;
   }
@@ -98,7 +98,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
   /// bytes that have already been returned by the last call of Next.
   /// So do the backup and have that ready for a later Next.
   void BackUp(int count) override {
-    GPR_ASSERT(count <= static_cast<int>(GRPC_SLICE_LENGTH(*slice_)));
+    ABSL_CHECK_LE(count, static_cast<int>(GRPC_SLICE_LENGTH(*slice_)));
     backup_count_ = count;
   }
 
@@ -124,10 +124,17 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
 
 #ifdef GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
   /// Read the next `count` bytes and append it to the given Cord.
-  // (override is intentionally omitted here to support old Protobuf which
+  // (override is conditionally omitted here to support old Protobuf which
   //  doesn't have ReadCord method)
-  // NOLINTNEXTLINE(modernize-use-override)
-  virtual bool ReadCord(absl::Cord* cord, int count) {
+  // NOLINTBEGIN(modernize-use-override,
+  // clang-diagnostic-inconsistent-missing-override)
+  virtual bool ReadCord(absl::Cord* cord, int count)
+#if GOOGLE_PROTOBUF_VERSION >= 4022000
+      override
+#endif
+  // NOLINTEND(modernize-use-override,
+  // clang-diagnostic-inconsistent-missing-override)
+  {
     if (!status().ok()) {
       return false;
     }
@@ -141,9 +148,12 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
             *slice(), GRPC_SLICE_LENGTH(*slice()) - backup_count(),
             GRPC_SLICE_LENGTH(*slice()) - backup_count() + count)));
       }
-      int64_t take = std::min(backup_count(), static_cast<int64_t>(count));
+      int64_t take = (std::min)(backup_count(), static_cast<int64_t>(count));
       set_backup_count(backup_count() - take);
-      count -= take;
+      // This cast is safe as the size of a serialized protobuf message
+      // should be smaller than 2GiB.
+      // (https://protobuf.dev/programming-guides/encoding/#size-limit)
+      count -= static_cast<int>(take);
       if (count == 0) {
         return true;
       }
@@ -156,14 +166,15 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
       set_byte_count(ByteCount() + slice_length);
       if (slice_length <= static_cast<uint64_t>(count)) {
         cord->Append(MakeCordFromSlice(grpc_slice_ref(*slice())));
-        count -= slice_length;
+        // This cast is safe as above.
+        count -= static_cast<int>(slice_length);
       } else {
         cord->Append(MakeCordFromSlice(grpc_slice_split_head(slice(), count)));
         set_backup_count(slice_length - count);
         return true;
       }
     }
-    GPR_ASSERT(count == 0);
+    ABSL_CHECK_EQ(count, 0);
     return true;
   }
 #endif  // GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
@@ -185,10 +196,17 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
   // This function takes ownership of slice and return a newly created Cord off
   // of it.
   static absl::Cord MakeCordFromSlice(grpc_slice slice) {
+    // slice_for_cord is created to keep inlined data of the given slice
+    grpc_slice* slice_for_cord = new grpc_slice;
+    *slice_for_cord = slice;
     return absl::MakeCordFromExternal(
-        absl::string_view(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
-                          GRPC_SLICE_LENGTH(slice)),
-        [slice](absl::string_view /* view */) { grpc_slice_unref(slice); });
+        absl::string_view(
+            reinterpret_cast<char*>(GRPC_SLICE_START_PTR(*slice_for_cord)),
+            GRPC_SLICE_LENGTH(*slice_for_cord)),
+        [slice_for_cord](absl::string_view /* view */) {
+          grpc_slice_unref(*slice_for_cord);
+          delete slice_for_cord;
+        });
   }
 #endif  // GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
 

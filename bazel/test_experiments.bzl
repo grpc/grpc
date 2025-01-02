@@ -16,6 +16,16 @@
 
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
+TEST_EXPERIMENT_ENABLES = {
+    "test_experiment_1": "test_experiment_1",
+    "test_experiment_2": "test_experiment_2",
+    "test_experiment_3": "test_experiment_3",
+    "test_experiment_4": "test_experiment_4",
+}
+
+TEST_EXPERIMENT_POLLERS = [
+]
+
 TEST_EXPERIMENTS = {
     "windows": {
         "dbg": {

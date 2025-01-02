@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/forkable.h"
+
+#include <grpc/support/port_platform.h>
 
 #ifdef GPR_POSIX_SUBPROCESS
 #include <errno.h>
@@ -23,16 +23,26 @@
 #include <unistd.h>
 #endif  // GPR_POSIX_SUBPROCESS
 
+#include <memory>
+
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
-
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/util/no_destruct.h"
 
 namespace {
 using ::grpc_event_engine::experimental::Forkable;
-using ::grpc_event_engine::experimental::RegisterForkHandlers;
+using ::grpc_event_engine::experimental::ObjectGroupForkHandler;
+
+grpc_core::NoDestruct<ObjectGroupForkHandler> g_forkable_manager;
+
+class ForkCallbackMethods {
+ public:
+  static void Prefork() { g_forkable_manager->Prefork(); }
+  static void PostforkParent() { g_forkable_manager->PostforkParent(); }
+  static void PostforkChild() { g_forkable_manager->PostforkChild(); }
+};
 }  // namespace
 
 class ForkableTest : public testing::Test {};
@@ -75,18 +85,21 @@ TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
     bool child_called_ = false;
   };
 
-  SomeForkable forkable;
+  auto forkable = std::make_shared<SomeForkable>();
+  g_forkable_manager->RegisterForkable(forkable, ForkCallbackMethods::Prefork,
+                                       ForkCallbackMethods::PostforkParent,
+                                       ForkCallbackMethods::PostforkChild);
   int child_pid = fork();
   ASSERT_NE(child_pid, -1);
   if (child_pid == 0) {
-    gpr_log(GPR_DEBUG, "I am child pid: %d", getpid());
-    forkable.CheckChild();
+    VLOG(2) << "I am child pid: " << getpid();
+    forkable->CheckChild();
     exit(testing::Test::HasFailure());
   } else {
-    gpr_log(GPR_DEBUG, "I am parent pid: %d", getpid());
-    forkable.CheckParent();
+    VLOG(2) << "I am parent pid: " << getpid();
+    forkable->CheckParent();
     int status;
-    gpr_log(GPR_DEBUG, "Waiting for child pid: %d", child_pid);
+    VLOG(2) << "Waiting for child pid: " << child_pid;
     do {
       // retry on EINTR, and fail otherwise
       if (waitpid(child_pid, &status, 0) != -1) break;
@@ -106,7 +119,7 @@ TEST_F(ForkableTest, NonPthreadManualForkOperations) {
   // Manually simulates a fork event for non-pthread-enabled environments
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
   // This platform does not need to exercise fork support manually.
-  GTEST_SKIP("Unnecessary test, this platform supports pthreads.");
+  GTEST_SKIP() << "Unnecessary test, this platform supports pthreads.";
 #endif
 
   class SomeForkable : public Forkable {
@@ -127,14 +140,25 @@ TEST_F(ForkableTest, NonPthreadManualForkOperations) {
     bool child_called_ = false;
   };
 
-  SomeForkable forkable;
-  forkable.AssertStates(/*prepare=*/false, /*parent=*/false, /*child=*/false);
-  grpc_event_engine::experimental::PrepareFork();
-  forkable.AssertStates(/*prepare=*/true, /*parent=*/false, /*child=*/false);
-  grpc_event_engine::experimental::PostforkParent();
-  forkable.AssertStates(/*prepare=*/true, /*parent=*/true, /*child=*/false);
-  grpc_event_engine::experimental::PostforkChild();
-  forkable.AssertStates(/*prepare=*/true, /*parent=*/true, /*child=*/true);
+  ObjectGroupForkHandler forkable_manager;
+  class NoopForkCallbackMethods {
+   public:
+    static void Prefork() {}
+    static void PostforkParent() {}
+    static void PostforkChild() {}
+  };
+  auto forkable = std::make_shared<SomeForkable>();
+  forkable_manager.RegisterForkable(forkable, NoopForkCallbackMethods::Prefork,
+                                    NoopForkCallbackMethods::PostforkParent,
+                                    NoopForkCallbackMethods::PostforkChild);
+  forkable->AssertStates(/*prepare=*/false, /*parent=*/false, /*child=*/false);
+  forkable_manager.Prefork();
+  forkable->AssertStates(/*prepare=*/true, /*parent=*/false, /*child=*/false);
+  forkable_manager.PostforkParent();
+  forkable->AssertStates(/*prepare=*/true, /*parent=*/true, /*child=*/false);
+  forkable_manager.Prefork();
+  forkable_manager.PostforkChild();
+  forkable->AssertStates(/*prepare=*/true, /*parent=*/true, /*child=*/true);
 }
 
 int main(int argc, char** argv) {
@@ -143,7 +167,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides config_overrides;
   config_overrides.enable_fork_support = true;
   grpc_core::ConfigVars::SetOverrides(config_overrides);
-  RegisterForkHandlers();
   auto result = RUN_ALL_TESTS();
   return result;
 }

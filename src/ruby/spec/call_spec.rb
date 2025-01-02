@@ -90,88 +90,101 @@ describe GRPC::Core::Call do
 
   describe '#status' do
     it 'can save the status and read it back' do
-      call = make_test_call
-      sts = Struct::Status.new(OK, 'OK')
-      expect { call.status = sts }.not_to raise_error
-      expect(call.status).to eq(sts)
+      make_test_call do |call|
+        sts = Struct::Status.new(OK, 'OK')
+        expect { call.status = sts }.not_to raise_error
+        expect(call.status).to eq(sts)
+      end
     end
 
     it 'must be set to a status' do
-      call = make_test_call
-      bad_sts = Object.new
-      expect { call.status = bad_sts }.to raise_error(TypeError)
+      make_test_call do |call|
+        bad_sts = Object.new
+        expect { call.status = bad_sts }.to raise_error(TypeError)
+      end
     end
 
     it 'can be set to nil' do
-      call = make_test_call
-      expect { call.status = nil }.not_to raise_error
+      make_test_call do |call|
+        expect { call.status = nil }.not_to raise_error
+      end
     end
   end
 
   describe '#metadata' do
     it 'can save the metadata hash and read it back' do
-      call = make_test_call
-      md = { 'k1' => 'v1',  'k2' => 'v2' }
-      expect { call.metadata = md }.not_to raise_error
-      expect(call.metadata).to be(md)
+      make_test_call do |call|
+        md = { 'k1' => 'v1',  'k2' => 'v2' }
+        expect { call.metadata = md }.not_to raise_error
+        expect(call.metadata).to be(md)
+      end
     end
 
     it 'must be set with a hash' do
-      call = make_test_call
-      bad_md = Object.new
-      expect { call.metadata = bad_md }.to raise_error(TypeError)
+      make_test_call do |call|
+        bad_md = Object.new
+        expect { call.metadata = bad_md }.to raise_error(TypeError)
+      end
     end
 
     it 'can be set to nil' do
-      call = make_test_call
-      expect { call.metadata = nil }.not_to raise_error
+      make_test_call do |call|
+        expect { call.metadata = nil }.not_to raise_error
+      end
     end
   end
 
   describe '#set_credentials!' do
     it 'can set a valid CallCredentials object' do
-      call = make_test_call
-      auth_proc = proc { { 'plugin_key' => 'plugin_value' } }
-      creds = GRPC::Core::CallCredentials.new auth_proc
-      expect { call.set_credentials! creds }.not_to raise_error
+      make_test_call do |call|
+        auth_proc = proc { { 'plugin_key' => 'plugin_value' } }
+        creds = GRPC::Core::CallCredentials.new auth_proc
+        expect { call.set_credentials! creds }.not_to raise_error
+      end
     end
   end
 
   describe '#cancel' do
     it 'completes ok' do
-      call = make_test_call
-      expect { call.cancel }.not_to raise_error
+      make_test_call do |call|
+        expect { call.cancel }.not_to raise_error
+      end
     end
 
     it 'completes ok when the call is closed' do
-      call = make_test_call
-      call.close
-      expect { call.cancel }.not_to raise_error
+      make_test_call do |call|
+        call.close
+        expect { call.cancel }.not_to raise_error
+      end
     end
   end
 
   describe '#cancel_with_status' do
     it 'completes ok' do
-      call = make_test_call
-      expect do
-        call.cancel_with_status(0, 'test status')
-      end.not_to raise_error
-      expect do
-        call.cancel_with_status(0, nil)
-      end.to raise_error(TypeError)
+      make_test_call do |call|
+        expect do
+          call.cancel_with_status(0, 'test status')
+        end.not_to raise_error
+        expect do
+          call.cancel_with_status(0, nil)
+        end.to raise_error(TypeError)
+      end
     end
 
     it 'completes ok when the call is closed' do
-      call = make_test_call
-      call.close
-      expect do
-        call.cancel_with_status(0, 'test status')
-      end.not_to raise_error
+      make_test_call do |call|
+        call.close
+        expect do
+          call.cancel_with_status(0, 'test status')
+        end.not_to raise_error
+      end
     end
   end
 
   def make_test_call
-    @ch.create_call(nil, nil, 'phony_method', nil, deadline)
+    call = @ch.create_call(nil, nil, 'phony_method', nil, deadline)
+    yield call
+    call.close
   end
 
   def deadline

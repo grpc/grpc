@@ -18,6 +18,7 @@
 #include <thread>
 
 #include "gtest/gtest.h"
+#include "src/core/lib/experiments/experiments.h"
 
 namespace grpc_core {
 namespace {
@@ -42,30 +43,76 @@ TEST(PingRatePolicy, NoOpServer) {
 
 TEST(PingRatePolicy, ServerCanSendAtStart) {
   Chttp2PingRatePolicy policy{ChannelArgs(), false};
-  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(100)), SendGranted());
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(100), 0),
+            SendGranted());
 }
 
 TEST(PingRatePolicy, ClientBlockedUntilDataSent) {
+  if (IsMaxPingsWoDataThrottleEnabled()) {
+    GTEST_SKIP()
+        << "Pings are not blocked if max_pings_wo_data_throttle is enabled.";
+  }
   Chttp2PingRatePolicy policy{ChannelArgs(), true};
-  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10)),
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
             TooManyRecentPings());
   policy.ResetPingsBeforeDataRequired();
-  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10)), SendGranted());
-  EXPECT_EQ(policy.RequestSendPing(Duration::Zero()), SendGranted());
-  EXPECT_EQ(policy.RequestSendPing(Duration::Zero()), TooManyRecentPings());
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
+            SendGranted());
+  policy.SentPing();
+  EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), SendGranted());
+  policy.SentPing();
+  EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), TooManyRecentPings());
+}
+
+TEST(PingRatePolicy, ClientThrottledUntilDataSent) {
+  if (!IsMaxPingsWoDataThrottleEnabled()) {
+    GTEST_SKIP()
+        << "Throttling behavior is enabled with max_pings_wo_data_throttle.";
+  }
+  Chttp2PingRatePolicy policy{ChannelArgs(), true};
+  // First ping is allowed.
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
+            SendGranted());
+  policy.SentPing();
+  // Second ping is throttled since no data has been sent.
+  auto result = policy.RequestSendPing(Duration::Zero(), 0);
+  EXPECT_TRUE(absl::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
+  EXPECT_EQ(absl::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
+            Duration::Minutes(1));
+  policy.ResetPingsBeforeDataRequired();
+  // After resetting pings before data required (data sent), we can send pings
+  // without being throttled.
+  EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), SendGranted());
+  policy.SentPing();
+  EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), SendGranted());
+  policy.SentPing();
+  // After reaching limit, we are throttled again.
+  result = policy.RequestSendPing(Duration::Zero(), 0);
+  EXPECT_TRUE(absl::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
+  EXPECT_EQ(absl::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
+            Duration::Minutes(1));
 }
 
 TEST(PingRatePolicy, RateThrottlingWorks) {
   Chttp2PingRatePolicy policy{ChannelArgs(), false};
   // Observe that we can fail if we send in a tight loop
-  while (policy.RequestSendPing(Duration::Milliseconds(10)) == SendGranted()) {
+  while (policy.RequestSendPing(Duration::Milliseconds(10), 0) ==
+         SendGranted()) {
+    policy.SentPing();
   }
   // Observe that we can succeed if we wait a bit between pings
   for (int i = 0; i < 100; i++) {
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
-    EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10)),
+    EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
               SendGranted());
+    policy.SentPing();
   }
+}
+
+TEST(PingRatePolicy, TooManyPingsInflightBlocksSendingPings) {
+  Chttp2PingRatePolicy policy{ChannelArgs(), false};
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(1), 100000000),
+            TooManyRecentPings());
 }
 
 }  // namespace

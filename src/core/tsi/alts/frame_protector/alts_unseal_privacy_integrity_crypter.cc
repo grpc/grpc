@@ -16,9 +16,8 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/tsi/alts/frame_protector/alts_counter.h"
 #include "src/core/tsi/alts/frame_protector/alts_crypter.h"
@@ -31,7 +30,7 @@ static void maybe_copy_error_msg(const char* src, char** dst) {
   }
 }
 
-// Perform input santity check.
+// Perform input sanity check.
 static grpc_status_code unseal_check(alts_crypter* c, const unsigned char* data,
                                      size_t /*data_allocated_size*/,
                                      size_t data_size, size_t* output_size,

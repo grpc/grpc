@@ -16,16 +16,14 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/timer_heap.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/useful.h"
 
 // Adjusts a heap so as to move a hole at position i closer to the root,
 // until a suitable position is found for element t. Then, copies t into that
@@ -50,7 +48,7 @@ static void adjust_upwards(grpc_timer** first, uint32_t i, grpc_timer* t) {
 static void adjust_downwards(grpc_timer** first, uint32_t i, uint32_t length,
                              grpc_timer* t) {
   for (;;) {
-    uint32_t left_child = 1u + 2u * i;
+    uint32_t left_child = 1u + (2u * i);
     if (left_child >= length) break;
     uint32_t right_child = left_child + 1;
     uint32_t next_i = right_child < length && first[left_child]->deadline >

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_grpc_library", "grpc_cc_library", "grpc_cc_proto_library", "grpc_internal_proto_library", "grpc_package")
 
 licenses(["notice"])
 
@@ -21,13 +21,17 @@ grpc_package(
     visibility = "public",
 )
 
-grpc_proto_library(
+grpc_internal_proto_library(
     name = "transport_security_common_proto",
     srcs = ["transport_security_common.proto"],
-    has_services = False,
 )
 
-grpc_proto_library(
+grpc_cc_proto_library(
+    name = "transport_security_common_cc_proto",
+    deps = ["transport_security_common_proto"],
+)
+
+grpc_internal_proto_library(
     name = "handshaker_proto",
     srcs = ["handshaker.proto"],
     has_services = True,
@@ -36,15 +40,29 @@ grpc_proto_library(
     ],
 )
 
+grpc_cc_proto_library(
+    name = "handshaker_cc_proto",
+    deps = ["handshaker_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "handshaker_cc_grpc",
+    srcs = ["handshaker_proto"],
+    deps = ["handshaker_cc_proto"],
+)
+
 grpc_cc_library(
     name = "fake_handshaker_lib",
     testonly = True,
     srcs = ["fake_handshaker_server.cc"],
     hdrs = ["fake_handshaker_server.h"],
+    external_deps = [
+        "absl/log:check",
+    ],
     language = "C++",
     deps = [
-        "handshaker_proto",
-        "transport_security_common_proto",
+        "handshaker_cc_grpc",
+        "transport_security_common_cc_proto",
         "//:grpc++",
     ],
 )
@@ -55,11 +73,13 @@ grpc_cc_binary(
     srcs = ["fake_handshaker_server_main.cc"],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
+        "absl/log:log",
     ],
     language = "C++",
     deps = [
         "fake_handshaker_lib",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
 )

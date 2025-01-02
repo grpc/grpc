@@ -20,7 +20,6 @@
 #define GRPC_SUPPORT_SYNC_ABSEIL_H
 
 #include <grpc/support/port_platform.h>
-
 #include <grpc/support/sync_generic.h>
 
 #ifdef GPR_ABSEIL_SYNC

@@ -19,12 +19,11 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_STATUS_CONVERSION_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_STATUS_CONVERSION_H
 
+#include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 
-#include <grpc/status.h>
-
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/transport/http2_errors.h"
+#include "src/core/util/time.h"
 
 // Conversion of grpc status codes to http2 error codes (for RST_STREAM)
 grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status);

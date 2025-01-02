@@ -16,32 +16,31 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/credentials.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
 
-#include <grpc/support/log.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/api_trace.h"
+#include "src/core/util/useful.h"
 
 // -- Common. --
 
 void grpc_channel_credentials_release(grpc_channel_credentials* creds) {
-  GRPC_API_TRACE("grpc_channel_credentials_release(creds=%p)", 1, (creds));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_channel_credentials_release(creds=" << creds << ")";
   grpc_core::ExecCtx exec_ctx;
   if (creds) creds->Unref();
 }
 
 void grpc_call_credentials_release(grpc_call_credentials* creds) {
-  GRPC_API_TRACE("grpc_call_credentials_release(creds=%p)", 1, (creds));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_call_credentials_release(creds=" << creds << ")";
   grpc_core::ExecCtx exec_ctx;
   if (creds) creds->Unref();
 }
@@ -74,8 +73,8 @@ grpc_channel_credentials* grpc_channel_credentials_from_arg(
     const grpc_arg* arg) {
   if (strcmp(arg->key, GRPC_ARG_CHANNEL_CREDENTIALS) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
-    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
-            GRPC_ARG_CHANNEL_CREDENTIALS);
+    LOG(ERROR) << "Invalid type " << arg->type << " for arg "
+               << GRPC_ARG_CHANNEL_CREDENTIALS;
     return nullptr;
   }
   return static_cast<grpc_channel_credentials*>(arg->value.pointer.p);
@@ -94,25 +93,26 @@ grpc_channel_credentials* grpc_channel_credentials_find_in_args(
 }
 
 void grpc_server_credentials_release(grpc_server_credentials* creds) {
-  GRPC_API_TRACE("grpc_server_credentials_release(creds=%p)", 1, (creds));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_server_credentials_release(creds=" << creds << ")";
   grpc_core::ExecCtx exec_ctx;
   if (creds) creds->Unref();
 }
 
 void grpc_server_credentials::set_auth_metadata_processor(
     const grpc_auth_metadata_processor& processor) {
-  GRPC_API_TRACE(
-      "grpc_server_credentials_set_auth_metadata_processor("
-      "creds=%p, "
-      "processor=grpc_auth_metadata_processor { process: %p, state: %p })",
-      3, (this, (void*)(intptr_t)processor.process, processor.state));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_server_credentials_set_auth_metadata_processor(creds=" << this
+      << ", processor=grpc_auth_metadata_processor { process: "
+      << (void*)(intptr_t)processor.process << ", state: " << processor.state
+      << " })";
   DestroyProcessor();
   processor_ = processor;
 }
 
 void grpc_server_credentials_set_auth_metadata_processor(
     grpc_server_credentials* creds, grpc_auth_metadata_processor processor) {
-  GPR_DEBUG_ASSERT(creds != nullptr);
+  DCHECK_NE(creds, nullptr);
   creds->set_auth_metadata_processor(processor);
 }
 
@@ -140,8 +140,8 @@ grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* c) {
 grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg) {
   if (strcmp(arg->key, GRPC_SERVER_CREDENTIALS_ARG) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
-    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
-            GRPC_SERVER_CREDENTIALS_ARG);
+    LOG(ERROR) << "Invalid type " << arg->type << " for arg "
+               << GRPC_SERVER_CREDENTIALS_ARG;
     return nullptr;
   }
   return static_cast<grpc_server_credentials*>(arg->value.pointer.p);

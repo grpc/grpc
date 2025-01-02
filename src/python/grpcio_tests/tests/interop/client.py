@@ -13,9 +13,10 @@
 # limitations under the License.
 """The Python implementation of the GRPC interoperability test client."""
 
-import argparse
 import os
 
+from absl import app
+from absl.flags import argparse_flags
 from google import auth as google_auth
 from google.auth import jwt as google_auth_jwt
 import grpc
@@ -25,8 +26,8 @@ from tests.interop import methods
 from tests.interop import resources
 
 
-def parse_interop_client_args():
-    parser = argparse.ArgumentParser()
+def parse_interop_client_args(argv):
+    parser = argparse_flags.ArgumentParser()
     parser.add_argument(
         "--server_host",
         default="localhost",
@@ -92,7 +93,7 @@ def parse_interop_client_args():
             " round_robin " + "or pick_first)."
         ),
     )
-    return parser.parse_args()
+    return parser.parse_args(argv[1:])
 
 
 def _create_call_credentials(args):
@@ -214,8 +215,7 @@ def _test_case_from_arg(test_case_arg):
         raise ValueError('No test case "%s"!' % test_case_arg)
 
 
-def test_interoperability():
-    args = parse_interop_client_args()
+def test_interoperability(args):
     channel = _create_channel(args)
     stub = create_stub(channel, args)
     test_case = _test_case_from_arg(args.test_case)
@@ -223,4 +223,4 @@ def test_interoperability():
 
 
 if __name__ == "__main__":
-    test_interoperability()
+    app.run(test_interoperability, flags_parser=parse_interop_client_args)

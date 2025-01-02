@@ -18,14 +18,7 @@
 
 #include "src/cpp/server/secure_server_credentials.h"
 
-#include <algorithm>
-#include <map>
-#include <memory>
-#include <utility>
-#include <vector>
-
 #include <grpc/grpc_security_constants.h>
-#include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 #include <grpcpp/security/tls_credentials_options.h>
@@ -33,28 +26,33 @@
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include "src/cpp/common/secure_auth_context.h"
 
 namespace grpc {
 
-void AuthMetadataProcessorAyncWrapper::Destroy(void* wrapper) {
-  auto* w = static_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
+void AuthMetadataProcessorAsyncWrapper::Destroy(void* wrapper) {
+  auto* w = static_cast<AuthMetadataProcessorAsyncWrapper*>(wrapper);
   delete w;
 }
 
-void AuthMetadataProcessorAyncWrapper::Process(
+void AuthMetadataProcessorAsyncWrapper::Process(
     void* wrapper, grpc_auth_context* context, const grpc_metadata* md,
     size_t num_md, grpc_process_auth_metadata_done_cb cb, void* user_data) {
-  auto* w = static_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
+  auto* w = static_cast<AuthMetadataProcessorAsyncWrapper*>(wrapper);
   if (!w->processor_) {
     // Early exit.
     cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_OK, nullptr);
     return;
   }
   if (w->processor_->IsBlocking()) {
+    // TODO(hork): replace with EventEngine::Run
     w->thread_pool_->Add([w, context, md, num_md, cb, user_data] {
-      w->AuthMetadataProcessorAyncWrapper::InvokeProcessor(context, md, num_md,
-                                                           cb, user_data);
+      w->AuthMetadataProcessorAsyncWrapper::InvokeProcessor(context, md, num_md,
+                                                            cb, user_data);
     });
   } else {
     // invoke directly.
@@ -62,7 +60,7 @@ void AuthMetadataProcessorAyncWrapper::Process(
   }
 }
 
-void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
+void AuthMetadataProcessorAsyncWrapper::InvokeProcessor(
     grpc_auth_context* context, const grpc_metadata* md, size_t num_md,
     grpc_process_auth_metadata_done_cb cb, void* user_data) {
   AuthMetadataProcessor::InputMetadata metadata;
@@ -98,17 +96,15 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
      status.error_message().c_str());
 }
 
-int SecureServerCredentials::AddPortToServer(const std::string& addr,
-                                             grpc_server* server) {
-  return grpc_server_add_http2_port(server, addr.c_str(), creds_);
-}
+SecureServerCredentials::SecureServerCredentials(grpc_server_credentials* creds)
+    : ServerCredentials(creds) {}
 
 void SecureServerCredentials::SetAuthMetadataProcessor(
     const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) {
-  auto* wrapper = new grpc::AuthMetadataProcessorAyncWrapper(processor);
+  auto* wrapper = new grpc::AuthMetadataProcessorAsyncWrapper(processor);
   grpc_server_credentials_set_auth_metadata_processor(
-      creds_, {grpc::AuthMetadataProcessorAyncWrapper::Process,
-               grpc::AuthMetadataProcessorAyncWrapper::Destroy, wrapper});
+      c_creds(), {grpc::AuthMetadataProcessorAsyncWrapper::Process,
+                  grpc::AuthMetadataProcessorAsyncWrapper::Destroy, wrapper});
 }
 
 std::shared_ptr<ServerCredentials> SslServerCredentials(
@@ -152,8 +148,13 @@ std::shared_ptr<ServerCredentials> LocalServerCredentials(
 
 std::shared_ptr<ServerCredentials> TlsServerCredentials(
     const grpc::experimental::TlsServerCredentialsOptions& options) {
-  return std::shared_ptr<ServerCredentials>(new SecureServerCredentials(
-      grpc_tls_server_credentials_create(options.c_credentials_options())));
+  grpc_server_credentials* c_creds =
+      grpc_tls_server_credentials_create(options.c_credentials_options());
+  if (c_creds == nullptr) {
+    return nullptr;
+  }
+  return std::shared_ptr<ServerCredentials>(
+      new SecureServerCredentials(c_creds));
 }
 
 }  // namespace experimental

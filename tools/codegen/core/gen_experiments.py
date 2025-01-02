@@ -23,10 +23,17 @@ Experiment definitions are in src/core/lib/experiments/experiments.yaml
 from __future__ import print_function
 
 import argparse
+import os
 import sys
 
 import experiments_compiler as exp
 import yaml
+
+REPO_ROOT = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), "../../..")
+)
+print(REPO_ROOT)
+os.chdir(REPO_ROOT)
 
 DEFAULTS = {
     "broken": "false",
@@ -80,10 +87,21 @@ def ParseCommandLineArguments(args):
         action="store_false",
         help="If specified, disables checking experiment expiry dates",
     )
+    flag_parser.add_argument(
+        "--no_dbg_experiments",
+        action="store_true",
+        help="Prohibit 'debug' configurations",
+        default=False,
+    )
     return flag_parser.parse_args(args)
 
 
 args = ParseCommandLineArguments(sys.argv[1:])
+
+
+def _InjectGithubPath(path):
+    base, ext = os.path.splitext(path)
+    return base + ".github" + ext
 
 
 def _GenerateExperimentFiles(args, mode):
@@ -96,17 +114,32 @@ def _GenerateExperimentFiles(args, mode):
         )
         _EXPERIMENTS_HDR_FILE = "test/core/experiments/fixtures/experiments.h"
         _EXPERIMENTS_SRC_FILE = "test/core/experiments/fixtures/experiments.cc"
+        _EXPERIMENTS_BZL_FILE = "bazel/test_experiments.bzl"
     else:
         _EXPERIMENTS_DEFS = "src/core/lib/experiments/experiments.yaml"
         _EXPERIMENTS_ROLLOUTS = "src/core/lib/experiments/rollouts.yaml"
         _EXPERIMENTS_HDR_FILE = "src/core/lib/experiments/experiments.h"
         _EXPERIMENTS_SRC_FILE = "src/core/lib/experiments/experiments.cc"
+        _EXPERIMENTS_BZL_FILE = "bazel/experiments.bzl"
+        if "/google3/" in REPO_ROOT:
+            _EXPERIMENTS_ROLLOUTS = _InjectGithubPath(_EXPERIMENTS_ROLLOUTS)
+            _EXPERIMENTS_HDR_FILE = _InjectGithubPath(_EXPERIMENTS_HDR_FILE)
+            _EXPERIMENTS_SRC_FILE = _InjectGithubPath(_EXPERIMENTS_SRC_FILE)
+            _EXPERIMENTS_BZL_FILE = _InjectGithubPath(_EXPERIMENTS_BZL_FILE)
 
     with open(_EXPERIMENTS_DEFS) as f:
         attrs = yaml.safe_load(f.read())
 
+    if not exp.AreExperimentsOrdered(attrs):
+        print("Experiments are not ordered")
+        sys.exit(1)
+
     with open(_EXPERIMENTS_ROLLOUTS) as f:
         rollouts = yaml.safe_load(f.read())
+
+    if not exp.AreExperimentsOrdered(rollouts):
+        print("Rollouts are not ordered")
+        sys.exit(1)
 
     compiler = exp.ExperimentsCompiler(
         DEFAULTS,
@@ -135,6 +168,10 @@ def _GenerateExperimentFiles(args, mode):
             print("ERROR adding rollout spec")
             sys.exit(1)
 
+    if mode != "test" and args.no_dbg_experiments:
+        print("Ensuring no debug experiments are configured")
+        compiler.EnsureNoDebugExperiments()
+
     print(f"Mode = {mode} Generating experiments headers")
     compiler.GenerateExperimentsHdr(_EXPERIMENTS_HDR_FILE, mode)
 
@@ -144,12 +181,12 @@ def _GenerateExperimentFiles(args, mode):
     )
 
     print("Generating experiments.bzl")
+    compiler.GenExperimentsBzl(mode, _EXPERIMENTS_BZL_FILE)
     if mode == "test":
-        compiler.GenExperimentsBzl(mode, "bazel/test_experiments.bzl")
         print("Generating experiments tests")
-        compiler.GenTest("test/core/experiments/experiments_test.cc")
-    else:
-        compiler.GenExperimentsBzl(mode, "bazel/experiments.bzl")
+        compiler.GenTest(
+            os.path.join(REPO_ROOT, "test/core/experiments/experiments_test.cc")
+        )
 
 
 _GenerateExperimentFiles(args, "production")

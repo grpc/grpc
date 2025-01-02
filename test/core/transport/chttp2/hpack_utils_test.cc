@@ -13,12 +13,13 @@
 // limitations under the License.
 
 #include <grpc/support/port_platform.h>
+#include <gtest/gtest.h>
 
 #include <random>
 #include <unordered_map>
 
-#include <gtest/gtest.h>
-
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
 
 namespace grpc_core {
@@ -31,7 +32,7 @@ static void VerifyAsciiHeaderSize(const char* key, const char* value,
       maybe_intern(grpc_slice_from_static_string(value), intern_value));
   size_t elem_size = MetadataSizeInHPackTable(elem, false);
   size_t expected_size = 32 + strlen(key) + strlen(value);
-  GPR_ASSERT(expected_size == elem_size);
+  CHECK(expected_size == elem_size);
   GRPC_MDELEM_UNREF(elem);
 }
 
@@ -42,13 +43,13 @@ static void VerifyBinaryHeaderSize(const char* key, const uint8_t* value,
       maybe_intern(grpc_slice_from_static_string(key), intern_key),
       maybe_intern(grpc_slice_from_static_buffer(value, value_len),
                    intern_value));
-  GPR_ASSERT(grpc_is_binary_header(GRPC_MDKEY(elem)));
+  CHECK(grpc_is_binary_header(GRPC_MDKEY(elem)));
   size_t elem_size = MetadataSizeInHPackTable(elem, false);
   grpc_slice value_slice = grpc_slice_from_copied_buffer(
       reinterpret_cast<const char*>(value), value_len);
   grpc_slice base64_encoded = grpc_chttp2_base64_encode(value_slice);
   size_t expected_size = 32 + strlen(key) + GRPC_SLICE_LENGTH(base64_encoded);
-  GPR_ASSERT(expected_size == elem_size);
+  CHECK(expected_size == elem_size);
   grpc_slice_unref(value_slice);
   grpc_slice_unref(base64_encoded);
   GRPC_MDELEM_UNREF(elem);
@@ -66,8 +67,8 @@ class MetadataTest : public ::testing::TestWithParam<Param> {
 TEST_P(MetadataTest, MetadataSize) {
   const bool intern_key = GetParam().intern_key;
   const bool intern_value = GetParam().intern_value;
-  gpr_log(GPR_INFO, "test_mdelem_size: intern_key=%d intern_value=%d",
-          intern_key, intern_value);
+  LOG(INFO) << "test_mdelem_size: intern_key=" << intern_key
+            << " intern_value=" << intern_value;
   grpc_init();
   ExecCtx exec_ctx;
 

@@ -13,8 +13,10 @@
 # limitations under the License.
 """Common code used throughout tests of gRPC."""
 
+import ast
 import collections
 from concurrent import futures
+import os
 import threading
 
 import grpc
@@ -110,9 +112,12 @@ def test_server(max_workers=10, reuse_port=False):
 
     These servers have SO_REUSEPORT disabled to prevent cross-talk.
     """
+    server_kwargs = os.environ.get("GRPC_ADDITIONAL_SERVER_KWARGS", "{}")
+    server_kwargs = ast.literal_eval(server_kwargs)
     return grpc.server(
         futures.ThreadPoolExecutor(max_workers=max_workers),
         options=(("grpc.so_reuseport", int(reuse_port)),),
+        **server_kwargs,
     )
 
 

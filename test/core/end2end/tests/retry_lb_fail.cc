@@ -14,19 +14,19 @@
 // limitations under the License.
 //
 
-#include <atomic>
-
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <atomic>
+#include <memory>
+
+#include "absl/status/status.h"
+#include "gtest/gtest.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/test_lb_policies.h"
+#include "test/core/test_util/test_lb_policies.h"
 
 namespace grpc_core {
 namespace {
@@ -39,6 +39,7 @@ std::atomic<int> g_num_lb_picks;
 // - on first attempt, LB policy fails with ABORTED before application
 //   starts recv_trailing_metadata op
 CORE_END2END_TEST(RetryTest, RetryLbFail) {
+  SKIP_IF_V3();  // Not working yet
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     RegisterFailLoadBalancingPolicy(
         builder, absl::UnavailableError("LB pick failed"), &g_num_lb_picks);

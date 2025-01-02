@@ -20,7 +20,6 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_ALPN_ALPN_H
 
 #include <grpc/support/port_platform.h>
-
 #include <string.h>
 
 // Returns 1 if the version is supported, 0 otherwise.

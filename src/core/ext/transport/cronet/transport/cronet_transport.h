@@ -19,14 +19,13 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_TRANSPORT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/transport/transport_fwd.h"
 
-grpc_transport* grpc_create_cronet_transport(void* engine, const char* target,
-                                             const grpc_channel_args* args,
-                                             void* reserved);
+grpc_core::Transport* grpc_create_cronet_transport(
+    void* engine, const char* target, const grpc_channel_args* args,
+    void* reserved);
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_TRANSPORT_H

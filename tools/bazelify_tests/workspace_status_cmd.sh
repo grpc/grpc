@@ -28,7 +28,7 @@ then
   echo "STABLE_GRPC_GIT_WORKSPACE_DIRTY false"
 else
   echo "STABLE_GRPC_GIT_WORKSPACE_DIRTY true"
-  echo "STABLE_GRPC_UNCOMMITED_PATCH_CHECKSUM $(git diff HEAD | sha256sum | cut -f1 -d' ')"
+  echo "STABLE_GRPC_UNCOMMITTED_PATCH_CHECKSUM $(git diff HEAD | sha256sum | cut -f1 -d' ')"
 fi
 
 # Since only --workspace_status_command is allowed by bazel, also include

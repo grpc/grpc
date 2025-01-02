@@ -21,9 +21,8 @@
 
 #include <ruby/ruby.h>
 
-#include <sys/time.h>
-
 #include <grpc/support/time.h>
+#include <stdlib.h>
 
 /* grpc_rb_mGrpcCore is the module containing the ruby wrapper GRPC classes. */
 extern VALUE grpc_rb_mGrpcCore;
@@ -54,7 +53,7 @@ extern VALUE sym_metadata;
 
 /* GRPC_RB_MEMSIZE_UNAVAILABLE is used in rb_data_type_t to indicate that the
  * number of bytes used by the wrapped struct is not available. */
-#define GRPC_RB_MEMSIZE_UNAVAILABLE (size_t(*)(const void*))(NULL)
+#define GRPC_RB_MEMSIZE_UNAVAILABLE (size_t (*)(const void*))(NULL)
 
 /* A ruby object alloc func that fails by raising an exception. */
 VALUE grpc_rb_cannot_alloc(VALUE cls);
@@ -79,5 +78,11 @@ void grpc_rb_fork_unsafe_begin();
 void grpc_rb_fork_unsafe_end();
 
 void grpc_ruby_init();
+
+#define GRPC_RUBY_ASSERT(x)                                       \
+  if (!(x)) {                                                     \
+    fprintf(stderr, "%s:%d assert failed\n", __FILE__, __LINE__); \
+    abort();                                                      \
+  }
 
 #endif /* GRPC_RB_H_ */

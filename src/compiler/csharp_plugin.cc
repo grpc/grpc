@@ -30,8 +30,21 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   ~CSharpGrpcGenerator() {}
 
   uint64_t GetSupportedFeatures() const override {
-    return FEATURE_PROTO3_OPTIONAL;
+    return FEATURE_PROTO3_OPTIONAL
+#ifdef GRPC_PROTOBUF_EDITION_SUPPORT
+           | FEATURE_SUPPORTS_EDITIONS
+#endif
+        ;
   }
+
+#ifdef GRPC_PROTOBUF_EDITION_SUPPORT
+  grpc::protobuf::Edition GetMinimumEdition() const override {
+    return grpc::protobuf::Edition::EDITION_PROTO2;
+  }
+  grpc::protobuf::Edition GetMaximumEdition() const override {
+    return grpc::protobuf::Edition::EDITION_2023;
+  }
+#endif
 
   bool Generate(const grpc::protobuf::FileDescriptor* file,
                 const std::string& parameter,
@@ -44,6 +57,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     bool generate_server = true;
     bool internal_access = false;
     std::string base_namespace = "";
+    bool base_namespace_present = false;
 
     // the suffix that will get appended to the name generated from the name
     // of the original .proto file
@@ -62,6 +76,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         // The option may be removed or file names generated may change
         // in the future.
         base_namespace = options[i].second;
+        base_namespace_present = true;
       } else {
         *error = "Unknown generator option: " + options[i].first;
         return false;
@@ -77,7 +92,8 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     // Get output file name.
     std::string file_name;
     if (!grpc_csharp_generator::ServicesFilename(
-            file, file_suffix, base_namespace, file_name, error)) {
+            file, file_suffix, base_namespace_present, base_namespace,
+            file_name, error)) {
       return false;
     }
     std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(

@@ -15,7 +15,7 @@
 licenses(["notice"])
 
 package(
-    default_visibility = ["//visibility:public"]
+    default_visibility = ["//visibility:public"],
 )
 
 # This is needed for the dependency on google_cloud_cpp to work.

@@ -1,0 +1,12 @@
+network_input {
+  input_segments {
+    segments {
+      chaotic_good {
+      }
+    }
+  }
+}
+api_actions {
+  close_channel {
+  }
+}

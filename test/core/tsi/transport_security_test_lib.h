@@ -20,6 +20,7 @@
 #define GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H
 
 #include <grpc/support/sync.h>
+#include <openssl/x509v3.h>
 
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -180,7 +181,7 @@ void tsi_test_frame_protector_config_destroy(
 void tsi_test_fixture_init(tsi_test_fixture* fixture);
 
 // This method destroys a tsi_test_fixture instance. Note that the
-// fixture intance must be dynamically allocated and will be freed by
+// fixture instance must be dynamically allocated and will be freed by
 // this function.
 void tsi_test_fixture_destroy(tsi_test_fixture* fixture);
 
@@ -196,12 +197,12 @@ void tsi_test_frame_protector_fixture_init(
     tsi_frame_protector* server_frame_protector);
 
 // This method destroys a tsi_test_frame_protector_fixture instance. Note that
-// the fixture intance must be dynamically allocated and will be freed by this
+// the fixture instance must be dynamically allocated and will be freed by this
 // function.
 void tsi_test_frame_protector_fixture_destroy(
     tsi_test_frame_protector_fixture* fixture);
 
-// This method performs a protect opeation on raw data and sends the result to
+// This method performs a protect operation on raw data and sends the result to
 // peer.
 void tsi_test_frame_protector_send_message_to_peer(
     tsi_test_frame_protector_config* config, tsi_test_channel* channel,
@@ -237,5 +238,11 @@ struct SelfSignedCertificateOptions {
 // Returns a PEM-encoded self-signed certificate.
 std::string GenerateSelfSignedCertificate(
     const SelfSignedCertificateOptions& options);
+
+// Returns the OpenSSL representation of a PEM cert.
+X509* ReadPemCert(absl::string_view pem_cert);
+
+// Returns the OpenSSL representation of a CRL.
+X509_CRL* ReadCrl(absl::string_view crl_pem);
 
 #endif  // GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H

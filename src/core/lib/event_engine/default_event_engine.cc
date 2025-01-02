@@ -11,26 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
 #include <atomic>
 #include <memory>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-
-#include <grpc/event_engine/event_engine.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine_factory.h"
-#include "src/core/lib/event_engine/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
 #include "src/core/lib/event_engine/thready_event_engine/thready_event_engine.h"  // IWYU pragma: keep
@@ -80,15 +77,15 @@ std::shared_ptr<EventEngine> GetDefaultEventEngine(
     grpc_core::SourceLocation location) {
   grpc_core::MutexLock lock(&*g_mu);
   if (std::shared_ptr<EventEngine> engine = g_event_engine->lock()) {
-    GRPC_EVENT_ENGINE_TRACE(
-        "Returning existing EventEngine::%p. use_count:%ld. Called from "
-        "[%s:%d]",
-        engine.get(), engine.use_count(), location.file(), location.line());
+    GRPC_TRACE_LOG(event_engine, INFO)
+        << "Returning existing EventEngine::" << engine.get()
+        << ". use_count:" << engine.use_count() << ". Called from " << location;
     return engine;
   }
   std::shared_ptr<EventEngine> engine{CreateEventEngine()};
-  GRPC_EVENT_ENGINE_TRACE("Created DefaultEventEngine::%p. Called from [%s:%d]",
-                          engine.get(), location.file(), location.line());
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "Created DefaultEventEngine::" << engine.get() << ". Called from "
+      << location;
   *g_event_engine = engine;
   return engine;
 }

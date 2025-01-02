@@ -25,7 +25,7 @@ def test_runner_log(msg):
 
 
 def python_args(arg_list):
-    if platform.system() == "Windows":
+    if platform.system() == "Windows" and arg_list[0].endswith(".py"):
         return [sys.executable] + arg_list
     return arg_list
 
@@ -86,7 +86,7 @@ def wait_until_dns_server_is_up(args):
     test_runner_log(
         (
             "Failed to reach DNS server over TCP and/or UDP. "
-            "Exitting without running tests."
+            "Exiting without running tests."
         )
     )
     sys.exit(1)

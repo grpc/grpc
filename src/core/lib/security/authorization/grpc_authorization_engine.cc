@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
+
+#include <grpc/support/port_platform.h>
 
 #include <algorithm>
 #include <map>
 #include <utility>
 
-#include <grpc/support/log.h>
-
+#include "absl/log/check.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 
@@ -59,7 +58,7 @@ GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy)
   for (auto& logger_config : policy.logger_configs) {
     auto logger =
         AuditLoggerRegistry::CreateAuditLogger(std::move(logger_config));
-    GPR_ASSERT(logger != nullptr);
+    CHECK(logger != nullptr);
     audit_loggers_.push_back(std::move(logger));
   }
 }

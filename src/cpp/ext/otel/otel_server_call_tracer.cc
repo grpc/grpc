@@ -16,185 +16,136 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/otel/otel_server_call_tracer.h"
 
-#include <initializer_list>
+#include <grpc/support/port_platform.h>
+
+#include <array>
 #include <memory>
 #include <string>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/status/status.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "absl/types/optional.h"
+#include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
-
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/tcp_tracer.h"
+#include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
 namespace internal {
 
-namespace {
-
-// OpenTelemetryServerCallTracer implementation
-
-class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
- public:
-  OpenTelemetryServerCallTracer() : start_time_(absl::Now()) {}
-
-  std::string TraceId() override {
-    // Not implemented
-    return "";
-  }
-
-  std::string SpanId() override {
-    // Not implemented
-    return "";
-  }
-
-  bool IsSampled() override {
-    // Not implemented
-    return false;
-  }
-
-  // Please refer to `grpc_transport_stream_op_batch_payload` for details on
-  // arguments.
-  void RecordSendInitialMetadata(
-      grpc_metadata_batch* /*send_initial_metadata*/) override {}
-
-  void RecordSendTrailingMetadata(
-      grpc_metadata_batch* /*send_trailing_metadata*/) override;
-
-  void RecordSendMessage(const grpc_core::SliceBuffer& send_message) override {
-    RecordAnnotation(
-        absl::StrFormat("Send message: %ld bytes", send_message.Length()));
-  }
-  void RecordSendCompressedMessage(
-      const grpc_core::SliceBuffer& send_compressed_message) override {
-    RecordAnnotation(absl::StrFormat("Send compressed message: %ld bytes",
-                                     send_compressed_message.Length()));
-  }
-
-  void RecordReceivedInitialMetadata(
-      grpc_metadata_batch* recv_initial_metadata) override;
-
-  void RecordReceivedMessage(
-      const grpc_core::SliceBuffer& recv_message) override {
-    RecordAnnotation(
-        absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
-  }
-  void RecordReceivedDecompressedMessage(
-      const grpc_core::SliceBuffer& recv_decompressed_message) override {
-    RecordAnnotation(absl::StrFormat("Received decompressed message: %ld bytes",
-                                     recv_decompressed_message.Length()));
-  }
-
-  void RecordReceivedTrailingMetadata(
-      grpc_metadata_batch* /*recv_trailing_metadata*/) override {}
-
-  void RecordCancel(grpc_error_handle /*cancel_error*/) override {
-    elapsed_time_ = absl::Now() - start_time_;
-  }
-
-  void RecordEnd(const grpc_call_final_info* final_info) override;
-
-  void RecordAnnotation(absl::string_view /*annotation*/) override {
-    // Not implemented
-  }
-
-  void RecordAnnotation(const Annotation& /*annotation*/) override {
-    // Not implemented
-  }
-
- private:
-  grpc_core::Slice path_;
-  absl::string_view method_;
-  std::string authority_;
-  absl::Time start_time_;
-  absl::Duration elapsed_time_;
-};
-
-void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
-  const auto* path =
-      recv_initial_metadata->get_pointer(grpc_core::HttpPathMetadata());
-  if (path != nullptr) {
-    path_ = path->Ref();
-  }
-  method_ = absl::StripPrefix(path_.as_string_view(), "/");
-  const auto* authority =
-      recv_initial_metadata->get_pointer(grpc_core::HttpAuthorityMetadata());
-  // Override with host metadata if authority is absent.
-  if (authority == nullptr) {
-    authority = recv_initial_metadata->get_pointer(grpc_core::HostMetadata());
-  }
-  if (authority != nullptr) {
-    authority_ = std::string(authority->as_string_view());
-  }
-  // TODO(yashykt): Figure out how to get this to work with absl::string_view
-  if (OTelPluginState().server.call.started != nullptr) {
-    OTelPluginState().server.call.started->Add(
-        1, {{std::string(OTelMethodKey()), std::string(method_)},
-            {std::string(OTelAuthorityKey()), authority_}});
+  path_ =
+      recv_initial_metadata->get_pointer(grpc_core::HttpPathMetadata())->Ref();
+  scope_config_->active_plugin_options_view().ForEach(
+      [&](const InternalOpenTelemetryPluginOption& plugin_option,
+          size_t index) {
+        auto* labels_injector = plugin_option.labels_injector();
+        if (labels_injector != nullptr) {
+          injected_labels_from_plugin_options_[index] =
+              labels_injector->GetLabels(recv_initial_metadata);
+        }
+        return true;
+      },
+      otel_plugin_);
+  registered_method_ =
+      recv_initial_metadata->get(grpc_core::GrpcRegisteredMethod())
+          .value_or(nullptr) != nullptr;
+  std::array<std::pair<absl::string_view, absl::string_view>, 1>
+      additional_labels = {{{OpenTelemetryMethodKey(), MethodForStats()}}};
+  if (otel_plugin_->server_.call.started != nullptr) {
+    // We might not have all the injected labels that we want at this point, so
+    // avoid recording a subset of injected labels here.
+    otel_plugin_->server_.call.started->Add(
+        1, KeyValueIterable(/*injected_labels_from_plugin_options=*/{},
+                            additional_labels,
+                            /*active_plugin_options_view=*/nullptr, {},
+                            /*is_client=*/false, otel_plugin_));
   }
 }
 
-void OpenTelemetryServerCallTracer::RecordSendTrailingMetadata(
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordSendInitialMetadata(
+    grpc_metadata_batch* send_initial_metadata) {
+  scope_config_->active_plugin_options_view().ForEach(
+      [&](const InternalOpenTelemetryPluginOption& plugin_option,
+          size_t index) {
+        auto* labels_injector = plugin_option.labels_injector();
+        if (labels_injector != nullptr) {
+          labels_injector->AddLabels(
+              send_initial_metadata,
+              injected_labels_from_plugin_options_[index].get());
+        }
+        return true;
+      },
+      otel_plugin_);
+}
+
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordSendTrailingMetadata(
     grpc_metadata_batch* /*send_trailing_metadata*/) {
   // We need to record the time when the trailing metadata was sent to
   // mark the completeness of the request.
   elapsed_time_ = absl::Now() - start_time_;
 }
 
-void OpenTelemetryServerCallTracer::RecordEnd(
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordEnd(
     const grpc_call_final_info* final_info) {
-  absl::InlinedVector<std::pair<std::string, std::string>, 2> attributes = {
-      {std::string(OTelMethodKey()), std::string(method_)},
-      {std::string(OTelStatusKey()),
-       absl::StatusCodeToString(
-           static_cast<absl::StatusCode>(final_info->final_status))},
-      {std::string(OTelAuthorityKey()), authority_}};
-  if (OTelPluginState().server.call.duration != nullptr) {
-    OTelPluginState().server.call.duration->Record(
-        absl::ToDoubleSeconds(elapsed_time_), attributes,
+  std::array<std::pair<absl::string_view, absl::string_view>, 2>
+      additional_labels = {
+          {{OpenTelemetryMethodKey(), MethodForStats()},
+           {OpenTelemetryStatusKey(),
+            grpc_status_code_to_string(final_info->final_status)}}};
+  // Currently we do not have any optional labels on the server side.
+  KeyValueIterable labels(
+      injected_labels_from_plugin_options_, additional_labels,
+      /*active_plugin_options_view=*/nullptr, /*optional_labels=*/{},
+      /*is_client=*/false, otel_plugin_);
+  if (otel_plugin_->server_.call.duration != nullptr) {
+    otel_plugin_->server_.call.duration->Record(
+        absl::ToDoubleSeconds(elapsed_time_), labels,
         opentelemetry::context::Context{});
   }
-  if (OTelPluginState().server.call.sent_total_compressed_message_size !=
+  if (otel_plugin_->server_.call.sent_total_compressed_message_size !=
       nullptr) {
-    OTelPluginState().server.call.sent_total_compressed_message_size->Record(
-        final_info->stats.transport_stream_stats.outgoing.data_bytes,
-        attributes, opentelemetry::context::Context{});
+    otel_plugin_->server_.call.sent_total_compressed_message_size->Record(
+        grpc_core::IsCallTracerInTransportEnabled()
+            ? outgoing_bytes_.load()
+            : final_info->stats.transport_stream_stats.outgoing.data_bytes,
+        labels, opentelemetry::context::Context{});
   }
-  if (OTelPluginState().server.call.rcvd_total_compressed_message_size !=
+  if (otel_plugin_->server_.call.rcvd_total_compressed_message_size !=
       nullptr) {
-    OTelPluginState().server.call.rcvd_total_compressed_message_size->Record(
-        final_info->stats.transport_stream_stats.incoming.data_bytes,
-        attributes, opentelemetry::context::Context{});
+    otel_plugin_->server_.call.rcvd_total_compressed_message_size->Record(
+        grpc_core::IsCallTracerInTransportEnabled()
+            ? incoming_bytes_.load()
+            : final_info->stats.transport_stream_stats.incoming.data_bytes,
+        labels, opentelemetry::context::Context{});
   }
 }
 
-}  // namespace
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordIncomingBytes(
+    const TransportByteSize& transport_byte_size) {
+  incoming_bytes_.fetch_add(transport_byte_size.data_bytes);
+}
 
-//
-// OpenTelemetryServerCallTracerFactory
-//
-
-grpc_core::ServerCallTracer*
-OpenTelemetryServerCallTracerFactory::CreateNewServerCallTracer(
-    grpc_core::Arena* arena) {
-  return arena->ManagedNew<OpenTelemetryServerCallTracer>();
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordOutgoingBytes(
+    const TransportByteSize& transport_byte_size) {
+  outgoing_bytes_.fetch_add(transport_byte_size.data_bytes);
 }
 
 }  // namespace internal

@@ -70,11 +70,11 @@ def cc_grpc_library(
     proto_targets = []
 
     if not grpc_only:
-        proto_target = "_" + name + "_only"
-        cc_proto_target = name if proto_only else "_" + name + "_cc_proto"
+        proto_target = name + "_only"
+        cc_proto_target = name if proto_only else name + "_cc_proto"
 
-        proto_deps = ["_" + dep + "_only" for dep in deps if dep.find(":") == -1]
-        proto_deps += [dep.split(":")[0] + ":" + "_" + dep.split(":")[1] + "_only" for dep in deps if dep.find(":") != -1 and dep.find("com_google_googleapis") == -1]
+        proto_deps = [dep + "_only" for dep in deps if dep.find(":") == -1]
+        proto_deps += [dep.split(":")[0] + ":" + dep.split(":")[1] + "_only" for dep in deps if dep.find(":") != -1 and dep.find("com_google_googleapis") == -1]
         proto_deps += [dep for dep in deps if dep.find("com_google_googleapis") != -1]
         if well_known_protos:
             proto_deps += well_known_proto_libs()
@@ -102,7 +102,7 @@ def cc_grpc_library(
         generate_cc(
             name = codegen_grpc_target,
             srcs = proto_targets,
-            plugin = "@com_github_grpc_grpc//src/compiler:grpc_cpp_plugin",
+            plugin = Label("//src/compiler:grpc_cpp_plugin"),
             well_known_protos = well_known_protos,
             generate_mocks = generate_mocks,
             **kwargs
@@ -114,6 +114,6 @@ def cc_grpc_library(
             hdrs = [":" + codegen_grpc_target],
             deps = deps +
                    extra_deps +
-                   ["@com_github_grpc_grpc//:grpc++_codegen_proto"],
+                   [Label("//:grpc++_codegen_proto")],
             **kwargs
         )

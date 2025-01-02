@@ -15,6 +15,7 @@
 from __future__ import absolute_import
 
 import importlib
+import logging
 import os
 import pkgutil
 import re
@@ -22,6 +23,8 @@ import sys
 import unittest
 
 import coverage
+
+logger = logging.getLogger(__name__)
 
 TEST_MODULE_REGEX = r"^.*_test$"
 
@@ -52,7 +55,7 @@ class Loader(object):
 
     Attributes:
       suite (unittest.TestSuite): All tests collected by the loader.
-      loader (unittest.TestLoader): Standard Python unittest loader to be ran per
+      loader (unittest.TestLoader): Standard Python unittest loader to be run per
         module discovered.
       module_matcher (re.RegexObject): A regular expression object to match
         against module names and determine whether or not the discovered module
@@ -103,13 +106,18 @@ class Loader(object):
         for importer, module_name, is_package in pkgutil.walk_packages(
             [package_path], prefix
         ):
-            found_module = importer.find_module(module_name)
             module = None
             if module_name in sys.modules:
                 module = sys.modules[module_name]
+                self.visit_module(module)
             else:
-                module = found_module.load_module(module_name)
-            self.visit_module(module)
+                try:
+                    spec = importer.find_spec(module_name)
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
+                    self.visit_module(module)
+                except ModuleNotFoundError:
+                    logger.debug("Skip loading %s", module_name)
 
     def visit_module(self, module):
         """Visits the module, adding discovered tests to the test suite.

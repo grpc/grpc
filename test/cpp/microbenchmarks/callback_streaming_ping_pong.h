@@ -19,10 +19,12 @@
 #ifndef GRPC_TEST_CPP_MICROBENCHMARKS_CALLBACK_STREAMING_PING_PONG_H
 #define GRPC_TEST_CPP_MICROBENCHMARKS_CALLBACK_STREAMING_PING_PONG_H
 
-#include <sstream>
-
 #include <benchmark/benchmark.h>
 
+#include <sstream>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
@@ -52,7 +54,7 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
 
   void OnReadDone(bool ok) override {
     if (!ok) {
-      gpr_log(GPR_ERROR, "Client read failed");
+      LOG(ERROR) << "Client read failed";
       return;
     }
     MaybeWrite();
@@ -60,7 +62,7 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
 
   void OnWriteDone(bool ok) override {
     if (!ok) {
-      gpr_log(GPR_ERROR, "Client write failed");
+      LOG(ERROR) << "Client write failed";
       return;
     }
     writes_complete_++;
@@ -68,8 +70,8 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
   }
 
   void OnDone(const Status& s) override {
-    GPR_ASSERT(s.ok());
-    GPR_ASSERT(writes_complete_ == msgs_to_send_);
+    CHECK(s.ok());
+    CHECK_EQ(writes_complete_, msgs_to_send_);
     if (state_->KeepRunning()) {
       writes_complete_ = 0;
       StartNewRpc();

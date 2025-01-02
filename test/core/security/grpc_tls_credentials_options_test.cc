@@ -19,20 +19,19 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
 #include <gmock/gmock.h>
+#include <grpc/credentials.h>
+#include <grpc/grpc_crl_provider.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 #include <gtest/gtest.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/tmpfile.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -65,6 +64,22 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
   std::string cert_chain_2_;
   HostNameCertificateVerifier hostname_certificate_verifier_;
 };
+
+TEST_F(GrpcTlsCredentialsOptionsTest, BadTlsVersionsForChannelCredentials) {
+  auto options = grpc_tls_credentials_options_create();
+  options->set_max_tls_version(grpc_tls_version::TLS1_2);
+  options->set_min_tls_version(grpc_tls_version::TLS1_3);
+  auto credentials = grpc_tls_credentials_create(options);
+  EXPECT_EQ(credentials, nullptr);
+}
+
+TEST_F(GrpcTlsCredentialsOptionsTest, BadTlsVersionsForServerCredentials) {
+  auto server_options = grpc_tls_credentials_options_create();
+  server_options->set_max_tls_version(grpc_tls_version::TLS1_2);
+  server_options->set_min_tls_version(grpc_tls_version::TLS1_3);
+  auto server_credentials = grpc_tls_server_credentials_create(server_options);
+  EXPECT_EQ(server_credentials, nullptr);
+}
 
 //
 // Tests for Default Root Certs.
@@ -560,6 +575,44 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
+}
+
+TEST_F(GrpcTlsCredentialsOptionsTest, CrlProvider) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider = experimental::CreateStaticCrlProvider({});
+  ASSERT_TRUE(provider.ok());
+  options->set_crl_provider(std::move(*provider));
+  auto credentials = MakeRefCounted<TlsCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  ChannelArgs new_args;
+  auto connector = credentials->create_security_connector(
+      nullptr, "random targets", &new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+}
+
+TEST_F(GrpcTlsCredentialsOptionsTest, CrlProviderWithServerCredentials) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider = MakeRefCounted<StaticDataCertificateProvider>(
+      root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+  options->set_certificate_provider(std::move(provider));
+  options->set_watch_root_cert(true);
+  options->set_watch_identity_pair(true);
+  options->set_cert_request_type(
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  auto crl_provider = experimental::CreateStaticCrlProvider({});
+  ASSERT_TRUE(crl_provider.ok());
+  options->set_crl_provider(std::move(*crl_provider));
+  auto credentials = MakeRefCounted<TlsServerCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  ChannelArgs new_args;
+  auto connector = credentials->create_security_connector(new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsServerSecurityConnector* tls_connector =
+      static_cast<TlsServerSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
 }
 
 }  // namespace testing

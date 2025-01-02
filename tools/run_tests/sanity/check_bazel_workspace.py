@@ -47,7 +47,7 @@ _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME = (
 _TWISTED_CONSTANTLY_DEP_NAME = "com_github_twisted_constantly"
 
 _GRPC_DEP_NAMES = [
-    "upb",
+    "platforms",
     "boringssl",
     "zlib",
     "com_google_protobuf",
@@ -68,6 +68,8 @@ _GRPC_DEP_NAMES = [
     _TWISTED_INCREMENTAL_DEP_NAME,
     _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
     _TWISTED_CONSTANTLY_DEP_NAME,
+    "bazel_features",
+    "rules_proto",
     "io_bazel_rules_go",
     "build_bazel_rules_apple",
     "build_bazel_apple_support",
@@ -77,17 +79,16 @@ _GRPC_DEP_NAMES = [
     "com_envoyproxy_protoc_gen_validate",
     "com_google_googleapis",
     "com_google_libprotobuf_mutator",
-    "com_github_cncf_udpa",
+    "com_github_cncf_xds",
     "google_cloud_cpp",
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
-    "upb",  # third_party/upb is checked in locally
+    "platforms",
     "rules_cc",
     "com_google_absl",
     "com_google_fuzztest",
     "io_opencensus_cpp",
-    "io_opentelemetry_cpp",
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _BAZEL_COMPDB_DEP_NAME,
@@ -96,6 +97,8 @@ _GRPC_BAZEL_ONLY_DEPS = [
     _TWISTED_INCREMENTAL_DEP_NAME,
     _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
     _TWISTED_CONSTANTLY_DEP_NAME,
+    "bazel_features",
+    "rules_proto",
     "io_bazel_rules_go",
     "build_bazel_rules_apple",
     "build_bazel_apple_support",
@@ -170,9 +173,13 @@ build_rules = {
     "Label": lambda a: None,
 }
 exec((bazel_file), build_rules)
-for name in _GRPC_DEP_NAMES:
-    assert name in list(names_and_urls.keys())
-assert len(_GRPC_DEP_NAMES) == len(list(names_and_urls.keys()))
+grpc_dep_names_set = set(_GRPC_DEP_NAMES)
+names_set = set(names_and_urls.keys())
+if grpc_dep_names_set != names_set:
+    print("Differences detected between GRPC_DEP_NAMES and grpc_deps.bzl")
+    print("- GRPC_DEP_NAMES only:", grpc_dep_names_set - names_set)
+    print("- grpc_deps.bzl only:", names_set - grpc_dep_names_set)
+    sys.exit(1)
 
 # There are some "bazel-only" deps that are exceptions to this sanity check,
 # we don't require that there is a corresponding git module for these.
@@ -180,6 +187,10 @@ names_without_bazel_only_deps = list(names_and_urls.keys())
 for dep_name in _GRPC_BAZEL_ONLY_DEPS:
     names_without_bazel_only_deps.remove(dep_name)
 archive_urls = [names_and_urls[name] for name in names_without_bazel_only_deps]
+for url in archive_urls:
+    if re.search(git_hash_pattern, url) is None:
+        print("Cannot find the hash value from url", url)
+        sys.exit(1)
 workspace_git_hashes = {
     re.search(git_hash_pattern, url).group() for url in archive_urls
 }

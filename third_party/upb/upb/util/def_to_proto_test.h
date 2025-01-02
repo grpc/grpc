@@ -1,3 +1,10 @@
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
+
 #ifndef UPB_UTIL_DEF_TO_PROTO_TEST_H_
 #define UPB_UTIL_DEF_TO_PROTO_TEST_H_
 
@@ -5,13 +12,14 @@
 
 #include "google/protobuf/descriptor.pb.h"
 #include "google/protobuf/descriptor.upb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include "google/protobuf/descriptor.h"
 #include "google/protobuf/dynamic_message.h"
 #include "google/protobuf/util/field_comparator.h"
+#include "upb/base/status.hpp"
+#include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
-#include "upb/upb.hpp"
 #include "upb/util/def_to_proto.h"
 
 namespace upb_test {
@@ -38,9 +46,9 @@ MATCHER_P(EqualsProtoTreatNansAsEqual, proto,
 }
 
 class NullErrorCollector : public google::protobuf::DescriptorPool::ErrorCollector {
-  void AddError(const std::string& filename, const std::string& element_name,
-                const google::protobuf::Message* descriptor, ErrorLocation location,
-                const std::string& message) override {}
+  void RecordError(absl::string_view filename, absl::string_view element_name,
+                   const google::protobuf::Message* descriptor, ErrorLocation location,
+                   absl::string_view message) override {}
   void RecordWarning(absl::string_view filename, absl::string_view element_name,
                      const google::protobuf::Message* descriptor, ErrorLocation location,
                      absl::string_view message) override {}

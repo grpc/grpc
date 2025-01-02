@@ -19,10 +19,10 @@ set PATH=C:\%1;C:\%1\scripts;%PATH%
 set PATH=C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 :end_mingw64_installation
 
-python -m pip install --upgrade six
-@rem some artifacts are broken for setuptools 38.5.0. See https://github.com/grpc/grpc/issues/14317
-python -m pip install --upgrade setuptools==44.1.1
-python -m pip install --upgrade "cython<3.0.0rc1"
+python -m pip install --upgrade pip six
+@rem Ping to a single version to make sure we're building the same artifacts
+python -m pip install setuptools==69.5.1 wheel==0.43.0
+python -m pip install --upgrade "cython>=3.0.0"
 python -m pip install -rrequirements.txt --user
 
 @rem set GRPC_PYTHON_OVERRIDE_CYGWIN_DETECTION_FOR_27=1
@@ -56,7 +56,7 @@ python setup.py bdist_wheel || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
-python -m pip install packaging==21.3 twine==3.8.0
+python -m pip install packaging==21.3 twine==5.0.0
 python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
 
 xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error

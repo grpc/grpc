@@ -15,8 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_PARSED_METADATA_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_PARSED_METADATA_H
 
+#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
-
 #include <string.h>
 
 #include <cstdint>
@@ -30,12 +30,8 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/slice.h>
-
-#include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -403,9 +399,8 @@ ParsedMetadata<MetadataContainer>::KeyValueVTable(absl::string_view key) {
          MetadataParseErrorFn, ParsedMetadata* result) {
         auto* p = new KV{
             static_cast<KV*>(result->value_.pointer)->first.Ref(),
-            will_keep_past_request_lifetime && IsUniqueMetadataStringsEnabled()
-                ? value->TakeUniquelyOwned()
-                : std::move(*value),
+            will_keep_past_request_lifetime ? value->TakeUniquelyOwned()
+                                            : std::move(*value),
         };
         result->value_.pointer = p;
       };

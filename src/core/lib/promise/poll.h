@@ -20,24 +20,33 @@
 #include <string>
 #include <utility>
 
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/construct_destruct.h"
+#include "absl/log/check.h"
+#include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
+#include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
 
 // A type that signals a Promise is still pending and not yet completed.
 // Allows writing 'return Pending{}' and with automatic conversions gets
 // upgraded to a Poll<> object.
-struct Pending {
-  constexpr bool operator==(Pending) const { return true; }
-};
+struct Pending {};
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool operator==(const Pending&,
+                                                            const Pending&) {
+  return true;
+}
 
 // A type that contains no value. Useful for simulating 'void' in promises that
 // always need to return some kind of value.
-struct Empty {
-  constexpr bool operator==(Empty) const { return true; }
-};
+struct Empty {};
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool operator==(const Empty&,
+                                                            const Empty&) {
+  return true;
+}
+template <typename Sink>
+void AbslStringify(Sink& sink, Empty) {
+  sink.Append("{}");
+}
 
 // The result of polling a Promise once.
 //
@@ -47,15 +56,17 @@ template <typename T>
 class Poll {
  public:
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Poll(Pending) : ready_(false) {}
-  Poll() : ready_(false) {}
-  Poll(const Poll& other) : ready_(other.ready_) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll(Pending) : ready_(false) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll() : ready_(false) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll(const Poll& other)
+      : ready_(other.ready_) {
     if (ready_) Construct(&value_, other.value_);
   }
-  Poll(Poll&& other) noexcept : ready_(other.ready_) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll(Poll&& other) noexcept
+      : ready_(other.ready_) {
     if (ready_) Construct(&value_, std::move(other.value_));
   }
-  Poll& operator=(const Poll& other) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll& operator=(const Poll& other) {
     if (ready_) {
       if (other.ready_) {
         value_ = other.value_;
@@ -69,7 +80,7 @@ class Poll {
     }
     return *this;
   }
-  Poll& operator=(Poll&& other) noexcept {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll& operator=(Poll&& other) noexcept {
     if (ready_) {
       if (other.ready_) {
         value_ = std::move(other.value_);
@@ -85,34 +96,36 @@ class Poll {
   }
   template <typename U>
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Poll(U value) : ready_(true) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll(U value) : ready_(true) {
     Construct(&value_, std::move(value));
   }
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Poll(T&& value) : ready_(true) { Construct(&value_, std::forward<T>(value)); }
-  ~Poll() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll(T&& value) : ready_(true) {
+    Construct(&value_, std::forward<T>(value));
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Poll() {
     if (ready_) Destruct(&value_);
   }
 
-  bool pending() const { return !ready_; }
-  bool ready() const { return ready_; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool pending() const { return !ready_; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ready() const { return ready_; }
 
-  T& value() {
-    GPR_DEBUG_ASSERT(ready());
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() {
+    DCHECK(ready());
     return value_;
   }
 
-  const T& value() const {
-    GPR_DEBUG_ASSERT(ready());
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T& value() const {
+    DCHECK(ready());
     return value_;
   }
 
-  T* value_if_ready() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* value_if_ready() {
     if (ready()) return &value_;
     return nullptr;
   }
 
-  const T* value_if_ready() const {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T* value_if_ready() const {
     if (ready()) return &value_;
     return nullptr;
   }
@@ -143,31 +156,31 @@ template <>
 class Poll<Empty> {
  public:
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Poll(Pending) : ready_(false) {}
-  Poll() : ready_(false) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll(Pending) : ready_(false) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll() : ready_(false) {}
   Poll(const Poll& other) = default;
   Poll(Poll&& other) noexcept = default;
   Poll& operator=(const Poll& other) = default;
   Poll& operator=(Poll&& other) = default;
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Poll(Empty) : ready_(true) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll(Empty) : ready_(true) {}
   ~Poll() = default;
 
-  bool pending() const { return !ready_; }
-  bool ready() const { return ready_; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool pending() const { return !ready_; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ready() const { return ready_; }
 
-  Empty value() const {
-    GPR_DEBUG_ASSERT(ready());
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Empty value() const {
+    DCHECK(ready());
     return Empty{};
   }
 
-  Empty* value_if_ready() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Empty* value_if_ready() {
     static Empty value;
     if (ready()) return &value;
     return nullptr;
   }
 
-  const Empty* value_if_ready() const {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const Empty* value_if_ready() const {
     static Empty value;
     if (ready()) return &value;
     return nullptr;
@@ -188,33 +201,70 @@ class Poll<Pending>;
 template <class T>
 class Poll<Poll<T>>;
 
-template <typename T>
-bool operator==(const Poll<T>& a, const Poll<T>& b) {
-  if (a.pending() && b.pending()) return true;
-  if (a.ready() && b.ready()) return a.value() == b.value();
-  return false;
-}
-
-template <typename T, typename U>
-Poll<T> poll_cast(Poll<U> poll) {
-  if (poll.pending()) return Pending{};
-  return static_cast<T>(std::move(poll.value()));
-}
-
 // PollTraits tells us whether a type is Poll<> or some other type, and is
 // leveraged in the PromiseLike/PromiseFactory machinery to select the
 // appropriate implementation of those concepts based upon the return type of a
 // lambda, for example (via enable_if).
 template <typename T>
 struct PollTraits {
-  static constexpr bool is_poll() { return false; }
+  using Type = T;
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static constexpr bool is_poll() {
+    return false;
+  }
 };
 
 template <typename T>
 struct PollTraits<Poll<T>> {
   using Type = T;
-  static constexpr bool is_poll() { return true; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static constexpr bool is_poll() {
+    return true;
+  }
 };
+
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool operator==(const Poll<T>& a,
+                                                            const Poll<T>& b) {
+  if (a.pending() && b.pending()) return true;
+  if (a.ready() && b.ready()) return a.value() == b.value();
+  return false;
+}
+
+template <typename T, typename U, typename SfinaeVoid = void>
+struct PollCastImpl;
+
+template <typename T, typename U>
+struct PollCastImpl<T, Poll<U>> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<T> Cast(Poll<U>&& poll) {
+    if (poll.pending()) return Pending{};
+    return static_cast<T>(std::move(poll.value()));
+  }
+};
+
+template <typename T, typename U>
+struct PollCastImpl<T, U, std::enable_if<!PollTraits<U>::is_poll()>> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<T> Cast(U&& poll) {
+    return Poll<T>(T(std::move(poll)));
+  }
+};
+
+template <typename T>
+struct PollCastImpl<T, T> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<T> Cast(T&& poll) {
+    return Poll<T>(std::move(poll));
+  }
+};
+
+template <typename T>
+struct PollCastImpl<T, Poll<T>> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<T> Cast(Poll<T>&& poll) {
+    return std::move(poll);
+  }
+};
+
+template <typename T, typename U>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<T> poll_cast(U poll) {
+  return PollCastImpl<T, U>::Cast(std::move(poll));
+}
 
 // Convert a poll to a string
 template <typename T, typename F>
@@ -225,6 +275,58 @@ std::string PollToString(
     return "<<pending>>";
   }
   return t_to_string(poll.value());
+}
+
+template <typename Sink, typename T>
+void AbslStringify(Sink& sink, const Poll<T>& poll) {
+  if (poll.pending()) {
+    absl::Format(&sink, "<<pending>>");
+    return;
+  }
+  absl::Format(&sink, "%v", poll.value());
+}
+
+template <typename Sink, typename T>
+void AbslStringify(Sink& sink, const Poll<absl::StatusOr<T>>& poll) {
+  if (poll.pending()) {
+    absl::Format(&sink, "<<pending>>");
+    return;
+  }
+  if (poll.value().ok()) {
+    absl::Format(&sink, "%v", *poll.value());
+  } else {
+    absl::Format(&sink, "%v", poll.value().status());
+  }
+}
+
+template <typename Sink, typename T>
+void AbslStringify(Sink& sink, const Poll<absl::optional<T>>& poll) {
+  if (poll.pending()) {
+    absl::Format(&sink, "<<pending>>");
+    return;
+  }
+  const auto& value = poll.value();
+  if (value.has_value()) {
+    absl::Format(&sink, "%v", value);
+  } else {
+    sink.append("nullopt");
+  }
+}
+
+// Hack to get metadata printing
+template <typename Sink, typename T, typename Deleter>
+void AbslStringify(
+    Sink& sink, const Poll<absl::optional<std::unique_ptr<T, Deleter>>>& poll) {
+  if (poll.pending()) {
+    absl::Format(&sink, "<<pending>>");
+    return;
+  }
+  const auto& value = poll.value();
+  if (value.has_value()) {
+    absl::Format(&sink, "%v", *value);
+  } else {
+    sink.Append("nullopt");
+  }
 }
 
 }  // namespace grpc_core

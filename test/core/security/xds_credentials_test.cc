@@ -18,11 +18,10 @@
 
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 
+#include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
-#include <grpc/grpc.h>
-
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -290,24 +289,17 @@ TEST(XdsSanMatchingTest, RegexMatch) {
 }
 
 TEST(XdsCertificateVerifierTest, CompareSuccess) {
-  XdsCertificateVerifier verifier_1(nullptr, "");
-  XdsCertificateVerifier verifier_2(nullptr, "");
+  XdsCertificateVerifier verifier_1(nullptr);
+  XdsCertificateVerifier verifier_2(nullptr);
   EXPECT_EQ(verifier_1.Compare(&verifier_2), 0);
   EXPECT_EQ(verifier_2.Compare(&verifier_1), 0);
 }
 
 TEST(XdsCertificateVerifierTest, CompareFailureDifferentCertificateProviders) {
-  XdsCertificateVerifier verifier_1(MakeRefCounted<XdsCertificateProvider>(),
-                                    "");
-  XdsCertificateVerifier verifier_2(MakeRefCounted<XdsCertificateProvider>(),
-                                    "");
-  EXPECT_NE(verifier_1.Compare(&verifier_2), 0);
-  EXPECT_NE(verifier_2.Compare(&verifier_1), 0);
-}
-
-TEST(XdsCertificateVerifierTest, CompareFailureDifferentClusterNames) {
-  XdsCertificateVerifier verifier_1(nullptr, "cluster1");
-  XdsCertificateVerifier verifier_2(nullptr, "cluster2");
+  XdsCertificateVerifier verifier_1(
+      MakeRefCounted<XdsCertificateProvider>(nullptr, "", nullptr, "", false));
+  XdsCertificateVerifier verifier_2(
+      MakeRefCounted<XdsCertificateProvider>(nullptr, "", nullptr, "", false));
   EXPECT_NE(verifier_1.Compare(&verifier_2), 0);
   EXPECT_NE(verifier_2.Compare(&verifier_1), 0);
 }

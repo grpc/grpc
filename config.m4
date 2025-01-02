@@ -6,8 +6,8 @@ if test "$PHP_GRPC" != "no"; then
 
   dnl # --with-grpc -> add include path
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/include)
-  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/core/ext/upb-generated)
-  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/core/ext/upbdefs-generated)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/core/ext/upb-gen)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/core/ext/upbdefs-gen)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/php/ext/grpc)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/abseil-cpp)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/address_sorting/include)
@@ -20,7 +20,7 @@ if test "$PHP_GRPC" != "no"; then
   LIBS="-lpthread $LIBS"
 
   CFLAGS="-std=c11 -g -O2"
-  CXXFLAGS="-std=c++14 -fno-exceptions -fno-rtti -g -O2"
+  CXXFLAGS="-std=c++17 -fno-exceptions -fno-rtti -g -O2"
   GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
   PHP_REQUIRE_CXX()
   PHP_ADD_LIBRARY(pthread)
@@ -41,74 +41,42 @@ if test "$PHP_GRPC" != "no"; then
   PHP_SUBST(GRPC_SHARED_LIBADD)
 
   PHP_NEW_EXTENSION(grpc,
+    src/core/call/request_buffer.cc \
+    src/core/channelz/channel_trace.cc \
+    src/core/channelz/channelz.cc \
+    src/core/channelz/channelz_registry.cc \
+    src/core/client_channel/backup_poller.cc \
+    src/core/client_channel/client_channel.cc \
+    src/core/client_channel/client_channel_factory.cc \
+    src/core/client_channel/client_channel_filter.cc \
+    src/core/client_channel/client_channel_plugin.cc \
+    src/core/client_channel/client_channel_service_config.cc \
+    src/core/client_channel/direct_channel.cc \
+    src/core/client_channel/dynamic_filters.cc \
+    src/core/client_channel/global_subchannel_pool.cc \
+    src/core/client_channel/lb_metadata.cc \
+    src/core/client_channel/load_balanced_call_destination.cc \
+    src/core/client_channel/local_subchannel_pool.cc \
+    src/core/client_channel/retry_filter.cc \
+    src/core/client_channel/retry_filter_legacy_call_data.cc \
+    src/core/client_channel/retry_interceptor.cc \
+    src/core/client_channel/retry_service_config.cc \
+    src/core/client_channel/retry_throttle.cc \
+    src/core/client_channel/subchannel.cc \
+    src/core/client_channel/subchannel_pool_interface.cc \
+    src/core/client_channel/subchannel_stream_client.cc \
+    src/core/config/config_vars.cc \
+    src/core/config/config_vars_non_generated.cc \
+    src/core/config/core_configuration.cc \
+    src/core/config/load_config.cc \
     src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
     src/core/ext/filters/census/grpc_context.cc \
-    src/core/ext/filters/channel_idle/channel_idle_filter.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
-    src/core/ext/filters/client_channel/backend_metric.cc \
-    src/core/ext/filters/client_channel/backup_poller.cc \
-    src/core/ext/filters/client_channel/channel_connectivity.cc \
-    src/core/ext/filters/client_channel/client_channel.cc \
-    src/core/ext/filters/client_channel/client_channel_channelz.cc \
-    src/core/ext/filters/client_channel/client_channel_factory.cc \
-    src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/client_channel_service_config.cc \
-    src/core/ext/filters/client_channel/config_selector.cc \
-    src/core/ext/filters/client_channel/dynamic_filters.cc \
-    src/core/ext/filters/client_channel/global_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/http_proxy.cc \
-    src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
-    src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
-    src/core/ext/filters/client_channel/lb_policy/health_check_client.cc \
-    src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc \
-    src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc \
-    src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
-    src/core/ext/filters/client_channel/lb_policy/priority/priority.cc \
-    src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc \
-    src/core/ext/filters/client_channel/lb_policy/rls/rls.cc \
-    src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
-    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc \
-    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc \
-    src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
-    src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
-    src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc \
-    src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc \
-    src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/polling_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
-    src/core/ext/filters/client_channel/retry_filter.cc \
-    src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
-    src/core/ext/filters/client_channel/retry_service_config.cc \
-    src/core/ext/filters/client_channel/retry_throttle.cc \
-    src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
-    src/core/ext/filters/client_channel/subchannel.cc \
-    src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
-    src/core/ext/filters/client_channel/subchannel_stream_client.cc \
-    src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
+    src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc \
+    src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
@@ -117,22 +85,23 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/rbac/rbac_filter.cc \
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
-    src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
     src/core/ext/filters/stateful_session/stateful_session_filter.cc \
     src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
-    src/core/ext/gcp/metadata_query.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
+    src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
     src/core/ext/transport/chttp2/transport/decode_huff.cc \
     src/core/ext/transport/chttp2/transport/flow_control.cc \
+    src/core/ext/transport/chttp2/transport/frame.cc \
     src/core/ext/transport/chttp2/transport/frame_data.cc \
     src/core/ext/transport/chttp2/transport/frame_goaway.cc \
     src/core/ext/transport/chttp2/transport/frame_ping.cc \
     src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
+    src/core/ext/transport/chttp2/transport/frame_security.cc \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
@@ -141,384 +110,364 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
-    src/core/ext/transport/chttp2/transport/http_trace.cc \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
+    src/core/ext/transport/chttp2/transport/ping_callbacks.cc \
     src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
+    src/core/ext/transport/chttp2/transport/write_size_policy.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
-    src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
-    src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c \
-    src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c \
-    src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c \
-    src/core/ext/upb-generated/envoy/admin/v3/config_dump_shared.upb.c \
-    src/core/ext/upb-generated/envoy/admin/v3/init_dump.upb.c \
-    src/core/ext/upb-generated/envoy/admin/v3/listeners.upb.c \
-    src/core/ext/upb-generated/envoy/admin/v3/memory.upb.c \
-    src/core/ext/upb-generated/envoy/admin/v3/metrics.upb.c \
-    src/core/ext/upb-generated/envoy/admin/v3/mutex_stats.upb.c \
-    src/core/ext/upb-generated/envoy/admin/v3/server_info.upb.c \
-    src/core/ext/upb-generated/envoy/admin/v3/tap.upb.c \
-    src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c \
-    src/core/ext/upb-generated/envoy/annotations/resource.upb.c \
-    src/core/ext/upb-generated/envoy/config/accesslog/v3/accesslog.upb.c \
-    src/core/ext/upb-generated/envoy/config/bootstrap/v3/bootstrap.upb.c \
-    src/core/ext/upb-generated/envoy/config/cluster/v3/circuit_breaker.upb.c \
-    src/core/ext/upb-generated/envoy/config/cluster/v3/cluster.upb.c \
-    src/core/ext/upb-generated/envoy/config/cluster/v3/filter.upb.c \
-    src/core/ext/upb-generated/envoy/config/cluster/v3/outlier_detection.upb.c \
-    src/core/ext/upb-generated/envoy/config/common/matcher/v3/matcher.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/address.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/backoff.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/base.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/config_source.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/event_service_config.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/extension.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/grpc_method_list.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/grpc_service.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/health_check.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c \
-    src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.c \
-    src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c \
-    src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c \
-    src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c \
-    src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.c \
-    src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c \
-    src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c \
-    src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.c \
-    src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c \
-    src/core/ext/upb-generated/envoy/config/metrics/v3/metrics_service.upb.c \
-    src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c \
-    src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.c \
-    src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c \
-    src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c \
-    src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c \
-    src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c \
-    src/core/ext/upb-generated/envoy/config/tap/v3/common.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v3/datadog.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v3/dynamic_ot.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v3/lightstep.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v3/opencensus.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v3/opentelemetry.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v3/service.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v3/skywalking.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.c \
-    src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.c \
-    src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/secret.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/tls.upb.c \
-    src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb.c \
-    src/core/ext/upb-generated/envoy/service/discovery/v3/ads.upb.c \
-    src/core/ext/upb-generated/envoy/service/discovery/v3/discovery.upb.c \
-    src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.c \
-    src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c \
-    src/core/ext/upb-generated/envoy/type/http/v3/cookie.upb.c \
-    src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.c \
-    src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c \
-    src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c \
-    src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c \
-    src/core/ext/upb-generated/envoy/type/v3/hash_policy.upb.c \
-    src/core/ext/upb-generated/envoy/type/v3/http.upb.c \
-    src/core/ext/upb-generated/envoy/type/v3/http_status.upb.c \
-    src/core/ext/upb-generated/envoy/type/v3/percent.upb.c \
-    src/core/ext/upb-generated/envoy/type/v3/range.upb.c \
-    src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.c \
-    src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.c \
-    src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c \
-    src/core/ext/upb-generated/envoy/type/v3/token_bucket.upb.c \
-    src/core/ext/upb-generated/google/api/annotations.upb.c \
-    src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c \
-    src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c \
-    src/core/ext/upb-generated/google/api/http.upb.c \
-    src/core/ext/upb-generated/google/api/httpbody.upb.c \
-    src/core/ext/upb-generated/google/protobuf/any.upb.c \
-    src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
-    src/core/ext/upb-generated/google/protobuf/duration.upb.c \
-    src/core/ext/upb-generated/google/protobuf/empty.upb.c \
-    src/core/ext/upb-generated/google/protobuf/struct.upb.c \
-    src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
-    src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
-    src/core/ext/upb-generated/google/rpc/status.upb.c \
-    src/core/ext/upb-generated/opencensus/proto/trace/v1/trace_config.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls_config.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/security.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/status.upb.c \
-    src/core/ext/upb-generated/udpa/annotations/versioning.upb.c \
-    src/core/ext/upb-generated/validate/validate.upb.c \
-    src/core/ext/upb-generated/xds/annotations/v3/migrate.upb.c \
-    src/core/ext/upb-generated/xds/annotations/v3/security.upb.c \
-    src/core/ext/upb-generated/xds/annotations/v3/sensitive.upb.c \
-    src/core/ext/upb-generated/xds/annotations/v3/status.upb.c \
-    src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c \
-    src/core/ext/upb-generated/xds/core/v3/authority.upb.c \
-    src/core/ext/upb-generated/xds/core/v3/cidr.upb.c \
-    src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c \
-    src/core/ext/upb-generated/xds/core/v3/context_params.upb.c \
-    src/core/ext/upb-generated/xds/core/v3/extension.upb.c \
-    src/core/ext/upb-generated/xds/core/v3/resource.upb.c \
-    src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c \
-    src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c \
-    src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c \
-    src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c \
-    src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.c \
-    src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.c \
-    src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.c \
-    src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.c \
-    src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c \
-    src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.c \
-    src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c \
-    src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c \
-    src/core/ext/upb-generated/xds/type/v3/cel.upb.c \
-    src/core/ext/upb-generated/xds/type/v3/range.upb.c \
-    src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c \
-    src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump_shared.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/admin/v3/init_dump.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/admin/v3/listeners.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/admin/v3/memory.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/admin/v3/metrics.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/admin/v3/mutex_stats.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/admin/v3/server_info.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/admin/v3/tap.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/accesslog/v3/accesslog.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/bootstrap/v3/bootstrap.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/cluster/v3/circuit_breaker.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/cluster/v3/cluster.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/cluster/v3/filter.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/cluster/v3/outlier_detection.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/common/matcher/v3/matcher.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/address.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/backoff.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/base.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/config_source.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/event_service_config.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/extension.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/grpc_method_list.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/grpc_service.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/health_check.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/http_uri.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/load_report.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/listener/v3/api_listener.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/metrics/v3/metrics_service.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/rbac/v3/rbac.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/route/v3/route.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/tap/v3/common.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/trace/v3/datadog.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/trace/v3/dynamic_ot.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/trace/v3/lightstep.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/trace/v3/opencensus.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/trace/v3/opentelemetry.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/trace/v3/service.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/trace/v3/skywalking.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/service/discovery/v3/ads.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/service/discovery/v3/discovery.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/service/load_stats/v3/lrs.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/http/v3/cookie.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/matcher/v3/filter_state.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/matcher/v3/http_inputs.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/matcher/v3/status_code_input.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/matcher/v3/struct.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/matcher/v3/value.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/metadata/v3/metadata.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/tracing/v3/custom_tag.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/v3/hash_policy.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/v3/http.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/v3/http_status.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/v3/percent.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_strategy.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_unit.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.c \
-    src/core/ext/upbdefs-generated/envoy/type/v3/token_bucket.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/checked.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/syntax.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/api/http.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/api/httpbody.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/protobuf/timestamp.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.c \
-    src/core/ext/upbdefs-generated/opencensus/proto/trace/v1/trace_config.upbdefs.c \
-    src/core/ext/upbdefs-generated/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
-    src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.c \
-    src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.c \
-    src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c \
-    src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c \
-    src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c \
-    src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/annotations/v3/migrate.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/annotations/v3/security.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/annotations/v3/sensitive.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/core/v3/extension.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.c \
-    src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c \
-    src/core/ext/xds/certificate_provider_store.cc \
-    src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
-    src/core/ext/xds/xds_api.cc \
-    src/core/ext/xds/xds_audit_logger_registry.cc \
-    src/core/ext/xds/xds_bootstrap.cc \
-    src/core/ext/xds/xds_bootstrap_grpc.cc \
-    src/core/ext/xds/xds_certificate_provider.cc \
-    src/core/ext/xds/xds_channel_stack_modifier.cc \
-    src/core/ext/xds/xds_client.cc \
-    src/core/ext/xds/xds_client_grpc.cc \
-    src/core/ext/xds/xds_client_stats.cc \
-    src/core/ext/xds/xds_cluster.cc \
-    src/core/ext/xds/xds_cluster_specifier_plugin.cc \
-    src/core/ext/xds/xds_common_types.cc \
-    src/core/ext/xds/xds_endpoint.cc \
-    src/core/ext/xds/xds_health_status.cc \
-    src/core/ext/xds/xds_http_fault_filter.cc \
-    src/core/ext/xds/xds_http_filters.cc \
-    src/core/ext/xds/xds_http_rbac_filter.cc \
-    src/core/ext/xds/xds_http_stateful_session_filter.cc \
-    src/core/ext/xds/xds_lb_policy_registry.cc \
-    src/core/ext/xds/xds_listener.cc \
-    src/core/ext/xds/xds_route_config.cc \
-    src/core/ext/xds/xds_routing.cc \
-    src/core/ext/xds/xds_server_config_fetcher.cc \
-    src/core/ext/xds/xds_transport_grpc.cc \
+    src/core/ext/transport/inproc/legacy_inproc_transport.cc \
+    src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/admin/v3/clusters.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/admin/v3/config_dump.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/admin/v3/config_dump_shared.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/admin/v3/init_dump.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/admin/v3/listeners.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/admin/v3/memory.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/admin/v3/metrics.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/admin/v3/mutex_stats.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/admin/v3/server_info.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/admin/v3/tap.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/accesslog/v3/accesslog.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/bootstrap/v3/bootstrap.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/cluster/v3/circuit_breaker.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/cluster/v3/cluster.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/cluster/v3/filter.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/cluster/v3/outlier_detection.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/udp_socket_config.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/endpoint/v3/endpoint.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/endpoint/v3/endpoint_components.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/endpoint/v3/load_report.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/listener/v3/api_listener.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/listener/v3/listener.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/listener/v3/listener_components.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/listener/v3/quic_config.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/listener/v3/udp_listener_config.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/metrics/v3/metrics_service.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/metrics/v3/stats.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/overload/v3/overload.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/rbac/v3/rbac.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/route/v3/route.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/route/v3/route_components.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/route/v3/scoped_route.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/tap/v3/common.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/trace/v3/datadog.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/trace/v3/dynamic_ot.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/trace/v3/http_tracer.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/trace/v3/service.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/trace/v3/skywalking.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/trace/v3/trace.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/trace/v3/xray.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/trace/v3/zipkin.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/data/accesslog/v3/accesslog.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/filters/http/router/v3/router.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/common/v3/common.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/common.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/service/status/v3/csds.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/http/v3/cookie.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/matcher/v3/node.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/matcher/v3/number.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/matcher/v3/path.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/matcher/v3/regex.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/matcher/v3/status_code_input.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/matcher/v3/string.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/matcher/v3/struct.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/matcher/v3/value.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/metadata/v3/metadata.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/tracing/v3/custom_tag.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/v3/hash_policy.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/v3/http.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/v3/http_status.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/v3/percent.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/v3/range.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c \
+    src/core/ext/upb-gen/google/api/annotations.upb_minitable.c \
+    src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c \
+    src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c \
+    src/core/ext/upb-gen/google/api/http.upb_minitable.c \
+    src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c \
+    src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c \
+    src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c \
+    src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c \
+    src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c \
+    src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c \
+    src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c \
+    src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
+    src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
+    src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls_config.upb_minitable.c \
+    src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c \
+    src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c \
+    src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c \
+    src/core/ext/upb-gen/udpa/annotations/status.upb_minitable.c \
+    src/core/ext/upb-gen/udpa/annotations/versioning.upb_minitable.c \
+    src/core/ext/upb-gen/validate/validate.upb_minitable.c \
+    src/core/ext/upb-gen/xds/annotations/v3/migrate.upb_minitable.c \
+    src/core/ext/upb-gen/xds/annotations/v3/security.upb_minitable.c \
+    src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb_minitable.c \
+    src/core/ext/upb-gen/xds/annotations/v3/status.upb_minitable.c \
+    src/core/ext/upb-gen/xds/annotations/v3/versioning.upb_minitable.c \
+    src/core/ext/upb-gen/xds/core/v3/authority.upb_minitable.c \
+    src/core/ext/upb-gen/xds/core/v3/cidr.upb_minitable.c \
+    src/core/ext/upb-gen/xds/core/v3/collection_entry.upb_minitable.c \
+    src/core/ext/upb-gen/xds/core/v3/context_params.upb_minitable.c \
+    src/core/ext/upb-gen/xds/core/v3/extension.upb_minitable.c \
+    src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c \
+    src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c \
+    src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c \
+    src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c \
+    src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c \
+    src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb_minitable.c \
+    src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb_minitable.c \
+    src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb_minitable.c \
+    src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb_minitable.c \
+    src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb_minitable.c \
+    src/core/ext/upb-gen/xds/type/matcher/v3/range.upb_minitable.c \
+    src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb_minitable.c \
+    src/core/ext/upb-gen/xds/type/matcher/v3/string.upb_minitable.c \
+    src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.c \
+    src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.c \
+    src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c \
+    src/core/ext/upbdefs-gen/envoy/admin/v3/certs.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/admin/v3/clusters.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/admin/v3/config_dump.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/admin/v3/config_dump_shared.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/admin/v3/init_dump.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/admin/v3/listeners.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/admin/v3/memory.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/admin/v3/metrics.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/admin/v3/mutex_stats.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/admin/v3/server_info.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/admin/v3/tap.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/annotations/deprecation.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/annotations/resource.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/accesslog/v3/accesslog.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/bootstrap/v3/bootstrap.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/cluster/v3/circuit_breaker.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/cluster/v3/cluster.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/cluster/v3/filter.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/event_service_config.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/extension.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_method_list.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/substitution_format_string.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/udp_socket_config.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/endpoint/v3/endpoint.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/endpoint/v3/endpoint_components.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/endpoint/v3/load_report.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/listener/v3/api_listener.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/listener/v3/listener.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/listener/v3/listener_components.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/listener/v3/quic_config.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/listener/v3/udp_listener_config.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/metrics/v3/metrics_service.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/metrics/v3/stats.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/overload/v3/overload.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/rbac/v3/rbac.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/route/v3/route.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/route/v3/route_components.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/route/v3/scoped_route.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/tap/v3/common.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/trace/v3/datadog.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/trace/v3/dynamic_ot.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/trace/v3/http_tracer.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/trace/v3/service.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/trace/v3/skywalking.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/trace/v3/trace.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/trace/v3/xray.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/trace/v3/zipkin.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/data/accesslog/v3/accesslog.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/filters/http/router/v3/router.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/service/discovery/v3/ads.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/service/discovery/v3/discovery.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/service/load_stats/v3/lrs.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/service/status/v3/csds.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/http/v3/cookie.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/matcher/v3/http_inputs.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/matcher/v3/metadata.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/matcher/v3/node.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/matcher/v3/number.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/matcher/v3/path.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/matcher/v3/regex.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/matcher/v3/status_code_input.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/matcher/v3/string.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/matcher/v3/struct.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/matcher/v3/value.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/metadata/v3/metadata.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/tracing/v3/custom_tag.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/v3/hash_policy.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/v3/http.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/v3/http_status.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/v3/percent.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/v3/range.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/api/annotations.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/api/expr/v1alpha1/checked.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/api/expr/v1alpha1/syntax.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/api/http.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/api/httpbody.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/protobuf/struct.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
+    src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.c \
+    src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
+    src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c \
+    src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c \
+    src/core/ext/upbdefs-gen/udpa/annotations/sensitive.upbdefs.c \
+    src/core/ext/upbdefs-gen/udpa/annotations/status.upbdefs.c \
+    src/core/ext/upbdefs-gen/udpa/annotations/versioning.upbdefs.c \
+    src/core/ext/upbdefs-gen/validate/validate.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/annotations/v3/migrate.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/annotations/v3/security.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/annotations/v3/sensitive.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/annotations/v3/status.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/annotations/v3/versioning.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/core/v3/authority.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/core/v3/cidr.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/core/v3/collection_entry.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/core/v3/context_params.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/core/v3/extension.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/core/v3/resource.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/core/v3/resource_locator.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/core/v3/resource_name.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/type/matcher/v3/cel.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/type/matcher/v3/domain.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/type/matcher/v3/http_inputs.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/type/matcher/v3/ip.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/type/matcher/v3/matcher.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/type/matcher/v3/range.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/type/matcher/v3/regex.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/type/matcher/v3/string.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c \
+    src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
+    src/core/filter/blackboard.cc \
+    src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
+    src/core/handshaker/handshaker.cc \
+    src/core/handshaker/handshaker_registry.cc \
+    src/core/handshaker/http_connect/http_connect_handshaker.cc \
+    src/core/handshaker/http_connect/http_proxy_mapper.cc \
+    src/core/handshaker/http_connect/xds_http_proxy_mapper.cc \
+    src/core/handshaker/proxy_mapper_registry.cc \
+    src/core/handshaker/security/secure_endpoint.cc \
+    src/core/handshaker/security/security_handshaker.cc \
+    src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
-    src/core/lib/backoff/backoff.cc \
-    src/core/lib/backoff/random_early_detection.cc \
-    src/core/lib/channel/call_tracer.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_args_preconditioning.cc \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_stack_builder_impl.cc \
-    src/core/lib/channel/channel_trace.cc \
-    src/core/lib/channel/channelz.cc \
-    src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/promise_based_filter.cc \
-    src/core/lib/channel/server_call_tracer_filter.cc \
     src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
-    src/core/lib/config/config_vars.cc \
-    src/core/lib/config/config_vars_non_generated.cc \
-    src/core/lib/config/core_configuration.cc \
-    src/core/lib/config/load_config.cc \
-    src/core/lib/debug/event_log.cc \
-    src/core/lib/debug/histogram_view.cc \
-    src/core/lib/debug/stats.cc \
-    src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/debug/trace_flags.cc \
     src/core/lib/event_engine/ares_resolver.cc \
     src/core/lib/event_engine/cf_engine/cf_engine.cc \
     src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
@@ -528,12 +477,12 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/forkable.cc \
-    src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
     src/core/lib/event_engine/posix_engine/ev_poll_posix.cc \
     src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
     src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
     src/core/lib/event_engine/posix_engine/lockfree_event.cc \
+    src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc \
     src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
@@ -552,15 +501,15 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/thread_local.cc \
-    src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
     src/core/lib/event_engine/thread_pool/thread_count.cc \
     src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
     src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
     src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc \
     src/core/lib/event_engine/time_util.cc \
-    src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
+    src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc \
     src/core/lib/event_engine/windows/iocp.cc \
+    src/core/lib/event_engine/windows/native_windows_dns_resolver.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
     src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
@@ -568,60 +517,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
-    src/core/lib/gpr/alloc.cc \
-    src/core/lib/gpr/android/log.cc \
-    src/core/lib/gpr/atm.cc \
-    src/core/lib/gpr/iphone/cpu.cc \
-    src/core/lib/gpr/linux/cpu.cc \
-    src/core/lib/gpr/linux/log.cc \
-    src/core/lib/gpr/log.cc \
-    src/core/lib/gpr/msys/tmpfile.cc \
-    src/core/lib/gpr/posix/cpu.cc \
-    src/core/lib/gpr/posix/log.cc \
-    src/core/lib/gpr/posix/string.cc \
-    src/core/lib/gpr/posix/sync.cc \
-    src/core/lib/gpr/posix/time.cc \
-    src/core/lib/gpr/posix/tmpfile.cc \
-    src/core/lib/gpr/string.cc \
-    src/core/lib/gpr/sync.cc \
-    src/core/lib/gpr/sync_abseil.cc \
-    src/core/lib/gpr/time.cc \
-    src/core/lib/gpr/time_precise.cc \
-    src/core/lib/gpr/windows/cpu.cc \
-    src/core/lib/gpr/windows/log.cc \
-    src/core/lib/gpr/windows/string.cc \
-    src/core/lib/gpr/windows/string_util.cc \
-    src/core/lib/gpr/windows/sync.cc \
-    src/core/lib/gpr/windows/time.cc \
-    src/core/lib/gpr/windows/tmpfile.cc \
-    src/core/lib/gpr/wrap_memcpy.cc \
-    src/core/lib/gprpp/crash.cc \
-    src/core/lib/gprpp/examine_stack.cc \
-    src/core/lib/gprpp/fork.cc \
-    src/core/lib/gprpp/host_port.cc \
-    src/core/lib/gprpp/linux/env.cc \
-    src/core/lib/gprpp/load_file.cc \
-    src/core/lib/gprpp/mpscq.cc \
-    src/core/lib/gprpp/per_cpu.cc \
-    src/core/lib/gprpp/posix/env.cc \
-    src/core/lib/gprpp/posix/stat.cc \
-    src/core/lib/gprpp/posix/thd.cc \
-    src/core/lib/gprpp/status_helper.cc \
-    src/core/lib/gprpp/strerror.cc \
-    src/core/lib/gprpp/tchar.cc \
-    src/core/lib/gprpp/time.cc \
-    src/core/lib/gprpp/time_averaged_stats.cc \
-    src/core/lib/gprpp/time_util.cc \
-    src/core/lib/gprpp/validation_errors.cc \
-    src/core/lib/gprpp/windows/env.cc \
-    src/core/lib/gprpp/windows/stat.cc \
-    src/core/lib/gprpp/windows/thd.cc \
-    src/core/lib/gprpp/work_serializer.cc \
-    src/core/lib/handshaker/proxy_mapper_registry.cc \
-    src/core/lib/http/format_request.cc \
-    src/core/lib/http/httpcli.cc \
-    src/core/lib/http/httpcli_security_connector.cc \
-    src/core/lib/http/parser.cc \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/cfstream_handle.cc \
@@ -638,7 +533,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_poll_posix.cc \
     src/core/lib/iomgr/ev_posix.cc \
-    src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/event_engine_shims/closure.cc \
     src/core/lib/iomgr/event_engine_shims/endpoint.cc \
     src/core/lib/iomgr/event_engine_shims/tcp_client.cc \
@@ -646,11 +540,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
-    src/core/lib/iomgr/gethostname_fallback.cc \
-    src/core/lib/iomgr/gethostname_host_name_max.cc \
-    src/core/lib/iomgr/gethostname_sysconf.cc \
-    src/core/lib/iomgr/grpc_if_nametoindex_posix.cc \
-    src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc \
     src/core/lib/iomgr/internal_errqueue.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
@@ -658,7 +547,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_posix_cfstream.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
-    src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -700,27 +588,16 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/json/json_object_loader.cc \
-    src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_util.cc \
-    src/core/lib/json/json_writer.cc \
-    src/core/lib/load_balancing/lb_policy.cc \
-    src/core/lib/load_balancing/lb_policy_registry.cc \
-    src/core/lib/matchers/matchers.cc \
     src/core/lib/promise/activity.cc \
     src/core/lib/promise/party.cc \
     src/core/lib/promise/sleep.cc \
-    src/core/lib/promise/trace.cc \
-    src/core/lib/resolver/resolver.cc \
-    src/core/lib/resolver/resolver_registry.cc \
-    src/core/lib/resolver/server_address.cc \
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
+    src/core/lib/resource_quota/connection_quota.cc \
     src/core/lib/resource_quota/memory_quota.cc \
     src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
-    src/core/lib/resource_quota/trace.cc \
     src/core/lib/security/authorization/audit_logging.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
@@ -749,6 +626,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/external/file_external_account_credentials.cc \
     src/core/lib/security/credentials/external/url_external_account_credentials.cc \
     src/core/lib/security/credentials/fake/fake_credentials.cc \
+    src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc \
     src/core/lib/security/credentials/google_default/credentials_generic.cc \
     src/core/lib/security/credentials/google_default/google_default_credentials.cc \
     src/core/lib/security/credentials/iam/iam_credentials.cc \
@@ -761,76 +639,137 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
     src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_match.cc \
     src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc \
     src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc \
     src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc \
     src/core/lib/security/credentials/tls/tls_credentials.cc \
     src/core/lib/security/credentials/tls/tls_utils.cc \
+    src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc \
     src/core/lib/security/credentials/xds/xds_credentials.cc \
     src/core/lib/security/security_connector/alts/alts_security_connector.cc \
     src/core/lib/security/security_connector/fake/fake_security_connector.cc \
     src/core/lib/security/security_connector/insecure/insecure_security_connector.cc \
     src/core/lib/security/security_connector/load_system_roots_fallback.cc \
     src/core/lib/security/security_connector/load_system_roots_supported.cc \
+    src/core/lib/security/security_connector/load_system_roots_windows.cc \
     src/core/lib/security/security_connector/local/local_security_connector.cc \
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
     src/core/lib/security/security_connector/ssl_utils.cc \
     src/core/lib/security/security_connector/tls/tls_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
-    src/core/lib/security/transport/secure_endpoint.cc \
-    src/core/lib/security/transport/security_handshaker.cc \
     src/core/lib/security/transport/server_auth_filter.cc \
-    src/core/lib/security/transport/tsi_error.cc \
     src/core/lib/security/util/json_util.cc \
-    src/core/lib/service_config/service_config_impl.cc \
-    src/core/lib/service_config/service_config_parser.cc \
-    src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
     src/core/lib/slice/slice_buffer.cc \
-    src/core/lib/slice/slice_refcount.cc \
     src/core/lib/slice/slice_string_helpers.cc \
-    src/core/lib/surface/api_trace.cc \
-    src/core/lib/surface/builtins.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
     src/core/lib/surface/call.cc \
     src/core/lib/surface/call_details.cc \
     src/core/lib/surface/call_log_batch.cc \
-    src/core/lib/surface/call_trace.cc \
+    src/core/lib/surface/call_utils.cc \
     src/core/lib/surface/channel.cc \
+    src/core/lib/surface/channel_create.cc \
     src/core/lib/surface/channel_init.cc \
-    src/core/lib/surface/channel_ping.cc \
     src/core/lib/surface/channel_stack_type.cc \
+    src/core/lib/surface/client_call.cc \
     src/core/lib/surface/completion_queue.cc \
     src/core/lib/surface/completion_queue_factory.cc \
+    src/core/lib/surface/connection_context.cc \
     src/core/lib/surface/event_string.cc \
+    src/core/lib/surface/filter_stack_call.cc \
     src/core/lib/surface/init.cc \
     src/core/lib/surface/init_internally.cc \
     src/core/lib/surface/lame_client.cc \
+    src/core/lib/surface/legacy_channel.cc \
     src/core/lib/surface/metadata_array.cc \
-    src/core/lib/surface/server.cc \
+    src/core/lib/surface/server_call.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
-    src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_arena_allocator.cc \
+    src/core/lib/transport/call_filters.cc \
+    src/core/lib/transport/call_final_info.cc \
+    src/core/lib/transport/call_spine.cc \
+    src/core/lib/transport/call_state.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
-    src/core/lib/transport/handshaker.cc \
-    src/core/lib/transport/handshaker_registry.cc \
-    src/core/lib/transport/http_connect_handshaker.cc \
+    src/core/lib/transport/interception_chain.cc \
+    src/core/lib/transport/message.cc \
+    src/core/lib/transport/metadata.cc \
     src/core/lib/transport/metadata_batch.cc \
+    src/core/lib/transport/metadata_info.cc \
     src/core/lib/transport/parsed_metadata.cc \
-    src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/status_conversion.cc \
-    src/core/lib/transport/tcp_connect_handshaker.cc \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
-    src/core/lib/uri/uri_parser.cc \
+    src/core/load_balancing/address_filtering.cc \
+    src/core/load_balancing/backend_metric_parser.cc \
+    src/core/load_balancing/child_policy_handler.cc \
+    src/core/load_balancing/endpoint_list.cc \
+    src/core/load_balancing/grpclb/client_load_reporting_filter.cc \
+    src/core/load_balancing/grpclb/grpclb.cc \
+    src/core/load_balancing/grpclb/grpclb_balancer_addresses.cc \
+    src/core/load_balancing/grpclb/grpclb_client_stats.cc \
+    src/core/load_balancing/grpclb/load_balancer_api.cc \
+    src/core/load_balancing/health_check_client.cc \
+    src/core/load_balancing/lb_policy.cc \
+    src/core/load_balancing/lb_policy_registry.cc \
+    src/core/load_balancing/oob_backend_metric.cc \
+    src/core/load_balancing/outlier_detection/outlier_detection.cc \
+    src/core/load_balancing/pick_first/pick_first.cc \
+    src/core/load_balancing/priority/priority.cc \
+    src/core/load_balancing/ring_hash/ring_hash.cc \
+    src/core/load_balancing/rls/rls.cc \
+    src/core/load_balancing/round_robin/round_robin.cc \
+    src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc \
+    src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc \
+    src/core/load_balancing/weighted_target/weighted_target.cc \
+    src/core/load_balancing/xds/cds.cc \
+    src/core/load_balancing/xds/xds_cluster_impl.cc \
+    src/core/load_balancing/xds/xds_cluster_manager.cc \
+    src/core/load_balancing/xds/xds_override_host.cc \
+    src/core/load_balancing/xds/xds_wrr_locality.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_extra.cc \
+    src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
+    src/core/resolver/dns/dns_resolver_plugin.cc \
+    src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc \
+    src/core/resolver/dns/event_engine/service_config_helper.cc \
+    src/core/resolver/dns/native/dns_resolver.cc \
+    src/core/resolver/endpoint_addresses.cc \
+    src/core/resolver/fake/fake_resolver.cc \
+    src/core/resolver/google_c2p/google_c2p_resolver.cc \
+    src/core/resolver/polling_resolver.cc \
+    src/core/resolver/resolver.cc \
+    src/core/resolver/resolver_registry.cc \
+    src/core/resolver/sockaddr/sockaddr_resolver.cc \
+    src/core/resolver/xds/xds_config.cc \
+    src/core/resolver/xds/xds_dependency_manager.cc \
+    src/core/resolver/xds/xds_resolver.cc \
+    src/core/server/server.cc \
+    src/core/server/server_call_tracer_filter.cc \
+    src/core/server/server_config_selector_filter.cc \
+    src/core/server/xds_channel_stack_modifier.cc \
+    src/core/server/xds_server_config_fetcher.cc \
+    src/core/service_config/service_config_channel_arg_filter.cc \
+    src/core/service_config/service_config_impl.cc \
+    src/core/service_config/service_config_parser.cc \
+    src/core/telemetry/call_tracer.cc \
+    src/core/telemetry/histogram_view.cc \
+    src/core/telemetry/metrics.cc \
+    src/core/telemetry/stats.cc \
+    src/core/telemetry/stats_data.cc \
     src/core/tsi/alts/crypt/aes_gcm.cc \
     src/core/tsi/alts/crypt/gsec.cc \
     src/core/tsi/alts/frame_protector/alts_counter.cc \
@@ -860,6 +799,109 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/ssl_transport_security_utils.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
+    src/core/util/alloc.cc \
+    src/core/util/backoff.cc \
+    src/core/util/crash.cc \
+    src/core/util/dump_args.cc \
+    src/core/util/event_log.cc \
+    src/core/util/examine_stack.cc \
+    src/core/util/fork.cc \
+    src/core/util/gcp_metadata_query.cc \
+    src/core/util/gethostname_fallback.cc \
+    src/core/util/gethostname_host_name_max.cc \
+    src/core/util/gethostname_sysconf.cc \
+    src/core/util/glob.cc \
+    src/core/util/gpr_time.cc \
+    src/core/util/grpc_if_nametoindex_posix.cc \
+    src/core/util/grpc_if_nametoindex_unsupported.cc \
+    src/core/util/host_port.cc \
+    src/core/util/http_client/format_request.cc \
+    src/core/util/http_client/httpcli.cc \
+    src/core/util/http_client/httpcli_security_connector.cc \
+    src/core/util/http_client/parser.cc \
+    src/core/util/iphone/cpu.cc \
+    src/core/util/json/json_object_loader.cc \
+    src/core/util/json/json_reader.cc \
+    src/core/util/json/json_util.cc \
+    src/core/util/json/json_writer.cc \
+    src/core/util/latent_see.cc \
+    src/core/util/linux/cpu.cc \
+    src/core/util/linux/env.cc \
+    src/core/util/load_file.cc \
+    src/core/util/log.cc \
+    src/core/util/matchers.cc \
+    src/core/util/mpscq.cc \
+    src/core/util/msys/tmpfile.cc \
+    src/core/util/per_cpu.cc \
+    src/core/util/posix/cpu.cc \
+    src/core/util/posix/directory_reader.cc \
+    src/core/util/posix/env.cc \
+    src/core/util/posix/stat.cc \
+    src/core/util/posix/string.cc \
+    src/core/util/posix/sync.cc \
+    src/core/util/posix/thd.cc \
+    src/core/util/posix/time.cc \
+    src/core/util/posix/tmpfile.cc \
+    src/core/util/random_early_detection.cc \
+    src/core/util/ref_counted_string.cc \
+    src/core/util/status_helper.cc \
+    src/core/util/strerror.cc \
+    src/core/util/string.cc \
+    src/core/util/sync.cc \
+    src/core/util/sync_abseil.cc \
+    src/core/util/tchar.cc \
+    src/core/util/time.cc \
+    src/core/util/time_averaged_stats.cc \
+    src/core/util/time_precise.cc \
+    src/core/util/time_util.cc \
+    src/core/util/uri.cc \
+    src/core/util/uuid_v4.cc \
+    src/core/util/validation_errors.cc \
+    src/core/util/windows/cpu.cc \
+    src/core/util/windows/directory_reader.cc \
+    src/core/util/windows/env.cc \
+    src/core/util/windows/stat.cc \
+    src/core/util/windows/string.cc \
+    src/core/util/windows/string_util.cc \
+    src/core/util/windows/sync.cc \
+    src/core/util/windows/thd.cc \
+    src/core/util/windows/time.cc \
+    src/core/util/windows/tmpfile.cc \
+    src/core/util/work_serializer.cc \
+    src/core/xds/grpc/certificate_provider_store.cc \
+    src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
+    src/core/xds/grpc/xds_audit_logger_registry.cc \
+    src/core/xds/grpc/xds_bootstrap_grpc.cc \
+    src/core/xds/grpc/xds_certificate_provider.cc \
+    src/core/xds/grpc/xds_client_grpc.cc \
+    src/core/xds/grpc/xds_cluster.cc \
+    src/core/xds/grpc/xds_cluster_parser.cc \
+    src/core/xds/grpc/xds_cluster_specifier_plugin.cc \
+    src/core/xds/grpc/xds_common_types.cc \
+    src/core/xds/grpc/xds_common_types_parser.cc \
+    src/core/xds/grpc/xds_endpoint.cc \
+    src/core/xds/grpc/xds_endpoint_parser.cc \
+    src/core/xds/grpc/xds_health_status.cc \
+    src/core/xds/grpc/xds_http_fault_filter.cc \
+    src/core/xds/grpc/xds_http_filter_registry.cc \
+    src/core/xds/grpc/xds_http_gcp_authn_filter.cc \
+    src/core/xds/grpc/xds_http_rbac_filter.cc \
+    src/core/xds/grpc/xds_http_stateful_session_filter.cc \
+    src/core/xds/grpc/xds_lb_policy_registry.cc \
+    src/core/xds/grpc/xds_listener.cc \
+    src/core/xds/grpc/xds_listener_parser.cc \
+    src/core/xds/grpc/xds_metadata.cc \
+    src/core/xds/grpc/xds_metadata_parser.cc \
+    src/core/xds/grpc/xds_route_config.cc \
+    src/core/xds/grpc/xds_route_config_parser.cc \
+    src/core/xds/grpc/xds_routing.cc \
+    src/core/xds/grpc/xds_server_grpc.cc \
+    src/core/xds/grpc/xds_transport_grpc.cc \
+    src/core/xds/xds_client/lrs_client.cc \
+    src/core/xds/xds_client/xds_api.cc \
+    src/core/xds/xds_client/xds_backend_metric_propagation.cc \
+    src/core/xds/xds_client/xds_bootstrap.cc \
+    src/core/xds/xds_client/xds_client.cc \
     src/php/ext/grpc/byte_buffer.c \
     src/php/ext/grpc/call.c \
     src/php/ext/grpc/call_credentials.c \
@@ -889,17 +931,20 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/crc/internal/crc.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_cord_state.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_memcpy_fallback.cc \
-    third_party/abseil-cpp/absl/crc/internal/crc_memcpy_x86_64.cc \
+    third_party/abseil-cpp/absl/crc/internal/crc_memcpy_x86_arm_combined.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_non_temporal_memcpy.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_x86_arm_combined.cc \
     third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc \
+    third_party/abseil-cpp/absl/debugging/internal/decode_rust_punycode.cc \
     third_party/abseil-cpp/absl/debugging/internal/demangle.cc \
+    third_party/abseil-cpp/absl/debugging/internal/demangle_rust.cc \
     third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc \
+    third_party/abseil-cpp/absl/debugging/internal/examine_stack.cc \
+    third_party/abseil-cpp/absl/debugging/internal/utf8_for_code_point.cc \
     third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc \
     third_party/abseil-cpp/absl/debugging/stacktrace.cc \
     third_party/abseil-cpp/absl/debugging/symbolize.cc \
     third_party/abseil-cpp/absl/flags/commandlineflag.cc \
-    third_party/abseil-cpp/absl/flags/flag.cc \
     third_party/abseil-cpp/absl/flags/internal/commandlineflag.cc \
     third_party/abseil-cpp/absl/flags/internal/flag.cc \
     third_party/abseil-cpp/absl/flags/internal/private_handle_accessor.cc \
@@ -910,6 +955,19 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/hash/internal/city.cc \
     third_party/abseil-cpp/absl/hash/internal/hash.cc \
     third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc \
+    third_party/abseil-cpp/absl/log/globals.cc \
+    third_party/abseil-cpp/absl/log/internal/check_op.cc \
+    third_party/abseil-cpp/absl/log/internal/conditions.cc \
+    third_party/abseil-cpp/absl/log/internal/fnmatch.cc \
+    third_party/abseil-cpp/absl/log/internal/globals.cc \
+    third_party/abseil-cpp/absl/log/internal/log_format.cc \
+    third_party/abseil-cpp/absl/log/internal/log_message.cc \
+    third_party/abseil-cpp/absl/log/internal/log_sink_set.cc \
+    third_party/abseil-cpp/absl/log/internal/nullguard.cc \
+    third_party/abseil-cpp/absl/log/internal/proto.cc \
+    third_party/abseil-cpp/absl/log/internal/vlog_config.cc \
+    third_party/abseil-cpp/absl/log/log_entry.cc \
+    third_party/abseil-cpp/absl/log/log_sink.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
     third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc \
     third_party/abseil-cpp/absl/random/discrete_distribution.cc \
@@ -923,6 +981,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/random/internal/seed_material.cc \
     third_party/abseil-cpp/absl/random/seed_gen_exception.cc \
     third_party/abseil-cpp/absl/random/seed_sequences.cc \
+    third_party/abseil-cpp/absl/status/internal/status_internal.cc \
     third_party/abseil-cpp/absl/status/status.cc \
     third_party/abseil-cpp/absl/status/status_payload_printer.cc \
     third_party/abseil-cpp/absl/status/statusor.cc \
@@ -940,7 +999,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_reader.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_consume.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_crc.cc \
-    third_party/abseil-cpp/absl/strings/internal/cord_rep_ring.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_functions.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_handle.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_info.cc \
@@ -997,234 +1055,248 @@ if test "$PHP_GRPC" != "no"; then
     third_party/address_sorting/address_sorting.c \
     third_party/address_sorting/address_sorting_posix.c \
     third_party/address_sorting/address_sorting_windows.c \
-    third_party/boringssl-with-bazel/err_data.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_bitstr.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_bool.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_d2i_fp.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_dup.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_gentm.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_i2d_fp.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_int.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_mbstr.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_object.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_octet.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_strex.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_strnid.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_time.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_type.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_utctm.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_lib.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_par.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/asn_pack.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/f_int.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/f_string.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/posix_time.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_dec.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_enc.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_fre.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_new.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_typ.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_utl.c \
-    third_party/boringssl-with-bazel/src/crypto/base64/base64.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/bio.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/bio_mem.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/connect.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/fd.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/file.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/hexdump.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/pair.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/printf.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/socket.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/socket_helper.c \
-    third_party/boringssl-with-bazel/src/crypto/blake2/blake2.c \
-    third_party/boringssl-with-bazel/src/crypto/bn_extra/bn_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/bn_extra/convert.c \
-    third_party/boringssl-with-bazel/src/crypto/buf/buf.c \
-    third_party/boringssl-with-bazel/src/crypto/bytestring/asn1_compat.c \
-    third_party/boringssl-with-bazel/src/crypto/bytestring/ber.c \
-    third_party/boringssl-with-bazel/src/crypto/bytestring/cbb.c \
-    third_party/boringssl-with-bazel/src/crypto/bytestring/cbs.c \
-    third_party/boringssl-with-bazel/src/crypto/bytestring/unicode.c \
-    third_party/boringssl-with-bazel/src/crypto/chacha/chacha.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/cipher_extra.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/derive_key.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesctrhmac.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesgcmsiv.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_chacha20poly1305.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_des.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_null.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc2.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc4.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_tls.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/tls_cbc.c \
-    third_party/boringssl-with-bazel/src/crypto/conf/conf.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_apple.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_freebsd.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_fuchsia.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_linux.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_openbsd.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_win.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_arm.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_arm_freebsd.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_arm_linux.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_arm_openbsd.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_intel.c \
-    third_party/boringssl-with-bazel/src/crypto/crypto.c \
-    third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.c \
-    third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519_64_adx.c \
-    third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.c \
-    third_party/boringssl-with-bazel/src/crypto/des/des.c \
-    third_party/boringssl-with-bazel/src/crypto/dh_extra/dh_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/dh_extra/params.c \
-    third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_extra.c \
-    third_party/boringssl-with-bazel/src/crypto/dsa/dsa.c \
-    third_party/boringssl-with-bazel/src/crypto/dsa/dsa_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_derive.c \
-    third_party/boringssl-with-bazel/src/crypto/ec_extra/hash_to_curve.c \
-    third_party/boringssl-with-bazel/src/crypto/ecdh_extra/ecdh_extra.c \
-    third_party/boringssl-with-bazel/src/crypto/ecdsa_extra/ecdsa_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/engine/engine.c \
-    third_party/boringssl-with-bazel/src/crypto/err/err.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/evp.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/evp_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/evp_ctx.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_dsa_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_ec.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_ec_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_hkdf.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_rsa.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_rsa_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_x25519.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_x25519_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/pbkdf.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/print.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/scrypt.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/sign.c \
-    third_party/boringssl-with-bazel/src/crypto/ex_data.c \
-    third_party/boringssl-with-bazel/src/crypto/fipsmodule/bcm.c \
-    third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c \
-    third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c \
-    third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c \
-    third_party/boringssl-with-bazel/src/crypto/kyber/keccak.c \
-    third_party/boringssl-with-bazel/src/crypto/kyber/kyber.c \
-    third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c \
-    third_party/boringssl-with-bazel/src/crypto/mem.c \
-    third_party/boringssl-with-bazel/src/crypto/obj/obj.c \
-    third_party/boringssl-with-bazel/src/crypto/obj/obj_xref.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_all.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_info.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_lib.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_oth.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_pk8.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_pkey.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_x509.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_xaux.c \
-    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7.c \
-    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7_x509.c \
-    third_party/boringssl-with-bazel/src/crypto/pkcs8/p5_pbev2.c \
-    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8.c \
-    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8_x509.c \
-    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305.c \
-    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_arm.c \
-    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_vec.c \
-    third_party/boringssl-with-bazel/src/crypto/pool/pool.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/deterministic.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/forkunsafe.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/getentropy.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/ios.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/passive.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_extra.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/trusty.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/windows.c \
-    third_party/boringssl-with-bazel/src/crypto/rc4/rc4.c \
-    third_party/boringssl-with-bazel/src/crypto/refcount.c \
-    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.c \
-    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.c \
-    third_party/boringssl-with-bazel/src/crypto/siphash/siphash.c \
-    third_party/boringssl-with-bazel/src/crypto/stack/stack.c \
-    third_party/boringssl-with-bazel/src/crypto/thread.c \
-    third_party/boringssl-with-bazel/src/crypto/thread_none.c \
-    third_party/boringssl-with-bazel/src/crypto/thread_pthread.c \
-    third_party/boringssl-with-bazel/src/crypto/thread_win.c \
-    third_party/boringssl-with-bazel/src/crypto/trust_token/pmbtoken.c \
-    third_party/boringssl-with-bazel/src/crypto/trust_token/trust_token.c \
-    third_party/boringssl-with-bazel/src/crypto/trust_token/voprf.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/a_digest.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/a_sign.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/a_verify.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/algorithm.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/asn1_gen.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/by_dir.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/by_file.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/i2d_pr.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/name_print.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/policy.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/rsa_pss.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/t_crl.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/t_req.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/t_x509.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/t_x509a.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_att.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_cmp.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_d2.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_def.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_ext.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_lu.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_obj.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_req.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_set.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_trs.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_txt.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_v3.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_vfy.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_vpm.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509cset.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509name.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509rset.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509spki.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_algor.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_all.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_attrib.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_crl.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_exten.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_info.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_name.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_pkey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_pubkey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_req.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_sig.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_spki.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_val.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_x509.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_x509a.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_akey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_akeya.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_alt.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_bcons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_bitst.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_conf.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_cpols.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_crld.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_enum.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_extku.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_genn.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ia5.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_info.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_int.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_lib.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ncons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ocsp.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pcons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pmaps.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_prn.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_purp.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_skey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_utl.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_bitstr.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_bool.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_d2i_fp.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_dup.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_gentm.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_i2d_fp.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_int.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_mbstr.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_object.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_octet.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_strex.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_strnid.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_time.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_type.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_utctm.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_lib.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_par.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn_pack.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/f_int.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/f_string.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/posix_time.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_dec.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_enc.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_fre.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_new.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_typ.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_utl.cc \
+    third_party/boringssl-with-bazel/src/crypto/base64/base64.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/bio.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/bio_mem.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/connect.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/errno.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/fd.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/file.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/hexdump.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/pair.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/printf.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/socket.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/socket_helper.cc \
+    third_party/boringssl-with-bazel/src/crypto/blake2/blake2.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn_extra/bn_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn_extra/convert.cc \
+    third_party/boringssl-with-bazel/src/crypto/buf/buf.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/asn1_compat.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/ber.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/cbb.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/cbs.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/unicode.cc \
+    third_party/boringssl-with-bazel/src/crypto/chacha/chacha.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/cipher_extra.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/derive_key.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesctrhmac.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesgcmsiv.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_chacha20poly1305.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_des.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_null.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc2.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc4.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_tls.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher_extra/tls_cbc.cc \
+    third_party/boringssl-with-bazel/src/crypto/conf/conf.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_apple.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_fuchsia.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_linux.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_openbsd.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_sysreg.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_win.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_arm_freebsd.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_arm_linux.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_intel.cc \
+    third_party/boringssl-with-bazel/src/crypto/crypto.cc \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.cc \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519_64_adx.cc \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.cc \
+    third_party/boringssl-with-bazel/src/crypto/des/des.cc \
+    third_party/boringssl-with-bazel/src/crypto/dh_extra/dh_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/dh_extra/params.cc \
+    third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_extra.cc \
+    third_party/boringssl-with-bazel/src/crypto/dsa/dsa.cc \
+    third_party/boringssl-with-bazel/src/crypto/dsa/dsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_derive.cc \
+    third_party/boringssl-with-bazel/src/crypto/ec_extra/hash_to_curve.cc \
+    third_party/boringssl-with-bazel/src/crypto/ecdh_extra/ecdh_extra.cc \
+    third_party/boringssl-with-bazel/src/crypto/ecdsa_extra/ecdsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/engine/engine.cc \
+    third_party/boringssl-with-bazel/src/crypto/err/err.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp_ctx.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_dh.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_dh_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_dsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ec.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ec_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_hkdf.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_rsa.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_rsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_x25519.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_x25519_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/pbkdf.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/print.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/scrypt.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/sign.cc \
+    third_party/boringssl-with-bazel/src/crypto/ex_data.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/bcm.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.cc \
+    third_party/boringssl-with-bazel/src/crypto/hpke/hpke.cc \
+    third_party/boringssl-with-bazel/src/crypto/hrss/hrss.cc \
+    third_party/boringssl-with-bazel/src/crypto/keccak/keccak.cc \
+    third_party/boringssl-with-bazel/src/crypto/kyber/kyber.cc \
+    third_party/boringssl-with-bazel/src/crypto/lhash/lhash.cc \
+    third_party/boringssl-with-bazel/src/crypto/md4/md4.cc \
+    third_party/boringssl-with-bazel/src/crypto/md5/md5.cc \
+    third_party/boringssl-with-bazel/src/crypto/mem.cc \
+    third_party/boringssl-with-bazel/src/crypto/mldsa/mldsa.cc \
+    third_party/boringssl-with-bazel/src/crypto/mlkem/mlkem.cc \
+    third_party/boringssl-with-bazel/src/crypto/obj/obj.cc \
+    third_party/boringssl-with-bazel/src/crypto/obj/obj_xref.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_all.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_info.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_lib.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_oth.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_pk8.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_pkey.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_xaux.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7_x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/p5_pbev2.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8_x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305.cc \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_arm.cc \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_vec.cc \
+    third_party/boringssl-with-bazel/src/crypto/pool/pool.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/deterministic.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/fork_detect.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/forkunsafe.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/getentropy.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/ios.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/passive.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_extra.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/trusty.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/urandom.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/windows.cc \
+    third_party/boringssl-with-bazel/src/crypto/rc4/rc4.cc \
+    third_party/boringssl-with-bazel/src/crypto/refcount.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_extra.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.cc \
+    third_party/boringssl-with-bazel/src/crypto/sha/sha1.cc \
+    third_party/boringssl-with-bazel/src/crypto/sha/sha256.cc \
+    third_party/boringssl-with-bazel/src/crypto/sha/sha512.cc \
+    third_party/boringssl-with-bazel/src/crypto/siphash/siphash.cc \
+    third_party/boringssl-with-bazel/src/crypto/slhdsa/fors.cc \
+    third_party/boringssl-with-bazel/src/crypto/slhdsa/merkle.cc \
+    third_party/boringssl-with-bazel/src/crypto/slhdsa/slhdsa.cc \
+    third_party/boringssl-with-bazel/src/crypto/slhdsa/thash.cc \
+    third_party/boringssl-with-bazel/src/crypto/slhdsa/wots.cc \
+    third_party/boringssl-with-bazel/src/crypto/stack/stack.cc \
+    third_party/boringssl-with-bazel/src/crypto/thread.cc \
+    third_party/boringssl-with-bazel/src/crypto/thread_none.cc \
+    third_party/boringssl-with-bazel/src/crypto/thread_pthread.cc \
+    third_party/boringssl-with-bazel/src/crypto/thread_win.cc \
+    third_party/boringssl-with-bazel/src/crypto/trust_token/pmbtoken.cc \
+    third_party/boringssl-with-bazel/src/crypto/trust_token/trust_token.cc \
+    third_party/boringssl-with-bazel/src/crypto/trust_token/voprf.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_digest.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_sign.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_verify.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/algorithm.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/asn1_gen.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/by_dir.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/by_file.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/i2d_pr.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/name_print.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/policy.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/rsa_pss.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_crl.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_req.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_x509a.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_akey.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_akeya.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_alt.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_bcons.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_bitst.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_conf.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_cpols.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_crld.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_enum.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_extku.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_genn.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ia5.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_info.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_int.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_lib.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ncons.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ocsp.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_pcons.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_pmaps.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_prn.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_purp.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_skey.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_utl.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_att.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_cmp.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_d2.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_def.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_ext.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_lu.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_obj.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_req.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_set.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_trs.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_txt.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_v3.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_vfy.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_vpm.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509cset.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509name.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509rset.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509spki.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_algor.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_all.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_attrib.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_crl.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_exten.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_name.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_pubkey.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_req.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_sig.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_spki.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_val.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_x509a.cc \
+    third_party/boringssl-with-bazel/src/gen/crypto/err_data.cc \
     third_party/boringssl-with-bazel/src/ssl/bio_ssl.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_both.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_lib.cc \
@@ -1246,6 +1318,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/ssl/ssl_buffer.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_cert.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_cipher.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_credential.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_file.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_key_share.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_lib.cc \
@@ -1285,9 +1358,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/re2/util/rune.cc \
     third_party/re2/util/strutil.cc \
     third_party/upb/upb/base/status.c \
-    third_party/upb/upb/collections/array.c \
-    third_party/upb/upb/collections/map.c \
-    third_party/upb/upb/collections/map_sorter.c \
     third_party/upb/upb/hash/common.c \
     third_party/upb/upb/json/decode.c \
     third_party/upb/upb/json/encode.c \
@@ -1298,12 +1368,24 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/mem/alloc.c \
     third_party/upb/upb/mem/arena.c \
     third_party/upb/upb/message/accessors.c \
+    third_party/upb/upb/message/array.c \
+    third_party/upb/upb/message/compat.c \
+    third_party/upb/upb/message/copy.c \
+    third_party/upb/upb/message/internal/compare_unknown.c \
+    third_party/upb/upb/message/internal/extension.c \
+    third_party/upb/upb/message/internal/message.c \
+    third_party/upb/upb/message/map.c \
+    third_party/upb/upb/message/map_sorter.c \
+    third_party/upb/upb/message/merge.c \
     third_party/upb/upb/message/message.c \
-    third_party/upb/upb/mini_table/common.c \
-    third_party/upb/upb/mini_table/decode.c \
-    third_party/upb/upb/mini_table/encode.c \
+    third_party/upb/upb/mini_descriptor/build_enum.c \
+    third_party/upb/upb/mini_descriptor/decode.c \
+    third_party/upb/upb/mini_descriptor/internal/base92.c \
+    third_party/upb/upb/mini_descriptor/internal/encode.c \
+    third_party/upb/upb/mini_descriptor/link.c \
     third_party/upb/upb/mini_table/extension_registry.c \
-    third_party/upb/upb/reflection/def_builder.c \
+    third_party/upb/upb/mini_table/internal/message.c \
+    third_party/upb/upb/mini_table/message.c \
     third_party/upb/upb/reflection/def_pool.c \
     third_party/upb/upb/reflection/def_type.c \
     third_party/upb/upb/reflection/desc_state.c \
@@ -1313,6 +1395,8 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/reflection/extension_range.c \
     third_party/upb/upb/reflection/field_def.c \
     third_party/upb/upb/reflection/file_def.c \
+    third_party/upb/upb/reflection/internal/def_builder.c \
+    third_party/upb/upb/reflection/internal/strdup2.c \
     third_party/upb/upb/reflection/message.c \
     third_party/upb/upb/reflection/message_def.c \
     third_party/upb/upb/reflection/message_reserved_range.c \
@@ -1320,168 +1404,156 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/reflection/oneof_def.c \
     third_party/upb/upb/reflection/service_def.c \
     third_party/upb/upb/text/encode.c \
+    third_party/upb/upb/text/internal/encode.c \
     third_party/upb/upb/wire/decode.c \
-    third_party/upb/upb/wire/decode_fast.c \
     third_party/upb/upb/wire/encode.c \
     third_party/upb/upb/wire/eps_copy_input_stream.c \
+    third_party/upb/upb/wire/internal/decode_fast.c \
     third_party/upb/upb/wire/reader.c \
-    third_party/utf8_range/naive.c \
-    third_party/utf8_range/range2-neon.c \
-    third_party/utf8_range/range2-sse.c \
+    third_party/utf8_range/utf8_range.c \
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.58.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.70.0dev\""')
 
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_channel)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/backend_metrics)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/channel_idle)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/grpclb)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/outlier_detection)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/pick_first)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/priority)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/ring_hash)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/rls)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/round_robin)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/weighted_round_robin)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/weighted_target)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/xds)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/binder)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/c_ares)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/event_engine)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/native)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/fake)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/google_c2p)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/sockaddr)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/xds)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/deadline)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/fault_injection)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/gcp_authentication)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/message_compress)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/server)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/message_size)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/rbac)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/server_config_selector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/stateful_session)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/gcp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/inproc)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/admin/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/annotations)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/accesslog/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/bootstrap/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/cluster/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/common/matcher/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/core/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/endpoint/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/listener/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/metrics/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/overload/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/rbac/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/route/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/tap/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/trace/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/data/accesslog/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/discovery/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/load_stats/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/status/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/http/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/matcher/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/metadata/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/tracing/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/api)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/api/expr/v1alpha1)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/protobuf)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/rpc)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/opencensus/proto/trace/v1)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/src/proto/grpc/gcp)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/src/proto/grpc/health/v1)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/src/proto/grpc/lb/v1)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/src/proto/grpc/lookup/v1)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/udpa/annotations)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/validate)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/annotations/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/core/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/data/orca/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/service/orca/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/type/matcher/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/type/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/admin/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/annotations)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/accesslog/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/bootstrap/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/cluster/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/common/matcher/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/core/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/endpoint/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/listener/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/metrics/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/overload/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/rbac/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/route/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/tap/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/trace/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/data/accesslog/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/filters/http/stateful_session/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/http/stateful_session/cookie/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/service/discovery/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/service/load_stats/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/service/status/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/type/http/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/type/matcher/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/type/metadata/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/type/tracing/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/type/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/google/api)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/google/api/expr/v1alpha1)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/google/protobuf)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/google/rpc)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/opencensus/proto/trace/v1)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/src/proto/grpc/lookup/v1)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/udpa/annotations)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/validate)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/xds/annotations/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/xds/core/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/xds/type/matcher/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/xds/type/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/xds)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/admin/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/annotations)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/accesslog/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/bootstrap/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/cluster/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/common/matcher/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/core/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/endpoint/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/listener/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/metrics/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/overload/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/rbac/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/route/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/tap/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/trace/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/data/accesslog/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/http/router/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/http/stateful_session/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/common/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/pick_first/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/ring_hash/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/service/discovery/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/service/load_stats/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/service/status/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/type/http/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/type/matcher/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/type/metadata/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/type/tracing/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/type/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/api)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/api/expr/v1alpha1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/protobuf)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/rpc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/opencensus/proto/trace/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/gcp)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/health/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/lb/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/lookup/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/udpa/annotations)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/validate)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/xds/annotations/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/xds/core/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/xds/data/orca/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/xds/service/orca/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/xds/type/matcher/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/xds/type/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/admin/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/annotations)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/accesslog/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/bootstrap/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/cluster/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/core/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/endpoint/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/listener/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/metrics/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/overload/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/rbac/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/route/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/tap/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/trace/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/data/accesslog/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/clusters/aggregate/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/router/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/stateful_session/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/network/http_connection_manager/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/http/stateful_session/cookie/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/http_11_proxy/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/service/discovery/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/service/load_stats/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/service/status/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/type/http/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/type/matcher/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/type/metadata/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/type/tracing/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/type/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/api)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/api/expr/v1alpha1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/protobuf)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/rpc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/opencensus/proto/trace/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/udpa/annotations)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/validate)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/annotations/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/core/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/type/matcher/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/type/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/filter)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/endpoint_info)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/http_connect)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/security)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/tcp_connect)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/address_utils)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/backoff)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/cf_engine)
@@ -1491,26 +1563,9 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/windows)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/work_queue)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/experiments)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/android)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/iphone)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/linux)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/msys)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/posix)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/windows)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp/linux)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp/posix)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp/windows)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/handshaker)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/event_engine_shims)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/load_balancing)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/promise)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resolver)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resource_quota)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/authorization)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/certificate_provider)
@@ -1520,6 +1575,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/composite)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/external)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/fake)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/gcp_service_account_identity)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/google_default)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/iam)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/insecure)
@@ -1529,6 +1585,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/plugin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/tls)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/token_fetcher)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/alts)
@@ -1539,12 +1596,33 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/tls)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/util)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/service_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/slice)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/uri)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/grpclb)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/outlier_detection)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/pick_first)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/priority)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/ring_hash)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/rls)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/round_robin)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/weighted_round_robin)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/weighted_target)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/plugin_registry)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns/c_ares)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns/event_engine)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns/native)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/fake)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/google_c2p)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/sockaddr)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/xds)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/server)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/service_config)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/telemetry)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/crypt)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/frame_protector)
@@ -1552,6 +1630,16 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/zero_copy_frame_protector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/key_logging)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/session_cache)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/http_client)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/iphone)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/json)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/linux)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/msys)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/posix)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/windows)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/xds/grpc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/xds/xds_client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base/internal)
@@ -1563,11 +1651,14 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/flags)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/flags/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/hash/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/log)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/log/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/numeric)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/profiling/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/random)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/random/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/status)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/status/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal/str_format)
@@ -1577,7 +1668,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/time/internal/cctz/src)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/types)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/address_sorting)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/asn1)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/base64)
@@ -1603,8 +1693,13 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/fipsmodule)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/hpke)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/hrss)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/keccak)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/kyber)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/lhash)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/md4)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/md5)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/mldsa)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/mlkem)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/obj)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/pem)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/pkcs7)
@@ -1614,24 +1709,32 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/rand_extra)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/rc4)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/rsa_extra)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/sha)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/siphash)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/slhdsa)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/stack)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/trust_token)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/gen/crypto)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/re2)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/util)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/base)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/collections)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/hash)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/json)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/lex)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mem)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/message)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/message/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_descriptor)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_descriptor/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_table)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_table/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/reflection)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/reflection/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/text)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/text/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/utf8_range)
 fi

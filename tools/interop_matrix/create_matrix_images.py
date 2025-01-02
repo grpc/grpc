@@ -53,9 +53,9 @@ _BUILD_INFO = "/var/local/build_info"
 
 argp = argparse.ArgumentParser(description="Run interop tests.")
 argp.add_argument(
-    "--gcr_path",
-    default="gcr.io/grpc-testing",
-    help="Path of docker images in Google Container Registry",
+    "--docker_path",
+    default="us-docker.pkg.dev/grpc-testing/testing-images-public",
+    help="Path of docker images",
 )
 
 argp.add_argument(
@@ -175,7 +175,7 @@ def build_image_jobspec(runtime, env, gcr_tag, stack_base):
     stack_base: the local gRPC repo path.
     """
     basename = "grpc_interop_%s" % runtime
-    tag = "%s/%s:%s" % (args.gcr_path, basename, gcr_tag)
+    tag = "%s/%s:%s" % (args.docker_path, basename, gcr_tag)
     build_env = {"INTEROP_IMAGE": tag, "BASE_NAME": basename}
     build_env.update(env)
     image_builder_path = _IMAGE_BUILDER
@@ -407,9 +407,16 @@ for lang in languages:
     for image in docker_images:
         if args.upload_images:
             jobset.message("START", "Uploading %s" % image, do_newline=True)
-            # docker image name must be in the format <gcr_path>/<image>:<gcr_tag>
-            assert image.startswith(args.gcr_path) and image.find(":") != -1
+            # docker image name must be in the format <docker_path>/<image>:<gcr_tag>
+            assert image.startswith(args.docker_path) and image.find(":") != -1
+            # Add a tag to exclude the image from the GCP Vulnerability Scanner.
+            (image_name, tag_name) = image.rsplit(":", 1)
+            alternate_image = (
+                f"{image_name}:infrastructure-public-image-{tag_name}"
+            )
+            subprocess.call(["docker", "image", "tag", image, alternate_image])
             subprocess.call(["gcloud", "docker", "--", "push", image])
+            subprocess.call(["gcloud", "docker", "--", "push", alternate_image])
         else:
             # Uploading (and overwriting images) by default can easily break things.
             print(

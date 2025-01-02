@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpcpp/grpcpp.h>
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -23,9 +25,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-
-#include <grpc/support/log.h>
-#include <grpcpp/grpcpp.h>
+#include "absl/log/check.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -88,7 +88,7 @@ class GreeterClient {
 
       // Verify that the request was completed successfully. Note that "ok"
       // corresponds solely to the request for updates introduced by Finish().
-      GPR_ASSERT(ok);
+      CHECK(ok);
 
       if (call->status.ok())
         std::cout << "Greeter received: " << call->reply.message() << std::endl;

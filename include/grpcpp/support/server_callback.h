@@ -19,10 +19,7 @@
 #ifndef GRPCPP_SUPPORT_SERVER_CALLBACK_H
 #define GRPCPP_SUPPORT_SERVER_CALLBACK_H
 
-#include <atomic>
-#include <functional>
-#include <type_traits>
-
+#include <grpc/impl/call.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/sync.h>
@@ -30,6 +27,12 @@
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/message_allocator.h>
 #include <grpcpp/support/status.h>
+
+#include <atomic>
+#include <functional>
+#include <type_traits>
+
+#include "absl/functional/any_invocable.h"
 
 namespace grpc {
 
@@ -126,6 +129,12 @@ class ServerCallbackCall {
 
  private:
   virtual ServerReactor* reactor() = 0;
+
+  virtual grpc_call* call() = 0;
+
+  virtual void RunAsync(absl::AnyInvocable<void()> cb) {
+    grpc_call_run_in_event_engine(call(), std::move(cb));
+  }
 
   // CallOnDone performs the work required at completion of the RPC: invoking
   // the OnDone function and doing all necessary cleanup. This function is only

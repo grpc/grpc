@@ -16,9 +16,10 @@
 
 syntax = "proto3";
 
-import "src/proto/grpc/testing/xds/v3/discovery.proto";
-
 package xds_client_fuzzer;
+
+import "envoy/service/discovery/v3/discovery.proto";
+import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
 
 // We'd ideally like to use google.rpc.Status instead of creating our
 // own proto for this, but that winds up causing all sorts of dependency
@@ -59,6 +60,10 @@ message StopWatch {
 
 message DumpCsdsData {}
 
+message ReportResourceCounts {}
+
+message ReportServerConnections {}
+
 //
 // interactions with fake transport
 //
@@ -96,12 +101,15 @@ message SendStatusToClient {
   Status status = 2;
 }
 
+// Next free field: 10
 message Action {
   oneof action_type {
     // interactions with XdsClient API
     StartWatch start_watch = 1;
     StopWatch stop_watch = 2;
     DumpCsdsData dump_csds_data = 3;
+    ReportResourceCounts report_resource_counts = 8;
+    ReportServerConnections report_server_connections = 9;
     // interactions with fake transport
     TriggerConnectionFailure trigger_connection_failure = 4;
     ReadMessageFromClient read_message_from_client = 5;
@@ -110,7 +118,8 @@ message Action {
   }
 }
 
-message Message {
+message Msg {
   string bootstrap = 1;
   repeated Action actions = 2;
+  fuzzing_event_engine.Actions fuzzing_event_engine_actions = 3;
 }

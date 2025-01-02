@@ -16,22 +16,19 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "test/cpp/util/channel_trace_proto_helper.h"
 
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/support/config.h>
+#include <gtest/gtest.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
-#include "src/core/lib/json/json_writer.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/proto/grpc/channelz/channelz.pb.h"
 
 namespace grpc {
@@ -42,7 +39,7 @@ namespace {
 // then back to json. This ensures that the json string was correctly formatted
 // according to https://developers.google.com/protocol-buffers/docs/proto3#json
 template <typename Message>
-void VaidateProtoJsonTranslation(const std::string& json_str) {
+void ValidateProtoJsonTranslation(absl::string_view json_str) {
   Message msg;
   grpc::protobuf::json::JsonParseOptions parse_options;
   // If the following line is failing, then uncomment the last line of the
@@ -74,41 +71,44 @@ void VaidateProtoJsonTranslation(const std::string& json_str) {
 
 namespace testing {
 
-void ValidateChannelTraceProtoJsonTranslation(const char* json_c_str) {
-  VaidateProtoJsonTranslation<grpc::channelz::v1::ChannelTrace>(json_c_str);
+void ValidateChannelTraceProtoJsonTranslation(absl::string_view json_string) {
+  ValidateProtoJsonTranslation<grpc::channelz::v1::ChannelTrace>(json_string);
 }
 
-void ValidateChannelProtoJsonTranslation(const char* json_c_str) {
-  VaidateProtoJsonTranslation<grpc::channelz::v1::Channel>(json_c_str);
+void ValidateChannelProtoJsonTranslation(absl::string_view json_string) {
+  ValidateProtoJsonTranslation<grpc::channelz::v1::Channel>(json_string);
 }
 
 void ValidateGetTopChannelsResponseProtoJsonTranslation(
-    const char* json_c_str) {
-  VaidateProtoJsonTranslation<grpc::channelz::v1::GetTopChannelsResponse>(
-      json_c_str);
+    absl::string_view json_string) {
+  ValidateProtoJsonTranslation<grpc::channelz::v1::GetTopChannelsResponse>(
+      json_string);
 }
 
-void ValidateGetChannelResponseProtoJsonTranslation(const char* json_c_str) {
-  VaidateProtoJsonTranslation<grpc::channelz::v1::GetChannelResponse>(
-      json_c_str);
+void ValidateGetChannelResponseProtoJsonTranslation(
+    absl::string_view json_string) {
+  ValidateProtoJsonTranslation<grpc::channelz::v1::GetChannelResponse>(
+      json_string);
 }
 
-void ValidateGetServerResponseProtoJsonTranslation(const char* json_c_str) {
-  VaidateProtoJsonTranslation<grpc::channelz::v1::GetServerResponse>(
-      json_c_str);
+void ValidateGetServerResponseProtoJsonTranslation(
+    absl::string_view json_string) {
+  ValidateProtoJsonTranslation<grpc::channelz::v1::GetServerResponse>(
+      json_string);
 }
 
-void ValidateSubchannelProtoJsonTranslation(const char* json_c_str) {
-  VaidateProtoJsonTranslation<grpc::channelz::v1::Subchannel>(json_c_str);
+void ValidateSubchannelProtoJsonTranslation(absl::string_view json_string) {
+  ValidateProtoJsonTranslation<grpc::channelz::v1::Subchannel>(json_string);
 }
 
-void ValidateServerProtoJsonTranslation(const char* json_c_str) {
-  VaidateProtoJsonTranslation<grpc::channelz::v1::Server>(json_c_str);
+void ValidateServerProtoJsonTranslation(absl::string_view json_string) {
+  ValidateProtoJsonTranslation<grpc::channelz::v1::Server>(json_string);
 }
 
-void ValidateGetServersResponseProtoJsonTranslation(const char* json_c_str) {
-  VaidateProtoJsonTranslation<grpc::channelz::v1::GetServersResponse>(
-      json_c_str);
+void ValidateGetServersResponseProtoJsonTranslation(
+    absl::string_view json_string) {
+  ValidateProtoJsonTranslation<grpc::channelz::v1::GetServersResponse>(
+      json_string);
 }
 
 }  // namespace testing

@@ -29,10 +29,5 @@ int ChannelTestPeer::registered_calls() const {
       ->TestOnlyRegisteredCalls();
 }
 
-int ChannelTestPeer::registration_attempts() const {
-  return grpc_core::Channel::FromC(channel_->c_channel_)
-      ->TestOnlyRegistrationAttempts();
-}
-
 }  // namespace testing
 }  // namespace grpc

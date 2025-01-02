@@ -13,9 +13,10 @@
 // limitations under the License.
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_EVENT_ENGINE_SHIMS_ENDPOINT_H
 #define GRPC_SRC_CORE_LIB_IOMGR_EVENT_ENGINE_SHIMS_ENDPOINT_H
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/event_engine.h>
+#include <memory>
 
 #include "src/core/lib/iomgr/endpoint.h"
 
@@ -30,6 +31,20 @@ grpc_endpoint* grpc_event_engine_endpoint_create(
 
 /// Returns true if the passed endpoint is an event engine shim endpoint.
 bool grpc_is_event_engine_endpoint(grpc_endpoint* ep);
+
+/// Returns the wrapped event engine endpoint if the given grpc_endpoint is an
+/// event engine shim endpoint. Otherwise it returns nullptr.
+EventEngine::Endpoint* grpc_get_wrapped_event_engine_endpoint(
+    grpc_endpoint* ep);
+
+/// Transfers ownership of the wrapped event engine endpoint if the given
+/// grpc_endpoint is an event engine shim endpoint. Otherwise it returns
+/// nullptr. If the passed ep wraps an event_engine endpoint, then after this
+/// call, the memory location holding by the passed ep is free'ed.
+/// Its safe to call this function only when there are no pending reads/writes
+/// on the endpoint.
+std::unique_ptr<EventEngine::Endpoint> grpc_take_wrapped_event_engine_endpoint(
+    grpc_endpoint* ep);
 
 /// Destroys the passed in event engine shim endpoint and schedules the
 /// asynchronous execution of the on_release_fd callback. The int pointer fd is

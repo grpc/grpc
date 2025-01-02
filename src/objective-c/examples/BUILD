@@ -14,15 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application")
+load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application")
+load("@build_bazel_rules_apple//apple:watchos.bzl", "watchos_application", "watchos_extension")
 load(
     "//src/objective-c:grpc_objc_internal_library.bzl",
     "grpc_objc_examples_library",
     "local_objc_grpc_library",
     "proto_library_objc_wrapper",
 )
-load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application")
-load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application")
-load("@build_bazel_rules_apple//apple:watchos.bzl", "watchos_application", "watchos_extension")
 
 licenses(["notice"])
 
@@ -77,7 +77,7 @@ ios_application(
         "ipad",
     ],
     infoplists = ["Sample/Sample/Info.plist"],
-    minimum_os_version = "9.0",
+    minimum_os_version = "11.0",
     visibility = ["//visibility:public"],
     deps = ["Sample-lib"],
 )
@@ -100,7 +100,7 @@ ios_application(
         "ipad",
     ],
     infoplists = ["InterceptorSample/InterceptorSample/Info.plist"],
-    minimum_os_version = "9.0",  # Safe Area Layout Guide used
+    minimum_os_version = "11.0",  # Safe Area Layout Guide used
     deps = ["InterceptorSample-lib"],
 )
 
@@ -119,7 +119,7 @@ tvos_application(
     name = "tvOS-sample",
     bundle_id = "io.grpc.tvOS-sample",
     infoplists = ["tvOS-sample/tvOS-sample/Info.plist"],
-    minimum_os_version = "10.0",
+    minimum_os_version = "13.0",
     deps = [":tvOS-sample-lib"],
 )
 
@@ -148,7 +148,7 @@ ios_application(
     bundle_id = "io.grpc.watchOS-sample",
     families = ["iphone"],
     infoplists = ["watchOS-sample/watchOS-sample/Info.plist"],
-    minimum_os_version = "9.0",  # Safe Area Layout Guide used
+    minimum_os_version = "11.0",  # Safe Area Layout Guide used
     watch_application = "watchOS-sample-watchApp",
     deps = [":watchOS-sample-iOS-lib"],
 )

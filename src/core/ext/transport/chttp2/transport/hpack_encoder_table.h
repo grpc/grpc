@@ -16,13 +16,11 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_TABLE_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
 #include <limits>
-
-#include "absl/container/inlined_vector.h"
+#include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 
@@ -58,8 +56,9 @@ class HPackEncoderTable {
     return 1 + hpack_constants::kLastStaticEntry + tail_remote_index_ +
            table_elems_ - index;
   }
-  // Check if an element index is convertable to a dynamic index
-  bool ConvertableToDynamicIndex(uint32_t index) const {
+  // Check if an element index is convertible to a dynamic index
+  // Note that 0 is always not convertible
+  bool ConvertibleToDynamicIndex(uint32_t index) const {
     return index > tail_remote_index_;
   }
 
@@ -73,8 +72,7 @@ class HPackEncoderTable {
   uint32_t table_elems_ = 0;
   uint32_t table_size_ = 0;
   // The size of each element in the HPACK table.
-  absl::InlinedVector<EntrySize, hpack_constants::kInitialTableEntries>
-      elem_size_;
+  std::vector<EntrySize> elem_size_;
 };
 
 }  // namespace grpc_core

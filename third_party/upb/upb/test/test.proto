@@ -1,3 +1,9 @@
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 syntax = "proto2";
 
@@ -55,6 +61,7 @@ message EmptyMessageWithExtensions {
 message ModelWithExtensions {
   optional int32 random_int32 = 3;
   optional string random_name = 4;
+  repeated int32 repeated_int32 = 5;
   // Reserved for unknown fields/extensions test.
   extensions 1000 to max;
 }
@@ -85,8 +92,10 @@ message ModelWithSubMessages {
 
 message ModelWithMaps {
   optional int32 id = 1;
+  map<string, bytes> map_sb = 2;
   map<string, string> map_ss = 3;
   map<int32, int32> map_ii = 4;
+  map<int32, ModelWithExtensions> map_im = 5;
 }
 
 message ExtremeDefaults {

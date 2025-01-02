@@ -27,7 +27,7 @@ class MathStub {
      * and remainder.
      * @param \Math\DivArgs $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Math\DivReply for response data, null if if error occured
+     * @return \Math\DivReply for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function Div(
@@ -80,7 +80,7 @@ class MathStub {
      * is closed.
      * @param \Grpc\ServerCallReader $reader read client request data of \Math\Num
      * @param \Grpc\ServerContext $context server request context
-     * @return \Math\Num for response data, null if if error occured
+     * @return \Math\Num for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function Sum(

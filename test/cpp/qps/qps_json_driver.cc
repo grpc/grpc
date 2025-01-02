@@ -16,18 +16,18 @@
 //
 //
 
+#include <grpcpp/impl/codegen/config_protobuf.h>
+
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <set>
 
 #include "absl/flags/flag.h"
-
-#include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "test/core/util/test_config.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "src/core/util/crash.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/benchmark_config.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/parse_json.h"
@@ -103,10 +103,9 @@ ConstructPerWorkerCredentialTypesMap() {
     }
     size_t comma = next_entry.find(',');
     if (comma == std::string::npos) {
-      gpr_log(GPR_ERROR,
-              "Expectd --per_worker_credential_types to be a list "
-              "of the form: 'addr1,cred_type1;addr2,cred_type2;...' "
-              "into.");
+      LOG(ERROR)
+          << "Expected --per_worker_credential_types to be a list of the "
+             "form: 'addr1,cred_type1;addr2,cred_type2;...' into.";
       abort();
     }
     std::string addr = next_entry.substr(0, comma);
@@ -181,12 +180,12 @@ static double BinarySearch(
     const std::map<std::string, std::string>& per_worker_credential_types,
     bool* success) {
   while (low <= high * (1 - absl::GetFlag(FLAGS_error_tolerance))) {
-    double mid = low + (high - low) / 2;
+    double mid = low + ((high - low) / 2);
     double current_cpu_load =
         GetCpuLoad(scenario, mid, per_worker_credential_types, success);
-    gpr_log(GPR_DEBUG, "Binary Search: current_offered_load %.0f", mid);
+    VLOG(2) << absl::StrFormat("Binary Search: current_offered_load %.0f", mid);
     if (!*success) {
-      gpr_log(GPR_ERROR, "Client/Server Failure");
+      LOG(ERROR) << "Client/Server Failure";
       break;
     }
     if (targeted_cpu_load <= current_cpu_load) {
@@ -208,7 +207,7 @@ static double SearchOfferedLoad(
   double current_cpu_load = GetCpuLoad(scenario, current_offered_load,
                                        per_worker_credential_types, success);
   if (current_cpu_load > targeted_cpu_load) {
-    gpr_log(GPR_ERROR, "Initial offered load too high");
+    LOG(ERROR) << "Initial offered load too high";
     return -1;
   }
 
@@ -216,8 +215,8 @@ static double SearchOfferedLoad(
     current_offered_load *= 2;
     current_cpu_load = GetCpuLoad(scenario, current_offered_load,
                                   per_worker_credential_types, success);
-    gpr_log(GPR_DEBUG, "Binary Search: current_offered_load  %.0f",
-            current_offered_load);
+    VLOG(2) << absl::StrFormat("Binary Search: current_offered_load %.0f",
+                               current_offered_load);
   }
 
   double targeted_offered_load =
@@ -244,12 +243,12 @@ static bool QpsDriver() {
   if (scfile) {
     // Read the json data from disk
     FILE* json_file = fopen(absl::GetFlag(FLAGS_scenarios_file).c_str(), "r");
-    GPR_ASSERT(json_file != nullptr);
+    CHECK_NE(json_file, nullptr);
     fseek(json_file, 0, SEEK_END);
     long len = ftell(json_file);
     char* data = new char[len];
     fseek(json_file, 0, SEEK_SET);
-    GPR_ASSERT(len == (long)fread(data, 1, len, json_file));
+    CHECK_EQ(len, (long)fread(data, 1, len, json_file));
     fclose(json_file);
     json = std::string(data, data + len);
     delete[] data;
@@ -266,7 +265,7 @@ static bool QpsDriver() {
   bool success = true;
 
   // Make sure that there is at least some valid scenario here
-  GPR_ASSERT(scenarios.scenarios_size() > 0);
+  CHECK_GT(scenarios.scenarios_size(), 0);
 
   for (int i = 0; i < scenarios.scenarios_size(); i++) {
     if (absl::GetFlag(FLAGS_search_param).empty()) {
@@ -279,11 +278,11 @@ static bool QpsDriver() {
             SearchOfferedLoad(absl::GetFlag(FLAGS_initial_search_value),
                               absl::GetFlag(FLAGS_targeted_cpu_load), scenario,
                               per_worker_credential_types, &success);
-        gpr_log(GPR_INFO, "targeted_offered_load %f", targeted_offered_load);
+        LOG(INFO) << "targeted_offered_load " << targeted_offered_load;
         GetCpuLoad(scenario, targeted_offered_load, per_worker_credential_types,
                    &success);
       } else {
-        gpr_log(GPR_ERROR, "Unimplemented search param");
+        LOG(ERROR) << "Unimplemented search param";
       }
     }
   }

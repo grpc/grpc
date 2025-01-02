@@ -14,6 +14,7 @@
 """Generates and compiles Python gRPC stubs from proto_library rules."""
 
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
+load("@rules_python//python:py_info.bzl", "PyInfo")
 load(
     "//bazel:protobuf.bzl",
     "declare_out_files",
@@ -110,10 +111,10 @@ _gen_py_aspect = aspect(
     fragments = ["py"],
     attrs = {
         "_protoc": attr.label(
-            default = Label("//external:protocol_compiler"),
+            default = Label("@com_google_protobuf//:protoc"),
             providers = ["files_to_run"],
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
         "_protobuf_library": attr.label(
             default = Label("@com_google_protobuf//:protobuf_python"),
@@ -166,10 +167,10 @@ py_proto_library = rule(
             aspects = [_gen_py_aspect],
         ),
         "_protoc": attr.label(
-            default = Label("//external:protocol_compiler"),
+            default = Label("@com_google_protobuf//:protoc"),
             providers = ["files_to_run"],
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
         "_protobuf_library": attr.label(
             default = Label("@com_google_protobuf//:protobuf_python"),
@@ -222,11 +223,11 @@ def _generate_pb2_grpc_src_impl(context):
     py_info = _merge_pyinfos(
         [
             p,
-            context.attr._grpc_library[PyInfo],
+            context.attr.grpc_library[PyInfo],
         ] + [dep[PyInfo] for dep in context.attr.py_deps],
     )
 
-    runfiles = context.runfiles(files = out_files, transitive_files = py_info.transitive_sources).merge(context.attr._grpc_library[DefaultInfo].data_runfiles)
+    runfiles = context.runfiles(files = out_files, transitive_files = py_info.transitive_sources).merge(context.attr.grpc_library[DefaultInfo].data_runfiles)
 
     return [
         DefaultInfo(
@@ -252,16 +253,16 @@ _generate_pb2_grpc_src = rule(
         "_grpc_plugin": attr.label(
             executable = True,
             providers = ["files_to_run"],
-            cfg = "host",
+            cfg = "exec",
             default = Label("//src/compiler:grpc_python_plugin"),
         ),
         "_protoc": attr.label(
             executable = True,
             providers = ["files_to_run"],
-            cfg = "host",
-            default = Label("//external:protocol_compiler"),
+            cfg = "exec",
+            default = Label("@com_google_protobuf//:protoc"),
         ),
-        "_grpc_library": attr.label(
+        "grpc_library": attr.label(
             default = Label("//src/python/grpcio/grpc:grpcio"),
             providers = [PyInfo],
         ),
@@ -274,6 +275,7 @@ def py_grpc_library(
         srcs,
         deps,
         strip_prefixes = [],
+        grpc_library = Label("//src/python/grpcio/grpc:grpcio"),
         **kwargs):
     """Generate python code for gRPC services defined in a protobuf.
 
@@ -287,6 +289,9 @@ def py_grpc_library(
         stripped from the beginning of foo_pb2 modules imported by the
         generated stubs. This is useful in combination with the `imports`
         attribute of the `py_library` rule.
+      grpc_library: (`label`) a single `py_library` target representing the
+        python gRPC library target to be depended upon. This can be used to
+        generate code that depends on `grpcio` from the Python Package Index.
       **kwargs: Additional arguments to be supplied to the invocation of
         py_library.
     """
@@ -301,5 +306,6 @@ def py_grpc_library(
         deps = srcs,
         py_deps = deps,
         strip_prefixes = strip_prefixes,
+        grpc_library = grpc_library,
         **kwargs
     )

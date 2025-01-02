@@ -14,23 +14,40 @@
 
 import argparse
 import collections
-from concurrent import futures
+import concurrent.futures
 import datetime
 import logging
 import signal
-import sys
 import threading
 import time
-from typing import DefaultDict, Dict, List, Mapping, Sequence, Set, Tuple
+from typing import (
+    DefaultDict,
+    Dict,
+    FrozenSet,
+    Iterable,
+    List,
+    Mapping,
+    Sequence,
+    Set,
+    Tuple,
+)
 
 import grpc
+from grpc import _typing as grpc_typing
 import grpc_admin
 from grpc_channelz.v1 import channelz
+from grpc_csm_observability import CsmOpenTelemetryPlugin
+from opentelemetry.exporter.prometheus import PrometheusMetricReader
+from opentelemetry.sdk.metrics import MeterProvider
+from prometheus_client import start_http_server
 
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2
 from src.proto.grpc.testing import test_pb2_grpc
+from src.python.grpcio_tests.tests.fork import native_debug
+
+native_debug.install_failure_signal_handler()
 
 logger = logging.getLogger()
 console_handler = logging.StreamHandler()
@@ -55,7 +72,15 @@ _METHOD_STR_TO_ENUM = {
 
 _METHOD_ENUM_TO_STR = {v: k for k, v in _METHOD_STR_TO_ENUM.items()}
 
+_PROMETHEUS_PORT = 9464
+
 PerMethodMetadataType = Mapping[str, Sequence[Tuple[str, str]]]
+
+
+# FutureFromCall is both a grpc.Call and grpc.Future
+class FutureFromCallType(grpc.Call, grpc.Future):
+    pass
+
 
 _CONFIG_CHANGE_TIMEOUT = datetime.timedelta(milliseconds=500)
 
@@ -69,8 +94,13 @@ class _StatsWatcher:
     _no_remote_peer: int
     _lock: threading.Lock
     _condition: threading.Condition
+    _metadata_keys: FrozenSet[str]
+    _include_all_metadata: bool
+    _metadata_by_peer: DefaultDict[
+        str, messages_pb2.LoadBalancerStatsResponse.MetadataByPeer
+    ]
 
-    def __init__(self, start: int, end: int):
+    def __init__(self, start: int, end: int, metadata_keys: Iterable[str]):
         self._start = start
         self._end = end
         self._rpcs_needed = end - start
@@ -80,8 +110,44 @@ class _StatsWatcher:
         )
         self._condition = threading.Condition()
         self._no_remote_peer = 0
+        self._metadata_keys = frozenset(
+            self._sanitize_metadata_key(key) for key in metadata_keys
+        )
+        self._include_all_metadata = "*" in self._metadata_keys
+        self._metadata_by_peer = collections.defaultdict(
+            messages_pb2.LoadBalancerStatsResponse.MetadataByPeer
+        )
 
-    def on_rpc_complete(self, request_id: int, peer: str, method: str) -> None:
+    @classmethod
+    def _sanitize_metadata_key(cls, metadata_key: str) -> str:
+        return metadata_key.strip().lower()
+
+    def _add_metadata(
+        self,
+        rpc_metadata: messages_pb2.LoadBalancerStatsResponse.RpcMetadata,
+        metadata_to_add: grpc_typing.MetadataType,
+        metadata_type: messages_pb2.LoadBalancerStatsResponse.MetadataType,
+    ) -> None:
+        for key, value in metadata_to_add:
+            if (
+                self._include_all_metadata
+                or self._sanitize_metadata_key(key) in self._metadata_keys
+            ):
+                rpc_metadata.metadata.append(
+                    messages_pb2.LoadBalancerStatsResponse.MetadataEntry(
+                        key=key, value=value, type=metadata_type
+                    )
+                )
+
+    def on_rpc_complete(
+        self,
+        request_id: int,
+        peer: str,
+        method: str,
+        *,
+        initial_metadata: grpc_typing.MetadataType,
+        trailing_metadata: grpc_typing.MetadataType,
+    ) -> None:
         """Records statistics for a single RPC."""
         if self._start <= request_id < self._end:
             with self._condition:
@@ -90,6 +156,23 @@ class _StatsWatcher:
                 else:
                     self._rpcs_by_peer[peer] += 1
                     self._rpcs_by_method[method][peer] += 1
+                    if self._metadata_keys:
+                        rpc_metadata = (
+                            messages_pb2.LoadBalancerStatsResponse.RpcMetadata()
+                        )
+                        self._add_metadata(
+                            rpc_metadata,
+                            initial_metadata,
+                            messages_pb2.LoadBalancerStatsResponse.MetadataType.INITIAL,
+                        )
+                        self._add_metadata(
+                            rpc_metadata,
+                            trailing_metadata,
+                            messages_pb2.LoadBalancerStatsResponse.MetadataType.TRAILING,
+                        )
+                        self._metadata_by_peer[peer].rpc_metadata.append(
+                            rpc_metadata
+                        )
                 self._rpcs_needed -= 1
                 self._condition.notify()
 
@@ -107,6 +190,8 @@ class _StatsWatcher:
             for method, count_by_peer in self._rpcs_by_method.items():
                 for peer, count in count_by_peer.items():
                     response.rpcs_by_method[method].rpcs_by_peer[peer] = count
+            for peer, metadata_by_peer in self._metadata_by_peer.items():
+                response.metadatas_by_peer[peer].CopyFrom(metadata_by_peer)
             response.num_failures = self._no_remote_peer + self._rpcs_needed
         return response
 
@@ -150,7 +235,7 @@ class _LoadBalancerStatsServicer(
         with _global_lock:
             start = _global_rpc_id + 1
             end = start + request.num_rpcs
-            watcher = _StatsWatcher(start, end)
+            watcher = _StatsWatcher(start, end, request.metadata_keys)
             _watchers.add(watcher)
         response = watcher.await_rpc_stats_response(request.timeout_sec)
         with _global_lock:
@@ -192,14 +277,29 @@ def _start_rpc(
     request_id: int,
     stub: test_pb2_grpc.TestServiceStub,
     timeout: float,
-    futures: Mapping[int, Tuple[grpc.Future, str]],
+    futures: Mapping[int, Tuple[FutureFromCallType, str]],
+    request_payload_size: int,
+    response_payload_size: int,
 ) -> None:
     logger.debug(f"Sending {method} request to backend: {request_id}")
     if method == "UnaryCall":
+        request = messages_pb2.SimpleRequest(
+            response_type=messages_pb2.COMPRESSABLE,
+            response_size=response_payload_size,
+            payload=messages_pb2.Payload(body=b"0" * request_payload_size),
+        )
         future = stub.UnaryCall.future(
-            messages_pb2.SimpleRequest(), metadata=metadata, timeout=timeout
+            request, metadata=metadata, timeout=timeout
         )
     elif method == "EmptyCall":
+        if request_payload_size > 0:
+            logger.error(
+                f"request_payload_size should not be set for EMPTY_CALL"
+            )
+        if response_payload_size > 0:
+            logger.error(
+                f"response_payload_size should not be set for EMPTY_CALL"
+            )
         future = stub.EmptyCall.future(
             empty_pb2.Empty(), metadata=metadata, timeout=timeout
         )
@@ -209,7 +309,7 @@ def _start_rpc(
 
 
 def _on_rpc_done(
-    rpc_id: int, future: grpc.Future, method: str, print_response: bool
+    rpc_id: int, future: FutureFromCallType, method: str, print_response: bool
 ) -> None:
     exception = future.exception()
     hostname = ""
@@ -241,23 +341,29 @@ def _on_rpc_done(
             if future.code() == grpc.StatusCode.OK:
                 logger.debug("Successful response.")
             else:
-                logger.debug(f"RPC failed: {call}")
+                logger.debug(f"RPC failed: {rpc_id}")
     with _global_lock:
         for watcher in _watchers:
-            watcher.on_rpc_complete(rpc_id, hostname, method)
+            watcher.on_rpc_complete(
+                rpc_id,
+                hostname,
+                method,
+                initial_metadata=future.initial_metadata(),
+                trailing_metadata=future.trailing_metadata(),
+            )
 
 
 def _remove_completed_rpcs(
-    futures: Mapping[int, grpc.Future], print_response: bool
+    rpc_futures: Mapping[int, FutureFromCallType], print_response: bool
 ) -> None:
     logger.debug("Removing completed RPCs")
     done = []
-    for future_id, (future, method) in futures.items():
+    for future_id, (future, method) in rpc_futures.items():
         if future.done():
             _on_rpc_done(future_id, future, method, args.print_response)
             done.append(future_id)
     for rpc_id in done:
-        del futures[rpc_id]
+        del rpc_futures[rpc_id]
 
 
 def _cancel_all_rpcs(futures: Mapping[int, Tuple[grpc.Future, str]]) -> None:
@@ -283,6 +389,8 @@ class _ChannelConfiguration:
         rpc_timeout_sec: int,
         print_response: bool,
         secure_mode: bool,
+        request_payload_size: int,
+        response_payload_size: int,
     ):
         # condition is signalled when a change is made to the config.
         self.condition = threading.Condition()
@@ -294,6 +402,8 @@ class _ChannelConfiguration:
         self.rpc_timeout_sec = rpc_timeout_sec
         self.print_response = print_response
         self.secure_mode = secure_mode
+        self.response_payload_size = response_payload_size
+        self.request_payload_size = request_payload_size
 
 
 def _run_single_channel(config: _ChannelConfiguration) -> None:
@@ -309,7 +419,7 @@ def _run_single_channel(config: _ChannelConfiguration) -> None:
         channel = grpc.insecure_channel(server)
     with channel:
         stub = test_pb2_grpc.TestServiceStub(channel)
-        futures: Dict[int, Tuple[grpc.Future, str]] = {}
+        futures: Dict[int, Tuple[FutureFromCallType, str]] = {}
         while not _stop_event.is_set():
             with config.condition:
                 if config.qps == 0:
@@ -333,6 +443,8 @@ def _run_single_channel(config: _ChannelConfiguration) -> None:
                     stub,
                     float(config.rpc_timeout_sec),
                     futures,
+                    config.request_payload_size,
+                    config.response_payload_size,
                 )
                 print_response = config.print_response
             _remove_completed_rpcs(futures, config.print_response)
@@ -419,6 +531,10 @@ def _run(
     per_method_metadata: PerMethodMetadataType,
 ) -> None:
     logger.info("Starting python xDS Interop Client.")
+    csm_plugin = None
+    if args.enable_csm_observability:
+        csm_plugin = _prepare_csm_observability_plugin()
+        csm_plugin.register_global()
     global _global_server  # pylint: disable=global-statement
     method_handles = []
     channel_configs = {}
@@ -435,10 +551,12 @@ def _run(
             args.rpc_timeout_sec,
             args.print_response,
             args.secure_mode,
+            args.request_payload_size,
+            args.response_payload_size,
         )
         channel_configs[method] = channel_config
         method_handles.append(_MethodHandle(args.num_channels, channel_config))
-    _global_server = grpc.server(futures.ThreadPoolExecutor())
+    _global_server = grpc.server(concurrent.futures.ThreadPoolExecutor())
     _global_server.add_insecure_port(f"0.0.0.0:{args.stats_port}")
     test_pb2_grpc.add_LoadBalancerStatsServiceServicer_to_server(
         _LoadBalancerStatsServicer(), _global_server
@@ -447,12 +565,13 @@ def _run(
         _XdsUpdateClientConfigureServicer(channel_configs, args.qps),
         _global_server,
     )
-    channelz.add_channelz_servicer(_global_server)
     grpc_admin.add_admin_servicers(_global_server)
     _global_server.start()
     _global_server.wait_for_termination()
     for method_handle in method_handles:
         method_handle.stop()
+    if csm_plugin:
+        csm_plugin.deregister_global()
 
 
 def parse_metadata_arg(metadata_arg: str) -> PerMethodMetadataType:
@@ -486,6 +605,17 @@ def bool_arg(arg: str) -> bool:
         return False
     else:
         raise argparse.ArgumentTypeError(f"Could not parse '{arg}' as a bool.")
+
+
+def _prepare_csm_observability_plugin() -> CsmOpenTelemetryPlugin:
+    # Start Prometheus client
+    start_http_server(port=_PROMETHEUS_PORT, addr="0.0.0.0")
+    reader = PrometheusMetricReader()
+    meter_provider = MeterProvider(metric_readers=[reader])
+    csm_plugin = CsmOpenTelemetryPlugin(
+        meter_provider=meter_provider,
+    )
+    return csm_plugin
 
 
 if __name__ == "__main__":
@@ -539,6 +669,24 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--log_file", default=None, type=str, help="A file to log to."
+    )
+    parser.add_argument(
+        "--enable_csm_observability",
+        help="Whether to enable CSM Observability",
+        default="False",
+        type=bool_arg,
+    )
+    parser.add_argument(
+        "--request_payload_size",
+        default=0,
+        type=int,
+        help="Set the SimpleRequest.payload.body to a string of repeated 0 (zero) ASCII characters of the given size in bytes.",
+    )
+    parser.add_argument(
+        "--response_payload_size",
+        default=0,
+        type=int,
+        help="Ask the server to respond with SimpleResponse.payload.body of the given length (may not be implemented on the server).",
     )
     rpc_help = "A comma-delimited list of RPC methods to run. Must be one of "
     rpc_help += ", ".join(_SUPPORTED_METHODS)

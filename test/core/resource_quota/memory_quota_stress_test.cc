@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/memory_request.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -25,18 +27,14 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/memory_request.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/sync.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 
@@ -51,8 +49,7 @@ class StressTest {
     std::random_device g;
     std::uniform_int_distribution<size_t> dist(0, num_quotas - 1);
     for (size_t i = 0; i < num_allocators; ++i) {
-      allocators_.emplace_back(quotas_[dist(g)].CreateMemoryOwner(
-          absl::StrCat("allocator[", i, "]")));
+      allocators_.emplace_back(quotas_[dist(g)].CreateMemoryOwner());
     }
   }
 
@@ -91,7 +88,7 @@ class StressTest {
       }
     }
 
-    // All threads started, wait for the alloted time.
+    // All threads started, wait for the allotted time.
     std::this_thread::sleep_for(std::chrono::seconds(seconds));
 
     // Toggle the completion bit, and then wait for the threads.
@@ -230,11 +227,10 @@ class StressTest {
 
 TEST(MemoryQuotaStressTest, MainTest) {
   if (sizeof(void*) != 8) {
-    gpr_log(
-        GPR_ERROR,
-        "This test assumes 64-bit processors in the values it uses for sizes. "
-        "Since this test is mostly aimed at TSAN coverage, and that's mostly "
-        "platform independent, we simply skip this test in 32-bit builds.");
+    LOG(ERROR) << "This test assumes 64-bit processors in the values it uses "
+                  "for sizes. Since this test is mostly aimed at TSAN "
+                  "coverage, and that's mostly platform independent, we simply "
+                  "skip this test in 32-bit builds.";
     GTEST_SKIP();
   }
   grpc_core::StressTest(16, 20).Run(8);

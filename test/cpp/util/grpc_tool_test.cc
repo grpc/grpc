@@ -18,14 +18,7 @@
 
 #include "test/cpp/util/grpc_tool.h"
 
-#include <chrono>
-#include <sstream>
-
-#include <gtest/gtest.h>
-
-#include "absl/flags/declare.h"
-#include "absl/flags/flag.h"
-
+#include <gmock/gmock-matchers.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/channel.h>
@@ -35,13 +28,20 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
 
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/iomgr/load_file.h"
+#include <chrono>
+#include <sstream>
+
+#include "absl/flags/declare.h"
+#include "absl/flags/flag.h"
+#include "absl/strings/str_split.h"
+#include "src/core/util/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/cli_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_config.h"
@@ -131,6 +131,7 @@ ABSL_DECLARE_FLAG(std::string, proto_path);
 ABSL_DECLARE_FLAG(std::string, default_service_config);
 ABSL_DECLARE_FLAG(double, timeout);
 ABSL_DECLARE_FLAG(int, max_recv_msg_size);
+ABSL_DECLARE_FLAG(std::string, channel_args);
 
 namespace grpc {
 namespace testing {
@@ -146,16 +147,10 @@ class TestCliCredentials final : public grpc::testing::CliCredentials {
     if (!secure_) {
       return InsecureChannelCredentials();
     }
-    grpc_slice ca_slice;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                                 grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-    const char* test_root_cert =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+    std::string test_root_cert =
+        grpc_core::testing::GetFileContents(CA_CERT_PATH);
     SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
-    std::shared_ptr<grpc::ChannelCredentials> credential_ptr =
-        grpc::SslCredentials(grpc::SslCredentialsOptions(ssl_opts));
-    grpc_slice_unref(ca_slice);
-    return credential_ptr;
+    return grpc::SslCredentials(grpc::SslCredentialsOptions(ssl_opts));
   }
   std::string GetCredentialUsage() const override { return ""; }
 
@@ -298,15 +293,10 @@ class GrpcToolTest : public ::testing::Test {
     // Setup server
     ServerBuilder builder;
     std::shared_ptr<grpc::ServerCredentials> creds;
-    grpc_slice cert_slice, key_slice;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-    const char* server_cert =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-    const char* server_key =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+    std::string server_cert =
+        grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
+    std::string server_key =
+        grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
     SslServerCredentialsOptions::PemKeyCertPair pkcp = {server_key,
                                                         server_cert};
     if (secure) {
@@ -320,8 +310,6 @@ class GrpcToolTest : public ::testing::Test {
     builder.AddListeningPort(server_address.str(), creds);
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
-    grpc_slice_unref(cert_slice);
-    grpc_slice_unref(key_slice);
     return server_address.str();
   }
 
@@ -384,9 +372,11 @@ TEST_F(GrpcToolTest, ListCommand) {
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
-                          "grpc.testing.EchoTestService\n"
-                          "grpc.reflection.v1alpha.ServerReflection\n"));
+  EXPECT_THAT(absl::StrSplit(output_stream.str(), "\n"),
+              ::testing::UnorderedElementsAre(
+                  "grpc.testing.EchoTestService",
+                  "grpc.reflection.v1alpha.ServerReflection",
+                  "grpc.reflection.v1.ServerReflection", ""));
 
   ShutdownServer();
 }
@@ -1261,15 +1251,10 @@ TEST_F(GrpcToolTest, CallCommandWithMetadata) {
 
 TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
   // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'"
-  const char* argv[] = {"grpc_cli", "call", "localhost:10000",
+  const std::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
                         "grpc.testing.EchoTestService.Echo",
                         "message: 'Hello'"};
-  absl::SetFlag(&FLAGS_protofiles, "src/proto/grpc/testing/echo.proto");
-  auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
-  if (test_srcdir.has_value()) {
-    absl::SetFlag(&FLAGS_proto_path,
-                  *test_srcdir + std::string("/com_github_grpc_grpc"));
-  }
 
   {
     std::stringstream output_stream;
@@ -1294,7 +1279,7 @@ TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
   }
 
   absl::SetFlag(&FLAGS_metadata, "");
-  absl::SetFlag(&FLAGS_protofiles, "");
+  ShutdownServer();
 }
 
 TEST_F(GrpcToolTest, CallMaxRecvMessageSizeSmall) {
@@ -1308,11 +1293,11 @@ TEST_F(GrpcToolTest, CallMaxRecvMessageSizeSmall) {
 
   // Set max_recv_msg_size to 4 which is not enough.
   absl::SetFlag(&FLAGS_max_recv_msg_size, 4);
-
-  // This should fail.
   EXPECT_FALSE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                     std::bind(PrintStream, &output_stream,
                                               std::placeholders::_1)));
+  absl::SetFlag(&FLAGS_max_recv_msg_size, 0);
+
   // No output expected.
   EXPECT_TRUE(0 == output_stream.tellp());
   ShutdownServer();
@@ -1329,10 +1314,11 @@ TEST_F(GrpcToolTest, CallMaxRecvMessageSizeEnough) {
 
   // Set max_recv_msg_size to a large enough number.
   absl::SetFlag(&FLAGS_max_recv_msg_size, 1024 * 1024);
-
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
+  absl::SetFlag(&FLAGS_max_recv_msg_size, 0);
+
   // Expected output: "message: \"Hello\""
   EXPECT_TRUE(nullptr !=
               strstr(output_stream.str().c_str(), "message: \"Hello\""));
@@ -1350,10 +1336,10 @@ TEST_F(GrpcToolTest, CallMaxRecvMessageSizeDefault) {
 
   // Set max_recv_msg_size to gRPC default, which should suffice.
   absl::SetFlag(&FLAGS_max_recv_msg_size, 0);
-
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
+
   // Expected output: "message: \"Hello\""
   EXPECT_TRUE(nullptr !=
               strstr(output_stream.str().c_str(), "message: \"Hello\""));
@@ -1371,13 +1357,43 @@ TEST_F(GrpcToolTest, CallMaxRecvMessageSizeUnlimited) {
 
   // Set max_recv_msg_size to unlimited (-1), which should work.
   absl::SetFlag(&FLAGS_max_recv_msg_size, -1);
-
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
+  absl::SetFlag(&FLAGS_max_recv_msg_size, 0);
+
   // Expected output: "message: \"Hello\""
   EXPECT_TRUE(nullptr !=
               strstr(output_stream.str().c_str(), "message: \"Hello\""));
+  ShutdownServer();
+}
+
+// This duplicates CallMaxRecvMessageSizeSmall, but using --channel_args.
+TEST_F(GrpcToolTest, CallWithChannelArgs) {
+  std::stringstream output_stream;
+  const std::string server_address = SetUpServer();
+  // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'
+  // --channel_args=grpc.max_receive_message_length=4"
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+                        "grpc.testing.EchoTestService.Echo",
+                        "message: 'Hello'"};
+
+  // Set max receive size to 4 bytes which is not enough.
+  absl::SetFlag(&FLAGS_channel_args,
+                "x=y,grpc.max_receive_message_length=4,z=1");
+  EXPECT_FALSE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                    std::bind(PrintStream, &output_stream,
+                                              std::placeholders::_1)));
+  absl::SetFlag(&FLAGS_channel_args, "");
+
+  // Then try again with large enough size, which should succeed.
+  absl::SetFlag(&FLAGS_channel_args,
+                ",grpc.max_receive_message_length=1000000,");
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  absl::SetFlag(&FLAGS_channel_args, "");
+
   ShutdownServer();
 }
 
@@ -1395,9 +1411,11 @@ TEST_F(GrpcToolTest, ListCommandOverrideSslHostName) {
       0 == GrpcToolMainLib(
                ArraySize(argv), argv, TestCliCredentials(true),
                std::bind(PrintStream, &output_stream, std::placeholders::_1)));
-  EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
-                          "grpc.testing.EchoTestService\n"
-                          "grpc.reflection.v1alpha.ServerReflection\n"));
+  EXPECT_THAT(
+      absl::StrSplit(output_stream.str(), '\n'),
+      ::testing::UnorderedElementsAre(
+          "grpc.testing.EchoTestService", "grpc.reflection.v1.ServerReflection",
+          "grpc.reflection.v1alpha.ServerReflection", ""));
 
   absl::SetFlag(&FLAGS_channel_creds_type, "");
   absl::SetFlag(&FLAGS_ssl_target, "");
@@ -1420,9 +1438,11 @@ TEST_F(GrpcToolTest, ConfiguringDefaultServiceConfig) {
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
   absl::SetFlag(&FLAGS_default_service_config, "");
-  EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
-                          "grpc.testing.EchoTestService\n"
-                          "grpc.reflection.v1alpha.ServerReflection\n"));
+  EXPECT_THAT(
+      absl::StrSplit(output_stream.str().c_str(), '\n'),
+      ::testing::UnorderedElementsAre(
+          "grpc.testing.EchoTestService", "grpc.reflection.v1.ServerReflection",
+          "grpc.reflection.v1alpha.ServerReflection", ""));
   ShutdownServer();
 }
 

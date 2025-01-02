@@ -15,26 +15,24 @@
 // For all inputs, ensure parsing one byte at a time produces the same result as
 // parsing the entire input at once.
 
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <memory>
-#include <string>
-
-#include "absl/cleanup/cleanup.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
+#include <limits>
+#include <memory>
+#include <string>
+
+#include "absl/cleanup/cleanup.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -42,13 +40,20 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "test/core/util/slice_splitter.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "test/core/test_util/slice_splitter.h"
 
 bool squelch = true;
 bool leak_check = true;
 
 namespace grpc_core {
 namespace {
+
+struct DeterministicBitGen : public std::numeric_limits<uint64_t> {
+  using result_type = uint64_t;
+  uint64_t operator()() { return 42; }
+};
 
 class TestEncoder {
  public:
@@ -75,15 +80,13 @@ bool IsStreamError(const absl::Status& status) {
 
 absl::StatusOr<std::string> TestVector(grpc_slice_split_mode mode,
                                        Slice input) {
-  MemoryAllocator memory_allocator = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  auto arena = MakeScopedArena(1024, &memory_allocator);
+  auto arena = SimpleArenaAllocator()->MakeArena();
   ExecCtx exec_ctx;
   grpc_slice* slices;
   size_t nslices;
   size_t i;
 
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
 
   HPackParser parser;
   parser.BeginFrame(
@@ -102,8 +105,10 @@ absl::StatusOr<std::string> TestVector(grpc_slice_split_mode mode,
   absl::Status found_err;
   for (i = 0; i < nslices; i++) {
     ExecCtx exec_ctx;
+    DeterministicBitGen bitgen;
     auto err =
-        parser.Parse(slices[i], i == nslices - 1, /*call_tracer=*/nullptr);
+        parser.Parse(slices[i], i == nslices - 1, absl::BitGenRef(bitgen),
+                     /*call_tracer=*/nullptr);
     if (!err.ok()) {
       if (!IsStreamError(err)) return err;
       if (found_err.ok()) found_err = err;
