@@ -2417,6 +2417,7 @@ grpc_cc_library(
         "ref_counted",
         "resource_quota",
         "slice",
+        "stats_data",
         "status_helper",
         "strerror",
         "time",
@@ -2427,6 +2428,7 @@ grpc_cc_library(
         "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:ref_counted_ptr",
+        "//:stats",
     ],
 )
 
