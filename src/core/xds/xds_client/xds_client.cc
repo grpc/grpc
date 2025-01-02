@@ -211,6 +211,7 @@ class XdsClient::XdsChannel::AdsCall final
       Duration timeout = ads_call_->xds_client()->request_timeout_;
       if (timeout == Duration::Zero()) {
         timeout =
+            XdsDataErrorHandlingEnabled() &&
             ads_call_->xds_channel()->server_.ResourceTimerIsTransientFailure()
                 ? Duration::Seconds(30)
                 : Duration::Seconds(15);
@@ -242,7 +243,8 @@ class XdsClient::XdsChannel::AdsCall final
                      name_.authority, type_->type_url(), name_.key)
               << "} from xds server";
           resource_seen_ = true;
-          if (ads_call_->xds_channel()->server_
+          if (XdsDataErrorHandlingEnabled() &&
+              ads_call_->xds_channel()->server_
                   .ResourceTimerIsTransientFailure()) {
             state.SetTransientError(absl::StrCat(
                 "xDS server ", ads_call_->xds_channel()->server_uri(),
