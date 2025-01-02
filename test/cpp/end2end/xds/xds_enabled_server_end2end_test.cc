@@ -221,8 +221,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ServingStatus) {
 TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
   SetInvalidLdsUpdate();
   StartBackend(0);
-  ASSERT_TRUE(
-      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::UNAVAILABLE));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
+      grpc::StatusCode::INVALID_ARGUMENT));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
                           "connections to all backends failing; last error: "));
@@ -250,8 +250,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
        NotServingStatusToServingStatusTransition) {
   SetInvalidLdsUpdate();
   StartBackend(0);
-  ASSERT_TRUE(
-      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::UNAVAILABLE));
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
+      grpc::StatusCode::INVALID_ARGUMENT));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
                           "connections to all backends failing; last error: "));
@@ -821,8 +821,10 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
                                              default_server_route_config_);
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      "Requested route config does not exist");
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "RDS resource unknown_server_route_config: does not exist "
+      "\\(node ID:xds_end2end_test\\)");
 }
 
 // TODO(yashykt): Once https://github.com/grpc/grpc/issues/24035 is fixed, we

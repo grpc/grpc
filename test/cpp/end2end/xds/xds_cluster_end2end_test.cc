@@ -382,7 +382,8 @@ TEST_P(CdsDeletionTest, ClusterDeleted) {
   // Wait for RPCs to start failing.
   SendRpcsUntilFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("CDS resource ", kDefaultClusterName, " does not exist"));
+      absl::StrCat("CDS resource ", kDefaultClusterName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)"));
   // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
@@ -535,7 +536,7 @@ TEST_P(EdsTest, LocalityBecomesEmptyWithDeactivatedChildStateUpdate) {
   // Wait for RPCs to start failing.
   constexpr char kErrorMessage[] =
       "no children in weighted_target policy: "
-      "EDS resource eds_service_name contains empty localities: "
+      "EDS resource eds_service_name: contains empty localities: "
       "\\[\\{region=\"xds_default_locality_region\", "
       "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
   SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
@@ -570,7 +571,7 @@ TEST_P(EdsTest, NoLocalities) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should fail.
   constexpr char kErrorMessage[] =
-      "no children in weighted_target policy: EDS resource eds_service_name "
+      "no children in weighted_target policy: EDS resource eds_service_name: "
       "contains no localities";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send EDS resource that has an endpoint.
@@ -787,7 +788,7 @@ TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
   // RPCs should fail.
   constexpr char kErrorMessage[] =
       "no children in weighted_target policy: "
-      "EDS resource eds_service_name contains empty localities: "
+      "EDS resource eds_service_name: contains empty localities: "
       "\\[\\{region=\"xds_default_locality_region\", "
       "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
