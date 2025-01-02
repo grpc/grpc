@@ -499,8 +499,8 @@ TEST_F(PartyTest, CanNestWakeupHold) {
 }
 
 TEST_F(PartyTest, ThreadStressTest) {
-  const int kNumThreads = 8;
-  const int kNumSpawns = 100;
+  constexpr int kNumThreads = 8;
+  constexpr int kNumSpawns = 100;
   auto party = MakeParty();
   std::vector<std::string> execution_order(kNumThreads);
   std::vector<std::string> thread_order(kNumThreads);
