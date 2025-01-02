@@ -487,7 +487,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       ::envoy::config::core::v3::HealthStatus health_status =
           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
       int lb_weight = 1, std::vector<size_t> additional_backend_indexes = {},
-      absl::string_view hostname = "") {
+      absl::string_view hostname = "",
+      const std::map<std::string, std::string /*JSON*/>& metadata = {}) {
     std::vector<int> additional_ports;
     additional_ports.reserve(additional_backend_indexes.size());
     for (size_t idx : additional_backend_indexes) {
@@ -495,7 +496,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     }
     return EdsResourceArgs::Endpoint(backends_[backend_idx]->port(),
                                      health_status, lb_weight, additional_ports,
-                                     hostname);
+                                     hostname, metadata);
   }
 
   // Creates a vector of endpoints for a specified range of backends,
@@ -756,6 +757,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
                            StatusCode expected_status,
                            absl::string_view expected_message_regex,
                            const RpcOptions& rpc_options = RpcOptions());
+
+  // Sends RPCs until either a timeout or an RPC fail, in which case the
+  // failure must match the specified status and message regex.
+  void SendRpcsUntilFailure(const grpc_core::DebugLocation& debug_location,
+                            StatusCode expected_status,
+                            absl::string_view expected_message_regex,
+                            int timeout_ms = 15000,
+                            const RpcOptions& rpc_options = RpcOptions());
 
   // Sends num_rpcs RPCs, counting how many of them fail with a message
   // matching the specified expected_message_prefix.

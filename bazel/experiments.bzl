@@ -19,9 +19,7 @@
 EXPERIMENT_ENABLES = {
     "backoff_cap_initial_at_max": "backoff_cap_initial_at_max",
     "call_tracer_in_transport": "call_tracer_in_transport",
-    "canary_client_privacy": "canary_client_privacy",
     "chaotic_good_legacy_protocol": "chaotic_good_legacy_protocol",
-    "client_privacy": "client_privacy",
     "disable_buffer_hint_on_high_memory_pressure": "disable_buffer_hint_on_high_memory_pressure",
     "event_engine_application_callbacks": "event_engine_application_callbacks",
     "event_engine_callback_cq": "event_engine_application_callbacks,event_engine_callback_cq",
@@ -43,7 +41,6 @@ EXPERIMENT_ENABLES = {
     "retry_in_callv3": "retry_in_callv3",
     "rq_fast_reject": "rq_fast_reject",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
-    "server_privacy": "server_privacy",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "time_caching_in_party": "time_caching_in_party",

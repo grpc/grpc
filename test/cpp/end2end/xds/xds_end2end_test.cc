@@ -395,19 +395,11 @@ class XdsSecurityTest : public XdsEnd2endTest {
     balancer_->ads_service()->SetCdsResource(cluster);
     // The updates might take time to have an effect, so use a retry loop.
     if (test_expects_failure) {
-      SendRpcsUntil(
-          DEBUG_LOCATION,
-          [&](const RpcResult& result) {
-            if (result.status.ok()) {
-              LOG(ERROR) << "RPC succeeded. Failure expected. Trying again.";
-              return true;
-            }
-            EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-            // TODO(yashkt): Change individual test cases to expect the exact
-            // error message here.
-            return false;
-          },
-          /* timeout_ms= */ 20 * 1000, RpcOptions().set_timeout_ms(5000));
+      SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                           // TODO(yashkt): Change individual test cases to
+                           // expect the exact error message here.
+                           ".*", /*timeout_ms=*/20 * 1000,
+                           RpcOptions().set_timeout_ms(5000));
     } else {
       backends_[backend_index_]->backend_service()->ResetCounters();
       SendRpcsUntil(
