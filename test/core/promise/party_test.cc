@@ -499,28 +499,44 @@ TEST_F(PartyTest, CanNestWakeupHold) {
 }
 
 TEST_F(PartyTest, ThreadStressTest) {
+  // Most other tests are testing promises and parties with only 1 thread.
+  // This test will test the party code for multiple threads.
+  // We will spawn multiple threads, and then spawn 100 promise sequences (Seq)
+  // on each thread using just one party object. This should work as expected.
+  // Asserts
+  // 1. Assert that one party can be used to spawn promises on multiple threads,
+  // and this works as expected.
+  // 2. The promise Seq in this case Sleep, wake up and resolve correctly as
+  // expected.
+  // 3. Notifications work as expected in such state
+  // 4. The promises are executed in the order that we expect.
+  // 5. The threads run in parallel. Spawn does not acquire locks that it should
+  // not. And it does not introduce majaor delays of any sort.
   constexpr int kNumThreads = 8;
   constexpr int kNumSpawns = 100;
   auto party = MakeParty();
   std::vector<std::string> execution_order(kNumThreads);
-  std::vector<std::string> thread_order(kNumThreads);
+  std::vector<Timestamp> start_times(kNumThreads);
+  std::vector<Timestamp> end_times(kNumThreads);
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
 
   for (int i = 0; i < kNumThreads; i++) {
+    Timestamp& start_time = start_times[i];
+    Timestamp& end_time = end_times[i];
     std::string& order = execution_order[i];
     absl::StrAppend(&order, absl::StrFormat("Thread %d : ", i));
-    threads.emplace_back([&kNumSpawns, &thread_order, thread_num = i, &order,
-                          party]() mutable {
+    threads.emplace_back([&start_time, &end_time, &kNumSpawns, thread_num = i,
+                          &order, party]() mutable {
+      start_time = Timestamp::Now();
       for (int j = 0; j < kNumSpawns; j++) {
+        const int sleep_ms = (thread_num % 2 == 1) ? 5 : 15;
         ExecCtx ctx;  // needed for Sleep
         Notification promise_complete;
         party->Spawn(
             "TestSpawn",
-            Seq(Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
-                [&thread_order, thread_num, &order,
-                 spawn_num = j]() mutable -> Poll<int> {
-                  thread_order[thread_num] = absl::StrFormat("%d", thread_num);
+            Seq(Sleep(Timestamp::Now() + Duration::Milliseconds(sleep_ms)),
+                [thread_num, &order, spawn_num = j]() mutable -> Poll<int> {
                   absl::StrAppend(&order, absl::StrFormat("%d(P%d,", thread_num,
                                                           spawn_num));
                   return spawn_num + 42;
@@ -533,20 +549,82 @@ TEST_F(PartyTest, ThreadStressTest) {
         promise_complete.WaitForNotification();
         absl::StrAppend(&order, ".");
       }
+      end_time = Timestamp::Now();
     });
   }
   for (auto& thread : threads) {
     thread.join();
   }
 
+  // Find the fastest thread run time.
+  // This will be used to compare the run time of other threads.
+  Duration small_thread_run_time = end_times[0] - start_times[0];
+  Timestamp last_finished_thread = end_times[0];
+  for (int i = 1; i < kNumThreads; i++) {
+    Duration curr_thread_run_time = (end_times[i] - start_times[i]);
+    if (last_finished_thread < end_times[i]) {
+      last_finished_thread = end_times[i];
+    }
+    if (curr_thread_run_time < small_thread_run_time) {
+      small_thread_run_time = curr_thread_run_time;
+    }
+  }
+
+  Duration time_for_serial_run =
+      Duration::Milliseconds(kNumThreads * kNumSpawns * 10);
+  float run_time_by_sleep_time = 2.0;
+  // This makes sure that the threads run efficiently in parallel.
+  // At the time of writing this test, we found run_time_by_sleep_time to
+  // be (1.63). Lets make sure this efficiency is not degraded beyond 2x. This
+  // degradation means that there is something slowing down the mechanism of
+  // party sleeping and waking up.
+  EXPECT_LE(last_finished_thread - start_times[0],
+            (time_for_serial_run / kNumThreads) * run_time_by_sleep_time);
+
+  LOG(INFO) << "Small thread run time : " << small_thread_run_time;
+
   std::vector<std::string> expected_order(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {
+    // Generate the expected order for each thread.
     absl::StrAppend(&expected_order[i], absl::StrFormat("Thread %d : ", i));
     for (int j = 0; j < kNumSpawns; j++) {
       absl::StrAppend(&expected_order[i],
                       absl::StrFormat("%d(P%d,D%d).", i, j, j));
     }
+
+    // Within one thread, the promises should be executed in the order we
+    // expect.
     EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
+
+    // All threads should start before any thread finishes. Thread 1 is likely
+    // (but not guaranteed) to finish before all other threads.
+    EXPECT_LE(start_times[i], end_times[1]);
+
+    // All threads should start before any thread finishes 5% of it's run.
+    // This is loose evidence that the threads are running in parallel.
+    EXPECT_LE(start_times[i] - start_times[0], (small_thread_run_time / 20));
+
+    LOG(INFO) << "Thread " << i << " started at " << start_times[i]
+              << " and finished at " << end_times[i];
+
+    if (i >= 2) {
+      // All odd threads should finish within few milliseconds of each other.
+      // All even threads should finish within few milliseconds of each other.
+      // This is loose evidence that the threads are running in parallel.
+      // If the party->Spawn acquires locks that it should not, or if it
+      // degrades in performance, this test will fail.
+      EXPECT_LE((end_times[i - 2] - end_times[i]),
+                (small_thread_run_time / 20));
+    }
+
+    if (i % 2 == 1) {
+      // Odd threads should finish before even threads because Sleep time for
+      // even threads is 3x more than odd threads.
+      // This is loose evidence that the threads are running in parallel.
+      // If the party->Spawn acquires locks that it should not, or if it
+      // degrades in performance, this test will fail.
+      EXPECT_GE(end_times[i - 1], end_times[i]);
+    }
   }
 }
 
