@@ -135,6 +135,7 @@ void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
         for (const Json& feature_json : array) {
           if (feature_json.type() == Json::Type::kString &&
               (feature_json.string() == kServerFeatureIgnoreResourceDeletion ||
+// FIXME: env var guard
                feature_json.string() ==
                    kServerFeatureResourceTimerIsTransientFailure ||
                feature_json.string() == kServerFeatureTrustedXdsServer)) {

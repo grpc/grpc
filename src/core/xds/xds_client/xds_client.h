@@ -279,6 +279,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
       ACKED,
       // Client received this resource and replied with NACK.
       NACKED,
+      // Transient error talking to xDS server.
+      TRANSIENT_ERROR,
     };
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_REQUESTED) ==
                       ClientResourceStatus::REQUESTED,
@@ -306,9 +308,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
     void SetAcked(std::shared_ptr<const XdsResourceType::ResourceData> resource,
                   std::string serialized_proto, std::string version,
                   Timestamp update_time);
-    void SetNacked(const std::string& version, const std::string& details,
+    void SetNacked(const std::string& version, absl::string_view details,
                    Timestamp update_time);
     void SetDoesNotExist();
+    void SetTransientError(const std::string& details);
 
     void set_ignored_deletion(bool value) { ignored_deletion_ = value; }
     bool ignored_deletion() const { return ignored_deletion_; }
@@ -322,6 +325,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     }
 
     absl::string_view failed_details() const { return failed_details_; }
+    absl::Status WatcherStatus() const;
 
     void FillGenericXdsConfig(
         upb_StringView type_url, upb_StringView resource_name, upb_Arena* arena,
@@ -341,7 +345,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::string version_;
     // The rejected version string of the last failed update attempt.
     std::string failed_version_;
-    // Details about the last failed update attempt.
+    // Details about the last failed update attempt or transient error.
     std::string failed_details_;
     // Timestamp of the last failed update attempt.
     Timestamp failed_update_time_;
