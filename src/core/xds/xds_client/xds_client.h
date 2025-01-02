@@ -309,7 +309,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
                   std::string serialized_proto, std::string version,
                   Timestamp update_time);
     void SetNacked(const std::string& version, absl::string_view details,
-                   Timestamp update_time);
+                   Timestamp update_time, bool drop_cached_resource);
     void SetDoesNotExist();
     void SetTransientError(const std::string& details);
 

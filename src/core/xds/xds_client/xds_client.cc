@@ -991,8 +991,8 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
   if (authority_it == xds_client()->authority_state_map_.end()) {
     return;  // Skip resource -- we don't have a subscription for it.
   }
-  // Found authority, so look up type.
   AuthorityState& authority_state = authority_it->second;
+  // Found authority, so look up type.
   auto type_it = authority_state.resource_map.find(context->type);
   if (type_it == authority_state.resource_map.end()) {
     return;  // Skip resource -- we don't have a subscription for it.
@@ -1021,8 +1021,15 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
   }
   // Update resource state based on whether the resource is valid.
   if (!decode_status.ok()) {
+    // If the fail_on_data_errors server feature is present, drop the
+    // existing cached resource, if any.
+    const bool drop_cached_resource = XdsDataErrorHandlingEnabled() &&
+                                      xds_channel()->server_.FailOnDataErrors();
     resource_state.SetNacked(context->version, decode_status.message(),
-                             context->update_time_);
+                             context->update_time_, drop_cached_resource);
+    // If there is no cached resource (either because we didn't have one
+    // or because we just dropped it due to fail_on_data_errors), then notify
+    // via OnResourceChanged(); otherwise, notify via OnAmbientError().
     if (!resource_state.HasResource()) {
       xds_client()->NotifyWatchersOnResourceChanged(
           resource_state.WatcherStatus(), resource_state.watchers(),
@@ -1220,7 +1227,9 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
               // that the resource does not exist.  For that case, we rely on
               // the request timeout instead.
               if (!resource_state.HasResource()) continue;
-              if (xds_channel()->server_.IgnoreResourceDeletion()) {
+              if (XdsDataErrorHandlingEnabled()
+                      ? !xds_channel()->server_.FailOnDataErrors()
+                      : xds_channel()->server_.IgnoreResourceDeletion()) {
                 if (!resource_state.ignored_deletion()) {
                   LOG(ERROR)
                       << "[xds_client " << xds_client() << "] xds server "
@@ -1338,7 +1347,9 @@ void XdsClient::ResourceState::SetAcked(
 
 void XdsClient::ResourceState::SetNacked(const std::string& version,
                                          absl::string_view details,
-                                         Timestamp update_time) {
+                                         Timestamp update_time,
+                                         bool drop_cached_resource) {
+  if (drop_cached_resource) resource_.reset();
   client_status_ = ClientResourceStatus::NACKED;
   failed_version_ = version;
   failed_details_ = details;
