@@ -754,6 +754,10 @@ void XdsClient::XdsChannel::AdsCall::UnsubscribeLocked(
   authority_map.erase(name.key);
   if (authority_map.empty()) {
     type_state_map.subscribed_resources.erase(name.authority);
+    // Note: We intentionally do not remove the top-level map entry for
+    // the resource type even if the authority map for the type is empty,
+    // because we need to retain the nonce in case a new watch is
+    // started for a resource of this type while this stream is still open.
   }
   // Don't need to send unsubscription message if this was the last
   // resource we were subscribed to, since we'll be closing the stream
