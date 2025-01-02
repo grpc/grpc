@@ -747,6 +747,10 @@ void XdsClient::XdsChannel::AdsCall::UnsubscribeLocked(
   authority_map.erase(name.key);
   if (authority_map.empty()) {
     type_state_map.subscribed_resources.erase(name.authority);
+    // Note: We intentionally do not remove the top-level map entry for
+    // the resource type even if the authority map for the type is empty,
+    // because we need to retain the nonce in case a new watch is
+    // started for a resource of this type while this stream is still open.
   }
   // Don't need to send unsubscription message if this was the last
   // resource we were subscribed to, since we'll be closing the stream
@@ -1003,16 +1007,16 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
     resource_state.set_ignored_deletion(false);
   }
   // Update resource state based on whether the resource is valid.
-  absl::Status status = absl::InvalidArgumentError(
-      absl::StrCat("invalid resource: ", decode_status.ToString()));
   if (!decode_status.ok()) {
+    ++context->num_invalid_resources;
+    absl::Status status = absl::InvalidArgumentError(
+        absl::StrCat("invalid resource: ", decode_status.ToString()));
     // If the fail_on_data_errors server feature is present, drop the
     // existing cached resource, if any.
     const bool drop_cached_resource = XdsDataErrorHandlingEnabled() &&
                                       xds_channel()->server_.FailOnDataErrors();
     resource_state.SetNacked(context->version, decode_status.ToString(),
                              context->update_time_, drop_cached_resource);
-    ++context->num_invalid_resources;
     // If there is no cached resource (either because we didn't have one
     // or because we just dropped it due to fail_on_data_errors), then notify
     // via OnResourceChanged(); otherwise, notify via OnAmbientError().
