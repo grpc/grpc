@@ -33,6 +33,7 @@ pushd "examples/cpp/helloworld/cmake/build"
 # rather than cloning a release.
 cmake \
   -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_CXX_STANDARD=17 \
   -DgRPC_BUILD_TESTS=OFF \
   -DgRPC_SSL_PROVIDER=package \
   -DGRPC_FETCHCONTENT=ON \

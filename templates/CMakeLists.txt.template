@@ -853,7 +853,7 @@
   % endif
   )
 
-  target_compile_features(${lib.name} PUBLIC cxx_std_14)
+  target_compile_features(${lib.name} PUBLIC cxx_std_17)
 
   set_target_properties(${lib.name} PROPERTIES
   % if lib.language == 'c++':
@@ -996,7 +996,7 @@
     endif()
   endif()
   % endif
-  target_compile_features(${tgt.name} PUBLIC cxx_std_14)
+  target_compile_features(${tgt.name} PUBLIC cxx_std_17)
   target_include_directories(${tgt.name}
     PRIVATE
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
