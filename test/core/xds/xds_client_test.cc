@@ -777,17 +777,15 @@ class XdsClientTest : public ::testing::Test {
 
   // Sets transport_factory_ and initializes xds_client_ with the
   // specified bootstrap config.
-  void InitXdsClient(
-      FakeXdsBootstrap::Builder bootstrap_builder = FakeXdsBootstrap::Builder(),
-      Duration resource_request_timeout = Duration::Seconds(15)) {
+  void InitXdsClient(FakeXdsBootstrap::Builder bootstrap_builder =
+                         FakeXdsBootstrap::Builder()) {
     transport_factory_ = MakeRefCounted<FakeXdsTransportFactory>(
         []() { FAIL() << "Multiple concurrent reads"; }, event_engine_);
     auto metrics_reporter = std::make_unique<MetricsReporter>(event_engine_);
     metrics_reporter_ = metrics_reporter.get();
     xds_client_ = MakeRefCounted<XdsClient>(
         bootstrap_builder.Build(), transport_factory_, event_engine_,
-        std::move(metrics_reporter), "foo agent", "foo version",
-        resource_request_timeout * grpc_test_slowdown_factor());
+        std::move(metrics_reporter), "foo agent", "foo version");
   }
 
   // Starts and cancels a watch for a Foo resource.
@@ -2438,9 +2436,7 @@ TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
 }
 
 TEST_F(XdsClientTest, ConnectionFails) {
-  // Lower resources-does-not-exist timeout, to make sure that we're not
-  // triggering that here.
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
+  InitXdsClient();
   // Tell transport to let us manually trigger completion of the
   // send_message ops to XdsClient.
   transport_factory_->SetAutoCompleteMessagesFromClient(false);
@@ -2639,7 +2635,7 @@ TEST_F(XdsClientTest, ConnectionFailsWithCachedResource) {
 }
 
 TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(1));
+  InitXdsClient();
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
@@ -2725,8 +2721,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
 }
 
 TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
-  // Lower resources-does-not-exist timeout so test finishes faster.
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
+  InitXdsClient();
   // Metrics should initially be empty.
   EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
               ::testing::ElementsAre());
@@ -2840,9 +2835,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
 }
 
 TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
-  // Lower resources-does-not-exist timeout, to make sure that we're not
-  // triggering that here.
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
+  InitXdsClient();
   // Tell transport to let us manually trigger completion of the
   // send_message ops to XdsClient.
   transport_factory_->SetAutoCompleteMessagesFromClient(false);
@@ -2925,7 +2918,7 @@ TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
 // update containing that resource.
 TEST_F(XdsClientTest,
        ResourceDoesNotExistUnsubscribeAndResubscribeWhileSendMessagePending) {
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(1));
+  InitXdsClient();
   // Tell transport to let us manually trigger completion of the
   // send_message ops to XdsClient.
   transport_factory_->SetAutoCompleteMessagesFromClient(false);
@@ -3074,9 +3067,7 @@ TEST_F(XdsClientTest,
 }
 
 TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
-  // Lower resources-does-not-exist timeout, to make sure that we're not
-  // triggering that here.
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
+  InitXdsClient();
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
@@ -3358,7 +3349,48 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
                /*version_info=*/"1", /*response_nonce=*/"A",
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  // Now cancel watch for "bar1".
+  // Server sends an empty response for the resource type.
+  // (The server doesn't need to do this, but it may.)
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("C")
+          .Serialize());
+  // Client should ACK.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"C",
+               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  // Now subscribe to foo2.
+  watcher = StartFooWatch("foo2");
+  // Client sends a subscription request, which retains the nonce and
+  // version seen previously.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"C",
+               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
+  // Server sends foo2.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("D")
+          .AddFooResource(XdsFooResource("foo2", 8))
+          .Serialize());
+  // Watcher receives the resource.
+  resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo2");
+  EXPECT_EQ(resource->value, 8);
+  // Client ACKs.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"D",
+               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
+  // Cancel watches.
+  CancelFooWatch(watcher.get(), "foo2", /*delay_unsubscription=*/true);
   CancelBarWatch(watcher2.get(), "bar1");
   EXPECT_TRUE(stream->IsOrphaned());
 }
