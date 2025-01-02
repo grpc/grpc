@@ -949,7 +949,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             EXPECT_TRUE(update.status.ok())
                 << update.status << " at " << location.file() << ":"
                 << location.line();
-            ExpectPickQueued(update.picker.get(), {}, location);
+            ExpectPickQueued(update.picker.get(), {}, {}, location);
             return true;  // Keep going.
           }
           EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
@@ -993,7 +993,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             EXPECT_TRUE(update.status.ok())
                 << update.status << " at " << location.file() << ":"
                 << location.line();
-            ExpectPickQueued(update.picker.get(), {}, location);
+            ExpectPickQueued(update.picker.get(), {}, {}, location);
             return true;  // Keep going.
           }
           EXPECT_EQ(update.state, GRPC_CHANNEL_TRANSIENT_FAILURE)
@@ -1060,7 +1060,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Status expected_status = absl::OkStatus(),
       SourceLocation location = SourceLocation()) {
     auto picker = ExpectState(expected_state, expected_status, location);
-    return ExpectPickQueued(picker.get(), {}, location);
+    return ExpectPickQueued(picker.get(), {}, {}, location);
   }
 
   // Convenient frontend to ExpectStateAndQueuingPicker() for CONNECTING.
@@ -1077,20 +1077,22 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Does a pick and returns the result.
   LoadBalancingPolicy::PickResult DoPick(
       LoadBalancingPolicy::SubchannelPicker* picker,
-      const CallAttributes& call_attributes = {}) {
+      const CallAttributes& call_attributes = {},
+      const std::map<std::string, std::string>& metadata = {}) {
     ExecCtx exec_ctx;
-    FakeMetadata metadata({});
+    FakeMetadata md(metadata);
     FakeCallState call_state(call_attributes);
-    return picker->Pick({"/service/method", &metadata, &call_state});
+    return picker->Pick({"/service/method", &md, &call_state});
   }
 
   // Requests a pick on picker and expects a Queue result.
   bool ExpectPickQueued(LoadBalancingPolicy::SubchannelPicker* picker,
                         const CallAttributes call_attributes = {},
+                        const std::map<std::string, std::string>& metadata = {},
                         SourceLocation location = SourceLocation()) {
     EXPECT_NE(picker, nullptr) << location.file() << ":" << location.line();
     if (picker == nullptr) return false;
-    auto pick_result = DoPick(picker, call_attributes);
+    auto pick_result = DoPick(picker, call_attributes, metadata);
     EXPECT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result))
         << PickResultString(pick_result) << "\nat " << location.file() << ":"
@@ -1109,6 +1111,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   absl::optional<std::string> ExpectPickComplete(
       LoadBalancingPolicy::SubchannelPicker* picker,
       const CallAttributes& call_attributes = {},
+      const std::map<std::string, std::string>& metadata = {},
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>*
           subchannel_call_tracker = nullptr,
       SubchannelState::FakeSubchannel** picked_subchannel = nullptr,
@@ -1117,7 +1120,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     if (picker == nullptr) {
       return absl::nullopt;
     }
-    auto pick_result = DoPick(picker, call_attributes);
+    auto pick_result = DoPick(picker, call_attributes, metadata);
     auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
         &pick_result.result);
     EXPECT_NE(complete, nullptr) << PickResultString(pick_result) << " at "
@@ -1168,6 +1171,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
           subchannel_call_tracker;
       auto address = ExpectPickComplete(picker, call_attributes,
+                                        /*metadata=*/{},
                                         subchannel_call_trackers == nullptr
                                             ? nullptr
                                             : &subchannel_call_tracker,
