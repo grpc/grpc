@@ -43,6 +43,7 @@
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/event_engine/windows/windows_listener.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/dump_args.h"
 #include "src/core/util/sync.h"
@@ -200,7 +201,7 @@ struct WindowsEventEngine::TimerClosure final : public EventEngine::Closure {
 };
 
 WindowsEventEngine::WindowsEventEngine()
-    : grpc_core::KeepsKeepsGrpcInitialized(true),
+    : grpc_core::KeepsGrpcInitialized(true),
       thread_pool_(
           MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       iocp_(thread_pool_.get()),

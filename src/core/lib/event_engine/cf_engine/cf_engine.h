@@ -36,7 +36,7 @@ class CFEventEngine : public EventEngine,
                       public Scheduler,
                       public grpc_core::KeepsGrpcInitialized {
  public:
-  CFEventEngine() : grpc_core::KeepsKeepsGrpcInitialized(/*enabled=*/true);
+  CFEventEngine() : grpc_core::KeepsGrpcInitialized(/*enabled=*/true);
   ~CFEventEngine() override;
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
