@@ -46,6 +46,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/telemetry/stats.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/load_file.h"
 #include "src/core/util/ref_counted_ptr.h"
