@@ -58,9 +58,9 @@ bool GrpcXdsServer::FailOnDataErrors() const {
 }
 
 bool GrpcXdsServer::ResourceTimerIsTransientFailure() const {
-  return server_features_.find(std::string(
-             kServerFeatureResourceTimerIsTransientFailure)) !=
-             server_features_.end();
+  return server_features_.find(
+             std::string(kServerFeatureResourceTimerIsTransientFailure)) !=
+         server_features_.end();
 }
 
 bool GrpcXdsServer::TrustedXdsServer() const {

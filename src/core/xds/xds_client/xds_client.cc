@@ -210,11 +210,11 @@ class XdsClient::XdsChannel::AdsCall final
       ads_call_ = std::move(ads_call);
       Duration timeout = ads_call_->xds_client()->request_timeout_;
       if (timeout == Duration::Zero()) {
-        timeout =
-            XdsDataErrorHandlingEnabled() &&
-            ads_call_->xds_channel()->server_.ResourceTimerIsTransientFailure()
-                ? Duration::Seconds(30)
-                : Duration::Seconds(15);
+        timeout = XdsDataErrorHandlingEnabled() &&
+                          ads_call_->xds_channel()
+                              ->server_.ResourceTimerIsTransientFailure()
+                      ? Duration::Seconds(30)
+                      : Duration::Seconds(15);
       }
       timer_handle_ = ads_call_->xds_client()->engine()->RunAfter(
           timeout, [self = Ref(DEBUG_LOCATION, "timer")]() {
@@ -244,8 +244,8 @@ class XdsClient::XdsChannel::AdsCall final
               << "} from xds server";
           resource_seen_ = true;
           if (XdsDataErrorHandlingEnabled() &&
-              ads_call_->xds_channel()->server_
-                  .ResourceTimerIsTransientFailure()) {
+              ads_call_->xds_channel()
+                  ->server_.ResourceTimerIsTransientFailure()) {
             state.SetTransientError(absl::StrCat(
                 "xDS server ", ads_call_->xds_channel()->server_uri(),
                 " not responding"));
@@ -1040,9 +1040,9 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
           resource_state.WatcherStatus(), resource_state.watchers(),
           context->read_delay_handle);
     } else {
-      xds_client()->NotifyWatchersOnAmbientError(
-          resource_state.WatcherStatus(), resource_state.watchers(),
-          context->read_delay_handle);
+      xds_client()->NotifyWatchersOnAmbientError(resource_state.WatcherStatus(),
+                                                 resource_state.watchers(),
+                                                 context->read_delay_handle);
     }
     ++context->num_invalid_resources;
     return;
@@ -1606,10 +1606,10 @@ void XdsClient::WatchResource(const XdsResourceType* type,
         absl::Status status = resource_state.WatcherStatus();
         if (!status.ok()) {
           GRPC_TRACE_LOG(xds_client, INFO)
-              << "[xds_client " << this
-              << "] reporting cached status for " << name << ": " << status;
-          NotifyWatchersOnResourceChanged(std::move(status),
-                                          {watcher}, ReadDelayHandle::NoWait());
+              << "[xds_client " << this << "] reporting cached status for "
+              << name << ": " << status;
+          NotifyWatchersOnResourceChanged(std::move(status), {watcher},
+                                          ReadDelayHandle::NoWait());
           notified_watcher = true;
         }
       }

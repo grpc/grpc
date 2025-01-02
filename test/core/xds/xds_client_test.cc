@@ -2877,9 +2877,8 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
       [&](grpc_event_engine::experimental::EventEngine::Duration duration) {
         grpc_event_engine::experimental::EventEngine::Duration expected =
             std::chrono::seconds(15);
-        EXPECT_EQ(duration, expected)
-            << "Expected: " << expected.count()
-            << "\nActual:   " << duration.count();
+        EXPECT_EQ(duration, expected) << "Expected: " << expected.count()
+                                      << "\nActual:   " << duration.count();
       });
   InitXdsClient();
   // Start a watch for "foo1".
@@ -2971,9 +2970,8 @@ TEST_F(XdsClientTest, ResourceTimerIsTransientErrorIgnoredUnlessEnabled) {
       [&](grpc_event_engine::experimental::EventEngine::Duration duration) {
         grpc_event_engine::experimental::EventEngine::Duration expected =
             std::chrono::seconds(15);
-        EXPECT_EQ(duration, expected)
-            << "Expected: " << expected.count()
-            << "\nActual:   " << duration.count();
+        EXPECT_EQ(duration, expected) << "Expected: " << expected.count()
+                                      << "\nActual:   " << duration.count();
       });
   InitXdsClient(FakeXdsBootstrap::Builder().SetServers(
       {FakeXdsBootstrap::FakeXdsServer(kDefaultXdsServerUrl, false, true)}));
@@ -3068,9 +3066,8 @@ TEST_F(XdsClientTest, ResourceTimerIsTransientFailure) {
       [&](grpc_event_engine::experimental::EventEngine::Duration duration) {
         grpc_event_engine::experimental::EventEngine::Duration expected =
             std::chrono::seconds(30);
-        EXPECT_EQ(duration, expected)
-            << "Expected: " << expected.count()
-            << "\nActual:   " << duration.count();
+        EXPECT_EQ(duration, expected) << "Expected: " << expected.count()
+                                      << "\nActual:   " << duration.count();
       });
   InitXdsClient(FakeXdsBootstrap::Builder().SetServers(
       {FakeXdsBootstrap::FakeXdsServer(kDefaultXdsServerUrl, false, true)}));
@@ -3104,10 +3101,9 @@ TEST_F(XdsClientTest, ResourceTimerIsTransientFailure) {
   // not existing.
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
-  EXPECT_EQ(error,
-            absl::UnavailableError(absl::StrCat(
-                "xDS server ", kDefaultXdsServerUrl,
-                " not responding (node ID:xds_client_test)")));
+  EXPECT_EQ(error, absl::UnavailableError(absl::StrCat(
+                       "xDS server ", kDefaultXdsServerUrl,
+                       " not responding (node ID:xds_client_test)")));
   // Check metric data.
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
@@ -3122,10 +3118,9 @@ TEST_F(XdsClientTest, ResourceTimerIsTransientFailure) {
   auto watcher2 = StartFooWatch("foo1");
   error = watcher2->WaitForNextError();
   ASSERT_TRUE(error.has_value());
-  EXPECT_EQ(error,
-            absl::UnavailableError(absl::StrCat(
-                "xDS server ", kDefaultXdsServerUrl,
-                " not responding (node ID:xds_client_test)")));
+  EXPECT_EQ(error, absl::UnavailableError(absl::StrCat(
+                       "xDS server ", kDefaultXdsServerUrl,
+                       " not responding (node ID:xds_client_test)")));
   // Now server sends a response.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
