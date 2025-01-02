@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_SRC_CORE_UTIL_WAIT_FOR_SINGLE_OWNER_H
+#define GRPC_SRC_CORE_UTIL_WAIT_FOR_SINGLE_OWNER_H
+
 #include <memory>
 
 #include "absl/log/log.h"
@@ -55,3 +58,5 @@ void WaitForSingleOwnerWithTimeout(std::shared_ptr<T> obj, Duration timeout) {
 }
 
 }  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_UTIL_WAIT_FOR_SINGLE_OWNER_H
