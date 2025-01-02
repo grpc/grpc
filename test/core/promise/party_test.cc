@@ -510,7 +510,7 @@ TEST_F(PartyTest, ThreadStressTest) {
   for (int i = 0; i < kNumThreads; i++) {
     std::string& order = execution_order[i];
     absl::StrAppend(&order, absl::StrFormat("Thread %d : ", i));
-    threads.emplace_back([&thread_order, thread_num = i, &order,
+    threads.emplace_back([&kNumSpawns, &thread_order, thread_num = i, &order,
                           party]() mutable {
       for (int j = 0; j < kNumSpawns; j++) {
         ExecCtx ctx;  // needed for Sleep
