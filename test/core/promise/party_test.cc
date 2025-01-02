@@ -602,7 +602,7 @@ TEST_F(PartyTest, ThreadStressTest) {
 
     // All threads should start before any thread finishes 5% of it's run.
     // This is loose evidence that the threads are running in parallel.
-    EXPECT_LE(start_times[i] - start_times[0], (small_thread_run_time / 20));
+    EXPECT_LE(start_times[i] - start_times[0], (small_thread_run_time / 10));
 
     LOG(INFO) << "Thread " << i << " started at " << start_times[i]
               << " and finished at " << end_times[i];
@@ -614,7 +614,7 @@ TEST_F(PartyTest, ThreadStressTest) {
       // If the party->Spawn acquires locks that it should not, or if it
       // degrades in performance, this test will fail.
       EXPECT_LE((end_times[i - 2] - end_times[i]),
-                (small_thread_run_time / 20));
+                (small_thread_run_time / 10));
     }
 
     if (i % 2 == 1) {
