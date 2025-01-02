@@ -1044,7 +1044,6 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
                                                  resource_state.watchers(),
                                                  context->read_delay_handle);
     }
-    ++context->num_invalid_resources;
     return;
   }
   // Resource is valid.
