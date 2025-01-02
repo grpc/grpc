@@ -57,8 +57,6 @@ GRPC_LLVM_WARNING_FLAGS = [
     "-Wno-unused-function",
     # alignment issues
     "-Walign-mismatch",
-    # TODO(hork): file bug with upb to fix -Wcast-align
-    # "-Wcast-align",
     "-Wover-aligned",
     "-Wunaligned-access",
 ]
