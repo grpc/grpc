@@ -91,7 +91,6 @@ TEST_F(EventEngineFactoryTest, SharedPtrGlobalEventEngineLifetimesAreValid) {
   ee2 = GetDefaultEventEngine();
   ASSERT_EQ(2, create_count);
   ASSERT_TRUE(ee2.unique());
-  grpc_event_engine::experimental::EventEngineFactoryReset();
 }
 
 }  // namespace
@@ -99,6 +98,8 @@ TEST_F(EventEngineFactoryTest, SharedPtrGlobalEventEngineLifetimesAreValid) {
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_init();
   auto result = RUN_ALL_TESTS();
+  grpc_shutdown();
   return result;
 }
