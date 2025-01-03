@@ -224,6 +224,7 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
 
 namespace {
 
+using EventEngine = ::grpc_event_engine::experimental::EventEngine;
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
 grpc_core::CallTracerAnnotationInterface* CallTracerIfSampled(
@@ -3097,7 +3098,7 @@ static void finish_keepalive_ping_locked(
 // Returns true if the timer was successfully extended. The provided callback
 // is used only if the timer was not previously scheduled with slack.
 static bool ExtendScheduledTimer(grpc_chttp2_transport* t, TaskHandle& handle,
-                                 EventEngine::Duration duration,
+                                 grpc_core::Duration duration,
                                  absl::AnyInvocable<void()> cb) {
   if (handle == TaskHandle::kInvalid) {
     return false;
