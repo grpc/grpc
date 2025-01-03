@@ -378,62 +378,89 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWakerAfterOrphaning) {
   auto party = MakeParty();
   Notification set_waker;
   Waker waker;
+  std::string execution_order;
   party->Spawn(
       "TestSpawn",
-      [&waker, &set_waker]() mutable -> Poll<int> {
+      [&waker, &set_waker, &execution_order]() mutable -> Poll<int> {
+        absl::StrAppend(&execution_order, "A");
         EXPECT_FALSE(set_waker.HasBeenNotified());
         waker = GetContext<Activity>()->MakeNonOwningWaker();
         set_waker.Notify();
         return Pending{};
       },
-      [](int) { Crash("unreachable"); });
+      [&execution_order](int) {
+        absl::StrAppend(&execution_order, "B");
+        Crash("unreachable");
+      });
   set_waker.WaitForNotification();
+  absl::StrAppend(&execution_order, "1");
   party.reset();
   EXPECT_FALSE(waker.is_unwakeable());
+  absl::StrAppend(&execution_order, "2");
+  // TODO(tjagtap) : Check how this works. Why is it unwakeable after this call?
+  // TODO(tjagtap) : Write a comment once it makes sense to me.
   waker.Wakeup();
   EXPECT_TRUE(waker.is_unwakeable());
+  EXPECT_STREQ(execution_order.c_str(), "A12");
 }
 
-// TODO(tjagtap)
 TEST_F(PartyTest, CanDropNonOwningWakeAfterOrphaning) {
   auto party = MakeParty();
   Notification set_waker;
   std::unique_ptr<Waker> waker;
+  std::string execution_order;
   party->Spawn(
       "TestSpawn",
-      [&waker, &set_waker]() mutable -> Poll<int> {
+      [&waker, &set_waker, &execution_order]() mutable -> Poll<int> {
+        absl::StrAppend(&execution_order, "A");
         EXPECT_FALSE(set_waker.HasBeenNotified());
         waker = std::make_unique<Waker>(
             GetContext<Activity>()->MakeNonOwningWaker());
         set_waker.Notify();
         return Pending{};
       },
-      [](int) { Crash("unreachable"); });
+      [&execution_order](int) {
+        absl::StrAppend(&execution_order, "B");
+        Crash("unreachable");
+      });
   set_waker.WaitForNotification();
+  absl::StrAppend(&execution_order, "1");
   party.reset();
   EXPECT_NE(waker, nullptr);
+  // TODO(tjagtap) : Check how this works.
+  // TODO(tjagtap) : Write a comment once it makes sense to me.
   waker.reset();
+  EXPECT_STREQ(execution_order.c_str(), "A1");
 }
 
-// TODO(tjagtap)
 TEST_F(PartyTest, CanWakeupNonOwningOrphanedWakerWithNoEffect) {
   auto party = MakeParty();
   Notification set_waker;
   Waker waker;
+  std::string execution_order;
   party->Spawn(
       "TestSpawn",
-      [&waker, &set_waker]() mutable -> Poll<int> {
+      [&waker, &set_waker, &execution_order]() mutable -> Poll<int> {
+        absl::StrAppend(&execution_order, "A");
         EXPECT_FALSE(set_waker.HasBeenNotified());
         waker = GetContext<Activity>()->MakeNonOwningWaker();
         set_waker.Notify();
         return Pending{};
       },
-      [](int) { Crash("unreachable"); });
+      [&execution_order](int) {
+        absl::StrAppend(&execution_order, "B");
+        Crash("unreachable");
+      });
   set_waker.WaitForNotification();
+  absl::StrAppend(&execution_order, "1");
   EXPECT_FALSE(waker.is_unwakeable());
   party.reset();
+  absl::StrAppend(&execution_order, "2");
+  // TODO(tjagtap) : Check how this works.
+  // TODO(tjagtap) : Write a comment once it makes sense to me.
   waker.Wakeup();
   EXPECT_TRUE(waker.is_unwakeable());
+  EXPECT_STREQ(execution_order.c_str(), "A12");
 }
 
 TEST_F(PartyTest, CanBulkSpawn) {
