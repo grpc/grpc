@@ -29,6 +29,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <memory>
+
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -52,7 +54,6 @@ struct alts_tsi_handshaker {
   char* handshaker_service_url;
   grpc_pollset_set* interested_parties;
   grpc_alts_credentials_options* options;
-  alts_handshaker_client_vtable* client_vtable_for_testing = nullptr;
   grpc_channel* channel = nullptr;
   bool use_dedicated_cq;
   // mu synchronizes all fields below. Note these are the
@@ -60,7 +61,7 @@ struct alts_tsi_handshaker {
   // potential concurrency of tsi_handshaker_shutdown and
   // tsi_handshaker_next).
   grpc_core::Mutex mu;
-  alts_handshaker_client* client = nullptr;
+  AltsHandshakerClient* client = nullptr;
   // shutdown effectively follows base.handshake_shutdown,
   // but is synchronized by the mutex of this object.
   bool shutdown = false;
@@ -187,9 +188,10 @@ static tsi_result handshaker_result_create_zero_copy_grpc_protector(
              "protector equals "
           << *max_output_protected_frame_size;
   tsi_result ok = alts_zero_copy_grpc_protector_create(
-      grpc_core::GsecKeyFactory({reinterpret_cast<uint8_t*>(result->key_data),
-                                 kAltsAes128GcmRekeyKeyLength},
-                                /*is_rekey=*/true),
+      grpc_core::GsecKeyFactory(
+          {reinterpret_cast<uint8_t*>(result->key_data),
+           AltsHandshakerClient::kAltsAes128GcmRekeyKeyLength},
+          /*is_rekey=*/true),
       result->is_client,
       /*is_integrity_only=*/false, /*enable_extra_copy=*/false,
       max_output_protected_frame_size, protector);
@@ -212,8 +214,8 @@ static tsi_result handshaker_result_create_frame_protector(
           const_cast<tsi_handshaker_result*>(self));
   tsi_result ok = alts_create_frame_protector(
       reinterpret_cast<const uint8_t*>(result->key_data),
-      kAltsAes128GcmRekeyKeyLength, result->is_client, /*is_rekey=*/true,
-      max_output_protected_frame_size, protector);
+      AltsHandshakerClient::kAltsAes128GcmRekeyKeyLength, result->is_client,
+      /*is_rekey=*/true, max_output_protected_frame_size, protector);
   if (ok != TSI_OK) {
     LOG(ERROR) << "Failed to create frame protector";
   }
@@ -280,7 +282,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     return TSI_FAILED_PRECONDITION;
   }
   upb_StringView key_data = grpc_gcp_HandshakerResult_key_data(hresult);
-  if (key_data.size < kAltsAes128GcmRekeyKeyLength) {
+  if (key_data.size < AltsHandshakerClient::kAltsAes128GcmRekeyKeyLength) {
     LOG(ERROR) << "Bad key length";
     return TSI_FAILED_PRECONDITION;
   }
@@ -314,9 +316,10 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   // because local identity could be empty in certain situations.
   alts_tsi_handshaker_result* sresult =
       grpc_core::Zalloc<alts_tsi_handshaker_result>();
-  sresult->key_data =
-      static_cast<char*>(gpr_zalloc(kAltsAes128GcmRekeyKeyLength));
-  memcpy(sresult->key_data, key_data.data, kAltsAes128GcmRekeyKeyLength);
+  sresult->key_data = static_cast<char*>(
+      gpr_zalloc(AltsHandshakerClient::kAltsAes128GcmRekeyKeyLength));
+  memcpy(sresult->key_data, key_data.data,
+         AltsHandshakerClient::kAltsAes128GcmRekeyKeyLength);
   sresult->peer_identity =
       static_cast<char*>(gpr_zalloc(peer_service_account.size + 1));
   memcpy(sresult->peer_identity, peer_service_account.data,
@@ -381,7 +384,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
 // gRPC provided callback used when gRPC thread model is applied.
 static void on_handshaker_service_resp_recv(void* arg,
                                             grpc_error_handle error) {
-  alts_handshaker_client* client = static_cast<alts_handshaker_client*>(arg);
+  AltsHandshakerClient* client = static_cast<AltsHandshakerClient*>(arg);
   if (client == nullptr) {
     LOG(ERROR) << "ALTS handshaker client is nullptr";
     return;
@@ -392,7 +395,7 @@ static void on_handshaker_service_resp_recv(void* arg,
             << grpc_core::StatusToString(error);
     success = false;
   }
-  alts_handshaker_client_handle_response(client, success);
+  client->HandleResponse(success);
 }
 
 // gRPC provided callback used when dedicatd CQ and thread are used.
@@ -427,12 +430,12 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
         handshaker->channel == nullptr
             ? grpc_alts_get_shared_resource_dedicated()->channel
             : handshaker->channel;
-    alts_handshaker_client* client = alts_grpc_handshaker_client_create(
-        handshaker, channel, handshaker->handshaker_service_url,
-        handshaker->interested_parties, handshaker->options,
-        handshaker->target_name, grpc_cb, cb, user_data,
-        handshaker->client_vtable_for_testing, handshaker->is_client,
-        handshaker->max_frame_size, error);
+    std::unique_ptr<AltsHandshakerClient> client =
+        AltsHandshakerClient::CreateNewAltsHandshakerClient(
+            handshaker, channel, handshaker->handshaker_service_url,
+            handshaker->interested_parties, handshaker->options,
+            handshaker->target_name, grpc_cb, cb, user_data,
+            handshaker->is_client, handshaker->max_frame_size, error);
     if (client == nullptr) {
       LOG(ERROR) << "Failed to create ALTS handshaker client";
       if (error != nullptr) *error = "Failed to create ALTS handshaker client";
@@ -441,7 +444,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
     {
       grpc_core::MutexLock lock(&handshaker->mu);
       CHECK_EQ(handshaker->client, nullptr);
-      handshaker->client = client;
+      handshaker->client = client.get();
       if (handshaker->shutdown) {
         VLOG(2) << "TSI handshake shutdown";
         if (error != nullptr) *error = "TSI handshaker shutdown";
@@ -450,8 +453,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
     }
     handshaker->has_created_handshaker_client = true;
   }
-  if (handshaker->channel == nullptr &&
-      handshaker->client_vtable_for_testing == nullptr) {
+  if (handshaker->channel == nullptr) {
     CHECK(grpc_cq_begin_op(grpc_alts_get_shared_resource_dedicated()->cq,
                            handshaker->client));
   }
@@ -463,18 +465,17 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
   tsi_result ok = TSI_OK;
   if (!handshaker->has_sent_start_message) {
     handshaker->has_sent_start_message = true;
-    ok = handshaker->is_client
-             ? alts_handshaker_client_start_client(handshaker->client)
-             : alts_handshaker_client_start_server(handshaker->client, &slice);
+    ok = handshaker->is_client ? handshaker->client->StartClient()
+                               : handshaker->client->StartServer(&slice);
     // It's unsafe for the current thread to access any state in handshaker
-    // at this point, since alts_handshaker_client_start_client/server
+    // at this point, since StartClient/server
     // have potentially just started an op batch on the handshake call.
     // The completion callback for that batch is unsynchronized and so
     // can invoke the TSI next API callback from any thread, at which point
     // there is nothing taking ownership of this handshaker to prevent it
     // from being destroyed.
   } else {
-    ok = alts_handshaker_client_next(handshaker->client, &slice);
+    ok = handshaker->client->Next(&slice);
   }
   grpc_core::CSliceUnref(slice);
   return ok;
@@ -599,7 +600,7 @@ static void handshaker_shutdown(tsi_handshaker* self) {
     return;
   }
   if (handshaker->client != nullptr) {
-    alts_handshaker_client_shutdown(handshaker->client);
+    handshaker->client->Shutdown();
   }
   handshaker->shutdown = true;
 }
@@ -610,7 +611,6 @@ static void handshaker_destroy(tsi_handshaker* self) {
   }
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
-  alts_handshaker_client_destroy(handshaker->client);
   grpc_core::CSliceUnref(handshaker->target_name);
   grpc_alts_credentials_options_destroy(handshaker->options);
   if (handshaker->channel != nullptr) {
@@ -699,19 +699,13 @@ bool alts_tsi_handshaker_get_has_sent_start_message_for_testing(
   return handshaker->has_sent_start_message;
 }
 
-void alts_tsi_handshaker_set_client_vtable_for_testing(
-    alts_tsi_handshaker* handshaker, alts_handshaker_client_vtable* vtable) {
-  CHECK_NE(handshaker, nullptr);
-  handshaker->client_vtable_for_testing = vtable;
-}
-
 bool alts_tsi_handshaker_get_is_client_for_testing(
     alts_tsi_handshaker* handshaker) {
   CHECK_NE(handshaker, nullptr);
   return handshaker->is_client;
 }
 
-alts_handshaker_client* alts_tsi_handshaker_get_client_for_testing(
+AltsHandshakerClient* alts_tsi_handshaker_get_client_for_testing(
     alts_tsi_handshaker* handshaker) {
   return handshaker->client;
 }
