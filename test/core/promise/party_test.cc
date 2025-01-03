@@ -93,6 +93,7 @@ TEST_F(PartyTest, TestLargeNumberOfSpawnedPromises) {
   // 3. The data type moves correctly from the promise to the on_done callback.
   // 4. A party is able to spawn a large number of promises, as long as they
   //    are not all Pending.
+  // TODO - Is on_done called on the same thread immediately after the promise?
   const int kNumPromises = 256;
   std::string execution_order;
   auto party = MakeParty();
@@ -124,7 +125,7 @@ TEST_F(PartyTest, Test16SpawnedPendingPromises) {
   // 2. A party is able to spawn the Nth promise even if (N-1) are Pending for
   //    N<=16 (but not for N>16).
   // 3. If we try to spawn more than 16 promises, the code hangs because it is
-  //    waiting for the promises to resolve (which they never will).
+  //    waiting for the promises to resolve (these promises will never resolve).
   // 4. on_done callback is never called for a promise that is not resolved.
   const int kNumPromises = 16;
   std::string execution_order;
@@ -145,8 +146,8 @@ TEST_F(PartyTest, Test16SpawnedPendingPromises) {
 auto MakePendingPromiseResolve(std::string& execution_order, int num) {
   return [i = num, &execution_order]() mutable -> Poll<int> {
     if ((9 * i) < execution_order.length()) {
-      // This condition makes sure that a few promises return pending a few
-      // times before resolving.
+      // This condition makes sure that a few runs of the promise return pending
+      // before resolving.
       absl::StrAppend(&execution_order, "L");
       absl::StrAppend(&execution_order, i);
       return i;
@@ -163,8 +164,8 @@ TEST_F(PartyTest, TestSpawnedPendingPromisesResolve) {
   // This test asserts the following:
   // 1. A resolved promise is not polled again after it is resolved even if it
   //    was Pending in a previous poll.
-  // 2. Earlier promises getting resolved creates a possibility for later
-  //    promises to get spawned and executed.
+  // 2. Earlier spawned promises getting resolved creates a possibility for
+  //    later promises to get spawned and executed.
   // 3. on_done callback is never called for a promise that is not resolved.
   //    It should be called immediately when the promise is resolved.
   const int kNumPromises = 20;
@@ -208,8 +209,8 @@ TEST_F(PartyTest, SpawnAndRunOneParty) {
         return Pending{};
       },
       [&n, &execution_order](int x) {
-        absl::StrAppend(&execution_order, "2");
         EXPECT_EQ(x, 42);
+        absl::StrAppend(&execution_order, "2");
         n.Notify();
       });
   absl::StrAppend(&execution_order, "3");
@@ -228,35 +229,37 @@ TEST_F(PartyTest, SpawnWaitableAndRunTwoParties) {
   auto party1 = MakeParty();
   auto party2 = MakeParty();
   Notification n;
-  InterActivityLatch<void> done;
+  InterActivityLatch<void> inter_activity_latch;
   // Spawn a task on party1 that will wait for a task on party2.
   // The party2 task will wait on the latch `done`.
   party1->Spawn(
       "party1_main",
-      [&party2, &done, &execution_order]() {
+      [&party2, &inter_activity_latch, &execution_order]() {
         absl::StrAppend(&execution_order, "1");
-        return party2->SpawnWaitable("party2_main",
-                                     [&done, &execution_order]() {
-                                       absl::StrAppend(&execution_order, "2");
-                                       return done.Wait();
-                                     });
+        return party2->SpawnWaitable(
+            "party2_main", [&inter_activity_latch, &execution_order]() {
+              absl::StrAppend(&execution_order, "2");
+              return inter_activity_latch.Wait();
+            });
       },
       [&n, &execution_order](Empty) {
-        absl::StrAppend(&execution_order, "3");
+        absl::StrAppend(&execution_order, "5");
         n.Notify();
       });
   ASSERT_FALSE(n.HasBeenNotified());
   party1->Spawn(
       "party1_notify_latch",
-      [&done, &execution_order]() {
-        absl::StrAppend(&execution_order, "4");
-        done.Set();
+      [&inter_activity_latch, &execution_order]() {
+        absl::StrAppend(&execution_order, "3");
+        inter_activity_latch.Set();
       },
-      [&execution_order](Empty) { absl::StrAppend(&execution_order, "5"); });
+      [&execution_order](Empty) { absl::StrAppend(&execution_order, "4"); });
   n.WaitForNotification();
-  EXPECT_STREQ(execution_order.c_str(), "12453");
+  absl::StrAppend(&execution_order, "6");
+  EXPECT_STREQ(execution_order.c_str(), "123456");
 }
 
+// TODO(tjagtap)
 TEST_F(PartyTest, CanSpawnFromSpawn) {
   // Test to run two promises on two parties.
   // The promise spawned a party will in turn spawn another promise on the same
@@ -301,6 +304,7 @@ TEST_F(PartyTest, CanSpawnFromSpawn) {
   EXPECT_STREQ(execution_order.c_str(), "14PPPP23");
 }
 
+// TODO(tjagtap)
 TEST_F(PartyTest, CanWakeupWithOwningWaker) {
   // Testing the Owning Waker.
   // Here, the party is woken up and the promise is executed by a loop which is
@@ -344,6 +348,7 @@ TEST_F(PartyTest, CanWakeupWithOwningWaker) {
   EXPECT_STREQ(execution_order.c_str(), "A 0A 1A 2A 3A 4A 5A 6A 7A 8AB 9");
 }
 
+// TODO(tjagtap)
 TEST_F(PartyTest, CanWakeupWithNonOwningWaker) {
   // This test is similar to the previous test CanWakeupWithOwningWaker, but the
   // waker is a non-owning waker. The asserts are the same.
@@ -378,6 +383,7 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWaker) {
   EXPECT_STREQ(execution_order.c_str(), "A 0A 1A 2A 3A 4A 5A 6A 7A 8AB 9");
 }
 
+// TODO(tjagtap)
 TEST_F(PartyTest, CanWakeupWithNonOwningWakerAfterOrphaning) {
   auto party = MakeParty();
   Notification set_waker;
@@ -408,6 +414,7 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWakerAfterOrphaning) {
   EXPECT_STREQ(execution_order.c_str(), "A12");
 }
 
+// TODO(tjagtap)
 TEST_F(PartyTest, CanDropNonOwningWakeAfterOrphaning) {
   auto party = MakeParty();
   Notification set_waker;
@@ -437,6 +444,7 @@ TEST_F(PartyTest, CanDropNonOwningWakeAfterOrphaning) {
   EXPECT_STREQ(execution_order.c_str(), "A1");
 }
 
+// TODO(tjagtap)
 TEST_F(PartyTest, CanWakeupNonOwningOrphanedWakerWithNoEffect) {
   auto party = MakeParty();
   Notification set_waker;
@@ -467,6 +475,7 @@ TEST_F(PartyTest, CanWakeupNonOwningOrphanedWakerWithNoEffect) {
   EXPECT_STREQ(execution_order.c_str(), "A12");
 }
 
+// TODO(tjagtap)
 TEST_F(PartyTest, CanBulkSpawn) {
   // Test for bulk spawning of promises.
   // One way to do bulk spawning is to use the Party::WakeupHold class.
@@ -507,6 +516,7 @@ TEST_F(PartyTest, CanBulkSpawn) {
   EXPECT_STREQ(execution_order.c_str(), "A1B2");
 }
 
+// TODO(tjagtap)
 TEST_F(PartyTest, CanNestWakeupHold) {
   // Test for bulk spawning of promises with nested WakeupHold objects.
   // One way to do bulk spawning is to use the Party::WakeupHold class.
@@ -552,6 +562,7 @@ TEST_F(PartyTest, CanNestWakeupHold) {
   EXPECT_STREQ(execution_order.c_str(), "A1B2");
 }
 
+// TODO(tjagtap)
 TEST_F(PartyTest, ThreadStressTest) {
   // Most other tests are testing promises and parties with only 1 thread.
   // This test will test the party code for multiple threads.
@@ -1029,7 +1040,7 @@ TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
     // EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
 }
-
+// TODO(tjagtap)
 TEST_F(PartyTest, NestedWakeup) {
   // We have 3 parties - party1 , party2 and party3. party1 spawns promises onto
   // party2 and party3. When party1 finishes, party3 and party2 are run. Then
