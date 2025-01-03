@@ -35,6 +35,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
@@ -127,8 +128,7 @@ class DirectoryReloaderCrlProviderTest : public CrlProviderTest {
     event_engine_->FuzzingDone();
     exec_ctx.Flush();
     event_engine_->TickUntilIdle();
-    grpc_event_engine::experimental::WaitForSingleOwner(
-        std::move(event_engine_));
+    WaitForSingleOwner(std::move(event_engine_));
     grpc_shutdown_blocking();
     event_engine_.reset();
   }
