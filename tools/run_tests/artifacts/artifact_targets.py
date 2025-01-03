@@ -212,7 +212,7 @@ class PythonArtifact:
                 % (self.platform, self.arch),
                 "tools/run_tests/artifacts/build_artifact_python.sh",
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
+                timeout_seconds=60 * 60 * 4,
             )
         elif self.platform == "windows":
             environ["EXT_COMPILER"] = "msvc"
@@ -451,6 +451,16 @@ def targets():
             PythonArtifact("musllinux_1_1", "x86", "cp312-cp312"),
             PythonArtifact(
                 "musllinux_1_1", "x86", "cp313-cp313", presubmit=True
+            ),
+            PythonArtifact(
+                "musllinux_1_1", "aarch64", "cp38-cp38", presubmit=True
+            ),
+            PythonArtifact("musllinux_1_1", "aarch64", "cp39-cp39"),
+            PythonArtifact("musllinux_1_1", "aarch64", "cp310-cp310"),
+            PythonArtifact("musllinux_1_1", "aarch64", "cp311-cp311"),
+            PythonArtifact("musllinux_1_1", "aarch64", "cp312-cp312"),
+            PythonArtifact(
+                "musllinux_1_1", "aarch64", "cp313-cp313", presubmit=True
             ),
             PythonArtifact("macos", "x64", "python3.8", presubmit=True),
             PythonArtifact("macos", "x64", "python3.9"),
