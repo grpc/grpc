@@ -49317,6 +49317,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -49393,10 +49397,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -49581,10 +49581,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
