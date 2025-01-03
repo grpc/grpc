@@ -55,6 +55,10 @@ GRPC_LLVM_WARNING_FLAGS = [
     # Exceptions but will be removed
     "-Wno-deprecated-declarations",
     "-Wno-unused-function",
+    # alignment issues
+    "-Walign-mismatch",
+    "-Wover-aligned",
+    "-Wunaligned-access",
 ]
 
 GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
