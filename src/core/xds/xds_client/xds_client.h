@@ -279,8 +279,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
       ACKED,
       // Client received this resource and replied with NACK.
       NACKED,
-      // Transient error talking to xDS server.
-      TRANSIENT_ERROR,
     };
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_REQUESTED) ==
                       ClientResourceStatus::REQUESTED,
@@ -324,8 +322,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
       return resource_;
     }
 
-    absl::string_view failed_details() const { return failed_details_; }
-    absl::Status WatcherStatus() const;
+    const absl::Status& failed_status() const { return failed_status_; }
 
     void FillGenericXdsConfig(
         upb_StringView type_url, upb_StringView resource_name, upb_Arena* arena,
@@ -346,7 +343,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     // The rejected version string of the last failed update attempt.
     std::string failed_version_;
     // Details about the last failed update attempt or transient error.
-    std::string failed_details_;
+    absl::Status failed_status_;
     // Timestamp of the last failed update attempt.
     Timestamp failed_update_time_;
     // If we've ignored deletion.
