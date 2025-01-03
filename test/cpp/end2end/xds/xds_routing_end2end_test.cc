@@ -226,8 +226,8 @@ TEST_P(LdsDeletionTest, ListenerDeletedFailsWithFailOnDataErrors) {
   // Wait for RPCs to start failing.
   SendRpcsUntilFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: LDS resource ", kServerName,
-                   ": does not exist \\(node ID:xds_end2end_test\\)"));
+      absl::StrCat("empty address list \\(LDS resource ", kServerName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"));
   // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->lds_response_state();
   ASSERT_TRUE(response_state.has_value());
