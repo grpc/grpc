@@ -49,6 +49,10 @@ namespace grpc_core {
 ///////////////////////////////////////////////////////////////////////////////
 // PartyTest
 
+constexpr int kNumThreads = 8;
+constexpr int kNumSpawns = 100;
+constexpr int kLargeNumSpawns = 10000;
+
 class PartyTest : public ::testing::Test {
  protected:
   RefCountedPtr<Party> MakeParty() {
@@ -564,8 +568,6 @@ TEST_F(PartyTest, ThreadStressTest) {
   //    not. And it does not introduce majaor delays of any sort.
   // 6. Stress testing with multiple threads and multiple spawns
   auto party = MakeParty();
-  constexpr int kNumThreads = 8;
-  int kNumSpawns = 100;  // Don't add const here, it causes clang tidy error.
   std::vector<std::string> execution_order(kNumThreads);
   std::vector<Timestamp> start_times(kNumThreads);
   std::vector<Timestamp> end_times(kNumThreads);
@@ -577,8 +579,8 @@ TEST_F(PartyTest, ThreadStressTest) {
     Timestamp& end_time = end_times[i];
     std::string& order = execution_order[i];
     absl::StrAppend(&order, absl::StrFormat("Thread %d : ", i));
-    threads.emplace_back([&start_time, &end_time, &kNumSpawns, thread_num = i,
-                          &order, party]() mutable {
+    threads.emplace_back([&start_time, &end_time, thread_num = i, &order,
+                          party]() mutable {
       start_time = Timestamp::Now();
       for (int j = 0; j < kNumSpawns; j++) {
         const int sleep_ms = (thread_num % 2 == 1) ? 10 : 30;
@@ -729,28 +731,46 @@ class PromiseNotification {
 TEST_F(PartyTest, ThreadStressTestWithOwningWaker) {
   auto party = MakeParty();
   std::vector<std::thread> threads;
-  threads.reserve(8);
-  for (int i = 0; i < 8; i++) {
-    threads.emplace_back([party]() {
-      for (int i = 0; i < 100; i++) {
+  threads.reserve(kNumThreads);
+  std::vector<std::string> execution_order(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    std::string& order = execution_order[i];
+    absl::StrAppend(&order, absl::StrFormat("Thread %d : ", i));
+    threads.emplace_back([party, &order]() {
+      for (int i = 0; i < kNumSpawns; i++) {
         ExecCtx ctx;  // needed for Sleep
         PromiseNotification promise_start(true);
         Notification promise_complete;
         party->Spawn("TestSpawn",
                      Seq(promise_start.Wait(),
                          Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
-                         []() -> Poll<int> { return 42; }),
-                     [&promise_complete](int i) {
-                       EXPECT_EQ(i, 42);
+                         [&order, i]() -> Poll<int> {
+                           absl::StrAppend(&order,
+                                           absl::StrFormat("%d(P%d,", i, i));
+                           return 42;
+                         }),
+                     [&order, &promise_complete, i](int val) {
+                       EXPECT_EQ(val, 42);
+                       absl::StrAppend(&order, absl::StrFormat("D%d)", i));
                        promise_complete.Notify();
                      });
         promise_start.Notify();
         promise_complete.WaitForNotification();
+        absl::StrAppend(&order, ".");
       }
     });
   }
   for (auto& thread : threads) {
     thread.join();
+  }
+  std::vector<std::string> expected_order(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    absl::StrAppend(&expected_order[i], absl::StrFormat("Thread %d : ", i));
+    for (int j = 0; j < kNumSpawns; j++) {
+      absl::StrAppend(&expected_order[i],
+                      absl::StrFormat("%d(P%d,D%d).", i, j, j));
+    }
+    // EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
 }
 
@@ -758,28 +778,46 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWaker) {
 TEST_F(PartyTest, ThreadStressTestWithOwningWakerHoldingLock) {
   auto party = MakeParty();
   std::vector<std::thread> threads;
-  threads.reserve(8);
-  for (int i = 0; i < 8; i++) {
-    threads.emplace_back([party]() {
-      for (int i = 0; i < 100; i++) {
+  threads.reserve(kNumThreads);
+  std::vector<std::string> execution_order(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    std::string& order = execution_order[i];
+    absl::StrAppend(&order, absl::StrFormat("Thread %d : ", i));
+    threads.emplace_back([party, &order]() {
+      for (int i = 0; i < kNumSpawns; i++) {
         ExecCtx ctx;  // needed for Sleep
         PromiseNotification promise_start(true);
         Notification promise_complete;
         party->Spawn("TestSpawn",
                      Seq(promise_start.Wait(),
                          Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
-                         []() -> Poll<int> { return 42; }),
-                     [&promise_complete](int i) {
-                       EXPECT_EQ(i, 42);
+                         [&order, i]() -> Poll<int> {
+                           absl::StrAppend(&order,
+                                           absl::StrFormat("%d(P%d,", i, i));
+                           return 42;
+                         }),
+                     [&order, &promise_complete, i](int val) {
+                       EXPECT_EQ(val, 42);
+                       absl::StrAppend(&order, absl::StrFormat("D%d)", i));
                        promise_complete.Notify();
                      });
         promise_start.NotifyUnderLock();
         promise_complete.WaitForNotification();
+        absl::StrAppend(&order, ".");
       }
     });
   }
   for (auto& thread : threads) {
     thread.join();
+  }
+  std::vector<std::string> expected_order(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    absl::StrAppend(&expected_order[i], absl::StrFormat("Thread %d : ", i));
+    for (int j = 0; j < kNumSpawns; j++) {
+      absl::StrAppend(&expected_order[i],
+                      absl::StrFormat("%d(P%d,D%d).", i, j, j));
+    }
+    // EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
 }
 
@@ -787,28 +825,46 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWakerHoldingLock) {
 TEST_F(PartyTest, ThreadStressTestWithNonOwningWaker) {
   auto party = MakeParty();
   std::vector<std::thread> threads;
-  threads.reserve(8);
-  for (int i = 0; i < 8; i++) {
-    threads.emplace_back([party]() {
-      for (int i = 0; i < 100; i++) {
+  threads.reserve(kNumThreads);
+  std::vector<std::string> execution_order(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    std::string& order = execution_order[i];
+    absl::StrAppend(&order, absl::StrFormat("Thread %d : ", i));
+    threads.emplace_back([party, &order]() {
+      for (int i = 0; i < kNumSpawns; i++) {
         ExecCtx ctx;  // needed for Sleep
         PromiseNotification promise_start(false);
         Notification promise_complete;
         party->Spawn("TestSpawn",
                      Seq(promise_start.Wait(),
                          Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
-                         []() -> Poll<int> { return 42; }),
-                     [&promise_complete](int i) {
-                       EXPECT_EQ(i, 42);
+                         [&order, i]() -> Poll<int> {
+                           absl::StrAppend(&order,
+                                           absl::StrFormat("%d(P%d,", i, i));
+                           return 42;
+                         }),
+                     [&order, &promise_complete, i](int val) {
+                       EXPECT_EQ(val, 42);
+                       absl::StrAppend(&order, absl::StrFormat("D%d)", i));
                        promise_complete.Notify();
                      });
         promise_start.Notify();
         promise_complete.WaitForNotification();
+        absl::StrAppend(&order, ".");
       }
     });
   }
   for (auto& thread : threads) {
     thread.join();
+  }
+  std::vector<std::string> expected_order(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    absl::StrAppend(&expected_order[i], absl::StrFormat("Thread %d : ", i));
+    for (int j = 0; j < kNumSpawns; j++) {
+      absl::StrAppend(&expected_order[i],
+                      absl::StrFormat("%d(P%d,D%d).", i, j, j));
+    }
+    // EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
 }
 
@@ -816,26 +872,44 @@ TEST_F(PartyTest, ThreadStressTestWithNonOwningWaker) {
 TEST_F(PartyTest, ThreadStressTestWithOwningWakerNoSleep) {
   auto party = MakeParty();
   std::vector<std::thread> threads;
-  threads.reserve(8);
-  for (int i = 0; i < 8; i++) {
-    threads.emplace_back([party]() {
-      for (int i = 0; i < 10000; i++) {
+  threads.reserve(kNumThreads);
+  std::vector<std::string> execution_order(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    std::string& order = execution_order[i];
+    absl::StrAppend(&order, absl::StrFormat("Thread %d : ", i));
+    threads.emplace_back([party, &order]() {
+      for (int i = 0; i < kLargeNumSpawns; i++) {
         PromiseNotification promise_start(true);
         Notification promise_complete;
-        party->Spawn(
-            "TestSpawn",
-            Seq(promise_start.Wait(), []() -> Poll<int> { return 42; }),
-            [&promise_complete](int i) {
-              EXPECT_EQ(i, 42);
-              promise_complete.Notify();
-            });
+        party->Spawn("TestSpawn",
+                     Seq(promise_start.Wait(),
+                         [&order, i]() -> Poll<int> {
+                           absl::StrAppend(&order,
+                                           absl::StrFormat("%d(P%d,", i, i));
+                           return 42;
+                         }),
+                     [&order, &promise_complete, i](int val) {
+                       EXPECT_EQ(val, 42);  // CHECK
+                       absl::StrAppend(&order, absl::StrFormat("D%d)", i));
+                       promise_complete.Notify();
+                     });
         promise_start.Notify();
         promise_complete.WaitForNotification();
+        absl::StrAppend(&order, ".");
       }
     });
   }
   for (auto& thread : threads) {
     thread.join();
+  }
+  std::vector<std::string> expected_order(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    absl::StrAppend(&expected_order[i], absl::StrFormat("Thread %d : ", i));
+    for (int j = 0; j < kLargeNumSpawns; j++) {
+      absl::StrAppend(&expected_order[i],
+                      absl::StrFormat("%d(P%d,D%d).", i, j, j));
+    }
+    // EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
 }
 
@@ -843,26 +917,44 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWakerNoSleep) {
 TEST_F(PartyTest, ThreadStressTestWithNonOwningWakerNoSleep) {
   auto party = MakeParty();
   std::vector<std::thread> threads;
-  threads.reserve(8);
-  for (int i = 0; i < 8; i++) {
-    threads.emplace_back([party]() {
-      for (int i = 0; i < 10000; i++) {
+  threads.reserve(kNumThreads);
+  std::vector<std::string> execution_order(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    std::string& order = execution_order[i];
+    absl::StrAppend(&order, absl::StrFormat("Thread %d : ", i));
+    threads.emplace_back([party, &order]() {
+      for (int i = 0; i < kLargeNumSpawns; i++) {
         PromiseNotification promise_start(false);
         Notification promise_complete;
-        party->Spawn(
-            "TestSpawn",
-            Seq(promise_start.Wait(), []() -> Poll<int> { return 42; }),
-            [&promise_complete](int i) {
-              EXPECT_EQ(i, 42);
-              promise_complete.Notify();
-            });
+        party->Spawn("TestSpawn",
+                     Seq(promise_start.Wait(),
+                         [&order, i]() -> Poll<int> {
+                           absl::StrAppend(&order,
+                                           absl::StrFormat("%d(P%d,", i, i));
+                           return 42;
+                         }),
+                     [&order, &promise_complete, i](int val) {
+                       EXPECT_EQ(val, 42);  // CHECK
+                       absl::StrAppend(&order, absl::StrFormat("D%d)", i));
+                       promise_complete.Notify();
+                     });
         promise_start.Notify();
         promise_complete.WaitForNotification();
+        absl::StrAppend(&order, ".");
       }
     });
   }
   for (auto& thread : threads) {
     thread.join();
+  }
+  std::vector<std::string> expected_order(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    absl::StrAppend(&expected_order[i], absl::StrFormat("Thread %d : ", i));
+    for (int j = 0; j < kLargeNumSpawns; j++) {
+      absl::StrAppend(&expected_order[i],
+                      absl::StrFormat("%d(P%d,D%d).", i, j, j));
+    }
+    // EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
 }
 
@@ -870,10 +962,13 @@ TEST_F(PartyTest, ThreadStressTestWithNonOwningWakerNoSleep) {
 TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
   auto party = MakeParty();
   std::vector<std::thread> threads;
-  threads.reserve(8);
-  for (int i = 0; i < 8; i++) {
-    threads.emplace_back([party]() {
-      for (int i = 0; i < 100; i++) {
+  threads.reserve(kNumThreads);
+  std::vector<std::string> execution_order(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    std::string& order = execution_order[i];
+    absl::StrAppend(&order, absl::StrFormat("Thread %d : ", i));
+    threads.emplace_back([party, &order]() {
+      for (int i = 0; i < kNumSpawns; i++) {
         ExecCtx ctx;  // needed for Sleep
         PromiseNotification inner_start(true);
         PromiseNotification inner_complete(false);
@@ -881,31 +976,57 @@ TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
         party->Spawn(
             "TestSpawn",
             Seq(
-                [party, &inner_start, &inner_complete]() -> Poll<int> {
-                  party->Spawn("TestSpawnInner",
-                               Seq(inner_start.Wait(), []() { return 0; }),
-                               [&inner_complete](int i) {
-                                 EXPECT_EQ(i, 0);
-                                 inner_complete.Notify();
-                               });
+                [party, &inner_start, &inner_complete, &order,
+                 i]() -> Poll<int> {
+                  party->Spawn(
+                      "TestSpawnInner",
+                      Seq(inner_start.Wait(),
+                          [&order, i]() {
+                            absl::StrAppend(&order,
+                                            absl::StrFormat("%d(P%d,", i, i));
+                            return 0;
+                          }),
+                      [&inner_complete, &order, i](int val) {
+                        EXPECT_EQ(val, 0);
+                        absl::StrAppend(&order, absl::StrFormat("D%d)", i));
+                        inner_complete.Notify();
+                      });
+                  absl::StrAppend(&order, absl::StrFormat("%d(P%d,", i, i));
                   return 0;
                 },
                 Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
-                [&inner_start]() {
+                [&inner_start, &order, i]() {
+                  absl::StrAppend(&order, absl::StrFormat("%d(P%d,", i, i));
                   inner_start.Notify();
                   return 0;
                 },
-                inner_complete.Wait(), []() -> Poll<int> { return 42; }),
-            [&promise_complete](int i) {
-              EXPECT_EQ(i, 42);
+                inner_complete.Wait(),
+                [&order, i]() -> Poll<int> {
+                  absl::StrAppend(&order, absl::StrFormat("%d(P%d,", i, i));
+                  return 42;
+                }),
+            [&promise_complete, &order, i](int val) {
+              EXPECT_EQ(val, 42);  // Check
+              absl::StrAppend(&order, absl::StrFormat("D%d)", i));
               promise_complete.Notify();
             });
         promise_complete.WaitForNotification();
+        absl::StrAppend(&order, ".");
       }
     });
   }
   for (auto& thread : threads) {
     thread.join();
+  }
+  std::vector<std::string> expected_order(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    absl::StrAppend(&expected_order[i], absl::StrFormat("Thread %d : ", i));
+    for (int j = 0; j < kNumSpawns; j++) {
+      absl::StrAppend(&expected_order[i],
+                      absl::StrFormat("%d(P%d,D%d).", i, j, j));
+    }
+    // FIX
+    // EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
 }
 
