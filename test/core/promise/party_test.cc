@@ -297,30 +297,43 @@ TEST_F(PartyTest, CanSpawnFromSpawn) {
   EXPECT_STREQ(execution_order.c_str(), "14PPPP23");
 }
 
-// TODO(tjagtap)
 TEST_F(PartyTest, CanWakeupWithOwningWaker) {
+  // Testing the Owning Waker.
+  // Here, the party is woken up and the promise is executed by a loop which is
+  // outside the party.
+  // Asserting
+  // 1. The waker wakes up the party as expected and the promise is executed.
+  // 2. The notifications are received in the order we expect.
+  // 3. Waking the promise is a no-op after the promise is resolved.
+  // 4. The on_done callback is called when the promise is resolved.
   auto party = MakeParty();
   Notification n[10];
   Notification complete;
+  std::string execution_order;
   Waker waker;
   party->Spawn(
       "TestSpawn",
-      [i = 0, &waker, &n]() mutable -> Poll<int> {
+      [num = 0, &waker, &n, &execution_order]() mutable -> Poll<int> {
+        absl::StrAppend(&execution_order, "A");
         waker = GetContext<Activity>()->MakeOwningWaker();
-        n[i].Notify();
-        i++;
-        if (i == 10) return 42;
+        n[num].Notify();
+        num++;
+        if (num == 10) return num;
         return Pending{};
       },
-      [&complete](int x) {
-        EXPECT_EQ(x, 42);
+      [&complete, &execution_order](int val) {
+        absl::StrAppend(&execution_order, "B");
+        EXPECT_EQ(val, 10);
         complete.Notify();
       });
   for (int i = 0; i < 10; i++) {
+    absl::StrAppend(&execution_order, " ");
+    absl::StrAppend(&execution_order, i);
     n[i].WaitForNotification();
     waker.Wakeup();
   }
   complete.WaitForNotification();
+  EXPECT_STREQ(execution_order.c_str(), "A 0A 1A 2A 3A 4A 5A 6A 7A 8AB 9");
 }
 
 // TODO(tjagtap)
@@ -512,8 +525,8 @@ TEST_F(PartyTest, ThreadStressTest) {
   // 4. The promises are executed in the order that we expect.
   // 5. The threads run in parallel. Spawn does not acquire locks that it should
   // not. And it does not introduce majaor delays of any sort.
-  constexpr int kNumThreads = 8;
-  const int kNumSpawns = 100;
+  int kNumThreads = 8;   // Don't add const here, it causes clang tidy errors.
+  int kNumSpawns = 100;  // Don't add const here, it causes clang tidy errors.
   auto party = MakeParty();
   std::vector<std::string> execution_order(kNumThreads);
   std::vector<Timestamp> start_times(kNumThreads);
@@ -572,12 +585,14 @@ TEST_F(PartyTest, ThreadStressTest) {
 
   Duration time_for_serial_run =
       Duration::Milliseconds(kNumThreads * kNumSpawns * 10);
-  float run_time_by_sleep_time = 2.0;
+  float run_time_by_sleep_time = 3.5;
   // This makes sure that the threads run efficiently in parallel.
   // At the time of writing this test, we found run_time_by_sleep_time to
-  // be (1.63). Lets make sure this efficiency is not degraded beyond 2x. This
+  // be (1.63). Lets make sure this efficiency is not degraded beyond 3.5x. This
   // degradation means that there is something slowing down the mechanism of
-  // party sleeping and waking up.
+  // party sleeping and waking up. Debug builds with various msan/tsan
+  // configs, could cause this entire execution to take longer, which is why
+  // this is 3x for debug builds. It is 1.63 for opt builds.
   EXPECT_LE(last_finished_thread - start_times[0],
             (time_for_serial_run / kNumThreads) * run_time_by_sleep_time);
 
