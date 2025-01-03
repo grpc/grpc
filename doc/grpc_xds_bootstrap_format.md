@@ -234,8 +234,9 @@ gRPC supports the following server features in the `server_features` field
 inside `xds_servers`:
 - `xds_v3`: Added in gRFC A30. Supported in older versions of gRPC. See
 [here](grpc_xds_features.md) for when gRPC added support for xDS transport
-protocol v3, and when support for xDS transport protocol v2 was dropped. 
-- `ignore_resource_deletion`: Added in [gRFC A53](a53)
+protocol v3, and when support for xDS transport protocol v2 was dropped.
+- `ignore_resource_deletion`: Added in [gRFC A53](a53).
+- `trusted_xds_server`: Added in [gRFC A81](a81).
 
 
 ### When were fields added?
@@ -263,3 +264,4 @@ protocol v3, and when support for xDS transport protocol v2 was dropped.
 [a53]: https://github.com/grpc/proposal/blob/master/A53-xds-ignore-resource-deletion.md
 [a65]: https://github.com/grpc/proposal/blob/master/A65-xds-mtls-creds-in-bootstrap.md#proposal
 [a71]: https://github.com/grpc/proposal/blob/master/A71-xds-fallback.md
+[a81]: https://github.com/grpc/proposal/blob/master/A81-xds-authority-rewriting.md
