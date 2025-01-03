@@ -54,8 +54,7 @@ struct CFEventEngine::Closure final : public EventEngine::Closure {
 };
 
 CFEventEngine::CFEventEngine()
-    : grpc_core::KeepsGrpcInitialized(/*enabled=*/true),
-      thread_pool_(
+    : thread_pool_(
           MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
       timer_manager_(thread_pool_) {}
 

@@ -201,8 +201,7 @@ struct WindowsEventEngine::TimerClosure final : public EventEngine::Closure {
 };
 
 WindowsEventEngine::WindowsEventEngine()
-    : grpc_core::KeepsGrpcInitialized(true),
-      thread_pool_(
+    : thread_pool_(
           MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       iocp_(thread_pool_.get()),
       timer_manager_(thread_pool_),

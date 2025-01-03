@@ -26,7 +26,7 @@ extern bool (*IsInitializedInternally)();
 
 class KeepsGrpcInitialized {
  public:
-  explicit KeepsGrpcInitialized(bool enabled) : enabled_(enabled) {
+  explicit KeepsGrpcInitialized(bool enabled = true) : enabled_(enabled) {
     if (enabled_) {
       InitInternally();
     }
