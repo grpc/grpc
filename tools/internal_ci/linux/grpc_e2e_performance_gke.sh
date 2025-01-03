@@ -220,8 +220,8 @@ declare -a disabledTests8core=(
 declare -a disabledTests32core=()
 
 # Arguments to disable tests.
-regexArgs8core=(-r "$(disabledTestsRegex "${disabledTests8core[@]}")")
-regexArgs32core=(-r "$(disabledTestsRegex "${disabledTests32core[@]}")")
+regexArgs8core=(-r "$(disableTestsRegex "${disabledTests8core[@]}")")
+regexArgs32core=(-r "$(disableTestsRegex "${disabledTests32core[@]}")")
 
 buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${configLangArgs8core[@]}" "${regexArgs8core[@]}"
 buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${configLangArgs32core[@]}" "${regexArgs32core[@]}"
