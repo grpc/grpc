@@ -1072,7 +1072,8 @@ TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
   SendRpc([this]() { return CreateMtlsChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtls) {
@@ -1098,7 +1099,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootPluginUpdate) {
   SendRpc([this]() { return CreateMtlsChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityPluginUpdate) {
@@ -1150,7 +1152,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootCertificateNameUpdate) {
   SendRpc([this]() { return CreateMtlsChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityCertificateNameUpdate) {
@@ -1260,7 +1263,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsToTls) {
   SendRpc([this]() { return CreateTlsChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   SendRpc([this]() { return CreateTlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
@@ -1279,7 +1283,8 @@ TEST_P(XdsServerSecurityTest, TestTlsToMtls) {
   SendRpc([this]() { return CreateTlsChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsToFallback) {
