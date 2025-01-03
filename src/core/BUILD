@@ -6508,6 +6508,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "delegating_helper",
+        "down_cast",
         "grpc_lb_policy_pick_first",
         "json",
         "lb_policy",

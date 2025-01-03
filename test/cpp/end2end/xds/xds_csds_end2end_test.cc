@@ -723,8 +723,8 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpListenerDoesNotExist) {
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: LDS resource ", kServerName,
-                   ": does not exist \\(node ID:xds_end2end_test\\)"),
+      absl::StrCat("empty address list \\(LDS resource ", kServerName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"),
       RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(csds_response.config(0).generic_xds_configs(),
@@ -740,9 +740,9 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpRouteConfigDoesNotExist) {
                                           kDefaultRouteConfigurationName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: RDS resource ",
+      absl::StrCat("empty address list \\(RDS resource ",
                    kDefaultRouteConfigurationName,
-                   ": does not exist \\(node ID:xds_end2end_test\\)"),
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"),
       RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(
