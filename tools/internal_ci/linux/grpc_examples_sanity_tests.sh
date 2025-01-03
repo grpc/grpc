@@ -18,6 +18,6 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+#source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 echo "Will be performing sanity checks for examples"
