@@ -334,9 +334,10 @@ class XdsClient::XdsChannel::AdsCall final
                      absl::string_view serialized_resource,
                      DecodeContext* context)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-  void HandleServerReportedResourceError(
-      size_t idx, absl::string_view resource_name, absl::Status status,
-      DecodeContext* context)
+  void HandleServerReportedResourceError(size_t idx,
+                                         absl::string_view resource_name,
+                                         absl::Status status,
+                                         DecodeContext* context)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
   absl::Status DecodeAdsResponse(absl::string_view encoded_response,
                                  DecodeContext* context)
@@ -1481,9 +1482,10 @@ void XdsClient::ResourceState::SetAcked(
   failed_status_ = absl::OkStatus();
 }
 
-void XdsClient::ResourceState::SetNacked(
-    const std::string& version, absl::string_view details,
-    Timestamp update_time, bool drop_cached_resource) {
+void XdsClient::ResourceState::SetNacked(const std::string& version,
+                                         absl::string_view details,
+                                         Timestamp update_time,
+                                         bool drop_cached_resource) {
   if (drop_cached_resource) resource_.reset();
   client_status_ = ClientResourceStatus::NACKED;
   failed_version_ = version;
@@ -1502,9 +1504,10 @@ void XdsClient::ResourceState::SetTransientError(const std::string& details) {
   failed_status_ = absl::UnavailableError(details);
 }
 
-void XdsClient::ResourceState::SetReceivedError(
-    const std::string& version, absl::Status status, Timestamp update_time,
-    bool drop_cached_resource) {
+void XdsClient::ResourceState::SetReceivedError(const std::string& version,
+                                                absl::Status status,
+                                                Timestamp update_time,
+                                                bool drop_cached_resource) {
   if (drop_cached_resource) resource_.reset();
   client_status_ = status.code() == absl::StatusCode::kNotFound
                        ? ClientResourceStatus::DOES_NOT_EXIST

@@ -2230,13 +2230,12 @@ TEST_F(XdsClientTest, ResourceErrorFromServer) {
                           XdsFooResourceType::Get()->type_url()),
           1)),
       ::testing::_));
-  EXPECT_THAT(
-      GetResourceCounts(),
-      ::testing::ElementsAre(::testing::Pair(
-          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
-                                XdsFooResourceType::Get()->type_url(),
-                                "received_error"),
-          1)));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "received_error"),
+                  1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2303,13 +2302,12 @@ TEST_F(XdsClientTest, ResourceErrorFromServer) {
                           XdsFooResourceType::Get()->type_url()),
           2)),
       ::testing::_));
-  EXPECT_THAT(
-      GetResourceCounts(),
-      ::testing::ElementsAre(::testing::Pair(
-          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
-                                XdsFooResourceType::Get()->type_url(),
-                                "received_error_but_cached"),
-          1)));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "received_error_but_cached"),
+                  1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2391,13 +2389,12 @@ TEST_F(XdsClientTest, ResourceErrorFromServerWithFailOnDataErrors) {
                           XdsFooResourceType::Get()->type_url()),
           1)),
       ::testing::_));
-  EXPECT_THAT(
-      GetResourceCounts(),
-      ::testing::ElementsAre(::testing::Pair(
-          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
-                                XdsFooResourceType::Get()->type_url(),
-                                "received_error"),
-          1)));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "received_error"),
+                  1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2464,13 +2461,12 @@ TEST_F(XdsClientTest, ResourceErrorFromServerWithFailOnDataErrors) {
                           XdsFooResourceType::Get()->type_url()),
           2)),
       ::testing::_));
-  EXPECT_THAT(
-      GetResourceCounts(),
-      ::testing::ElementsAre(::testing::Pair(
-          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
-                                XdsFooResourceType::Get()->type_url(),
-                                "received_error"),
-          1)));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "received_error"),
+                  1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2541,13 +2537,12 @@ TEST_F(XdsClientTest, ResourceErrorFromServerIgnoredIfNotEnabled) {
   // Check metric data.
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
-  EXPECT_THAT(
-      GetResourceCounts(),
-      ::testing::ElementsAre(::testing::Pair(
-          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
-                                XdsFooResourceType::Get()->type_url(),
-                                "requested"),
-          1)));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
