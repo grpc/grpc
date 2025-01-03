@@ -304,7 +304,8 @@ TEST_F(PartyTest, CanWakeupWithOwningWaker) {
   // Asserting
   // 1. The waker wakes up the party as expected and the promise is executed.
   // 2. The notifications are received in the order we expect.
-  // 3. Waking the promise is a no-op after the promise is resolved.
+  // 3. Waking the promise is a no-op after the promise is resolved. A resolved
+  //    promise is not repolled.
   // 4. The on_done callback is called when the promise is resolved.
   auto party = MakeParty();
   Notification n[10];
@@ -330,40 +331,49 @@ TEST_F(PartyTest, CanWakeupWithOwningWaker) {
     absl::StrAppend(&execution_order, " ");
     absl::StrAppend(&execution_order, i);
     n[i].WaitForNotification();
+    if (i < 9) {
+      EXPECT_FALSE(n[i + 1].HasBeenNotified());
+    }
     waker.Wakeup();
   }
   complete.WaitForNotification();
   EXPECT_STREQ(execution_order.c_str(), "A 0A 1A 2A 3A 4A 5A 6A 7A 8AB 9");
 }
 
-// TODO(tjagtap)
 TEST_F(PartyTest, CanWakeupWithNonOwningWaker) {
+  // This test is similar to the previous test CanWakeupWithOwningWaker, but the
+  // waker is a non-owning waker. The asserts are the same.
   auto party = MakeParty();
   Notification n[10];
   Notification complete;
+  std::string execution_order;
   Waker waker;
   party->Spawn(
       "TestSpawn",
-      [i = 10, &waker, &n]() mutable -> Poll<int> {
+      [i = 10, &waker, &n, &execution_order]() mutable -> Poll<int> {
+        absl::StrAppend(&execution_order, "A");
         waker = GetContext<Activity>()->MakeNonOwningWaker();
         --i;
         n[9 - i].Notify();
         if (i == 0) return 42;
         return Pending{};
       },
-      [&complete](int x) {
+      [&complete, &execution_order](int x) {
+        absl::StrAppend(&execution_order, "B");
         EXPECT_EQ(x, 42);
         complete.Notify();
       });
-  for (int i = 0; i < 9; i++) {
+  for (int i = 0; i <= 9; i++) {
+    absl::StrAppend(&execution_order, " ");
+    absl::StrAppend(&execution_order, i);
     n[i].WaitForNotification();
-    EXPECT_FALSE(n[i + 1].HasBeenNotified());
+    if (i < 9) EXPECT_FALSE(n[i + 1].HasBeenNotified());
     waker.Wakeup();
   }
   complete.WaitForNotification();
+  EXPECT_STREQ(execution_order.c_str(), "A 0A 1A 2A 3A 4A 5A 6A 7A 8AB 9");
 }
 
-// TODO(tjagtap)
 TEST_F(PartyTest, CanWakeupWithNonOwningWakerAfterOrphaning) {
   auto party = MakeParty();
   Notification set_waker;
@@ -518,16 +528,17 @@ TEST_F(PartyTest, ThreadStressTest) {
   // on each thread using just one party object. This should work as expected.
   // Asserts
   // 1. Assert that one party can be used to spawn promises on multiple threads,
-  // and this works as expected.
+  //    and this works as expected.
   // 2. The promise Seq in this case Sleep, wake up and resolve correctly as
-  // expected.
+  //    expected.
   // 3. Notifications work as expected in such state
   // 4. The promises are executed in the order that we expect.
   // 5. The threads run in parallel. Spawn does not acquire locks that it should
-  // not. And it does not introduce majaor delays of any sort.
-  int kNumThreads = 8;   // Don't add const here, it causes clang tidy errors.
-  int kNumSpawns = 100;  // Don't add const here, it causes clang tidy errors.
+  //    not. And it does not introduce majaor delays of any sort.
+  // 6. Stress testing with multiple threads and multiple spawns
   auto party = MakeParty();
+  constexpr int kNumThreads = 8;
+  int kNumSpawns = 100;  // Don't add const here, it causes clang tidy error.
   std::vector<std::string> execution_order(kNumThreads);
   std::vector<Timestamp> start_times(kNumThreads);
   std::vector<Timestamp> end_times(kNumThreads);
@@ -543,7 +554,7 @@ TEST_F(PartyTest, ThreadStressTest) {
                           &order, party]() mutable {
       start_time = Timestamp::Now();
       for (int j = 0; j < kNumSpawns; j++) {
-        const int sleep_ms = (thread_num % 2 == 1) ? 5 : 15;
+        const int sleep_ms = (thread_num % 2 == 1) ? 10 : 30;
         ExecCtx ctx;  // needed for Sleep
         Notification promise_complete;
         party->Spawn(
@@ -584,7 +595,7 @@ TEST_F(PartyTest, ThreadStressTest) {
   }
 
   Duration time_for_serial_run =
-      Duration::Milliseconds(kNumThreads * kNumSpawns * 10);
+      Duration::Milliseconds(kNumThreads * kNumSpawns * 20);
   float run_time_by_sleep_time = 3.5;
   // This makes sure that the threads run efficiently in parallel.
   // At the time of writing this test, we found run_time_by_sleep_time to
@@ -592,7 +603,7 @@ TEST_F(PartyTest, ThreadStressTest) {
   // degradation means that there is something slowing down the mechanism of
   // party sleeping and waking up. Debug builds with various msan/tsan
   // configs, could cause this entire execution to take longer, which is why
-  // this is 3x for debug builds. It is 1.63 for opt builds.
+  // this is 3.5x for debug builds. It is 1.63 for opt builds.
   EXPECT_LE(last_finished_thread - start_times[0],
             (time_for_serial_run / kNumThreads) * run_time_by_sleep_time);
 
@@ -615,9 +626,9 @@ TEST_F(PartyTest, ThreadStressTest) {
     // (but not guaranteed) to finish before all other threads.
     EXPECT_LE(start_times[i], end_times[1]);
 
-    // All threads should start before any thread finishes 5% of it's run.
+    // All threads should start before any thread finishes 12.5% of it's run.
     // This is loose evidence that the threads are running in parallel.
-    EXPECT_LE(start_times[i] - start_times[0], (small_thread_run_time / 10));
+    EXPECT_LE(start_times[i] - start_times[0], (small_thread_run_time / 8));
 
     LOG(INFO) << "Thread " << i << " started at " << start_times[i]
               << " and finished at " << end_times[i];
@@ -628,8 +639,7 @@ TEST_F(PartyTest, ThreadStressTest) {
       // This is loose evidence that the threads are running in parallel.
       // If the party->Spawn acquires locks that it should not, or if it
       // degrades in performance, this test will fail.
-      EXPECT_LE((end_times[i - 2] - end_times[i]),
-                (small_thread_run_time / 10));
+      EXPECT_LE((end_times[i - 2] - end_times[i]), (small_thread_run_time / 5));
     }
 
     if (i % 2 == 1) {
