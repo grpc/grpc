@@ -332,7 +332,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
     }
 
     const absl::Status& failed_status() const { return failed_status_; }
-    absl::Status WatcherStatus() const;
 
     void FillGenericXdsConfig(
         upb_StringView type_url, upb_StringView resource_name, upb_Arena* arena,
