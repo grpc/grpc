@@ -46,6 +46,7 @@
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.pb.h"
 #include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/xds/xds_server.h"
@@ -209,6 +210,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   class ServerThread {
    public:
     // A status notifier for xDS-enabled servers.
+    //
+    // TODO(yashykt): This notifier records the most recent state seen
+    // for every URI and then lets the caller wait until the status for
+    // that URI is the expected one.  If we are expecting an update that
+    // has the same status as the previous one, then we really have no
+    // way of knowing whether the second update has actually been sent.
+    // A better approach here would be to queue the updates received by
+    // the notifier and then have a method to get the next update from
+    // the queue, if any.
+    // Also, we should change the callers to check not just the status
+    // but also the corresponding error message, so that we can verify
+    // that we're emitting useful error messages for our users.
     class XdsServingStatusNotifier
         : public grpc::XdsServerServingStatusNotifierInterface {
      public:
@@ -245,6 +258,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     int port() const { return port_; }
 
     XdsServingStatusNotifier* notifier() { return &notifier_; }
+
+    GRPC_MUST_USE_RESULT bool WaitOnServingStatusChange(
+        grpc::StatusCode expected_status,
+        absl::Duration timeout = absl::Seconds(10)) {
+      return notifier_.WaitOnServingStatusChange(
+          grpc_core::LocalIpAndPort(port_), expected_status, timeout);
+    }
 
     void set_allow_put_requests(bool allow_put_requests) {
       allow_put_requests_ = allow_put_requests;
@@ -862,6 +882,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // xDS server, or until a timeout expires.
 
   // Sends RPCs until get_state() returns a response.
+  // TODO(roth): Does this actually need to send RPCs, or can it just
+  // use a condition variable to wait?  I suspect that we need to be
+  // sending RPCs for polling reasons, but that should go away when we
+  // finish the EventEngine migration.  Once that's done, try changing
+  // this to not send RPCs.
+  // Also, consider refactoring to also support waiting for ACKs, since
+  // there are several use-cases where tests are doing that.
   absl::optional<AdsServiceImpl::ResponseState> WaitForNack(
       const grpc_core::DebugLocation& debug_location,
       std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,

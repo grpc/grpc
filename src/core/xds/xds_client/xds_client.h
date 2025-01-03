@@ -305,7 +305,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
                   std::string serialized_proto, std::string version,
                   Timestamp update_time);
     void SetNacked(const std::string& version, const std::string& details,
-                   Timestamp update_time);
+                   Timestamp update_time, bool drop_cached_resource);
     void SetDoesNotExist();
 
     void set_ignored_deletion(bool value) { ignored_deletion_ = value; }
