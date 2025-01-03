@@ -279,8 +279,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
       ACKED,
       // Client received this resource and replied with NACK.
       NACKED,
-      // Transient error talking to xDS server.
-      TRANSIENT_ERROR,
+      // Server sent an error for the resource.
+      RECEIVED_ERROR,
     };
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_REQUESTED) ==
                       ClientResourceStatus::REQUESTED,
@@ -295,6 +295,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_NACKED) ==
                       ClientResourceStatus::NACKED,
                   "");
+// FIXME
+//    static_assert(
+//        static_cast<ClientResourceStatus>(envoy_admin_v3_RECEIVED_ERROR) ==
+//            ClientResourceStatus::RECEIVED_ERROR,
+//        "");
 
     void AddWatcher(RefCountedPtr<ResourceWatcherInterface> watcher) {
       watchers_.insert(std::move(watcher));
@@ -312,6 +317,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
                    Timestamp update_time, bool drop_cached_resource);
     void SetDoesNotExist();
     void SetTransientError(const std::string& details);
+    void SetReceivedError(const std::string& version, absl::Status status,
+                          Timestamp update_time, bool drop_cached_resource);
 
     void set_ignored_deletion(bool value) { ignored_deletion_ = value; }
     bool ignored_deletion() const { return ignored_deletion_; }
@@ -324,7 +331,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
       return resource_;
     }
 
-    absl::string_view failed_details() const { return failed_details_; }
+    const absl::Status& failed_status() const { return failed_status_; }
     absl::Status WatcherStatus() const;
 
     void FillGenericXdsConfig(
@@ -346,7 +353,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     // The rejected version string of the last failed update attempt.
     std::string failed_version_;
     // Details about the last failed update attempt or transient error.
-    std::string failed_details_;
+    absl::Status failed_status_;
     // Timestamp of the last failed update attempt.
     Timestamp failed_update_time_;
     // If we've ignored deletion.

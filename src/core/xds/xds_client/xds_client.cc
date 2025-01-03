@@ -334,6 +334,10 @@ class XdsClient::XdsChannel::AdsCall final
                      absl::string_view serialized_resource,
                      DecodeContext* context)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+  void HandleServerReportedResourceError(
+      size_t idx, absl::string_view resource_name, absl::Status status,
+      DecodeContext* context)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
   absl::Status DecodeAdsResponse(absl::string_view encoded_response,
                                  DecodeContext* context)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
@@ -1024,8 +1028,6 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
   // Update resource state based on whether the resource is valid.
   if (!decode_status.ok()) {
     ++context->num_invalid_resources;
-    absl::Status status = absl::InvalidArgumentError(
-        absl::StrCat("invalid resource: ", decode_status.ToString()));
     // If the fail_on_data_errors server feature is present, drop the
     // existing cached resource, if any.
     const bool drop_cached_resource = XdsDataErrorHandlingEnabled() &&
@@ -1074,6 +1076,106 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
                                                 context->read_delay_handle);
 }
 
+void XdsClient::XdsChannel::AdsCall::HandleServerReportedResourceError(
+    size_t idx, absl::string_view resource_name, absl::Status status,
+    DecodeContext* context) {
+  std::string error_prefix = absl::StrCat(
+      "resource_errors index ", idx, ": ",
+      resource_name.empty() ? "" : absl::StrCat(resource_name, ": "));
+  if (resource_name.empty()) {
+    context->errors.emplace_back(
+        absl::StrCat(error_prefix, "resource_name unset"));
+    ++context->num_invalid_resources;
+    return;
+  }
+  if (status.ok()) {
+    context->errors.emplace_back(
+        absl::StrCat(error_prefix, "error_detail must be non-OK"));
+    ++context->num_invalid_resources;
+    return;
+  }
+  // Check the resource name.
+  auto parsed_resource_name =
+      xds_client()->ParseXdsResourceName(resource_name, context->type);
+  if (!parsed_resource_name.ok()) {
+    context->errors.emplace_back(
+        absl::StrCat(error_prefix, "Cannot parse xDS resource name"));
+    ++context->num_invalid_resources;
+    return;
+  }
+  // Cancel resource-does-not-exist timer, if needed.
+  auto timer_it = state_map_.find(context->type);
+  if (timer_it != state_map_.end()) {
+    auto it = timer_it->second.subscribed_resources.find(
+        parsed_resource_name->authority);
+    if (it != timer_it->second.subscribed_resources.end()) {
+      auto res_it = it->second.find(parsed_resource_name->key);
+      if (res_it != it->second.end()) {
+        res_it->second->MarkSeen();
+      }
+    }
+  }
+  // Lookup the authority in the cache.
+  auto authority_it =
+      xds_client()->authority_state_map_.find(parsed_resource_name->authority);
+  if (authority_it == xds_client()->authority_state_map_.end()) {
+    return;  // Skip resource -- we don't have a subscription for it.
+  }
+  AuthorityState& authority_state = authority_it->second;
+  // Found authority, so look up type.
+  auto type_it = authority_state.resource_map.find(context->type);
+  if (type_it == authority_state.resource_map.end()) {
+    return;  // Skip resource -- we don't have a subscription for it.
+  }
+  auto& type_map = type_it->second;
+  // Found type, so look up resource key.
+  auto it = type_map.find(parsed_resource_name->key);
+  if (it == type_map.end()) {
+    return;  // Skip resource -- we don't have a subscription for it.
+  }
+  ResourceState& resource_state = it->second;
+  // If needed, record that we've seen this resource.
+  if (context->type->AllResourcesRequiredInSotW()) {
+    context->resources_seen[parsed_resource_name->authority].insert(
+        parsed_resource_name->key);
+  }
+  ++context->num_invalid_resources;
+
+// FIXME: ???
+#if 0
+  // If we previously ignored the resource's deletion, log that we're
+  // now re-adding it.
+  if (resource_state.ignored_deletion()) {
+    LOG(INFO) << "[xds_client " << xds_client() << "] xds server "
+              << xds_channel()->server_.server_uri()
+              << ": server returned new version of resource for which we "
+                 "previously ignored a deletion: type "
+              << type_url << " name " << resource_name;
+    resource_state.set_ignored_deletion(false);
+  }
+#endif
+
+  // Update cache state.
+  const bool drop_cached_resource =
+      xds_channel()->server_.FailOnDataErrors() &&
+      (status.code() == absl::StatusCode::kNotFound ||
+       status.code() == absl::StatusCode::kPermissionDenied);
+  resource_state.SetReceivedError(context->version, std::move(status),
+                                  context->update_time_, drop_cached_resource);
+  // If there is no cached resource (either because we didn't have one
+  // or because we just dropped it due to fail_on_data_errors), then notify
+  // via OnResourceChanged(); otherwise, notify via OnAmbientError().
+  if (!resource_state.HasResource()) {
+    xds_client()->NotifyWatchersOnResourceChanged(
+        resource_state.WatcherStatus(), resource_state.watchers(),
+        context->read_delay_handle);
+  } else {
+    xds_client()->NotifyWatchersOnAmbientError(resource_state.WatcherStatus(),
+                                               resource_state.watchers(),
+                                               context->read_delay_handle);
+  }
+}
+
 namespace {
 
 void MaybeLogDiscoveryResponse(
@@ -1104,7 +1206,8 @@ absl::Status XdsClient::XdsChannel::AdsCall::DecodeAdsResponse(
   }
   MaybeLogDiscoveryResponse(xds_client(), xds_client()->def_pool_.ptr(),
                             response);
-  // Get the type_url, version, nonce, and number of resources.
+  // Get the type_url, version, nonce, number of resources, and number
+  // of errors.
   context->type_url = std::string(absl::StripPrefix(
       UpbStringToAbsl(
           envoy_service_discovery_v3_DiscoveryResponse_type_url(response)),
@@ -1117,12 +1220,18 @@ absl::Status XdsClient::XdsChannel::AdsCall::DecodeAdsResponse(
   const google_protobuf_Any* const* resources =
       envoy_service_discovery_v3_DiscoveryResponse_resources(response,
                                                              &num_resources);
+  size_t num_errors = 0;
+  const envoy_service_discovery_v3_ResourceError* const* errors = nullptr;
+  if (XdsDataErrorHandlingEnabled()) {
+    errors = envoy_service_discovery_v3_DiscoveryResponse_resource_errors(
+        response, &num_errors);
+  }
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[xds_client " << xds_client() << "] xds server "
       << xds_channel()->server_.server_uri()
       << ": received ADS response: type_url=" << context->type_url
       << ", version=" << context->version << ", nonce=" << context->nonce
-      << ", num_resources=" << num_resources;
+      << ", num_resources=" << num_resources << ", num_errors=" << num_errors;
   context->type = xds_client()->GetResourceTypeLocked(context->type_url);
   if (context->type == nullptr) {
     return absl::InvalidArgumentError(
@@ -1166,6 +1275,29 @@ absl::Status XdsClient::XdsChannel::AdsCall::DecodeAdsResponse(
           envoy_service_discovery_v3_Resource_name(resource_wrapper));
     }
     ParseResource(i, type_url, resource_name, serialized_resource, context);
+  }
+  // Process each error.
+  for (size_t i = 0; i < num_errors; ++i) {
+    absl::string_view name;
+    {
+      const envoy_service_discovery_v3_ResourceName* resource_name =
+          envoy_service_discovery_v3_ResourceError_resource_name(errors[i]);
+      if (resource_name != nullptr) {
+        name = UpbStringToAbsl(
+            envoy_service_discovery_v3_ResourceName_name(resource_name));
+      }
+    }
+    absl::Status status;
+    {
+      const google_rpc_Status* error_detail =
+          envoy_service_discovery_v3_ResourceError_error_detail(errors[i]);
+      if (error_detail != nullptr) {
+        status = absl::Status(
+            static_cast<absl::StatusCode>(google_rpc_Status_code(error_detail)),
+            UpbStringToAbsl(google_rpc_Status_message(error_detail)));
+      }
+    }
+    HandleServerReportedResourceError(i, name, std::move(status), context);
   }
   return absl::OkStatus();
 }
@@ -1346,34 +1478,44 @@ void XdsClient::ResourceState::SetAcked(
   update_time_ = update_time;
   version_ = std::move(version);
   failed_version_.clear();
-  failed_details_.clear();
+  failed_status_ = absl::OkStatus();
 }
 
-void XdsClient::ResourceState::SetNacked(const std::string& version,
-                                         absl::string_view details,
-                                         Timestamp update_time,
-                                         bool drop_cached_resource) {
+void XdsClient::ResourceState::SetNacked(
+    const std::string& version, absl::string_view details,
+    Timestamp update_time, bool drop_cached_resource) {
   if (drop_cached_resource) resource_.reset();
   client_status_ = ClientResourceStatus::NACKED;
   failed_version_ = version;
-  failed_details_ = details;
+  failed_status_ = absl::InvalidArgumentError(details);
   failed_update_time_ = update_time;
 }
 
 void XdsClient::ResourceState::SetDoesNotExist() {
   resource_.reset();
   client_status_ = ClientResourceStatus::DOES_NOT_EXIST;
+  failed_status_ = absl::NotFoundError("does not exist");
 }
 
 void XdsClient::ResourceState::SetTransientError(const std::string& details) {
-  client_status_ = ClientResourceStatus::TRANSIENT_ERROR;
-  failed_details_ = details;
+  failed_status_ = absl::UnavailableError(details);
+}
+
+void XdsClient::ResourceState::SetReceivedError(
+    const std::string& version, absl::Status status, Timestamp update_time,
+    bool drop_cached_resource) {
+  if (drop_cached_resource) resource_.reset();
+  client_status_ = status.code() == absl::StatusCode::kNotFound
+                       ? ClientResourceStatus::DOES_NOT_EXIST
+                       : ClientResourceStatus::RECEIVED_ERROR;
+  failed_version_ = version;
+  failed_status_ = std::move(status);
+  failed_update_time_ = update_time;
 }
 
 absl::string_view XdsClient::ResourceState::CacheStateString() const {
   switch (client_status_) {
     case ClientResourceStatus::REQUESTED:
-    case ClientResourceStatus::TRANSIENT_ERROR:
       return "requested";
     case ClientResourceStatus::DOES_NOT_EXIST:
       return "does_not_exist";
@@ -1381,22 +1523,20 @@ absl::string_view XdsClient::ResourceState::CacheStateString() const {
       return "acked";
     case ClientResourceStatus::NACKED:
       return resource_ != nullptr ? "nacked_but_cached" : "nacked";
+    case ClientResourceStatus::RECEIVED_ERROR:
+      return resource_ != nullptr ? "received_error_but_cached"
+                                  : "received_error";
   }
   Crash("unknown resource state");
 }
 
 absl::Status XdsClient::ResourceState::WatcherStatus() const {
-  switch (client_status_) {
-    case ClientResourceStatus::TRANSIENT_ERROR:
-      return absl::UnavailableError(failed_details_);
-    case ClientResourceStatus::DOES_NOT_EXIST:
-      return absl::NotFoundError("does not exist");
-    case ClientResourceStatus::NACKED:
-      return absl::InvalidArgumentError(
-          absl::StrCat("invalid resource: ", failed_details_));
-    default:
-      return absl::OkStatus();
+  if (client_status_ == ClientResourceStatus::NACKED) {
+    return absl::Status(
+        failed_status_.code(),
+        absl::StrCat("invalid resource: ", failed_status_.message()));
   }
+  return failed_status_;
 }
 
 namespace {
@@ -1432,10 +1572,14 @@ void XdsClient::ResourceState::FillGenericXdsConfig(
     google_protobuf_Any_set_value(any_field,
                                   StdStringToUpbString(serialized_proto_));
   }
-  if (client_status_ == ClientResourceStatus::NACKED) {
+  if (client_status_ == ClientResourceStatus::NACKED ||
+      client_status_ == ClientResourceStatus::RECEIVED_ERROR) {
     auto* update_failure_state = envoy_admin_v3_UpdateFailureState_new(arena);
+// FIXME: use ToString() here?  would require allocation, thus defeating
+// the mutex-exposing CSDS optimization.  maybe just remove that
+// optimization?
     envoy_admin_v3_UpdateFailureState_set_details(
-        update_failure_state, StdStringToUpbString(failed_details_));
+        update_failure_state, StdStringToUpbString(failed_status_.message()));
     envoy_admin_v3_UpdateFailureState_set_version_info(
         update_failure_state, StdStringToUpbString(failed_version_));
     envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
