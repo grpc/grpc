@@ -102,6 +102,8 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
     ClusterWatcher* watcher = nullptr;
     // Most recent update obtained from this watcher.
     absl::StatusOr<std::shared_ptr<const XdsClusterResource>> update = nullptr;
+    // Ambient error.
+    std::string resolution_note;
   };
 
   struct EndpointConfig {
@@ -128,11 +130,13 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
   // Event handlers.
   void OnListenerUpdate(
       absl::StatusOr<std::shared_ptr<const XdsListenerResource>> listener);
+  void OnListenerAmbientError(absl::Status status);
+
   void OnRouteConfigUpdate(
       const std::string& name,
       absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
           route_config);
-  void OnAmbientError(std::string context, absl::Status status);
+  void OnRouteConfigAmbientError(std::string name, absl::Status status);
 
   void OnClusterUpdate(
       const std::string& name,
@@ -190,12 +194,14 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
   ListenerWatcher* listener_watcher_ = nullptr;
   std::shared_ptr<const XdsListenerResource> current_listener_;
   std::string route_config_name_;
+  std::string lds_resolution_note_;
 
   // RouteConfig state.
   RouteConfigWatcher* route_config_watcher_ = nullptr;
   std::shared_ptr<const XdsRouteConfigResource> current_route_config_;
   const XdsRouteConfigResource::VirtualHost* current_virtual_host_ = nullptr;
   absl::flat_hash_set<absl::string_view> clusters_from_route_config_;
+  std::string rds_resolution_note_;
 
   // Cluster state.
   absl::flat_hash_map<std::string, ClusterWatcherState> cluster_watchers_;

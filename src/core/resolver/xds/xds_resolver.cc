@@ -501,7 +501,7 @@ XdsResolver::RouteConfigData::CreateMethodConfig(
   const auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
       resolver->current_config_->listener->listener);
   auto result = XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
-      static_cast<const GrpcXdsBootstrap&>(resolver->xds_client_->bootstrap())
+      DownCast<const GrpcXdsBootstrap&>(resolver->xds_client_->bootstrap())
           .http_filter_registry(),
       hcm.http_filters, *resolver->current_config_->virtual_host, route,
       cluster_weight, resolver->args_);
