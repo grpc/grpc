@@ -502,6 +502,9 @@ def targets():
             protobuf_version="3.25",
             presubmit=True,
         ),
+        RubyDistribTest(
+            "linux", "x64", "debian11", ruby_version="ruby_3_4", presubmit=True
+        ),
         RubyDistribTest("linux", "x64", "ubuntu2004"),
         RubyDistribTest("linux", "x64", "ubuntu2204", presubmit=True),
         # PHP8
