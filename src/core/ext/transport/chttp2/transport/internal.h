@@ -475,6 +475,9 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   ;
   /// time duration in between pings
   grpc_core::Duration keepalive_time;
+  /// Tracks any adjustments to the absolute timestamp of the next keepalive
+  /// timer callback execution.
+  grpc_core::Timestamp next_adjusted_keepalive_timestamp;
   /// grace period to wait for data after sending a ping before keepalives
   /// timeout
   grpc_core::Duration keepalive_timeout;
