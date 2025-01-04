@@ -369,8 +369,9 @@ class CdsDeletionTest : public XdsEnd2endTest {
 INSTANTIATE_TEST_SUITE_P(XdsTest, CdsDeletionTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-// Tests that we go into TRANSIENT_FAILURE if the Cluster is deleted.
-TEST_P(CdsDeletionTest, ClusterDeleted) {
+// Tests that we go into TRANSIENT_FAILURE if the Cluster is deleted
+// by default.
+TEST_P(CdsDeletionTest, ClusterDeletedFailsByDefault) {
   InitClient();
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
@@ -390,7 +391,8 @@ TEST_P(CdsDeletionTest, ClusterDeleted) {
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that we ignore Cluster deletions if configured to do so.
+// Tests that we ignore Cluster deletions if ignore_resource_deletions
+// is set.
 TEST_P(CdsDeletionTest, ClusterDeletionIgnored) {
   InitClient(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
   CreateAndStartBackends(2);
@@ -424,6 +426,71 @@ TEST_P(CdsDeletionTest, ClusterDeletionIgnored) {
       BuildEdsResource(args, kNewEdsResourceName));
   // Wait for client to start using backend 1.
   WaitForAllBackends(DEBUG_LOCATION, 1, 2);
+}
+
+// Tests that we ignore Cluster deletions by default if data error
+// handling is enabled.
+TEST_P(CdsDeletionTest,
+       ClusterDeletionIgnoredByDefaultWithDataErrorHandlingEnabled) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
+  InitClient();
+  CreateAndStartBackends(2);
+  // Bring up client pointing to backend 0 and wait for it to connect.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  // Make sure we ACKed the CDS update.
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Unset CDS resource and wait for client to ACK the update.
+  balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
+  const auto deadline = absl::Now() + absl::Seconds(30);
+  while (true) {
+    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for CDS ACK";
+    response_state = balancer_->ads_service()->cds_response_state();
+    if (response_state.has_value()) break;
+  }
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Make sure we can still send RPCs.
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Now recreate the CDS resource pointing to a new EDS resource that
+  // specified backend 1, and make sure the client uses it.
+  const char* kNewEdsResourceName = "new_eds_resource_name";
+  auto cluster = default_cluster_;
+  cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsResourceName));
+  // Wait for client to start using backend 1.
+  WaitForAllBackends(DEBUG_LOCATION, 1, 2);
+}
+
+// Tests that we go into TRANSIENT_FAILURE if the Cluster is deleted
+// if data error handling is enabled and fail_on_data_errors is set.
+TEST_P(CdsDeletionTest,
+       ClusterDeletedFailsWithDataErrorHandlingEnabledWithFailOnDataErrors) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
+  InitClient(MakeBootstrapBuilder().SetFailOnDataErrors());
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // We need to wait for all backends to come online.
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Unset CDS resource.
+  balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
+  // Wait for RPCs to start failing.
+  SendRpcsUntilFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("CDS resource ", kDefaultClusterName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)"));
+  // Make sure we ACK'ed the update.
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 //

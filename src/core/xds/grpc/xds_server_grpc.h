@@ -35,6 +35,8 @@ class GrpcXdsServer final : public XdsBootstrap::XdsServer {
   const std::string& server_uri() const override { return server_uri_; }
 
   bool IgnoreResourceDeletion() const override;
+  bool FailOnDataErrors() const override;
+  bool ResourceTimerIsTransientFailure() const override;
 
   bool TrustedXdsServer() const;
 

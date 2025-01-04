@@ -89,7 +89,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
       std::unique_ptr<XdsMetricsReporter> metrics_reporter,
       std::string user_agent_name, std::string user_agent_version,
-      Duration resource_request_timeout = Duration::Seconds(15));
+      // This parameter overrides the timer duration for testing
+      // purposes only -- do not use in production.
+      Duration resource_request_timeout = Duration::Zero());
   ~XdsClient() override;
 
   // Start and cancel watch for a resource.
@@ -277,6 +279,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
       ACKED,
       // Client received this resource and replied with NACK.
       NACKED,
+      // Server sent an error for the resource.
+      RECEIVED_ERROR,
     };
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_REQUESTED) ==
                       ClientResourceStatus::REQUESTED,
@@ -291,6 +295,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_NACKED) ==
                       ClientResourceStatus::NACKED,
                   "");
+    static_assert(static_cast<ClientResourceStatus>(
+                      envoy_admin_v3_CLIENT_RECEIVED_ERROR) ==
+                      ClientResourceStatus::RECEIVED_ERROR,
+                  "");
 
     void AddWatcher(RefCountedPtr<ResourceWatcherInterface> watcher) {
       watchers_.insert(std::move(watcher));
@@ -304,9 +312,12 @@ class XdsClient : public DualRefCounted<XdsClient> {
     void SetAcked(std::shared_ptr<const XdsResourceType::ResourceData> resource,
                   std::string serialized_proto, std::string version,
                   Timestamp update_time);
-    void SetNacked(const std::string& version, const std::string& details,
-                   Timestamp update_time);
+    void SetNacked(const std::string& version, absl::string_view details,
+                   Timestamp update_time, bool drop_cached_resource);
     void SetDoesNotExist();
+    void SetTransientError(const std::string& details);
+    void SetReceivedError(const std::string& version, absl::Status status,
+                          Timestamp update_time, bool drop_cached_resource);
 
     void set_ignored_deletion(bool value) { ignored_deletion_ = value; }
     bool ignored_deletion() const { return ignored_deletion_; }
@@ -319,7 +330,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
       return resource_;
     }
 
-    absl::string_view failed_details() const { return failed_details_; }
+    const absl::Status& failed_status() const { return failed_status_; }
 
     void FillGenericXdsConfig(
         upb_StringView type_url, upb_StringView resource_name, upb_Arena* arena,
@@ -339,8 +350,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::string version_;
     // The rejected version string of the last failed update attempt.
     std::string failed_version_;
-    // Details about the last failed update attempt.
-    std::string failed_details_;
+    // Details about the last failed update attempt or transient error.
+    absl::Status failed_status_;
     // Timestamp of the last failed update attempt.
     Timestamp failed_update_time_;
     // If we've ignored deletion.
