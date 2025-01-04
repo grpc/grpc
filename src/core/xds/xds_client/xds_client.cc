@@ -1509,9 +1509,7 @@ void XdsClient::ResourceState::SetReceivedError(const std::string& version,
                                                 Timestamp update_time,
                                                 bool drop_cached_resource) {
   if (drop_cached_resource) resource_.reset();
-  client_status_ = status.code() == absl::StatusCode::kNotFound
-                       ? ClientResourceStatus::DOES_NOT_EXIST
-                       : ClientResourceStatus::RECEIVED_ERROR;
+  client_status_ = ClientResourceStatus::RECEIVED_ERROR;
   failed_version_ = version;
   failed_status_ = std::move(status);
   failed_update_time_ = update_time;
