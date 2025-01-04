@@ -2570,6 +2570,7 @@ grpc_cc_library(
         "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_utils",
+        "experiments",
         "forkable",
         "init_internally",
         "iomgr_port",
