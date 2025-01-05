@@ -49,9 +49,11 @@ namespace grpc_core {
 ///////////////////////////////////////////////////////////////////////////////
 // PartyTest
 
+// Constants for our stress tests
 constexpr int kNumThreads = 8;
 constexpr int kNumSpawns = 100;
 constexpr int kLargeNumSpawns = 10000;
+constexpr int kStressTestSleepMs = 10;
 
 class PartyTest : public ::testing::Test {
  protected:
@@ -554,6 +556,67 @@ TEST_F(PartyTest, CanNestWakeupHold) {
   EXPECT_STREQ(execution_order.c_str(), "A1B2");
 }
 
+void StressTestAsserts(std::vector<Timestamp>& start_times,
+                       std::vector<Timestamp>& end_times,
+                       int average_sleep_ms) {
+  // Find the fastest thread run time.
+  // This will be used to compare the run time of other threads.
+  Duration fastest_thread_run_time = end_times[0] - start_times[0];
+  Timestamp last_finished_thread = end_times[0];
+  for (int i = 1; i < kNumThreads; i++) {
+    if ((end_times[i] - start_times[i]) < fastest_thread_run_time) {
+      fastest_thread_run_time = end_times[i] - start_times[i];
+    }
+    if (last_finished_thread < end_times[i]) {
+      last_finished_thread = end_times[i];
+    }
+  }
+
+  LOG(INFO) << "Small thread run time : " << fastest_thread_run_time;
+
+  // TODO(tjagtap) : Too many ways to check the same thing. Explore what we
+  // want to keep and what we want to remove. Just presenting all the options
+  // here.
+  Duration total_sleep_time =
+      Duration::Milliseconds(kNumThreads * kNumSpawns * average_sleep_ms);
+  float run_time_by_sleep_time = 3.5;
+  // This makes sure that the threads run efficiently in parallel.
+  // At the time of writing this test, we found run_time_by_sleep_time to
+  // be (1.63). Lets make sure this efficiency is not degraded beyond 3.5x.
+  // This degradation means that there is something slowing down the mechanism
+  // of party sleeping and waking up. Debug builds with various msan/tsan
+  // configs, could cause this entire execution to take longer, which is why
+  // this is 3.5x for debug builds. It is 1.63 for opt builds.
+  EXPECT_LE(last_finished_thread - start_times[0],
+            (total_sleep_time / kNumThreads) * run_time_by_sleep_time);
+
+  for (int i = 0; i < kNumThreads; i++) {
+    LOG(INFO) << "Thread " << i << " started at " << start_times[i]
+              << " and finished at " << end_times[i];
+
+    // All threads should start before any thread finishes. Thread 1 is likely
+    // (but not guaranteed) to finish before all other threads.
+    EXPECT_LE(start_times[i], end_times[1]);
+
+    // All threads should start before any thread finishes 12.5% of it's run.
+    // This is loose evidence that the threads are running in parallel.
+    EXPECT_LE(start_times[i] - start_times[0], (fastest_thread_run_time / 8));
+
+    if (i >= 2) {
+      // For some stress tests, the even thread swill sleep for 3x the time of
+      // the odd threads. For other stress tests, sleep time for all threads
+      // will be the same.
+      // All odd threads should finish within few milliseconds of each other.
+      // All even threads should finish within few milliseconds of each other.
+      // This is loose evidence that the threads are running in parallel.
+      // If the party->Spawn acquires locks that it should not, or if it
+      // degrades in performance, this test will fail.
+      EXPECT_LE((end_times[i - 2] - end_times[i]),
+                (fastest_thread_run_time / 5));
+    }
+  }
+}
+
 TEST_F(PartyTest, ThreadStressTest) {
   // Most other tests are testing promises and parties with only 1 thread.
   // This test will test the party code for multiple threads.
@@ -585,7 +648,8 @@ TEST_F(PartyTest, ThreadStressTest) {
                           party]() mutable {
       start_time = Timestamp::Now();
       for (int j = 0; j < kNumSpawns; j++) {
-        const int sleep_ms = (thread_num % 2 == 1) ? 10 : 30;
+        const int sleep_ms =
+            (thread_num % 2 == 1) ? kStressTestSleepMs : 3 * kStressTestSleepMs;
         ExecCtx ctx;  // needed for Sleep
         Notification promise_complete;
         party->Spawn(
@@ -611,38 +675,6 @@ TEST_F(PartyTest, ThreadStressTest) {
     thread.join();
   }
 
-  // TODO(tjagtap) : Too many ways to check the same thing. Explore what we want
-  // to keep and what we want to remove. Just presenting all the options here.
-
-  // Find the fastest thread run time.
-  // This will be used to compare the run time of other threads.
-  Duration small_thread_run_time = end_times[0] - start_times[0];
-  Timestamp last_finished_thread = end_times[0];
-  for (int i = 1; i < kNumThreads; i++) {
-    Duration curr_thread_run_time = (end_times[i] - start_times[i]);
-    if (last_finished_thread < end_times[i]) {
-      last_finished_thread = end_times[i];
-    }
-    if (curr_thread_run_time < small_thread_run_time) {
-      small_thread_run_time = curr_thread_run_time;
-    }
-  }
-
-  Duration total_sleep_time =
-      Duration::Milliseconds(kNumThreads * kNumSpawns * 20);
-  float run_time_by_sleep_time = 3.5;
-  // This makes sure that the threads run efficiently in parallel.
-  // At the time of writing this test, we found run_time_by_sleep_time to
-  // be (1.63). Lets make sure this efficiency is not degraded beyond 3.5x. This
-  // degradation means that there is something slowing down the mechanism of
-  // party sleeping and waking up. Debug builds with various msan/tsan
-  // configs, could cause this entire execution to take longer, which is why
-  // this is 3.5x for debug builds. It is 1.63 for opt builds.
-  EXPECT_LE(last_finished_thread - start_times[0],
-            (total_sleep_time / kNumThreads) * run_time_by_sleep_time);
-
-  LOG(INFO) << "Small thread run time : " << small_thread_run_time;
-
   std::vector<std::string> expected_order(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {
     // Generate the expected order for each thread.
@@ -652,39 +684,10 @@ TEST_F(PartyTest, ThreadStressTest) {
                       absl::StrFormat("%d(P%d,D%d).", i, j, j));
     }
 
-    // Within one thread, the promises should be executed in the order we
-    // expect.
+    // Within one thread, the promises should be executed in the order of spawn.
     EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
-
-    // All threads should start before any thread finishes. Thread 1 is likely
-    // (but not guaranteed) to finish before all other threads.
-    EXPECT_LE(start_times[i], end_times[1]);
-
-    // All threads should start before any thread finishes 12.5% of it's run.
-    // This is loose evidence that the threads are running in parallel.
-    EXPECT_LE(start_times[i] - start_times[0], (small_thread_run_time / 8));
-
-    LOG(INFO) << "Thread " << i << " started at " << start_times[i]
-              << " and finished at " << end_times[i];
-
-    if (i >= 2) {
-      // All odd threads should finish within few milliseconds of each other.
-      // All even threads should finish within few milliseconds of each other.
-      // This is loose evidence that the threads are running in parallel.
-      // If the party->Spawn acquires locks that it should not, or if it
-      // degrades in performance, this test will fail.
-      EXPECT_LE((end_times[i - 2] - end_times[i]), (small_thread_run_time / 5));
-    }
-
-    if (i % 2 == 1) {
-      // Odd threads should finish before even threads because Sleep time for
-      // even threads is 3x more than odd threads.
-      // This is loose evidence that the threads are running in parallel.
-      // If the party->Spawn acquires locks that it should not, or if it
-      // degrades in performance, this test will fail.
-      EXPECT_GE(end_times[i - 1], end_times[i]);
-    }
   }
+  StressTestAsserts(start_times, end_times, 2 * kStressTestSleepMs);
 }
 
 class PromiseNotification {
@@ -748,7 +751,8 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWaker) {
         Notification promise_complete;
         party->Spawn("TestSpawn",
                      Seq(promise_start.Wait(),
-                         Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
+                         Sleep(Timestamp::Now() +
+                               Duration::Milliseconds(kStressTestSleepMs)),
                          [&order, i]() -> Poll<int> {
                            absl::StrAppend(&order,
                                            absl::StrFormat("%d(P%d,", i, i));
@@ -795,7 +799,8 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWakerHoldingLock) {
         Notification promise_complete;
         party->Spawn("TestSpawn",
                      Seq(promise_start.Wait(),
-                         Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
+                         Sleep(Timestamp::Now() +
+                               Duration::Milliseconds(kStressTestSleepMs)),
                          [&order, i]() -> Poll<int> {
                            absl::StrAppend(&order,
                                            absl::StrFormat("%d(P%d,", i, i));
@@ -842,7 +847,8 @@ TEST_F(PartyTest, ThreadStressTestWithNonOwningWaker) {
         Notification promise_complete;
         party->Spawn("TestSpawn",
                      Seq(promise_start.Wait(),
-                         Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
+                         Sleep(Timestamp::Now() +
+                               Duration::Milliseconds(kStressTestSleepMs)),
                          [&order, i]() -> Poll<int> {
                            absl::StrAppend(&order,
                                            absl::StrFormat("%d(P%d,", i, i));
@@ -963,17 +969,23 @@ TEST_F(PartyTest, ThreadStressTestWithNonOwningWakerNoSleep) {
   }
 }
 
-// TODO(tjagtap)
 TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
+  // Stress test with inner spawns.
+  // Asserts are similar to ThreadStressTest.
   auto party = MakeParty();
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
   std::vector<std::string> execution_order(kNumThreads);
+  std::vector<Timestamp> start_times(kNumThreads);
+  std::vector<Timestamp> end_times(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {
     std::string& order = execution_order[i];
     absl::StrAppend(&order, absl::StrFormat("Thread %d : ", i));
-    threads.emplace_back([party, &order]() {
-      for (int i = 0; i < kNumSpawns; i++) {
+    Timestamp& start_time = start_times[i];
+    Timestamp& end_time = end_times[i];
+    threads.emplace_back([party, &order, &start_time, &end_time]() {
+      start_time = Timestamp::Now();
+      for (int j = 0; j < kNumSpawns; j++) {
         ExecCtx ctx;  // needed for Sleep
         PromiseNotification inner_start(true);
         PromiseNotification inner_complete(false);
@@ -982,42 +994,44 @@ TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
             "TestSpawn",
             Seq(
                 [party, &inner_start, &inner_complete, &order,
-                 i]() -> Poll<int> {
+                 j]() -> Poll<int> {
+                  absl::StrAppend(&order, absl::StrFormat("A%d", j));
                   party->Spawn(
                       "TestSpawnInner",
                       Seq(inner_start.Wait(),
-                          [&order, i]() {
-                            absl::StrAppend(&order,
-                                            absl::StrFormat("%d(P%d,", i, i));
-                            return 0;
+                          [&order, j]() {
+                            absl::StrAppend(&order, absl::StrFormat("D%d", j));
+                            return j;
                           }),
-                      [&inner_complete, &order, i](int val) {
-                        EXPECT_EQ(val, 0);
-                        absl::StrAppend(&order, absl::StrFormat("D%d)", i));
+                      [&inner_complete, &order, j](int val) {
+                        EXPECT_EQ(val, j);
+                        absl::StrAppend(&order, absl::StrFormat("E%d", j));
                         inner_complete.Notify();
                       });
-                  absl::StrAppend(&order, absl::StrFormat("%d(P%d,", i, i));
+                  absl::StrAppend(&order, absl::StrFormat("B%d", j));
                   return 0;
                 },
-                Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
-                [&inner_start, &order, i]() {
-                  absl::StrAppend(&order, absl::StrFormat("%d(P%d,", i, i));
+                Sleep(Timestamp::Now() +
+                      Duration::Milliseconds(kStressTestSleepMs)),
+                [&inner_start, &order, j]() {
+                  absl::StrAppend(&order, absl::StrFormat("C%d", j));
                   inner_start.Notify();
                   return 0;
                 },
                 inner_complete.Wait(),
-                [&order, i]() -> Poll<int> {
-                  absl::StrAppend(&order, absl::StrFormat("%d(P%d,", i, i));
+                [&order, j]() -> Poll<int> {
+                  absl::StrAppend(&order, absl::StrFormat("F%d", j));
                   return 42;
                 }),
-            [&promise_complete, &order, i](int val) {
+            [&promise_complete, &order, j](int val) {
               EXPECT_EQ(val, 42);  // Check
-              absl::StrAppend(&order, absl::StrFormat("D%d)", i));
+              absl::StrAppend(&order, absl::StrFormat("G%d", j));
               promise_complete.Notify();
             });
         promise_complete.WaitForNotification();
         absl::StrAppend(&order, ".");
       }
+      end_time = Timestamp::Now();
     });
   }
   for (auto& thread : threads) {
@@ -1027,12 +1041,13 @@ TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
   for (int i = 0; i < kNumThreads; i++) {
     absl::StrAppend(&expected_order[i], absl::StrFormat("Thread %d : ", i));
     for (int j = 0; j < kNumSpawns; j++) {
-      absl::StrAppend(&expected_order[i],
-                      absl::StrFormat("%d(P%d,D%d).", i, j, j));
+      absl::StrAppend(
+          &expected_order[i],
+          absl::StrFormat("A%dB%dC%dD%dE%dF%dG%d.", j, j, j, j, j, j, j));
     }
-    // FIX
-    // EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
+    EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
+  StressTestAsserts(start_times, end_times, kStressTestSleepMs);
 }
 
 TEST_F(PartyTest, NestedWakeup) {
