@@ -28,7 +28,7 @@ set +ex
 # but we want to exit if there's a failure
 set -e
 
-RUBY_VERSION=3.4.0
+RUBY_VERSION=3.4.1
 echo "Installing ruby-${RUBY_VERSION}"
 time rvm install "ruby-${RUBY_VERSION}"
 echo "Setting default ruby version."

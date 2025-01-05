@@ -72,11 +72,11 @@ RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 # Install Ruby 3.4
 RUN apt-get update && apt-get install -y procps && apt-get clean
-RUN /bin/bash -l -c "rvm install ruby-3.4.0"
-RUN /bin/bash -l -c "rvm use --default ruby-3.4.0"
+RUN /bin/bash -l -c "rvm install ruby-3.4.1"
+RUN /bin/bash -l -c "rvm use --default ruby-3.4.1"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.4.0' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.4.1' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-document"
 
 # Workaround for rvm unable to find mkdir properly
