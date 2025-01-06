@@ -135,6 +135,17 @@ def grpc_proto_fuzzer(
     )
 
 def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], external_deps = []):
+    """Instantiates a fuzztest based test.
+
+    This is the preferred method of writing fuzzers.
+
+    Args:
+        name: The name of the test.
+        srcs: The source files for the test.
+        deps: The dependencies of the test.
+        tags: The tags for the test.
+        external_deps: External deps.
+    """
     grpc_cc_test(
         name = name,
         srcs = srcs,

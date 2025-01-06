@@ -16,11 +16,11 @@ load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 load(
     "//test/core/test_util:grpc_fuzzer.bzl",
+    "grpc_fuzz_test",
     "grpc_fuzzer",
     "grpc_proto_fuzzer",
 )
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
