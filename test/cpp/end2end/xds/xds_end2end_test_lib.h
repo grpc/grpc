@@ -758,6 +758,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
                            absl::string_view expected_message_regex,
                            const RpcOptions& rpc_options = RpcOptions());
 
+  // Sends RPCs until either a timeout or an RPC fail, in which case the
+  // failure must match the specified status and message regex.
+  void SendRpcsUntilFailure(const grpc_core::DebugLocation& debug_location,
+                            StatusCode expected_status,
+                            absl::string_view expected_message_regex,
+                            int timeout_ms = 15000,
+                            const RpcOptions& rpc_options = RpcOptions());
+
   // Sends num_rpcs RPCs, counting how many of them fail with a message
   // matching the specified expected_message_prefix.
   // Any failure with a non-matching status or message is a test failure.
@@ -975,7 +983,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
   // Returns a regex that can be matched against an RPC failure status
   // message for a connection failure.
-  static std::string MakeConnectionFailureRegex(absl::string_view prefix);
+  static std::string MakeConnectionFailureRegex(
+      absl::string_view prefix, bool has_resolution_note = true);
 
   // Returns a regex that can be matched against an RPC failure status
   // message for a Tls handshake failure.

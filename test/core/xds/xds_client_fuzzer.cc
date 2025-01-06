@@ -189,27 +189,23 @@ class Fuzzer {
         : resource_name_(std::move(resource_name)) {}
 
     void OnResourceChanged(
-        std::shared_ptr<const typename ResourceType::ResourceType> resource,
+        absl::StatusOr<
+            std::shared_ptr<const typename ResourceType::ResourceType>>
+            resource,
         RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
         override {
       LOG(INFO) << "==> OnResourceChanged(" << ResourceType::Get()->type_url()
-                << " " << resource_name_ << "): " << resource->ToString();
+                << " " << resource_name_ << "): "
+                << (resource.ok() ? (*resource)->ToString()
+                                  : resource.status().ToString());
     }
 
-    void OnError(
+    void OnAmbientError(
         absl::Status status,
         RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
         override {
-      LOG(INFO) << "==> OnError(" << ResourceType::Get()->type_url() << " "
-                << resource_name_ << "): " << status;
-    }
-
-    void OnResourceDoesNotExist(
-        RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
-        override {
-      LOG(INFO) << "==> OnResourceDoesNotExist("
-                << ResourceType::Get()->type_url() << " " << resource_name_
-                << ")";
+      LOG(INFO) << "==> OnAmbientError(" << ResourceType::Get()->type_url()
+                << " " << resource_name_ << "): " << status;
     }
 
    private:
