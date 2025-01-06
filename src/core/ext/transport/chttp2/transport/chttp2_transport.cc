@@ -589,6 +589,7 @@ static void init_keepalive_pings_if_enabled_locked(
 
 // TODO(alishananda): add unit testing as part of chttp2 promise conversion work
 void grpc_chttp2_transport::WriteSecurityFrame(grpc_core::SliceBuffer* data) {
+  grpc_core::ExecCtx exec_ctx;
   combiner->Run(grpc_core::NewClosure(
                     [transport = Ref(), data](grpc_error_handle) mutable {
                       transport->WriteSecurityFrameLocked(data);
