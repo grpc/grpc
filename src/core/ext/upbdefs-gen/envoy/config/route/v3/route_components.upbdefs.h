@@ -289,6 +289,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Override_Dynami
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.Override.DynamicMetadata");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_HitsAddend_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.HitsAddend");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_HeaderMatcher_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.HeaderMatcher");
