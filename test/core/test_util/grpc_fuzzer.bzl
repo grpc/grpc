@@ -128,3 +128,12 @@ def grpc_proto_fuzzer(
         }),
         **kwargs
     )
+
+def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], external_deps = []):
+    grpc_cc_test(
+        name = name,
+        srcs = srcs,
+        tags = tags + ["grpc-fuzzer", "no-cache"],
+        deps = deps,
+        external_deps = external_deps,
+    )

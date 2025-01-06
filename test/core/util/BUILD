@@ -20,6 +20,7 @@ load(
     "grpc_proto_fuzzer",
 )
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
@@ -793,4 +794,27 @@ grpc_cc_test(
     deps = [
         "//src/core:lru_cache",
     ],
+)
+
+grpc_fuzz_test(
+    name = "tdigest_fuzztest",
+    srcs = ["tdigest_fuzztest.cc"],
+    external_deps = [
+        "absl/types:variant",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:tdigest"],
+)
+
+grpc_fuzz_test(
+    name = "useful_fuzztest",
+    srcs = ["useful_fuzztest.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:useful"],
 )
