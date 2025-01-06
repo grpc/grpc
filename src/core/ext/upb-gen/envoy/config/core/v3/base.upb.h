@@ -48,6 +48,7 @@ typedef struct envoy_config_core_v3_RuntimePercent { upb_Message UPB_PRIVATE(bas
 typedef struct envoy_config_core_v3_RuntimeDouble { upb_Message UPB_PRIVATE(base); } envoy_config_core_v3_RuntimeDouble;
 typedef struct envoy_config_core_v3_RuntimeFeatureFlag { upb_Message UPB_PRIVATE(base); } envoy_config_core_v3_RuntimeFeatureFlag;
 typedef struct envoy_config_core_v3_KeyValue { upb_Message UPB_PRIVATE(base); } envoy_config_core_v3_KeyValue;
+typedef struct envoy_config_core_v3_KeyValuePair { upb_Message UPB_PRIVATE(base); } envoy_config_core_v3_KeyValuePair;
 typedef struct envoy_config_core_v3_KeyValueAppend { upb_Message UPB_PRIVATE(base); } envoy_config_core_v3_KeyValueAppend;
 typedef struct envoy_config_core_v3_KeyValueMutation { upb_Message UPB_PRIVATE(base); } envoy_config_core_v3_KeyValueMutation;
 typedef struct envoy_config_core_v3_QueryParameter { upb_Message UPB_PRIVATE(base); } envoy_config_core_v3_QueryParameter;
@@ -74,6 +75,7 @@ struct google_protobuf_Any;
 struct google_protobuf_BoolValue;
 struct google_protobuf_Struct;
 struct google_protobuf_UInt32Value;
+struct google_protobuf_Value;
 struct xds_core_v3_ContextParams;
 
 typedef enum {
@@ -1569,6 +1571,90 @@ UPB_INLINE void envoy_config_core_v3_KeyValue_set_value(envoy_config_core_v3_Key
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
+/* envoy.config.core.v3.KeyValuePair */
+
+UPB_INLINE envoy_config_core_v3_KeyValuePair* envoy_config_core_v3_KeyValuePair_new(upb_Arena* arena) {
+  return (envoy_config_core_v3_KeyValuePair*)_upb_Message_New(&envoy__config__core__v3__KeyValuePair_msg_init, arena);
+}
+UPB_INLINE envoy_config_core_v3_KeyValuePair* envoy_config_core_v3_KeyValuePair_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_core_v3_KeyValuePair* ret = envoy_config_core_v3_KeyValuePair_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__core__v3__KeyValuePair_msg_init, NULL, 0, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_config_core_v3_KeyValuePair* envoy_config_core_v3_KeyValuePair_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_core_v3_KeyValuePair* ret = envoy_config_core_v3_KeyValuePair_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__core__v3__KeyValuePair_msg_init, extreg, options,
+                 arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_config_core_v3_KeyValuePair_serialize(const envoy_config_core_v3_KeyValuePair* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__KeyValuePair_msg_init, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_config_core_v3_KeyValuePair_serialize_ex(const envoy_config_core_v3_KeyValuePair* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__core__v3__KeyValuePair_msg_init, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_config_core_v3_KeyValuePair_clear_key(envoy_config_core_v3_KeyValuePair* msg) {
+  const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE upb_StringView envoy_config_core_v3_KeyValuePair_key(const envoy_config_core_v3_KeyValuePair* msg) {
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE void envoy_config_core_v3_KeyValuePair_clear_value(envoy_config_core_v3_KeyValuePair* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const struct google_protobuf_Value* envoy_config_core_v3_KeyValuePair_value(const envoy_config_core_v3_KeyValuePair* msg) {
+  const struct google_protobuf_Value* default_val = NULL;
+  const struct google_protobuf_Value* ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Value_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_config_core_v3_KeyValuePair_has_value(const envoy_config_core_v3_KeyValuePair* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
+
+UPB_INLINE void envoy_config_core_v3_KeyValuePair_set_key(envoy_config_core_v3_KeyValuePair *msg, upb_StringView value) {
+  const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE void envoy_config_core_v3_KeyValuePair_set_value(envoy_config_core_v3_KeyValuePair *msg, struct google_protobuf_Value* value) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Value_msg_init);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE struct google_protobuf_Value* envoy_config_core_v3_KeyValuePair_mutable_value(envoy_config_core_v3_KeyValuePair* msg, upb_Arena* arena) {
+  struct google_protobuf_Value* sub = (struct google_protobuf_Value*)envoy_config_core_v3_KeyValuePair_value(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Value*)_upb_Message_New(&google__protobuf__Value_msg_init, arena);
+    if (sub) envoy_config_core_v3_KeyValuePair_set_value(msg, sub);
+  }
+  return sub;
+}
+
 /* envoy.config.core.v3.KeyValueAppend */
 
 UPB_INLINE envoy_config_core_v3_KeyValueAppend* envoy_config_core_v3_KeyValueAppend_new(upb_Arena* arena) {
@@ -1634,6 +1720,23 @@ UPB_INLINE int32_t envoy_config_core_v3_KeyValueAppend_action(const envoy_config
                                     &default_val, &ret);
   return ret;
 }
+UPB_INLINE void envoy_config_core_v3_KeyValueAppend_clear_record(envoy_config_core_v3_KeyValueAppend* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const envoy_config_core_v3_KeyValuePair* envoy_config_core_v3_KeyValueAppend_record(const envoy_config_core_v3_KeyValueAppend* msg) {
+  const envoy_config_core_v3_KeyValuePair* default_val = NULL;
+  const envoy_config_core_v3_KeyValuePair* ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__KeyValuePair_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_config_core_v3_KeyValueAppend_has_record(const envoy_config_core_v3_KeyValueAppend* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
 
 UPB_INLINE void envoy_config_core_v3_KeyValueAppend_set_entry(envoy_config_core_v3_KeyValueAppend *msg, envoy_config_core_v3_KeyValue* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -1651,6 +1754,19 @@ UPB_INLINE struct envoy_config_core_v3_KeyValue* envoy_config_core_v3_KeyValueAp
 UPB_INLINE void envoy_config_core_v3_KeyValueAppend_set_action(envoy_config_core_v3_KeyValueAppend *msg, int32_t value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 12), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE void envoy_config_core_v3_KeyValueAppend_set_record(envoy_config_core_v3_KeyValueAppend *msg, envoy_config_core_v3_KeyValuePair* value) {
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__KeyValuePair_msg_init);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE struct envoy_config_core_v3_KeyValuePair* envoy_config_core_v3_KeyValueAppend_mutable_record(envoy_config_core_v3_KeyValueAppend* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_KeyValuePair* sub = (struct envoy_config_core_v3_KeyValuePair*)envoy_config_core_v3_KeyValueAppend_record(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_KeyValuePair*)_upb_Message_New(&envoy__config__core__v3__KeyValuePair_msg_init, arena);
+    if (sub) envoy_config_core_v3_KeyValueAppend_set_record(msg, sub);
+  }
+  return sub;
 }
 
 /* envoy.config.core.v3.KeyValueMutation */

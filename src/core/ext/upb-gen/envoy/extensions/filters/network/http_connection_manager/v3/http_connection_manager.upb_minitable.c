@@ -74,7 +74,7 @@ static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_conn
   {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__HcmAccessLogOptions_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager__fields[55] = {
+static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager__fields[56] = {
   {1, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(212, 64), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(204, 368), UPB_SIZE(-101, -33), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -130,12 +130,13 @@ static const upb_MiniTableField envoy_extensions_filters_network_http_connection
   {55, UPB_SIZE(192, 58), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {56, UPB_SIZE(196, 360), 90, 34, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {57, UPB_SIZE(200, 59), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {58, UPB_SIZE(201, 60), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager_msg_init = {
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager__submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager__fields[0],
-  UPB_SIZE(240, 384), 55, kUpb_ExtMode_NonExtendable, 10, UPB_FASTTABLE_MASK(248), 0,
+  UPB_SIZE(240, 384), 56, kUpb_ExtMode_NonExtendable, 10, UPB_FASTTABLE_MASK(248), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager",
 #endif
