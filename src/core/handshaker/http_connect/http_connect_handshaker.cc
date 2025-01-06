@@ -111,7 +111,7 @@ void HttpConnectHandshaker::HandshakeFailedLocked(absl::Status error) {
   if (args_ != nullptr && args_->endpoint != nullptr) {
     peer_string = grpc_endpoint_get_peer(args_->endpoint.get());
   }
-  LOG_EVERY_N_SEC(ERROR, 1)
+  LOG_EVERY_N_SEC(ERROR, 60)
       << "HTTP proxy handshake with " << peer_string << " failed: " << error;
   // Invoke callback.
   FinishLocked(std::move(error));

@@ -983,7 +983,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
   // Returns a regex that can be matched against an RPC failure status
   // message for a connection failure.
-  static std::string MakeConnectionFailureRegex(absl::string_view prefix);
+  static std::string MakeConnectionFailureRegex(
+      absl::string_view prefix, bool has_resolution_note = true);
 
   // Returns a regex that can be matched against an RPC failure status
   // message for a Tls handshake failure.

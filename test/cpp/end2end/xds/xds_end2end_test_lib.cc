@@ -846,7 +846,7 @@ void XdsEnd2endTest::SetProtoDuration(
 }
 
 std::string XdsEnd2endTest::MakeConnectionFailureRegex(
-    absl::string_view prefix) {
+    absl::string_view prefix, bool has_resolution_note) {
   return absl::StrCat(
       prefix,
       "(UNKNOWN|UNAVAILABLE): "
@@ -864,7 +864,9 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       "|Broken pipe"
       "|FD shutdown)"
       // errno value
-      "( \\([0-9]+\\))?");
+      "( \\([0-9]+\\))?",
+      // xDS node ID
+      has_resolution_note ? " \\(xDS node ID:xds_end2end_test\\)" : "");
 }
 
 std::string XdsEnd2endTest::MakeTlsHandshakeFailureRegex(
