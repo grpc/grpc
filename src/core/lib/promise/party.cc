@@ -30,6 +30,7 @@
 #include "src/core/util/sync.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
+#include "absl/random/random.h"           // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
 #include "src/core/util/thd.h"            // IWYU pragma: keep
 #endif
@@ -377,14 +378,14 @@ uint64_t Party::NextAllocationMask(uint64_t current_allocation_mask) {
   if (current_allocation_mask == kWakeupMask) return kWakeupMask + 1;
   // Count number of unset bits in the wakeup mask
   size_t unset_bits = 0;
-  for (size_t i = 0; i < kMaxParticipants; i++) {
+  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
     if (current_allocation_mask & (1ull << i)) continue;
     ++unset_bits;
   }
   CHECK_GT(unset_bits, 0);
   absl::BitGen bitgen;
-  size_t selected = absl::Uniform(bitgen, unset_bits);
-  for (size_t i = 0; i < kMaxParticipants; i++) {
+  size_t selected = absl::Uniform<size_t>(bitgen, 0, unset_bits);
+  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
     if (current_allocation_mask & (1ull << i)) continue;
     if (selected == 0) return 1ull << i;
     --selected;
