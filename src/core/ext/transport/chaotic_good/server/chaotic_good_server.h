@@ -134,8 +134,6 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     absl::BitGen bitgen_;
   };
 
-  void Start() override { StartListening().IgnoreError(); };
-
   class DataConnectionListener final : public ServerConnectionFactory {
    public:
     DataConnectionListener(
@@ -174,9 +172,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
   };
 
-  void Start(Server*, const std::vector<grpc_pollset*>*) override {
-    StartListening().IgnoreError();
-  };
+  void Start() override { StartListening().IgnoreError(); };
 
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return nullptr;
