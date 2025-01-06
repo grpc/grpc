@@ -84,6 +84,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_core_v3_KeyValue_getmsgdef(upb_Def
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.KeyValue");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_KeyValuePair_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_base_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.KeyValuePair");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_core_v3_KeyValueAppend_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_base_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.KeyValueAppend");
