@@ -44,6 +44,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_Policy_getmsgdef(upb_DefPo
   return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.Policy");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_SourcedMetadata_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.SourcedMetadata");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_Permission_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.Permission");
