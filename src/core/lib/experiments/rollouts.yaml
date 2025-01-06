@@ -40,6 +40,8 @@
 #
 # Supported platforms: ios, windows, posix
 
+- name: backoff_cap_initial_at_max
+  default: true
 - name: call_tracer_in_transport
   default: true
 - name: call_v3
@@ -89,6 +91,10 @@
   default: true
 - name: pick_first_new
   default: true
+- name: posix_ee_skip_grpc_init
+  default: false
+- name: prioritize_finished_requests
+  default: false
 - name: promise_based_client_call
   default:
     ios: broken

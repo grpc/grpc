@@ -17,7 +17,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nRenvoy/extensions/transport_sockets/proxy_protocol/v3/upstream_proxy_protocol.proto\x12\x34\x65nvoy.extensions.transport_sockets.proxy_protocol.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a)envoy/config/core/v3/proxy_protocol.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xa6\x01\n\x1eProxyProtocolUpstreamTransport\x12\x39\n\x06\x63onfig\x18\x01 \x01(\x0b\x32).envoy.config.core.v3.ProxyProtocolConfig\x12I\n\x10transport_socket\x18\x02 \x01(\x0b\x32%.envoy.config.core.v3.TransportSocketB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x42\xd8\x01\nBio.envoyproxy.envoy.extensions.transport_sockets.proxy_protocol.v3B\x1aUpstreamProxyProtocolProtoP\x01Zlgithub.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/proxy_protocol/v3;proxy_protocolv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nRenvoy/extensions/transport_sockets/proxy_protocol/v3/upstream_proxy_protocol.proto\x12\x34\x65nvoy.extensions.transport_sockets.proxy_protocol.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a)envoy/config/core/v3/proxy_protocol.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xe2\x01\n\x1eProxyProtocolUpstreamTransport\x12\x39\n\x06\x63onfig\x18\x01 \x01(\x0b\x32).envoy.config.core.v3.ProxyProtocolConfig\x12I\n\x10transport_socket\x18\x02 \x01(\x0b\x32%.envoy.config.core.v3.TransportSocketB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12!\n\x19\x61llow_unspecified_address\x18\x03 \x01(\x08\x12\x17\n\x0ftlv_as_pool_key\x18\x04 \x01(\x08\x42\xd8\x01\nBio.envoyproxy.envoy.extensions.transport_sockets.proxy_protocol.v3B\x1aUpstreamProxyProtocolProtoP\x01Zlgithub.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/proxy_protocol/v3;proxy_protocolv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -28,5 +28,5 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _PROXYPROTOCOLUPSTREAMTRANSPORT.fields_by_name['transport_socket']._options = None
   _PROXYPROTOCOLUPSTREAMTRANSPORT.fields_by_name['transport_socket']._serialized_options = b'\372B\005\212\001\002\020\001'
   _globals['_PROXYPROTOCOLUPSTREAMTRANSPORT']._serialized_start=273
-  _globals['_PROXYPROTOCOLUPSTREAMTRANSPORT']._serialized_end=439
+  _globals['_PROXYPROTOCOLUPSTREAMTRANSPORT']._serialized_end=499
 # @@protoc_insertion_point(module_scope)

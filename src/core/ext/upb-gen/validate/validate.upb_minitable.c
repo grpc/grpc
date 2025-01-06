@@ -17,7 +17,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal validate_FieldRules_submsgs[22] = {
+static const upb_MiniTableSubInternal validate_FieldRules__submsgs[22] = {
   {.UPB_PRIVATE(submsg) = &validate__FloatRules_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &validate__DoubleRules_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &validate__Int32Rules_msg_init_ptr},
@@ -68,7 +68,7 @@ static const upb_MiniTableField validate_FieldRules__fields[22] = {
 };
 
 const upb_MiniTable validate__FieldRules_msg_init = {
-  &validate_FieldRules_submsgs[0],
+  &validate_FieldRules__submsgs[0],
   &validate_FieldRules__fields[0],
   UPB_SIZE(24, 32), 22, kUpb_ExtMode_NonExtendable, 22, UPB_FASTTABLE_MASK(248), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -497,8 +497,8 @@ const upb_MiniTable validate__BoolRules_msg_init = {
 };
 
 const upb_MiniTable* validate__BoolRules_msg_init_ptr = &validate__BoolRules_msg_init;
-static const upb_MiniTableSubInternal validate_StringRules_submsgs[1] = {
-  {.UPB_PRIVATE(subenum) = &validate_KnownRegex_enum_init},
+static const upb_MiniTableSubInternal validate_StringRules__submsgs[1] = {
+  {.UPB_PRIVATE(subenum) = &validate__KnownRegex_enum_init},
 };
 
 static const upb_MiniTableField validate_StringRules__fields[26] = {
@@ -531,7 +531,7 @@ static const upb_MiniTableField validate_StringRules__fields[26] = {
 };
 
 const upb_MiniTable validate__StringRules_msg_init = {
-  &validate_StringRules_submsgs[0],
+  &validate_StringRules__submsgs[0],
   &validate_StringRules__fields[0],
   UPB_SIZE(128, 184), 26, kUpb_ExtMode_NonExtendable, 26, UPB_FASTTABLE_MASK(248), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -661,7 +661,7 @@ const upb_MiniTable validate__MessageRules_msg_init = {
 };
 
 const upb_MiniTable* validate__MessageRules_msg_init_ptr = &validate__MessageRules_msg_init;
-static const upb_MiniTableSubInternal validate_RepeatedRules_submsgs[1] = {
+static const upb_MiniTableSubInternal validate_RepeatedRules__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &validate__FieldRules_msg_init_ptr},
 };
 
@@ -674,7 +674,7 @@ static const upb_MiniTableField validate_RepeatedRules__fields[5] = {
 };
 
 const upb_MiniTable validate__RepeatedRules_msg_init = {
-  &validate_RepeatedRules_submsgs[0],
+  &validate_RepeatedRules__submsgs[0],
   &validate_RepeatedRules__fields[0],
   40, 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -683,7 +683,7 @@ const upb_MiniTable validate__RepeatedRules_msg_init = {
 };
 
 const upb_MiniTable* validate__RepeatedRules_msg_init_ptr = &validate__RepeatedRules_msg_init;
-static const upb_MiniTableSubInternal validate_MapRules_submsgs[2] = {
+static const upb_MiniTableSubInternal validate_MapRules__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &validate__FieldRules_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &validate__FieldRules_msg_init_ptr},
 };
@@ -698,7 +698,7 @@ static const upb_MiniTableField validate_MapRules__fields[6] = {
 };
 
 const upb_MiniTable validate__MapRules_msg_init = {
-  &validate_MapRules_submsgs[0],
+  &validate_MapRules__submsgs[0],
   &validate_MapRules__fields[0],
   UPB_SIZE(40, 48), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -729,7 +729,7 @@ const upb_MiniTable validate__AnyRules_msg_init = {
 };
 
 const upb_MiniTable* validate__AnyRules_msg_init_ptr = &validate__AnyRules_msg_init;
-static const upb_MiniTableSubInternal validate_DurationRules_submsgs[7] = {
+static const upb_MiniTableSubInternal validate_DurationRules__submsgs[7] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
@@ -751,7 +751,7 @@ static const upb_MiniTableField validate_DurationRules__fields[8] = {
 };
 
 const upb_MiniTable validate__DurationRules_msg_init = {
-  &validate_DurationRules_submsgs[0],
+  &validate_DurationRules__submsgs[0],
   &validate_DurationRules__fields[0],
   UPB_SIZE(40, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -778,7 +778,7 @@ const upb_MiniTable validate__DurationRules_msg_init = {
 };
 
 const upb_MiniTable* validate__DurationRules_msg_init_ptr = &validate__DurationRules_msg_init;
-static const upb_MiniTableSubInternal validate_TimestampRules_submsgs[6] = {
+static const upb_MiniTableSubInternal validate_TimestampRules__submsgs[6] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
@@ -800,7 +800,7 @@ static const upb_MiniTableField validate_TimestampRules__fields[9] = {
 };
 
 const upb_MiniTable validate__TimestampRules_msg_init = {
-  &validate_TimestampRules_submsgs[0],
+  &validate_TimestampRules__submsgs[0],
   &validate_TimestampRules__fields[0],
   UPB_SIZE(40, 64), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -809,7 +809,7 @@ const upb_MiniTable validate__TimestampRules_msg_init = {
 };
 
 const upb_MiniTable* validate__TimestampRules_msg_init_ptr = &validate__TimestampRules_msg_init;
-const upb_MiniTableEnum validate_KnownRegex_enum_init = {
+const upb_MiniTableEnum validate__KnownRegex_enum_init = {
     64,
     0,
     {
@@ -841,7 +841,7 @@ const upb_MiniTableExtension validate_required_ext = {
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension validate_rules_ext = {
-  {1071, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {1071, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   &google__protobuf__FieldOptions_msg_init,
   {.UPB_PRIVATE(submsg) = &validate__FieldRules_msg_init},
 
@@ -873,7 +873,7 @@ static const upb_MiniTable *messages_layout[23] = {
 };
 
 static const upb_MiniTableEnum *enums_layout[1] = {
-  &validate_KnownRegex_enum_init,
+  &validate__KnownRegex_enum_init,
 };
 
 

@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_ADMIN_V3_SERVER_INFO_PROTO_UPB_H_
-#define ENVOY_ADMIN_V3_SERVER_INFO_PROTO_UPB_H_
+#ifndef ENVOY_ADMIN_V3_SERVER_INFO_PROTO_UPB_H__UPB_H_
+#define ENVOY_ADMIN_V3_SERVER_INFO_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -1011,4 +1011,4 @@ UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_skip_hot_restart_parent_st
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_ADMIN_V3_SERVER_INFO_PROTO_UPB_H_ */
+#endif  /* ENVOY_ADMIN_V3_SERVER_INFO_PROTO_UPB_H__UPB_H_ */

@@ -212,11 +212,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gridiron"  # @unused
+g_stands_for = "genius"  # @unused
 
-core_version = "44.1.0"  # @unused
+core_version = "44.2.0"  # @unused
 
-version = "1.69.0-dev"  # @unused
+version = "1.70.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1971,6 +1971,7 @@ grpc_cc_library(
         "//src/core:event_engine_common",
         "//src/core:event_engine_context",
         "//src/core:experiments",
+        "//src/core:filter_args",
         "//src/core:for_each",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
@@ -3407,6 +3408,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr_platform",
+        "//src/core:experiments",
         "//src/core:time",
     ],
 )
@@ -3733,6 +3735,7 @@ grpc_cc_library(
         "//src/core:channel_fwd",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
+        "//src/core:client_channel_args",
         "//src/core:client_channel_backup_poller",
         "//src/core:client_channel_internal_header",
         "//src/core:client_channel_service_config",
@@ -3773,6 +3776,7 @@ grpc_cc_library(
         "//src/core:ref_counted",
         "//src/core:resolved_address",
         "//src/core:resource_quota",
+        "//src/core:retry_interceptor",
         "//src/core:retry_service_config",
         "//src/core:retry_throttle",
         "//src/core:seq",
@@ -3889,6 +3893,7 @@ grpc_cc_library(
     deps = [
         "config",
         "debug_location",
+        "event_engine_base_hdrs",
         "exec_ctx",
         "gpr",
         "grpc_base",
@@ -3900,17 +3905,17 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "resource_quota_api",
-        "sockaddr_utils",
         "uri",
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
         "//src/core:closure",
         "//src/core:error",
         "//src/core:error_utils",
+        "//src/core:event_engine_common",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",
         "//src/core:pollset_set",
-        "//src/core:resolved_address",
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:slice_refcount",
@@ -4359,6 +4364,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:flat_hash_set",
         "absl/cleanup",
         "absl/log:check",
         "absl/log:log",

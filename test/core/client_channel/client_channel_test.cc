@@ -274,11 +274,9 @@ CLIENT_CHANNEL_TEST(StartCall) {
   QueueNameResolutionResult(
       MakeSuccessfulResolutionResult("ipv4:127.0.0.1:1234"));
   auto call_handler = TickUntilCallStarted();
-  SpawnTestSeq(call.initiator, "cancel",
-               [call_initiator = call.initiator]() mutable {
-                 call_initiator.Cancel();
-                 return Empty{};
-               });
+  SpawnTestSeq(
+      call.initiator, "cancel",
+      [call_initiator = call.initiator]() mutable { call_initiator.Cancel(); });
   WaitForAllPendingWork();
 }
 
@@ -361,13 +359,10 @@ CLIENT_CHANNEL_TEST(ConfigSelectorWithDynamicFilters) {
           EXPECT_TRUE(value.has_value());
           if (value.has_value()) EXPECT_EQ(*value, "bar");
         }
-        return Empty{};
       });
-  SpawnTestSeq(call.initiator, "cancel",
-               [call_initiator = call.initiator]() mutable {
-                 call_initiator.Cancel();
-                 return Empty{};
-               });
+  SpawnTestSeq(
+      call.initiator, "cancel",
+      [call_initiator = call.initiator]() mutable { call_initiator.Cancel(); });
   WaitForAllPendingWork();
 }
 

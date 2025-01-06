@@ -562,6 +562,10 @@ static void read_channel_args(grpc_chttp2_transport* t,
   t->max_concurrent_streams_overload_protection =
       channel_args.GetBool(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION)
           .value_or(true);
+
+  t->max_concurrent_streams_reject_on_client =
+      channel_args.GetBool(GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT)
+          .value_or(false);
 }
 
 static void init_keepalive_pings_if_enabled_locked(
@@ -1427,8 +1431,24 @@ static void send_initial_metadata_locked(
     if (t->is_client) {
       if (t->closed_with_error.ok()) {
         CHECK_EQ(s->id, 0u);
-        grpc_chttp2_list_add_waiting_for_concurrency(t, s);
-        maybe_start_some_streams(t);
+        if (t->max_concurrent_streams_reject_on_client &&
+            t->stream_map.size() >=
+                t->settings.peer().max_concurrent_streams()) {
+          s->trailing_metadata_buffer.Set(
+              grpc_core::GrpcStreamNetworkState(),
+              grpc_core::GrpcStreamNetworkState::kNotSentOnWire);
+          grpc_chttp2_cancel_stream(
+              t, s,
+              grpc_error_set_int(
+                  GRPC_ERROR_CREATE_REFERENCING("Too many streams",
+                                                &t->closed_with_error, 1),
+                  grpc_core::StatusIntProperty::kRpcStatus,
+                  GRPC_STATUS_RESOURCE_EXHAUSTED),
+              false);
+        } else {
+          grpc_chttp2_list_add_waiting_for_concurrency(t, s);
+          maybe_start_some_streams(t);
+        }
       } else {
         s->trailing_metadata_buffer.Set(
             grpc_core::GrpcStreamNetworkState(),

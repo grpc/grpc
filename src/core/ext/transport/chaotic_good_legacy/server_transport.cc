@@ -164,7 +164,7 @@ auto ChaoticGoodServerTransport::SendCallBody(
   // Continuously send client frame with client to server
   // messages.
   return ForEach(
-      OutgoingMessages(call_initiator),
+      MessagesFrom(call_initiator),
       // Capture the call_initator to ensure the underlying call
       // spine is alive until the SendFragment promise completes.
       [stream_id, outgoing_frames, call_initiator,
@@ -224,7 +224,6 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
                 GRPC_TRACE_VLOG(chaotic_good, 2)
                     << "CHAOTIC_GOOD: CallOutboundLoop: stream_id=" << stream_id
                     << " main_body_result=" << main_body_result;
-                return Empty{};
               }),
           call_initiator.PullServerTrailingMetadata(),
           // Capture the call_initator to ensure the underlying call_spine
@@ -422,10 +421,8 @@ void ChaoticGoodServerTransport::AbortWithError() {
   lock.Release();
   for (const auto& pair : stream_map) {
     auto call_initiator = pair.second;
-    call_initiator.SpawnInfallible("cancel", [call_initiator]() mutable {
-      call_initiator.Cancel();
-      return Empty{};
-    });
+    call_initiator.SpawnInfallible(
+        "cancel", [call_initiator]() mutable { call_initiator.Cancel(); });
   }
 }
 
@@ -474,10 +471,7 @@ absl::Status ChaoticGoodServerTransport::NewStream(
             self->ExtractStream(stream_id);
         if (call_initiator.has_value()) {
           auto c = std::move(*call_initiator);
-          c.SpawnInfallible("cancel", [c]() mutable {
-            c.Cancel();
-            return Empty{};
-          });
+          c.SpawnInfallible("cancel", [c]() mutable { c.Cancel(); });
         }
       });
   if (!on_done_added) {

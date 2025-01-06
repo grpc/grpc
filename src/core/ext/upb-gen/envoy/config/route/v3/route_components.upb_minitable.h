@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -126,6 +126,8 @@ extern const upb_MiniTable envoy__config__route__v3__RateLimit__Override_msg_ini
 extern const upb_MiniTable* envoy__config__route__v3__RateLimit__Override_msg_init_ptr;
 extern const upb_MiniTable envoy__config__route__v3__RateLimit__Override__DynamicMetadata_msg_init;
 extern const upb_MiniTable* envoy__config__route__v3__RateLimit__Override__DynamicMetadata_msg_init_ptr;
+extern const upb_MiniTable envoy__config__route__v3__RateLimit__HitsAddend_msg_init;
+extern const upb_MiniTable* envoy__config__route__v3__RateLimit__HitsAddend_msg_init_ptr;
 extern const upb_MiniTable envoy__config__route__v3__HeaderMatcher_msg_init;
 extern const upb_MiniTable* envoy__config__route__v3__HeaderMatcher_msg_init_ptr;
 extern const upb_MiniTable envoy__config__route__v3__QueryParameterMatcher_msg_init;
@@ -143,4 +145,4 @@ extern const upb_MiniTableFile envoy_config_route_v3_route_components_proto_upb_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPB_H__UPB_MINITABLE_H_ */

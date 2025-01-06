@@ -63,6 +63,7 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/backend_metric_data.h"
@@ -93,6 +94,7 @@ namespace testing {
 
 class LoadBalancingPolicyTest : public ::testing::Test {
  protected:
+  using EventEngine = grpc_event_engine::experimental::EventEngine;
   using FuzzingEventEngine =
       grpc_event_engine::experimental::FuzzingEventEngine;
 
@@ -303,10 +305,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     // Sets the connectivity state for this subchannel.  The updated state
     // will be reported to all associated SubchannelInterface objects.
-    void SetConnectivityState(grpc_connectivity_state state,
-                              const absl::Status& status = absl::OkStatus(),
-                              bool validate_state_transition = true,
-                              SourceLocation location = SourceLocation()) {
+    void SetConnectivityState(
+        grpc_connectivity_state state,
+        const absl::Status& status = absl::OkStatus(),
+        bool validate_state_transition = true,
+        absl::AnyInvocable<void()> run_before_flush = nullptr,
+        SourceLocation location = SourceLocation()) {
       ExecCtx exec_ctx;
       if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         EXPECT_FALSE(status.ok())
@@ -334,6 +338,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             // SetState() enqueued the connectivity state notifications for
             // the subchannel, so we add another callback to the queue to be
             // executed after that state notifications has been delivered.
+            if (run_before_flush != nullptr) run_before_flush();
             LOG(INFO) << "Waiting for state notifications to be delivered";
             test_->work_serializer_->Run(
                 [&]() {
@@ -350,7 +355,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                 DEBUG_LOCATION);
           },
           DEBUG_LOCATION);
-      notification.WaitForNotification();
+      while (!notification.HasBeenNotified()) {
+        test_->fuzzing_ee_->Tick();
+      }
       LOG(INFO) << "Health notifications delivered";
     }
 
@@ -394,7 +401,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             notification.Notify();
           },
           DEBUG_LOCATION);
-      notification.WaitForNotification();
+      while (!notification.HasBeenNotified()) {
+        test_->fuzzing_ee_->Tick();
+      }
       return num_watchers;
     }
 
@@ -519,7 +528,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               notification->Notify();
             },
             DEBUG_LOCATION);
-        notification.WaitForNotification();
+        while (!notification.HasBeenNotified()) {
+          test_->fuzzing_ee_->Tick();
+        }
       }
 
       LoadBalancingPolicy::PickResult Pick(
@@ -603,9 +614,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return nullptr;
     }
 
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
-      return test_->fuzzing_ee_.get();
-    }
+    EventEngine* GetEventEngine() override { return test_->fuzzing_ee_.get(); }
 
     GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup()
         override {
@@ -702,12 +711,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   void SetUp() override {
     // Order is important here: Fuzzing EE needs to be created before
-    // grpc_init(), and the POSIX EE (which is used by the WorkSerializer)
-    // needs to be created after grpc_init().
-    fuzzing_ee_ = MakeFuzzingEventEngine();
+    // grpc_init().
+    fuzzing_ee_ = std::make_shared<FuzzingEventEngine>(
+        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
+    grpc_timer_manager_set_start_threaded(false);
     grpc_init();
-    event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
-    work_serializer_ = std::make_shared<WorkSerializer>(event_engine_);
+    work_serializer_ = std::make_shared<WorkSerializer>(fuzzing_ee_);
     auto helper = std::make_unique<FakeHelper>(this);
     helper_ = helper.get();
     LoadBalancingPolicy::Args args = {work_serializer_, std::move(helper),
@@ -737,17 +746,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       lb_policy_.reset();
     }
     fuzzing_ee_->TickUntilIdle();
-    grpc_event_engine::experimental::WaitForSingleOwner(
-        std::move(event_engine_));
-    event_engine_.reset();
+    grpc_event_engine::experimental::WaitForSingleOwner(std::move(fuzzing_ee_));
     grpc_shutdown_blocking();
-    fuzzing_ee_.reset();
-  }
-
-  virtual std::shared_ptr<FuzzingEventEngine> MakeFuzzingEventEngine() {
-    return std::make_shared<FuzzingEventEngine>(
-        grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-        fuzzing_event_engine::Actions());
   }
 
   LoadBalancingPolicy* lb_policy() const {
@@ -858,7 +858,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               DEBUG_LOCATION);
         },
         DEBUG_LOCATION);
-    notification.WaitForNotification();
+    while (!notification.HasBeenNotified()) {
+      fuzzing_ee_->Tick();
+    }
     LOG(INFO) << "health notifications delivered";
     return status;
   }
@@ -877,7 +879,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                                 DEBUG_LOCATION);
         },
         DEBUG_LOCATION);
-    notification.WaitForNotification();
+    while (!notification.HasBeenNotified()) {
+      fuzzing_ee_->Tick();
+    }
   }
 
   void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
@@ -944,7 +948,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             EXPECT_TRUE(update.status.ok())
                 << update.status << " at " << location.file() << ":"
                 << location.line();
-            ExpectPickQueued(update.picker.get(), {}, location);
+            ExpectPickQueued(update.picker.get(), {}, {}, location);
             return true;  // Keep going.
           }
           EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
@@ -988,7 +992,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             EXPECT_TRUE(update.status.ok())
                 << update.status << " at " << location.file() << ":"
                 << location.line();
-            ExpectPickQueued(update.picker.get(), {}, location);
+            ExpectPickQueued(update.picker.get(), {}, {}, location);
             return true;  // Keep going.
           }
           EXPECT_EQ(update.state, GRPC_CHANNEL_TRANSIENT_FAILURE)
@@ -1055,7 +1059,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Status expected_status = absl::OkStatus(),
       SourceLocation location = SourceLocation()) {
     auto picker = ExpectState(expected_state, expected_status, location);
-    return ExpectPickQueued(picker.get(), {}, location);
+    return ExpectPickQueued(picker.get(), {}, {}, location);
   }
 
   // Convenient frontend to ExpectStateAndQueuingPicker() for CONNECTING.
@@ -1072,20 +1076,22 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Does a pick and returns the result.
   LoadBalancingPolicy::PickResult DoPick(
       LoadBalancingPolicy::SubchannelPicker* picker,
-      const CallAttributes& call_attributes = {}) {
+      const CallAttributes& call_attributes = {},
+      const std::map<std::string, std::string>& metadata = {}) {
     ExecCtx exec_ctx;
-    FakeMetadata metadata({});
+    FakeMetadata md(metadata);
     FakeCallState call_state(call_attributes);
-    return picker->Pick({"/service/method", &metadata, &call_state});
+    return picker->Pick({"/service/method", &md, &call_state});
   }
 
   // Requests a pick on picker and expects a Queue result.
   bool ExpectPickQueued(LoadBalancingPolicy::SubchannelPicker* picker,
                         const CallAttributes call_attributes = {},
+                        const std::map<std::string, std::string>& metadata = {},
                         SourceLocation location = SourceLocation()) {
     EXPECT_NE(picker, nullptr) << location.file() << ":" << location.line();
     if (picker == nullptr) return false;
-    auto pick_result = DoPick(picker, call_attributes);
+    auto pick_result = DoPick(picker, call_attributes, metadata);
     EXPECT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result))
         << PickResultString(pick_result) << "\nat " << location.file() << ":"
@@ -1104,6 +1110,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   absl::optional<std::string> ExpectPickComplete(
       LoadBalancingPolicy::SubchannelPicker* picker,
       const CallAttributes& call_attributes = {},
+      const std::map<std::string, std::string>& metadata = {},
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>*
           subchannel_call_tracker = nullptr,
       SubchannelState::FakeSubchannel** picked_subchannel = nullptr,
@@ -1112,7 +1119,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     if (picker == nullptr) {
       return absl::nullopt;
     }
-    auto pick_result = DoPick(picker, call_attributes);
+    auto pick_result = DoPick(picker, call_attributes, metadata);
     auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
         &pick_result.result);
     EXPECT_NE(complete, nullptr) << PickResultString(pick_result) << " at "
@@ -1163,6 +1170,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
           subchannel_call_tracker;
       auto address = ExpectPickComplete(picker, call_attributes,
+                                        /*metadata=*/{},
                                         subchannel_call_trackers == nullptr
                                             ? nullptr
                                             : &subchannel_call_tracker,
@@ -1445,27 +1453,27 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     LOG(INFO) << "waiting for WorkSerializer to flush...";
     absl::Notification notification;
     work_serializer_->Run([&]() { notification.Notify(); }, DEBUG_LOCATION);
-    notification.WaitForNotification();
+    while (!notification.HasBeenNotified()) {
+      fuzzing_ee_->Tick();
+    }
     LOG(INFO) << "WorkSerializer flush complete";
   }
 
-  void IncrementTimeBy(Duration duration) {
+  void IncrementTimeBy(Duration duration, bool flush_work_serializer = true) {
     ExecCtx exec_ctx;
     LOG(INFO) << "Incrementing time by " << duration;
     fuzzing_ee_->TickForDuration(duration);
     LOG(INFO) << "Done incrementing time";
     // Flush WorkSerializer, in case the timer callback enqueued anything.
-    WaitForWorkSerializerToFlush();
+    if (flush_work_serializer) WaitForWorkSerializerToFlush();
   }
 
-  void SetExpectedTimerDuration(
-      absl::optional<grpc_event_engine::experimental::EventEngine::Duration>
-          duration,
-      SourceLocation location = SourceLocation()) {
+  void SetExpectedTimerDuration(absl::optional<EventEngine::Duration> duration,
+                                SourceLocation location = SourceLocation()) {
     if (duration.has_value()) {
       fuzzing_ee_->SetRunAfterDurationCallback(
-          [expected = *duration, location = location](
-              grpc_event_engine::experimental::EventEngine::Duration duration) {
+          [expected = *duration,
+           location = location](EventEngine::Duration duration) {
             EXPECT_EQ(duration, expected)
                 << "Expected: " << expected.count()
                 << "ns\n  Actual: " << duration.count() << "ns\n"
@@ -1477,15 +1485,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   std::shared_ptr<FuzzingEventEngine> fuzzing_ee_;
-  // TODO(ctiller): this is a normal event engine, yet it gets its time measure
-  // from fuzzing_ee_ -- results are likely to be a little funky, but seem to do
-  // well enough for the tests we have today.
-  // We should transition everything here to just use fuzzing_ee_, but that
-  // needs some thought on how to Tick() at appropriate times, as there are
-  // Notification objects buried everywhere in this code, and
-  // WaitForNotification is deeply incompatible with a single threaded event
-  // engine that doesn't run callbacks until its public Tick method is called.
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::shared_ptr<WorkSerializer> work_serializer_;
   FakeHelper* helper_ = nullptr;
   std::map<SubchannelKey, SubchannelState> subchannel_pool_;

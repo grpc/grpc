@@ -28,6 +28,69 @@
 namespace grpc_core {
 namespace promise_detail {
 
+// The Join promise combinator takes as inputs multiple promises.
+// When the Join promise is polled, these input promises will be executed
+// serially on the same thread.
+// Each promise being executed either returns a value or Pending{}.
+// Each subsequent execution of the Join will only execute the input promises
+// which returned Pending{} in any of the previous executions. This mechanism
+// ensures that no promise is executed after it resolves, which is an essential
+// requirement.
+//
+// Suppose you have three promises
+// 1.  First promise returning type Poll<int>
+// 2.  Second promise returning type Poll<bool>
+// 3.  Third promise returning type Poll<double>
+// Then you poll the Join of theses three promises, the result will have the
+// type Poll<std::tuple<int, bool, double>>
+//
+// Polling this join promise will
+// 1.  Return Pending{} if even one promise in the input list of promises
+// returns Pending{}
+// 2.  Return the tuple if all promises are resolved.
+//
+// All promises in the input list will be executed irrespective of failure
+// status. If you want the promise execution to stop when there is a failure in
+// any one promise, consider using TryJoin promise combinator instead of the
+// Join combinator.
+//
+// Example of Join :
+//
+// {
+//   int execution_order = 0;
+//   auto first_promise = [&execution_order]() mutable -> Poll<int> {
+//     execution_order = (execution_order * 10) + 1;
+//     return 1;
+//   };
+//   auto second_promise = [&execution_order]() mutable -> Poll<bool> {
+//     execution_order = (execution_order * 10) + 2;
+//     return false;
+//   };
+//   auto third_promise = [&execution_order,
+//                         once = false]() mutable -> Poll<StatusFlag> {
+//     execution_order = (execution_order * 10) + 3;
+//     if (once) return Success{};
+//     once = true;
+//     return Pending{};
+//   };
+//
+//   auto join_1_2_3 = Join(first_promise, second_promise, third_promise);
+//
+//   using JoinTuple = std::tuple<int, bool, StatusFlag>;
+//   Poll<JoinTuple> first_execution = join_1_2_3();
+//   EXPECT_FALSE(first_execution.ready());
+//
+//   Poll<JoinTuple> second_execution = join_1_2_3();
+//   EXPECT_TRUE(second_execution.ready());
+//
+//   JoinTuple& tuple = *(second_execution.value_if_ready());
+//   EXPECT_EQ(get<0>(tuple), 1);
+//   EXPECT_EQ(get<1>(tuple), false);
+//   EXPECT_EQ(get<2>(tuple), Success{});
+//
+//   EXPECT_EQ(execution_order, 1233);  // Check the order of execution.
+// }
+
 struct JoinTraits {
   template <typename T>
   using ResultType = absl::remove_reference_t<T>;
@@ -72,8 +135,6 @@ struct WrapInTuple {
 
 }  // namespace promise_detail
 
-/// Combinator to run all promises to completion, and return a tuple
-/// of their results.
 template <typename... Promise>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Join<Promise...>
 Join(Promise... promises) {

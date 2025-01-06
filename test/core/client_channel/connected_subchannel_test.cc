@@ -165,7 +165,6 @@ CONNECTED_SUBCHANNEL_CHANNEL_TEST(StartCall) {
   SpawnTestSeq(
       call.handler, "start-call", [channel, handler = call.handler]() mutable {
         channel->unstarted_call_destination()->StartCall(std::move(handler));
-        return Empty{};
       });
   auto handler = TickUntilCallStarted();
   WaitForAllPendingWork();

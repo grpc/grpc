@@ -32,7 +32,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_config_listener_v3_AdditionalAddress_submsgs[2] = {
+static const upb_MiniTableSubInternal envoy_config_listener_v3_AdditionalAddress__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SocketOptionsOverride_msg_init_ptr},
 };
@@ -43,7 +43,7 @@ static const upb_MiniTableField envoy_config_listener_v3_AdditionalAddress__fiel
 };
 
 const upb_MiniTable envoy__config__listener__v3__AdditionalAddress_msg_init = {
-  &envoy_config_listener_v3_AdditionalAddress_submsgs[0],
+  &envoy_config_listener_v3_AdditionalAddress__submsgs[0],
   &envoy_config_listener_v3_AdditionalAddress__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -52,7 +52,7 @@ const upb_MiniTable envoy__config__listener__v3__AdditionalAddress_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__listener__v3__AdditionalAddress_msg_init_ptr = &envoy__config__listener__v3__AdditionalAddress_msg_init;
-static const upb_MiniTableSubInternal envoy_config_listener_v3_ListenerCollection_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_config_listener_v3_ListenerCollection__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &xds__core__v3__CollectionEntry_msg_init_ptr},
 };
 
@@ -61,7 +61,7 @@ static const upb_MiniTableField envoy_config_listener_v3_ListenerCollection__fie
 };
 
 const upb_MiniTable envoy__config__listener__v3__ListenerCollection_msg_init = {
-  &envoy_config_listener_v3_ListenerCollection_submsgs[0],
+  &envoy_config_listener_v3_ListenerCollection__submsgs[0],
   &envoy_config_listener_v3_ListenerCollection__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -74,7 +74,7 @@ const upb_MiniTable envoy__config__listener__v3__ListenerCollection_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__listener__v3__ListenerCollection_msg_init_ptr = &envoy__config__listener__v3__ListenerCollection_msg_init;
-static const upb_MiniTableSubInternal envoy_config_listener_v3_Listener_submsgs[24] = {
+static const upb_MiniTableSubInternal envoy_config_listener_v3_Listener__submsgs[24] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__FilterChain_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
@@ -138,7 +138,7 @@ static const upb_MiniTableField envoy_config_listener_v3_Listener__fields[33] = 
 };
 
 const upb_MiniTable envoy__config__listener__v3__Listener_msg_init = {
-  &envoy_config_listener_v3_Listener_submsgs[0],
+  &envoy_config_listener_v3_Listener__submsgs[0],
   &envoy_config_listener_v3_Listener__fields[0],
   UPB_SIZE(152, 256), 33, kUpb_ExtMode_NonExtendable, 13, UPB_FASTTABLE_MASK(248), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -181,7 +181,7 @@ const upb_MiniTable envoy__config__listener__v3__Listener_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__listener__v3__Listener_msg_init_ptr = &envoy__config__listener__v3__Listener_msg_init;
-static const upb_MiniTableSubInternal envoy_config_listener_v3_Listener_DeprecatedV1_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_config_listener_v3_Listener_DeprecatedV1__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
 };
 
@@ -190,7 +190,7 @@ static const upb_MiniTableField envoy_config_listener_v3_Listener_DeprecatedV1__
 };
 
 const upb_MiniTable envoy__config__listener__v3__Listener__DeprecatedV1_msg_init = {
-  &envoy_config_listener_v3_Listener_DeprecatedV1_submsgs[0],
+  &envoy_config_listener_v3_Listener_DeprecatedV1__submsgs[0],
   &envoy_config_listener_v3_Listener_DeprecatedV1__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -199,7 +199,7 @@ const upb_MiniTable envoy__config__listener__v3__Listener__DeprecatedV1_msg_init
 };
 
 const upb_MiniTable* envoy__config__listener__v3__Listener__DeprecatedV1_msg_init_ptr = &envoy__config__listener__v3__Listener__DeprecatedV1_msg_init;
-static const upb_MiniTableSubInternal envoy_config_listener_v3_Listener_ConnectionBalanceConfig_submsgs[2] = {
+static const upb_MiniTableSubInternal envoy_config_listener_v3_Listener_ConnectionBalanceConfig__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__Listener__ConnectionBalanceConfig__ExactBalance_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
 };
@@ -210,7 +210,7 @@ static const upb_MiniTableField envoy_config_listener_v3_Listener_ConnectionBala
 };
 
 const upb_MiniTable envoy__config__listener__v3__Listener__ConnectionBalanceConfig_msg_init = {
-  &envoy_config_listener_v3_Listener_ConnectionBalanceConfig_submsgs[0],
+  &envoy_config_listener_v3_Listener_ConnectionBalanceConfig__submsgs[0],
   &envoy_config_listener_v3_Listener_ConnectionBalanceConfig__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED

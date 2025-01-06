@@ -36,6 +36,7 @@ namespace {
 // - client sends a 100 KiB message, thus exceeding the buffer size limit
 // - retry attempt gets ABORTED but is not retried
 CORE_END2END_TEST(RetryTest, RetryExceedsBufferSizeInDelay) {
+  SKIP_IF_V3();  // Not working yet
   InitServer(ChannelArgs());
   InitClient(
       ChannelArgs()

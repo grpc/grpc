@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_H_
-#define XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_H_
+#ifndef XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_H__UPB_H_
+#define XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -400,4 +400,4 @@ UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_set_value(xds_
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_H_ */
+#endif  /* XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_H__UPB_H_ */

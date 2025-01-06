@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_V3_HTTP_PROTO_UPBDEFS_H_
-#define ENVOY_TYPE_V3_HTTP_PROTO_UPBDEFS_H_
+#ifndef ENVOY_TYPE_V3_HTTP_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_TYPE_V3_HTTP_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -25,4 +25,4 @@ extern _upb_DefPool_Init envoy_type_v3_http_proto_upbdefinit;
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_V3_HTTP_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_TYPE_V3_HTTP_PROTO_UPB_H__UPBDEFS_H_ */

@@ -340,7 +340,7 @@ std::string YodelTest::RandomMessage() {
     }
     return out;
   }()};
-  return RandomString(0, 1024 * 1024, *kChars);
+  return RandomString(0, max_random_message_size_, *kChars);
 }
 
 }  // namespace grpc_core
