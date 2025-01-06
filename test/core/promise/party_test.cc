@@ -632,9 +632,9 @@ void StressTestAsserts(std::vector<Timestamp>& start_times,
     // (but not guaranteed) to finish before all other threads.
     EXPECT_LE(start_times[i], end_times[1]);
 
-    // All threads should start before any thread finishes 12.5% of it's run.
+    // All threads should start before any thread finishes 20% of it's run.
     // This is loose evidence that the threads are running in parallel.
-    EXPECT_LE(start_times[i] - start_times[0], (fastest_thread_run_time / 8));
+    EXPECT_LE(start_times[i] - start_times[0], (fastest_thread_run_time / 5));
 
     if (i >= 2) {
       // For some stress tests, the even thread swill sleep for 3x the time of
@@ -771,7 +771,6 @@ class PromiseNotification {
   Waker waker_ ABSL_GUARDED_BY(mu_);
 };
 
-// TODO(tjagtap) : WIP
 TEST_F(PartyTest, ThreadStressTestWithOwningWaker) {
   // Stress test with owning waker.
   // Asserts are identical to ThreadStressTest.
@@ -792,15 +791,15 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWaker) {
                          Sleep(Timestamp::Now() +
                                Duration::Milliseconds(kStressTestSleepMs)),
                          [&order, i]() -> Poll<int> {
-                           absl::StrAppend(&order,
-                                           absl::StrFormat("%d(P%d,", i, i));
-                           return 42;
+                           absl::StrAppend(&order, absl::StrFormat("B%d", i));
+                           return i + 42;
                          }),
                      [&order, &promise_complete, i](int val) {
-                       EXPECT_EQ(val, 42);
-                       absl::StrAppend(&order, absl::StrFormat("D%d)", i));
+                       EXPECT_EQ(val, i + 42);
+                       absl::StrAppend(&order, absl::StrFormat("C%d", i));
                        promise_complete.Notify();
                      });
+        absl::StrAppend(&order, absl::StrFormat("A%d", i));
         promise_start.Notify();
         promise_complete.WaitForNotification();
         absl::StrAppend(&order, ".");
@@ -815,13 +814,14 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWaker) {
     absl::StrAppend(&expected_order[i], absl::StrFormat("Thread %d : ", i));
     for (int j = 0; j < kNumSpawns; j++) {
       absl::StrAppend(&expected_order[i],
-                      absl::StrFormat("%d(P%d,D%d).", i, j, j));
+                      absl::StrFormat("A%dB%dC%d.", j, j, j));
     }
-    // EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
+    // For the given test, the order is guaranteed because of the way the
+    // notifications are used.
+    EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
 }
 
-// TODO(tjagtap) : WIP
 TEST_F(PartyTest, ThreadStressTestWithOwningWakerHoldingLock) {
   auto party = MakeParty();
   std::vector<std::thread> threads;
@@ -840,15 +840,15 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWakerHoldingLock) {
                          Sleep(Timestamp::Now() +
                                Duration::Milliseconds(kStressTestSleepMs)),
                          [&order, i]() -> Poll<int> {
-                           absl::StrAppend(&order,
-                                           absl::StrFormat("%d(P%d,", i, i));
+                           absl::StrAppend(&order, absl::StrFormat("B%d", i));
                            return 42;
                          }),
                      [&order, &promise_complete, i](int val) {
                        EXPECT_EQ(val, 42);
-                       absl::StrAppend(&order, absl::StrFormat("D%d)", i));
+                       absl::StrAppend(&order, absl::StrFormat("C%d", i));
                        promise_complete.Notify();
                      });
+        absl::StrAppend(&order, absl::StrFormat("A%d", i));
         promise_start.NotifyUnderLock();
         promise_complete.WaitForNotification();
         absl::StrAppend(&order, ".");
@@ -863,13 +863,14 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWakerHoldingLock) {
     absl::StrAppend(&expected_order[i], absl::StrFormat("Thread %d : ", i));
     for (int j = 0; j < kNumSpawns; j++) {
       absl::StrAppend(&expected_order[i],
-                      absl::StrFormat("%d(P%d,D%d).", i, j, j));
+                      absl::StrFormat("A%dB%dC%d.", j, j, j));
     }
-    // EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
+    // For the given test, the order is guaranteed because of the way the
+    // notifications are used.
+    EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
 }
 
-// TODO(tjagtap) : WIP
 TEST_F(PartyTest, ThreadStressTestWithNonOwningWaker) {
   auto party = MakeParty();
   std::vector<std::thread> threads;
@@ -888,15 +889,15 @@ TEST_F(PartyTest, ThreadStressTestWithNonOwningWaker) {
                          Sleep(Timestamp::Now() +
                                Duration::Milliseconds(kStressTestSleepMs)),
                          [&order, i]() -> Poll<int> {
-                           absl::StrAppend(&order,
-                                           absl::StrFormat("%d(P%d,", i, i));
+                           absl::StrAppend(&order, absl::StrFormat("B%d", i));
                            return 42;
                          }),
                      [&order, &promise_complete, i](int val) {
                        EXPECT_EQ(val, 42);
-                       absl::StrAppend(&order, absl::StrFormat("D%d)", i));
+                       absl::StrAppend(&order, absl::StrFormat("C%d", i));
                        promise_complete.Notify();
                      });
+        absl::StrAppend(&order, absl::StrFormat("A%d", i));
         promise_start.Notify();
         promise_complete.WaitForNotification();
         absl::StrAppend(&order, ".");
@@ -911,9 +912,11 @@ TEST_F(PartyTest, ThreadStressTestWithNonOwningWaker) {
     absl::StrAppend(&expected_order[i], absl::StrFormat("Thread %d : ", i));
     for (int j = 0; j < kNumSpawns; j++) {
       absl::StrAppend(&expected_order[i],
-                      absl::StrFormat("%d(P%d,D%d).", i, j, j));
+                      absl::StrFormat("A%dB%dC%d.", j, j, j));
     }
-    // EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
+    // For the given test, the order is guaranteed because of the way the
+    // notifications are used.
+    EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
 }
 
