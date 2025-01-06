@@ -522,8 +522,8 @@ grpc_cc_test(
 )
 
 grpc_fuzz_test(
-    name = "write_size_policy_test",
-    srcs = ["write_size_policy_test.cc"],
+    name = "write_size_policy_fuzztest",
+    srcs = ["write_size_policy_fuzztest.cc"],
     external_deps = [
         "fuzztest",
         "fuzztest_main",
