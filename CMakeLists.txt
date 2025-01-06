@@ -403,18 +403,18 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLO
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz
-    e525a6fb6e6ed3eef1eec6bef3da9b5708e471f0f9335a7604df14a4b386231e
-    data-plane-api-f8b75d1efa92bbf534596a013d9ca5873f79dd30
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/3a311b6d421867bb1a83cfc7af6c4a84f6c00050.tar.gz
+    fc4aca6aec598d081d09cb479187bc249311887200b5a13be695e76c09a63871
+    data-plane-api-3a311b6d421867bb1a83cfc7af6c4a84f6c00050
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz
-    e525a6fb6e6ed3eef1eec6bef3da9b5708e471f0f9335a7604df14a4b386231e
-    data-plane-api-f8b75d1efa92bbf534596a013d9ca5873f79dd30
+    https://github.com/envoyproxy/data-plane-api/archive/3a311b6d421867bb1a83cfc7af6c4a84f6c00050.tar.gz
+    fc4aca6aec598d081d09cb479187bc249311887200b5a13be695e76c09a63871
+    data-plane-api-3a311b6d421867bb1a83cfc7af6c4a84f6c00050
   )
 endif()
 # Setup external proto library at third_party/googleapis with 2 download URLs
@@ -883,6 +883,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/config/core/v3/resolver.proto envoy/config/core/v3/resolver.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto envoy/config/core/v3/socket_cmsg_headers.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/config/core/v3/socket_option.proto envoy/config/core/v3/socket_option.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -950,9 +953,6 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/config/trace/v3/lightstep.proto envoy/config/trace/v3/lightstep.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/envoy-api/envoy/config/trace/v3/opencensus.proto envoy/config/trace/v3/opencensus.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto envoy/config/trace/v3/opentelemetry.proto
@@ -1139,9 +1139,6 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/googleapis/google/rpc/status.proto google/rpc/status.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto opencensus/proto/trace/v1/trace_config.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/protoc-gen-validate/validate/validate.proto validate/validate.proto
@@ -2330,6 +2327,7 @@ add_library(grpc
   src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/core/v3/udp_socket_config.upb_minitable.c
@@ -2353,7 +2351,6 @@ add_library(grpc
   src/core/ext/upb-gen/envoy/config/trace/v3/dynamic_ot.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/trace/v3/http_tracer.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.c
-  src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/trace/v3/service.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/trace/v3/skywalking.upb_minitable.c
@@ -2423,7 +2420,6 @@ add_library(grpc
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -2497,6 +2493,7 @@ add_library(grpc
   src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_cmsg_headers.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/config/core/v3/substitution_format_string.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/config/core/v3/udp_socket_config.upbdefs.c
@@ -2520,7 +2517,6 @@ add_library(grpc
   src/core/ext/upbdefs-gen/envoy/config/trace/v3/dynamic_ot.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/config/trace/v3/http_tracer.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.c
-  src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/config/trace/v3/service.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/config/trace/v3/skywalking.upbdefs.c
@@ -2585,7 +2581,6 @@ add_library(grpc
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c
-  src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c
   src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c
   src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c
@@ -6771,6 +6766,10 @@ add_executable(admin_services_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -6859,10 +6858,6 @@ add_executable(admin_services_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -7023,10 +7018,6 @@ add_executable(admin_services_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -10758,6 +10749,7 @@ add_executable(cel_authorization_engine_test
   src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/core/v3/udp_socket_config.upb_minitable.c
@@ -24855,6 +24847,10 @@ add_executable(pre_stop_hook_server_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -24943,10 +24939,6 @@ add_executable(pre_stop_hook_server_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -25107,10 +25099,6 @@ add_executable(pre_stop_hook_server_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -37008,6 +36996,10 @@ add_executable(xds_audit_logger_registry_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -37478,6 +37470,10 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -37833,6 +37829,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -37909,10 +37909,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -38073,10 +38069,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -38336,6 +38328,10 @@ add_executable(xds_cluster_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -38388,10 +38384,6 @@ add_executable(xds_cluster_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -38592,10 +38584,6 @@ add_executable(xds_cluster_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -38876,6 +38864,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -38952,10 +38944,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -39120,10 +39108,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -39366,6 +39350,10 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -39757,6 +39745,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -39833,10 +39825,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -39997,10 +39985,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -40471,6 +40455,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -40563,10 +40551,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -40747,10 +40731,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -41038,6 +41018,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -41114,10 +41098,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -41278,10 +41258,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -41519,6 +41495,10 @@ add_executable(xds_endpoint_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -41875,6 +41855,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -41951,10 +41935,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -42115,10 +42095,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -42405,6 +42381,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -42481,10 +42461,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -42653,10 +42629,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -42943,6 +42915,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -43019,10 +42995,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -43187,10 +43159,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -43477,6 +43445,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -43553,10 +43525,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -43721,10 +43689,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -43971,6 +43935,10 @@ add_executable(xds_http_filters_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -44015,10 +43983,6 @@ add_executable(xds_http_filters_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -44199,10 +44163,6 @@ add_executable(xds_http_filters_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -44457,6 +44417,10 @@ add_executable(xds_lb_policy_registry_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -44823,6 +44787,10 @@ add_executable(xds_listener_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -44887,10 +44855,6 @@ add_executable(xds_listener_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -45079,10 +45043,6 @@ add_executable(xds_listener_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -45317,6 +45277,10 @@ add_executable(xds_metadata_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -45661,6 +45625,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -45737,10 +45705,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -45909,10 +45873,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -46199,6 +46159,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -46275,10 +46239,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -46447,10 +46407,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -46828,6 +46784,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -46904,10 +46864,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -47076,10 +47032,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -47367,6 +47319,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -47443,10 +47399,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -47611,10 +47563,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -47910,6 +47858,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -47986,10 +47938,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -48150,10 +48098,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -48400,6 +48344,10 @@ add_executable(xds_route_config_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -48835,6 +48783,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -48911,10 +48863,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -49083,10 +49031,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -49373,6 +49317,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -49449,10 +49397,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -49637,10 +49581,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -49968,6 +49908,10 @@ add_executable(xds_stats_watcher_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -50056,10 +50000,6 @@ add_executable(xds_stats_watcher_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -50220,10 +50160,6 @@ add_executable(xds_stats_watcher_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -50507,6 +50443,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/resolver.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_cmsg_headers.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
@@ -50583,10 +50523,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
@@ -50755,10 +50691,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h

@@ -34,11 +34,6 @@ UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_FilterChain_getmsgdef(
   return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.FilterChain");
 }
 
-UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_FilterChain_OnDemandConfiguration_getmsgdef(upb_DefPool *s) {
-  _upb_DefPool_LoadDefInit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
-  return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.FilterChain.OnDemandConfiguration");
-}
-
 UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_ListenerFilterChainMatchPredicate_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.ListenerFilterChainMatchPredicate");

@@ -16,7 +16,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n]envoy/extensions/filters/network/sni_dynamic_forward_proxy/v3/sni_dynamic_forward_proxy.proto\x12=envoy.extensions.filters.network.sni_dynamic_forward_proxy.v3\x1a@envoy/extensions/common/dynamic_forward_proxy/v3/dns_cache.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xa9\x01\n\x0c\x46ilterConfig\x12\x64\n\x10\x64ns_cache_config\x18\x01 \x01(\x0b\x32@.envoy.extensions.common.dynamic_forward_proxy.v3.DnsCacheConfigB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12!\n\nport_value\x18\x02 \x01(\rB\x0b\xfa\x42\x08*\x06\x18\xff\xff\x03 \x00H\x00\x42\x10\n\x0eport_specifierB\xf7\x01\nKio.envoyproxy.envoy.extensions.filters.network.sni_dynamic_forward_proxy.v3B\x1bSniDynamicForwardProxyProtoP\x01Z\x80\x01github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/sni_dynamic_forward_proxy/v3;sni_dynamic_forward_proxyv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n]envoy/extensions/filters/network/sni_dynamic_forward_proxy/v3/sni_dynamic_forward_proxy.proto\x12=envoy.extensions.filters.network.sni_dynamic_forward_proxy.v3\x1a@envoy/extensions/common/dynamic_forward_proxy/v3/dns_cache.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xc8\x01\n\x0c\x46ilterConfig\x12\x64\n\x10\x64ns_cache_config\x18\x01 \x01(\x0b\x32@.envoy.extensions.common.dynamic_forward_proxy.v3.DnsCacheConfigB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12!\n\nport_value\x18\x02 \x01(\rB\x0b\xfa\x42\x08*\x06\x18\xff\xff\x03 \x00H\x00\x12\x1d\n\x15save_upstream_address\x18\x03 \x01(\x08\x42\x10\n\x0eport_specifierB\xf7\x01\nKio.envoyproxy.envoy.extensions.filters.network.sni_dynamic_forward_proxy.v3B\x1bSniDynamicForwardProxyProtoP\x01Z\x80\x01github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/sni_dynamic_forward_proxy/v3;sni_dynamic_forward_proxyv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -29,5 +29,5 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _FILTERCONFIG.fields_by_name['port_value']._options = None
   _FILTERCONFIG.fields_by_name['port_value']._serialized_options = b'\372B\010*\006\030\377\377\003 \000'
   _globals['_FILTERCONFIG']._serialized_start=283
-  _globals['_FILTERCONFIG']._serialized_end=452
+  _globals['_FILTERCONFIG']._serialized_end=483
 # @@protoc_insertion_point(module_scope)

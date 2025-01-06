@@ -1913,19 +1913,20 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
           "resource index 0: foo1: INVALID_ARGUMENT: errors validating JSON: "
           "[field:value error:is not a number]]"),
       /*resource_names=*/{"foo1"});
-  // Start a second watcher for the same resource.  Even though the last
-  // update was a NACK, we should still deliver the cached resource to
-  // the watcher.
-  // TODO(roth): Consider what the right behavior is here.  It seems
-  // inconsistent that the watcher sees the error if it had started
-  // before the error was seen but does not if it was started afterwards.
-  // One option is to not send errors at all for already-cached resources;
-  // another option is to send the errors even for newly started watchers.
+  // Start a second watcher for the same resource.  The watcher should
+  // first get the cached resource and then the ambient error.
   auto watcher2 = StartFooWatch("foo1");
   resource = watcher2->WaitForNextResource();
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  error = watcher2->WaitForNextAmbientError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(
+      *error,
+      absl::InvalidArgumentError(
+          "invalid resource: errors validating JSON: "
+          "[field:value error:is not a number] (node ID:xds_client_test)"));
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
@@ -2146,18 +2147,20 @@ TEST_F(XdsClientTest,
           "resource index 0: foo1: INVALID_ARGUMENT: errors validating JSON: "
           "[field:value error:is not a number]]"),
       /*resource_names=*/{"foo1"});
-  // Start a second watcher for the same resource.  This should deliver
-  // the cached resource to the watcher immediately.
-  // TODO(roth): Consider what the right behavior is here.  It seems
-  // inconsistent that the watcher sees the error if it had started
-  // before the error was seen but does not if it was started afterwards.
-  // One option is to not send errors at all for already-cached resources;
-  // another option is to send the errors even for newly started watchers.
+  // Start a second watcher for the same resource.  The watcher should
+  // first get the cached resource and then the ambient error.
   auto watcher2 = StartFooWatch("foo1");
   resource = watcher2->WaitForNextResource();
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  error = watcher2->WaitForNextAmbientError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(
+      *error,
+      absl::InvalidArgumentError(
+          "invalid resource: errors validating JSON: "
+          "[field:value error:is not a number] (node ID:xds_client_test)"));
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
@@ -2422,9 +2425,12 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredByDefault) {
           .set_version_info("2")
           .set_nonce("B")
           .Serialize());
-  // Watcher should not see any update, since we should have ignored the
+  // Watcher should see an ambient error, since we should have ignored the
   // deletion.
-  EXPECT_TRUE(watcher->ExpectNoEvent());
+  auto error = watcher->WaitForNextAmbientError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(*error,
+            absl::NotFoundError("does not exist (node ID:xds_client_test)"));
   // Check metric data.
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::ElementsAre(::testing::Pair(
@@ -2432,20 +2438,24 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredByDefault) {
                           XdsWildcardCapableResourceType::Get()->type_url()),
           1)),
       ::testing::ElementsAre(), ::testing::_));
-  EXPECT_THAT(
-      GetResourceCounts(),
-      ::testing::ElementsAre(::testing::Pair(
-          ResourceCountLabelsEq(
-              XdsClient::kOldStyleAuthority,
-              XdsWildcardCapableResourceType::Get()->type_url(), "acked"),
-          1)));
-  // Start a new watcher for the same resource.  It should immediately
-  // receive the cached resource.
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(
+                      XdsClient::kOldStyleAuthority,
+                      XdsWildcardCapableResourceType::Get()->type_url(),
+                      "does_not_exist_but_cached"),
+                  1)));
+  // Start a second watcher for the same resource.  The watcher should
+  // first get the cached resource and then the ambient error.
   auto watcher2 = StartWildcardCapableWatch("wc1");
   resource = watcher2->WaitForNextResource();
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 6);
+  error = watcher2->WaitForNextAmbientError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(*error,
+            absl::NotFoundError("does not exist (node ID:xds_client_test)"));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
