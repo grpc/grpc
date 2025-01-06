@@ -145,7 +145,7 @@ TEST_F(PartyTest, TestLargeNumberOfSpawnedPromises) {
   }
   // Warning : We do not guarantee that the promises will be executed in the
   // order they were spawned. However, in this test, the promises never return
-  // Pending, so they should be executed in the order they were spawned.
+  // Pending, so they will be executed in the order they were spawned.
   EXPECT_STREQ(execution_order.c_str(), expected_execution_order.c_str());
 }
 
@@ -182,7 +182,7 @@ TEST_F(PartyTest, Test16SpawnedPendingPromises) {
   }
   // Warning : We do not guarantee that the promises will be executed in the
   // order they were spawned. However, in this test, we spawn only 16 promises,
-  // so they should be executed in the order they were spawned.
+  // so they will be executed in the order they were spawned.
   EXPECT_STREQ(execution_order.c_str(), expected_execution_order.c_str());
 }
 
@@ -210,7 +210,7 @@ TEST_F(PartyTest, TestSpawnedPendingPromisesResolve) {
   // 2. Earlier spawned promises getting resolved creates a possibility for
   //    later promises to get spawned and executed.
   // 3. on_done callback is never called for a promise that is not resolved.
-  //    It should be called immediately when the promise is resolved.
+  //    It will be called immediately when the promise is resolved.
   const int kNumPromises = 20;
   std::string execution_order;
   auto party = MakeParty();
@@ -479,7 +479,12 @@ TEST_F(PartyTest, CanDropNonOwningWakeAfterOrphaning) {
 }
 
 TEST_F(PartyTest, CanWakeupNonOwningOrphanedWakerWithNoEffect) {
-  // TODO(tjagtap) : Write a comment once it makes sense to me.
+  // Our party has a promise which is pending. In this test, we cancel the party
+  // before the promise is resolved.
+  // The test asserts the following:
+  // 1. The promise is not resolved.
+  // 2. The waker is still valid after the party is cancelled.
+  // 3. The waker can be woken up after the party is cancelled but it is a noop.
   auto party = MakeParty();
   Notification set_waker;
   Waker waker;
@@ -501,8 +506,6 @@ TEST_F(PartyTest, CanWakeupNonOwningOrphanedWakerWithNoEffect) {
   absl::StrAppend(&execution_order, "2");
 
   waker.Wakeup();  // Because the party is cancelled, this is a no-op.
-  // You can do a single wake up with a waker. So after the wakeup, your waker
-  // is unwakeable.
   EXPECT_TRUE(waker.is_unwakeable());
   EXPECT_STREQ(execution_order.c_str(), "A12");
 }
@@ -548,17 +551,12 @@ TEST_F(PartyTest, CanBulkSpawn) {
 }
 
 TEST_F(PartyTest, CanNestWakeupHold) {
-  // Test for bulk spawning of promises with nested WakeupHold objects.
-  // One way to do bulk spawning is to use the Party::WakeupHold class.
-  // When a WakeupHold is in scope, the party will not be polled until the
-  // WakeupHold goes out of scope.
-  // This test asserts the following:
-  // 1. Spawning multiple promises in a WakeupHold works as expected. The
-  //    promises should not be polled until the WakeupHold goes out of scope.
-  // 2. The two Wakehold objects don't interfere with each other. Nesting the
+  // This test is similar to the previous test CanBulkSpawn, but the WakeupHold
+  // objects are nested.
+  // In addition to the asserts in CanBulkSpawn, this test asserts:
+  // 1. The two Wakehold objects don't interfere with each other. Nesting the
   //    WakeupHold objects should not cause any change in the behavior.
-  // 3. The promises are executed in the order we expect.
-  // 4. This test was added after we found a rare intermittent crash which was
+  // 2. This test was added after we found a rare intermittent crash which was
   //    caused by a nested hold. This test makes sure that wont happen again.
   auto party = MakeParty();
   Notification n1;
@@ -611,16 +609,16 @@ void StressTestAsserts(std::vector<Timestamp>& start_times,
   LOG(INFO) << "Small thread run time : " << fastest_thread_run_time;
 
   // TODO(tjagtap) : Too many ways to check the same thing. Explore what we
-  // want to keep and what we want to remove. Just presenting all the options
-  // here.
+  // want to keep and what to remove. Just presenting all the options here.
   Duration total_sleep_time =
       Duration::Milliseconds(kNumThreads * kNumSpawns * average_sleep_ms);
   float run_time_by_sleep_time = 3.5;
-  // This makes sure that the threads run efficiently in parallel.
+
+  // This assert makes sure that the threads run efficiently in parallel.
   // At the time of writing this test, we found run_time_by_sleep_time to
   // be (1.63). Lets make sure this efficiency is not degraded beyond 3.5x.
   // This degradation means that there is something slowing down the mechanism
-  // of party sleeping and waking up. Debug builds with various msan/tsan
+  // of party sleeping and waking up. Debug builds with various asan/tsan
   // configs, could cause this entire execution to take longer, which is why
   // this is 3.5x for debug builds. It is 1.63 for opt builds.
   EXPECT_LE(last_finished_thread - start_times[0],
@@ -654,7 +652,7 @@ void StressTestAsserts(std::vector<Timestamp>& start_times,
 }
 
 TEST_F(PartyTest, ThreadStressTest) {
-  // Most other tests are testing promises and parties with only 1 thread.
+  // Most other tests are testing promises and parties with only 1 or 2 threads.
   // This test will test the party code for multiple threads.
   // We will spawn multiple threads, and then spawn many promise sequences (Seq)
   // on each thread using just one party object. This should work as expected.
@@ -720,7 +718,9 @@ TEST_F(PartyTest, ThreadStressTest) {
                       absl::StrFormat("%d(P%d,D%d).", i, j, j));
     }
 
-    // Within one thread, the promises should be executed in the order of spawn.
+    // Warning : We do not guarantee that the promises will be executed in the
+    // order they were spawned. However, in this test, the promises never return
+    // Pending, so they will be executed in the order they were spawned.
     EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
   StressTestAsserts(start_times, end_times, 2 * kStressTestSleepMs);
@@ -771,8 +771,10 @@ class PromiseNotification {
   Waker waker_ ABSL_GUARDED_BY(mu_);
 };
 
-// TODO(tjagtap)
+// TODO(tjagtap) : WIP
 TEST_F(PartyTest, ThreadStressTestWithOwningWaker) {
+  // Stress test with owning waker.
+  // Asserts are identical to ThreadStressTest.
   auto party = MakeParty();
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
@@ -819,7 +821,7 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWaker) {
   }
 }
 
-// TODO(tjagtap)
+// TODO(tjagtap) : WIP
 TEST_F(PartyTest, ThreadStressTestWithOwningWakerHoldingLock) {
   auto party = MakeParty();
   std::vector<std::thread> threads;
@@ -867,7 +869,7 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWakerHoldingLock) {
   }
 }
 
-// TODO(tjagtap)
+// TODO(tjagtap) : WIP
 TEST_F(PartyTest, ThreadStressTestWithNonOwningWaker) {
   auto party = MakeParty();
   std::vector<std::thread> threads;
@@ -915,7 +917,7 @@ TEST_F(PartyTest, ThreadStressTestWithNonOwningWaker) {
   }
 }
 
-// TODO(tjagtap)
+// TODO(tjagtap) : WIP
 TEST_F(PartyTest, ThreadStressTestWithOwningWakerNoSleep) {
   auto party = MakeParty();
   std::vector<std::thread> threads;
@@ -960,7 +962,7 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWakerNoSleep) {
   }
 }
 
-// TODO(tjagtap)
+// TODO(tjagtap) : WIP
 TEST_F(PartyTest, ThreadStressTestWithNonOwningWakerNoSleep) {
   auto party = MakeParty();
   std::vector<std::thread> threads;
@@ -1007,7 +1009,7 @@ TEST_F(PartyTest, ThreadStressTestWithNonOwningWakerNoSleep) {
 
 TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
   // Stress test with inner spawns.
-  // Asserts are similar to ThreadStressTest.
+  // Asserts are identical to ThreadStressTest.
   auto party = MakeParty();
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
@@ -1081,6 +1083,8 @@ TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
           &expected_order[i],
           absl::StrFormat("A%dB%dC%dD%dE%dF%dG%d.", j, j, j, j, j, j, j));
     }
+    // For the given test, the order is guaranteed because of the way the
+    // notifications are used.
     EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
   StressTestAsserts(start_times, end_times, kStressTestSleepMs);
@@ -1096,7 +1100,7 @@ TEST_F(PartyTest, NestedWakeup) {
   //    before they can proceed. So when party2 is waiting for a notification,
   //    party3 is woken up and begins its processing. When party3 is waiting for
   //    notification, party2 is woken up. We want to assert this expected sleep
-  //    and wake cycle. However since party2 and party3 will be run of different
+  //    and wake cycle. However since party2 and party3 will be run on different
   //    threads, our asserts are only placed after the notifications are
   //    received.
   // 3. WaitForNotification should cause a party to sleep if the Notification is
