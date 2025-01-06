@@ -138,7 +138,13 @@ def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], external_deps = []):
     grpc_cc_test(
         name = name,
         srcs = srcs,
-        tags = tags + ["grpc-fuzzer", "grpc-fuzztest", "no-cache", "no_windows"],
+        tags = tags + [
+            "grpc-fuzzer",
+            "grpc-fuzztest",
+            "no-cache",
+            "no_windows",
+            "bazel_only",
+        ],
         deps = deps,
         external_deps = external_deps,
     )
