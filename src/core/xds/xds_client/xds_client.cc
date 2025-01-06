@@ -236,7 +236,7 @@ class XdsClient::XdsChannel::AdsCall final
                      name_.authority, type_->type_url(), name_.key)
               << "} from xds server";
           resource_seen_ = true;
-          state.SetDoesNotExist();
+          state.SetDoesNotExist(/*drop_cached_resource=*/false);
           ads_call_->xds_client()->NotifyWatchersOnResourceChanged(
               absl::NotFoundError("does not exist"), state.watchers(),
               ReadDelayHandle::NoWait());
@@ -996,16 +996,6 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
     context->resources_seen[parsed_resource_name->authority].insert(
         parsed_resource_name->key);
   }
-  // If we previously ignored the resource's deletion, log that we're
-  // now re-adding it.
-  if (resource_state.ignored_deletion()) {
-    LOG(INFO) << "[xds_client " << xds_client() << "] xds server "
-              << xds_channel()->server_.server_uri()
-              << ": server returned new version of resource for which we "
-                 "previously ignored a deletion: type "
-              << type_url << " name " << resource_name;
-    resource_state.set_ignored_deletion(false);
-  }
   // Update resource state based on whether the resource is valid.
   if (!decode_status.ok()) {
     ++context->num_invalid_resources;
@@ -1216,22 +1206,17 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
               // that the resource does not exist.  For that case, we rely on
               // the request timeout instead.
               if (!resource_state.HasResource()) continue;
-              if (XdsDataErrorHandlingEnabled()
-                      ? !xds_channel()->server_.FailOnDataErrors()
-                      : xds_channel()->server_.IgnoreResourceDeletion()) {
-                if (!resource_state.ignored_deletion()) {
-                  LOG(ERROR)
-                      << "[xds_client " << xds_client() << "] xds server "
-                      << xds_channel()->server_.server_uri()
-                      << ": ignoring deletion for resource type "
-                      << context.type_url << " name "
-                      << XdsClient::ConstructFullXdsResourceName(
-                             authority, context.type_url.c_str(), resource_key);
-                  resource_state.set_ignored_deletion(true);
-                }
-              } else {
-                resource_state.SetDoesNotExist();
+              const bool drop_cached_resource =
+                  XdsDataErrorHandlingEnabled()
+                      ? xds_channel()->server_.FailOnDataErrors()
+                      : !xds_channel()->server_.IgnoreResourceDeletion();
+              resource_state.SetDoesNotExist(drop_cached_resource);
+              if (drop_cached_resource) {
                 xds_client()->NotifyWatchersOnResourceChanged(
+                    absl::NotFoundError("does not exist"),
+                    resource_state.watchers(), context.read_delay_handle);
+              } else {
+                xds_client()->NotifyWatchersOnAmbientError(
                     absl::NotFoundError("does not exist"),
                     resource_state.watchers(), context.read_delay_handle);
               }
@@ -1345,8 +1330,8 @@ void XdsClient::ResourceState::SetNacked(const std::string& version,
   failed_update_time_ = update_time;
 }
 
-void XdsClient::ResourceState::SetDoesNotExist() {
-  resource_.reset();
+void XdsClient::ResourceState::SetDoesNotExist(bool drop_cached_resource) {
+  if (drop_cached_resource) resource_.reset();
   client_status_ = ClientResourceStatus::DOES_NOT_EXIST;
 }
 
@@ -1355,7 +1340,8 @@ absl::string_view XdsClient::ResourceState::CacheStateString() const {
     case ClientResourceStatus::REQUESTED:
       return "requested";
     case ClientResourceStatus::DOES_NOT_EXIST:
-      return "does_not_exist";
+      return resource_ != nullptr ? "does_not_exist_but_cached"
+                                  : "does_not_exist";
     case ClientResourceStatus::ACKED:
       return "acked";
     case ClientResourceStatus::NACKED:
@@ -1631,12 +1617,6 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
   resource_state.RemoveWatcher(watcher);
   // Clean up empty map entries, if any.
   if (!resource_state.HasWatchers()) {
-    if (resource_state.ignored_deletion()) {
-      LOG(INFO) << "[xds_client " << this
-                << "] unsubscribing from a resource for which we "
-                << "previously ignored a deletion: type " << type->type_url()
-                << " name " << name;
-    }
     for (const auto& xds_channel : authority_state.xds_channels) {
       xds_channel->UnsubscribeLocked(type, *resource_name,
                                      delay_unsubscription);

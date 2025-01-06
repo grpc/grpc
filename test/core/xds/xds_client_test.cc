@@ -2415,9 +2415,12 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredByDefault) {
           .set_version_info("2")
           .set_nonce("B")
           .Serialize());
-  // Watcher should not see any update, since we should have ignored the
+  // Watcher should see an ambient error, since we should have ignored the
   // deletion.
-  EXPECT_TRUE(watcher->ExpectNoEvent());
+  auto error = watcher->WaitForNextAmbientError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(*error,
+            absl::NotFoundError("does not exist (node ID:xds_client_test)"));
   // Check metric data.
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::ElementsAre(::testing::Pair(
@@ -2430,7 +2433,8 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredByDefault) {
       ::testing::ElementsAre(::testing::Pair(
           ResourceCountLabelsEq(
               XdsClient::kOldStyleAuthority,
-              XdsWildcardCapableResourceType::Get()->type_url(), "acked"),
+              XdsWildcardCapableResourceType::Get()->type_url(),
+              "does_not_exist_but_cached"),
           1)));
   // Start a new watcher for the same resource.  It should immediately
   // receive the cached resource.

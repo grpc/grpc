@@ -306,10 +306,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
                   Timestamp update_time);
     void SetNacked(const std::string& version, const std::string& details,
                    Timestamp update_time, bool drop_cached_resource);
-    void SetDoesNotExist();
-
-    void set_ignored_deletion(bool value) { ignored_deletion_ = value; }
-    bool ignored_deletion() const { return ignored_deletion_; }
+    void SetDoesNotExist(bool drop_cached_resource);
 
     ClientResourceStatus client_status() const { return client_status_; }
     absl::string_view CacheStateString() const;
@@ -343,8 +340,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::string failed_details_;
     // Timestamp of the last failed update attempt.
     Timestamp failed_update_time_;
-    // If we've ignored deletion.
-    bool ignored_deletion_ = false;
   };
 
   struct AuthorityState {
