@@ -369,6 +369,8 @@ libs:
   - src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb.h
@@ -415,8 +417,6 @@ libs:
   - src/core/ext/upb-gen/envoy/config/trace/v3/http_tracer.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb.h
   - src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb.h
-  - src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb.h
   - src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/trace/v3/service.upb.h
@@ -555,8 +555,6 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
-  - src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb.h
-  - src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
@@ -669,6 +667,7 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.h
+  - src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_cmsg_headers.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/substitution_format_string.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/udp_socket_config.upbdefs.h
@@ -692,7 +691,6 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/config/trace/v3/dynamic_ot.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/trace/v3/http_tracer.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.h
-  - src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/trace/v3/service.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/trace/v3/skywalking.upbdefs.h
@@ -757,7 +755,6 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h
   - src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h
-  - src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h
   - src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.h
   - src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.h
@@ -1395,6 +1392,7 @@ libs:
   - src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/udp_socket_config.upb_minitable.c
@@ -1418,7 +1416,6 @@ libs:
   - src/core/ext/upb-gen/envoy/config/trace/v3/dynamic_ot.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/trace/v3/http_tracer.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/trace/v3/service.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/trace/v3/skywalking.upb_minitable.c
@@ -1488,7 +1485,6 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  - src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -1562,6 +1558,7 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.c
+  - src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_cmsg_headers.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/substitution_format_string.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/udp_socket_config.upbdefs.c
@@ -1585,7 +1582,6 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/config/trace/v3/dynamic_ot.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/trace/v3/http_tracer.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.c
-  - src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/trace/v3/service.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/trace/v3/skywalking.upbdefs.c
@@ -1650,7 +1646,6 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   - src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c
-  - src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c
   - src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c
   - src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c
@@ -5399,6 +5394,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -5421,7 +5417,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -5462,7 +5457,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -8240,6 +8234,8 @@ targets:
   - src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb.h
@@ -8418,6 +8414,7 @@ targets:
   - src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/udp_socket_config.upb_minitable.c
@@ -16034,6 +16031,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -16056,7 +16054,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -16097,7 +16094,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -23968,6 +23964,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -24098,6 +24095,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -24204,6 +24202,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -24223,7 +24222,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -24264,7 +24262,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -24340,6 +24337,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -24353,7 +24351,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -24404,7 +24401,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -24489,6 +24485,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -24508,7 +24505,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -24550,7 +24546,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -24627,6 +24622,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -24740,6 +24736,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -24759,7 +24756,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -24800,7 +24796,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -24951,6 +24946,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -24974,7 +24970,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -25020,7 +25015,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -25110,6 +25104,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -25129,7 +25124,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -25178,7 +25172,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -25249,6 +25242,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -25350,6 +25344,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -25369,7 +25364,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -25410,7 +25404,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -25497,6 +25490,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -25516,7 +25510,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -25559,7 +25552,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -25646,6 +25638,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -25665,7 +25658,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -25707,7 +25699,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -25795,6 +25786,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -25814,7 +25806,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -25856,7 +25847,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -25934,6 +25924,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -25945,7 +25936,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -25991,7 +25981,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -26069,6 +26058,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -26174,6 +26164,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -26190,7 +26181,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -26238,7 +26228,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -26305,6 +26294,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -26400,6 +26390,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -26419,7 +26410,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -26462,7 +26452,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -26549,6 +26538,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -26568,7 +26558,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -26611,7 +26600,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -26728,6 +26716,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -26747,7 +26736,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -26790,7 +26778,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -26880,6 +26867,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -26899,7 +26887,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -26941,7 +26928,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -27032,6 +27018,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -27051,7 +27038,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -27092,7 +27078,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -27170,6 +27155,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -27292,6 +27278,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -27311,7 +27298,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -27354,7 +27340,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -27446,6 +27431,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -27468,7 +27454,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -27509,7 +27494,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -27594,6 +27578,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
   - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
@@ -27613,7 +27598,6 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
   - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
   - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
-  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
   - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
   - third_party/envoy-api/envoy/config/trace/v3/service.proto
   - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
@@ -27656,7 +27640,6 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
-  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -27704,12 +27687,12 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: e525a6fb6e6ed3eef1eec6bef3da9b5708e471f0f9335a7604df14a4b386231e
+  hash: fc4aca6aec598d081d09cb479187bc249311887200b5a13be695e76c09a63871
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-f8b75d1efa92bbf534596a013d9ca5873f79dd30
+  strip_prefix: data-plane-api-3a311b6d421867bb1a83cfc7af6c4a84f6c00050
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/3a311b6d421867bb1a83cfc7af6c4a84f6c00050.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/3a311b6d421867bb1a83cfc7af6c4a84f6c00050.tar.gz
 - destination: third_party/googleapis
   hash: 0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4
   proto_prefix: third_party/googleapis/

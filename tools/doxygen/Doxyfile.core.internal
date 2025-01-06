@@ -1161,6 +1161,9 @@ src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb.h \
 src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.h \
+src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb.h \
+src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.c \
+src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb.h \
 src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.h \
@@ -1230,9 +1233,6 @@ src/core/ext/upb-gen/envoy/config/trace/v3/http_tracer.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb.h \
 src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.h \
-src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb.h \
-src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.c \
-src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb.h \
 src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.h \
@@ -1440,9 +1440,6 @@ src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h \
 src/core/ext/upb-gen/google/rpc/status.upb.h \
 src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
 src/core/ext/upb-gen/google/rpc/status.upb_minitable.h \
-src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb.h \
-src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.c \
-src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.h \
 src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h \
 src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c \
 src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h \
@@ -1628,6 +1625,8 @@ src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.h \
+src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_cmsg_headers.upbdefs.c \
+src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_cmsg_headers.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/substitution_format_string.upbdefs.c \
@@ -1674,8 +1673,6 @@ src/core/ext/upbdefs-gen/envoy/config/trace/v3/http_tracer.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/trace/v3/http_tracer.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.h \
-src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.c \
-src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/trace/v3/service.upbdefs.c \
@@ -1804,8 +1801,6 @@ src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
 src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h \
 src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
 src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h \
-src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.c \
-src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.h \
 src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
 src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h \
 src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c \

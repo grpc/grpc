@@ -2417,6 +2417,7 @@ grpc_cc_library(
         "ref_counted",
         "resource_quota",
         "slice",
+        "stats_data",
         "status_helper",
         "strerror",
         "time",
@@ -2427,6 +2428,7 @@ grpc_cc_library(
         "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:ref_counted_ptr",
+        "//:stats",
     ],
 )
 
@@ -2568,6 +2570,7 @@ grpc_cc_library(
         "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_utils",
+        "experiments",
         "forkable",
         "init_internally",
         "iomgr_port",
@@ -6507,6 +6510,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "delegating_helper",
+        "down_cast",
         "grpc_lb_policy_pick_first",
         "json",
         "lb_policy",

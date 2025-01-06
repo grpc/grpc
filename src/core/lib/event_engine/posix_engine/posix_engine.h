@@ -132,7 +132,8 @@ class PosixEnginePollerManager
 
 // An iomgr-based Posix EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
-class PosixEventEngine final : public PosixEventEngineWithFdSupport {
+class PosixEventEngine final : public PosixEventEngineWithFdSupport,
+                               public grpc_core::KeepsGrpcInitialized {
  public:
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:

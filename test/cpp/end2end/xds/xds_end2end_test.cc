@@ -1190,7 +1190,8 @@ TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
   SendRpc([this]() { return CreateMtlsChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtls) {
@@ -1218,7 +1219,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootPluginUpdate) {
   SendRpc([this]() { return CreateMtlsChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityPluginUpdate) {
@@ -1273,7 +1275,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootCertificateNameUpdate) {
   SendRpc([this]() { return CreateMtlsChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityCertificateNameUpdate) {
@@ -1392,7 +1395,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsToTls) {
   SendRpc([this]() { return CreateTlsChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   SendRpc([this]() { return CreateTlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
@@ -1412,7 +1416,8 @@ TEST_P(XdsServerSecurityTest, TestTlsToMtls) {
   SendRpc([this]() { return CreateTlsChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsToFallback) {
@@ -1506,11 +1511,12 @@ TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
   backends_[0]->Start();
   ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
       grpc_core::LocalIpAndPort(backends_[0]->port()),
-      grpc::StatusCode::UNAVAILABLE));
+      grpc::StatusCode::INVALID_ARGUMENT));
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
@@ -1538,11 +1544,12 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   backends_[0]->Start();
   ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
       grpc_core::LocalIpAndPort(backends_[0]->port()),
-      grpc::StatusCode::UNAVAILABLE));
+      grpc::StatusCode::INVALID_ARGUMENT));
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
   // Send a valid LDS update to change to serving status
   SetValidLdsUpdate();
   ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
@@ -1569,7 +1576,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
@@ -1589,7 +1597,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
     SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
             true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
             MakeConnectionFailureRegex(
-                "failed to connect to all addresses; last error: "));
+                "failed to connect to all addresses; last error: ",
+                /*has_resolution_note=*/false));
   }
 }
 
@@ -1628,7 +1637,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
   for (int i = 0; i < kNumChannels; i++) {
     EXPECT_TRUE(streaming_rpcs[i].stream->Write(request));
     streaming_rpcs[i].stream->Read(&response);
@@ -1762,7 +1772,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
 }
 
 TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
@@ -1783,7 +1794,8 @@ TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -1805,7 +1817,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -1827,7 +1840,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
-              "failed to connect to all addresses; last error: "));
+              "failed to connect to all addresses; last error: ",
+              /*has_resolution_note=*/false));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -2118,7 +2132,8 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
       grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
-          "Requested route config does not exist");
+          "RDS resource unknown_server_route_config: does not exist "
+          "\\(node ID:xds_end2end_test\\)");
 }
 
 // TODO(yashykt): Once https://github.com/grpc/grpc/issues/24035 is fixed, we
