@@ -13100,6 +13100,10 @@ targets:
   - cares
   - gpr
   - address_sorting
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: hpack_parser_table_test
   gtest: true
   build: test
@@ -20602,6 +20606,10 @@ targets:
   - cares
   - gpr
   - address_sorting
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: retry_streaming_after_commit_test
   gtest: true
   build: test
@@ -23540,6 +23548,10 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:span
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: tdigest_test
   gtest: true
   build: test
@@ -24673,6 +24685,10 @@ targets:
   - absl/status:statusor
   - absl/types:span
   - gpr
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: unique_ptr_with_bitset_test
   gtest: true
   build: test
@@ -24752,6 +24768,10 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:span
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: useful_test
   gtest: true
   build: test
@@ -25158,6 +25178,10 @@ targets:
   - absl/status:statusor
   - absl/types:span
   - gpr
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: write_size_policy_test
   gtest: true
   build: test
