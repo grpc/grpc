@@ -246,9 +246,9 @@ class XdsClient::XdsChannel::AdsCall final
           if (XdsDataErrorHandlingEnabled() &&
               ads_call_->xds_channel()
                   ->server_.ResourceTimerIsTransientFailure()) {
-            state.SetTransientError(absl::StrCat(
-                "xDS server ", ads_call_->xds_channel()->server_uri(),
-                " not responding"));
+            state.SetTimeout(absl::StrCat(
+                "timeout obtaining resource from xDS server ",
+                ads_call_->xds_channel()->server_uri()));
           } else {
             state.SetDoesNotExist(/*drop_cached_resource=*/false);
           }
@@ -1321,9 +1321,9 @@ void XdsClient::ResourceState::SetNacked(const std::string& version,
                                          bool drop_cached_resource) {
   if (drop_cached_resource) resource_.reset();
   client_status_ = ClientResourceStatus::NACKED;
-  failed_version_ = version;
   failed_status_ =
       absl::InvalidArgumentError(absl::StrCat("invalid resource: ", details));
+  failed_version_ = version;
   failed_update_time_ = update_time;
 }
 
@@ -1331,10 +1331,13 @@ void XdsClient::ResourceState::SetDoesNotExist(bool drop_cached_resource) {
   if (drop_cached_resource) resource_.reset();
   client_status_ = ClientResourceStatus::DOES_NOT_EXIST;
   failed_status_ = absl::NotFoundError("does not exist");
+  failed_version_.clear();
 }
 
-void XdsClient::ResourceState::SetTransientError(const std::string& details) {
+void XdsClient::ResourceState::SetTimeout(const std::string& details) {
+  client_status_ = ClientResourceStatus::TIMEOUT;
   failed_status_ = absl::UnavailableError(details);
+  failed_version_.clear();
 }
 
 absl::string_view XdsClient::ResourceState::CacheStateString() const {
@@ -1348,6 +1351,8 @@ absl::string_view XdsClient::ResourceState::CacheStateString() const {
       return "acked";
     case ClientResourceStatus::NACKED:
       return resource_ != nullptr ? "nacked_but_cached" : "nacked";
+    case ClientResourceStatus::TIMEOUT:
+      return "timeout";
   }
   Crash("unknown resource state");
 }
@@ -1385,14 +1390,16 @@ void XdsClient::ResourceState::FillGenericXdsConfig(
     google_protobuf_Any_set_value(any_field,
                                   StdStringToUpbString(serialized_proto_));
   }
-  if (client_status_ == ClientResourceStatus::NACKED) {
+  if (!failed_status_.ok()) {
     auto* update_failure_state = envoy_admin_v3_UpdateFailureState_new(arena);
     envoy_admin_v3_UpdateFailureState_set_details(
         update_failure_state, StdStringToUpbString(failed_status_.message()));
-    envoy_admin_v3_UpdateFailureState_set_version_info(
-        update_failure_state, StdStringToUpbString(failed_version_));
-    envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
-        update_failure_state, EncodeTimestamp(failed_update_time_, arena));
+    if (!failed_version_.empty()) {
+      envoy_admin_v3_UpdateFailureState_set_version_info(
+          update_failure_state, StdStringToUpbString(failed_version_));
+      envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
+          update_failure_state, EncodeTimestamp(failed_update_time_, arena));
+    }
     envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_error_state(
         entry, update_failure_state);
   }

@@ -279,6 +279,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
       ACKED,
       // Client received this resource and replied with NACK.
       NACKED,
+      // Client encountered timeout getting resource from server.
+      TIMEOUT,
     };
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_REQUESTED) ==
                       ClientResourceStatus::REQUESTED,
@@ -293,6 +295,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_NACKED) ==
                       ClientResourceStatus::NACKED,
                   "");
+// FIXME
+//    static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_TIMEOUT) ==
+//                      ClientResourceStatus::TIMEOUT,
+//                  "");
 
     void AddWatcher(RefCountedPtr<ResourceWatcherInterface> watcher) {
       watchers_.insert(std::move(watcher));
@@ -309,7 +315,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     void SetNacked(const std::string& version, absl::string_view details,
                    Timestamp update_time, bool drop_cached_resource);
     void SetDoesNotExist(bool drop_cached_resource);
-    void SetTransientError(const std::string& details);
+    void SetTimeout(const std::string& details);
 
     ClientResourceStatus client_status() const { return client_status_; }
     absl::string_view CacheStateString() const;
@@ -337,11 +343,12 @@ class XdsClient : public DualRefCounted<XdsClient> {
     Timestamp update_time_;
     // The last successfully updated version of the resource.
     std::string version_;
-    // The rejected version string of the last failed update attempt.
-    std::string failed_version_;
     // Details about the last failed update attempt or transient error.
     absl::Status failed_status_;
+    // The rejected version string of the last failed update attempt.
+    std::string failed_version_;
     // Timestamp of the last failed update attempt.
+    // Used only if failed_version_ is non-empty.
     Timestamp failed_update_time_;
   };
 

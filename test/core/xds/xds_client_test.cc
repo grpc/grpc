@@ -3112,8 +3112,8 @@ TEST_F(XdsClientTest, ResourceTimerIsTransientFailure) {
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error, absl::UnavailableError(absl::StrCat(
-                       "xDS server ", kDefaultXdsServerUrl,
-                       " not responding (node ID:xds_client_test)")));
+                       "timeout obtaining resource from xDS server ",
+                       kDefaultXdsServerUrl, " (node ID:xds_client_test)")));
   // Check metric data.
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
@@ -3121,7 +3121,7 @@ TEST_F(XdsClientTest, ResourceTimerIsTransientFailure) {
               ::testing::ElementsAre(::testing::Pair(
                   ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
                                         XdsFooResourceType::Get()->type_url(),
-                                        "requested"),
+                                        "timeout"),
                   1)));
   // Start a new watcher for the same resource.  It should immediately
   // receive the same does-not-exist notification.
@@ -3129,8 +3129,8 @@ TEST_F(XdsClientTest, ResourceTimerIsTransientFailure) {
   error = watcher2->WaitForNextError();
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error, absl::UnavailableError(absl::StrCat(
-                       "xDS server ", kDefaultXdsServerUrl,
-                       " not responding (node ID:xds_client_test)")));
+                       "timeout obtaining resource from xDS server ",
+                       kDefaultXdsServerUrl, " (node ID:xds_client_test)")));
   // Now server sends a response.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
