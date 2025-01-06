@@ -1525,7 +1525,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(error->message(),
-            "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
+            "invalid resource: errors validating JSON: "
             "[field:value error:is not a number] (node ID:xds_client_test)")
       << *error;
   // Check metric data.
@@ -1562,7 +1562,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(error->message(),
-            "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
+            "invalid resource: errors validating JSON: "
             "[field:value error:is not a number] (node ID:xds_client_test)")
       << *error;
   // Now server sends an updated version of the resource.
@@ -1726,14 +1726,14 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(error->message(),
-            "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
+            "invalid resource: errors validating JSON: "
             "[field:value error:is not a number] (node ID:xds_client_test)")
       << *error;
   error = watcher3->WaitForNextError();
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(error->message(),
-            "invalid resource: INVALID_ARGUMENT: JSON parsing failed: "
+            "invalid resource: JSON parsing failed: "
             "[JSON parse error at index 15] (node ID:xds_client_test)")
       << *error;
   // It cannot delivery an error for foo2, because the client doesn't know
@@ -1872,7 +1872,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(error->message(),
-            "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
+            "invalid resource: errors validating JSON: "
             "[field:value error:is not a number] (node ID:xds_client_test)")
       << *error;
   // Check metric data.
@@ -1906,19 +1906,20 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
           "resource index 0: foo1: INVALID_ARGUMENT: errors validating JSON: "
           "[field:value error:is not a number]]"),
       /*resource_names=*/{"foo1"});
-  // Start a second watcher for the same resource.  Even though the last
-  // update was a NACK, we should still deliver the cached resource to
-  // the watcher.
-  // TODO(roth): Consider what the right behavior is here.  It seems
-  // inconsistent that the watcher sees the error if it had started
-  // before the error was seen but does not if it was started afterwards.
-  // One option is to not send errors at all for already-cached resources;
-  // another option is to send the errors even for newly started watchers.
+  // Start a second watcher for the same resource.  The watcher should
+  // first get the cached resource and then the ambient error.
   auto watcher2 = StartFooWatch("foo1");
   resource = watcher2->WaitForNextResource();
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  error = watcher2->WaitForNextAmbientError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(
+      *error,
+      absl::InvalidArgumentError(
+          "invalid resource: errors validating JSON: "
+          "[field:value error:is not a number] (node ID:xds_client_test)"));
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
@@ -1991,7 +1992,7 @@ TEST_F(XdsClientTest,
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(error->message(),
-            "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
+            "invalid resource: errors validating JSON: "
             "[field:value error:is not a number] (node ID:xds_client_test)")
       << *error;
   // Check metric data.
@@ -2032,7 +2033,7 @@ TEST_F(XdsClientTest,
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(error->message(),
-            "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
+            "invalid resource: errors validating JSON: "
             "[field:value error:is not a number] (node ID:xds_client_test)")
       << *error;
   // Cancel watches.
@@ -2105,7 +2106,7 @@ TEST_F(XdsClientTest,
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(error->message(),
-            "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
+            "invalid resource: errors validating JSON: "
             "[field:value error:is not a number] (node ID:xds_client_test)")
       << *error;
   // Check metric data.
@@ -2139,18 +2140,20 @@ TEST_F(XdsClientTest,
           "resource index 0: foo1: INVALID_ARGUMENT: errors validating JSON: "
           "[field:value error:is not a number]]"),
       /*resource_names=*/{"foo1"});
-  // Start a second watcher for the same resource.  This should deliver
-  // the cached resource to the watcher immediately.
-  // TODO(roth): Consider what the right behavior is here.  It seems
-  // inconsistent that the watcher sees the error if it had started
-  // before the error was seen but does not if it was started afterwards.
-  // One option is to not send errors at all for already-cached resources;
-  // another option is to send the errors even for newly started watchers.
+  // Start a second watcher for the same resource.  The watcher should
+  // first get the cached resource and then the ambient error.
   auto watcher2 = StartFooWatch("foo1");
   resource = watcher2->WaitForNextResource();
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  error = watcher2->WaitForNextAmbientError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(
+      *error,
+      absl::InvalidArgumentError(
+          "invalid resource: errors validating JSON: "
+          "[field:value error:is not a number] (node ID:xds_client_test)"));
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
@@ -2428,21 +2431,24 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredByDefault) {
                           XdsWildcardCapableResourceType::Get()->type_url()),
           1)),
       ::testing::ElementsAre(), ::testing::_));
-  EXPECT_THAT(
-      GetResourceCounts(),
-      ::testing::ElementsAre(::testing::Pair(
-          ResourceCountLabelsEq(
-              XdsClient::kOldStyleAuthority,
-              XdsWildcardCapableResourceType::Get()->type_url(),
-              "does_not_exist_but_cached"),
-          1)));
-  // Start a new watcher for the same resource.  It should immediately
-  // receive the cached resource.
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(
+                      XdsClient::kOldStyleAuthority,
+                      XdsWildcardCapableResourceType::Get()->type_url(),
+                      "does_not_exist_but_cached"),
+                  1)));
+  // Start a second watcher for the same resource.  The watcher should
+  // first get the cached resource and then the ambient error.
   auto watcher2 = StartWildcardCapableWatch("wc1");
   resource = watcher2->WaitForNextResource();
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 6);
+  error = watcher2->WaitForNextAmbientError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(*error,
+            absl::NotFoundError("does not exist (node ID:xds_client_test)"));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());

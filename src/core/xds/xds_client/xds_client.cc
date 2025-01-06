@@ -238,7 +238,7 @@ class XdsClient::XdsChannel::AdsCall final
           resource_seen_ = true;
           state.SetDoesNotExist(/*drop_cached_resource=*/false);
           ads_call_->xds_client()->NotifyWatchersOnResourceChanged(
-              absl::NotFoundError("does not exist"), state.watchers(),
+              state.failed_status(), state.watchers(),
               ReadDelayHandle::NoWait());
         }
       }
@@ -311,7 +311,7 @@ class XdsClient::XdsChannel::AdsCall final
         resources_seen;
     uint64_t num_valid_resources = 0;
     uint64_t num_invalid_resources = 0;
-    Timestamp update_time_ = Timestamp::Now();
+    Timestamp update_time = Timestamp::Now();
     RefCountedPtr<ReadDelayHandle> read_delay_handle;
   };
   void ParseResource(size_t idx, absl::string_view type_url,
@@ -999,26 +999,14 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
   // Update resource state based on whether the resource is valid.
   if (!decode_status.ok()) {
     ++context->num_invalid_resources;
-    absl::Status status = absl::InvalidArgumentError(
-        absl::StrCat("invalid resource: ", decode_status.ToString()));
     // If the fail_on_data_errors server feature is present, drop the
     // existing cached resource, if any.
     const bool drop_cached_resource = XdsDataErrorHandlingEnabled() &&
                                       xds_channel()->server_.FailOnDataErrors();
-    resource_state.SetNacked(context->version, decode_status.ToString(),
-                             context->update_time_, drop_cached_resource);
-    // If there is no cached resource (either because we didn't have one
-    // or because we just dropped it due to fail_on_data_errors), then notify
-    // via OnResourceChanged(); otherwise, notify via OnAmbientError().
-    if (!resource_state.HasResource()) {
-      xds_client()->NotifyWatchersOnResourceChanged(std::move(status),
-                                                    resource_state.watchers(),
-                                                    context->read_delay_handle);
-    } else {
-      xds_client()->NotifyWatchersOnAmbientError(std::move(status),
-                                                 resource_state.watchers(),
-                                                 context->read_delay_handle);
-    }
+    resource_state.SetNacked(context->version, decode_status.message(),
+                             context->update_time, drop_cached_resource);
+    xds_client()->NotifyWatchersOnError(resource_state,
+                                        context->read_delay_handle);
     return;
   }
   // Resource is valid.
@@ -1042,7 +1030,7 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
   // Update the resource state.
   resource_state.SetAcked(std::move(*decode_result.resource),
                           std::string(serialized_resource), context->version,
-                          context->update_time_);
+                          context->update_time);
   // Notify watchers.
   xds_client()->NotifyWatchersOnResourceChanged(resource_state.resource(),
                                                 resource_state.watchers(),
@@ -1211,15 +1199,8 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
                       ? xds_channel()->server_.FailOnDataErrors()
                       : !xds_channel()->server_.IgnoreResourceDeletion();
               resource_state.SetDoesNotExist(drop_cached_resource);
-              if (drop_cached_resource) {
-                xds_client()->NotifyWatchersOnResourceChanged(
-                    absl::NotFoundError("does not exist"),
-                    resource_state.watchers(), context.read_delay_handle);
-              } else {
-                xds_client()->NotifyWatchersOnAmbientError(
-                    absl::NotFoundError("does not exist"),
-                    resource_state.watchers(), context.read_delay_handle);
-              }
+              xds_client()->NotifyWatchersOnError(resource_state,
+                                                  context.read_delay_handle);
             }
           }
         }
@@ -1316,23 +1297,25 @@ void XdsClient::ResourceState::SetAcked(
   update_time_ = update_time;
   version_ = std::move(version);
   failed_version_.clear();
-  failed_details_.clear();
+  failed_status_ = absl::OkStatus();
 }
 
 void XdsClient::ResourceState::SetNacked(const std::string& version,
-                                         const std::string& details,
+                                         absl::string_view details,
                                          Timestamp update_time,
                                          bool drop_cached_resource) {
   if (drop_cached_resource) resource_.reset();
   client_status_ = ClientResourceStatus::NACKED;
   failed_version_ = version;
-  failed_details_ = details;
+  failed_status_ =
+      absl::InvalidArgumentError(absl::StrCat("invalid resource: ", details));
   failed_update_time_ = update_time;
 }
 
 void XdsClient::ResourceState::SetDoesNotExist(bool drop_cached_resource) {
   if (drop_cached_resource) resource_.reset();
   client_status_ = ClientResourceStatus::DOES_NOT_EXIST;
+  failed_status_ = absl::NotFoundError("does not exist");
 }
 
 absl::string_view XdsClient::ResourceState::CacheStateString() const {
@@ -1386,7 +1369,7 @@ void XdsClient::ResourceState::FillGenericXdsConfig(
   if (client_status_ == ClientResourceStatus::NACKED) {
     auto* update_failure_state = envoy_admin_v3_UpdateFailureState_new(arena);
     envoy_admin_v3_UpdateFailureState_set_details(
-        update_failure_state, StdStringToUpbString(failed_details_));
+        update_failure_state, StdStringToUpbString(failed_status_.message()));
     envoy_admin_v3_UpdateFailureState_set_version_info(
         update_failure_state, StdStringToUpbString(failed_version_));
     envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
@@ -1515,7 +1498,6 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     bool first_watcher_for_resource = it_is_new.second;
     ResourceState& resource_state = it_is_new.first->second;
     resource_state.AddWatcher(watcher);
-    bool notified_watcher = false;
     if (first_watcher_for_resource) {
       // We try to add new channels in 2 cases:
       // - This is the first resource for this authority (i.e., the list
@@ -1551,26 +1533,13 @@ void XdsClient::WatchResource(const XdsResourceType* type,
             << name;
         NotifyWatchersOnResourceChanged(resource_state.resource(), {watcher},
                                         ReadDelayHandle::NoWait());
-        notified_watcher = true;
-      } else if (resource_state.client_status() ==
-                 ResourceState::ClientResourceStatus::DOES_NOT_EXIST) {
+      }
+      if (!resource_state.failed_status().ok()) {
         GRPC_TRACE_LOG(xds_client, INFO)
-            << "[xds_client " << this
-            << "] reporting cached does-not-exist for " << name;
-        NotifyWatchersOnResourceChanged(absl::NotFoundError("does not exist"),
-                                        {watcher}, ReadDelayHandle::NoWait());
-        notified_watcher = true;
-      } else if (resource_state.client_status() ==
-                 ResourceState::ClientResourceStatus::NACKED) {
-        GRPC_TRACE_LOG(xds_client, INFO)
-            << "[xds_client " << this
-            << "] reporting cached validation failure for " << name << ": "
-            << resource_state.failed_details();
-        NotifyWatchersOnResourceChanged(
-            absl::InvalidArgumentError(absl::StrCat(
-                "invalid resource: ", resource_state.failed_details())),
-            {watcher}, ReadDelayHandle::NoWait());
-        notified_watcher = true;
+            << "[xds_client " << this << "] returning cached error for " << name
+            << ": " << resource_state.failed_status();
+        NotifyWatchersOnError(resource_state, ReadDelayHandle::NoWait(),
+                              {watcher});
       }
     }
     // If the channel is not connected, report an error to the watcher.
@@ -1579,13 +1548,8 @@ void XdsClient::WatchResource(const XdsResourceType* type,
       GRPC_TRACE_LOG(xds_client, INFO)
           << "[xds_client " << this << "] returning cached channel error for "
           << name << ": " << channel_status;
-      if (notified_watcher) {
-        NotifyWatchersOnAmbientError(std::move(channel_status), {watcher},
-                                     ReadDelayHandle::NoWait());
-      } else {
-        NotifyWatchersOnResourceChanged(std::move(channel_status), {watcher},
-                                        ReadDelayHandle::NoWait());
-      }
+      NotifyWatchersOnError(resource_state, ReadDelayHandle::NoWait(),
+                            {watcher}, std::move(channel_status));
     }
   }
   work_serializer_.DrainQueue();
@@ -1737,6 +1701,21 @@ void XdsClient::NotifyWatchersOnAmbientError(
             }
           },
       DEBUG_LOCATION);
+}
+
+void XdsClient::NotifyWatchersOnError(
+    const ResourceState& resource_state,
+    RefCountedPtr<ReadDelayHandle> read_delay_handle, WatcherSet watchers,
+    absl::Status status) {
+  if (watchers.empty()) watchers = resource_state.watchers();
+  if (status.ok()) status = resource_state.failed_status();
+  if (!resource_state.HasResource()) {
+    NotifyWatchersOnResourceChanged(std::move(status), std::move(watchers),
+                                    std::move(read_delay_handle));
+  } else {
+    NotifyWatchersOnAmbientError(std::move(status), std::move(watchers),
+                                 std::move(read_delay_handle));
+  }
 }
 
 void XdsClient::DumpClientConfig(
