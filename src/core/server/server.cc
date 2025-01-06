@@ -280,6 +280,9 @@ void Server::ListenerState::RemoveLogicalConnection(
 }
 
 void Server::ListenerState::DrainConnectionsLocked() {
+  if (connections_.empty()) {
+    return;
+  }
   // Send GOAWAYs on the transports so that they disconnect when existing
   // RPCs finish.
   for (auto& connection : connections_) {
