@@ -11824,7 +11824,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(chttp2_server_listener_test PUBLIC cxx_std_14)
+target_compile_features(chttp2_server_listener_test PUBLIC cxx_std_17)
 target_include_directories(chttp2_server_listener_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
