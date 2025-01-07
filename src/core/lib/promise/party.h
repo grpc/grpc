@@ -89,7 +89,13 @@ namespace party_detail {
 // 3. Once a party is cancelled, promises that were Spawned onto the party, but
 // not yet executed, will not get executed.
 // 4. No promise will be repolled after it is resolved.
-// 5. We gurantee safe spawning of upto 10 un-resolved promises on a party at a
+// 5. A promise spawned on a party, can in turn spawn another promise either on
+// the same party or on another party. We allow nesting of Spawn.
+// 6. A promise or promise factory that is passed to a Spawn function could
+// either be a single simple promise, or it could be a promise combinator such
+// as TrySeq, TryJoin, Loop or any such promise combinator. Nesting of these
+// promise combinators is allowed too.
+// 7. We gurantee safe spawning of upto 10 un-resolved promises on a party at a
 // time. More than this could cause delays in the Spawn functions or other
 // issues. (TODO - What issues?).
 // TODO(tjagtap) : We are not commiting to 16, but we need to commit atleast
