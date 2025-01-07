@@ -39,15 +39,8 @@ class Map;
 
 template <typename Promise, typename Fn>
 class Map<Promise, Fn,
-          absl::enable_if_t<!std::is_void<
-#if (defined(__cpp_lib_is_invocable) && __cpp_lib_is_invocable >= 201703L) || \
-    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
-              std::invoke_result_t<Fn, typename PromiseLike<Promise>::Result>
-#else
-              typename std::result_of<Fn(
-                  typename PromiseLike<Promise>::Result)>::type
-#endif
-              >::value>> {
+          absl::enable_if_t<!std::is_void<std::invoke_result_t<
+              Fn, typename PromiseLike<Promise>::Result>>::value>> {
  public:
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Promise promise, Fn fn)
       : promise_(std::move(promise)), fn_(std::move(fn)) {}
@@ -78,15 +71,8 @@ class Map<Promise, Fn,
 
 template <typename Promise, typename Fn>
 class Map<Promise, Fn,
-          absl::enable_if_t<std::is_void<
-#if (defined(__cpp_lib_is_invocable) && __cpp_lib_is_invocable >= 201703L) || \
-    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
-              std::invoke_result_t<Fn, typename PromiseLike<Promise>::Result>
-#else
-              typename std::result_of<Fn(
-                  typename PromiseLike<Promise>::Result)>::type
-#endif
-              >::value>> {
+          absl::enable_if_t<std::is_void<std::invoke_result_t<
+              Fn, typename PromiseLike<Promise>::Result>>::value>> {
  public:
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Promise promise, Fn fn)
       : promise_(std::move(promise)), fn_(std::move(fn)) {}
