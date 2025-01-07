@@ -105,7 +105,7 @@
   test_tags: [resource_quota_test]
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
-  expiry: 2024/12/30
+  expiry: 2025/01/30
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: max_pings_wo_data_throttle
@@ -113,7 +113,7 @@
     Experiment to throttle pings to a period of 1 min when
     GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of
     completely blocking).
-  expiry: 2024/01/30
+  expiry: 2025/01/30
   owner: yashkt@google.com
   test_tags: []
 - name: monitoring_experiment
@@ -132,6 +132,13 @@
   expiry: 2025/03/01
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
+- name: posix_ee_skip_grpc_init
+  description:
+    Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on
+    creation and destruction.
+  expiry: 2025/03/02
+  owner: hork@google.com
+  test_tags: ["core_end2end_test", "cpp_end2end_test"]
 - name: prioritize_finished_requests
   description: Prioritize flushing out finished requests over other in-flight
     requests during transport writes.
@@ -214,6 +221,6 @@
     Have the work serializer dispatch work to event engine for every callback,
     instead of running things inline in the first thread that successfully
     enqueues work.
-  expiry: 2024/12/31
+  expiry: 2025/01/30
   owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]
