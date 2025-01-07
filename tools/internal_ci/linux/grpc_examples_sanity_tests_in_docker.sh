@@ -18,7 +18,6 @@ set -ex
 # Enter the gRPC repo root
 cd "$(dirname $0)/../../.."
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 export TMPDIR=$(mktemp -d)
 trap "rm -rf ${TMPDIR}" EXIT
