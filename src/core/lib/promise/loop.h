@@ -40,7 +40,7 @@ namespace grpc_core {
 //
 // Running of the Loop combinator:
 //
-// 1. The input promise is guranteed to run atleast once when the combinator
+// 1. The input promise is guranteed to run at least once when the combinator
 //    is invoked.
 // 2. The Loop combinators execution will keep running input promise for
 //    as long as the input promise returns the Continue() object.
