@@ -1336,7 +1336,9 @@ void XdsClient::ResourceState::SetNacked(const std::string& version,
 
 void XdsClient::ResourceState::SetDoesNotExist() {
   resource_.reset();
+  serialized_proto_.clear();
   client_status_ = ClientResourceStatus::DOES_NOT_EXIST;
+  failed_version_.clear();
 }
 
 absl::string_view XdsClient::ResourceState::CacheStateString() const {
