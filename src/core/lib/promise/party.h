@@ -43,6 +43,7 @@ namespace grpc_core {
 
 // A Party is an Activity with multiple participant promises.
 //
+//
 // Creating a Party
 // A Party must only be created using Party::Make function.
 //
@@ -93,9 +94,12 @@ namespace grpc_core {
 // either be a single simple promise, or it could be a promise combinator such
 // as TrySeq, TryJoin, Loop or any such promise combinator. Nesting of these
 // promise combinators is allowed too.
-// 7. We gurantee safe spawning of upto 10 un-resolved promises on a party at a
-// time. More than this could cause delays in the Spawn functions or other
-// issues. (TODO - What issues?).
+// 7. You can re-use the same party to spawn new promises as long as the older
+// promises have been resolved.
+// 7. A party participant is a promise which was spawned on a party and is not
+// yet resolved. We gurantee safe working of upto 10 un-resolved participatns on
+// a party at a time. More than this could cause delays in the Spawn functions
+// or other issues. TODO(tjagtap) - What issues?.
 // TODO(tjagtap) : We are not commiting to 16, but we need to commit atleast
 // some minimum number right?
 //
