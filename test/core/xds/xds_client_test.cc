@@ -985,76 +985,17 @@ MATCHER_P(TimestampProtoEq, timestamp, "equals timestamp") {
       timestamp, Timestamp::FromTimespecRoundDown(ts), result_listener);
 }
 
-MATCHER_P5(CsdsResourceAcked, type_url, name, resource, version, last_updated,
-           "equals CSDS ACKed resource") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(
-      arg.client_status(), ClientResourceStatus::ACKED, result_listener);
-  ok &= ::testing::ExplainMatchResult(
-      absl::StrCat("type.googleapis.com/", type_url), arg.type_url(),
-      result_listener);
-  ok &= ::testing::ExplainMatchResult(name, arg.name(), result_listener);
-  ok &= ::testing::ExplainMatchResult(
-      absl::StrCat("type.googleapis.com/", type_url),
-      arg.xds_config().type_url(), result_listener);
-  ok &= ::testing::ExplainMatchResult(resource, arg.xds_config().value(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(version, arg.version_info(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(last_updated, arg.last_updated(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(::testing::IsFalse(),
-                                      arg.has_error_state(), result_listener);
-  return ok;
-}
-
-MATCHER_P2(CsdsResourceRequested, type_url, name,
-           "equals CSDS requested resource") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(
-      arg.client_status(), ClientResourceStatus::REQUESTED, result_listener);
-  ok &= ::testing::ExplainMatchResult(
-      absl::StrCat("type.googleapis.com/", type_url), arg.type_url(),
-      result_listener);
-  ok &= ::testing::ExplainMatchResult(name, arg.name(), result_listener);
-  ok &= ::testing::ExplainMatchResult("", arg.version_info(), result_listener);
-  ok &= ::testing::ExplainMatchResult(::testing::IsFalse(),
-                                      arg.has_last_updated(), result_listener);
-  ok &= ::testing::ExplainMatchResult(::testing::IsFalse(),
-                                      arg.has_xds_config(), result_listener);
-  ok &= ::testing::ExplainMatchResult(::testing::IsFalse(),
-                                      arg.has_error_state(), result_listener);
-  return ok;
-}
-
-MATCHER_P2(CsdsResourceDoesNotExistOnTimeout, type_url, name,
-           "equals CSDS does-not-exist-on-timeout resource") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(arg.client_status(),
-                                      ClientResourceStatus::DOES_NOT_EXIST,
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(
-      absl::StrCat("type.googleapis.com/", type_url), arg.type_url(),
-      result_listener);
-  ok &= ::testing::ExplainMatchResult(name, arg.name(), result_listener);
-  ok &= ::testing::ExplainMatchResult("", arg.version_info(), result_listener);
-  ok &= ::testing::ExplainMatchResult(::testing::IsFalse(),
-                                      arg.has_last_updated(), result_listener);
-  ok &= ::testing::ExplainMatchResult(::testing::IsFalse(),
-                                      arg.has_xds_config(), result_listener);
-  ok &= ::testing::ExplainMatchResult(
-      "does not exist", arg.error_state().details(), result_listener);
-  ok &= ::testing::ExplainMatchResult(
-      "", arg.error_state().version_info(), result_listener);
-  ok &= ::testing::ExplainMatchResult(
-      ::testing::IsFalse(), arg.error_state().has_last_update_attempt(),
-      result_listener);
-  return ok;
-}
-
-MATCHER_P9(CsdsResourceEq, client_status, type_url, name, resource, version,
-           last_updated, error_details, error_version, error_time,
-           "equals CSDS resource") {
+// Matches a CSDS ClientConfig proto.
+//
+// The resource_fields argument is a matcher that must validate the
+// xds_config, version_info, and last_updated fields.  Examples are
+// CsdsResourceFields() and CsdsNoResourceFields().
+//
+// The error_fields argument is a matcher that must validate the
+// error_state field.  Examples are CsdsErrorFields(),
+// CsdsErrorDetailsOnly(), and CsdsNoErrorFields().
+MATCHER_P5(CsdsResourceEq, client_status, type_url, name, resource_fields,
+           error_fields, "equals CSDS resource") {
   bool ok = true;
   ok &= ::testing::ExplainMatchResult(arg.client_status(), client_status,
                                       result_listener);
@@ -1062,17 +1003,42 @@ MATCHER_P9(CsdsResourceEq, client_status, type_url, name, resource, version,
       absl::StrCat("type.googleapis.com/", type_url), arg.type_url(),
       result_listener);
   ok &= ::testing::ExplainMatchResult(name, arg.name(), result_listener);
-  if (arg.has_xds_config()) {
-    ok &= ::testing::ExplainMatchResult(
-        absl::StrCat("type.googleapis.com/", type_url),
-        arg.xds_config().type_url(), result_listener);
-  }
+  ok &= ::testing::ExplainMatchResult(resource_fields, arg, result_listener);
+  ok &= ::testing::ExplainMatchResult(error_fields, arg, result_listener);
+  return ok;
+}
+
+// Validates the resource fields in a CSDS ClientConfig proto.  Intended
+// for use with CsdsResourceEq().
+MATCHER_P3(CsdsResourceFields, resource, version, last_updated,
+           "CSDS resource fields") {
+  bool ok = true;
   ok &= ::testing::ExplainMatchResult(resource, arg.xds_config().value(),
                                       result_listener);
   ok &= ::testing::ExplainMatchResult(version, arg.version_info(),
                                       result_listener);
   ok &= ::testing::ExplainMatchResult(last_updated, arg.last_updated(),
                                       result_listener);
+  return ok;
+}
+
+// Validates the resource fields are not present in a CSDS ClientConfig
+// proto.  Intended for use with CsdsResourceEq().
+MATCHER(CsdsNoResourceFields, "CSDS has no resource fields") {
+  bool ok = true;
+  ok &= ::testing::ExplainMatchResult(::testing::IsFalse(),
+                                      arg.has_xds_config(), result_listener);
+  ok &= ::testing::ExplainMatchResult("", arg.version_info(), result_listener);
+  ok &= ::testing::ExplainMatchResult(::testing::IsFalse(),
+                                      arg.has_last_updated(), result_listener);
+  return ok;
+}
+
+// Validates the error fields in a CSDS ClientConfig proto.  Intended
+// for use with CsdsResourceEq().
+MATCHER_P3(CsdsErrorFields, error_details, error_version, error_time,
+           "CSDS error fields") {
+  bool ok = true;
   ok &= ::testing::ExplainMatchResult(
       error_details, arg.error_state().details(), result_listener);
   ok &= ::testing::ExplainMatchResult(
@@ -1080,6 +1046,57 @@ MATCHER_P9(CsdsResourceEq, client_status, type_url, name, resource, version,
   ok &= ::testing::ExplainMatchResult(
       error_time, arg.error_state().last_update_attempt(), result_listener);
   return ok;
+}
+
+// Same as CsdsErrorFields, but expects the error details without a
+// version or timestamp.
+MATCHER_P(CsdsErrorDetailsOnly, error_details, "CSDS error details only") {
+  bool ok = true;
+  ok &= ::testing::ExplainMatchResult(
+      error_details, arg.error_state().details(), result_listener);
+  ok &= ::testing::ExplainMatchResult("", arg.error_state().version_info(),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(
+      ::testing::IsFalse(), arg.error_state().has_last_update_attempt(),
+      result_listener);
+  return ok;
+}
+
+// Validates that there is no error in a CSDS ClientConfig proto.  Intended
+// for use with CsdsResourceEq().
+MATCHER(CsdsNoErrorFields, "CSDS has no error fields") {
+  return ::testing::ExplainMatchResult(::testing::IsFalse(),
+                                       arg.has_error_state(), result_listener);
+}
+
+// Convenient wrapper for ACKED resources in CSDS.
+MATCHER_P5(CsdsResourceAcked, type_url, name, resource, version, last_updated,
+           "equals CSDS ACKED resource") {
+  return ::testing::ExplainMatchResult(
+      CsdsResourceEq(ClientResourceStatus::ACKED, type_url, name,
+                     CsdsResourceFields(resource, version, last_updated),
+                     CsdsNoErrorFields()),
+      arg, result_listener);
+}
+
+// Convenient wrapper for REQUESTED resources in CSDS.
+MATCHER_P2(CsdsResourceRequested, type_url, name,
+           "equals CSDS requested resource") {
+  return ::testing::ExplainMatchResult(
+      CsdsResourceEq(ClientResourceStatus::REQUESTED, type_url, name,
+                     CsdsNoResourceFields(), CsdsNoErrorFields()),
+      arg, result_listener);
+}
+
+// Convenient wrapper for DOES_NOT_EXIST resources in CSDS caused by
+// the resource timer.
+MATCHER_P2(CsdsResourceDoesNotExistOnTimeout, type_url, name,
+           "equals CSDS does-not-exist-on-timeout resource") {
+  return ::testing::ExplainMatchResult(
+      CsdsResourceEq(ClientResourceStatus::DOES_NOT_EXIST, type_url, name,
+                     CsdsNoResourceFields(),
+                     CsdsErrorDetailsOnly("does not exist")),
+      arg, result_listener);
 }
 
 TEST_F(XdsClientTest, BasicWatch) {
@@ -1810,12 +1827,11 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
       csds.generic_xds_configs(),
       ::testing::ElementsAre(CsdsResourceEq(
           ClientResourceStatus::NACKED, XdsFooResourceType::Get()->type_url(),
-          "foo1", /*resource=*/"",
-          /*version=*/"", /*last_updated=*/::testing::_,
-          "invalid resource: errors validating JSON: "
-          "[field:value error:is not a number]",
-          /*error_version=*/"1",
-          /*error_time=*/TimestampProtoEq(kTime0))));
+          "foo1", CsdsNoResourceFields(),
+          CsdsErrorFields("invalid resource: errors validating JSON: "
+                          "[field:value error:is not a number]",
+                          /*error_version=*/"1",
+                          /*error_time=*/TimestampProtoEq(kTime0)))));
   // XdsClient should NACK the update.
   // Note that version_info is not populated in the request.
   request = WaitForRequest(stream.get());
@@ -2095,23 +2111,23 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   EXPECT_THAT(
       csds.generic_xds_configs(),
       ::testing::UnorderedElementsAre(
-          CsdsResourceEq(ClientResourceStatus::NACKED,
-                         XdsFooResourceType::Get()->type_url(), "foo1",
-                         /*resource=*/"",
-                         /*version=*/"", /*last_updated=*/::testing::_,
-                         "invalid resource: errors validating JSON: "
-                         "[field:value error:is not a number]",
-                         /*error_version=*/"1",
-                         /*error_time=*/TimestampProtoEq(kTime0)),
+          CsdsResourceEq(
+              ClientResourceStatus::NACKED,
+              XdsFooResourceType::Get()->type_url(), "foo1",
+              CsdsNoResourceFields(),
+              CsdsErrorFields("invalid resource: errors validating JSON: "
+                              "[field:value error:is not a number]",
+                              /*error_version=*/"1",
+                              /*error_time=*/TimestampProtoEq(kTime0))),
           CsdsResourceRequested(XdsFooResourceType::Get()->type_url(), "foo2"),
-          CsdsResourceEq(ClientResourceStatus::NACKED,
-                         XdsFooResourceType::Get()->type_url(), "foo3",
-                         /*resource=*/"",
-                         /*version=*/"", /*last_updated=*/::testing::_,
-                         "invalid resource: JSON parsing failed: "
-                         "[JSON parse error at index 15]",
-                         /*error_version=*/"1",
-                         /*error_time=*/TimestampProtoEq(kTime0)),
+          CsdsResourceEq(
+              ClientResourceStatus::NACKED,
+              XdsFooResourceType::Get()->type_url(), "foo3",
+              CsdsNoResourceFields(),
+              CsdsErrorFields("invalid resource: JSON parsing failed: "
+                              "[JSON parse error at index 15]",
+                              /*error_version=*/"1",
+                              /*error_time=*/TimestampProtoEq(kTime0))),
           CsdsResourceAcked(XdsFooResourceType::Get()->type_url(), "foo4",
                             /*resource=*/resource->AsJsonString(),
                             /*version=*/"1",
@@ -2250,12 +2266,14 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
               ::testing::UnorderedElementsAre(CsdsResourceEq(
                   ClientResourceStatus::NACKED,
                   XdsFooResourceType::Get()->type_url(), "foo1",
-                  /*resource=*/resource->AsJsonString(),
-                  /*version=*/"1", /*last_updated=*/TimestampProtoEq(kTime0),
-                  "invalid resource: errors validating JSON: "
-                  "[field:value error:is not a number]",
-                  /*error_version=*/"2",
-                  /*error_time=*/TimestampProtoEq(kTime1))));
+                  CsdsResourceFields(
+                      /*resource=*/resource->AsJsonString(),
+                      /*version=*/"1",
+                      /*last_updated=*/TimestampProtoEq(kTime0)),
+                  CsdsErrorFields("invalid resource: errors validating JSON: "
+                                  "[field:value error:is not a number]",
+                                  /*error_version=*/"2",
+                                  /*error_time=*/TimestampProtoEq(kTime1)))));
   // XdsClient should NACK the update.
   // Note that version_info is set to the previous version in this request,
   // because there were no valid resources in it.
@@ -2693,11 +2711,11 @@ TEST_F(XdsClientTest, ResourceDeletionWithFailOnDataErrors) {
               ::testing::UnorderedElementsAre(CsdsResourceEq(
                   ClientResourceStatus::DOES_NOT_EXIST,
                   XdsWildcardCapableResourceType::Get()->type_url(), "wc1",
-                  /*resource=*/"", /*version=*/"",
-                  /*last_updated=*/::testing::_,
-                  /*error_details=*/"does not exist",
-                  /*error_version=*/"2",
-                  /*error_time=*/TimestampProtoEq(kTime1))));
+                  CsdsNoResourceFields(),
+                  CsdsErrorFields(
+                      /*error_details=*/"does not exist",
+                      /*error_version=*/"2",
+                      /*error_time=*/TimestampProtoEq(kTime1)))));
   // Start a new watcher for the same resource.  It should immediately
   // receive the same does-not-exist notification.
   auto watcher2 = StartWildcardCapableWatch("wc1");
@@ -2858,12 +2876,14 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredByDefault) {
               ::testing::UnorderedElementsAre(CsdsResourceEq(
                   ClientResourceStatus::DOES_NOT_EXIST,
                   XdsWildcardCapableResourceType::Get()->type_url(), "wc1",
-                  /*resource=*/resource->AsJsonString(),
-                  /*version=*/"1",
-                  /*last_updated=*/TimestampProtoEq(kTime0),
-                  /*error_details=*/"does not exist",
-                  /*error_version=*/"2",
-                  /*error_time=*/TimestampProtoEq(kTime1))));
+                  CsdsResourceFields(
+                      /*resource=*/resource->AsJsonString(),
+                      /*version=*/"1",
+                      /*last_updated=*/TimestampProtoEq(kTime0)),
+                  CsdsErrorFields(
+                      /*error_details=*/"does not exist",
+                      /*error_version=*/"2",
+                      /*error_time=*/TimestampProtoEq(kTime1)))));
   // Start a new watcher for the same resource.  It should immediately
   // receive the cached resource.
   auto watcher2 = StartWildcardCapableWatch("wc1");

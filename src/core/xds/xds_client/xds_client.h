@@ -306,9 +306,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
     void SetNacked(const std::string& version, absl::string_view details,
                    Timestamp update_time, bool drop_cached_resource);
     void SetDoesNotExistOnTimeout();
-    void SetDoesNotExistOnLdsOrCdsDeletion(
-        const std::string& version, Timestamp update_time,
-        bool drop_cached_resource);
+    void SetDoesNotExistOnLdsOrCdsDeletion(const std::string& version,
+                                           Timestamp update_time,
+                                           bool drop_cached_resource);
 
     ClientResourceStatus client_status() const { return client_status_; }
     absl::string_view CacheStateString() const;
