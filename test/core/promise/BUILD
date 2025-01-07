@@ -27,7 +27,6 @@ grpc_cc_library(
     external_deps = ["gtest"],
     visibility = [
         "//test/core:__subpackages__",
-        "//third_party/grpc/fuzztest/core:__subpackages__",
     ],
     deps = ["//src/core:poll"],
 )
