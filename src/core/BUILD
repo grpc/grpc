@@ -647,6 +647,7 @@ grpc_cc_library(
         "absl/log:log",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/random",
     ],
     language = "c++",
     deps = [

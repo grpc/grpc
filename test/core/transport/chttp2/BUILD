@@ -14,7 +14,7 @@
 
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test", "grpc_fuzzer", "grpc_proto_fuzzer")
 
 licenses(["notice"])
 
@@ -536,5 +536,39 @@ grpc_cc_test(
         "//test/core/end2end:cq_verifier",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "write_size_policy_fuzztest",
+    srcs = ["write_size_policy_fuzztest.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:write_size_policy"],
+)
+
+grpc_fuzz_test(
+    name = "hpack_encoder_timeout_test",
+    srcs = ["hpack_encoder_timeout_test.cc"],
+    external_deps = [
+        "absl/random",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//:grpc_base",
+        "//:hpack_encoder",
+        "//:hpack_parser",
+        "//:ref_counted_ptr",
+        "//src/core:arena",
+        "//src/core:memory_quota",
+        "//src/core:metadata_batch",
+        "//src/core:resource_quota",
+        "//src/core:slice_buffer",
+        "//src/core:time",
     ],
 )
