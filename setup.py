@@ -263,19 +263,20 @@ EXTRA_ENV_LINK_ARGS = os.environ.get("GRPC_PYTHON_LDFLAGS", None)
 if EXTRA_ENV_COMPILE_ARGS is None:
     EXTRA_ENV_COMPILE_ARGS = ""
     if "win32" in sys.platform:
-        # MSVC by defaults uses C++14 so C11 needs to be specified.
+        # MSVC by defaults uses C++14 and C89 so both needs to be configured.
+        EXTRA_ENV_COMPILE_ARGS += " /std:c++17"
         EXTRA_ENV_COMPILE_ARGS += " /std:c11"
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
     elif "linux" in sys.platform:
-        # GCC by defaults uses C17 so only C++14 needs to be specified.
+        # GCC by defaults uses C17 so only C++17 needs to be specified.
         EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
         EXTRA_ENV_COMPILE_ARGS += (
             " -fvisibility=hidden -fno-wrapv -fno-exceptions"
         )
     elif "darwin" in sys.platform:
-        # AppleClang by defaults uses C17 so only C++14 needs to be specified.
+        # AppleClang by defaults uses C17 so only C++17 needs to be specified.
         EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
         EXTRA_ENV_COMPILE_ARGS += (
             " -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions"
