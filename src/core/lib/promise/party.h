@@ -221,12 +221,14 @@ class Party : public Activity, private Wakeable {
   // after the promise is created the factory is destroyed. This means that
   // pointers or references to factory members will be invalidated after the
   // promise is created - so the promise should not retain any of these.
+  // This function is thread safe. We can Spawn different promises onto the
+  // same party from different threads.
   template <typename Factory, typename OnComplete>
   void Spawn(absl::string_view name, Factory promise_factory,
              OnComplete on_complete);
 
   // This is similar to the Spawn function.
-  // TODO(tjagtap) : What does it do?
+  // TODO(tjagtap) : What does it do differently? Waiting for what?
   template <typename Factory>
   auto SpawnWaitable(absl::string_view name, Factory factory);
 
