@@ -15,7 +15,10 @@
 
 set -ex
 
-echo ${PWD}
+# Enter the gRPC repo root
+cd $(dirname $0)/../../..
+
+echo "Current dir ${PWD}"
 
 cd "examples/cpp"
 
