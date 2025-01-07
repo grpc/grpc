@@ -139,8 +139,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   Mutex* mu() ABSL_LOCK_RETURNED(&mu_) { return &mu_; }
 
   // Dumps the active xDS config to the provided
-  // envoy.service.status.v3.ClientConfig message including the config status
-  // (e.g., CLIENT_REQUESTED, CLIENT_ACKED, CLIENT_NACKED).
+  // envoy.service.status.v3.ClientConfig message.
   void DumpClientConfig(std::set<std::string>* string_pool, upb_Arena* arena,
                         envoy_service_status_v3_ClientConfig* client_config)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
@@ -306,7 +305,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
                   Timestamp update_time);
     void SetNacked(const std::string& version, absl::string_view details,
                    Timestamp update_time, bool drop_cached_resource);
-    void SetDoesNotExist(bool drop_cached_resource);
+    void SetDoesNotExistOnTimeout();
+    void SetDoesNotExistOnLdsOrCdsDeletion(
+        const std::string& version, Timestamp update_time,
+        bool drop_cached_resource);
 
     ClientResourceStatus client_status() const { return client_status_; }
     absl::string_view CacheStateString() const;

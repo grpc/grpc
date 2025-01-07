@@ -236,7 +236,7 @@ class XdsClient::XdsChannel::AdsCall final
                      name_.authority, type_->type_url(), name_.key)
               << "} from xds server";
           resource_seen_ = true;
-          state.SetDoesNotExist(/*drop_cached_resource=*/false);
+          state.SetDoesNotExistOnTimeout();
           ads_call_->xds_client()->NotifyWatchersOnResourceChanged(
               state.failed_status(), state.watchers(),
               ReadDelayHandle::NoWait());
@@ -1011,10 +1011,21 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
   }
   // Resource is valid.
   ++context->num_valid_resources;
-  // If it didn't change, ignore it.
-  if (resource_state.HasResource() &&
+  // Check if the resource has changed.
+  const bool resource_identical =
+      resource_state.HasResource() &&
       context->type->ResourcesEqual(resource_state.resource().get(),
-                                    decode_result.resource->get())) {
+                                    decode_result.resource->get());
+  // If not changed, keep using the current decoded resource object.
+  // This should avoid wasting memory, since external watchers may be
+  // holding refs to the current object.
+  if (resource_identical) decode_result.resource = resource_state.resource();
+  // Update the resource state.
+  resource_state.SetAcked(std::move(*decode_result.resource),
+                          std::string(serialized_resource), context->version,
+                          context->update_time);
+  // If the resource didn't change, inhibit watcher notifications.
+  if (resource_identical) {
     GRPC_TRACE_LOG(xds_client, INFO)
         << "[xds_client " << xds_client() << "] " << context->type_url
         << " resource " << resource_name << " identical to current, ignoring.";
@@ -1027,10 +1038,6 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
     }
     return;
   }
-  // Update the resource state.
-  resource_state.SetAcked(std::move(*decode_result.resource),
-                          std::string(serialized_resource), context->version,
-                          context->update_time);
   // Notify watchers.
   xds_client()->NotifyWatchersOnResourceChanged(resource_state.resource(),
                                                 resource_state.watchers(),
@@ -1198,7 +1205,8 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
                   XdsDataErrorHandlingEnabled()
                       ? xds_channel()->server_.FailOnDataErrors()
                       : !xds_channel()->server_.IgnoreResourceDeletion();
-              resource_state.SetDoesNotExist(drop_cached_resource);
+              resource_state.SetDoesNotExistOnLdsOrCdsDeletion(
+                  context.version, context.update_time, drop_cached_resource);
               xds_client()->NotifyWatchersOnError(resource_state,
                                                   context.read_delay_handle);
             }
@@ -1304,7 +1312,10 @@ void XdsClient::ResourceState::SetNacked(const std::string& version,
                                          absl::string_view details,
                                          Timestamp update_time,
                                          bool drop_cached_resource) {
-  if (drop_cached_resource) resource_.reset();
+  if (drop_cached_resource) {
+    resource_.reset();
+    serialized_proto_.clear();
+  }
   client_status_ = ClientResourceStatus::NACKED;
   failed_version_ = version;
   failed_status_ =
@@ -1312,10 +1323,23 @@ void XdsClient::ResourceState::SetNacked(const std::string& version,
   failed_update_time_ = update_time;
 }
 
-void XdsClient::ResourceState::SetDoesNotExist(bool drop_cached_resource) {
-  if (drop_cached_resource) resource_.reset();
+void XdsClient::ResourceState::SetDoesNotExistOnTimeout() {
   client_status_ = ClientResourceStatus::DOES_NOT_EXIST;
   failed_status_ = absl::NotFoundError("does not exist");
+  failed_version_.clear();
+}
+
+void XdsClient::ResourceState::SetDoesNotExistOnLdsOrCdsDeletion(
+    const std::string& version, Timestamp update_time,
+    bool drop_cached_resource) {
+  if (drop_cached_resource) {
+    resource_.reset();
+    serialized_proto_.clear();
+  }
+  client_status_ = ClientResourceStatus::DOES_NOT_EXIST;
+  failed_status_ = absl::NotFoundError("does not exist");
+  failed_version_ = version;
+  failed_update_time_ = update_time;
 }
 
 absl::string_view XdsClient::ResourceState::CacheStateString() const {
@@ -1366,14 +1390,16 @@ void XdsClient::ResourceState::FillGenericXdsConfig(
     google_protobuf_Any_set_value(any_field,
                                   StdStringToUpbString(serialized_proto_));
   }
-  if (client_status_ == ClientResourceStatus::NACKED) {
+  if (!failed_status_.ok()) {
     auto* update_failure_state = envoy_admin_v3_UpdateFailureState_new(arena);
     envoy_admin_v3_UpdateFailureState_set_details(
         update_failure_state, StdStringToUpbString(failed_status_.message()));
-    envoy_admin_v3_UpdateFailureState_set_version_info(
-        update_failure_state, StdStringToUpbString(failed_version_));
-    envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
-        update_failure_state, EncodeTimestamp(failed_update_time_, arena));
+    if (!failed_version_.empty()) {
+      envoy_admin_v3_UpdateFailureState_set_version_info(
+          update_failure_state, StdStringToUpbString(failed_version_));
+      envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
+          update_failure_state, EncodeTimestamp(failed_update_time_, arena));
+    }
     envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_error_state(
         entry, update_failure_state);
   }
