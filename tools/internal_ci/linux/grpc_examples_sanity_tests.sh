@@ -16,7 +16,7 @@
 set -ex
 
 # Enter the gRPC repo root
-cd $(dirname $0)/../../..
+cd "$(dirname $0)/../../.."
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
@@ -30,7 +30,7 @@ SERVER_PID=
 
 clean () {
   echo "CLeaning server ${SERVER_PID}"
-  if [[ -n $SERVER_PID ]] then
+  if [[ -n $SERVER_PID ]]; then
       kill -9 $SERVER_PID || true
   fi
   SERVER_PID=
@@ -39,7 +39,7 @@ clean () {
 
 fail () {
     echo "$(tput setaf 1) $1 $(tput sgr 0)"
-    if [[ -n $SERVER_PID ]] then
+    if [[ -n $SERVER_PID ]] ; then
       kill -9 $SERVER_PID || true
     fi
     SERVER_PID=
@@ -90,7 +90,7 @@ declare -A EXPECTED_CLIENT_OUTPUT=(
 )
 
 
-for example in ${EXAMPLES[@]}; do
+for example in "${EXAMPLES[@]}"; do
     echo "$(tput setaf 4) testing: ${example} $(tput sgr 0)"
 
     # Build server
