@@ -35,7 +35,13 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 
-// Multi producer single consumer inter-activity comms.
+// Multi Producer Single Consumer (MPSC) inter-activity communications.
+//
+// MPSC is used to communicate in between two or more activities or promise
+// parties in a thread safe way.
+//
+// The communication consists of one or more MpscSender objects and one
+// MpscReceiver.
 
 namespace grpc_core {
 
