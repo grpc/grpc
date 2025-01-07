@@ -27846,12 +27846,12 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: fc4aca6aec598d081d09cb479187bc249311887200b5a13be695e76c09a63871
+  hash: aed4389a9cf7777df7811185770dca7352f19a2fd68a41ae04e47071dada31eb
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-3a311b6d421867bb1a83cfc7af6c4a84f6c00050
+  strip_prefix: data-plane-api-88a37373e3cb5e1ab09e75dfb302b083168e6654
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/3a311b6d421867bb1a83cfc7af6c4a84f6c00050.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/3a311b6d421867bb1a83cfc7af6c4a84f6c00050.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/88a37373e3cb5e1ab09e75dfb302b083168e6654.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/88a37373e3cb5e1ab09e75dfb302b083168e6654.tar.gz
 - destination: third_party/googleapis
   hash: 0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4
   proto_prefix: third_party/googleapis/
