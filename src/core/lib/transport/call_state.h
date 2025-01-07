@@ -377,7 +377,8 @@ CallState::BeginPushClientToServerMessage() {
                  << GRPC_DUMP_ARGS(client_to_server_push_state_);
       break;
     case ClientToServerPushState::kPushedHalfClose:
-      LOG(FATAL) << "PushClientToServerMessage called after half-close";
+      LOG(FATAL) << "PushClientToServerMessage called after half-close; "
+                 << GRPC_DUMP_ARGS(client_to_server_push_state_);
       break;
     case ClientToServerPushState::kFinished:
       break;
