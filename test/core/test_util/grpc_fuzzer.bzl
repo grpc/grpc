@@ -14,6 +14,11 @@
 
 """
 Includes fuzzer rules.
+
+Now that we are at C++17, please prefer grpc_fuzz_test over the
+grpc_fuzzer/grpc_proto_fuzzer older rules for new fuzzers - the former is
+simpler and better maintained, and we'll eventually replace existing fuzzers
+with grpc_fuzz_test.
 """
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library")
@@ -127,4 +132,30 @@ def grpc_proto_fuzzer(
             "//conditions:default": ["--directory=" + CORPUS_DIR],
         }),
         **kwargs
+    )
+
+def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], external_deps = []):
+    """Instantiates a fuzztest based test.
+
+    This is the preferred method of writing fuzzers.
+
+    Args:
+        name: The name of the test.
+        srcs: The source files for the test.
+        deps: The dependencies of the test.
+        tags: The tags for the test.
+        external_deps: External deps.
+    """
+    grpc_cc_test(
+        name = name,
+        srcs = srcs,
+        tags = tags + [
+            "grpc-fuzzer",
+            "grpc-fuzztest",
+            "no-cache",
+            "no_windows",
+            "bazel_only",
+        ],
+        deps = deps,
+        external_deps = external_deps,
     )
