@@ -40,13 +40,6 @@ namespace grpc_core {
 // GcpAuthenticationFilter::Call
 //
 
-const NoInterceptor GcpAuthenticationFilter::Call::OnClientToServerMessage;
-const NoInterceptor GcpAuthenticationFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor GcpAuthenticationFilter::Call::OnServerInitialMetadata;
-const NoInterceptor GcpAuthenticationFilter::Call::OnServerToClientMessage;
-const NoInterceptor GcpAuthenticationFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor GcpAuthenticationFilter::Call::OnFinalize;
-
 absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
     ClientMetadata& /*md*/, GcpAuthenticationFilter* filter) {
   // Get the cluster name chosen for this RPC.

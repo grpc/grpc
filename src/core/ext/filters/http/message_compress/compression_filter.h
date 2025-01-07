@@ -129,9 +129,9 @@ class ClientCompressionFilter final
     absl::StatusOr<MessageHandle> OnServerToClientMessage(
         MessageHandle message, ClientCompressionFilter* filter);
 
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
 
    private:
     grpc_compression_algorithm compression_algorithm_;
@@ -168,9 +168,9 @@ class ServerCompressionFilter final
     MessageHandle OnServerToClientMessage(MessageHandle message,
                                           ServerCompressionFilter* filter);
 
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
 
    private:
     ChannelCompression::DecompressArgs decompress_args_;
