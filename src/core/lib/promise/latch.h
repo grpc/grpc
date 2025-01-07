@@ -39,7 +39,7 @@ namespace grpc_core {
 // wait for a particular object to be set. This object would typically be set by
 // some promise getting resolved.
 //
-// Initially the value Latch is usually unset.
+// Initially the value Latch is unset.
 //
 // We can wait for Latch to be set using either the Wait or WaitAndCopy method.
 // These two methods produce Promises that resolves when the Latch is value Set
