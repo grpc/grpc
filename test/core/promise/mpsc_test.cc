@@ -204,6 +204,8 @@ TEST(MpscTest, CloseFailsNext) {
   activity.Deactivate();
 }
 
+// Testing MPSC using Promise Party
+
 }  // namespace
 }  // namespace grpc_core
 
