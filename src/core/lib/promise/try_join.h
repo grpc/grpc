@@ -112,40 +112,40 @@ namespace promise_detail {
 //         }
 //         return 6;
 //       });
-
+//
 //   // Execution 1 : All promises are pending. All should be run once.
 //   Poll<absl::StatusOr<std::tuple<int, double, std::string, int>>> retval =
 //       try_join_combinator();
 //   EXPECT_TRUE(retval.pending());
 //   // All promises are Pending
 //   EXPECT_STREQ(execution_order.c_str(), "3P4P5P6P");
-
+//
 //   // Execution 2 : All promises should be run once. 3 gets resolved.
 //   execution_order.clear();
 //   pending_3 = false;
 //   retval = try_join_combinator();
 //   EXPECT_TRUE(retval.pending());
 //   EXPECT_STREQ(execution_order.c_str(), "34P5P6P");
-
+//
 //   // Execution 3 : All promises other than 3 should be run. 4 gets resolved.
 //   execution_order.clear();
 //   pending_4 = false;
 //   retval = try_join_combinator();
 //   EXPECT_TRUE(retval.pending());
 //   EXPECT_STREQ(execution_order.c_str(), "45P6P");  // 3 should not be re-run.
-
+//
 //   // Execution 4 : Order changed. 5 will still be pending. 6 will be
 //   resolved. execution_order.clear(); pending_6 = false; retval =
 //   try_join_combinator(); EXPECT_TRUE(retval.pending());
 //   EXPECT_STREQ(execution_order.c_str(), "5P6");
-
+//
 //   // Execution 5 : Only 5 should be run. And 5 gets resolved.
 //   execution_order.clear();
 //   pending_5 = false;
 //   retval = try_join_combinator();
 //   EXPECT_TRUE(retval.ready());  // All promises are resolved.
 //   EXPECT_STREQ(execution_order.c_str(), "5");
-
+//
 //   EXPECT_TRUE(retval.value().ok());  // All promises are a success.
 //   EXPECT_EQ(retval.value().value(), std::make_tuple(3, 4.0, "5", 6));
 // }
