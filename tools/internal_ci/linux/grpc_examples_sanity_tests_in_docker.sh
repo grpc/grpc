@@ -13,7 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -x
+set +e
 
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
