@@ -16,8 +16,8 @@
 Contains macros used for running bazelified tests.
 """
 
-load(":dockerimage_current_versions.bzl", "DOCKERIMAGE_CURRENT_VERSIONS")
 load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_rbe_exec_properties_dict")
+load(":dockerimage_current_versions.bzl", "DOCKERIMAGE_CURRENT_VERSIONS")
 
 def _dockerized_sh_test(name, srcs = [], args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, docker_run_as_root = False, env = {}):
     """Runs sh_test under docker either via RBE or via docker sandbox."""
