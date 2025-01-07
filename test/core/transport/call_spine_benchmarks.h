@@ -229,7 +229,9 @@ class UnstartedCallDestinationFixture {
     return traits_->MakeServerInitialMetadata();
   }
 
-  MessageHandle MakePayload() { return traits_->MakePayload(); }
+  MessageHandle MakePayload(uint32_t flags) {
+    return traits_->MakePayload(flags);
+  }
 
   ServerMetadataHandle MakeServerTrailingMetadata() {
     return traits_->MakeServerTrailingMetadata();
