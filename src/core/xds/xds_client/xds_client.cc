@@ -311,7 +311,7 @@ class XdsClient::XdsChannel::AdsCall final
         resources_seen;
     uint64_t num_valid_resources = 0;
     uint64_t num_invalid_resources = 0;
-    Timestamp update_time_ = Timestamp::Now();
+    Timestamp update_time = Timestamp::Now();
     RefCountedPtr<ReadDelayHandle> read_delay_handle;
   };
   void ParseResource(size_t idx, absl::string_view type_url,
@@ -1020,16 +1020,27 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
                                                  context->read_delay_handle);
     }
     resource_state.SetNacked(context->version, decode_status.ToString(),
-                             context->update_time_);
+                             context->update_time);
     ++context->num_invalid_resources;
     return;
   }
   // Resource is valid.
   ++context->num_valid_resources;
-  // If it didn't change, ignore it.
-  if (resource_state.HasResource() &&
+  // Check if the resource has changed.
+  const bool resource_identical =
+      resource_state.HasResource() &&
       context->type->ResourcesEqual(resource_state.resource().get(),
-                                    decode_result.resource->get())) {
+                                    decode_result.resource->get());
+  // If not changed, keep using the current decoded resource object.
+  // This should avoid wasting memory, since external watchers may be
+  // holding refs to the current object.
+  if (resource_identical) decode_result.resource = resource_state.resource();
+  // Update the resource state.
+  resource_state.SetAcked(std::move(*decode_result.resource),
+                          std::string(serialized_resource), context->version,
+                          context->update_time);
+  // If the resource didn't change, inhibit watcher notifications.
+  if (resource_identical) {
     GRPC_TRACE_LOG(xds_client, INFO)
         << "[xds_client " << xds_client() << "] " << context->type_url
         << " resource " << resource_name << " identical to current, ignoring.";
@@ -1042,10 +1053,6 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
     }
     return;
   }
-  // Update the resource state.
-  resource_state.SetAcked(std::move(*decode_result.resource),
-                          std::string(serialized_resource), context->version,
-                          context->update_time_);
   // Notify watchers.
   xds_client()->NotifyWatchersOnResourceChanged(resource_state.resource(),
                                                 resource_state.watchers(),

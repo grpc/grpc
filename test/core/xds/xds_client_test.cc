@@ -82,6 +82,13 @@ namespace {
 
 constexpr absl::string_view kDefaultXdsServerUrl = "default_xds_server";
 
+constexpr Timestamp kTime0 =
+    Timestamp::FromMillisecondsAfterProcessEpoch(10000);
+constexpr Timestamp kTime1 =
+    Timestamp::FromMillisecondsAfterProcessEpoch(15000);
+constexpr Timestamp kTime2 =
+    Timestamp::FromMillisecondsAfterProcessEpoch(20000);
+
 class XdsClientTest : public ::testing::Test {
  protected:
   // A fake bootstrap implementation that allows tests to populate the
@@ -757,6 +764,7 @@ class XdsClientTest : public ::testing::Test {
   }
 
   void SetUp() override {
+    time_cache_.TestOnlySetNow(kTime0);
     event_engine_ = std::make_shared<FuzzingEventEngine>(
         FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
     grpc_timer_manager_set_start_threaded(false);
@@ -951,6 +959,7 @@ class XdsClientTest : public ::testing::Test {
     return client_config_proto;
   }
 
+  ScopedTimeCache time_cache_;
   std::shared_ptr<FuzzingEventEngine> event_engine_;
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
   RefCountedPtr<XdsClient> xds_client_;
@@ -1145,8 +1154,7 @@ TEST_F(XdsClientTest, BasicWatch) {
       CsdsResourceAcked(
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
-          /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*version=*/"1", /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1218,9 +1226,8 @@ TEST_F(XdsClientTest, UpdateFromServer) {
   EXPECT_THAT(csds.generic_xds_configs(), ::testing::ElementsAre(
       CsdsResourceAcked(
           XdsFooResourceType::Get()->type_url(), "foo1",
-          /*resource=*/resource->AsJsonString(),
-          /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*resource=*/resource->AsJsonString(), /*version=*/"1",
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1229,6 +1236,8 @@ TEST_F(XdsClientTest, UpdateFromServer) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
   // Server sends an updated version of the resource.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
@@ -1258,9 +1267,8 @@ TEST_F(XdsClientTest, UpdateFromServer) {
   EXPECT_THAT(csds.generic_xds_configs(), ::testing::ElementsAre(
       CsdsResourceAcked(
           XdsFooResourceType::Get()->type_url(), "foo1",
-          /*resource=*/resource->AsJsonString(),
-          /*version=*/"2",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*resource=*/resource->AsJsonString(), /*version=*/"2",
+          /*last_updated=*/TimestampProtoEq(kTime1))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1322,7 +1330,7 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1376,7 +1384,7 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"2",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1457,7 +1465,7 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1487,7 +1495,7 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now())),
+          /*last_updated=*/TimestampProtoEq(kTime0)),
       CsdsResourceRequested(XdsFooResourceType::Get()->type_url(), "foo2")));
   // XdsClient should have sent a subscription request on the ADS stream.
   request = WaitForRequest(stream.get());
@@ -1497,6 +1505,8 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
   // Send a response.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
@@ -1528,12 +1538,12 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now())),
+          /*last_updated=*/TimestampProtoEq(kTime0)),
       CsdsResourceAcked(
           XdsFooResourceType::Get()->type_url(), "foo2",
           /*resource=*/resource2->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime1))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1557,7 +1567,7 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
           XdsFooResourceType::Get()->type_url(), "foo2",
           /*resource=*/resource2->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime1))));
   // XdsClient should send an unsubscription request.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1615,6 +1625,8 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
   // Send a response.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
@@ -1646,12 +1658,12 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now())),
+          /*last_updated=*/TimestampProtoEq(kTime0)),
       CsdsResourceAcked(
           XdsFooResourceType::Get()->type_url(), "foo2",
           /*resource=*/resource2->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime1))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1660,6 +1672,8 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
   // Server sends an update for "foo1".  The response does not contain "foo2".
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime2);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
@@ -1691,12 +1705,12 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"2",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now())),
+          /*last_updated=*/TimestampProtoEq(kTime2)),
       CsdsResourceAcked(
           XdsFooResourceType::Get()->type_url(), "foo2",
           /*resource=*/resource2->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime1))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -1789,7 +1803,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
           "INVALID_ARGUMENT: errors validating JSON: "
           "[field:value error:is not a number]",
           /*error_version=*/"1",
-          /*error_time=*/TimestampProtoEq(Timestamp::Now()))));
+          /*error_time=*/TimestampProtoEq(kTime0))));
   // XdsClient should NACK the update.
   // Note that version_info is not populated in the request.
   request = WaitForRequest(stream.get());
@@ -1814,6 +1828,8 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
             "[field:value error:is not a number] (node ID:xds_client_test)")
       << *error;
   // Now server sends an updated version of the resource.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
@@ -1853,7 +1869,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"2",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime1))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2062,7 +2078,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
           "INVALID_ARGUMENT: errors validating JSON: "
           "[field:value error:is not a number]",
           /*error_version=*/"1",
-          /*error_time=*/TimestampProtoEq(Timestamp::Now())),
+          /*error_time=*/TimestampProtoEq(kTime0)),
       CsdsResourceRequested(XdsFooResourceType::Get()->type_url(), "foo2"),
       CsdsResourceEq(
           ClientResourceStatus::NACKED,
@@ -2071,12 +2087,12 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
           "INVALID_ARGUMENT: JSON parsing failed: "
           "[JSON parse error at index 15]",
           /*error_version=*/"1",
-          /*error_time=*/TimestampProtoEq(Timestamp::Now())),
+          /*error_time=*/TimestampProtoEq(kTime0)),
       CsdsResourceAcked(
           XdsFooResourceType::Get()->type_url(), "foo4",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should NACK the update.
   // There was one good resource, so the version will be updated.
   request = WaitForRequest(stream.get());
@@ -2162,7 +2178,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2171,6 +2187,8 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
   // Send an update containing an invalid resource.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
@@ -2210,11 +2228,11 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
           ClientResourceStatus::NACKED,
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
-          /*version=*/"1", /*last_updated=*/TimestampProtoEq(Timestamp::Now()),
+          /*version=*/"1", /*last_updated=*/TimestampProtoEq(kTime0),
           "INVALID_ARGUMENT: errors validating JSON: "
           "[field:value error:is not a number]",
           /*error_version=*/"2",
-          /*error_time=*/TimestampProtoEq(Timestamp::Now()))));
+          /*error_time=*/TimestampProtoEq(kTime1))));
   // XdsClient should NACK the update.
   // Note that version_info is set to the previous version in this request,
   // because there were no valid resources in it.
@@ -2304,7 +2322,7 @@ TEST_F(XdsClientTest, WildcardCapableResponseWithEmptyResource) {
           XdsWildcardCapableResourceType::Get()->type_url(), "wc1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should NACK the update.
   // There was one good resource, so the version will be updated.
   request = WaitForRequest(stream.get());
@@ -2376,7 +2394,7 @@ TEST_F(XdsClientTest, ResourceDeletion) {
           XdsWildcardCapableResourceType::Get()->type_url(), "wc1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2424,6 +2442,8 @@ TEST_F(XdsClientTest, ResourceDeletion) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"wc1"});
   // Server sends the resource again.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream->SendMessageToClient(
       ResponseBuilder(XdsWildcardCapableResourceType::Get()->type_url())
           .set_version_info("3")
@@ -2460,7 +2480,7 @@ TEST_F(XdsClientTest, ResourceDeletion) {
           XdsWildcardCapableResourceType::Get()->type_url(), "wc1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"3",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime1))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2527,7 +2547,7 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
           XdsWildcardCapableResourceType::Get()->type_url(), "wc1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2537,6 +2557,9 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
                /*resource_names=*/{"wc1"});
   // Server now sends a response without the resource, thus indicating
   // it's been deleted.
+  // We increment time to make sure that the CSDS data does NOT get a
+  // new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream->SendMessageToClient(
       ResponseBuilder(XdsWildcardCapableResourceType::Get()->type_url())
           .set_version_info("2")
@@ -2566,7 +2589,7 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
           XdsWildcardCapableResourceType::Get()->type_url(), "wc1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // Start a new watcher for the same resource.  It should immediately
   // receive the cached resource.
   auto watcher2 = StartWildcardCapableWatch("wc1");
@@ -2582,6 +2605,8 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"wc1"});
   // Server sends a new value for the resource.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime2);
   stream->SendMessageToClient(
       ResponseBuilder(XdsWildcardCapableResourceType::Get()->type_url())
           .set_version_info("3")
@@ -2618,7 +2643,7 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
           XdsWildcardCapableResourceType::Get()->type_url(), "wc1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"3",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime2))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -3096,7 +3121,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -3231,7 +3256,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient sends an ACK.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -3322,7 +3347,7 @@ TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -3396,7 +3421,7 @@ TEST_F(XdsClientTest,
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -3429,7 +3454,7 @@ TEST_F(XdsClientTest,
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now())),
+          /*last_updated=*/TimestampProtoEq(kTime0)),
       CsdsResourceRequested(XdsFooResourceType::Get()->type_url(), "foo2")));
   // XdsClient sends a request to subscribe to the new resource.
   request = WaitForRequest(stream.get());
@@ -3463,6 +3488,8 @@ TEST_F(XdsClientTest,
       CsdsResourceRequested(XdsFooResourceType::Get()->type_url(), "foo1"),
       CsdsResourceRequested(XdsFooResourceType::Get()->type_url(), "foo2")));
   // Now send a response from the server containing both foo1 and foo2.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
@@ -3502,12 +3529,12 @@ TEST_F(XdsClientTest,
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now())),
+          /*last_updated=*/TimestampProtoEq(kTime1)),
       CsdsResourceAcked(
           XdsFooResourceType::Get()->type_url(), "foo2",
           /*resource=*/resource2->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime1))));
   // Now we finally tell XdsClient that its previous send_message op is
   // complete.
   stream->CompleteSendMessageFromClient();
@@ -3578,7 +3605,7 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -3624,11 +3651,11 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
   EXPECT_THAT(csds.generic_xds_configs(), ::testing::UnorderedElementsAre(
       CsdsResourceAcked(
           XdsFooResourceType::Get()->type_url(), "foo1",
-          /*resource=*/resource->AsJsonString(),
-          /*version=*/"1",
-          /*last_updated=*/::testing::_ // FIXME: TimestampProtoEq(Timestamp::Now())
-          )));
+          /*resource=*/resource->AsJsonString(), /*version=*/"1",
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // Now server sends a response.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
@@ -3659,8 +3686,7 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/::testing::_ // FIXME: TimestampProtoEq(Timestamp::Now())
-          )));
+          /*last_updated=*/TimestampProtoEq(kTime1))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -3723,7 +3749,7 @@ TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -3785,7 +3811,7 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -3805,6 +3831,8 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"bar1"});
   // Send a response.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream->SendMessageToClient(
       ResponseBuilder(XdsBarResourceType::Get()->type_url())
           .set_version_info("2")
@@ -3846,12 +3874,12 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now())),
+          /*last_updated=*/TimestampProtoEq(kTime0)),
       CsdsResourceAcked(
           XdsBarResourceType::Get()->type_url(), "bar1",
           /*resource=*/resource2->AsJsonString(),
           /*version=*/"2",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime1))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -3978,7 +4006,7 @@ TEST_F(XdsClientTest, Federation) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -4013,7 +4041,7 @@ TEST_F(XdsClientTest, Federation) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now())),
+          /*last_updated=*/TimestampProtoEq(kTime0)),
       CsdsResourceRequested(XdsFooResourceType::Get()->type_url(),
                             kXdstpResourceName)));
   // XdsClient will create a new stream to the server for this authority.
@@ -4030,6 +4058,8 @@ TEST_F(XdsClientTest, Federation) {
                /*resource_names=*/{kXdstpResourceName});
   CheckRequestNode(*request);  // Should be present on the first request.
   // Send a response.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream2->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
@@ -4075,12 +4105,12 @@ TEST_F(XdsClientTest, Federation) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now())),
+          /*last_updated=*/TimestampProtoEq(kTime0)),
       CsdsResourceAcked(
           XdsFooResourceType::Get()->type_url(), kXdstpResourceName,
           /*resource=*/resource2->AsJsonString(),
           /*version=*/"2",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime1))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream2.get());
   ASSERT_TRUE(request.has_value());
@@ -4153,7 +4183,7 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -4175,6 +4205,8 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", kXdstpResourceName});
   // Send a response.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
@@ -4213,12 +4245,12 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now())),
+          /*last_updated=*/TimestampProtoEq(kTime0)),
       CsdsResourceAcked(
           XdsFooResourceType::Get()->type_url(), kXdstpResourceName,
           /*resource=*/resource2->AsJsonString(),
           /*version=*/"2",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime1))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -4381,7 +4413,7 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -4412,6 +4444,8 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
                /*resource_names=*/{kXdstpResourceName});
   CheckRequestNode(*request);  // Should be present on the first request.
   // Send a response.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream2->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
@@ -4457,12 +4491,12 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"1",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now())),
+          /*last_updated=*/TimestampProtoEq(kTime0)),
       CsdsResourceAcked(
           XdsFooResourceType::Get()->type_url(), kXdstpResourceName,
           /*resource=*/resource2->AsJsonString(),
           /*version=*/"2",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime1))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream2.get());
   ASSERT_TRUE(request.has_value());
@@ -4649,7 +4683,7 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"20",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime0))));
   // Result (remote): Client sends ACK to server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -4733,6 +4767,8 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
   // Input: Fallback server sends a response with both resources.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream2->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("5")
@@ -4778,12 +4814,12 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"5",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now())),
+          /*last_updated=*/TimestampProtoEq(kTime1)),
       CsdsResourceAcked(
           XdsFooResourceType::Get()->type_url(), "foo2",
           /*resource=*/resource2->AsJsonString(),
           /*version=*/"5",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime1))));
   // Result (remote): Client sends ACK to fallback server.
   request = WaitForRequest(stream2.get());
   ASSERT_TRUE(request.has_value());
@@ -4792,6 +4828,8 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
   // Input: Primary server sends a response containing both resources.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime2);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("15")
@@ -4831,12 +4869,12 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
           XdsFooResourceType::Get()->type_url(), "foo1",
           /*resource=*/resource->AsJsonString(),
           /*version=*/"15",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now())),
+          /*last_updated=*/TimestampProtoEq(kTime2)),
       CsdsResourceAcked(
           XdsFooResourceType::Get()->type_url(), "foo2",
           /*resource=*/resource2->AsJsonString(),
           /*version=*/"15",
-          /*last_updated=*/TimestampProtoEq(Timestamp::Now()))));
+          /*last_updated=*/TimestampProtoEq(kTime2))));
   // Result (remote): The stream to the fallback server has been orphaned.
   EXPECT_TRUE(stream2->IsOrphaned());
   // Result (remote): Client sends ACK to server.
