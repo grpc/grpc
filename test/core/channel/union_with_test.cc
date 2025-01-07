@@ -18,10 +18,10 @@
 #include <utility>
 #include <vector>
 
+#include "absl/types/variant.h"
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "absl/types/variant.h"
 
 namespace grpc_core {
 
@@ -29,15 +29,15 @@ using IntOrString = absl::variant<int, std::string>;
 using VectorOfArgs = std::vector<std::pair<std::string, IntOrString>>;
 
 ChannelArgs ChannelArgsFromVector(VectorOfArgs va) {
-    ChannelArgs result;
-    for (auto& [key, value] : va) {
-        if (absl::holds_alternative<int>(value)) {
-            result = result.Set(key, absl::get<int>(value));
-        } else {
-            result = result.Set(key, absl::get<std::string>(value));
-        }
+  ChannelArgs result;
+  for (auto& [key, value] : va) {
+    if (absl::holds_alternative<int>(value)) {
+      result = result.Set(key, absl::get<int>(value));
+    } else {
+      result = result.Set(key, absl::get<std::string>(value));
     }
-    return result;
+  }
+  return result;
 }
 
 void UnionWithIsCorrect(VectorOfArgs va, VectorOfArgs vb) {
@@ -47,4 +47,4 @@ void UnionWithIsCorrect(VectorOfArgs va, VectorOfArgs vb) {
 }
 FUZZ_TEST(MyTestSuite, UnionWithIsCorrect);
 
-}
+}  // namespace grpc_core

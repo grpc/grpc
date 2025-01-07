@@ -424,6 +424,8 @@ class Party : public Activity, private Wakeable {
   void AddParticipant(Participant* participant);
   void DelayAddParticipant(Participant* participant);
 
+  static uint64_t NextAllocationMask(uint64_t current_allocation_mask);
+
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void LogStateChange(
       const char* op, uint64_t prev_state, uint64_t new_state,
       DebugLocation loc = {}) {
