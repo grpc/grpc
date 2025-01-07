@@ -105,11 +105,10 @@ namespace party_detail {
 // 1. Promises spawned on one party are not guranteed to execute in the same
 // order. They can execute in any order. If you need the promises to be executed
 // in a specific order, either consider the use of a promise combinator, or
-// order the promises using Notifications or Latches.
-// 2. A party cannot gurantee which thread a promise will execute on. It could
-// either execute on the current thread, or an event engine thread or any other
-// thread. Do not assume anything about on which thread a spawned promise will
-// be executed.
+// order the execution of promises using Notifications or Latches.
+// 2. A party cannot gurantee which thread a spawned promise will execute on. It
+// could either execute on the current thread, or an event engine thread or any
+// other thread.
 
 // Number of bits reserved for wakeups gives us the maximum number of
 // participants.
