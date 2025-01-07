@@ -43,6 +43,12 @@ namespace grpc_core {
 
 // A Party is an Activity with multiple participant promises.
 //
+// Using a Party
+// A party should be used when
+// 1. You need many promises to be run serially.
+// 2. These promises have their own complex sleep and wake mechanisms.
+// 3. You need a way to run these promises to completion by repolling them as
+// needed.
 //
 // Creating a Party
 // A Party must only be created using Party::Make function.
