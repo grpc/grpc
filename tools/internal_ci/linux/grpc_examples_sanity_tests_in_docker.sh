@@ -15,9 +15,9 @@
 
 set -ex
 
-cd "examples/cpp"
+echo ${PWD}
 
-pwd
+cd "examples/cpp"
 
 export TMPDIR=$(mktemp -d)
 trap "rm -rf ${TMPDIR}" EXIT
