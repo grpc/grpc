@@ -41,8 +41,6 @@
 
 namespace grpc_core {
 
-namespace party_detail {
-
 // A Party is an Activity with multiple participant promises.
 //
 // Creating a Party
@@ -110,8 +108,11 @@ namespace party_detail {
 // could either execute on the current thread, or an event engine thread or any
 // other thread.
 
+namespace party_detail {
+
 // Number of bits reserved for wakeups gives us the maximum number of
-// participants.
+// participants. This can change in the future and we dont gurantee this number
+// to be 16 always.
 static constexpr size_t kMaxParticipants = 16;
 
 }  // namespace party_detail
@@ -121,10 +122,10 @@ class Party : public Activity, private Wakeable {
   // Non-owning wakeup handle.
   class Handle;
 
-  // One participant in the party.
+  // One promise participant in the party.
   class Participant {
    public:
-    // Poll the participant. Return true if complete.
+    // Poll the participant promise. Return true if complete.
     // Participant should take care of its own deallocation in this case.
     virtual bool PollParticipantPromise() = 0;
 
@@ -145,6 +146,7 @@ class Party : public Activity, private Wakeable {
   Party(const Party&) = delete;
   Party& operator=(const Party&) = delete;
 
+  // A Party object must be created only by using this method.
   static RefCountedPtr<Party> Make(RefCountedPtr<Arena> arena) {
     auto* arena_ptr = arena.get();
     return RefCountedPtr<Party>(arena_ptr->New<Party>(std::move(arena)));
@@ -197,20 +199,19 @@ class Party : public Activity, private Wakeable {
   };
 
   // Spawn one promise into the party.
-  // The promise will be polled until it is resolved, or until the party is shut
-  // down.
-  // The on_complete callback will be called with the result of the promise if
-  // it completes.
-  // A maximum of sixteen promises can be spawned onto a party.
-  // promise_factory called to create the promise with the party lock taken;
-  // after the promise is created the factory is destroyed.
-  // This means that pointers or references to factory members will be
-  // invalidated after the promise is created - so the promise should not retain
-  // any of these.
+  // The party will poll the promise until it is resolved, or until the party is
+  // shut down. The on_complete callback will be called with the result of the
+  // promise if it completes. promise_factory called to create the promise with
+  // the party lock taken; after the promise is created the factory is
+  // destroyed. This means that pointers or references to factory members will
+  // be invalidated after the promise is created - so the promise should not
+  // retain any of these.
   template <typename Factory, typename OnComplete>
   void Spawn(absl::string_view name, Factory promise_factory,
              OnComplete on_complete);
 
+  // This is similar to the Spawn function.
+  // TODO(tjagtap) : What does it do?
   template <typename Factory>
   auto SpawnWaitable(absl::string_view name, Factory factory);
 
