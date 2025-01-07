@@ -30,7 +30,7 @@ namespace grpc_core {
 
 // Seq Promise combinator.
 //
-// Seq stands for sequencing.
+// Seq stands for sequence.
 //
 // Input :
 // 1. The seq combinator needs minimum one promise as input.
