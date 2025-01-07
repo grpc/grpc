@@ -16,8 +16,6 @@
 
 namespace grpc_core {
 namespace chaotic_good {
-namespace testing {
-
-}  // namespace testing
+namespace testing {}  // namespace testing
 }  // namespace chaotic_good
 }  // namespace grpc_core

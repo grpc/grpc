@@ -83,7 +83,7 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "mock_frame_transport",
-    testonly=1,
+    testonly = 1,
     srcs = [
         "mock_frame_transport.cc",
     ],
