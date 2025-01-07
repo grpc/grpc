@@ -28,12 +28,14 @@
 namespace grpc_core {
 
 namespace promise_detail {
-template <typename D, D discriminator, typename F>
+template <auto kDiscriminator, typename F>
 struct Case {
   using Factory = OncePromiseFactory<void, F>;
   explicit Case(F f) : factory(std::move(f)) {}
   Factory factory;
-  static bool Matches(D value) { return value == discriminator; }
+  static bool Matches(decltype(kDiscriminator) value) {
+    return value == kDiscriminator;
+  }
 };
 
 template <typename F>
@@ -63,12 +65,9 @@ auto SwitchImpl(D discriminator, Cases&... cases) {
 
 }  // namespace promise_detail
 
-// TODO(ctiller): when we have C++17, make this
-// template <auto D, typename PromiseFactory>.
-// (this way we don't need to list the type on /every/ case)
-template <typename D, D discriminator, typename PromiseFactory>
+template <auto kDiscriminator, typename PromiseFactory>
 auto Case(PromiseFactory f) {
-  return promise_detail::Case<D, discriminator, PromiseFactory>{std::move(f)};
+  return promise_detail::Case<kDiscriminator, PromiseFactory>{std::move(f)};
 }
 
 template <typename PromiseFactory>
