@@ -15,9 +15,9 @@
 
 set -ex
 
-# Enter the gRPC repo root
-cd "$(dirname $0)/../../.."
+cd "examples/cpp"
 
+pwd
 
 export TMPDIR=$(mktemp -d)
 trap "rm -rf ${TMPDIR}" EXIT
