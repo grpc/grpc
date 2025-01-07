@@ -25,6 +25,7 @@ elseif(gRPC_ABSL_PROVIDER STREQUAL "module")
       # Abseil will be installed along with gRPC for convenience.
       set(ABSL_ENABLE_INSTALL ON)
     endif()
+    set(ABSL_PROPAGATE_CXX_STD ON)
     add_subdirectory(${ABSL_ROOT_DIR} third_party/abseil-cpp)
   else()
     message(WARNING "gRPC_ABSL_PROVIDER is \"module\" but ABSL_ROOT_DIR is wrong")
