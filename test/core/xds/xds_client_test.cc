@@ -2321,6 +2321,12 @@ TEST_F(XdsClientTest,
           ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
                                 XdsFooResourceType::Get()->type_url(), "acked"),
           1)));
+  // Check CSDS data.
+  ClientConfig csds = DumpCsds();
+  EXPECT_THAT(csds.generic_xds_configs(),
+              ::testing::UnorderedElementsAre(CsdsResourceAcked(
+                  XdsFooResourceType::Get()->type_url(), "foo1",
+                  resource->AsJsonString(), "1", TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2329,6 +2335,8 @@ TEST_F(XdsClientTest,
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
   // Send an update containing an invalid resource.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
@@ -2361,6 +2369,16 @@ TEST_F(XdsClientTest,
                                         XdsFooResourceType::Get()->type_url(),
                                         "nacked"),
                   1)));
+  // CSDS should show that the resource has been requested.
+  csds = DumpCsds();
+  EXPECT_THAT(
+      csds.generic_xds_configs(),
+      ::testing::ElementsAre(CsdsResourceEq(
+          ClientResourceStatus::NACKED, XdsFooResourceType::Get()->type_url(),
+          "foo1", CsdsNoResourceFields(),
+          CsdsErrorFields("invalid resource: errors validating JSON: "
+                          "[field:value error:is not a number]",
+                          "2", TimestampProtoEq(kTime1)))));
   // XdsClient should NACK the update.
   // Note that version_info is set to the previous version in this request,
   // because there were no valid resources in it.
@@ -2435,6 +2453,12 @@ TEST_F(XdsClientTest,
           ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
                                 XdsFooResourceType::Get()->type_url(), "acked"),
           1)));
+  // Check CSDS data.
+  ClientConfig csds = DumpCsds();
+  EXPECT_THAT(csds.generic_xds_configs(),
+              ::testing::UnorderedElementsAre(CsdsResourceAcked(
+                  XdsFooResourceType::Get()->type_url(), "foo1",
+                  resource->AsJsonString(), "1", TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2443,6 +2467,8 @@ TEST_F(XdsClientTest,
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
   // Send an update containing an invalid resource.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
@@ -2475,6 +2501,17 @@ TEST_F(XdsClientTest,
                                         XdsFooResourceType::Get()->type_url(),
                                         "nacked_but_cached"),
                   1)));
+  // Check CSDS data.
+  csds = DumpCsds();
+  EXPECT_THAT(csds.generic_xds_configs(),
+              ::testing::UnorderedElementsAre(CsdsResourceEq(
+                  ClientResourceStatus::NACKED,
+                  XdsFooResourceType::Get()->type_url(), "foo1",
+                  CsdsResourceFields(resource->AsJsonString(), "1",
+                                     TimestampProtoEq(kTime0)),
+                  CsdsErrorFields("invalid resource: errors validating JSON: "
+                                  "[field:value error:is not a number]",
+                                  "2", TimestampProtoEq(kTime1)))));
   // XdsClient should NACK the update.
   // Note that version_info is set to the previous version in this request,
   // because there were no valid resources in it.
