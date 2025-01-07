@@ -166,6 +166,7 @@ void Server::ListenerState::Stop() {
       MutexLock lock(&mu_);
       // Orphan the connections so that they can start cleaning up.
       connections = std::move(connections_);
+      connections_.clear();
       is_serving_ = false;
     }
     if (config_fetcher_watcher_ != nullptr) {
@@ -291,6 +292,7 @@ void Server::ListenerState::DrainConnectionsLocked() {
   connections_to_be_drained_list_.emplace_back();
   auto& connections_to_be_drained = connections_to_be_drained_list_.back();
   connections_to_be_drained.connections = std::move(connections_);
+  connections_.clear();
   connections_to_be_drained.timestamp =
       Timestamp::Now() +
       std::max(Duration::Zero(),
