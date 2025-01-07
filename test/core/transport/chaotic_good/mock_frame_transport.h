@@ -85,4 +85,4 @@ inline Frame MakeMessageFrame(uint32_t stream_id, absl::string_view payload) {
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_MOCK_FRAME_TRANSPORT_H

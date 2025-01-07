@@ -1250,9 +1250,9 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "activity",
+        "gpr_manual_constructor",
         "poll",
         "ref_counted",
-        "gpr_manual_constructor",
         "//:gpr",
         "//:ref_counted_ptr",
     ],
@@ -8279,11 +8279,11 @@ grpc_cc_library(
     deps = [
         "1999",
         "chaotic_good_frame",
+        "inter_activity_pipe",
         "map",
         "match_promise",
         "mpsc",
         "pipe",
-        "inter_activity_pipe",
         "//:promise",
     ],
 )

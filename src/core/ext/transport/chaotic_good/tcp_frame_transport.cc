@@ -14,7 +14,7 @@
 
 #include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 
-#include "control_endpoint.h"
+#include "src/core/ext/transport/chaotic_good/control_endpoint.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"

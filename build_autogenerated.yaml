@@ -13039,6 +13039,7 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
   - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -13141,6 +13142,7 @@ targets:
   - src/core/util/dump_args.h
   - src/core/util/glob.h
   - src/core/util/latent_see.h
+  - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h

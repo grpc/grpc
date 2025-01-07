@@ -14,11 +14,11 @@
 
 #include "test/core/transport/chaotic_good/mock_frame_transport.h"
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "gmock/gmock.h"
 #include "test/core/promise/poll_matcher.h"
 
 namespace grpc_core {
@@ -80,7 +80,8 @@ void MockFrameTransport::Read(Frame frame) {
   LOG(INFO) << "Read " << frame_interface.ToString();
   auto header = frame_interface.MakeHeader();
   frame_interface.SerializePayload(buffer);
-  EXPECT_THAT(reader_.Push(IncomingFrame(header, std::move(buffer)))(), IsReady());
+  EXPECT_THAT(reader_.Push(IncomingFrame(header, std::move(buffer)))(),
+              IsReady());
 }
 
 }  // namespace testing
