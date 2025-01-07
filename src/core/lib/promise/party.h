@@ -117,6 +117,10 @@ namespace grpc_core {
 // 2. A party cannot gurantee which thread a spawned promise will execute on. It
 // could either execute on the current thread, or an event engine thread or any
 // other thread.
+// 3. Say, we spawned promises P1_1, P1_2, P1_3 on party1. Then promise P1_1 in
+// turn spawns promise P2_1, P2_2, P2_3 on party2. In such cases, party1 and
+// party2 may either execute on the same thread, or they may both execute on
+// different threads.
 
 namespace party_detail {
 
