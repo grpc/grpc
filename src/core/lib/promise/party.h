@@ -56,12 +56,12 @@ namespace party_detail {
 //
 // Execution of Spawned Promises
 // A promise spawned on a party will get executed by that party.
-// Whenever the party wakes up, it will executed all pending promises Spawned on
-// it at least once.
+// Whenever the party wakes up, it will executed all unresolved promises Spawned
+// on it at least once.
 //
 // When these promises are executed (polled), they can either
 // 1. Resolve by returning a value
-// 2. Eeturn Pending()
+// 2. Return Pending{}
 // 3. Wait for a certain event to happen using either a Notification or a Latch.
 //
 // Sleep mechanism of a Party
@@ -83,12 +83,12 @@ namespace party_detail {
 //
 // Gurantees of a Party
 // 1. All promises spawned on one party are guranteed to be run serially. their
-// execution will not overlap and happen in parallel.
+// execution will not happen in parallel.
 // 2. If a promise is executed, its on_complete is guranteed to be executed as
 // long as the party is not cancelled.
 // 3. Once a party is cancelled, promises that were Spawned onto the party, but
 // not yet executed, will not get executed.
-// 4. No promise will be repolled after it is resolved.
+// 4. Promise spawned on a party will never be repolled after it is resolved.
 // 5. A promise spawned on a party, can in turn spawn another promise either on
 // the same party or on another party. We allow nesting of Spawn.
 // 6. A promise or promise factory that is passed to a Spawn function could
