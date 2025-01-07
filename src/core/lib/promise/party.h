@@ -43,13 +43,74 @@ namespace grpc_core {
 
 namespace party_detail {
 
+// A Party is an Activity with multiple participant promises.
+//
+// Creating a Party
+// A Party must only be created using Party::Make function.
+//
+// Spawning a promise on a Party
+// 1. A promise can be spawned on a party using either Spawn or SpawnWaitable
+// method.
+// 2. If you want to bulk spawn promises on a party before any thread
+// starts executing them, use Party::WakeupHold.
+//
+// Execution of Spawned Promises
+// A promise spawned on a party will get executed by that party.
+// Whenever the party wakes up, it will executed all pending promises Spawned on
+// it at least once.
+//
+// When these promises are executed (polled), they can either
+// 1. Resolve by returning a value
+// 2. Eeturn Pending()
+// 3. Wait for a certain event to happen using either a Notification or a Latch.
+//
+// Sleep mechanism of a Party
+// A party will Sleep/Quiece if all promises Spawned on the party are in any of
+// the following states
+// 1. Return Pending{}
+// 2. Resolve
+// 3. Are waiting by using Notification or a Latch.
+// 4. Sleeping because of grpc_core::Sleep promise.
+// If a party is currently running a promise, it is said to be active/awake.
+// Otherwise it is said to be Sleeping or Quieced.
+//
+// Wake mechanism of a Party
+// To wake up a sleeping party you can use the Waker object. Once the Party is
+// woken, it will be executed as mentioned above.
+//
+// Party Cancellation
+// A Party can be cancelled using party_.reset() method.
+//
+// Gurantees of a Party
+// 1. All promises spawned on one party are guranteed to be run serially. their
+// execution will not overlap and happen in parallel.
+// 2. If a promise is executed, its on_complete is guranteed to be executed as
+// long as the party is not cancelled.
+// 3. Once a party is cancelled, promises that were Spawned onto the party, but
+// not yet executed, will not get executed.
+// 4. No promise will be repolled after it is resolved.
+// 5. We gurantee safe spawning of upto 10 un-resolved promises on a party at a
+// time. More than this could cause delays in the Spawn functions or other
+// issues. (TODO - What issues?).
+// TODO(tjagtap) : We are not commiting to 16, but we need to commit atleast
+// some minimum number right?
+//
+// Non-Gurantees of a Party
+// 1. Promises spawned on one party are not guranteed to execute in the same
+// order. They can execute in any order. If you need the promises to be executed
+// in a specific order, either consider the use of a promise combinator, or
+// order the promises using Notifications or Latches.
+// 2. A party cannot gurantee which thread a promise will execute on. It could
+// either execute on the current thread, or an event engine thread or any other
+// thread. Do not assume anything about on which thread a spawned promise will
+// be executed.
+
 // Number of bits reserved for wakeups gives us the maximum number of
 // participants.
 static constexpr size_t kMaxParticipants = 16;
 
 }  // namespace party_detail
 
-// A Party is an Activity with multiple participant promises.
 class Party : public Activity, private Wakeable {
  private:
   // Non-owning wakeup handle.
@@ -78,6 +139,11 @@ class Party : public Activity, private Wakeable {
  public:
   Party(const Party&) = delete;
   Party& operator=(const Party&) = delete;
+
+  static RefCountedPtr<Party> Make(RefCountedPtr<Arena> arena) {
+    auto* arena_ptr = arena.get();
+    return RefCountedPtr<Party>(arena_ptr->New<Party>(std::move(arena)));
+  }
 
   // When calling into a Party from outside the promises system we often would
   // like to perform more than one action.
@@ -124,11 +190,6 @@ class Party : public Activity, private Wakeable {
     Party* party_ = nullptr;
     uint64_t prev_state_;
   };
-
-  static RefCountedPtr<Party> Make(RefCountedPtr<Arena> arena) {
-    auto* arena_ptr = arena.get();
-    return RefCountedPtr<Party>(arena_ptr->New<Party>(std::move(arena)));
-  }
 
   // Spawn one promise into the party.
   // The promise will be polled until it is resolved, or until the party is shut
