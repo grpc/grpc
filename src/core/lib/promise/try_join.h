@@ -71,6 +71,84 @@ namespace promise_detail {
 // TryJoin combinator.
 //
 // Example of TryJoin : Refer to try_join_test.cc
+// TEST(TryJoinTestBasic, TryJoinPendingFour) {
+//   std::string execution_order;
+//   bool pending_3 = true;
+//   bool pending_4 = true;
+//   bool pending_5 = true;
+//   bool pending_6 = true;
+//   auto try_join_combinator = TryJoin<absl::StatusOr>(
+//       [&execution_order, &pending_3]() mutable -> Poll<absl::StatusOr<int>> {
+//         absl::StrAppend(&execution_order, "3");
+//         if (pending_3) {
+//           absl::StrAppend(&execution_order, "P");
+//           return Pending{};
+//         }
+//         return 3;
+//       },
+//       [&execution_order, &pending_4]() mutable ->
+//       Poll<absl::StatusOr<double>> {
+//         absl::StrAppend(&execution_order, "4");
+//         if (pending_4) {
+//           absl::StrAppend(&execution_order, "P");
+//           return Pending{};
+//         }
+//         return 4.0;
+//       },
+//       [&execution_order,
+//        &pending_5]() mutable -> Poll<absl::StatusOr<std::string>> {
+//         absl::StrAppend(&execution_order, "5");
+//         if (pending_5) {
+//           absl::StrAppend(&execution_order, "P");
+//           return Pending{};
+//         }
+//         return "5";
+//       },
+//       [&execution_order, &pending_6]() mutable -> Poll<absl::StatusOr<int>> {
+//         absl::StrAppend(&execution_order, "6");
+//         if (pending_6) {
+//           absl::StrAppend(&execution_order, "P");
+//           return Pending{};
+//         }
+//         return 6;
+//       });
+
+//   // Execution 1 : All promises are pending. All should be run once.
+//   Poll<absl::StatusOr<std::tuple<int, double, std::string, int>>> retval =
+//       try_join_combinator();
+//   EXPECT_TRUE(retval.pending());
+//   // All promises are Pending
+//   EXPECT_STREQ(execution_order.c_str(), "3P4P5P6P");
+
+//   // Execution 2 : All promises should be run once. 3 gets resolved.
+//   execution_order.clear();
+//   pending_3 = false;
+//   retval = try_join_combinator();
+//   EXPECT_TRUE(retval.pending());
+//   EXPECT_STREQ(execution_order.c_str(), "34P5P6P");
+
+//   // Execution 3 : All promises other than 3 should be run. 4 gets resolved.
+//   execution_order.clear();
+//   pending_4 = false;
+//   retval = try_join_combinator();
+//   EXPECT_TRUE(retval.pending());
+//   EXPECT_STREQ(execution_order.c_str(), "45P6P");  // 3 should not be re-run.
+
+//   // Execution 4 : Order changed. 5 will still be pending. 6 will be
+//   resolved. execution_order.clear(); pending_6 = false; retval =
+//   try_join_combinator(); EXPECT_TRUE(retval.pending());
+//   EXPECT_STREQ(execution_order.c_str(), "5P6");
+
+//   // Execution 5 : Only 5 should be run. And 5 gets resolved.
+//   execution_order.clear();
+//   pending_5 = false;
+//   retval = try_join_combinator();
+//   EXPECT_TRUE(retval.ready());  // All promises are resolved.
+//   EXPECT_STREQ(execution_order.c_str(), "5");
+
+//   EXPECT_TRUE(retval.value().ok());  // All promises are a success.
+//   EXPECT_EQ(retval.value().value(), std::make_tuple(3, 4.0, "5", 6));
+// }
 
 // Extract the T from a StatusOr<T>
 template <typename T>
