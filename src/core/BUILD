@@ -1252,6 +1252,7 @@ grpc_cc_library(
         "activity",
         "poll",
         "ref_counted",
+        "gpr_manual_constructor",
         "//:gpr",
         "//:ref_counted_ptr",
     ],
