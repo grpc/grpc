@@ -200,12 +200,13 @@ class Party : public Activity, private Wakeable {
 
   // Spawn one promise into the party.
   // The party will poll the promise until it is resolved, or until the party is
-  // shut down. The on_complete callback will be called with the result of the
-  // promise if it completes. promise_factory called to create the promise with
-  // the party lock taken; after the promise is created the factory is
-  // destroyed. This means that pointers or references to factory members will
-  // be invalidated after the promise is created - so the promise should not
-  // retain any of these.
+  // shut down.
+  // The on_complete callback will be called with the result of the
+  // promise if it completes.
+  // promise_factory called to create the promise with the party lock taken;
+  // after the promise is created the factory is destroyed. This means that
+  // pointers or references to factory members will be invalidated after the
+  // promise is created - so the promise should not retain any of these.
   template <typename Factory, typename OnComplete>
   void Spawn(absl::string_view name, Factory promise_factory,
              OnComplete on_complete);
