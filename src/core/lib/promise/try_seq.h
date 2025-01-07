@@ -41,9 +41,9 @@ namespace promise_detail {
 // Input :
 // 1. The TrySeq combinator needs minimum one promise as input.
 // 2. The first input to TrySeq combinator is a promise.
-// 3. The remaining inputs to TrySeq combinator are functors which return a
-// promise. The input type of the Nth functor should be the return value of the
-// (N-1)th promise.
+// 3. The remaining inputs to TrySeq combinator are Promise Factories (functors
+// that return a promise). The input type of the Nth functor should be the
+// return value of the (N-1)th promise.
 // 4. Functors can return promises with return type StatusOr<> to signal that a
 // value is fed forward, or Status to indicate only success/failure. In the case
 // of returning Status, the next functor in the chain takes no arguments.
