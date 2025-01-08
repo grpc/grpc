@@ -214,7 +214,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "genius"  # @unused
 
-core_version = "44.2.0"  # @unused
+core_version = "45.0.0"  # @unused
 
 version = "1.70.0-dev"  # @unused
 
