@@ -406,8 +406,6 @@ TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
 
 TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
-  // Send a valid LDS update to get the server to start listening
-  SetValidLdsUpdate();
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   constexpr int kNumChannels = 10;
@@ -465,8 +463,6 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   DoSetUp();
   constexpr int kDrainGraceTimeMs = 100;
   xds_drain_grace_time_ms_ = kDrainGraceTimeMs;
-  // Send a valid LDS update to get the server to start listening
-  SetValidLdsUpdate();
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   constexpr int kNumChannels = 10;
