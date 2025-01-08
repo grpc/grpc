@@ -16,8 +16,8 @@
 Generates portability tests.
 """
 
-load("supported_bazel_versions.bzl", "SUPPORTED_BAZEL_VERSIONS")
 load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_bazel_distribtest_test")
+load("supported_bazel_versions.bzl", "SUPPORTED_BAZEL_VERSIONS")
 
 _TEST_SHARDS = [
     "buildtest",

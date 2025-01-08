@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.70.0dev</release>
-  <api>1.70.0dev</api>
+  <release>1.71.0dev</release>
+  <api>1.71.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.70.0 update
+- gRPC Core 1.71.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -372,6 +372,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.h" role="src" />
@@ -441,9 +444,6 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.h" role="src" />
@@ -651,9 +651,6 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb_minitable.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h" role="src" />
@@ -839,6 +836,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_cmsg_headers.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_cmsg_headers.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/substitution_format_string.upbdefs.c" role="src" />
@@ -885,8 +884,6 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/trace/v3/http_tracer.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/trace/v3/service.upbdefs.c" role="src" />
@@ -1015,8 +1012,6 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c" role="src" />

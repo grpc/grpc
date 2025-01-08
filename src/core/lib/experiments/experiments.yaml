@@ -132,6 +132,13 @@
   expiry: 2025/03/01
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
+- name: posix_ee_skip_grpc_init
+  description:
+    Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on
+    creation and destruction.
+  expiry: 2025/03/02
+  owner: hork@google.com
+  test_tags: ["core_end2end_test", "cpp_end2end_test"]
 - name: prioritize_finished_requests
   description: Prioritize flushing out finished requests over other in-flight
     requests during transport writes.
@@ -180,6 +187,13 @@
   expiry: 2025/03/01
   owner: vigneshbabu@google.com
   test_tags: []
+- name: server_listener
+  description:
+    If set, the new server listener classes are used.
+  requires: ["work_serializer_dispatch"]
+  expiry: 2025/03/31
+  owner: yashkt@google.com
+  test_tags: ["xds_end2end_test", "core_end2end_test"]
 - name: tcp_frame_size_tuning
   description:
     If set, enables TCP to use RPC size estimation made by higher layers.

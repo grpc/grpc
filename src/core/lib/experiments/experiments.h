@@ -79,6 +79,7 @@ inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
+inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
 inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
@@ -95,6 +96,7 @@ inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
 inline bool IsWorkSerializerDispatchEnabled() { return true; }
+inline bool IsServerListenerEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 #define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
@@ -122,6 +124,7 @@ inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
+inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
 inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
@@ -138,6 +141,7 @@ inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
 inline bool IsWorkSerializerDispatchEnabled() { return true; }
+inline bool IsServerListenerEnabled() { return false; }
 
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
@@ -165,6 +169,7 @@ inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
+inline bool IsPosixEeSkipGrpcInitEnabled() { return false; }
 inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
@@ -181,6 +186,7 @@ inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
 inline bool IsWorkSerializerDispatchEnabled() { return true; }
+inline bool IsServerListenerEnabled() { return false; }
 #endif
 
 #else
@@ -201,6 +207,7 @@ enum ExperimentIds {
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
   kExperimentIdPickFirstNew,
+  kExperimentIdPosixEeSkipGrpcInit,
   kExperimentIdPrioritizeFinishedRequests,
   kExperimentIdPromiseBasedHttp2ClientTransport,
   kExperimentIdPromiseBasedHttp2ServerTransport,
@@ -214,6 +221,7 @@ enum ExperimentIds {
   kExperimentIdTraceRecordCallops,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kExperimentIdWorkSerializerDispatch,
+  kExperimentIdServerListener,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
@@ -281,6 +289,10 @@ inline bool IsMultipingEnabled() {
 inline bool IsPickFirstNewEnabled() {
   return IsExperimentEnabled<kExperimentIdPickFirstNew>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_POSIX_EE_SKIP_GRPC_INIT
+inline bool IsPosixEeSkipGrpcInitEnabled() {
+  return IsExperimentEnabled<kExperimentIdPosixEeSkipGrpcInit>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_PRIORITIZE_FINISHED_REQUESTS
 inline bool IsPrioritizeFinishedRequestsEnabled() {
   return IsExperimentEnabled<kExperimentIdPrioritizeFinishedRequests>();
@@ -332,6 +344,10 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
 inline bool IsWorkSerializerDispatchEnabled() {
   return IsExperimentEnabled<kExperimentIdWorkSerializerDispatch>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
+inline bool IsServerListenerEnabled() {
+  return IsExperimentEnabled<kExperimentIdServerListener>();
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

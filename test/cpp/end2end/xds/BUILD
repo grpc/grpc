@@ -102,9 +102,9 @@ grpc_cc_library(
 )
 
 grpc_cc_test(
-    name = "xds_end2end_test",
+    name = "xds_security_end2end_test",
     size = "large",
-    srcs = ["xds_end2end_test.cc"],
+    srcs = ["xds_security_end2end_test.cc"],
     data = [
         "//src/core/tsi/test_creds:badclient.key",
         "//src/core/tsi/test_creds:badclient.pem",
@@ -120,7 +120,7 @@ grpc_cc_test(
     ],
     flaky = True,  # TODO(b/144705388)
     linkstatic = True,  # Fixes dyld error on MacOS
-    shard_count = 50,
+    shard_count = 25,
     tags = [
         "no_test_ios",
         "no_windows",
@@ -131,12 +131,9 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//:grpc_resolver_fake",
-        "//src/core:channel_args",
         "//src/core:grpc_audit_logging",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
-        "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
         "//test/core/test_util:audit_logging_utils",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
@@ -148,8 +145,6 @@ grpc_cc_test(
         "@envoy_api//envoy/config/listener/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/clusters/aggregate/v3:pkg_cc_proto",
-        "@envoy_api//envoy/extensions/filters/common/fault/v3:pkg_cc_proto",
-        "@envoy_api//envoy/extensions/filters/http/fault/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
@@ -471,6 +466,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
         "@envoy_api//envoy/extensions/filters/http/fault/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
     ],
@@ -592,5 +588,29 @@ grpc_cc_test(
         "//test/core/test_util:scoped_env_var",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/transport_sockets/http_11_proxy/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_enabled_server_end2end_test",
+    size = "large",
+    srcs = ["xds_enabled_server_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    flaky = True,  # TODO(b/144705388)
+    linkstatic = True,  # Fixes dyld error on MacOS
+    tags = [
+        "no_test_ios",
+        "no_windows",
+        "xds_end2end_test",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
