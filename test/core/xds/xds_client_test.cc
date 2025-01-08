@@ -2625,6 +2625,14 @@ TEST_F(XdsClientTest, ResourceErrorFromServer) {
                                         XdsFooResourceType::Get()->type_url(),
                                         "received_error"),
                   1)));
+  // Check CSDS data.
+  ClientConfig csds = DumpCsds();
+  EXPECT_THAT(
+      csds.generic_xds_configs(),
+      ::testing::UnorderedElementsAre(CsdsResourceEq(
+          ClientResourceStatus::RECEIVED_ERROR,
+          XdsFooResourceType::Get()->type_url(), "foo1", CsdsNoResourceFields(),
+          CsdsErrorFields("nope", "1", TimestampProtoEq(kTime0)))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2633,6 +2641,8 @@ TEST_F(XdsClientTest, ResourceErrorFromServer) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
   // Now server sends a valid resource.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
@@ -2661,6 +2671,12 @@ TEST_F(XdsClientTest, ResourceErrorFromServer) {
           ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
                                 XdsFooResourceType::Get()->type_url(), "acked"),
           1)));
+  // Check CSDS data.
+  csds = DumpCsds();
+  EXPECT_THAT(csds.generic_xds_configs(),
+              ::testing::UnorderedElementsAre(CsdsResourceAcked(
+                  XdsFooResourceType::Get()->type_url(), "foo1",
+                  resource->AsJsonString(), "2", TimestampProtoEq(kTime1))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2669,6 +2685,8 @@ TEST_F(XdsClientTest, ResourceErrorFromServer) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
   // Now server sends an error again.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime2);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("3")
@@ -2697,6 +2715,15 @@ TEST_F(XdsClientTest, ResourceErrorFromServer) {
                                         XdsFooResourceType::Get()->type_url(),
                                         "received_error_but_cached"),
                   1)));
+  // Check CSDS data.
+  csds = DumpCsds();
+  EXPECT_THAT(csds.generic_xds_configs(),
+              ::testing::UnorderedElementsAre(CsdsResourceEq(
+                  ClientResourceStatus::RECEIVED_ERROR,
+                  XdsFooResourceType::Get()->type_url(), "foo1",
+                  CsdsResourceFields(resource->AsJsonString(), "2",
+                                     TimestampProtoEq(kTime1)),
+                  CsdsErrorFields("bzzt", "3", TimestampProtoEq(kTime2)))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2784,6 +2811,14 @@ TEST_F(XdsClientTest, ResourceErrorFromServerWithFailOnDataErrors) {
                                         XdsFooResourceType::Get()->type_url(),
                                         "received_error"),
                   1)));
+  // Check CSDS data.
+  ClientConfig csds = DumpCsds();
+  EXPECT_THAT(
+      csds.generic_xds_configs(),
+      ::testing::UnorderedElementsAre(CsdsResourceEq(
+          ClientResourceStatus::RECEIVED_ERROR,
+          XdsFooResourceType::Get()->type_url(), "foo1", CsdsNoResourceFields(),
+          CsdsErrorFields("nope", "1", TimestampProtoEq(kTime0)))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2792,6 +2827,8 @@ TEST_F(XdsClientTest, ResourceErrorFromServerWithFailOnDataErrors) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
   // Now server sends a valid resource.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime1);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
@@ -2820,6 +2857,12 @@ TEST_F(XdsClientTest, ResourceErrorFromServerWithFailOnDataErrors) {
           ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
                                 XdsFooResourceType::Get()->type_url(), "acked"),
           1)));
+  // Check CSDS data.
+  csds = DumpCsds();
+  EXPECT_THAT(csds.generic_xds_configs(),
+              ::testing::UnorderedElementsAre(CsdsResourceAcked(
+                  XdsFooResourceType::Get()->type_url(), "foo1",
+                  resource->AsJsonString(), "2", TimestampProtoEq(kTime1))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2828,6 +2871,8 @@ TEST_F(XdsClientTest, ResourceErrorFromServerWithFailOnDataErrors) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
   // Now server sends an error again.
+  // We increment time to make sure that the CSDS data gets a new timestamp.
+  time_cache_.TestOnlySetNow(kTime2);
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("3")
@@ -2856,6 +2901,14 @@ TEST_F(XdsClientTest, ResourceErrorFromServerWithFailOnDataErrors) {
                                         XdsFooResourceType::Get()->type_url(),
                                         "received_error"),
                   1)));
+  // Check CSDS data.
+  csds = DumpCsds();
+  EXPECT_THAT(
+      csds.generic_xds_configs(),
+      ::testing::UnorderedElementsAre(CsdsResourceEq(
+          ClientResourceStatus::RECEIVED_ERROR,
+          XdsFooResourceType::Get()->type_url(), "foo1", CsdsNoResourceFields(),
+          CsdsErrorFields("bzzt", "3", TimestampProtoEq(kTime2)))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2932,6 +2985,11 @@ TEST_F(XdsClientTest, ResourceErrorFromServerIgnoredIfNotEnabled) {
                                         XdsFooResourceType::Get()->type_url(),
                                         "requested"),
                   1)));
+  // CSDS should show that the resource has been requested.
+  ClientConfig csds = DumpCsds();
+  EXPECT_THAT(csds.generic_xds_configs(),
+              ::testing::ElementsAre(CsdsResourceRequested(
+                  XdsFooResourceType::Get()->type_url(), "foo1")));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2964,6 +3022,12 @@ TEST_F(XdsClientTest, ResourceErrorFromServerIgnoredIfNotEnabled) {
           ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
                                 XdsFooResourceType::Get()->type_url(), "acked"),
           1)));
+  // Check CSDS data.
+  csds = DumpCsds();
+  EXPECT_THAT(csds.generic_xds_configs(),
+              ::testing::UnorderedElementsAre(CsdsResourceAcked(
+                  XdsFooResourceType::Get()->type_url(), "foo1",
+                  resource->AsJsonString(), "2", TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
