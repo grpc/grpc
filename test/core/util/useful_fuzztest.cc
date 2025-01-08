@@ -13,16 +13,10 @@
 // limitations under the License.
 
 #include <limits>
-#include <string>
-#include <utility>
-#include <vector>
 
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
 #include "src/core/util/useful.h"
-
-using fuzztest::InRange;
-using fuzztest::VectorOf;
 
 namespace grpc_core {
 
