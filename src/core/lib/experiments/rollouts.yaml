@@ -84,7 +84,7 @@
 - name: local_connector_secure
   default: false
 - name: max_pings_wo_data_throttle
-  default: false
+  default: true
 - name: monitoring_experiment
   default: true
 - name: pending_queue_cap
