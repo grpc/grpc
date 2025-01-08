@@ -284,25 +284,19 @@ class XdsClient : public DualRefCounted<XdsClient> {
       TIMEOUT,
     };
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_REQUESTED) ==
-                      ClientResourceStatus::REQUESTED,
-                  "");
+                  ClientResourceStatus::REQUESTED);
     static_assert(
         static_cast<ClientResourceStatus>(envoy_admin_v3_DOES_NOT_EXIST) ==
-            ClientResourceStatus::DOES_NOT_EXIST,
-        "");
+        ClientResourceStatus::DOES_NOT_EXIST);
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_ACKED) ==
-                      ClientResourceStatus::ACKED,
-                  "");
+                  ClientResourceStatus::ACKED);
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_NACKED) ==
-                      ClientResourceStatus::NACKED,
-                  "");
+                  ClientResourceStatus::NACKED);
     static_assert(
         static_cast<ClientResourceStatus>(envoy_admin_v3_RECEIVED_ERROR) ==
-            ClientResourceStatus::RECEIVED_ERROR,
-        "");
+        ClientResourceStatus::RECEIVED_ERROR);
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_TIMEOUT) ==
-                      ClientResourceStatus::TIMEOUT,
-                  "");
+                  ClientResourceStatus::TIMEOUT);
 
     void AddWatcher(RefCountedPtr<ResourceWatcherInterface> watcher) {
       watchers_.insert(std::move(watcher));
