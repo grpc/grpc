@@ -8885,6 +8885,37 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: chttp2_server_listener_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/test_util/cmdline.h
+  - test/core/test_util/evaluate_args_test_util.h
+  - test/core/test_util/fuzzer_util.h
+  - test/core/test_util/grpc_profiler.h
+  - test/core/test_util/histogram.h
+  - test/core/test_util/mock_endpoint.h
+  - test/core/test_util/parse_hexstring.h
+  - test/core/test_util/resolve_localhost_ip46.h
+  - test/core/test_util/slice_splitter.h
+  - test/core/test_util/tracer_util.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/cmdline.cc
+  - test/core/test_util/fuzzer_util.cc
+  - test/core/test_util/grpc_profiler.cc
+  - test/core/test_util/histogram.cc
+  - test/core/test_util/mock_endpoint.cc
+  - test/core/test_util/parse_hexstring.cc
+  - test/core/test_util/resolve_localhost_ip46.cc
+  - test/core/test_util/slice_splitter.cc
+  - test/core/test_util/tracer_util.cc
+  - test/core/transport/chttp2/chttp2_server_listener_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: chunked_vector_test
   gtest: true
   build: test
@@ -13410,9 +13441,11 @@ targets:
   - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/status_flag.h
   - src/core/util/bitset.h
   - src/core/util/glob.h
   - test/core/promise/poll_matcher.h
@@ -24063,8 +24096,26 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - third_party/envoy-api/envoy/admin/v3/certs.proto
+  - third_party/envoy-api/envoy/admin/v3/clusters.proto
+  - third_party/envoy-api/envoy/admin/v3/config_dump.proto
+  - third_party/envoy-api/envoy/admin/v3/config_dump_shared.proto
+  - third_party/envoy-api/envoy/admin/v3/init_dump.proto
+  - third_party/envoy-api/envoy/admin/v3/listeners.proto
+  - third_party/envoy-api/envoy/admin/v3/memory.proto
+  - third_party/envoy-api/envoy/admin/v3/metrics.proto
+  - third_party/envoy-api/envoy/admin/v3/mutex_stats.proto
+  - third_party/envoy-api/envoy/admin/v3/server_info.proto
+  - third_party/envoy-api/envoy/admin/v3/tap.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/config/bootstrap/v3/bootstrap.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/circuit_breaker.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
@@ -24083,8 +24134,40 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint_components.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/load_report.proto
+  - third_party/envoy-api/envoy/config/listener/v3/api_listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener_components.proto
+  - third_party/envoy-api/envoy/config/listener/v3/quic_config.proto
+  - third_party/envoy-api/envoy/config/listener/v3/udp_listener_config.proto
+  - third_party/envoy-api/envoy/config/metrics/v3/metrics_service.proto
+  - third_party/envoy-api/envoy/config/metrics/v3/stats.proto
+  - third_party/envoy-api/envoy/config/overload/v3/overload.proto
+  - third_party/envoy-api/envoy/config/route/v3/route.proto
+  - third_party/envoy-api/envoy/config/route/v3/route_components.proto
+  - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
+  - third_party/envoy-api/envoy/config/tap/v3/common.proto
+  - third_party/envoy-api/envoy/config/trace/v3/datadog.proto
+  - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
+  - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
+  - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
+  - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
+  - third_party/envoy-api/envoy/config/trace/v3/service.proto
+  - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
+  - third_party/envoy-api/envoy/config/trace/v3/trace.proto
+  - third_party/envoy-api/envoy/config/trace/v3/xray.proto
+  - third_party/envoy-api/envoy/config/trace/v3/zipkin.proto
+  - third_party/envoy-api/envoy/data/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/cert.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/common.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/status/v3/csds.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -24096,6 +24179,8 @@ targets:
   - third_party/envoy-api/envoy/type/matcher/v3/string.proto
   - third_party/envoy-api/envoy/type/matcher/v3/struct.proto
   - third_party/envoy-api/envoy/type/matcher/v3/value.proto
+  - third_party/envoy-api/envoy/type/metadata/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/tracing/v3/custom_tag.proto
   - third_party/envoy-api/envoy/type/v3/hash_policy.proto
   - third_party/envoy-api/envoy/type/v3/http.proto
   - third_party/envoy-api/envoy/type/v3/http_status.proto
@@ -24106,6 +24191,8 @@ targets:
   - third_party/envoy-api/envoy/type/v3/semantic_version.proto
   - third_party/envoy-api/envoy/type/v3/token_bucket.proto
   - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/checked.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/syntax.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
@@ -24128,6 +24215,17 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/type/matcher/v3/cel.proto
+  - third_party/xds/xds/type/matcher/v3/domain.proto
+  - third_party/xds/xds/type/matcher/v3/http_inputs.proto
+  - third_party/xds/xds/type/matcher/v3/ip.proto
+  - third_party/xds/xds/type/matcher/v3/matcher.proto
+  - third_party/xds/xds/type/matcher/v3/range.proto
+  - third_party/xds/xds/type/matcher/v3/regex.proto
+  - third_party/xds/xds/type/matcher/v3/string.proto
+  - third_party/xds/xds/type/v3/cel.proto
+  - third_party/xds/xds/type/v3/range.proto
+  - third_party/xds/xds/type/v3/typed_struct.proto
   - src/cpp/client/global_callback_hook.cc
   - src/cpp/util/status.cc
   - test/core/event_engine/event_engine_test_utils.cc
@@ -25050,6 +25148,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -27214,6 +27313,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h

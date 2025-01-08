@@ -629,6 +629,28 @@ void XdsDependencyManager::PopulateDnsUpdate(const std::string& dns_name,
   dns_state->update.endpoints = std::move(resource);
 }
 
+std::string XdsDependencyManager::GenerateResolutionNoteForCluster(
+    absl::string_view cluster_resolution_note,
+    absl::string_view endpoint_resolution_note) const {
+  std::array<absl::string_view, 4> notes = {
+      lds_resolution_note_, rds_resolution_note_, cluster_resolution_note,
+      endpoint_resolution_note};
+  std::vector<absl::string_view> resolution_notes;
+  for (const auto& note : notes) {
+    if (!note.empty()) resolution_notes.push_back(note);
+  }
+  std::string node_id_buffer;
+  if (resolution_notes.empty()) {
+    const XdsBootstrap::Node* node =
+        DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap()).node();
+    if (node != nullptr) {
+      node_id_buffer = absl::StrCat("xDS node ID:", node->id());
+      resolution_notes.push_back(node_id_buffer);
+    }
+  }
+  return absl::StrJoin(resolution_notes, "; ");
+}
+
 bool XdsDependencyManager::PopulateClusterConfigMap(
     absl::string_view name, int depth,
     absl::flat_hash_map<std::string, absl::StatusOr<XdsConfig::ClusterConfig>>*
@@ -697,25 +719,10 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
           return false;
         }
         // Populate cluster config.
-        std::array<absl::string_view, 4> notes = {
-            lds_resolution_note_, rds_resolution_note_, state.resolution_note,
-            eds_state.update.resolution_note};
-        std::vector<absl::string_view> resolution_notes;
-        for (const auto& note : notes) {
-          if (!note.empty()) resolution_notes.push_back(note);
-        }
-        std::string node_id_buffer;
-        if (resolution_notes.empty()) {
-          const XdsBootstrap::Node* node =
-              DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-                  .node();
-          if (node != nullptr) {
-            node_id_buffer = absl::StrCat("xDS node ID:", node->id());
-            resolution_notes.push_back(node_id_buffer);
-          }
-        }
-        cluster_config.emplace(*state.update, eds_state.update.endpoints,
-                               absl::StrJoin(resolution_notes, "; "));
+        cluster_config.emplace(
+            *state.update, eds_state.update.endpoints,
+            GenerateResolutionNoteForCluster(state.resolution_note,
+                                             eds_state.update.resolution_note));
         if (leaf_clusters != nullptr) (*leaf_clusters)->push_back(name);
         return true;
       },
@@ -762,8 +769,10 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
           return false;
         }
         // Populate cluster config.
-        cluster_config.emplace(*state.update, dns_state.update.endpoints,
-                               dns_state.update.resolution_note);
+        cluster_config.emplace(
+            *state.update, dns_state.update.endpoints,
+            GenerateResolutionNoteForCluster(state.resolution_note,
+                                             dns_state.update.resolution_note));
         if (leaf_clusters != nullptr) (*leaf_clusters)->push_back(name);
         return true;
       },

@@ -246,6 +246,7 @@ class CallState {
   }
   enum class ServerToClientPushState : uint16_t {
     kStart,
+    kPushedMessageWithoutInitialMetadata,
     kPushedServerInitialMetadata,
     kPushedServerInitialMetadataAndPushedMessage,
     kTrailersOnly,
@@ -258,6 +259,8 @@ class CallState {
     switch (state) {
       case ServerToClientPushState::kStart:
         return "Start";
+      case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:
+        return "PushedMessageWithoutInitialMetadata";
       case ServerToClientPushState::kPushedServerInitialMetadata:
         return "PushedServerInitialMetadata";
       case ServerToClientPushState::
@@ -351,7 +354,8 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void CallState::Start() {
     case ServerToClientPullState::kIdle:
     case ServerToClientPullState::kReading:
     case ServerToClientPullState::kProcessingServerToClientMessage:
-      LOG(FATAL) << "Start called twice";
+      LOG(FATAL) << "Start called twice; "
+                 << GRPC_DUMP_ARGS(server_to_client_pull_state_);
     case ServerToClientPullState::kTerminated:
       break;
   }
@@ -370,10 +374,12 @@ CallState::BeginPushClientToServerMessage() {
       break;
     case ClientToServerPushState::kPushedMessage:
     case ClientToServerPushState::kPushedMessageAndHalfClosed:
-      LOG(FATAL) << "PushClientToServerMessage called twice concurrently";
+      LOG(FATAL) << "PushClientToServerMessage called twice concurrently;"
+                 << GRPC_DUMP_ARGS(client_to_server_push_state_);
       break;
     case ClientToServerPushState::kPushedHalfClose:
-      LOG(FATAL) << "PushClientToServerMessage called after half-close";
+      LOG(FATAL) << "PushClientToServerMessage called after half-close; "
+                 << GRPC_DUMP_ARGS(client_to_server_push_state_);
       break;
     case ClientToServerPushState::kFinished:
       break;
@@ -414,7 +420,8 @@ CallState::ClientToServerHalfClose() {
       break;
     case ClientToServerPushState::kPushedHalfClose:
     case ClientToServerPushState::kPushedMessageAndHalfClosed:
-      LOG(FATAL) << "ClientToServerHalfClose called twice";
+      LOG(FATAL) << "ClientToServerHalfClose called twice;"
+                 << GRPC_DUMP_ARGS(client_to_server_push_state_);
       break;
     case ClientToServerPushState::kFinished:
       break;
@@ -435,7 +442,8 @@ CallState::BeginPullClientInitialMetadata() {
     case ClientToServerPullState::kIdle:
     case ClientToServerPullState::kReading:
     case ClientToServerPullState::kProcessingClientToServerMessage:
-      LOG(FATAL) << "BeginPullClientInitialMetadata called twice";
+      LOG(FATAL) << "BeginPullClientInitialMetadata called twice; "
+                 << GRPC_DUMP_ARGS(client_to_server_pull_state_);
       break;
     case ClientToServerPullState::kTerminated:
       break;
@@ -449,7 +457,8 @@ CallState::FinishPullClientInitialMetadata() {
       << GRPC_DUMP_ARGS(this, client_to_server_pull_state_);
   switch (client_to_server_pull_state_) {
     case ClientToServerPullState::kBegin:
-      LOG(FATAL) << "FinishPullClientInitialMetadata called before Begin";
+      LOG(FATAL) << "FinishPullClientInitialMetadata called before Begin; "
+                 << GRPC_DUMP_ARGS(client_to_server_pull_state_);
       break;
     case ClientToServerPullState::kProcessingClientInitialMetadata:
       client_to_server_pull_state_ = ClientToServerPullState::kIdle;
@@ -458,7 +467,8 @@ CallState::FinishPullClientInitialMetadata() {
     case ClientToServerPullState::kIdle:
     case ClientToServerPullState::kReading:
     case ClientToServerPullState::kProcessingClientToServerMessage:
-      LOG(FATAL) << "Out of order FinishPullClientInitialMetadata";
+      LOG(FATAL) << "Out of order FinishPullClientInitialMetadata"
+                 << GRPC_DUMP_ARGS(client_to_server_pull_state_);
       break;
     case ClientToServerPullState::kTerminated:
       break;
@@ -483,7 +493,8 @@ CallState::PollPullClientToServerMessageAvailable() {
       break;
     case ClientToServerPullState::kProcessingClientToServerMessage:
       LOG(FATAL) << "PollPullClientToServerMessageAvailable called while "
-                    "processing a message";
+                    "processing a message; "
+                 << GRPC_DUMP_ARGS(client_to_server_pull_state_);
       break;
     case ClientToServerPullState::kTerminated:
       return Failure{};
@@ -534,14 +545,20 @@ CallState::FinishPullClientToServerMessage() {
   switch (client_to_server_pull_state_) {
     case ClientToServerPullState::kBegin:
     case ClientToServerPullState::kProcessingClientInitialMetadata:
-      LOG(FATAL) << "FinishPullClientToServerMessage called before Begin";
+      LOG(FATAL) << "FinishPullClientToServerMessage called before Begin; "
+                 << GRPC_DUMP_ARGS(client_to_server_pull_state_,
+                                   client_to_server_push_state_);
       break;
     case ClientToServerPullState::kIdle:
-      LOG(FATAL) << "FinishPullClientToServerMessage called twice";
+      LOG(FATAL) << "FinishPullClientToServerMessage called twice; "
+                 << GRPC_DUMP_ARGS(client_to_server_pull_state_,
+                                   client_to_server_push_state_);
       break;
     case ClientToServerPullState::kReading:
       LOG(FATAL) << "FinishPullClientToServerMessage called before "
-                    "PollPullClientToServerMessageAvailable";
+                    "PollPullClientToServerMessageAvailable; "
+                 << GRPC_DUMP_ARGS(client_to_server_pull_state_,
+                                   client_to_server_push_state_);
       break;
     case ClientToServerPullState::kProcessingClientToServerMessage:
       client_to_server_pull_state_ = ClientToServerPullState::kIdle;
@@ -557,7 +574,9 @@ CallState::FinishPullClientToServerMessage() {
       break;
     case ClientToServerPushState::kIdle:
     case ClientToServerPushState::kPushedHalfClose:
-      LOG(FATAL) << "FinishPullClientToServerMessage called without a message";
+      LOG(FATAL) << "FinishPullClientToServerMessage called without a message; "
+                 << GRPC_DUMP_ARGS(client_to_server_pull_state_,
+                                   client_to_server_push_state_);
       break;
     case ClientToServerPushState::kPushedMessageAndHalfClosed:
       client_to_server_push_state_ = ClientToServerPushState::kPushedHalfClose;
@@ -578,9 +597,26 @@ CallState::PushServerInitialMetadata() {
       ServerTrailingMetadataState::kNotPushed) {
     return Failure{};
   }
-  CHECK_EQ(server_to_client_push_state_, ServerToClientPushState::kStart);
-  server_to_client_push_state_ =
-      ServerToClientPushState::kPushedServerInitialMetadata;
+  switch (server_to_client_push_state_) {
+    case ServerToClientPushState::kStart:
+      server_to_client_push_state_ =
+          ServerToClientPushState::kPushedServerInitialMetadata;
+      break;
+    case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:
+      server_to_client_push_state_ =
+          ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage;
+      break;
+    case ServerToClientPushState::kPushedServerInitialMetadata:
+    case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
+    case ServerToClientPushState::kTrailersOnly:
+    case ServerToClientPushState::kIdle:
+    case ServerToClientPushState::kPushedMessage:
+      LOG(FATAL) << "PushServerInitialMetadata called twice; "
+                 << GRPC_DUMP_ARGS(server_to_client_push_state_);
+      break;
+    case ServerToClientPushState::kFinished:
+      break;
+  }
   server_to_client_push_waiter_.Wake();
   return Success{};
 }
@@ -592,16 +628,18 @@ CallState::BeginPushServerToClientMessage() {
       << GRPC_DUMP_ARGS(this, server_to_client_push_state_);
   switch (server_to_client_push_state_) {
     case ServerToClientPushState::kStart:
-      LOG(FATAL) << "BeginPushServerToClientMessage called before "
-                    "PushServerInitialMetadata";
+      server_to_client_push_state_ =
+          ServerToClientPushState::kPushedMessageWithoutInitialMetadata;
       break;
     case ServerToClientPushState::kPushedServerInitialMetadata:
       server_to_client_push_state_ =
           ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage;
       break;
     case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
+    case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:
     case ServerToClientPushState::kPushedMessage:
-      LOG(FATAL) << "BeginPushServerToClientMessage called twice concurrently";
+      LOG(FATAL) << "BeginPushServerToClientMessage called twice concurrently; "
+                 << GRPC_DUMP_ARGS(server_to_client_push_state_);
       break;
     case ServerToClientPushState::kTrailersOnly:
       // Will fail in poll.
@@ -622,10 +660,12 @@ CallState::PollReadyForPushServerToClientMessage() {
       << GRPC_DUMP_ARGS(this, server_to_client_push_state_);
   switch (server_to_client_push_state_) {
     case ServerToClientPushState::kStart:
-      LOG(FATAL) << "PollReadyForPushServerToClientMessage called before "
-                 << "PushServerInitialMetadata";
+      LOG(FATAL) << "PollPushServerToClientMessage called before "
+                 << "PushServerInitialMetadata; "
+                 << GRPC_DUMP_ARGS(server_to_client_push_state_);
     case ServerToClientPushState::kTrailersOnly:
       return false;
+    case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:
     case ServerToClientPushState::kPushedMessage:
     case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
       return server_to_client_push_waiter_.pending();
@@ -662,6 +702,7 @@ CallState::PushServerTrailingMetadata(bool cancel) {
     case ServerToClientPushState::kPushedServerInitialMetadata:
     case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
     case ServerToClientPushState::kPushedMessage:
+    case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:
       if (cancel) {
         server_to_client_push_state_ = ServerToClientPushState::kFinished;
         server_to_client_push_waiter_.Wake();
@@ -722,7 +763,9 @@ CallState::PollPullServerInitialMetadataAvailable() {
     case ServerToClientPullState::kIdle:
     case ServerToClientPullState::kReading:
     case ServerToClientPullState::kProcessingServerToClientMessage:
-      LOG(FATAL) << "PollPullServerInitialMetadataAvailable called twice";
+      LOG(FATAL) << "PollPullServerInitialMetadataAvailable called twice; "
+                 << GRPC_DUMP_ARGS(server_to_client_pull_state_,
+                                   server_to_client_push_state_);
     case ServerToClientPullState::kTerminated:
       return false;
   }
@@ -732,6 +775,7 @@ CallState::PollPullServerInitialMetadataAvailable() {
       << server_to_client_pull_state_;
   switch (server_to_client_push_state_) {
     case ServerToClientPushState::kStart:
+    case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:
       return server_to_client_push_waiter_.pending();
     case ServerToClientPushState::kPushedServerInitialMetadata:
     case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
@@ -744,7 +788,9 @@ CallState::PollPullServerInitialMetadataAvailable() {
     case ServerToClientPushState::kIdle:
     case ServerToClientPushState::kPushedMessage:
       LOG(FATAL)
-          << "PollPullServerInitialMetadataAvailable after metadata processed";
+          << "PollPullServerInitialMetadataAvailable after metadata processed; "
+          << GRPC_DUMP_ARGS(server_to_client_pull_state_,
+                            server_to_client_push_state_);
     case ServerToClientPushState::kFinished:
       server_to_client_pull_state_ = ServerToClientPullState::kTerminated;
       server_to_client_pull_waiter_.Wake();
@@ -780,7 +826,9 @@ CallState::FinishPullServerInitialMetadata() {
     case ServerToClientPullState::kIdle:
     case ServerToClientPullState::kReading:
     case ServerToClientPullState::kProcessingServerToClientMessage:
-      LOG(FATAL) << "Out of order FinishPullServerInitialMetadata";
+      LOG(FATAL) << "Out of order FinishPullServerInitialMetadata; "
+                 << GRPC_DUMP_ARGS(server_to_client_pull_state_,
+                                   server_to_client_push_state_);
     case ServerToClientPullState::kTerminated:
       return;
   }
@@ -789,8 +837,11 @@ CallState::FinishPullServerInitialMetadata() {
       << server_to_client_pull_state_;
   switch (server_to_client_push_state_) {
     case ServerToClientPushState::kStart:
+    case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:
       LOG(FATAL) << "FinishPullServerInitialMetadata called before initial "
-                    "metadata consumed";
+                    "metadata consumed; "
+                 << GRPC_DUMP_ARGS(server_to_client_pull_state_,
+                                   server_to_client_push_state_);
     case ServerToClientPushState::kPushedServerInitialMetadata:
       server_to_client_push_state_ = ServerToClientPushState::kIdle;
       server_to_client_push_waiter_.Wake();
@@ -803,7 +854,9 @@ CallState::FinishPullServerInitialMetadata() {
     case ServerToClientPushState::kPushedMessage:
     case ServerToClientPushState::kTrailersOnly:
     case ServerToClientPushState::kFinished:
-      LOG(FATAL) << "FinishPullServerInitialMetadata called twice";
+      LOG(FATAL) << "FinishPullServerInitialMetadata called twice; "
+                 << GRPC_DUMP_ARGS(server_to_client_pull_state_,
+                                   server_to_client_push_state_);
   }
 }
 
@@ -842,13 +895,16 @@ CallState::PollPullServerToClientMessageAvailable() {
       break;
     case ServerToClientPullState::kProcessingServerToClientMessage:
       LOG(FATAL) << "PollPullServerToClientMessageAvailable called while "
-                    "processing a message";
+                    "processing a message; "
+                 << GRPC_DUMP_ARGS(server_to_client_pull_state_,
+                                   server_to_client_push_state_);
     case ServerToClientPullState::kTerminated:
       return Failure{};
   }
   DCHECK_EQ(server_to_client_pull_state_, ServerToClientPullState::kReading);
   switch (server_to_client_push_state_) {
     case ServerToClientPushState::kStart:
+    case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:
     case ServerToClientPushState::kPushedServerInitialMetadata:
     case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
       return server_to_client_push_waiter_.pending();
@@ -912,13 +968,19 @@ CallState::FinishPullServerToClientMessage() {
     case ServerToClientPullState::kStartedReading:
     case ServerToClientPullState::kProcessingServerInitialMetadata:
     case ServerToClientPullState::kProcessingServerInitialMetadataReading:
-      LOG(FATAL)
-          << "FinishPullServerToClientMessage called before metadata available";
+      LOG(FATAL) << "FinishPullServerToClientMessage called before metadata "
+                    "available; "
+                 << GRPC_DUMP_ARGS(server_to_client_pull_state_,
+                                   server_to_client_push_state_);
     case ServerToClientPullState::kIdle:
-      LOG(FATAL) << "FinishPullServerToClientMessage called twice";
+      LOG(FATAL) << "FinishPullServerToClientMessage called twice; "
+                 << GRPC_DUMP_ARGS(server_to_client_pull_state_,
+                                   server_to_client_push_state_);
     case ServerToClientPullState::kReading:
       LOG(FATAL) << "FinishPullServerToClientMessage called before "
-                 << "PollPullServerToClientMessageAvailable";
+                 << "PollPullServerToClientMessageAvailable; "
+                 << GRPC_DUMP_ARGS(server_to_client_pull_state_,
+                                   server_to_client_push_state_);
     case ServerToClientPullState::kProcessingServerToClientMessage:
       server_to_client_pull_state_ = ServerToClientPullState::kIdle;
       server_to_client_pull_waiter_.Wake();
@@ -927,20 +989,27 @@ CallState::FinishPullServerToClientMessage() {
       break;
   }
   switch (server_to_client_push_state_) {
+    case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:
     case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
     case ServerToClientPushState::kPushedServerInitialMetadata:
     case ServerToClientPushState::kStart:
       LOG(FATAL) << "FinishPullServerToClientMessage called before initial "
-                    "metadata consumed";
+                    "metadata consumed; "
+                 << GRPC_DUMP_ARGS(server_to_client_pull_state_,
+                                   server_to_client_push_state_);
     case ServerToClientPushState::kTrailersOnly:
       LOG(FATAL) << "FinishPullServerToClientMessage called after "
-                    "PushServerTrailingMetadata";
+                    "PushServerTrailingMetadata; "
+                 << GRPC_DUMP_ARGS(server_to_client_pull_state_,
+                                   server_to_client_push_state_);
     case ServerToClientPushState::kPushedMessage:
       server_to_client_push_state_ = ServerToClientPushState::kIdle;
       server_to_client_push_waiter_.Wake();
       break;
     case ServerToClientPushState::kIdle:
-      LOG(FATAL) << "FinishPullServerToClientMessage called without a message";
+      LOG(FATAL) << "FinishPullServerToClientMessage called without a message; "
+                 << GRPC_DUMP_ARGS(server_to_client_pull_state_,
+                                   server_to_client_push_state_);
     case ServerToClientPushState::kFinished:
       break;
   }
@@ -971,6 +1040,7 @@ CallState::PollServerTrailingMetadataAvailable() {
             break;  // Ready for processing
           }
           ABSL_FALLTHROUGH_INTENDED;
+        case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:
         case ServerToClientPushState::kPushedServerInitialMetadata:
         case ServerToClientPushState::
             kPushedServerInitialMetadataAndPushedMessage:
@@ -1005,7 +1075,9 @@ CallState::PollServerTrailingMetadataAvailable() {
     case ServerTrailingMetadataState::kNotPushed:
     case ServerTrailingMetadataState::kPulled:
     case ServerTrailingMetadataState::kPulledCancel:
-      LOG(FATAL) << "PollServerTrailingMetadataAvailable completed twice";
+      LOG(FATAL) << "PollServerTrailingMetadataAvailable completed twice; "
+                 << GRPC_DUMP_ARGS(server_to_client_pull_state_,
+                                   server_trailing_metadata_state_);
   }
   return Empty{};
 }
