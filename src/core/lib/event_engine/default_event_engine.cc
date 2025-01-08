@@ -39,6 +39,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
+// TODO(hork): delete the factory once all known users have migrated away
 std::atomic<absl::AnyInvocable<std::shared_ptr<EventEngine>()>*>
     g_event_engine_factory{nullptr};
 grpc_core::NoDestruct<grpc_core::Mutex> g_mu;
@@ -63,7 +64,7 @@ void SetDefaultEventEngine(std::shared_ptr<EventEngine> engine) {
       << "The previous user-supplied engine was not properly shut down. Please "
          "use ShutdownDefaultEventEngine";
   CHECK_NE(engine, nullptr);
-  *g_user_event_engine = engine;
+  *g_user_event_engine = std::move(engine);
   g_weak_internal_event_engine->reset();
 }
 
@@ -98,12 +99,10 @@ std::shared_ptr<EventEngine> CreateEventEngine() {
   return engine;
 }
 
-// std::shared_ptr<EventEngine> GetDefaultEventEngine(
-//     grpc_core::SourceLocation location) {
 std::shared_ptr<EventEngine> GetDefaultEventEngine() {
   grpc_core::MutexLock lock(&*g_mu);
   // User-provided default engine
-  if (*g_user_event_engine) {
+  if (*g_user_event_engine != nullptr) {
     CHECK_EQ(g_weak_internal_event_engine->use_count(), 0)
         << "Both a provided EventEngine and an internal EventEngine exist at "
            "the same time. This should not be possible.";

@@ -50,20 +50,20 @@ class DefaultEngineTest : public testing::Test {
       int ran_after;
     };
     explicit CountingEngine(EngineOpCounts& counter) : counter_(counter) {
-      counter_.constructed++;
+      ++counter_.constructed;
     }
-    ~CountingEngine() override { counter_.destroyed++; }
-    void Run(Closure* /* closure */) override { counter_.ran++; };
+    ~CountingEngine() override { ++counter_.destroyed; }
+    void Run(Closure* /* closure */) override { ++counter_.ran; };
     void Run(absl::AnyInvocable<void()> /* closure */) override {
-      counter_.ran++;
+      ++counter_.ran;
     };
     TaskHandle RunAfter(Duration /* when */, Closure* /* closure */) override {
-      counter_.ran_after++;
+      ++counter_.ran_after;
       return {-1, -1};
     }
     TaskHandle RunAfter(Duration /* when */,
                         absl::AnyInvocable<void()> /* closure */) override {
-      counter_.ran_after++;
+      ++counter_.ran_after;
       return {-1, -1};
     }
 
