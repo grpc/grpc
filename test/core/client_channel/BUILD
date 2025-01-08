@@ -14,6 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/client_channel")
@@ -165,5 +166,20 @@ grpc_cc_test(
         "//src/core:metadata_batch",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "retry_state_test",
+    srcs = ["retry_state_test.cc"],
+    external_deps = [
+        "absl/types:variant",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:json_reader",
+        "//src/core:retry_interceptor",
     ],
 )

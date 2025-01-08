@@ -81,6 +81,8 @@ build:thready_tsan --copt=-gmlt
 build:thready_tsan --test_timeout=60,600,1800,3600
 build:thready_tsan --test_tag_filters=thready_tsan,-no_linux,-notsan,-qps_json_driver
 
+build:fuzztest --test_tag_filters=grpc-fuzztest
+
 # undefined behavior sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
 build:ubsan --copt=-gmlt
