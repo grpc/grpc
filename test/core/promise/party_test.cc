@@ -580,6 +580,105 @@ TEST_F(PartyTest, NestedWakeup) {
   notify_done.WaitForNotification();
 }
 
+// Testing Promise Parties with MPSC Queues
+
+struct Payload {
+  std::unique_ptr<int> x;
+  bool operator==(const Payload& other) const {
+    return (x == nullptr && other.x == nullptr) ||
+           (x != nullptr && other.x != nullptr && *x == *other.x);
+  }
+  bool operator!=(const Payload& other) const { return !(*this == other); }
+  explicit Payload(std::unique_ptr<int> x) : x(std::move(x)) {}
+  Payload(const Payload& other)
+      : x(other.x ? std::make_unique<int>(*other.x) : nullptr) {}
+
+  friend std::ostream& operator<<(std::ostream& os, const Payload& payload) {
+    if (payload.x == nullptr) return os << "Payload{nullptr}";
+    return os << "Payload{" << *payload.x << "}";
+  }
+};
+
+Payload MakePayload(int value) { return Payload{std::make_unique<int>(value)}; }
+
+auto MakeSenderPromise(MpscSender<Payload>& sender, Notification& sent) {
+  return [&sender, &sent]() {
+    auto send_promise = sender.Send(MakePayload(42));
+    Poll<bool> send_result = send_promise();
+    EXPECT_TRUE(send_result.ready());
+    EXPECT_TRUE(send_result.value());
+    sent.Notify();
+  };
+}
+
+auto MakeReceiverPromise(MpscReceiver<Payload>& receiver, Notification& sent) {
+  return [&receiver, &sent]() {
+    sent.WaitForNotification();
+    auto receive_promise = receiver.Next();
+    Poll<ValueOrFailure<Payload>> receive_result = receive_promise();
+    EXPECT_TRUE(receive_result.ready());
+    EXPECT_EQ(receive_result.value(), MakePayload(42));
+  };
+}
+
+auto OnCompleteNotify(Notification& notification) {
+  return [&notification](Empty) { notification.Notify(); };
+}
+
+auto OnCompleteNoop() {
+  return [](Empty) {};
+}
+
+TEST_F(PartyTest, MpscTest) {
+  // Number of Receivers = 1  // Will be 1 always for MPSC
+  // Number of Senders   = 1
+  // Number of Payloads  = 1
+  // Number of Parties   = 1
+  // Number of Threads   = 1
+
+  // Basic MPSC & Party test.
+  MpscReceiver<Payload> receiver(1);
+  MpscSender<Payload> sender = receiver.MakeSender();
+  auto party = MakeParty();
+  Notification sent;
+  Notification received;
+  auto sender_promise = MakeSenderPromise(sender, sent);
+  auto receiver_promise = MakeReceiverPromise(receiver, sent);
+  party->Spawn("sender", sender_promise, OnCompleteNotify(received));
+  party->Spawn("receiver", receiver_promise, OnCompleteNoop());
+  received.WaitForNotification();
+  // TODO(tjagtap): Is this how we want to use the MPSC for HTTP2 Transports?
+  // TODO(tjagtap): Is there some notification we can wait on when something
+  // is ready to be read?
+  // TODO(tjagtap): This crashes!! Is that expected?
+  // auto nothing = receiver.Next()();
+}
+
+TEST_F(PartyTest, MpscStressTestOneParty) {
+  // Number of Receivers = 1  // Will be 1 always for MPSC
+  // Number of Senders   = 10
+  // Number of Payloads  = 10 Senders * 100 spawns = 1000
+  // Number of Parties   = 1
+  // Number of Threads   = 11
+
+  // Stress testing MPSC & Party.
+}
+
+TEST_F(PartyTest, MpscStressTestManyParties) {
+  // Number of Receivers = 1  // Will be 1 always for MPSC
+  // Number of Senders   = 10
+  // Number of Payloads  = 10 Senders * 100 spawns = 1000
+  // Number of Parties   = 10
+  // Number of Threads   = 11
+  // Stress testing MPSC & Party.
+  // This is the same as the above test, but with multiple parties.
+  // Using 10 parties, each with 10 threads will ensure that we have 10 threads
+  // concurrently trying to send on the same MPSC.
+
+  // TODO(tjagtap): What do I need to do to make sure that event engine actually
+  // gives me 10 threads all for this test?
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
