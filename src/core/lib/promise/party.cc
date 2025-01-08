@@ -30,6 +30,7 @@
 #include "src/core/util/sync.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
+#include "absl/random/random.h"           // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
 #include "src/core/util/thd.h"            // IWYU pragma: keep
 #endif
@@ -359,6 +360,40 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
   }
 }
 
+// Given a bitmask indicating allocation status of promises, return the index of
+// the next slot to allocate.
+// By default we use a deterministic and fast algorithm (fit-first), but we
+// don't want to guarantee that this is the order of spawning -- if a promise is
+// locked by another thread (for instance) a sequence of spawns may be reordered
+// for initial execution.
+// So for thready-tsan we provide an alternative implementation that
+// additionally reorders promises.
+#ifndef GRPC_MAXIMIZE_THREADYNESS
+uint64_t Party::NextAllocationMask(uint64_t current_allocation_mask) {
+  return LowestOneBit(~current_allocation_mask);
+}
+#else
+uint64_t Party::NextAllocationMask(uint64_t current_allocation_mask) {
+  CHECK_EQ(current_allocation_mask & ~kWakeupMask, 0);
+  if (current_allocation_mask == kWakeupMask) return kWakeupMask + 1;
+  // Count number of unset bits in the wakeup mask
+  size_t unset_bits = 0;
+  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
+    if (current_allocation_mask & (1ull << i)) continue;
+    ++unset_bits;
+  }
+  CHECK_GT(unset_bits, 0);
+  absl::BitGen bitgen;
+  size_t selected = absl::Uniform<size_t>(bitgen, 0, unset_bits);
+  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
+    if (current_allocation_mask & (1ull << i)) continue;
+    if (selected == 0) return 1ull << i;
+    --selected;
+  }
+  LOG(FATAL) << "unreachable";
+}
+#endif
+
 void Party::AddParticipant(Participant* participant) {
   GRPC_LATENT_SEE_INNER_SCOPE("Party::AddParticipant");
   uint64_t state = state_.load(std::memory_order_acquire);
@@ -372,7 +407,7 @@ void Party::AddParticipant(Participant* participant) {
   uint64_t new_state;
   do {
     allocated = (state & kAllocatedMask) >> kAllocatedShift;
-    wakeup_mask = LowestOneBit(~allocated);
+    wakeup_mask = NextAllocationMask(allocated);
     if (GPR_UNLIKELY((wakeup_mask & kWakeupMask) == 0)) {
       DelayAddParticipant(participant);
       return;

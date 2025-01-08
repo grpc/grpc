@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 grpc_package(name = "test/core/channel")
 
@@ -130,4 +131,16 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/test_util:grpc_test_util",
     ],
+)
+
+grpc_fuzz_test(
+    name = "union_with_test",
+    srcs = ["union_with_test.cc"],
+    external_deps = [
+        "absl/types:variant",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:channel_args"],
 )

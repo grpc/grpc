@@ -26,8 +26,8 @@ cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.70.0-dev")
-set(gRPC_CORE_VERSION     "44.2.0")
-set(gRPC_CORE_SOVERSION   "44")
+set(gRPC_CORE_VERSION     "45.0.0")
+set(gRPC_CORE_SOVERSION   "45")
 set(gRPC_CPP_VERSION      "1.70.0-dev")
 set(gRPC_CPP_SOVERSION    "1.70")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
@@ -1051,6 +1051,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/service/discovery/v3/discovery.proto envoy/service/discovery/v3/discovery.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/envoy-api/envoy/service/status/v3/csds.proto envoy/service/status/v3/csds.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/type/http/v3/cookie.proto envoy/type/http/v3/cookie.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -1361,6 +1364,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx check_gcp_environment_linux_test)
   add_dependencies(buildtests_cxx check_gcp_environment_windows_test)
+  add_dependencies(buildtests_cxx chttp2_server_listener_test)
   add_dependencies(buildtests_cxx chunked_vector_test)
   add_dependencies(buildtests_cxx cli_call_test)
   add_dependencies(buildtests_cxx client_auth_filter_test)
@@ -2003,7 +2007,7 @@ add_library(address_sorting
   third_party/address_sorting/address_sorting_windows.c
 )
 
-target_compile_features(address_sorting PUBLIC cxx_std_14)
+target_compile_features(address_sorting PUBLIC cxx_std_17)
 
 set_target_properties(address_sorting PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -2093,7 +2097,7 @@ add_library(gpr
   src/core/util/windows/tmpfile.cc
 )
 
-target_compile_features(gpr PUBLIC cxx_std_14)
+target_compile_features(gpr PUBLIC cxx_std_17)
 
 set_target_properties(gpr PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -3037,7 +3041,7 @@ add_library(grpc
   src/core/xds/xds_client/xds_client.cc
 )
 
-target_compile_features(grpc PUBLIC cxx_std_14)
+target_compile_features(grpc PUBLIC cxx_std_17)
 
 set_target_properties(grpc PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -3216,7 +3220,7 @@ add_library(grpc_test_util
   test/core/test_util/tls_utils.cc
 )
 
-target_compile_features(grpc_test_util PUBLIC cxx_std_14)
+target_compile_features(grpc_test_util PUBLIC cxx_std_17)
 
 set_target_properties(grpc_test_util PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -3282,7 +3286,7 @@ add_library(grpc_test_util_unsecure
   test/core/test_util/test_tcp_server.cc
 )
 
-target_compile_features(grpc_test_util_unsecure PUBLIC cxx_std_14)
+target_compile_features(grpc_test_util_unsecure PUBLIC cxx_std_17)
 
 set_target_properties(grpc_test_util_unsecure PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -3737,7 +3741,7 @@ add_library(grpc_unsecure
   ${gRPC_ADDITIONAL_DLL_SRC}
 )
 
-target_compile_features(grpc_unsecure PUBLIC cxx_std_14)
+target_compile_features(grpc_unsecure PUBLIC cxx_std_17)
 
 set_target_properties(grpc_unsecure PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -3918,7 +3922,7 @@ add_library(gtest
   third_party/googletest/googletest/src/gtest.cc
 )
 
-target_compile_features(gtest PUBLIC cxx_std_14)
+target_compile_features(gtest PUBLIC cxx_std_17)
 
 set_target_properties(gtest PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -3977,7 +3981,7 @@ add_library(upb_base_lib
   third_party/upb/upb/base/status.c
 )
 
-target_compile_features(upb_base_lib PUBLIC cxx_std_14)
+target_compile_features(upb_base_lib PUBLIC cxx_std_17)
 
 set_target_properties(upb_base_lib PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -4052,7 +4056,7 @@ add_library(upb_json_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/reflection/service_def.c
 )
 
-target_compile_features(upb_json_lib PUBLIC cxx_std_14)
+target_compile_features(upb_json_lib PUBLIC cxx_std_17)
 
 set_target_properties(upb_json_lib PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -4106,7 +4110,7 @@ add_library(upb_mem_lib
   third_party/upb/upb/mem/arena.c
 )
 
-target_compile_features(upb_mem_lib PUBLIC cxx_std_14)
+target_compile_features(upb_mem_lib PUBLIC cxx_std_17)
 
 set_target_properties(upb_mem_lib PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -4171,7 +4175,7 @@ add_library(upb_message_lib
   third_party/upb/upb/wire/reader.c
 )
 
-target_compile_features(upb_message_lib PUBLIC cxx_std_14)
+target_compile_features(upb_message_lib PUBLIC cxx_std_17)
 
 set_target_properties(upb_message_lib PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -4232,7 +4236,7 @@ add_library(upb_mini_descriptor_lib
   third_party/upb/upb/mini_table/message.c
 )
 
-target_compile_features(upb_mini_descriptor_lib PUBLIC cxx_std_14)
+target_compile_features(upb_mini_descriptor_lib PUBLIC cxx_std_17)
 
 set_target_properties(upb_mini_descriptor_lib PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -4309,7 +4313,7 @@ add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/text/internal/encode.c
 )
 
-target_compile_features(upb_textformat_lib PUBLIC cxx_std_14)
+target_compile_features(upb_textformat_lib PUBLIC cxx_std_17)
 
 set_target_properties(upb_textformat_lib PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -4364,7 +4368,7 @@ add_library(upb_wire_lib
   third_party/upb/upb/wire/internal/decode_fast.c
 )
 
-target_compile_features(upb_wire_lib PUBLIC cxx_std_14)
+target_compile_features(upb_wire_lib PUBLIC cxx_std_17)
 
 set_target_properties(upb_wire_lib PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -4417,7 +4421,7 @@ add_library(utf8_range_lib
   third_party/utf8_range/utf8_range.c
 )
 
-target_compile_features(utf8_range_lib PUBLIC cxx_std_14)
+target_compile_features(utf8_range_lib PUBLIC cxx_std_17)
 
 set_target_properties(utf8_range_lib PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -4512,7 +4516,7 @@ add_library(benchmark_helpers ${_gRPC_STATIC_WIN32}
   test/cpp/microbenchmarks/helpers.cc
 )
 
-target_compile_features(benchmark_helpers PUBLIC cxx_std_14)
+target_compile_features(benchmark_helpers PUBLIC cxx_std_17)
 
 set_target_properties(benchmark_helpers PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -4618,7 +4622,7 @@ add_library(grpc++
   ${gRPC_UPB_GEN_DUPL_SRC}
 )
 
-target_compile_features(grpc++ PUBLIC cxx_std_14)
+target_compile_features(grpc++ PUBLIC cxx_std_17)
 
 set_target_properties(grpc++ PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -4900,7 +4904,7 @@ add_library(grpc++_alts
   ${gRPC_UPB_GEN_DUPL_SRC}
 )
 
-target_compile_features(grpc++_alts PUBLIC cxx_std_14)
+target_compile_features(grpc++_alts PUBLIC cxx_std_17)
 
 set_target_properties(grpc++_alts PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -4971,7 +4975,7 @@ add_library(grpc++_error_details
   src/cpp/util/error_details.cc
 )
 
-target_compile_features(grpc++_error_details PUBLIC cxx_std_14)
+target_compile_features(grpc++_error_details PUBLIC cxx_std_17)
 
 set_target_properties(grpc++_error_details PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -5052,7 +5056,7 @@ add_library(grpc++_reflection ${_gRPC_STATIC_WIN32}
   src/cpp/ext/proto_server_reflection_plugin.cc
 )
 
-target_compile_features(grpc++_reflection PUBLIC cxx_std_14)
+target_compile_features(grpc++_reflection PUBLIC cxx_std_17)
 
 set_target_properties(grpc++_reflection PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -5127,7 +5131,7 @@ add_library(grpc++_test
   src/cpp/client/channel_test_peer.cc
 )
 
-target_compile_features(grpc++_test PUBLIC cxx_std_14)
+target_compile_features(grpc++_test PUBLIC cxx_std_17)
 
 set_target_properties(grpc++_test PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -5200,7 +5204,7 @@ add_library(grpc++_test_config
   test/cpp/util/test_config_cc.cc
 )
 
-target_compile_features(grpc++_test_config PUBLIC cxx_std_14)
+target_compile_features(grpc++_test_config PUBLIC cxx_std_17)
 
 set_target_properties(grpc++_test_config PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -5271,7 +5275,7 @@ add_library(grpc++_test_util
   test/cpp/util/test_credentials_provider.cc
 )
 
-target_compile_features(grpc++_test_util PUBLIC cxx_std_14)
+target_compile_features(grpc++_test_util PUBLIC cxx_std_17)
 
 set_target_properties(grpc++_test_util PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -5365,7 +5369,7 @@ add_library(grpc++_unsecure
   ${gRPC_ADDITIONAL_DLL_CXX_SRC}
 )
 
-target_compile_features(grpc++_unsecure PUBLIC cxx_std_14)
+target_compile_features(grpc++_unsecure PUBLIC cxx_std_17)
 
 set_target_properties(grpc++_unsecure PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -5910,7 +5914,7 @@ add_library(grpc_authorization_provider
   src/core/util/work_serializer.cc
 )
 
-target_compile_features(grpc_authorization_provider PUBLIC cxx_std_14)
+target_compile_features(grpc_authorization_provider PUBLIC cxx_std_17)
 
 set_target_properties(grpc_authorization_provider PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -6077,7 +6081,7 @@ add_library(grpc_plugin_support
   src/compiler/ruby_generator.cc
 )
 
-target_compile_features(grpc_plugin_support PUBLIC cxx_std_14)
+target_compile_features(grpc_plugin_support PUBLIC cxx_std_17)
 
 set_target_properties(grpc_plugin_support PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -6150,7 +6154,7 @@ add_library(grpcpp_channelz ${_gRPC_STATIC_WIN32}
   src/cpp/server/channelz/channelz_service_plugin.cc
 )
 
-target_compile_features(grpcpp_channelz PUBLIC cxx_std_14)
+target_compile_features(grpcpp_channelz PUBLIC cxx_std_17)
 
 set_target_properties(grpcpp_channelz PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -6228,7 +6232,7 @@ add_library(grpcpp_otel_plugin
   src/cpp/ext/otel/otel_server_call_tracer.cc
 )
 
-target_compile_features(grpcpp_otel_plugin PUBLIC cxx_std_14)
+target_compile_features(grpcpp_otel_plugin PUBLIC cxx_std_17)
 
 set_target_properties(grpcpp_otel_plugin PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
@@ -6320,7 +6324,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(fd_conservation_posix_test PUBLIC cxx_std_14)
+  target_compile_features(fd_conservation_posix_test PUBLIC cxx_std_17)
   target_include_directories(fd_conservation_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6357,7 +6361,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(multiple_server_queues_test PUBLIC cxx_std_14)
+target_compile_features(multiple_server_queues_test PUBLIC cxx_std_17)
 target_include_directories(multiple_server_queues_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6394,7 +6398,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
       )
     endif()
   endif()
-  target_compile_features(pollset_windows_starvation_test PUBLIC cxx_std_14)
+  target_compile_features(pollset_windows_starvation_test PUBLIC cxx_std_17)
   target_include_directories(pollset_windows_starvation_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6440,7 +6444,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_core_iomgr_timer_list_test PUBLIC cxx_std_14)
+target_compile_features(test_core_iomgr_timer_list_test PUBLIC cxx_std_17)
 target_include_directories(test_core_iomgr_timer_list_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6482,7 +6486,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(activity_test PUBLIC cxx_std_14)
+target_compile_features(activity_test PUBLIC cxx_std_17)
 target_include_directories(activity_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6532,7 +6536,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(address_sorting_test PUBLIC cxx_std_14)
+  target_compile_features(address_sorting_test PUBLIC cxx_std_17)
   target_include_directories(address_sorting_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6592,7 +6596,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(address_sorting_test_unsecure PUBLIC cxx_std_14)
+  target_compile_features(address_sorting_test_unsecure PUBLIC cxx_std_17)
   target_include_directories(address_sorting_test_unsecure
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7152,7 +7156,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(admin_services_end2end_test PUBLIC cxx_std_14)
+target_compile_features(admin_services_end2end_test PUBLIC cxx_std_17)
 target_include_directories(admin_services_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7207,7 +7211,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(alarm_test PUBLIC cxx_std_14)
+  target_compile_features(alarm_test PUBLIC cxx_std_17)
   target_include_directories(alarm_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7253,7 +7257,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(all_ok_test PUBLIC cxx_std_14)
+target_compile_features(all_ok_test PUBLIC cxx_std_17)
 target_include_directories(all_ok_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7299,7 +7303,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(alloc_test PUBLIC cxx_std_14)
+target_compile_features(alloc_test PUBLIC cxx_std_17)
 target_include_directories(alloc_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7341,7 +7345,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(alpn_test PUBLIC cxx_std_14)
+target_compile_features(alpn_test PUBLIC cxx_std_17)
 target_include_directories(alpn_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7396,7 +7400,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(alts_concurrent_connectivity_test PUBLIC cxx_std_14)
+  target_compile_features(alts_concurrent_connectivity_test PUBLIC cxx_std_17)
   target_include_directories(alts_concurrent_connectivity_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7441,7 +7445,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(alts_counter_test PUBLIC cxx_std_14)
+target_compile_features(alts_counter_test PUBLIC cxx_std_17)
 target_include_directories(alts_counter_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7484,7 +7488,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(alts_crypt_test PUBLIC cxx_std_14)
+target_compile_features(alts_crypt_test PUBLIC cxx_std_17)
 target_include_directories(alts_crypt_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7527,7 +7531,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(alts_crypter_test PUBLIC cxx_std_14)
+target_compile_features(alts_crypter_test PUBLIC cxx_std_17)
 target_include_directories(alts_crypter_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7571,7 +7575,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(alts_frame_protector_test PUBLIC cxx_std_14)
+target_compile_features(alts_frame_protector_test PUBLIC cxx_std_17)
 target_include_directories(alts_frame_protector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7614,7 +7618,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(alts_grpc_record_protocol_test PUBLIC cxx_std_14)
+target_compile_features(alts_grpc_record_protocol_test PUBLIC cxx_std_17)
 target_include_directories(alts_grpc_record_protocol_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7657,7 +7661,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(alts_handshaker_client_test PUBLIC cxx_std_14)
+target_compile_features(alts_handshaker_client_test PUBLIC cxx_std_17)
 target_include_directories(alts_handshaker_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7700,7 +7704,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(alts_iovec_record_protocol_test PUBLIC cxx_std_14)
+target_compile_features(alts_iovec_record_protocol_test PUBLIC cxx_std_17)
 target_include_directories(alts_iovec_record_protocol_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7751,7 +7755,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(alts_security_connector_test PUBLIC cxx_std_14)
+target_compile_features(alts_security_connector_test PUBLIC cxx_std_17)
 target_include_directories(alts_security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7794,7 +7798,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(alts_tsi_handshaker_test PUBLIC cxx_std_14)
+target_compile_features(alts_tsi_handshaker_test PUBLIC cxx_std_17)
 target_include_directories(alts_tsi_handshaker_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7837,7 +7841,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(alts_tsi_utils_test PUBLIC cxx_std_14)
+target_compile_features(alts_tsi_utils_test PUBLIC cxx_std_17)
 target_include_directories(alts_tsi_utils_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7880,7 +7884,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(alts_util_test PUBLIC cxx_std_14)
+target_compile_features(alts_util_test PUBLIC cxx_std_17)
 target_include_directories(alts_util_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7924,7 +7928,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(alts_zero_copy_grpc_protector_test PUBLIC cxx_std_14)
+target_compile_features(alts_zero_copy_grpc_protector_test PUBLIC cxx_std_17)
 target_include_directories(alts_zero_copy_grpc_protector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7966,7 +7970,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(arena_promise_test PUBLIC cxx_std_14)
+target_compile_features(arena_promise_test PUBLIC cxx_std_17)
 target_include_directories(arena_promise_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8008,7 +8012,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(arena_test PUBLIC cxx_std_14)
+target_compile_features(arena_test PUBLIC cxx_std_17)
 target_include_directories(arena_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8091,7 +8095,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(async_end2end_test PUBLIC cxx_std_14)
+target_compile_features(async_end2end_test PUBLIC cxx_std_17)
 target_include_directories(async_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8142,7 +8146,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(auth_context_test PUBLIC cxx_std_14)
+target_compile_features(auth_context_test PUBLIC cxx_std_17)
 target_include_directories(auth_context_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8185,7 +8189,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(auth_property_iterator_test PUBLIC cxx_std_14)
+target_compile_features(auth_property_iterator_test PUBLIC cxx_std_17)
 target_include_directories(auth_property_iterator_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8236,7 +8240,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(authorization_matchers_test PUBLIC cxx_std_14)
+target_compile_features(authorization_matchers_test PUBLIC cxx_std_17)
 target_include_directories(authorization_matchers_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8280,7 +8284,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(authorization_policy_provider_test PUBLIC cxx_std_14)
+target_compile_features(authorization_policy_provider_test PUBLIC cxx_std_17)
 target_include_directories(authorization_policy_provider_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8323,7 +8327,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(avl_test PUBLIC cxx_std_14)
+target_compile_features(avl_test PUBLIC cxx_std_17)
 target_include_directories(avl_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8376,7 +8380,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(aws_request_signer_test PUBLIC cxx_std_14)
+target_compile_features(aws_request_signer_test PUBLIC cxx_std_17)
 target_include_directories(aws_request_signer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8433,7 +8437,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(backend_metrics_lb_policy_test PUBLIC cxx_std_14)
+target_compile_features(backend_metrics_lb_policy_test PUBLIC cxx_std_17)
 target_include_directories(backend_metrics_lb_policy_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8477,7 +8481,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(backoff_test PUBLIC cxx_std_14)
+target_compile_features(backoff_test PUBLIC cxx_std_17)
 target_include_directories(backoff_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8550,7 +8554,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(bad_ping_test PUBLIC cxx_std_14)
+target_compile_features(bad_ping_test PUBLIC cxx_std_17)
 target_include_directories(bad_ping_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8596,7 +8600,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(bad_server_response_test PUBLIC cxx_std_14)
+target_compile_features(bad_server_response_test PUBLIC cxx_std_17)
 target_include_directories(bad_server_response_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8651,7 +8655,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(bad_ssl_alpn_test PUBLIC cxx_std_14)
+  target_compile_features(bad_ssl_alpn_test PUBLIC cxx_std_17)
   target_include_directories(bad_ssl_alpn_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8707,7 +8711,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(bad_ssl_cert_test PUBLIC cxx_std_14)
+  target_compile_features(bad_ssl_cert_test PUBLIC cxx_std_17)
   target_include_directories(bad_ssl_cert_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8752,7 +8756,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(bad_streaming_id_bad_client_test PUBLIC cxx_std_14)
+target_compile_features(bad_streaming_id_bad_client_test PUBLIC cxx_std_17)
 target_include_directories(bad_streaming_id_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8796,7 +8800,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(badreq_bad_client_test PUBLIC cxx_std_14)
+target_compile_features(badreq_bad_client_test PUBLIC cxx_std_17)
 target_include_directories(badreq_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8838,7 +8842,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(basic_work_queue_test PUBLIC cxx_std_14)
+target_compile_features(basic_work_queue_test PUBLIC cxx_std_17)
 target_include_directories(basic_work_queue_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8881,7 +8885,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(bdp_estimator_test PUBLIC cxx_std_14)
+  target_compile_features(bdp_estimator_test PUBLIC cxx_std_17)
   target_include_directories(bdp_estimator_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8924,7 +8928,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(bin_decoder_test PUBLIC cxx_std_14)
+target_compile_features(bin_decoder_test PUBLIC cxx_std_17)
 target_include_directories(bin_decoder_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8966,7 +8970,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(bin_encoder_test PUBLIC cxx_std_14)
+target_compile_features(bin_encoder_test PUBLIC cxx_std_17)
 target_include_directories(bin_encoder_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9039,7 +9043,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(binary_metadata_test PUBLIC cxx_std_14)
+target_compile_features(binary_metadata_test PUBLIC cxx_std_17)
 target_include_directories(binary_metadata_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9075,7 +9079,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(bitset_test
   test/core/util/bitset_test.cc
 )
-target_compile_features(bitset_test PUBLIC cxx_std_14)
+target_compile_features(bitset_test PUBLIC cxx_std_17)
 target_include_directories(bitset_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9127,7 +9131,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(blackboard_test PUBLIC cxx_std_14)
+target_compile_features(blackboard_test PUBLIC cxx_std_17)
 target_include_directories(blackboard_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9184,7 +9188,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(buffer_list_test PUBLIC cxx_std_14)
+target_compile_features(buffer_list_test PUBLIC cxx_std_17)
 target_include_directories(buffer_list_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9227,7 +9231,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(byte_buffer_test PUBLIC cxx_std_14)
+target_compile_features(byte_buffer_test PUBLIC cxx_std_17)
 target_include_directories(byte_buffer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9269,7 +9273,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(c_slice_buffer_test PUBLIC cxx_std_14)
+target_compile_features(c_slice_buffer_test PUBLIC cxx_std_17)
 target_include_directories(c_slice_buffer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9312,7 +9316,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(call_arena_allocator_test PUBLIC cxx_std_14)
+  target_compile_features(call_arena_allocator_test PUBLIC cxx_std_17)
   target_include_directories(call_arena_allocator_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9386,7 +9390,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(call_creds_test PUBLIC cxx_std_14)
+target_compile_features(call_creds_test PUBLIC cxx_std_17)
 target_include_directories(call_creds_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9474,7 +9478,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(call_filters_test PUBLIC cxx_std_14)
+target_compile_features(call_filters_test PUBLIC cxx_std_17)
 target_include_directories(call_filters_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9527,7 +9531,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(call_finalization_test PUBLIC cxx_std_14)
+target_compile_features(call_finalization_test PUBLIC cxx_std_17)
 target_include_directories(call_finalization_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9600,7 +9604,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(call_host_override_test PUBLIC cxx_std_14)
+target_compile_features(call_host_override_test PUBLIC cxx_std_17)
 target_include_directories(call_host_override_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9654,7 +9658,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(call_spine_test PUBLIC cxx_std_14)
+  target_compile_features(call_spine_test PUBLIC cxx_std_17)
   target_include_directories(call_spine_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9705,7 +9709,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(call_state_test PUBLIC cxx_std_14)
+target_compile_features(call_state_test PUBLIC cxx_std_17)
 target_include_directories(call_state_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9754,7 +9758,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(call_tracer_test PUBLIC cxx_std_14)
+target_compile_features(call_tracer_test PUBLIC cxx_std_17)
 target_include_directories(call_tracer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10030,7 +10034,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(call_utils_test PUBLIC cxx_std_14)
+target_compile_features(call_utils_test PUBLIC cxx_std_17)
 target_include_directories(call_utils_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10119,7 +10123,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(cancel_after_accept_test PUBLIC cxx_std_14)
+target_compile_features(cancel_after_accept_test PUBLIC cxx_std_17)
 target_include_directories(cancel_after_accept_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10195,7 +10199,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(cancel_after_client_done_test PUBLIC cxx_std_14)
+target_compile_features(cancel_after_client_done_test PUBLIC cxx_std_17)
 target_include_directories(cancel_after_client_done_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10271,7 +10275,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(cancel_after_invoke_test PUBLIC cxx_std_14)
+target_compile_features(cancel_after_invoke_test PUBLIC cxx_std_17)
 target_include_directories(cancel_after_invoke_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10347,7 +10351,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(cancel_after_round_trip_test PUBLIC cxx_std_14)
+target_compile_features(cancel_after_round_trip_test PUBLIC cxx_std_17)
 target_include_directories(cancel_after_round_trip_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10396,7 +10400,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(cancel_ares_query_test PUBLIC cxx_std_14)
+target_compile_features(cancel_ares_query_test PUBLIC cxx_std_17)
 target_include_directories(cancel_ares_query_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10470,7 +10474,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(cancel_before_invoke_test PUBLIC cxx_std_14)
+target_compile_features(cancel_before_invoke_test PUBLIC cxx_std_17)
 target_include_directories(cancel_before_invoke_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10542,7 +10546,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(cancel_callback_test PUBLIC cxx_std_14)
+target_compile_features(cancel_callback_test PUBLIC cxx_std_17)
 target_include_directories(cancel_callback_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10623,7 +10627,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(cancel_in_a_vacuum_test PUBLIC cxx_std_14)
+target_compile_features(cancel_in_a_vacuum_test PUBLIC cxx_std_17)
 target_include_directories(cancel_in_a_vacuum_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10699,7 +10703,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(cancel_with_status_test PUBLIC cxx_std_14)
+target_compile_features(cancel_with_status_test PUBLIC cxx_std_17)
 target_include_directories(cancel_with_status_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10843,7 +10847,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(cel_authorization_engine_test PUBLIC cxx_std_14)
+target_compile_features(cel_authorization_engine_test PUBLIC cxx_std_17)
 target_include_directories(cel_authorization_engine_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10885,7 +10889,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(certificate_provider_registry_test PUBLIC cxx_std_14)
+target_compile_features(certificate_provider_registry_test PUBLIC cxx_std_17)
 target_include_directories(certificate_provider_registry_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10927,7 +10931,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(certificate_provider_store_test PUBLIC cxx_std_14)
+target_compile_features(certificate_provider_store_test PUBLIC cxx_std_17)
 target_include_directories(certificate_provider_store_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10970,7 +10974,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(cf_engine_test PUBLIC cxx_std_14)
+  target_compile_features(cf_engine_test PUBLIC cxx_std_17)
   target_include_directories(cf_engine_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11019,7 +11023,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(cf_event_engine_test PUBLIC cxx_std_14)
+  target_compile_features(cf_event_engine_test PUBLIC cxx_std_17)
   target_include_directories(cf_event_engine_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11096,7 +11100,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(cfstream_test PUBLIC cxx_std_14)
+target_compile_features(cfstream_test PUBLIC cxx_std_17)
 target_include_directories(cfstream_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11138,7 +11142,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(channel_args_test PUBLIC cxx_std_14)
+target_compile_features(channel_args_test PUBLIC cxx_std_17)
 target_include_directories(channel_args_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11181,7 +11185,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(channel_arguments_test PUBLIC cxx_std_14)
+target_compile_features(channel_arguments_test PUBLIC cxx_std_17)
 target_include_directories(channel_arguments_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11233,7 +11237,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(channel_creds_registry_test PUBLIC cxx_std_14)
+target_compile_features(channel_creds_registry_test PUBLIC cxx_std_17)
 target_include_directories(channel_creds_registry_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11275,7 +11279,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(channel_init_test PUBLIC cxx_std_14)
+target_compile_features(channel_init_test PUBLIC cxx_std_17)
 target_include_directories(channel_init_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11317,7 +11321,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(channel_stack_builder_test PUBLIC cxx_std_14)
+target_compile_features(channel_stack_builder_test PUBLIC cxx_std_17)
 target_include_directories(channel_stack_builder_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11359,7 +11363,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(channel_stack_test PUBLIC cxx_std_14)
+target_compile_features(channel_stack_test PUBLIC cxx_std_17)
 target_include_directories(channel_stack_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11407,7 +11411,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(channel_trace_test PUBLIC cxx_std_14)
+target_compile_features(channel_trace_test PUBLIC cxx_std_17)
 target_include_directories(channel_trace_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11451,7 +11455,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(channelz_registry_test PUBLIC cxx_std_14)
+target_compile_features(channelz_registry_test PUBLIC cxx_std_17)
 target_include_directories(channelz_registry_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11529,7 +11533,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(channelz_service_test PUBLIC cxx_std_14)
+target_compile_features(channelz_service_test PUBLIC cxx_std_17)
 target_include_directories(channelz_service_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11597,7 +11601,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(chaotic_good_one_byte_chunk_test PUBLIC cxx_std_14)
+  target_compile_features(chaotic_good_one_byte_chunk_test PUBLIC cxx_std_17)
   target_include_directories(chaotic_good_one_byte_chunk_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11667,7 +11671,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(chaotic_good_single_connection_test PUBLIC cxx_std_14)
+  target_compile_features(chaotic_good_single_connection_test PUBLIC cxx_std_17)
   target_include_directories(chaotic_good_single_connection_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11720,7 +11724,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(check_gcp_environment_linux_test PUBLIC cxx_std_14)
+target_compile_features(check_gcp_environment_linux_test PUBLIC cxx_std_17)
 target_include_directories(check_gcp_environment_linux_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11771,7 +11775,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(check_gcp_environment_windows_test PUBLIC cxx_std_14)
+target_compile_features(check_gcp_environment_windows_test PUBLIC cxx_std_17)
 target_include_directories(check_gcp_environment_windows_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11792,6 +11796,58 @@ target_include_directories(check_gcp_environment_windows_test
 )
 
 target_link_libraries(check_gcp_environment_windows_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(chttp2_server_listener_test
+  test/core/end2end/cq_verifier.cc
+  test/core/test_util/cmdline.cc
+  test/core/test_util/fuzzer_util.cc
+  test/core/test_util/grpc_profiler.cc
+  test/core/test_util/histogram.cc
+  test/core/test_util/mock_endpoint.cc
+  test/core/test_util/parse_hexstring.cc
+  test/core/test_util/resolve_localhost_ip46.cc
+  test/core/test_util/slice_splitter.cc
+  test/core/test_util/tracer_util.cc
+  test/core/transport/chttp2/chttp2_server_listener_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(chttp2_server_listener_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(chttp2_server_listener_test PUBLIC cxx_std_17)
+target_include_directories(chttp2_server_listener_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(chttp2_server_listener_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util
@@ -11840,7 +11896,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(chunked_vector_test PUBLIC cxx_std_14)
+target_compile_features(chunked_vector_test PUBLIC cxx_std_17)
 target_include_directories(chunked_vector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11933,7 +11989,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(cli_call_test PUBLIC cxx_std_14)
+target_compile_features(cli_call_test PUBLIC cxx_std_17)
 target_include_directories(cli_call_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11982,7 +12038,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(client_auth_filter_test PUBLIC cxx_std_14)
+target_compile_features(client_auth_filter_test PUBLIC cxx_std_17)
 target_include_directories(client_auth_filter_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12031,7 +12087,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(client_authority_filter_test PUBLIC cxx_std_14)
+target_compile_features(client_authority_filter_test PUBLIC cxx_std_17)
 target_include_directories(client_authority_filter_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12085,7 +12141,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(client_call_test PUBLIC cxx_std_14)
+  target_compile_features(client_call_test PUBLIC cxx_std_17)
   target_include_directories(client_call_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12164,7 +12220,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(client_callback_end2end_test PUBLIC cxx_std_14)
+target_compile_features(client_callback_end2end_test PUBLIC cxx_std_17)
 target_include_directories(client_callback_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12206,7 +12262,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(client_channel_service_config_test PUBLIC cxx_std_14)
+target_compile_features(client_channel_service_config_test PUBLIC cxx_std_17)
 target_include_directories(client_channel_service_config_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12257,7 +12313,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(client_channel_test PUBLIC cxx_std_14)
+  target_compile_features(client_channel_test PUBLIC cxx_std_17)
   target_include_directories(client_channel_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12302,7 +12358,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(client_context_test_peer_test PUBLIC cxx_std_14)
+target_compile_features(client_context_test_peer_test PUBLIC cxx_std_17)
 target_include_directories(client_context_test_peer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12382,7 +12438,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(client_fork_test PUBLIC cxx_std_14)
+  target_compile_features(client_fork_test PUBLIC cxx_std_17)
   target_include_directories(client_fork_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12462,7 +12518,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(client_interceptors_end2end_test PUBLIC cxx_std_14)
+target_compile_features(client_interceptors_end2end_test PUBLIC cxx_std_17)
 target_include_directories(client_interceptors_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12554,7 +12610,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(client_lb_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(client_lb_end2end_test PUBLIC cxx_std_17)
   target_include_directories(client_lb_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12598,7 +12654,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(client_ssl_test PUBLIC cxx_std_14)
+  target_compile_features(client_ssl_test PUBLIC cxx_std_17)
   target_include_directories(client_ssl_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12672,7 +12728,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(client_streaming_test PUBLIC cxx_std_14)
+target_compile_features(client_streaming_test PUBLIC cxx_std_17)
 target_include_directories(client_streaming_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12726,7 +12782,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(cmdline_test PUBLIC cxx_std_14)
+target_compile_features(cmdline_test PUBLIC cxx_std_17)
 target_include_directories(cmdline_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12769,7 +12825,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(codegen_test_full PUBLIC cxx_std_14)
+target_compile_features(codegen_test_full PUBLIC cxx_std_17)
 target_include_directories(codegen_test_full
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12813,7 +12869,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(codegen_test_minimal PUBLIC cxx_std_14)
+target_compile_features(codegen_test_minimal PUBLIC cxx_std_17)
 target_include_directories(codegen_test_minimal
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12866,7 +12922,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(combiner_test PUBLIC cxx_std_14)
+  target_compile_features(combiner_test PUBLIC cxx_std_17)
   target_include_directories(combiner_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12908,7 +12964,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(common_closures_test PUBLIC cxx_std_14)
+target_compile_features(common_closures_test PUBLIC cxx_std_17)
 target_include_directories(common_closures_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12951,7 +13007,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(completion_queue_threading_test PUBLIC cxx_std_14)
+target_compile_features(completion_queue_threading_test PUBLIC cxx_std_17)
 target_include_directories(completion_queue_threading_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13024,7 +13080,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(compressed_payload_test PUBLIC cxx_std_14)
+target_compile_features(compressed_payload_test PUBLIC cxx_std_17)
 target_include_directories(compressed_payload_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13069,7 +13125,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(compression_test PUBLIC cxx_std_14)
+target_compile_features(compression_test PUBLIC cxx_std_17)
 target_include_directories(compression_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13111,7 +13167,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(concurrent_connectivity_test PUBLIC cxx_std_14)
+target_compile_features(concurrent_connectivity_test PUBLIC cxx_std_17)
 target_include_directories(concurrent_connectivity_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13162,7 +13218,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(connected_subchannel_test PUBLIC cxx_std_14)
+  target_compile_features(connected_subchannel_test PUBLIC cxx_std_17)
   target_include_directories(connected_subchannel_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13215,7 +13271,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(connection_context_test PUBLIC cxx_std_14)
+target_compile_features(connection_context_test PUBLIC cxx_std_17)
 target_include_directories(connection_context_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13259,7 +13315,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(connection_prefix_bad_client_test PUBLIC cxx_std_14)
+target_compile_features(connection_prefix_bad_client_test PUBLIC cxx_std_17)
 target_include_directories(connection_prefix_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13302,7 +13358,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(connection_refused_test PUBLIC cxx_std_14)
+target_compile_features(connection_refused_test PUBLIC cxx_std_17)
 target_include_directories(connection_refused_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13353,7 +13409,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(connectivity_state_test PUBLIC cxx_std_14)
+target_compile_features(connectivity_state_test PUBLIC cxx_std_17)
 target_include_directories(connectivity_state_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13426,7 +13482,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(connectivity_test PUBLIC cxx_std_14)
+target_compile_features(connectivity_test PUBLIC cxx_std_17)
 target_include_directories(connectivity_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13505,7 +13561,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(context_allocator_end2end_test PUBLIC cxx_std_14)
+target_compile_features(context_allocator_end2end_test PUBLIC cxx_std_17)
 target_include_directories(context_allocator_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13546,7 +13602,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(context_test PUBLIC cxx_std_14)
+target_compile_features(context_test PUBLIC cxx_std_17)
 target_include_directories(context_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13590,7 +13646,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(core_configuration_test PUBLIC cxx_std_14)
+target_compile_features(core_configuration_test PUBLIC cxx_std_17)
 target_include_directories(core_configuration_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13623,7 +13679,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(cpp_impl_of_test
   test/core/util/cpp_impl_of_test.cc
 )
-target_compile_features(cpp_impl_of_test PUBLIC cxx_std_14)
+target_compile_features(cpp_impl_of_test PUBLIC cxx_std_17)
 target_include_directories(cpp_impl_of_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13664,7 +13720,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(cpu_test PUBLIC cxx_std_14)
+target_compile_features(cpu_test PUBLIC cxx_std_17)
 target_include_directories(cpu_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13740,7 +13796,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(crl_provider_test PUBLIC cxx_std_14)
+target_compile_features(crl_provider_test PUBLIC cxx_std_17)
 target_include_directories(crl_provider_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13784,7 +13840,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(crl_ssl_transport_security_test PUBLIC cxx_std_14)
+  target_compile_features(crl_ssl_transport_security_test PUBLIC cxx_std_17)
   target_include_directories(crl_ssl_transport_security_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13827,7 +13883,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(default_engine_methods_test PUBLIC cxx_std_14)
+target_compile_features(default_engine_methods_test PUBLIC cxx_std_17)
 target_include_directories(default_engine_methods_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13900,7 +13956,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(default_host_test PUBLIC cxx_std_14)
+target_compile_features(default_host_test PUBLIC cxx_std_17)
 target_include_directories(default_host_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13979,7 +14035,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(delegating_channel_test PUBLIC cxx_std_14)
+target_compile_features(delegating_channel_test PUBLIC cxx_std_17)
 target_include_directories(delegating_channel_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14022,7 +14078,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(destroy_grpclb_channel_with_active_connect_stress_test PUBLIC cxx_std_14)
+target_compile_features(destroy_grpclb_channel_with_active_connect_stress_test PUBLIC cxx_std_17)
 target_include_directories(destroy_grpclb_channel_with_active_connect_stress_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14064,7 +14120,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(directory_reader_test PUBLIC cxx_std_14)
+target_compile_features(directory_reader_test PUBLIC cxx_std_17)
 target_include_directories(directory_reader_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14137,7 +14193,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(disappearing_server_test PUBLIC cxx_std_14)
+target_compile_features(disappearing_server_test PUBLIC cxx_std_17)
 target_include_directories(disappearing_server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14182,7 +14238,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(dns_resolver_cooldown_test PUBLIC cxx_std_14)
+target_compile_features(dns_resolver_cooldown_test PUBLIC cxx_std_17)
 target_include_directories(dns_resolver_cooldown_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14224,7 +14280,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(dns_resolver_test PUBLIC cxx_std_14)
+target_compile_features(dns_resolver_test PUBLIC cxx_std_17)
 target_include_directories(dns_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14265,7 +14321,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(down_cast_test PUBLIC cxx_std_14)
+target_compile_features(down_cast_test PUBLIC cxx_std_17)
 target_include_directories(down_cast_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14308,7 +14364,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(dual_ref_counted_test PUBLIC cxx_std_14)
+target_compile_features(dual_ref_counted_test PUBLIC cxx_std_17)
 target_include_directories(dual_ref_counted_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14352,7 +14408,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(dualstack_socket_test PUBLIC cxx_std_14)
+  target_compile_features(dualstack_socket_test PUBLIC cxx_std_17)
   target_include_directories(dualstack_socket_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14387,7 +14443,7 @@ add_executable(dump_args_test
   src/core/util/dump_args.cc
   test/core/util/dump_args_test.cc
 )
-target_compile_features(dump_args_test PUBLIC cxx_std_14)
+target_compile_features(dump_args_test PUBLIC cxx_std_17)
 target_include_directories(dump_args_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14433,7 +14489,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(duplicate_header_bad_client_test PUBLIC cxx_std_14)
+target_compile_features(duplicate_header_bad_client_test PUBLIC cxx_std_17)
 target_include_directories(duplicate_header_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14506,7 +14562,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(empty_batch_test PUBLIC cxx_std_14)
+target_compile_features(empty_batch_test PUBLIC cxx_std_17)
 target_include_directories(empty_batch_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14590,7 +14646,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(end2end_test PUBLIC cxx_std_14)
+target_compile_features(end2end_test PUBLIC cxx_std_17)
 target_include_directories(end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14632,7 +14688,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(endpoint_addresses_test PUBLIC cxx_std_14)
+target_compile_features(endpoint_addresses_test PUBLIC cxx_std_17)
 target_include_directories(endpoint_addresses_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14678,7 +14734,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(endpoint_config_test PUBLIC cxx_std_14)
+target_compile_features(endpoint_config_test PUBLIC cxx_std_17)
 target_include_directories(endpoint_config_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14734,7 +14790,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(endpoint_pair_test PUBLIC cxx_std_14)
+target_compile_features(endpoint_pair_test PUBLIC cxx_std_17)
 target_include_directories(endpoint_pair_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14776,7 +14832,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(env_test PUBLIC cxx_std_14)
+target_compile_features(env_test PUBLIC cxx_std_17)
 target_include_directories(env_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14843,7 +14899,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(error_details_test PUBLIC cxx_std_14)
+target_compile_features(error_details_test PUBLIC cxx_std_17)
 target_include_directories(error_details_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14896,7 +14952,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(error_test PUBLIC cxx_std_14)
+target_compile_features(error_test PUBLIC cxx_std_17)
 target_include_directories(error_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14947,7 +15003,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(error_utils_test PUBLIC cxx_std_14)
+target_compile_features(error_utils_test PUBLIC cxx_std_17)
 target_include_directories(error_utils_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14998,7 +15054,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(evaluate_args_test PUBLIC cxx_std_14)
+target_compile_features(evaluate_args_test PUBLIC cxx_std_17)
 target_include_directories(evaluate_args_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15040,7 +15096,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(event_engine_wakeup_scheduler_test PUBLIC cxx_std_14)
+target_compile_features(event_engine_wakeup_scheduler_test PUBLIC cxx_std_17)
 target_include_directories(event_engine_wakeup_scheduler_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15084,7 +15140,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(event_poller_posix_test PUBLIC cxx_std_14)
+  target_compile_features(event_poller_posix_test PUBLIC cxx_std_17)
   target_include_directories(event_poller_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15128,7 +15184,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(examine_stack_test PUBLIC cxx_std_14)
+  target_compile_features(examine_stack_test PUBLIC cxx_std_17)
   target_include_directories(examine_stack_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15204,7 +15260,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(exception_test PUBLIC cxx_std_14)
+target_compile_features(exception_test PUBLIC cxx_std_17)
 target_include_directories(exception_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15267,7 +15323,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(exec_ctx_wakeup_scheduler_test PUBLIC cxx_std_14)
+target_compile_features(exec_ctx_wakeup_scheduler_test PUBLIC cxx_std_17)
 target_include_directories(exec_ctx_wakeup_scheduler_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15319,7 +15375,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(experiments_tag_test PUBLIC cxx_std_14)
+target_compile_features(experiments_tag_test PUBLIC cxx_std_17)
 target_include_directories(experiments_tag_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15364,7 +15420,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(experiments_test PUBLIC cxx_std_14)
+target_compile_features(experiments_test PUBLIC cxx_std_17)
 target_include_directories(experiments_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15406,7 +15462,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(factory_test PUBLIC cxx_std_14)
+target_compile_features(factory_test PUBLIC cxx_std_17)
 target_include_directories(factory_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15448,7 +15504,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(fake_resolver_test PUBLIC cxx_std_14)
+target_compile_features(fake_resolver_test PUBLIC cxx_std_17)
 target_include_directories(fake_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15491,7 +15547,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(fake_transport_security_test PUBLIC cxx_std_14)
+target_compile_features(fake_transport_security_test PUBLIC cxx_std_17)
 target_include_directories(fake_transport_security_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15543,7 +15599,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(fd_posix_test PUBLIC cxx_std_14)
+  target_compile_features(fd_posix_test PUBLIC cxx_std_17)
   target_include_directories(fd_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15586,7 +15642,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(file_watcher_certificate_provider_factory_test PUBLIC cxx_std_14)
+target_compile_features(file_watcher_certificate_provider_factory_test PUBLIC cxx_std_17)
 target_include_directories(file_watcher_certificate_provider_factory_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15659,7 +15715,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(filter_causes_close_test PUBLIC cxx_std_14)
+target_compile_features(filter_causes_close_test PUBLIC cxx_std_17)
 target_include_directories(filter_causes_close_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15735,7 +15791,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(filter_init_fails_test PUBLIC cxx_std_14)
+target_compile_features(filter_init_fails_test PUBLIC cxx_std_17)
 target_include_directories(filter_init_fails_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15786,7 +15842,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(filter_test_test PUBLIC cxx_std_14)
+target_compile_features(filter_test_test PUBLIC cxx_std_17)
 target_include_directories(filter_test_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15861,7 +15917,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(filtered_metadata_test PUBLIC cxx_std_14)
+target_compile_features(filtered_metadata_test PUBLIC cxx_std_17)
 target_include_directories(filtered_metadata_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15940,7 +15996,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(flaky_network_test PUBLIC cxx_std_14)
+target_compile_features(flaky_network_test PUBLIC cxx_std_17)
 target_include_directories(flaky_network_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16013,7 +16069,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(flow_control_test PUBLIC cxx_std_14)
+target_compile_features(flow_control_test PUBLIC cxx_std_17)
 target_include_directories(flow_control_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16091,7 +16147,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(for_each_test PUBLIC cxx_std_14)
+target_compile_features(for_each_test PUBLIC cxx_std_17)
 target_include_directories(for_each_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16142,7 +16198,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(fork_test PUBLIC cxx_std_14)
+  target_compile_features(fork_test PUBLIC cxx_std_17)
   target_include_directories(fork_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16188,7 +16244,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(forkable_test PUBLIC cxx_std_14)
+target_compile_features(forkable_test PUBLIC cxx_std_17)
 target_include_directories(forkable_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16245,7 +16301,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(format_request_test PUBLIC cxx_std_14)
+target_compile_features(format_request_test PUBLIC cxx_std_17)
 target_include_directories(format_request_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16288,7 +16344,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(frame_handler_test PUBLIC cxx_std_14)
+target_compile_features(frame_handler_test PUBLIC cxx_std_17)
 target_include_directories(frame_handler_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16336,7 +16392,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(frame_test PUBLIC cxx_std_14)
+target_compile_features(frame_test PUBLIC cxx_std_17)
 target_include_directories(frame_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16393,7 +16449,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(fuzzing_event_engine_test PUBLIC cxx_std_14)
+  target_compile_features(fuzzing_event_engine_test PUBLIC cxx_std_17)
   target_include_directories(fuzzing_event_engine_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16442,7 +16498,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(fuzzing_event_engine_unittest PUBLIC cxx_std_14)
+target_compile_features(fuzzing_event_engine_unittest PUBLIC cxx_std_17)
 target_include_directories(fuzzing_event_engine_unittest
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16491,7 +16547,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(gcp_authentication_filter_test PUBLIC cxx_std_14)
+target_compile_features(gcp_authentication_filter_test PUBLIC cxx_std_17)
 target_include_directories(gcp_authentication_filter_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16571,7 +16627,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(generic_end2end_test PUBLIC cxx_std_14)
+target_compile_features(generic_end2end_test PUBLIC cxx_std_17)
 target_include_directories(generic_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16613,7 +16669,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(glob_test PUBLIC cxx_std_14)
+target_compile_features(glob_test PUBLIC cxx_std_17)
 target_include_directories(glob_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16656,7 +16712,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(goaway_server_test PUBLIC cxx_std_14)
+target_compile_features(goaway_server_test PUBLIC cxx_std_17)
 target_include_directories(goaway_server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16700,7 +16756,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(google_c2p_resolver_test PUBLIC cxx_std_14)
+target_compile_features(google_c2p_resolver_test PUBLIC cxx_std_17)
 target_include_directories(google_c2p_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16742,7 +16798,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(gpr_time_test PUBLIC cxx_std_14)
+target_compile_features(gpr_time_test PUBLIC cxx_std_17)
 target_include_directories(gpr_time_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16815,7 +16871,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(graceful_server_shutdown_test PUBLIC cxx_std_14)
+target_compile_features(graceful_server_shutdown_test PUBLIC cxx_std_17)
 target_include_directories(graceful_server_shutdown_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16861,7 +16917,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(graceful_shutdown_test PUBLIC cxx_std_14)
+target_compile_features(graceful_shutdown_test PUBLIC cxx_std_17)
 target_include_directories(graceful_shutdown_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16912,7 +16968,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_alts_credentials_options_test PUBLIC cxx_std_14)
+target_compile_features(grpc_alts_credentials_options_test PUBLIC cxx_std_17)
 target_include_directories(grpc_alts_credentials_options_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16954,7 +17010,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_audit_logging_test PUBLIC cxx_std_14)
+target_compile_features(grpc_audit_logging_test PUBLIC cxx_std_17)
 target_include_directories(grpc_audit_logging_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17006,7 +17062,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_authorization_engine_test PUBLIC cxx_std_14)
+target_compile_features(grpc_authorization_engine_test PUBLIC cxx_std_17)
 target_include_directories(grpc_authorization_engine_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17057,7 +17113,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_authorization_policy_provider_test PUBLIC cxx_std_14)
+target_compile_features(grpc_authorization_policy_provider_test PUBLIC cxx_std_17)
 target_include_directories(grpc_authorization_policy_provider_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17136,7 +17192,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_authz_end2end_test PUBLIC cxx_std_14)
+target_compile_features(grpc_authz_end2end_test PUBLIC cxx_std_17)
 target_include_directories(grpc_authz_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17210,7 +17266,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_authz_test PUBLIC cxx_std_14)
+target_compile_features(grpc_authz_test PUBLIC cxx_std_17)
 target_include_directories(grpc_authz_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17255,7 +17311,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_byte_buffer_reader_test PUBLIC cxx_std_14)
+target_compile_features(grpc_byte_buffer_reader_test PUBLIC cxx_std_17)
 target_include_directories(grpc_byte_buffer_reader_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17308,7 +17364,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_cli PUBLIC cxx_std_14)
+target_compile_features(grpc_cli PUBLIC cxx_std_17)
 target_include_directories(grpc_cli
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17347,7 +17403,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_completion_queue_test PUBLIC cxx_std_14)
+target_compile_features(grpc_completion_queue_test PUBLIC cxx_std_17)
 target_include_directories(grpc_completion_queue_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17380,7 +17436,7 @@ if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_CPP_PLUGIN)
 add_executable(grpc_cpp_plugin
   src/compiler/cpp_plugin.cc
 )
-target_compile_features(grpc_cpp_plugin PUBLIC cxx_std_14)
+target_compile_features(grpc_cpp_plugin PUBLIC cxx_std_17)
 target_include_directories(grpc_cpp_plugin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17418,7 +17474,7 @@ if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_CSHARP_PLUGIN)
 add_executable(grpc_csharp_plugin
   src/compiler/csharp_plugin.cc
 )
-target_compile_features(grpc_csharp_plugin PUBLIC cxx_std_14)
+target_compile_features(grpc_csharp_plugin PUBLIC cxx_std_17)
 target_include_directories(grpc_csharp_plugin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17474,7 +17530,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_ipv6_loopback_available_test PUBLIC cxx_std_14)
+target_compile_features(grpc_ipv6_loopback_available_test PUBLIC cxx_std_17)
 target_include_directories(grpc_ipv6_loopback_available_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17507,7 +17563,7 @@ if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_NODE_PLUGIN)
 add_executable(grpc_node_plugin
   src/compiler/node_plugin.cc
 )
-target_compile_features(grpc_node_plugin PUBLIC cxx_std_14)
+target_compile_features(grpc_node_plugin PUBLIC cxx_std_17)
 target_include_directories(grpc_node_plugin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17545,7 +17601,7 @@ if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_OBJECTIVE_C_PLUGIN)
 add_executable(grpc_objective_c_plugin
   src/compiler/objective_c_plugin.cc
 )
-target_compile_features(grpc_objective_c_plugin PUBLIC cxx_std_14)
+target_compile_features(grpc_objective_c_plugin PUBLIC cxx_std_17)
 target_include_directories(grpc_objective_c_plugin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17583,7 +17639,7 @@ if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_PHP_PLUGIN)
 add_executable(grpc_php_plugin
   src/compiler/php_plugin.cc
 )
-target_compile_features(grpc_php_plugin PUBLIC cxx_std_14)
+target_compile_features(grpc_php_plugin PUBLIC cxx_std_17)
 target_include_directories(grpc_php_plugin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17621,7 +17677,7 @@ if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_PYTHON_PLUGIN)
 add_executable(grpc_python_plugin
   src/compiler/python_plugin.cc
 )
-target_compile_features(grpc_python_plugin PUBLIC cxx_std_14)
+target_compile_features(grpc_python_plugin PUBLIC cxx_std_17)
 target_include_directories(grpc_python_plugin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17659,7 +17715,7 @@ if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_RUBY_PLUGIN)
 add_executable(grpc_ruby_plugin
   src/compiler/ruby_plugin.cc
 )
-target_compile_features(grpc_ruby_plugin PUBLIC cxx_std_14)
+target_compile_features(grpc_ruby_plugin PUBLIC cxx_std_17)
 target_include_directories(grpc_ruby_plugin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17715,7 +17771,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_tls_certificate_distributor_test PUBLIC cxx_std_14)
+target_compile_features(grpc_tls_certificate_distributor_test PUBLIC cxx_std_17)
 target_include_directories(grpc_tls_certificate_distributor_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17766,7 +17822,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_tls_certificate_provider_test PUBLIC cxx_std_14)
+target_compile_features(grpc_tls_certificate_provider_test PUBLIC cxx_std_17)
 target_include_directories(grpc_tls_certificate_provider_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17817,7 +17873,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_tls_certificate_verifier_test PUBLIC cxx_std_14)
+target_compile_features(grpc_tls_certificate_verifier_test PUBLIC cxx_std_17)
 target_include_directories(grpc_tls_certificate_verifier_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17868,7 +17924,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_tls_credentials_options_comparator_test PUBLIC cxx_std_14)
+target_compile_features(grpc_tls_credentials_options_comparator_test PUBLIC cxx_std_17)
 target_include_directories(grpc_tls_credentials_options_comparator_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17919,7 +17975,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_tls_credentials_options_test PUBLIC cxx_std_14)
+target_compile_features(grpc_tls_credentials_options_test PUBLIC cxx_std_17)
 target_include_directories(grpc_tls_credentials_options_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17972,7 +18028,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpc_tls_crl_provider_test PUBLIC cxx_std_14)
+target_compile_features(grpc_tls_crl_provider_test PUBLIC cxx_std_17)
 target_include_directories(grpc_tls_crl_provider_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18055,7 +18111,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(grpc_tool_test PUBLIC cxx_std_14)
+  target_compile_features(grpc_tool_test PUBLIC cxx_std_17)
   target_include_directories(grpc_tool_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18106,7 +18162,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(grpclb_api_test PUBLIC cxx_std_14)
+target_compile_features(grpclb_api_test PUBLIC cxx_std_17)
 target_include_directories(grpclb_api_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18191,7 +18247,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(grpclb_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(grpclb_end2end_test PUBLIC cxx_std_17)
   target_include_directories(grpclb_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18244,7 +18300,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(h2_ssl_cert_test PUBLIC cxx_std_14)
+target_compile_features(h2_ssl_cert_test PUBLIC cxx_std_17)
 target_include_directories(h2_ssl_cert_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18287,7 +18343,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(h2_ssl_session_reuse_test PUBLIC cxx_std_14)
+target_compile_features(h2_ssl_session_reuse_test PUBLIC cxx_std_17)
 target_include_directories(h2_ssl_session_reuse_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18330,7 +18386,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(h2_tls_peer_property_external_verifier_test PUBLIC cxx_std_14)
+target_compile_features(h2_tls_peer_property_external_verifier_test PUBLIC cxx_std_17)
 target_include_directories(h2_tls_peer_property_external_verifier_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18372,7 +18428,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(handle_tests PUBLIC cxx_std_14)
+target_compile_features(handle_tests PUBLIC cxx_std_17)
 target_include_directories(handle_tests
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18416,7 +18472,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(handshake_server_with_readahead_handshaker_test PUBLIC cxx_std_14)
+  target_compile_features(handshake_server_with_readahead_handshaker_test PUBLIC cxx_std_17)
   target_include_directories(handshake_server_with_readahead_handshaker_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18461,7 +18517,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(head_of_line_blocking_bad_client_test PUBLIC cxx_std_14)
+target_compile_features(head_of_line_blocking_bad_client_test PUBLIC cxx_std_17)
 target_include_directories(head_of_line_blocking_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18505,7 +18561,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(headers_bad_client_test PUBLIC cxx_std_14)
+target_compile_features(headers_bad_client_test PUBLIC cxx_std_17)
 target_include_directories(headers_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18590,7 +18646,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(health_service_end2end_test PUBLIC cxx_std_14)
+target_compile_features(health_service_end2end_test PUBLIC cxx_std_17)
 target_include_directories(health_service_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18663,7 +18719,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(high_initial_seqno_test PUBLIC cxx_std_14)
+target_compile_features(high_initial_seqno_test PUBLIC cxx_std_17)
 target_include_directories(high_initial_seqno_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18717,7 +18773,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(histogram_test PUBLIC cxx_std_14)
+target_compile_features(histogram_test PUBLIC cxx_std_17)
 target_include_directories(histogram_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18759,7 +18815,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(host_port_test PUBLIC cxx_std_14)
+target_compile_features(host_port_test PUBLIC cxx_std_17)
 target_include_directories(host_port_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18810,7 +18866,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(hpack_encoder_test PUBLIC cxx_std_14)
+target_compile_features(hpack_encoder_test PUBLIC cxx_std_17)
 target_include_directories(hpack_encoder_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18861,7 +18917,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(hpack_parser_table_test PUBLIC cxx_std_14)
+target_compile_features(hpack_parser_table_test PUBLIC cxx_std_17)
 target_include_directories(hpack_parser_table_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18912,7 +18968,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(hpack_parser_test PUBLIC cxx_std_14)
+target_compile_features(hpack_parser_test PUBLIC cxx_std_17)
 target_include_directories(hpack_parser_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18985,7 +19041,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(hpack_size_test PUBLIC cxx_std_14)
+target_compile_features(hpack_size_test PUBLIC cxx_std_17)
 target_include_directories(hpack_size_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19043,7 +19099,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(http2_client PUBLIC cxx_std_14)
+target_compile_features(http2_client PUBLIC cxx_std_17)
 target_include_directories(http2_client
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19093,7 +19149,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(http2_client_transport_test PUBLIC cxx_std_14)
+target_compile_features(http2_client_transport_test PUBLIC cxx_std_17)
 target_include_directories(http2_client_transport_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19147,7 +19203,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(http2_server_transport_test PUBLIC cxx_std_14)
+target_compile_features(http2_server_transport_test PUBLIC cxx_std_17)
 target_include_directories(http2_server_transport_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19189,7 +19245,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(http2_settings_test PUBLIC cxx_std_14)
+target_compile_features(http2_settings_test PUBLIC cxx_std_17)
 target_include_directories(http2_settings_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19262,7 +19318,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(http2_stats_test PUBLIC cxx_std_14)
+target_compile_features(http2_stats_test PUBLIC cxx_std_17)
 target_include_directories(http2_stats_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19307,7 +19363,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(http_proxy_mapper_test PUBLIC cxx_std_14)
+target_compile_features(http_proxy_mapper_test PUBLIC cxx_std_17)
 target_include_directories(http_proxy_mapper_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19353,7 +19409,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(httpcli_test PUBLIC cxx_std_14)
+  target_compile_features(httpcli_test PUBLIC cxx_std_17)
   target_include_directories(httpcli_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19400,7 +19456,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(httpscli_test PUBLIC cxx_std_14)
+  target_compile_features(httpscli_test PUBLIC cxx_std_17)
   target_include_directories(httpscli_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19481,7 +19537,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(hybrid_end2end_test PUBLIC cxx_std_14)
+target_compile_features(hybrid_end2end_test PUBLIC cxx_std_17)
 target_include_directories(hybrid_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19515,7 +19571,7 @@ add_executable(idle_filter_state_test
   src/core/ext/filters/channel_idle/idle_filter_state.cc
   test/core/client_idle/idle_filter_state_test.cc
 )
-target_compile_features(idle_filter_state_test PUBLIC cxx_std_14)
+target_compile_features(idle_filter_state_test PUBLIC cxx_std_17)
 target_include_directories(idle_filter_state_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19547,7 +19603,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(if_list_test
   test/core/util/if_list_test.cc
 )
-target_compile_features(if_list_test PUBLIC cxx_std_14)
+target_compile_features(if_list_test PUBLIC cxx_std_17)
 target_include_directories(if_list_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19587,7 +19643,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(if_test PUBLIC cxx_std_14)
+target_compile_features(if_test PUBLIC cxx_std_17)
 target_include_directories(if_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19631,7 +19687,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(init_test PUBLIC cxx_std_14)
+target_compile_features(init_test PUBLIC cxx_std_17)
 target_include_directories(init_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19675,7 +19731,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(initial_settings_frame_bad_client_test PUBLIC cxx_std_14)
+target_compile_features(initial_settings_frame_bad_client_test PUBLIC cxx_std_17)
 target_include_directories(initial_settings_frame_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19740,7 +19796,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(inproc_test PUBLIC cxx_std_14)
+  target_compile_features(inproc_test PUBLIC cxx_std_17)
   target_include_directories(inproc_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19793,7 +19849,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(insecure_security_connector_test PUBLIC cxx_std_14)
+target_compile_features(insecure_security_connector_test PUBLIC cxx_std_17)
 target_include_directories(insecure_security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19835,7 +19891,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(inter_activity_latch_test PUBLIC cxx_std_14)
+target_compile_features(inter_activity_latch_test PUBLIC cxx_std_17)
 target_include_directories(inter_activity_latch_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19883,7 +19939,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(inter_activity_pipe_test PUBLIC cxx_std_14)
+target_compile_features(inter_activity_pipe_test PUBLIC cxx_std_17)
 target_include_directories(inter_activity_pipe_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19931,7 +19987,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(interception_chain_test PUBLIC cxx_std_14)
+target_compile_features(interception_chain_test PUBLIC cxx_std_17)
 target_include_directories(interception_chain_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20000,7 +20056,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(interceptor_list_test PUBLIC cxx_std_14)
+target_compile_features(interceptor_list_test PUBLIC cxx_std_17)
 target_include_directories(interceptor_list_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20067,7 +20123,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(interop_client PUBLIC cxx_std_14)
+target_compile_features(interop_client PUBLIC cxx_std_17)
 target_include_directories(interop_client
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20121,7 +20177,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(interop_server PUBLIC cxx_std_14)
+target_compile_features(interop_server PUBLIC cxx_std_17)
 target_include_directories(interop_server
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20160,7 +20216,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(invalid_call_argument_test PUBLIC cxx_std_14)
+target_compile_features(invalid_call_argument_test PUBLIC cxx_std_17)
 target_include_directories(invalid_call_argument_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20233,7 +20289,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(invoke_large_request_test PUBLIC cxx_std_14)
+target_compile_features(invoke_large_request_test PUBLIC cxx_std_17)
 target_include_directories(invoke_large_request_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20280,7 +20336,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
       )
     endif()
   endif()
-  target_compile_features(iocp_test PUBLIC cxx_std_14)
+  target_compile_features(iocp_test PUBLIC cxx_std_17)
   target_include_directories(iocp_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20329,7 +20385,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(istio_echo_server_test PUBLIC cxx_std_14)
+target_compile_features(istio_echo_server_test PUBLIC cxx_std_17)
 target_include_directories(istio_echo_server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20375,7 +20431,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(join_test PUBLIC cxx_std_14)
+target_compile_features(join_test PUBLIC cxx_std_17)
 target_include_directories(join_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20420,7 +20476,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(json_object_loader_test PUBLIC cxx_std_14)
+target_compile_features(json_object_loader_test PUBLIC cxx_std_17)
 target_include_directories(json_object_loader_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20462,7 +20518,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(json_test PUBLIC cxx_std_14)
+target_compile_features(json_test PUBLIC cxx_std_17)
 target_include_directories(json_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20513,7 +20569,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(json_token_test PUBLIC cxx_std_14)
+target_compile_features(json_token_test PUBLIC cxx_std_17)
 target_include_directories(json_token_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20564,7 +20620,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(jwt_verifier_test PUBLIC cxx_std_14)
+target_compile_features(jwt_verifier_test PUBLIC cxx_std_17)
 target_include_directories(jwt_verifier_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20637,7 +20693,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(keepalive_timeout_test PUBLIC cxx_std_14)
+target_compile_features(keepalive_timeout_test PUBLIC cxx_std_17)
 target_include_directories(keepalive_timeout_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20683,7 +20739,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(lame_client_test PUBLIC cxx_std_14)
+target_compile_features(lame_client_test PUBLIC cxx_std_17)
 target_include_directories(lame_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20756,7 +20812,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(large_metadata_test PUBLIC cxx_std_14)
+target_compile_features(large_metadata_test PUBLIC cxx_std_17)
 target_include_directories(large_metadata_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20807,7 +20863,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(latch_test PUBLIC cxx_std_14)
+target_compile_features(latch_test PUBLIC cxx_std_17)
 target_include_directories(latch_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20859,7 +20915,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(lb_get_cpu_stats_test PUBLIC cxx_std_14)
+target_compile_features(lb_get_cpu_stats_test PUBLIC cxx_std_17)
 target_include_directories(lb_get_cpu_stats_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20903,7 +20959,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(lb_load_data_store_test PUBLIC cxx_std_14)
+target_compile_features(lb_load_data_store_test PUBLIC cxx_std_17)
 target_include_directories(lb_load_data_store_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20946,7 +21002,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(lb_metadata_test PUBLIC cxx_std_14)
+target_compile_features(lb_metadata_test PUBLIC cxx_std_17)
 target_include_directories(lb_metadata_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -20997,7 +21053,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(load_balanced_call_destination_test PUBLIC cxx_std_14)
+  target_compile_features(load_balanced_call_destination_test PUBLIC cxx_std_17)
   target_include_directories(load_balanced_call_destination_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21041,7 +21097,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(load_config_test PUBLIC cxx_std_14)
+target_compile_features(load_config_test PUBLIC cxx_std_17)
 target_include_directories(load_config_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21083,7 +21139,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(load_file_test PUBLIC cxx_std_14)
+target_compile_features(load_file_test PUBLIC cxx_std_17)
 target_include_directories(load_file_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21134,7 +21190,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(local_security_connector_test PUBLIC cxx_std_14)
+target_compile_features(local_security_connector_test PUBLIC cxx_std_17)
 target_include_directories(local_security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21177,7 +21233,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(log_too_many_open_files_test PUBLIC cxx_std_14)
+  target_compile_features(log_too_many_open_files_test PUBLIC cxx_std_17)
   target_include_directories(log_too_many_open_files_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21222,7 +21278,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(loop_test PUBLIC cxx_std_14)
+target_compile_features(loop_test PUBLIC cxx_std_17)
 target_include_directories(loop_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21258,7 +21314,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(lru_cache_test
   test/core/util/lru_cache_test.cc
 )
-target_compile_features(lru_cache_test PUBLIC cxx_std_14)
+target_compile_features(lru_cache_test PUBLIC cxx_std_17)
 target_include_directories(lru_cache_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21330,7 +21386,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(map_pipe_test PUBLIC cxx_std_14)
+target_compile_features(map_pipe_test PUBLIC cxx_std_17)
 target_include_directories(map_pipe_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21379,7 +21435,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(match_promise_test PUBLIC cxx_std_14)
+target_compile_features(match_promise_test PUBLIC cxx_std_17)
 target_include_directories(match_promise_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21413,7 +21469,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(match_test
   test/core/util/match_test.cc
 )
-target_compile_features(match_test PUBLIC cxx_std_14)
+target_compile_features(match_test PUBLIC cxx_std_17)
 target_include_directories(match_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21463,7 +21519,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(matchers_test PUBLIC cxx_std_14)
+target_compile_features(matchers_test PUBLIC cxx_std_17)
 target_include_directories(matchers_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21536,7 +21592,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(max_concurrent_streams_test PUBLIC cxx_std_14)
+target_compile_features(max_concurrent_streams_test PUBLIC cxx_std_17)
 target_include_directories(max_concurrent_streams_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21612,7 +21668,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(max_connection_age_test PUBLIC cxx_std_14)
+target_compile_features(max_connection_age_test PUBLIC cxx_std_17)
 target_include_directories(max_connection_age_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21688,7 +21744,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(max_connection_idle_test PUBLIC cxx_std_14)
+target_compile_features(max_connection_idle_test PUBLIC cxx_std_17)
 target_include_directories(max_connection_idle_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21764,7 +21820,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(max_message_length_test PUBLIC cxx_std_14)
+target_compile_features(max_message_length_test PUBLIC cxx_std_17)
 target_include_directories(max_message_length_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21810,7 +21866,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(memory_quota_stress_test PUBLIC cxx_std_14)
+  target_compile_features(memory_quota_stress_test PUBLIC cxx_std_17)
   target_include_directories(memory_quota_stress_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21853,7 +21909,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(memory_quota_test PUBLIC cxx_std_14)
+target_compile_features(memory_quota_test PUBLIC cxx_std_17)
 target_include_directories(memory_quota_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21929,7 +21985,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(message_allocator_end2end_test PUBLIC cxx_std_14)
+target_compile_features(message_allocator_end2end_test PUBLIC cxx_std_17)
 target_include_directories(message_allocator_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -21980,7 +22036,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(message_compress_test PUBLIC cxx_std_14)
+target_compile_features(message_compress_test PUBLIC cxx_std_17)
 target_include_directories(message_compress_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22022,7 +22078,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(message_size_service_config_test PUBLIC cxx_std_14)
+target_compile_features(message_size_service_config_test PUBLIC cxx_std_17)
 target_include_directories(message_size_service_config_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22073,7 +22129,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(metadata_map_test PUBLIC cxx_std_14)
+target_compile_features(metadata_map_test PUBLIC cxx_std_17)
 target_include_directories(metadata_map_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22116,7 +22172,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(metrics_test PUBLIC cxx_std_14)
+target_compile_features(metrics_test PUBLIC cxx_std_17)
 target_include_directories(metrics_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22158,7 +22214,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(minimal_stack_is_minimal_test PUBLIC cxx_std_14)
+target_compile_features(minimal_stack_is_minimal_test PUBLIC cxx_std_17)
 target_include_directories(minimal_stack_is_minimal_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22191,7 +22247,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(miscompile_with_no_unique_address_test
   test/core/compiler_bugs/miscompile_with_no_unique_address_test.cc
 )
-target_compile_features(miscompile_with_no_unique_address_test PUBLIC cxx_std_14)
+target_compile_features(miscompile_with_no_unique_address_test PUBLIC cxx_std_17)
 target_include_directories(miscompile_with_no_unique_address_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22265,7 +22321,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(mock_stream_test PUBLIC cxx_std_14)
+target_compile_features(mock_stream_test PUBLIC cxx_std_17)
 target_include_directories(mock_stream_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22344,7 +22400,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(mock_test PUBLIC cxx_std_14)
+target_compile_features(mock_test PUBLIC cxx_std_17)
 target_include_directories(mock_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22392,7 +22448,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(mpsc_test PUBLIC cxx_std_14)
+target_compile_features(mpsc_test PUBLIC cxx_std_17)
 target_include_directories(mpsc_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22441,7 +22497,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(mpscq_test PUBLIC cxx_std_14)
+  target_compile_features(mpscq_test PUBLIC cxx_std_17)
   target_include_directories(mpscq_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22515,7 +22571,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(negative_deadline_test PUBLIC cxx_std_14)
+target_compile_features(negative_deadline_test PUBLIC cxx_std_17)
 target_include_directories(negative_deadline_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22551,7 +22607,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(no_destruct_test
   test/core/util/no_destruct_test.cc
 )
-target_compile_features(no_destruct_test PUBLIC cxx_std_14)
+target_compile_features(no_destruct_test PUBLIC cxx_std_17)
 target_include_directories(no_destruct_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22623,7 +22679,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(no_logging_test PUBLIC cxx_std_14)
+target_compile_features(no_logging_test PUBLIC cxx_std_17)
 target_include_directories(no_logging_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22699,7 +22755,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(no_op_test PUBLIC cxx_std_14)
+target_compile_features(no_op_test PUBLIC cxx_std_17)
 target_include_directories(no_op_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22745,7 +22801,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(no_server_test PUBLIC cxx_std_14)
+target_compile_features(no_server_test PUBLIC cxx_std_17)
 target_include_directories(no_server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22820,7 +22876,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(nonblocking_test PUBLIC cxx_std_14)
+target_compile_features(nonblocking_test PUBLIC cxx_std_17)
 target_include_directories(nonblocking_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22861,7 +22917,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(notification_test PUBLIC cxx_std_14)
+target_compile_features(notification_test PUBLIC cxx_std_17)
 target_include_directories(notification_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22903,7 +22959,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(num_external_connectivity_watchers_test PUBLIC cxx_std_14)
+target_compile_features(num_external_connectivity_watchers_test PUBLIC cxx_std_17)
 target_include_directories(num_external_connectivity_watchers_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -22951,7 +23007,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(observable_test PUBLIC cxx_std_14)
+target_compile_features(observable_test PUBLIC cxx_std_17)
 target_include_directories(observable_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23005,7 +23061,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(oracle_event_engine_posix_test PUBLIC cxx_std_14)
+  target_compile_features(oracle_event_engine_posix_test PUBLIC cxx_std_17)
   target_include_directories(oracle_event_engine_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23074,7 +23130,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(orca_service_end2end_test PUBLIC cxx_std_14)
+target_compile_features(orca_service_end2end_test PUBLIC cxx_std_17)
 target_include_directories(orca_service_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23118,7 +23174,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(orca_service_test PUBLIC cxx_std_14)
+target_compile_features(orca_service_test PUBLIC cxx_std_17)
 target_include_directories(orca_service_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23160,7 +23216,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(orphanable_test PUBLIC cxx_std_14)
+target_compile_features(orphanable_test PUBLIC cxx_std_17)
 target_include_directories(orphanable_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23194,7 +23250,7 @@ add_executable(osa_distance_test
   test/core/test_util/osa_distance.cc
   test/core/test_util/osa_distance_test.cc
 )
-target_compile_features(osa_distance_test PUBLIC cxx_std_14)
+target_compile_features(osa_distance_test PUBLIC cxx_std_17)
 target_include_directories(osa_distance_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23274,7 +23330,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(otel_plugin_test PUBLIC cxx_std_14)
+target_compile_features(otel_plugin_test PUBLIC cxx_std_17)
 target_include_directories(otel_plugin_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23320,7 +23376,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(out_of_bounds_bad_client_test PUBLIC cxx_std_14)
+target_compile_features(out_of_bounds_bad_client_test PUBLIC cxx_std_17)
 target_include_directories(out_of_bounds_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23362,7 +23418,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(outlier_detection_lb_config_parser_test PUBLIC cxx_std_14)
+target_compile_features(outlier_detection_lb_config_parser_test PUBLIC cxx_std_17)
 target_include_directories(outlier_detection_lb_config_parser_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23410,7 +23466,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(outlier_detection_test PUBLIC cxx_std_14)
+target_compile_features(outlier_detection_test PUBLIC cxx_std_17)
 target_include_directories(outlier_detection_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23444,7 +23500,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(overload_test
   test/core/util/overload_test.cc
 )
-target_compile_features(overload_test PUBLIC cxx_std_14)
+target_compile_features(overload_test PUBLIC cxx_std_17)
 target_include_directories(overload_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23485,7 +23541,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(parse_address_test PUBLIC cxx_std_14)
+target_compile_features(parse_address_test PUBLIC cxx_std_17)
 target_include_directories(parse_address_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23528,7 +23584,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(parse_address_with_named_scope_id_test PUBLIC cxx_std_14)
+  target_compile_features(parse_address_with_named_scope_id_test PUBLIC cxx_std_17)
   target_include_directories(parse_address_with_named_scope_id_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23571,7 +23627,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(parsed_metadata_test PUBLIC cxx_std_14)
+target_compile_features(parsed_metadata_test PUBLIC cxx_std_17)
 target_include_directories(parsed_metadata_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23626,7 +23682,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(parser_test PUBLIC cxx_std_14)
+target_compile_features(parser_test PUBLIC cxx_std_17)
 target_include_directories(parser_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23668,7 +23724,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(party_test PUBLIC cxx_std_14)
+target_compile_features(party_test PUBLIC cxx_std_17)
 target_include_directories(party_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23741,7 +23797,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(payload_test PUBLIC cxx_std_14)
+target_compile_features(payload_test PUBLIC cxx_std_17)
 target_include_directories(payload_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23786,7 +23842,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(percent_encoding_test PUBLIC cxx_std_14)
+target_compile_features(percent_encoding_test PUBLIC cxx_std_17)
 target_include_directories(percent_encoding_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23848,7 +23904,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(periodic_update_test PUBLIC cxx_std_14)
+target_compile_features(periodic_update_test PUBLIC cxx_std_17)
 target_include_directories(periodic_update_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23903,7 +23959,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(pick_first_test PUBLIC cxx_std_14)
+target_compile_features(pick_first_test PUBLIC cxx_std_17)
 target_include_directories(pick_first_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23955,7 +24011,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(ping_abuse_policy_test PUBLIC cxx_std_14)
+target_compile_features(ping_abuse_policy_test PUBLIC cxx_std_17)
 target_include_directories(ping_abuse_policy_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23997,7 +24053,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(ping_callbacks_test PUBLIC cxx_std_14)
+target_compile_features(ping_callbacks_test PUBLIC cxx_std_17)
 target_include_directories(ping_callbacks_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -24048,7 +24104,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(ping_configuration_test PUBLIC cxx_std_14)
+target_compile_features(ping_configuration_test PUBLIC cxx_std_17)
 target_include_directories(ping_configuration_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -24121,7 +24177,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(ping_pong_streaming_test PUBLIC cxx_std_14)
+target_compile_features(ping_pong_streaming_test PUBLIC cxx_std_17)
 target_include_directories(ping_pong_streaming_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -24175,7 +24231,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(ping_rate_policy_test PUBLIC cxx_std_14)
+target_compile_features(ping_rate_policy_test PUBLIC cxx_std_17)
 target_include_directories(ping_rate_policy_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -24248,7 +24304,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(ping_test PUBLIC cxx_std_14)
+target_compile_features(ping_test PUBLIC cxx_std_17)
 target_include_directories(ping_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -24293,7 +24349,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(pipe_test PUBLIC cxx_std_14)
+target_compile_features(pipe_test PUBLIC cxx_std_17)
 target_include_directories(pipe_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -24334,7 +24390,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(poll_test PUBLIC cxx_std_14)
+target_compile_features(poll_test PUBLIC cxx_std_17)
 target_include_directories(poll_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -24410,7 +24466,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(port_sharing_end2end_test PUBLIC cxx_std_14)
+target_compile_features(port_sharing_end2end_test PUBLIC cxx_std_17)
 target_include_directories(port_sharing_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -24457,7 +24513,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(posix_endpoint_test PUBLIC cxx_std_14)
+  target_compile_features(posix_endpoint_test PUBLIC cxx_std_17)
   target_include_directories(posix_endpoint_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -24501,7 +24557,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(posix_engine_listener_utils_test PUBLIC cxx_std_14)
+  target_compile_features(posix_engine_listener_utils_test PUBLIC cxx_std_17)
   target_include_directories(posix_engine_listener_utils_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -24548,7 +24604,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(posix_event_engine_connect_test PUBLIC cxx_std_14)
+  target_compile_features(posix_event_engine_connect_test PUBLIC cxx_std_17)
   target_include_directories(posix_event_engine_connect_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -24600,7 +24656,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(posix_event_engine_native_dns_test PUBLIC cxx_std_14)
+  target_compile_features(posix_event_engine_native_dns_test PUBLIC cxx_std_17)
   target_include_directories(posix_event_engine_native_dns_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -24655,7 +24711,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(posix_event_engine_test PUBLIC cxx_std_14)
+  target_compile_features(posix_event_engine_test PUBLIC cxx_std_17)
   target_include_directories(posix_event_engine_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25236,7 +25292,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(pre_stop_hook_server_test PUBLIC cxx_std_14)
+target_compile_features(pre_stop_hook_server_test PUBLIC cxx_std_17)
 target_include_directories(pre_stop_hook_server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25280,7 +25336,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(prioritized_race_test PUBLIC cxx_std_14)
+target_compile_features(prioritized_race_test PUBLIC cxx_std_17)
 target_include_directories(prioritized_race_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25323,7 +25379,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(promise_endpoint_test PUBLIC cxx_std_14)
+target_compile_features(promise_endpoint_test PUBLIC cxx_std_17)
 target_include_directories(promise_endpoint_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25364,7 +25420,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(promise_factory_test PUBLIC cxx_std_14)
+target_compile_features(promise_factory_test PUBLIC cxx_std_17)
 target_include_directories(promise_factory_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25407,7 +25463,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(promise_map_test PUBLIC cxx_std_14)
+target_compile_features(promise_map_test PUBLIC cxx_std_17)
 target_include_directories(promise_map_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25457,7 +25513,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(promise_mutex_test PUBLIC cxx_std_14)
+target_compile_features(promise_mutex_test PUBLIC cxx_std_17)
 target_include_directories(promise_mutex_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25504,7 +25560,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(promise_test PUBLIC cxx_std_14)
+target_compile_features(promise_test PUBLIC cxx_std_17)
 target_include_directories(promise_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25548,7 +25604,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(proto_buffer_reader_test PUBLIC cxx_std_14)
+target_compile_features(proto_buffer_reader_test PUBLIC cxx_std_17)
 target_include_directories(proto_buffer_reader_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25591,7 +25647,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(proto_buffer_writer_test PUBLIC cxx_std_14)
+target_compile_features(proto_buffer_writer_test PUBLIC cxx_std_17)
 target_include_directories(proto_buffer_writer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25672,7 +25728,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(proto_server_reflection_test PUBLIC cxx_std_14)
+target_compile_features(proto_server_reflection_test PUBLIC cxx_std_17)
 target_include_directories(proto_server_reflection_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25716,7 +25772,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(proto_utils_test PUBLIC cxx_std_14)
+target_compile_features(proto_utils_test PUBLIC cxx_std_17)
 target_include_directories(proto_utils_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25790,7 +25846,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(proxy_auth_test PUBLIC cxx_std_14)
+target_compile_features(proxy_auth_test PUBLIC cxx_std_17)
 target_include_directories(proxy_auth_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25877,7 +25933,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(qps_json_driver PUBLIC cxx_std_14)
+target_compile_features(qps_json_driver PUBLIC cxx_std_17)
 target_include_directories(qps_json_driver
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25949,7 +26005,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(qps_worker PUBLIC cxx_std_14)
+target_compile_features(qps_worker PUBLIC cxx_std_17)
 target_include_directories(qps_worker
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25986,7 +26042,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(query_extensions_test PUBLIC cxx_std_14)
+target_compile_features(query_extensions_test PUBLIC cxx_std_17)
 target_include_directories(query_extensions_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26028,7 +26084,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(race_test PUBLIC cxx_std_14)
+target_compile_features(race_test PUBLIC cxx_std_17)
 target_include_directories(race_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26062,7 +26118,7 @@ add_executable(random_early_detection_test
   src/core/util/random_early_detection.cc
   test/core/util/random_early_detection_test.cc
 )
-target_compile_features(random_early_detection_test PUBLIC cxx_std_14)
+target_compile_features(random_early_detection_test PUBLIC cxx_std_17)
 target_include_directories(random_early_detection_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26144,7 +26200,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(raw_end2end_test PUBLIC cxx_std_14)
+target_compile_features(raw_end2end_test PUBLIC cxx_std_17)
 target_include_directories(raw_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26186,7 +26242,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(rbac_service_config_parser_test PUBLIC cxx_std_14)
+target_compile_features(rbac_service_config_parser_test PUBLIC cxx_std_17)
 target_include_directories(rbac_service_config_parser_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26237,7 +26293,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(rbac_translator_test PUBLIC cxx_std_14)
+target_compile_features(rbac_translator_test PUBLIC cxx_std_17)
 target_include_directories(rbac_translator_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26280,7 +26336,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(ref_counted_ptr_test PUBLIC cxx_std_14)
+target_compile_features(ref_counted_ptr_test PUBLIC cxx_std_17)
 target_include_directories(ref_counted_ptr_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26322,7 +26378,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(ref_counted_test PUBLIC cxx_std_14)
+target_compile_features(ref_counted_test PUBLIC cxx_std_17)
 target_include_directories(ref_counted_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26395,7 +26451,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(registered_call_test PUBLIC cxx_std_14)
+target_compile_features(registered_call_test PUBLIC cxx_std_17)
 target_include_directories(registered_call_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26441,7 +26497,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(remove_stream_from_stalled_lists_test PUBLIC cxx_std_14)
+  target_compile_features(remove_stream_from_stalled_lists_test PUBLIC cxx_std_17)
   target_include_directories(remove_stream_from_stalled_lists_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26531,7 +26587,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(request_buffer_test PUBLIC cxx_std_14)
+target_compile_features(request_buffer_test PUBLIC cxx_std_17)
 target_include_directories(request_buffer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26615,7 +26671,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(request_with_flags_test PUBLIC cxx_std_14)
+target_compile_features(request_with_flags_test PUBLIC cxx_std_17)
 target_include_directories(request_with_flags_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26691,7 +26747,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(request_with_payload_test PUBLIC cxx_std_14)
+target_compile_features(request_with_payload_test PUBLIC cxx_std_17)
 target_include_directories(request_with_payload_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26746,7 +26802,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(resolve_address_using_ares_resolver_posix_test PUBLIC cxx_std_14)
+  target_compile_features(resolve_address_using_ares_resolver_posix_test PUBLIC cxx_std_17)
   target_include_directories(resolve_address_using_ares_resolver_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26799,7 +26855,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(resolve_address_using_ares_resolver_test PUBLIC cxx_std_14)
+target_compile_features(resolve_address_using_ares_resolver_test PUBLIC cxx_std_17)
 target_include_directories(resolve_address_using_ares_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26852,7 +26908,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(resolve_address_using_native_resolver_posix_test PUBLIC cxx_std_14)
+  target_compile_features(resolve_address_using_native_resolver_posix_test PUBLIC cxx_std_17)
   target_include_directories(resolve_address_using_native_resolver_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26905,7 +26961,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(resolve_address_using_native_resolver_test PUBLIC cxx_std_14)
+target_compile_features(resolve_address_using_native_resolver_test PUBLIC cxx_std_17)
 target_include_directories(resolve_address_using_native_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26981,7 +27037,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(resource_quota_end2end_stress_test PUBLIC cxx_std_14)
+target_compile_features(resource_quota_end2end_stress_test PUBLIC cxx_std_17)
 target_include_directories(resource_quota_end2end_stress_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -27054,7 +27110,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(resource_quota_server_test PUBLIC cxx_std_14)
+target_compile_features(resource_quota_server_test PUBLIC cxx_std_17)
 target_include_directories(resource_quota_server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -27099,7 +27155,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(resource_quota_test PUBLIC cxx_std_14)
+target_compile_features(resource_quota_test PUBLIC cxx_std_17)
 target_include_directories(resource_quota_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -27172,7 +27228,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_cancel_after_first_attempt_starts_test PUBLIC cxx_std_14)
+target_compile_features(retry_cancel_after_first_attempt_starts_test PUBLIC cxx_std_17)
 target_include_directories(retry_cancel_after_first_attempt_starts_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -27248,7 +27304,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_cancel_during_delay_test PUBLIC cxx_std_14)
+target_compile_features(retry_cancel_during_delay_test PUBLIC cxx_std_17)
 target_include_directories(retry_cancel_during_delay_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -27324,7 +27380,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_cancel_with_multiple_send_batches_test PUBLIC cxx_std_14)
+target_compile_features(retry_cancel_with_multiple_send_batches_test PUBLIC cxx_std_17)
 target_include_directories(retry_cancel_with_multiple_send_batches_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -27400,7 +27456,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_cancellation_test PUBLIC cxx_std_14)
+target_compile_features(retry_cancellation_test PUBLIC cxx_std_17)
 target_include_directories(retry_cancellation_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -27476,7 +27532,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_disabled_test PUBLIC cxx_std_14)
+target_compile_features(retry_disabled_test PUBLIC cxx_std_17)
 target_include_directories(retry_disabled_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -27552,7 +27608,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_exceeds_buffer_size_in_delay_test PUBLIC cxx_std_14)
+target_compile_features(retry_exceeds_buffer_size_in_delay_test PUBLIC cxx_std_17)
 target_include_directories(retry_exceeds_buffer_size_in_delay_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -27628,7 +27684,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_exceeds_buffer_size_in_initial_batch_test PUBLIC cxx_std_14)
+target_compile_features(retry_exceeds_buffer_size_in_initial_batch_test PUBLIC cxx_std_17)
 target_include_directories(retry_exceeds_buffer_size_in_initial_batch_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -27704,7 +27760,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_exceeds_buffer_size_in_subsequent_batch_test PUBLIC cxx_std_14)
+target_compile_features(retry_exceeds_buffer_size_in_subsequent_batch_test PUBLIC cxx_std_17)
 target_include_directories(retry_exceeds_buffer_size_in_subsequent_batch_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -27758,7 +27814,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(retry_interceptor_test PUBLIC cxx_std_14)
+  target_compile_features(retry_interceptor_test PUBLIC cxx_std_17)
   target_include_directories(retry_interceptor_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -27833,7 +27889,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_lb_drop_test PUBLIC cxx_std_14)
+target_compile_features(retry_lb_drop_test PUBLIC cxx_std_17)
 target_include_directories(retry_lb_drop_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -27909,7 +27965,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_lb_fail_test PUBLIC cxx_std_14)
+target_compile_features(retry_lb_fail_test PUBLIC cxx_std_17)
 target_include_directories(retry_lb_fail_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -27985,7 +28041,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_non_retriable_status_before_trailers_test PUBLIC cxx_std_14)
+target_compile_features(retry_non_retriable_status_before_trailers_test PUBLIC cxx_std_17)
 target_include_directories(retry_non_retriable_status_before_trailers_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -28061,7 +28117,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_non_retriable_status_test PUBLIC cxx_std_14)
+target_compile_features(retry_non_retriable_status_test PUBLIC cxx_std_17)
 target_include_directories(retry_non_retriable_status_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -28137,7 +28193,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_per_attempt_recv_timeout_on_last_attempt_test PUBLIC cxx_std_14)
+target_compile_features(retry_per_attempt_recv_timeout_on_last_attempt_test PUBLIC cxx_std_17)
 target_include_directories(retry_per_attempt_recv_timeout_on_last_attempt_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -28213,7 +28269,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_per_attempt_recv_timeout_test PUBLIC cxx_std_14)
+target_compile_features(retry_per_attempt_recv_timeout_test PUBLIC cxx_std_17)
 target_include_directories(retry_per_attempt_recv_timeout_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -28289,7 +28345,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_recv_initial_metadata_test PUBLIC cxx_std_14)
+target_compile_features(retry_recv_initial_metadata_test PUBLIC cxx_std_17)
 target_include_directories(retry_recv_initial_metadata_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -28365,7 +28421,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_recv_message_replay_test PUBLIC cxx_std_14)
+target_compile_features(retry_recv_message_replay_test PUBLIC cxx_std_17)
 target_include_directories(retry_recv_message_replay_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -28441,7 +28497,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_recv_message_test PUBLIC cxx_std_14)
+target_compile_features(retry_recv_message_test PUBLIC cxx_std_17)
 target_include_directories(retry_recv_message_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -28517,7 +28573,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_recv_trailing_metadata_error_test PUBLIC cxx_std_14)
+target_compile_features(retry_recv_trailing_metadata_error_test PUBLIC cxx_std_17)
 target_include_directories(retry_recv_trailing_metadata_error_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -28593,7 +28649,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_send_initial_metadata_refs_test PUBLIC cxx_std_14)
+target_compile_features(retry_send_initial_metadata_refs_test PUBLIC cxx_std_17)
 target_include_directories(retry_send_initial_metadata_refs_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -28669,7 +28725,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_send_op_fails_test PUBLIC cxx_std_14)
+target_compile_features(retry_send_op_fails_test PUBLIC cxx_std_17)
 target_include_directories(retry_send_op_fails_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -28745,7 +28801,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_send_recv_batch_test PUBLIC cxx_std_14)
+target_compile_features(retry_send_recv_batch_test PUBLIC cxx_std_17)
 target_include_directories(retry_send_recv_batch_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -28821,7 +28877,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_server_pushback_delay_test PUBLIC cxx_std_14)
+target_compile_features(retry_server_pushback_delay_test PUBLIC cxx_std_17)
 target_include_directories(retry_server_pushback_delay_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -28897,7 +28953,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_server_pushback_disabled_test PUBLIC cxx_std_14)
+target_compile_features(retry_server_pushback_disabled_test PUBLIC cxx_std_17)
 target_include_directories(retry_server_pushback_disabled_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -28942,7 +28998,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_service_config_test PUBLIC cxx_std_14)
+target_compile_features(retry_service_config_test PUBLIC cxx_std_17)
 target_include_directories(retry_service_config_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29015,7 +29071,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_streaming_after_commit_test PUBLIC cxx_std_14)
+target_compile_features(retry_streaming_after_commit_test PUBLIC cxx_std_17)
 target_include_directories(retry_streaming_after_commit_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29091,7 +29147,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_streaming_succeeds_before_replay_finished_test PUBLIC cxx_std_14)
+target_compile_features(retry_streaming_succeeds_before_replay_finished_test PUBLIC cxx_std_17)
 target_include_directories(retry_streaming_succeeds_before_replay_finished_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29167,7 +29223,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_streaming_test PUBLIC cxx_std_14)
+target_compile_features(retry_streaming_test PUBLIC cxx_std_17)
 target_include_directories(retry_streaming_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29243,7 +29299,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_test PUBLIC cxx_std_14)
+target_compile_features(retry_test PUBLIC cxx_std_17)
 target_include_directories(retry_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29288,7 +29344,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_throttle_test PUBLIC cxx_std_14)
+target_compile_features(retry_throttle_test PUBLIC cxx_std_17)
 target_include_directories(retry_throttle_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29361,7 +29417,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_throttled_test PUBLIC cxx_std_14)
+target_compile_features(retry_throttled_test PUBLIC cxx_std_17)
 target_include_directories(retry_throttled_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29437,7 +29493,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_too_many_attempts_test PUBLIC cxx_std_14)
+target_compile_features(retry_too_many_attempts_test PUBLIC cxx_std_17)
 target_include_directories(retry_too_many_attempts_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29513,7 +29569,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_transparent_goaway_test PUBLIC cxx_std_14)
+target_compile_features(retry_transparent_goaway_test PUBLIC cxx_std_17)
 target_include_directories(retry_transparent_goaway_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29589,7 +29645,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_transparent_max_concurrent_streams_test PUBLIC cxx_std_14)
+target_compile_features(retry_transparent_max_concurrent_streams_test PUBLIC cxx_std_17)
 target_include_directories(retry_transparent_max_concurrent_streams_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29665,7 +29721,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_transparent_not_sent_on_wire_test PUBLIC cxx_std_14)
+target_compile_features(retry_transparent_not_sent_on_wire_test PUBLIC cxx_std_17)
 target_include_directories(retry_transparent_not_sent_on_wire_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29741,7 +29797,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_unref_before_finish_test PUBLIC cxx_std_14)
+target_compile_features(retry_unref_before_finish_test PUBLIC cxx_std_17)
 target_include_directories(retry_unref_before_finish_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29817,7 +29873,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(retry_unref_before_recv_test PUBLIC cxx_std_14)
+target_compile_features(retry_unref_before_recv_test PUBLIC cxx_std_17)
 target_include_directories(retry_unref_before_recv_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29853,7 +29909,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(ring_buffer_test
   test/core/util/ring_buffer_test.cc
 )
-target_compile_features(ring_buffer_test PUBLIC cxx_std_14)
+target_compile_features(ring_buffer_test PUBLIC cxx_std_17)
 target_include_directories(ring_buffer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29900,7 +29956,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(ring_hash_test PUBLIC cxx_std_14)
+target_compile_features(ring_hash_test PUBLIC cxx_std_17)
 target_include_directories(ring_hash_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29989,7 +30045,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(rls_end2end_test PUBLIC cxx_std_14)
+target_compile_features(rls_end2end_test PUBLIC cxx_std_17)
 target_include_directories(rls_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30032,7 +30088,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(rls_lb_config_parser_test PUBLIC cxx_std_14)
+target_compile_features(rls_lb_config_parser_test PUBLIC cxx_std_17)
 target_include_directories(rls_lb_config_parser_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30080,7 +30136,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(round_robin_test PUBLIC cxx_std_14)
+target_compile_features(round_robin_test PUBLIC cxx_std_17)
 target_include_directories(round_robin_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30124,7 +30180,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(secure_auth_context_test PUBLIC cxx_std_14)
+target_compile_features(secure_auth_context_test PUBLIC cxx_std_17)
 target_include_directories(secure_auth_context_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30166,7 +30222,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(secure_channel_create_test PUBLIC cxx_std_14)
+target_compile_features(secure_channel_create_test PUBLIC cxx_std_17)
 target_include_directories(secure_channel_create_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30218,7 +30274,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(secure_endpoint_test PUBLIC cxx_std_14)
+target_compile_features(secure_endpoint_test PUBLIC cxx_std_17)
 target_include_directories(secure_endpoint_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30269,7 +30325,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(security_connector_test PUBLIC cxx_std_14)
+target_compile_features(security_connector_test PUBLIC cxx_std_17)
 target_include_directories(security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30313,7 +30369,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(seq_test PUBLIC cxx_std_14)
+target_compile_features(seq_test PUBLIC cxx_std_17)
 target_include_directories(seq_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30358,7 +30414,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(sequential_connectivity_test PUBLIC cxx_std_14)
+target_compile_features(sequential_connectivity_test PUBLIC cxx_std_17)
 target_include_directories(sequential_connectivity_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30438,7 +30494,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(server_builder_plugin_test PUBLIC cxx_std_14)
+target_compile_features(server_builder_plugin_test PUBLIC cxx_std_17)
 target_include_directories(server_builder_plugin_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30524,7 +30580,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(server_builder_test PUBLIC cxx_std_14)
+  target_compile_features(server_builder_test PUBLIC cxx_std_17)
   target_include_directories(server_builder_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30611,7 +30667,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(server_builder_with_socket_mutator_test PUBLIC cxx_std_14)
+  target_compile_features(server_builder_with_socket_mutator_test PUBLIC cxx_std_17)
   target_include_directories(server_builder_with_socket_mutator_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30666,7 +30722,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(server_call_test PUBLIC cxx_std_14)
+  target_compile_features(server_call_test PUBLIC cxx_std_17)
   target_include_directories(server_call_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30710,7 +30766,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(server_call_tracer_factory_test PUBLIC cxx_std_14)
+target_compile_features(server_call_tracer_factory_test PUBLIC cxx_std_17)
 target_include_directories(server_call_tracer_factory_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30752,7 +30808,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(server_chttp2_test PUBLIC cxx_std_14)
+target_compile_features(server_chttp2_test PUBLIC cxx_std_17)
 target_include_directories(server_chttp2_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30794,7 +30850,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(server_config_selector_test PUBLIC cxx_std_14)
+target_compile_features(server_config_selector_test PUBLIC cxx_std_17)
 target_include_directories(server_config_selector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30837,7 +30893,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(server_context_test_spouse_test PUBLIC cxx_std_14)
+target_compile_features(server_context_test_spouse_test PUBLIC cxx_std_17)
 target_include_directories(server_context_test_spouse_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30912,7 +30968,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(server_early_return_test PUBLIC cxx_std_14)
+target_compile_features(server_early_return_test PUBLIC cxx_std_17)
 target_include_directories(server_early_return_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30985,7 +31041,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(server_finishes_request_test PUBLIC cxx_std_14)
+target_compile_features(server_finishes_request_test PUBLIC cxx_std_17)
 target_include_directories(server_finishes_request_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31065,7 +31121,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(server_interceptors_end2end_test PUBLIC cxx_std_14)
+target_compile_features(server_interceptors_end2end_test PUBLIC cxx_std_17)
 target_include_directories(server_interceptors_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31109,7 +31165,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(server_registered_method_bad_client_test PUBLIC cxx_std_14)
+target_compile_features(server_registered_method_bad_client_test PUBLIC cxx_std_17)
 target_include_directories(server_registered_method_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31194,7 +31250,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(server_request_call_test PUBLIC cxx_std_14)
+  target_compile_features(server_request_call_test PUBLIC cxx_std_17)
   target_include_directories(server_request_call_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31240,7 +31296,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(server_ssl_test PUBLIC cxx_std_14)
+  target_compile_features(server_ssl_test PUBLIC cxx_std_17)
   target_include_directories(server_ssl_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31314,7 +31370,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(server_streaming_test PUBLIC cxx_std_14)
+target_compile_features(server_streaming_test PUBLIC cxx_std_17)
 target_include_directories(server_streaming_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31359,7 +31415,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(server_test PUBLIC cxx_std_14)
+target_compile_features(server_test PUBLIC cxx_std_17)
 target_include_directories(server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31439,7 +31495,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(service_config_end2end_test PUBLIC cxx_std_14)
+target_compile_features(service_config_end2end_test PUBLIC cxx_std_17)
 target_include_directories(service_config_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31481,7 +31537,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(service_config_test PUBLIC cxx_std_14)
+target_compile_features(service_config_test PUBLIC cxx_std_17)
 target_include_directories(service_config_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31532,7 +31588,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(settings_timeout_test PUBLIC cxx_std_14)
+target_compile_features(settings_timeout_test PUBLIC cxx_std_17)
 target_include_directories(settings_timeout_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31605,7 +31661,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(shutdown_finishes_calls_test PUBLIC cxx_std_14)
+target_compile_features(shutdown_finishes_calls_test PUBLIC cxx_std_17)
 target_include_directories(shutdown_finishes_calls_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31681,7 +31737,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(shutdown_finishes_tags_test PUBLIC cxx_std_14)
+target_compile_features(shutdown_finishes_tags_test PUBLIC cxx_std_17)
 target_include_directories(shutdown_finishes_tags_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31763,7 +31819,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(shutdown_test PUBLIC cxx_std_14)
+target_compile_features(shutdown_test PUBLIC cxx_std_17)
 target_include_directories(shutdown_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31836,7 +31892,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(simple_delayed_request_test PUBLIC cxx_std_14)
+target_compile_features(simple_delayed_request_test PUBLIC cxx_std_17)
 target_include_directories(simple_delayed_request_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31912,7 +31968,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(simple_metadata_test PUBLIC cxx_std_14)
+target_compile_features(simple_metadata_test PUBLIC cxx_std_17)
 target_include_directories(simple_metadata_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31959,7 +32015,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(simple_request_bad_client_test PUBLIC cxx_std_14)
+target_compile_features(simple_request_bad_client_test PUBLIC cxx_std_17)
 target_include_directories(simple_request_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32032,7 +32088,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(simple_request_test PUBLIC cxx_std_14)
+target_compile_features(simple_request_test PUBLIC cxx_std_17)
 target_include_directories(simple_request_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32076,7 +32132,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(single_set_ptr_test PUBLIC cxx_std_14)
+target_compile_features(single_set_ptr_test PUBLIC cxx_std_17)
 target_include_directories(single_set_ptr_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32118,7 +32174,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(sleep_test PUBLIC cxx_std_14)
+target_compile_features(sleep_test PUBLIC cxx_std_17)
 target_include_directories(sleep_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32164,7 +32220,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(slice_string_helpers_test PUBLIC cxx_std_14)
+target_compile_features(slice_string_helpers_test PUBLIC cxx_std_17)
 target_include_directories(slice_string_helpers_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32209,7 +32265,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(smoke_test PUBLIC cxx_std_14)
+target_compile_features(smoke_test PUBLIC cxx_std_17)
 target_include_directories(smoke_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32251,7 +32307,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(sockaddr_resolver_test PUBLIC cxx_std_14)
+target_compile_features(sockaddr_resolver_test PUBLIC cxx_std_17)
 target_include_directories(sockaddr_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32293,7 +32349,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(sockaddr_utils_test PUBLIC cxx_std_14)
+target_compile_features(sockaddr_utils_test PUBLIC cxx_std_17)
 target_include_directories(sockaddr_utils_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32345,7 +32401,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(socket_utils_test PUBLIC cxx_std_14)
+  target_compile_features(socket_utils_test PUBLIC cxx_std_17)
   target_include_directories(socket_utils_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32379,7 +32435,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(sorted_pack_test
   test/core/util/sorted_pack_test.cc
 )
-target_compile_features(sorted_pack_test PUBLIC cxx_std_14)
+target_compile_features(sorted_pack_test PUBLIC cxx_std_17)
 target_include_directories(sorted_pack_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32420,7 +32476,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(spinlock_test PUBLIC cxx_std_14)
+target_compile_features(spinlock_test PUBLIC cxx_std_17)
 target_include_directories(spinlock_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32464,7 +32520,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(ssl_transport_security_test PUBLIC cxx_std_14)
+  target_compile_features(ssl_transport_security_test PUBLIC cxx_std_17)
   target_include_directories(ssl_transport_security_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32509,7 +32565,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(ssl_transport_security_utils_test PUBLIC cxx_std_14)
+  target_compile_features(ssl_transport_security_utils_test PUBLIC cxx_std_17)
   target_include_directories(ssl_transport_security_utils_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32553,7 +32609,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(stack_tracer_test PUBLIC cxx_std_14)
+  target_compile_features(stack_tracer_test PUBLIC cxx_std_17)
   target_include_directories(stack_tracer_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32596,7 +32652,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(stat_test PUBLIC cxx_std_14)
+target_compile_features(stat_test PUBLIC cxx_std_17)
 target_include_directories(stat_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32638,7 +32694,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(static_stride_scheduler_test PUBLIC cxx_std_14)
+target_compile_features(static_stride_scheduler_test PUBLIC cxx_std_17)
 target_include_directories(static_stride_scheduler_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32681,7 +32737,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(stats_test PUBLIC cxx_std_14)
+target_compile_features(stats_test PUBLIC cxx_std_17)
 target_include_directories(stats_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32732,7 +32788,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(status_conversion_test PUBLIC cxx_std_14)
+target_compile_features(status_conversion_test PUBLIC cxx_std_17)
 target_include_directories(status_conversion_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32773,7 +32829,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(status_flag_test PUBLIC cxx_std_14)
+target_compile_features(status_flag_test PUBLIC cxx_std_17)
 target_include_directories(status_flag_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32816,7 +32872,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(status_helper_test PUBLIC cxx_std_14)
+target_compile_features(status_helper_test PUBLIC cxx_std_17)
 target_include_directories(status_helper_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32858,7 +32914,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(status_util_test PUBLIC cxx_std_14)
+target_compile_features(status_util_test PUBLIC cxx_std_17)
 target_include_directories(status_util_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32900,7 +32956,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(stream_leak_with_queued_flow_control_update_test PUBLIC cxx_std_14)
+target_compile_features(stream_leak_with_queued_flow_control_update_test PUBLIC cxx_std_17)
 target_include_directories(stream_leak_with_queued_flow_control_update_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32973,7 +33029,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(streaming_error_response_test PUBLIC cxx_std_14)
+target_compile_features(streaming_error_response_test PUBLIC cxx_std_17)
 target_include_directories(streaming_error_response_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33056,7 +33112,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(streaming_throughput_test PUBLIC cxx_std_14)
+  target_compile_features(streaming_throughput_test PUBLIC cxx_std_17)
   target_include_directories(streaming_throughput_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33109,7 +33165,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(streams_not_seen_test PUBLIC cxx_std_14)
+target_compile_features(streams_not_seen_test PUBLIC cxx_std_17)
 target_include_directories(streams_not_seen_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33152,7 +33208,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(string_ref_test PUBLIC cxx_std_14)
+target_compile_features(string_ref_test PUBLIC cxx_std_17)
 target_include_directories(string_ref_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33195,7 +33251,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(string_test PUBLIC cxx_std_14)
+target_compile_features(string_test PUBLIC cxx_std_17)
 target_include_directories(string_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33237,7 +33293,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(subchannel_args_test PUBLIC cxx_std_14)
+target_compile_features(subchannel_args_test PUBLIC cxx_std_17)
 target_include_directories(subchannel_args_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33278,7 +33334,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(switch_test PUBLIC cxx_std_14)
+target_compile_features(switch_test PUBLIC cxx_std_17)
 target_include_directories(switch_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33322,7 +33378,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(sync_test PUBLIC cxx_std_14)
+target_compile_features(sync_test PUBLIC cxx_std_17)
 target_include_directories(sync_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33373,7 +33429,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(system_roots_test PUBLIC cxx_std_14)
+target_compile_features(system_roots_test PUBLIC cxx_std_17)
 target_include_directories(system_roots_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33406,7 +33462,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(table_test
   test/core/util/table_test.cc
 )
-target_compile_features(table_test PUBLIC cxx_std_14)
+target_compile_features(table_test PUBLIC cxx_std_17)
 target_include_directories(table_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33461,7 +33517,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(tcp_client_posix_test PUBLIC cxx_std_14)
+  target_compile_features(tcp_client_posix_test PUBLIC cxx_std_17)
   target_include_directories(tcp_client_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33505,7 +33561,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(tcp_posix_socket_utils_test PUBLIC cxx_std_14)
+  target_compile_features(tcp_posix_socket_utils_test PUBLIC cxx_std_17)
   target_include_directories(tcp_posix_socket_utils_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33559,7 +33615,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(tcp_posix_test PUBLIC cxx_std_14)
+  target_compile_features(tcp_posix_test PUBLIC cxx_std_17)
   target_include_directories(tcp_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33612,7 +33668,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(tcp_server_posix_test PUBLIC cxx_std_14)
+  target_compile_features(tcp_server_posix_test PUBLIC cxx_std_17)
   target_include_directories(tcp_server_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33655,7 +33711,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(tcp_socket_utils_test PUBLIC cxx_std_14)
+target_compile_features(tcp_socket_utils_test PUBLIC cxx_std_17)
 target_include_directories(tcp_socket_utils_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33689,7 +33745,7 @@ add_executable(tdigest_test
   src/core/util/tdigest.cc
   test/core/util/tdigest_test.cc
 )
-target_compile_features(tdigest_test PUBLIC cxx_std_14)
+target_compile_features(tdigest_test PUBLIC cxx_std_17)
 target_include_directories(tdigest_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33743,7 +33799,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_core_channelz_channelz_test PUBLIC cxx_std_14)
+target_compile_features(test_core_channelz_channelz_test PUBLIC cxx_std_17)
 target_include_directories(test_core_channelz_channelz_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33817,7 +33873,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_core_end2end_channelz_test PUBLIC cxx_std_14)
+target_compile_features(test_core_end2end_channelz_test PUBLIC cxx_std_17)
 target_include_directories(test_core_end2end_channelz_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33865,7 +33921,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_core_event_engine_posix_timer_heap_test PUBLIC cxx_std_14)
+target_compile_features(test_core_event_engine_posix_timer_heap_test PUBLIC cxx_std_17)
 target_include_directories(test_core_event_engine_posix_timer_heap_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33911,7 +33967,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_core_event_engine_posix_timer_list_test PUBLIC cxx_std_14)
+target_compile_features(test_core_event_engine_posix_timer_list_test PUBLIC cxx_std_17)
 target_include_directories(test_core_event_engine_posix_timer_list_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -33963,7 +34019,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_core_event_engine_slice_buffer_test PUBLIC cxx_std_14)
+target_compile_features(test_core_event_engine_slice_buffer_test PUBLIC cxx_std_17)
 target_include_directories(test_core_event_engine_slice_buffer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34018,7 +34074,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_core_iomgr_timer_heap_test PUBLIC cxx_std_14)
+target_compile_features(test_core_iomgr_timer_heap_test PUBLIC cxx_std_17)
 target_include_directories(test_core_iomgr_timer_heap_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34075,7 +34131,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_core_security_credentials_test PUBLIC cxx_std_14)
+target_compile_features(test_core_security_credentials_test PUBLIC cxx_std_17)
 target_include_directories(test_core_security_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34127,7 +34183,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_core_security_ssl_credentials_test PUBLIC cxx_std_14)
+target_compile_features(test_core_security_ssl_credentials_test PUBLIC cxx_std_17)
 target_include_directories(test_core_security_ssl_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34169,7 +34225,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_core_slice_slice_buffer_test PUBLIC cxx_std_14)
+target_compile_features(test_core_slice_slice_buffer_test PUBLIC cxx_std_17)
 target_include_directories(test_core_slice_slice_buffer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34212,7 +34268,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_core_slice_slice_test PUBLIC cxx_std_14)
+target_compile_features(test_core_slice_slice_test PUBLIC cxx_std_17)
 target_include_directories(test_core_slice_slice_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34280,7 +34336,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(test_core_transport_test_suite_chaotic_good_test PUBLIC cxx_std_14)
+  target_compile_features(test_core_transport_test_suite_chaotic_good_test PUBLIC cxx_std_17)
   target_include_directories(test_core_transport_test_suite_chaotic_good_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34324,7 +34380,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_core_util_time_test PUBLIC cxx_std_14)
+target_compile_features(test_core_util_time_test PUBLIC cxx_std_17)
 target_include_directories(test_core_util_time_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34369,7 +34425,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_cpp_client_credentials_test PUBLIC cxx_std_14)
+target_compile_features(test_cpp_client_credentials_test PUBLIC cxx_std_17)
 target_include_directories(test_cpp_client_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34446,7 +34502,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_cpp_end2end_ssl_credentials_test PUBLIC cxx_std_14)
+target_compile_features(test_cpp_end2end_ssl_credentials_test PUBLIC cxx_std_17)
 target_include_directories(test_cpp_end2end_ssl_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34510,7 +34566,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_cpp_ext_chaotic_good_test PUBLIC cxx_std_14)
+target_compile_features(test_cpp_ext_chaotic_good_test PUBLIC cxx_std_17)
 target_include_directories(test_cpp_ext_chaotic_good_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34555,7 +34611,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_cpp_server_credentials_test PUBLIC cxx_std_14)
+target_compile_features(test_cpp_server_credentials_test PUBLIC cxx_std_17)
 target_include_directories(test_cpp_server_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34599,7 +34655,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_cpp_util_slice_test PUBLIC cxx_std_14)
+target_compile_features(test_cpp_util_slice_test PUBLIC cxx_std_17)
 target_include_directories(test_cpp_util_slice_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34642,7 +34698,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_cpp_util_time_test PUBLIC cxx_std_14)
+target_compile_features(test_cpp_util_time_test PUBLIC cxx_std_17)
 target_include_directories(test_cpp_util_time_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34684,7 +34740,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(thd_test PUBLIC cxx_std_14)
+target_compile_features(thd_test PUBLIC cxx_std_17)
 target_include_directories(thd_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34727,7 +34783,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(thread_manager_test PUBLIC cxx_std_14)
+target_compile_features(thread_manager_test PUBLIC cxx_std_17)
 target_include_directories(thread_manager_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34770,7 +34826,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(thread_pool_test PUBLIC cxx_std_14)
+target_compile_features(thread_pool_test PUBLIC cxx_std_17)
 target_include_directories(thread_pool_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34813,7 +34869,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(thread_quota_test PUBLIC cxx_std_14)
+target_compile_features(thread_quota_test PUBLIC cxx_std_17)
 target_include_directories(thread_quota_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34895,7 +34951,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(thread_stress_test PUBLIC cxx_std_14)
+  target_compile_features(thread_stress_test PUBLIC cxx_std_17)
   target_include_directories(thread_stress_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34945,7 +35001,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(thready_posix_event_engine_test PUBLIC cxx_std_14)
+  target_compile_features(thready_posix_event_engine_test PUBLIC cxx_std_17)
   target_include_directories(thready_posix_event_engine_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -34990,7 +35046,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(time_jump_test PUBLIC cxx_std_14)
+  target_compile_features(time_jump_test PUBLIC cxx_std_17)
   target_include_directories(time_jump_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35034,7 +35090,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(time_util_test PUBLIC cxx_std_14)
+target_compile_features(time_util_test PUBLIC cxx_std_17)
 target_include_directories(time_util_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35107,7 +35163,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(timeout_before_request_call_test PUBLIC cxx_std_14)
+target_compile_features(timeout_before_request_call_test PUBLIC cxx_std_17)
 target_include_directories(timeout_before_request_call_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35161,7 +35217,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(timeout_encoding_test PUBLIC cxx_std_14)
+target_compile_features(timeout_encoding_test PUBLIC cxx_std_17)
 target_include_directories(timeout_encoding_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35203,7 +35259,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(timer_manager_test PUBLIC cxx_std_14)
+target_compile_features(timer_manager_test PUBLIC cxx_std_17)
 target_include_directories(timer_manager_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35246,7 +35302,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(timer_test PUBLIC cxx_std_14)
+target_compile_features(timer_test PUBLIC cxx_std_17)
 target_include_directories(timer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35291,7 +35347,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(tls_certificate_verifier_test PUBLIC cxx_std_14)
+target_compile_features(tls_certificate_verifier_test PUBLIC cxx_std_17)
 target_include_directories(tls_certificate_verifier_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35368,7 +35424,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(tls_credentials_test PUBLIC cxx_std_14)
+target_compile_features(tls_credentials_test PUBLIC cxx_std_17)
 target_include_directories(tls_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35443,7 +35499,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(tls_key_export_test PUBLIC cxx_std_14)
+target_compile_features(tls_key_export_test PUBLIC cxx_std_17)
 target_include_directories(tls_key_export_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35494,7 +35550,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(tls_security_connector_test PUBLIC cxx_std_14)
+target_compile_features(tls_security_connector_test PUBLIC cxx_std_17)
 target_include_directories(tls_security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35538,7 +35594,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(too_many_pings_test PUBLIC cxx_std_14)
+target_compile_features(too_many_pings_test PUBLIC cxx_std_17)
 target_include_directories(too_many_pings_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35581,7 +35637,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(trace_flags_test PUBLIC cxx_std_14)
+target_compile_features(trace_flags_test PUBLIC cxx_std_17)
 target_include_directories(trace_flags_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35624,7 +35680,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(traced_buffer_list_test PUBLIC cxx_std_14)
+  target_compile_features(traced_buffer_list_test PUBLIC cxx_std_17)
   target_include_directories(traced_buffer_list_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35698,7 +35754,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(trailing_metadata_test PUBLIC cxx_std_14)
+target_compile_features(trailing_metadata_test PUBLIC cxx_std_17)
 target_include_directories(trailing_metadata_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35743,7 +35799,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(transport_security_common_api_test PUBLIC cxx_std_14)
+target_compile_features(transport_security_common_api_test PUBLIC cxx_std_17)
 target_include_directories(transport_security_common_api_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35785,7 +35841,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(transport_security_test PUBLIC cxx_std_14)
+target_compile_features(transport_security_test PUBLIC cxx_std_17)
 target_include_directories(transport_security_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35829,7 +35885,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(try_join_test PUBLIC cxx_std_14)
+target_compile_features(try_join_test PUBLIC cxx_std_17)
 target_include_directories(try_join_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35875,7 +35931,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(try_seq_metadata_test PUBLIC cxx_std_14)
+target_compile_features(try_seq_metadata_test PUBLIC cxx_std_17)
 target_include_directories(try_seq_metadata_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35919,7 +35975,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(try_seq_test PUBLIC cxx_std_14)
+target_compile_features(try_seq_test PUBLIC cxx_std_17)
 target_include_directories(try_seq_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35955,7 +36011,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(unique_ptr_with_bitset_test
   test/core/util/unique_ptr_with_bitset_test.cc
 )
-target_compile_features(unique_ptr_with_bitset_test PUBLIC cxx_std_14)
+target_compile_features(unique_ptr_with_bitset_test PUBLIC cxx_std_17)
 target_include_directories(unique_ptr_with_bitset_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35989,7 +36045,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(unique_type_name_test
   test/core/util/unique_type_name_test.cc
 )
-target_compile_features(unique_type_name_test PUBLIC cxx_std_14)
+target_compile_features(unique_type_name_test PUBLIC cxx_std_17)
 target_include_directories(unique_type_name_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36036,7 +36092,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(unknown_frame_bad_client_test PUBLIC cxx_std_14)
+target_compile_features(unknown_frame_bad_client_test PUBLIC cxx_std_17)
 target_include_directories(unknown_frame_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36078,7 +36134,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(uri_test PUBLIC cxx_std_14)
+target_compile_features(uri_test PUBLIC cxx_std_17)
 target_include_directories(uri_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36111,7 +36167,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(useful_test
   test/core/util/useful_test.cc
 )
-target_compile_features(useful_test PUBLIC cxx_std_14)
+target_compile_features(useful_test PUBLIC cxx_std_17)
 target_include_directories(useful_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36154,7 +36210,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(uuid_v4_test PUBLIC cxx_std_14)
+target_compile_features(uuid_v4_test PUBLIC cxx_std_17)
 target_include_directories(uuid_v4_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36196,7 +36252,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(validation_errors_test PUBLIC cxx_std_14)
+target_compile_features(validation_errors_test PUBLIC cxx_std_17)
 target_include_directories(validation_errors_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36238,7 +36294,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(varint_test PUBLIC cxx_std_14)
+target_compile_features(varint_test PUBLIC cxx_std_17)
 target_include_directories(varint_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36286,7 +36342,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(wait_for_callback_test PUBLIC cxx_std_14)
+target_compile_features(wait_for_callback_test PUBLIC cxx_std_17)
 target_include_directories(wait_for_callback_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36335,7 +36391,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(wakeup_fd_posix_test PUBLIC cxx_std_14)
+  target_compile_features(wakeup_fd_posix_test PUBLIC cxx_std_17)
   target_include_directories(wakeup_fd_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36379,7 +36435,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(weighted_round_robin_config_test PUBLIC cxx_std_14)
+target_compile_features(weighted_round_robin_config_test PUBLIC cxx_std_17)
 target_include_directories(weighted_round_robin_config_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36428,7 +36484,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(weighted_round_robin_test PUBLIC cxx_std_14)
+target_compile_features(weighted_round_robin_test PUBLIC cxx_std_17)
 target_include_directories(weighted_round_robin_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36473,7 +36529,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
       )
     endif()
   endif()
-  target_compile_features(win_socket_test PUBLIC cxx_std_14)
+  target_compile_features(win_socket_test PUBLIC cxx_std_17)
   target_include_directories(win_socket_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36518,7 +36574,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(window_overflow_bad_client_test PUBLIC cxx_std_14)
+target_compile_features(window_overflow_bad_client_test PUBLIC cxx_std_17)
 target_include_directories(window_overflow_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36562,7 +36618,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
       )
     endif()
   endif()
-  target_compile_features(windows_endpoint_test PUBLIC cxx_std_14)
+  target_compile_features(windows_endpoint_test PUBLIC cxx_std_17)
   target_include_directories(windows_endpoint_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36607,7 +36663,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(work_serializer_test PUBLIC cxx_std_14)
+  target_compile_features(work_serializer_test PUBLIC cxx_std_17)
   target_include_directories(work_serializer_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36681,7 +36737,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(write_buffering_at_end_test PUBLIC cxx_std_14)
+target_compile_features(write_buffering_at_end_test PUBLIC cxx_std_17)
 target_include_directories(write_buffering_at_end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36757,7 +36813,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(write_buffering_test PUBLIC cxx_std_14)
+target_compile_features(write_buffering_test PUBLIC cxx_std_17)
 target_include_directories(write_buffering_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36803,7 +36859,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(write_size_policy_test PUBLIC cxx_std_14)
+target_compile_features(write_size_policy_test PUBLIC cxx_std_17)
 target_include_directories(write_size_policy_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36895,7 +36951,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(writes_per_rpc_test PUBLIC cxx_std_14)
+  target_compile_features(writes_per_rpc_test PUBLIC cxx_std_17)
   target_include_directories(writes_per_rpc_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -37285,7 +37341,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_audit_logger_registry_test PUBLIC cxx_std_14)
+target_compile_features(xds_audit_logger_registry_test PUBLIC cxx_std_17)
 target_include_directories(xds_audit_logger_registry_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -37329,7 +37385,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_bootstrap_test PUBLIC cxx_std_14)
+target_compile_features(xds_bootstrap_test PUBLIC cxx_std_17)
 target_include_directories(xds_bootstrap_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -37371,7 +37427,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_certificate_provider_test PUBLIC cxx_std_14)
+target_compile_features(xds_certificate_provider_test PUBLIC cxx_std_17)
 target_include_directories(xds_certificate_provider_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -37406,6 +37462,50 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/clusters.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/clusters.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/clusters.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/clusters.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/config_dump.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/config_dump.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/config_dump.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/config_dump.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/config_dump_shared.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/config_dump_shared.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/config_dump_shared.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/config_dump_shared.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/init_dump.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/init_dump.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/init_dump.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/init_dump.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/listeners.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/listeners.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/listeners.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/listeners.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/memory.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/memory.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/memory.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/memory.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/metrics.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/metrics.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/metrics.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/metrics.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/mutex_stats.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/mutex_stats.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/mutex_stats.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/mutex_stats.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/server_info.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/server_info.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/server_info.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/server_info.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/tap.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/tap.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/tap.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/tap.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -37414,6 +37514,34 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/accesslog/v3/accesslog.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/accesslog/v3/accesslog.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/accesslog/v3/accesslog.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/accesslog/v3/accesslog.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/bootstrap/v3/bootstrap.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/bootstrap/v3/bootstrap.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/bootstrap/v3/bootstrap.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/bootstrap/v3/bootstrap.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/circuit_breaker.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/circuit_breaker.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/circuit_breaker.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/circuit_breaker.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/cluster.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/cluster.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/cluster.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/cluster.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/filter.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/filter.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/filter.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/filter.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/outlier_detection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/outlier_detection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/outlier_detection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/outlier_detection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/matcher/v3/matcher.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/matcher/v3/matcher.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/matcher/v3/matcher.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/matcher/v3/matcher.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.pb.h
@@ -37486,6 +37614,130 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/udp_socket_config.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/udp_socket_config.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/udp_socket_config.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint_components.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint_components.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint_components.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint_components.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/api_listener.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/api_listener.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/api_listener.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/api_listener.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener_components.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener_components.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener_components.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener_components.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/quic_config.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/quic_config.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/quic_config.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/quic_config.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/overload/v3/overload.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/overload/v3/overload.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/overload/v3/overload.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/overload/v3/overload.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route_components.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route_components.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route_components.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route_components.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/scoped_route.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/scoped_route.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/scoped_route.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/scoped_route.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/tap/v3/common.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/tap/v3/common.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/tap/v3/common.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/tap/v3/common.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/datadog.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/datadog.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/datadog.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/datadog.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/dynamic_ot.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/dynamic_ot.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/dynamic_ot.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/dynamic_ot.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/http_tracer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/http_tracer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/http_tracer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/http_tracer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opentelemetry.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/skywalking.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/skywalking.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/skywalking.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/skywalking.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/trace.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/trace.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/trace.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/trace.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/xray.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/xray.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/xray.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/xray.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/zipkin.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/zipkin.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/zipkin.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/zipkin.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/data/accesslog/v3/accesslog.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/data/accesslog/v3/accesslog.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/data/accesslog/v3/accesslog.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/data/accesslog/v3/accesslog.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/cert.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/cert.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/cert.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/cert.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/common.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/common.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/common.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/common.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/secret.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/secret.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/secret.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/secret.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/ads.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/ads.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/ads.pb.h
@@ -37494,6 +37746,10 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/discovery.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/discovery.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/discovery.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/service/status/v3/csds.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/service/status/v3/csds.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/service/status/v3/csds.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/service/status/v3/csds.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/filter_state.pb.h
@@ -37538,6 +37794,14 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/value.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/value.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/value.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/metadata/v3/metadata.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/metadata/v3/metadata.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/metadata/v3/metadata.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/metadata/v3/metadata.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/tracing/v3/custom_tag.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/tracing/v3/custom_tag.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/tracing/v3/custom_tag.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/tracing/v3/custom_tag.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/hash_policy.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/hash_policy.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/hash_policy.pb.h
@@ -37578,6 +37842,14 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/expr/v1alpha1/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/expr/v1alpha1/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/expr/v1alpha1/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/expr/v1alpha1/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/expr/v1alpha1/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/expr/v1alpha1/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/expr/v1alpha1/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/expr/v1alpha1/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -37666,6 +37938,50 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/cel.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/cel.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/cel.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/cel.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/range.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/range.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/range.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/range.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.h
   src/cpp/client/global_callback_hook.cc
   src/cpp/util/status.cc
   test/core/event_engine/event_engine_test_utils.cc
@@ -37682,7 +37998,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_client_test PUBLIC cxx_std_14)
+target_compile_features(xds_client_test PUBLIC cxx_std_17)
 target_include_directories(xds_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -38212,7 +38528,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_cluster_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_cluster_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_cluster_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -38717,7 +39033,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_cluster_resource_type_test PUBLIC cxx_std_14)
+target_compile_features(xds_cluster_resource_type_test PUBLIC cxx_std_17)
 target_include_directories(xds_cluster_resource_type_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -39250,7 +39566,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_cluster_type_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_cluster_type_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_cluster_type_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -39599,7 +39915,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_common_types_test PUBLIC cxx_std_14)
+target_compile_features(xds_common_types_test PUBLIC cxx_std_17)
 target_include_directories(xds_common_types_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -40127,7 +40443,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_core_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_core_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_core_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -40204,7 +40520,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_credentials_end2end_test PUBLIC cxx_std_14)
+target_compile_features(xds_credentials_end2end_test PUBLIC cxx_std_17)
 target_include_directories(xds_credentials_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -40255,7 +40571,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_credentials_test PUBLIC cxx_std_14)
+target_compile_features(xds_credentials_test PUBLIC cxx_std_17)
 target_include_directories(xds_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -40873,7 +41189,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_csds_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_csds_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_csds_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -41399,7 +41715,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_enabled_server_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_enabled_server_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_enabled_server_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -41708,7 +42024,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_endpoint_resource_type_test PUBLIC cxx_std_14)
+target_compile_features(xds_endpoint_resource_type_test PUBLIC cxx_std_17)
 target_include_directories(xds_endpoint_resource_type_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -42236,7 +42552,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_fallback_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_fallback_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_fallback_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -42770,7 +43086,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_fault_injection_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_fault_injection_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_fault_injection_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -43300,7 +43616,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_gcp_authn_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_gcp_authn_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_gcp_authn_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -43831,7 +44147,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_http_connect_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_http_connect_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_http_connect_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -44300,7 +44616,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_http_filters_test PUBLIC cxx_std_14)
+target_compile_features(xds_http_filters_test PUBLIC cxx_std_17)
 target_include_directories(xds_http_filters_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -44682,7 +44998,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_lb_policy_registry_test PUBLIC cxx_std_14)
+target_compile_features(xds_lb_policy_registry_test PUBLIC cxx_std_17)
 target_include_directories(xds_lb_policy_registry_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -45180,7 +45496,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_listener_resource_type_test PUBLIC cxx_std_14)
+target_compile_features(xds_listener_resource_type_test PUBLIC cxx_std_17)
 target_include_directories(xds_listener_resource_type_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -45480,7 +45796,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_metadata_test PUBLIC cxx_std_14)
+target_compile_features(xds_metadata_test PUBLIC cxx_std_17)
 target_include_directories(xds_metadata_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -46014,7 +46330,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_outlier_detection_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_outlier_detection_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_outlier_detection_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -46548,7 +46864,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_override_host_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_override_host_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_override_host_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -46591,7 +46907,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_override_host_lb_config_parser_test PUBLIC cxx_std_14)
+target_compile_features(xds_override_host_lb_config_parser_test PUBLIC cxx_std_17)
 target_include_directories(xds_override_host_lb_config_parser_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -46639,7 +46955,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_override_host_test PUBLIC cxx_std_14)
+target_compile_features(xds_override_host_test PUBLIC cxx_std_17)
 target_include_directories(xds_override_host_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -47174,7 +47490,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_pick_first_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_pick_first_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_pick_first_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -47705,7 +48021,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_ring_hash_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_ring_hash_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_ring_hash_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -48240,7 +48556,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_rls_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_rls_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_rls_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -48637,7 +48953,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_route_config_resource_type_test PUBLIC cxx_std_14)
+target_compile_features(xds_route_config_resource_type_test PUBLIC cxx_std_17)
 target_include_directories(xds_route_config_resource_type_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -49172,7 +49488,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_routing_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_routing_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_routing_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -49723,7 +50039,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_security_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_security_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_security_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -50296,7 +50612,7 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(xds_stats_watcher_test PUBLIC cxx_std_14)
+target_compile_features(xds_stats_watcher_test PUBLIC cxx_std_17)
 target_include_directories(xds_stats_watcher_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -50833,7 +51149,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(xds_wrr_end2end_test PUBLIC cxx_std_14)
+  target_compile_features(xds_wrr_end2end_test PUBLIC cxx_std_17)
   target_include_directories(xds_wrr_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
