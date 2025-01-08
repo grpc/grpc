@@ -137,7 +137,27 @@ enum StatusCode {
   DATA_LOSS = 15,
 
   /// Force users to include a default branch:
-  DO_NOT_USE = -1
+  DO_NOT_USE = -1,
+
+  // absl::StatusCode {
+  kOk = 0,
+  kCancelled = 1,
+  kUnknown = 2,
+  kInvalidArgument = 3,
+  kDeadlineExceeded = 4,
+  kNotFound = 5,
+  kAlreadyExists = 6,
+  kPermissionDenied = 7,
+  kResourceExhausted = 8,
+  kFailedPrecondition = 9,
+  kAborted = 10,
+  kOutOfRange = 11,
+  kUnimplemented = 12,
+  kInternal = 13,
+  kUnavailable = 14,
+  kDataLoss = 15,
+  kUnauthenticated = 16,
+  // absl::StatusCode }
 };
 
 }  // namespace grpc
