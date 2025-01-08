@@ -75,7 +75,7 @@ namespace grpc_core {
 // 1. Return Pending{}
 // 2. Resolve
 // 3. Are waiting by using Notification or a Latch.
-// 4. Sleeping because of grpc_core::Sleep promise.
+// 4. Sleeping because of Sleep promise.
 // If a party is currently running a promise, it is said to be active/awake.
 // Otherwise it is said to be Sleeping or Quieced.
 //
