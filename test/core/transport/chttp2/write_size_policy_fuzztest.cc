@@ -14,12 +14,11 @@
 
 // Test to verify Fuzztest integration
 
-#include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
-
 #include <vector>
 
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
+#include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 
 namespace grpc_core {
 

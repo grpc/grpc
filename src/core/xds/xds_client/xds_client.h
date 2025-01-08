@@ -141,8 +141,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   Mutex* mu() ABSL_LOCK_RETURNED(&mu_) { return &mu_; }
 
   // Dumps the active xDS config to the provided
-  // envoy.service.status.v3.ClientConfig message including the config status
-  // (e.g., CLIENT_REQUESTED, CLIENT_ACKED, CLIENT_NACKED).
+  // envoy.service.status.v3.ClientConfig message.
   void DumpClientConfig(std::set<std::string>* string_pool, upb_Arena* arena,
                         envoy_service_status_v3_ClientConfig* client_config)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
@@ -280,7 +279,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
       // Client received this resource and replied with NACK.
       NACKED,
       // Client encountered timeout getting resource from server.
-      TIMEOUT,
+      // TODO(roth): Remove explicit value when adding RECEIVED_ERROR.
+      TIMEOUT = 6,
     };
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_REQUESTED) ==
                       ClientResourceStatus::REQUESTED,
@@ -295,10 +295,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_NACKED) ==
                       ClientResourceStatus::NACKED,
                   "");
-// FIXME
-//    static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_TIMEOUT) ==
-//                      ClientResourceStatus::TIMEOUT,
-//                  "");
+    static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_TIMEOUT) ==
+                      ClientResourceStatus::TIMEOUT,
+                  "");
 
     void AddWatcher(RefCountedPtr<ResourceWatcherInterface> watcher) {
       watchers_.insert(std::move(watcher));
@@ -314,7 +313,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
                   Timestamp update_time);
     void SetNacked(const std::string& version, absl::string_view details,
                    Timestamp update_time, bool drop_cached_resource);
-    void SetDoesNotExist(bool drop_cached_resource);
+    void SetDoesNotExistOnLdsOrCdsDeletion(const std::string& version,
+                                           Timestamp update_time,
+                                           bool drop_cached_resource);
+    void SetDoesNotExistOnTimeout();
     void SetTimeout(const std::string& details);
 
     ClientResourceStatus client_status() const { return client_status_; }
