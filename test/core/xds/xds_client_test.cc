@@ -2707,13 +2707,13 @@ TEST_F(XdsClientTest, ResourceDeletionWithFailOnDataErrors) {
                   1)));
   // Check CSDS data.
   csds = DumpCsds();
-  EXPECT_THAT(csds.generic_xds_configs(),
-              ::testing::UnorderedElementsAre(CsdsResourceEq(
-                  ClientResourceStatus::DOES_NOT_EXIST,
-                  XdsWildcardCapableResourceType::Get()->type_url(), "wc1",
-                  CsdsNoResourceFields(),
-                  CsdsErrorFields("does not exist", "2",
-                                  TimestampProtoEq(kTime1)))));
+  EXPECT_THAT(
+      csds.generic_xds_configs(),
+      ::testing::UnorderedElementsAre(CsdsResourceEq(
+          ClientResourceStatus::DOES_NOT_EXIST,
+          XdsWildcardCapableResourceType::Get()->type_url(), "wc1",
+          CsdsNoResourceFields(),
+          CsdsErrorFields("does not exist", "2", TimestampProtoEq(kTime1)))));
   // Start a new watcher for the same resource.  It should immediately
   // receive the same does-not-exist notification.
   auto watcher2 = StartWildcardCapableWatch("wc1");
