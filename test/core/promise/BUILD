@@ -26,7 +26,6 @@ grpc_cc_library(
     hdrs = ["poll_matcher.h"],
     external_deps = ["gtest"],
     visibility = [
-        "//fuzztest/core:__subpackages__",
         "//test/core:__subpackages__",
     ],
     deps = ["//src/core:poll"],
