@@ -27,6 +27,7 @@ HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
 SYSTEM ?= $(HOST_SYSTEM)
 CXX = g++
 CPPFLAGS += `pkg-config --cflags protobuf grpc absl_flags absl_flags_parse`
+CXXFLAGS += -std=c++17
 ifeq ($(SYSTEM),Darwin)
 LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ grpcpp_otel_plugin absl_flags absl_flags_parse $(PROTOBUF_ABSL_DEPS)` \
            $(PROTOBUF_UTF8_RANGE_LINK_LIBS) \
@@ -67,7 +68,7 @@ greeter_callback_server: util.o helloworld.pb.o helloworld.grpc.pb.o greeter_cal
 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 
 util.o: ../util.cc
-	$(CXX) $^ -I . -I $(CPPFLAGS) -c -o $@
+	$(CXX) $^ -I . $(CPPFLAGS) $(CXXFLAGS) -c -o $@
 
 clean:
 	rm -f *.o *.pb.cc *.pb.h greeter_callback_client greeter_callback_server
