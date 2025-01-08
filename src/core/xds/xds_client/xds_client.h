@@ -299,12 +299,12 @@ class XdsClient : public DualRefCounted<XdsClient> {
     void SetAcked(std::shared_ptr<const XdsResourceType::ResourceData> resource,
                   std::string serialized_proto, std::string version,
                   Timestamp update_time);
-    void SetNacked(const std::string& version, const std::string& details,
-                   Timestamp update_time);
-    void SetDoesNotExist();
-
-    void set_ignored_deletion(bool value) { ignored_deletion_ = value; }
-    bool ignored_deletion() const { return ignored_deletion_; }
+    void SetNacked(const std::string& version, absl::string_view details,
+                   Timestamp update_time, bool drop_cached_resource);
+    void SetDoesNotExistOnTimeout();
+    void SetDoesNotExistOnLdsOrCdsDeletion(const std::string& version,
+                                           Timestamp update_time,
+                                           bool drop_cached_resource);
 
     ClientResourceStatus client_status() const { return client_status_; }
     absl::string_view CacheStateString() const;
@@ -314,7 +314,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
       return resource_;
     }
 
-    absl::string_view failed_details() const { return failed_details_; }
+    const absl::Status& failed_status() const { return failed_status_; }
 
     void FillGenericXdsConfig(
         upb_StringView type_url, upb_StringView resource_name, upb_Arena* arena,
@@ -335,11 +335,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
     // The rejected version string of the last failed update attempt.
     std::string failed_version_;
     // Details about the last failed update attempt.
-    std::string failed_details_;
+    absl::Status failed_status_;
     // Timestamp of the last failed update attempt.
     Timestamp failed_update_time_;
-    // If we've ignored deletion.
-    bool ignored_deletion_ = false;
   };
 
   struct AuthorityState {
@@ -359,6 +357,15 @@ class XdsClient : public DualRefCounted<XdsClient> {
   void NotifyWatchersOnAmbientError(
       absl::Status status, WatcherSet watchers,
       RefCountedPtr<ReadDelayHandle> read_delay_handle);
+  // Notifies watchers for resource_state of an error, using
+  // OnResourceChanged() if there is no cached resource or
+  // OnAmbientError() if there is a cached resource.
+  void NotifyWatchersOnError(const ResourceState& resource_state,
+                             RefCountedPtr<ReadDelayHandle> read_delay_handle,
+                             // If empty, will use resource_state.watchers().
+                             WatcherSet watchers = {},
+                             // If OK, will use resource_state.failed_status().
+                             absl::Status status = absl::OkStatus());
 
   void MaybeRegisterResourceTypeLocked(const XdsResourceType* resource_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
