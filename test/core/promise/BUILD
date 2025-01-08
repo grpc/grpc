@@ -242,7 +242,11 @@ grpc_cc_test(
 grpc_cc_test(
     name = "loop_test",
     srcs = ["loop_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/strings",
+    ],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
