@@ -172,11 +172,17 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
   };
 
-  void Start(Server*, const std::vector<grpc_pollset*>*) override {
-    StartListening().IgnoreError();
-  };
+  void Start() override { StartListening().IgnoreError(); };
 
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
+    return nullptr;
+  }
+
+  void SetServerListenerState(RefCountedPtr<Server::ListenerState>) override {}
+
+  const grpc_resolved_address* resolved_address() const override {
+    // chaotic good doesn't use the new ListenerState interface yet.
+    Crash("Unimplemented");
     return nullptr;
   }
 
