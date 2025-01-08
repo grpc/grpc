@@ -209,8 +209,9 @@ fi
 # displayed on the public dashboard. The test runs and passes on the 30-core
 # ("32core") node pool. This can be considered a permanent fix, selectively
 # removing an unnecessary test and allowing the test run to become green.
+# IMPORTANT: Scenario names are case-sensitive.
 declare -a disabledTests8core=(
-  cpp_protobuf_async_client_unary_1channel_64wide_128breq_8mbresp_insecure
+  cpp_protobuf_async_client_unary_1channel_64wide_128Breq_8MBresp_insecure
 )
 declare -a disabledTests32core=()
 
