@@ -24,5 +24,10 @@ GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS=${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_J
 cd examples/cpp/helloworld
 mkdir -p cmake/build
 cd cmake/build
-cmake -DGRPC_AS_SUBMODULE=ON -Dprotobuf_INSTALL=OFF -Dutf8_range_ENABLE_INSTALL=OFF ../..
+cmake \
+  -DCMAKE_CXX_STANDARD=17 \
+  -DGRPC_AS_SUBMODULE=ON \
+  -Dprotobuf_INSTALL=OFF \
+  -Dutf8_range_ENABLE_INSTALL=OFF \
+  ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"
