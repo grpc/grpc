@@ -23,7 +23,17 @@ with grpc_fuzz_test.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library")
 
-def grpc_fuzzer(name, corpus, owner = "grpc", srcs = [], tags = [], external_deps = [], deps = [], data = [], size = "large", **kwargs):
+def grpc_fuzzer(
+        name,
+        corpus,
+        owner = "grpc",  # @unused
+        srcs = [],
+        tags = [],
+        external_deps = [],
+        deps = [],
+        data = [],
+        size = "large",
+        **kwargs):
     """Instantiates a fuzzer test.
 
     Args:
