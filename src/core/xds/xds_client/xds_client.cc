@@ -246,9 +246,9 @@ class XdsClient::XdsChannel::AdsCall final
           if (XdsDataErrorHandlingEnabled() &&
               ads_call_->xds_channel()
                   ->server_.ResourceTimerIsTransientFailure()) {
-            state.SetTimeout(absl::StrCat(
-                "timeout obtaining resource from xDS server ",
-                ads_call_->xds_channel()->server_uri()));
+            state.SetTimeout(
+                absl::StrCat("timeout obtaining resource from xDS server ",
+                             ads_call_->xds_channel()->server_uri()));
           } else {
             state.SetDoesNotExistOnTimeout();
           }

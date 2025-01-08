@@ -2714,13 +2714,13 @@ TEST_F(XdsClientTest, ResourceDeletionWithFailOnDataErrors) {
                   1)));
   // Check CSDS data.
   csds = DumpCsds();
-  EXPECT_THAT(csds.generic_xds_configs(),
-              ::testing::UnorderedElementsAre(CsdsResourceEq(
-                  ClientResourceStatus::DOES_NOT_EXIST,
-                  XdsWildcardCapableResourceType::Get()->type_url(), "wc1",
-                  CsdsNoResourceFields(),
-                  CsdsErrorFields("does not exist", "2",
-                                  TimestampProtoEq(kTime1)))));
+  EXPECT_THAT(
+      csds.generic_xds_configs(),
+      ::testing::UnorderedElementsAre(CsdsResourceEq(
+          ClientResourceStatus::DOES_NOT_EXIST,
+          XdsWildcardCapableResourceType::Get()->type_url(), "wc1",
+          CsdsNoResourceFields(),
+          CsdsErrorFields("does not exist", "2", TimestampProtoEq(kTime1)))));
   // Start a new watcher for the same resource.  It should immediately
   // receive the same does-not-exist notification.
   auto watcher2 = StartWildcardCapableWatch("wc1");
@@ -3483,6 +3483,11 @@ TEST_F(XdsClientTest, ResourceTimerIsTransientErrorIgnoredUnlessEnabled) {
                                         XdsFooResourceType::Get()->type_url(),
                                         "does_not_exist"),
                   1)));
+  // Check CSDS data.
+  ClientConfig csds = DumpCsds();
+  EXPECT_THAT(csds.generic_xds_configs(),
+              ::testing::ElementsAre(CsdsResourceDoesNotExistOnTimeout(
+                  XdsFooResourceType::Get()->type_url(), "foo1")));
   // Start a new watcher for the same resource.  It should immediately
   // receive the same does-not-exist notification.
   auto watcher2 = StartFooWatch("foo1");
@@ -3516,6 +3521,12 @@ TEST_F(XdsClientTest, ResourceTimerIsTransientErrorIgnoredUnlessEnabled) {
           ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
                                 XdsFooResourceType::Get()->type_url(), "acked"),
           1)));
+  // Check CSDS data.
+  csds = DumpCsds();
+  EXPECT_THAT(csds.generic_xds_configs(),
+              ::testing::UnorderedElementsAre(CsdsResourceAcked(
+                  XdsFooResourceType::Get()->type_url(), "foo1",
+                  resource->AsJsonString(), "1", TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -3583,6 +3594,16 @@ TEST_F(XdsClientTest, ResourceTimerIsTransientFailure) {
                                         XdsFooResourceType::Get()->type_url(),
                                         "timeout"),
                   1)));
+  // Check CSDS data.
+  ClientConfig csds = DumpCsds();
+  EXPECT_THAT(
+      csds.generic_xds_configs(),
+      ::testing::UnorderedElementsAre(CsdsResourceEq(
+          ClientResourceStatus::TIMEOUT, XdsFooResourceType::Get()->type_url(),
+          "foo1", CsdsNoResourceFields(),
+          CsdsErrorDetailsOnly(
+              absl::StrCat("timeout obtaining resource from xDS server ",
+                           kDefaultXdsServerUrl)))));
   // Start a new watcher for the same resource.  It should immediately
   // receive the same does-not-exist notification.
   auto watcher2 = StartFooWatch("foo1");
@@ -3620,6 +3641,12 @@ TEST_F(XdsClientTest, ResourceTimerIsTransientFailure) {
           ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
                                 XdsFooResourceType::Get()->type_url(), "acked"),
           1)));
+  // Check CSDS data.
+  csds = DumpCsds();
+  EXPECT_THAT(csds.generic_xds_configs(),
+              ::testing::UnorderedElementsAre(CsdsResourceAcked(
+                  XdsFooResourceType::Get()->type_url(), "foo1",
+                  resource->AsJsonString(), "1", TimestampProtoEq(kTime0))));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
