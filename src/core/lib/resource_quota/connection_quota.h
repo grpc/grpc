@@ -48,6 +48,10 @@ class ConnectionQuota : public RefCounted<ConnectionQuota> {
   // Mark connections as closed.
   void ReleaseConnections(int num_connections);
 
+  int TestOnlyActiveIncomingConnections() const {
+    return active_incoming_connections_;
+  }
+
  private:
   std::atomic<int> active_incoming_connections_{0};
   std::atomic<int> max_incoming_connections_{std::numeric_limits<int>::max()};
