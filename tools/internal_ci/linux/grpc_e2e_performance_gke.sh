@@ -214,14 +214,15 @@ fi
 # displayed on the public dashboard. The test runs and passes on the 30-core
 # ("32core") node pool. This can be considered a permanent fix, selectively
 # removing an unnecessary test and allowing the test run to become green.
+# IMPORTANT: Scenario names are case-sensitive.
 declare -a disabledTests8core=(
-  cpp_protobuf_async_client_unary_1channel_64wide_128breq_8mbresp_insecure
+  cpp_protobuf_async_client_unary_1channel_64wide_128Breq_8MBresp_insecure
 )
 declare -a disabledTests32core=()
 
 # Arguments to disable tests.
-regexArgs8core=(-r "$(disabledTestsRegex "${disabledTests8core[@]}")")
-regexArgs32core=(-r "$(disabledTestsRegex "${disabledTests32core[@]}")")
+regexArgs8core=(-r "$(disableTestsRegex "${disabledTests8core[@]}")")
+regexArgs32core=(-r "$(disableTestsRegex "${disabledTests32core[@]}")")
 
 buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${configLangArgs8core[@]}" "${regexArgs8core[@]}"
 buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${configLangArgs32core[@]}" "${regexArgs32core[@]}"

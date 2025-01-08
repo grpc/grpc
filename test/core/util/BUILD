@@ -16,6 +16,7 @@ load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 load(
     "//test/core/test_util:grpc_fuzzer.bzl",
+    "grpc_fuzz_test",
     "grpc_fuzzer",
     "grpc_proto_fuzzer",
 )
@@ -805,4 +806,27 @@ grpc_cc_test(
     deps = [
         "//src/core:wait_for_single_owner",
     ],
+)
+
+grpc_fuzz_test(
+    name = "tdigest_fuzztest",
+    srcs = ["tdigest_fuzztest.cc"],
+    external_deps = [
+        "absl/types:variant",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:tdigest"],
+)
+
+grpc_fuzz_test(
+    name = "useful_fuzztest",
+    srcs = ["useful_fuzztest.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:useful"],
 )

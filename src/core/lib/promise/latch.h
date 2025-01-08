@@ -31,11 +31,19 @@
 
 namespace grpc_core {
 
-// Latch provides a single set waitable object.
-// Initially the Latch is unset.
-// It can be waited upon by the Wait method, which produces a Promise that
-// resolves when the Latch is Set to a value of type T.
-// Latches only work correctly within a single activity.
+// Latches only work correctly within a single activity or a single party. If
+// you need something that works across activities/parties refer to
+// inter_activity_latch.h
+//
+// Latch provides a single set waitable object. We use Latch when we want to
+// wait for a particular object to be set. This object would typically be set by
+// some promise getting resolved.
+//
+// Initially the value Latch is unset.
+//
+// We can wait for Latch to be set using either the Wait or WaitAndCopy method.
+// These two methods produce Promises that resolves when the Latch is value Set
+// to a value of type T.
 template <typename T>
 class Latch {
  public:

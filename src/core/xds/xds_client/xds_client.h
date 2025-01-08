@@ -139,8 +139,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   Mutex* mu() ABSL_LOCK_RETURNED(&mu_) { return &mu_; }
 
   // Dumps the active xDS config to the provided
-  // envoy.service.status.v3.ClientConfig message including the config status
-  // (e.g., CLIENT_REQUESTED, CLIENT_ACKED, CLIENT_NACKED).
+  // envoy.service.status.v3.ClientConfig message.
   void DumpClientConfig(std::set<std::string>* string_pool, upb_Arena* arena,
                         envoy_service_status_v3_ClientConfig* client_config)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
@@ -279,18 +278,14 @@ class XdsClient : public DualRefCounted<XdsClient> {
       NACKED,
     };
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_REQUESTED) ==
-                      ClientResourceStatus::REQUESTED,
-                  "");
+                  ClientResourceStatus::REQUESTED);
     static_assert(
         static_cast<ClientResourceStatus>(envoy_admin_v3_DOES_NOT_EXIST) ==
-            ClientResourceStatus::DOES_NOT_EXIST,
-        "");
+        ClientResourceStatus::DOES_NOT_EXIST);
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_ACKED) ==
-                      ClientResourceStatus::ACKED,
-                  "");
+                  ClientResourceStatus::ACKED);
     static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_NACKED) ==
-                      ClientResourceStatus::NACKED,
-                  "");
+                  ClientResourceStatus::NACKED);
 
     void AddWatcher(RefCountedPtr<ResourceWatcherInterface> watcher) {
       watchers_.insert(std::move(watcher));
