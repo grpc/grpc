@@ -2712,10 +2712,8 @@ TEST_F(XdsClientTest, ResourceDeletionWithFailOnDataErrors) {
                   ClientResourceStatus::DOES_NOT_EXIST,
                   XdsWildcardCapableResourceType::Get()->type_url(), "wc1",
                   CsdsNoResourceFields(),
-                  CsdsErrorFields(
-                      /*error_details=*/"does not exist",
-                      /*error_version=*/"2",
-                      /*error_time=*/TimestampProtoEq(kTime1)))));
+                  CsdsErrorFields("does not exist", "2",
+                                  TimestampProtoEq(kTime1)))));
   // Start a new watcher for the same resource.  It should immediately
   // receive the same does-not-exist notification.
   auto watcher2 = StartWildcardCapableWatch("wc1");
