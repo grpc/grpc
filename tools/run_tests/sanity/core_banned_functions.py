@@ -92,9 +92,9 @@ BANNED_EXCEPT = {
     # Use `std::make_unique()` instead.
     "absl::make_unique": [],
     # C++17: Use [[fallthrough]]
-    "ABSL_FALLTHROUGH_INTENDED": []
+    "ABSL_FALLTHROUGH_INTENDED": [],
     # C++17: Use [[nodiscard]]
-    "ABSL_MUST_USE_RESULT": []
+    "ABSL_MUST_USE_RESULT": [],
 }
 
 errors = 0
