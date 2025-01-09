@@ -2315,7 +2315,7 @@
   - third_party/abseil-cpp/absl/types/compare.h
   name: absl/types:compare
   src: []
-- cmake_target: absl::optional
+- cmake_target: std::optional
   deps:
   - absl/base:base_internal
   - absl/base:config

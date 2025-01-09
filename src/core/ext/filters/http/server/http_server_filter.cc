@@ -24,12 +24,12 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/base/attributes.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -117,7 +117,7 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
   }
 
   if (md.get_pointer(HttpAuthorityMetadata()) == nullptr) {
-    absl::optional<Slice> host = md.Take(HostMetadata());
+    std::optional<Slice> host = md.Take(HostMetadata());
     if (host.has_value()) {
       md.Set(HttpAuthorityMetadata(), std::move(*host));
     }

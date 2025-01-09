@@ -229,7 +229,7 @@ Timeout Timeout::FromHours(int64_t hours) {
   return Timeout(kMaxHours, Unit::kHours);
 }
 
-absl::optional<Duration> ParseTimeout(const Slice& text) {
+std::optional<Duration> ParseTimeout(const Slice& text) {
   int32_t x = 0;
   const uint8_t* p = text.begin();
   const uint8_t* end = text.end();
@@ -249,11 +249,11 @@ absl::optional<Duration> ParseTimeout(const Slice& text) {
     }
     x = x * 10 + digit;
   }
-  if (!have_digit) return absl::nullopt;
+  if (!have_digit) return std::nullopt;
   // skip whitespace
   for (; p != end && *p == ' '; p++) {
   }
-  if (p == end) return absl::nullopt;
+  if (p == end) return std::nullopt;
   // decode unit specifier
   Duration timeout;
   switch (*p) {
@@ -278,10 +278,10 @@ absl::optional<Duration> ParseTimeout(const Slice& text) {
       timeout = Duration::Hours(x);
       break;
     default:
-      return absl::nullopt;
+      return std::nullopt;
   }
   p++;
-  if (!IsAllSpace(p, end)) return absl::nullopt;
+  if (!IsAllSpace(p, end)) return std::nullopt;
   return timeout;
 }
 

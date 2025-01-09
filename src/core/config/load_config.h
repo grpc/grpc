@@ -18,12 +18,12 @@
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/flags/flag.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 
 namespace grpc_core {
 
@@ -35,9 +35,9 @@ bool LoadConfigFromEnv(absl::string_view environment_variable,
                        bool default_value);
 
 template <typename T, typename D>
-T LoadConfig(const absl::Flag<absl::optional<T>>& flag,
+T LoadConfig(const absl::Flag<std::optional<T>>& flag,
              absl::string_view environment_variable,
-             const absl::optional<T>& override, D default_value) {
+             const std::optional<T>& override, D default_value) {
   if (override.has_value()) return *override;
   auto from_flag = absl::GetFlag(flag);
   if (from_flag.has_value()) return std::move(*from_flag);
@@ -46,7 +46,7 @@ T LoadConfig(const absl::Flag<absl::optional<T>>& flag,
 
 std::string LoadConfig(const absl::Flag<std::vector<std::string>>& flag,
                        absl::string_view environment_variable,
-                       const absl::optional<std::string>& override,
+                       const std::optional<std::string>& override,
                        const char* default_value);
 
 }  // namespace grpc_core

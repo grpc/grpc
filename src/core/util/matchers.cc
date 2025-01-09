@@ -294,8 +294,7 @@ bool HeaderMatcher::operator==(const HeaderMatcher& other) const {
   }
 }
 
-bool HeaderMatcher::Match(
-    const absl::optional<absl::string_view>& value) const {
+bool HeaderMatcher::Match(const std::optional<absl::string_view>& value) const {
   bool match;
   if (type_ == Type::kPresent) {
     match = value.has_value() == present_match_;

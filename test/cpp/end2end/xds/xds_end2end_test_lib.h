@@ -27,6 +27,7 @@
 #include <gtest/gtest.h>
 
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <thread>
@@ -37,7 +38,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "envoy/config/rbac/v3/rbac.pb.h"
 #include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
@@ -599,7 +599,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // and channel args for the XdsClient.  Then calls ResetStub().
   // All tests must call this exactly once at the start of the test.
   // If credentials is null, fake credentials will be used.
-  void InitClient(absl::optional<XdsBootstrapBuilder> builder = absl::nullopt,
+  void InitClient(std::optional<XdsBootstrapBuilder> builder = std::nullopt,
                   std::string lb_expected_authority = "",
                   int xds_resource_does_not_exist_timeout_ms = 0,
                   std::string balancer_authority_override = "",
@@ -642,7 +642,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     int client_cancel_after_us = 0;
     bool skip_cancelled_check = false;
     StatusCode server_expected_error = StatusCode::OK;
-    absl::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics;
+    std::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics;
     bool server_notify_client_when_started = false;
     bool echo_host_from_authority_header = false;
     bool echo_metadata_initially = false;
@@ -706,7 +706,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     }
 
     RpcOptions& set_backend_metrics(
-        absl::optional<xds::data::orca::v3::OrcaLoadReport> metrics) {
+        std::optional<xds::data::orca::v3::OrcaLoadReport> metrics) {
       backend_metrics = std::move(metrics);
       return *this;
     }
@@ -889,14 +889,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // this to not send RPCs.
   // Also, consider refactoring to also support waiting for ACKs, since
   // there are several use-cases where tests are doing that.
-  absl::optional<AdsServiceImpl::ResponseState> WaitForNack(
+  std::optional<AdsServiceImpl::ResponseState> WaitForNack(
       const grpc_core::DebugLocation& debug_location,
-      std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
+      std::function<std::optional<AdsServiceImpl::ResponseState>()> get_state,
       const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE);
 
   // Sends RPCs until an LDS NACK is seen.
-  absl::optional<AdsServiceImpl::ResponseState> WaitForLdsNack(
+  std::optional<AdsServiceImpl::ResponseState> WaitForLdsNack(
       const grpc_core::DebugLocation& debug_location,
       const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
@@ -907,7 +907,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   }
 
   // Sends RPCs until an RDS NACK is seen.
-  absl::optional<AdsServiceImpl::ResponseState> WaitForRdsNack(
+  std::optional<AdsServiceImpl::ResponseState> WaitForRdsNack(
       const grpc_core::DebugLocation& debug_location,
       const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
@@ -918,7 +918,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   }
 
   // Sends RPCs until a CDS NACK is seen.
-  absl::optional<AdsServiceImpl::ResponseState> WaitForCdsNack(
+  std::optional<AdsServiceImpl::ResponseState> WaitForCdsNack(
       const grpc_core::DebugLocation& debug_location,
       const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
@@ -929,7 +929,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   }
 
   // Sends RPCs until an EDS NACK is seen.
-  absl::optional<AdsServiceImpl::ResponseState> WaitForEdsNack(
+  std::optional<AdsServiceImpl::ResponseState> WaitForEdsNack(
       const grpc_core::DebugLocation& debug_location,
       const RpcOptions& rpc_options = RpcOptions()) {
     return WaitForNack(
@@ -940,7 +940,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
   // Convenient front-end to wait for RouteConfiguration to be NACKed,
   // regardless of whether it's sent in LDS or RDS.
-  absl::optional<AdsServiceImpl::ResponseState> WaitForRouteConfigNack(
+  std::optional<AdsServiceImpl::ResponseState> WaitForRouteConfigNack(
       const grpc_core::DebugLocation& debug_location,
       const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
@@ -952,7 +952,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
   // Convenient front-end for accessing xDS response state for a
   // RouteConfiguration, regardless of whether it's sent in LDS or RDS.
-  absl::optional<AdsServiceImpl::ResponseState> RouteConfigurationResponseState(
+  std::optional<AdsServiceImpl::ResponseState> RouteConfigurationResponseState(
       BalancerServerThread* balancer) const {
     AdsServiceImpl* ads_service = balancer->ads_service();
     if (GetParam().enable_rds_testing()) {

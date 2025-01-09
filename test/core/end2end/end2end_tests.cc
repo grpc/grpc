@@ -107,7 +107,7 @@ void CoreEnd2endTest::TearDown() {
 
 CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
   if (auto* u = absl::get_if<UnregisteredCall>(&call_selector_)) {
-    absl::optional<Slice> host;
+    std::optional<Slice> host;
     if (u->host.has_value()) host = Slice::FromCopiedString(*u->host);
     test_.ForceInitialized();
     return Call(
@@ -160,7 +160,7 @@ CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, void* method,
             GRPC_CALL_OK);
 }
 
-absl::optional<std::string> CoreEnd2endTest::IncomingCall::GetInitialMetadata(
+std::optional<std::string> CoreEnd2endTest::IncomingCall::GetInitialMetadata(
     absl::string_view key) const {
   return FindInMetadataArray(impl_->request_metadata, key);
 }

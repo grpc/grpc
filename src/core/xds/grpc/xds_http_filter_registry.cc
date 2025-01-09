@@ -51,7 +51,7 @@ void XdsHttpRouterFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_router_v3_Router_getmsgdef(symtab);
 }
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRouterFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -60,24 +60,24 @@ XdsHttpRouterFilter::GenerateFilterConfig(
       absl::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse router filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   if (envoy_extensions_filters_http_router_v3_Router_parse(
           serialized_filter_config->data(), serialized_filter_config->size(),
           context.arena) == nullptr) {
     errors->AddError("could not parse router filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   return FilterConfig{ConfigProtoName(), Json()};
 }
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRouterFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
     XdsExtension /*extension*/, ValidationErrors* errors) const {
   errors->AddError("router filter does not support config override");
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 //

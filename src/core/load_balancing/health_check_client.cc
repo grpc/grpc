@@ -24,6 +24,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <type_traits>
@@ -35,7 +36,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel.h"
@@ -359,7 +359,7 @@ void HealthProducer::Orphaned() {
 
 void HealthProducer::AddWatcher(
     HealthWatcher* watcher,
-    const absl::optional<std::string>& health_check_service_name) {
+    const std::optional<std::string>& health_check_service_name) {
   MutexLock lock(&mu_);
   grpc_pollset_set_add_pollset_set(interested_parties_,
                                    watcher->interested_parties());
@@ -380,7 +380,7 @@ void HealthProducer::AddWatcher(
 
 void HealthProducer::RemoveWatcher(
     HealthWatcher* watcher,
-    const absl::optional<std::string>& health_check_service_name) {
+    const std::optional<std::string>& health_check_service_name) {
   MutexLock lock(&mu_);
   grpc_pollset_set_del_pollset_set(interested_parties_,
                                    watcher->interested_parties());
@@ -483,7 +483,7 @@ MakeHealthCheckWatcher(
     std::shared_ptr<WorkSerializer> work_serializer, const ChannelArgs& args,
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
         watcher) {
-  absl::optional<std::string> health_check_service_name;
+  std::optional<std::string> health_check_service_name;
   if (!args.GetBool(GRPC_ARG_INHIBIT_HEALTH_CHECKING).value_or(false)) {
     health_check_service_name =
         args.GetOwnedString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);

@@ -17,10 +17,10 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -56,8 +56,8 @@ void ResolvedAddressSetPort(EventEngine::ResolvedAddress& resolved_addr,
                             int port);
 
 // Returns the port number associated with the address if the given address is
-// a wildcard ipv4 or ipv6 address. Otherwise returns absl::nullopt
-absl::optional<int> MaybeGetWildcardPortFromAddress(
+// a wildcard ipv4 or ipv6 address. Otherwise returns std::nullopt
+std::optional<int> MaybeGetWildcardPortFromAddress(
     const EventEngine::ResolvedAddress& addr);
 
 // Returns true if resolved_addr is an VSOCK address. Otherwise returns false.

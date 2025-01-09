@@ -24,10 +24,10 @@
 #include <array>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/time.h"
@@ -142,7 +142,7 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
     };
     using SourcePortsMap = std::map<uint16_t, FilterChainDataSharedPtr>;
     struct SourceIp {
-      absl::optional<CidrRange> prefix_range;
+      std::optional<CidrRange> prefix_range;
       SourcePortsMap ports_map;
 
       bool operator==(const SourceIp& other) const {
@@ -154,7 +154,7 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
     enum class ConnectionSourceType { kAny = 0, kSameIpOrLoopback, kExternal };
     using ConnectionSourceTypesArray = std::array<SourceIpVector, 3>;
     struct DestinationIp {
-      absl::optional<CidrRange> prefix_range;
+      std::optional<CidrRange> prefix_range;
       // We always fail match on server name, so those filter chains are not
       // included here.
       ConnectionSourceTypesArray source_types_array;
@@ -178,7 +178,7 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
   struct TcpListener {
     std::string address;  // host:port listening address
     FilterChainMap filter_chain_map;
-    absl::optional<FilterChainData> default_filter_chain;
+    std::optional<FilterChainData> default_filter_chain;
 
     bool operator==(const TcpListener& other) const {
       return address == other.address &&

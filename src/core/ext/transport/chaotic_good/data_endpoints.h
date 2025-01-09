@@ -70,7 +70,7 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
   Poll<SliceBuffer> PollNext(uint32_t connection_id);
 
   Mutex mu_;
-  std::vector<absl::optional<OutputBuffer>> buffers_ ABSL_GUARDED_BY(mu_);
+  std::vector<std::optional<OutputBuffer>> buffers_ ABSL_GUARDED_BY(mu_);
   Waker write_waker_ ABSL_GUARDED_BY(mu_);
   std::atomic<uint32_t> ready_endpoints_{0};
 };

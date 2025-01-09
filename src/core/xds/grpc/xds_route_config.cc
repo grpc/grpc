@@ -16,6 +16,7 @@
 
 #include "src/core/xds/grpc/xds_route_config.h"
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -23,7 +24,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "re2/re2.h"
 #include "src/core/util/match.h"

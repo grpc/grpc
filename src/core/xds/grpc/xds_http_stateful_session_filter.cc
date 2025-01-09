@@ -138,7 +138,7 @@ Json::Object ValidateStatefulSession(
 
 }  // namespace
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpStatefulSessionFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -147,7 +147,7 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfig(
       absl::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse stateful session filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   auto* stateful_session =
       envoy_extensions_filters_http_stateful_session_v3_StatefulSession_parse(
@@ -155,14 +155,14 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfig(
           context.arena);
   if (stateful_session == nullptr) {
     errors->AddError("could not parse stateful session filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   return FilterConfig{ConfigProtoName(),
                       Json::FromObject(ValidateStatefulSession(
                           context, stateful_session, errors))};
 }
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -171,7 +171,7 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
       absl::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse stateful session filter override config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   auto* stateful_session_per_route =
       envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_parse(
@@ -179,7 +179,7 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
           context.arena);
   if (stateful_session_per_route == nullptr) {
     errors->AddError("could not parse stateful session filter override config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   Json::Object config;
   if (!envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_disabled(

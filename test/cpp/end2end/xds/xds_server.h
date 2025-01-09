@@ -20,6 +20,7 @@
 #include <grpcpp/support/status.h>
 
 #include <deque>
+#include <optional>
 #include <set>
 #include <string>
 #include <thread>
@@ -27,7 +28,6 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-#include "absl/types/optional.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/endpoint/v3/endpoint.pb.h"
 #include "envoy/config/listener/v3/listener.pb.h"
@@ -138,25 +138,25 @@ class AdsServiceImpl
   // Get the list of response state for each resource type.
   // TODO(roth): Consider adding an absl::Notification-based mechanism
   // here to avoid the need for tests to poll the response state.
-  absl::optional<ResponseState> GetResponseState(const std::string& type_url) {
+  std::optional<ResponseState> GetResponseState(const std::string& type_url) {
     grpc_core::MutexLock lock(&ads_mu_);
     if (resource_type_response_state_[type_url].empty()) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     auto response = resource_type_response_state_[type_url].front();
     resource_type_response_state_[type_url].pop_front();
     return response;
   }
-  absl::optional<ResponseState> lds_response_state() {
+  std::optional<ResponseState> lds_response_state() {
     return GetResponseState(kLdsTypeUrl);
   }
-  absl::optional<ResponseState> rds_response_state() {
+  std::optional<ResponseState> rds_response_state() {
     return GetResponseState(kRdsTypeUrl);
   }
-  absl::optional<ResponseState> cds_response_state() {
+  std::optional<ResponseState> cds_response_state() {
     return GetResponseState(kCdsTypeUrl);
   }
-  absl::optional<ResponseState> eds_response_state() {
+  std::optional<ResponseState> eds_response_state() {
     return GetResponseState(kEdsTypeUrl);
   }
 
@@ -179,7 +179,7 @@ class AdsServiceImpl
 
   void ClearADSFailure() {
     grpc_core::MutexLock lock(&ads_mu_);
-    forced_ads_failure_ = absl::nullopt;
+    forced_ads_failure_ = std::nullopt;
   }
 
  private:
@@ -209,7 +209,7 @@ class AdsServiceImpl
   // A struct representing the current state for an individual resource.
   struct ResourceState {
     // The resource itself, if present.
-    absl::optional<google::protobuf::Any> resource;
+    std::optional<google::protobuf::Any> resource;
     // The resource type version that this resource was last updated in.
     int resource_type_version = 0;
     // A list of subscriptions to this resource.
@@ -270,7 +270,7 @@ class AdsServiceImpl
       // sent out.
       bool did_work = false;
       // Look for new requests and decide what to handle.
-      absl::optional<DiscoveryResponse> response;
+      std::optional<DiscoveryResponse> response;
       {
         grpc_core::MutexLock lock(&ads_mu_);
         // If the stream has been closed or our parent is being shut
@@ -357,7 +357,7 @@ class AdsServiceImpl
   void ProcessRequest(const DiscoveryRequest& request,
                       UpdateQueue* update_queue,
                       SubscriptionMap* subscription_map, SentState* sent_state,
-                      absl::optional<DiscoveryResponse>* response)
+                      std::optional<DiscoveryResponse>* response)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(ads_mu_) {
     // Check the nonce sent by the client, if any.
     // (This will be absent on the first request on a stream.)
@@ -459,7 +459,7 @@ class AdsServiceImpl
   void ProcessUpdate(const std::string& resource_type,
                      const std::string& resource_name,
                      SubscriptionMap* subscription_map, SentState* sent_state,
-                     absl::optional<DiscoveryResponse>* response)
+                     std::optional<DiscoveryResponse>* response)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(ads_mu_) {
     LOG(INFO) << "ADS[" << debug_label_
               << "]: Received update for type=" << resource_type
@@ -593,7 +593,7 @@ class AdsServiceImpl
   //   yet been destroyed by UnsetResource()).
   // - There is at least one subscription for the resource.
   ResourceMap resource_map_ ABSL_GUARDED_BY(ads_mu_);
-  absl::optional<Status> forced_ads_failure_ ABSL_GUARDED_BY(ads_mu_);
+  std::optional<Status> forced_ads_failure_ ABSL_GUARDED_BY(ads_mu_);
   bool wrap_resources_ ABSL_GUARDED_BY(ads_mu_) = false;
 
   grpc_core::Mutex clients_mu_;

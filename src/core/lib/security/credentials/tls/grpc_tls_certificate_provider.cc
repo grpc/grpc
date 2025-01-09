@@ -91,8 +91,8 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
-    absl::optional<std::string> root_certificate;
-    absl::optional<PemKeyCertPairList> pem_key_cert_pairs;
+    std::optional<std::string> root_certificate;
+    std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     StaticDataCertificateProvider::WatcherInfo& info = watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
         !root_certificate_.empty()) {
@@ -208,8 +208,8 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
-    absl::optional<std::string> root_certificate;
-    absl::optional<PemKeyCertPairList> pem_key_cert_pairs;
+    std::optional<std::string> root_certificate;
+    std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     FileWatcherCertificateProvider::WatcherInfo& info =
         watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
@@ -277,8 +277,8 @@ absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
 }
 
 void FileWatcherCertificateProvider::ForceUpdate() {
-  absl::optional<std::string> root_certificate;
-  absl::optional<PemKeyCertPairList> pem_key_cert_pairs;
+  std::optional<std::string> root_certificate;
+  std::optional<PemKeyCertPairList> pem_key_cert_pairs;
   if (!root_cert_path_.empty()) {
     root_certificate = ReadRootCertificatesFromFile(root_cert_path_);
   }
@@ -317,8 +317,8 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     for (const auto& p : watcher_info_) {
       const std::string& cert_name = p.first;
       const WatcherInfo& info = p.second;
-      absl::optional<std::string> root_to_report;
-      absl::optional<PemKeyCertPairList> identity_to_report;
+      std::optional<std::string> root_to_report;
+      std::optional<PemKeyCertPairList> identity_to_report;
       // Set key materials to the distributor if their contents changed.
       if (info.root_being_watched && !root_certificate_.empty() &&
           root_cert_changed) {
@@ -346,7 +346,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
   }
 }
 
-absl::optional<std::string>
+std::optional<std::string>
 FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
     const std::string& root_cert_full_path) {
   // Read the root file.
@@ -355,7 +355,7 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
   if (!root_slice.ok()) {
     LOG(ERROR) << "Reading file " << root_cert_full_path
                << " failed: " << root_slice.status();
-    return absl::nullopt;
+    return std::nullopt;
   }
   return std::string(root_slice->as_string_view());
 }
@@ -372,7 +372,7 @@ time_t GetModificationTime(const char* filename) {
 
 }  // namespace
 
-absl::optional<PemKeyCertPairList>
+std::optional<PemKeyCertPairList>
 FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     const std::string& private_key_path,
     const std::string& identity_certificate_path) {
@@ -433,7 +433,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   }
   LOG(ERROR) << "All retry attempts failed. Will try again after the next "
                 "interval.";
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 int64_t FileWatcherCertificateProvider::TestOnlyGetRefreshIntervalSecond()

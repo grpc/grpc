@@ -201,7 +201,6 @@ grpc_cc_test(
     srcs = ["table_test.cc"],
     external_deps = [
         "gtest",
-        "absl/types:optional",
     ],
     language = "C++",
     uses_event_engine = False,

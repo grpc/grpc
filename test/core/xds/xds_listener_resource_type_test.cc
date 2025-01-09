@@ -21,6 +21,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -30,7 +31,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "envoy/config/core/v3/address.pb.h"
 #include "envoy/config/core/v3/base.pb.h"
@@ -220,20 +220,20 @@ class HttpConnectionManagerTest
     return listener;
   }
 
-  static absl::optional<XdsListenerResource::HttpConnectionManager>
-  GetHCMConfig(const XdsListenerResource& resource) {
+  static std::optional<XdsListenerResource::HttpConnectionManager> GetHCMConfig(
+      const XdsListenerResource& resource) {
     if (GetParam().in_api_listener) {
       // Client.
       auto* hcm = absl::get_if<XdsListenerResource::HttpConnectionManager>(
           &resource.listener);
-      if (hcm == nullptr) return absl::nullopt;
+      if (hcm == nullptr) return std::nullopt;
       return *hcm;
     }
     // Server.
     auto* tcp_listener =
         absl::get_if<XdsListenerResource::TcpListener>(&resource.listener);
-    if (tcp_listener == nullptr) return absl::nullopt;
-    if (!tcp_listener->default_filter_chain.has_value()) return absl::nullopt;
+    if (tcp_listener == nullptr) return std::nullopt;
+    if (!tcp_listener->default_filter_chain.has_value()) return std::nullopt;
     return tcp_listener->default_filter_chain->http_connection_manager;
   }
 

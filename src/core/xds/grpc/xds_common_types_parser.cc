@@ -75,18 +75,18 @@ Duration ParseDuration(const google_protobuf_Duration* proto_duration,
 // ParseXdsAddress()
 //
 
-absl::optional<grpc_resolved_address> ParseXdsAddress(
+std::optional<grpc_resolved_address> ParseXdsAddress(
     const envoy_config_core_v3_Address* address, ValidationErrors* errors) {
   if (address == nullptr) {
     errors->AddError("field not present");
-    return absl::nullopt;
+    return std::nullopt;
   }
   ValidationErrors::ScopedField field(errors, ".socket_address");
   const envoy_config_core_v3_SocketAddress* socket_address =
       envoy_config_core_v3_Address_socket_address(address);
   if (socket_address == nullptr) {
     errors->AddError("field not present");
-    return absl::nullopt;
+    return std::nullopt;
   }
   std::string address_str = UpbStringToStdString(
       envoy_config_core_v3_SocketAddress_address(socket_address));
@@ -96,13 +96,13 @@ absl::optional<grpc_resolved_address> ParseXdsAddress(
     port = envoy_config_core_v3_SocketAddress_port_value(socket_address);
     if (GPR_UNLIKELY(port >> 16) != 0) {
       errors->AddError("invalid port");
-      return absl::nullopt;
+      return std::nullopt;
     }
   }
   auto addr = StringToSockaddr(address_str, port);
   if (!addr.ok()) {
     errors->AddError(addr.status().message());
-    return absl::nullopt;
+    return std::nullopt;
   }
   return *addr;
 }
@@ -443,12 +443,12 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
 // ExtractXdsExtension()
 //
 
-absl::optional<XdsExtension> ExtractXdsExtension(
+std::optional<XdsExtension> ExtractXdsExtension(
     const XdsResourceType::DecodeContext& context,
     const google_protobuf_Any* any, ValidationErrors* errors) {
   if (any == nullptr) {
     errors->AddError("field not present");
-    return absl::nullopt;
+    return std::nullopt;
   }
   XdsExtension extension;
   auto strip_type_prefix = [&]() {
@@ -466,7 +466,7 @@ absl::optional<XdsExtension> ExtractXdsExtension(
     return true;
   };
   extension.type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
-  if (!strip_type_prefix()) return absl::nullopt;
+  if (!strip_type_prefix()) return std::nullopt;
   extension.validation_fields.emplace_back(
       errors, absl::StrCat(".value[", extension.type, "]"));
   absl::string_view any_value = UpbStringToAbsl(google_protobuf_Any_value(any));
@@ -476,11 +476,11 @@ absl::optional<XdsExtension> ExtractXdsExtension(
         any_value.data(), any_value.size(), context.arena);
     if (typed_struct == nullptr) {
       errors->AddError("could not parse");
-      return absl::nullopt;
+      return std::nullopt;
     }
     extension.type =
         UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(typed_struct));
-    if (!strip_type_prefix()) return absl::nullopt;
+    if (!strip_type_prefix()) return std::nullopt;
     extension.validation_fields.emplace_back(
         errors, absl::StrCat(".value[", extension.type, "]"));
     auto* protobuf_struct = xds_type_v3_TypedStruct_value(typed_struct);
@@ -490,7 +490,7 @@ absl::optional<XdsExtension> ExtractXdsExtension(
       auto json = ParseProtobufStructToJson(context, protobuf_struct);
       if (!json.ok()) {
         errors->AddError(json.status().message());
-        return absl::nullopt;
+        return std::nullopt;
       }
       extension.value = std::move(*json);
     }

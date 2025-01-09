@@ -83,7 +83,7 @@ void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
 }
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -92,14 +92,14 @@ XdsHttpFaultFilter::GenerateFilterConfig(
       absl::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse fault injection filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   auto* http_fault = envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
       serialized_filter_config->data(), serialized_filter_config->size(),
       context.arena);
   if (http_fault == nullptr) {
     errors->AddError("could not parse fault injection filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   // NOTE(lidiz): Here, we are manually translating the upb messages into the
   // JSON form of the filter config as part of method config, which will be
@@ -205,7 +205,7 @@ XdsHttpFaultFilter::GenerateFilterConfig(
                       Json::FromObject(std::move(fault_injection_policy_json))};
 }
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfigOverride(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,

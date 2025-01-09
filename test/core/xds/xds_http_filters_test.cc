@@ -338,7 +338,7 @@ class XdsFaultInjectionFilterConfigTest
     : public XdsFaultInjectionFilterTest,
       public ::testing::WithParamInterface<bool> {
  protected:
-  absl::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(
+  std::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(
       XdsExtension extension) {
     if (GetParam()) {
       return filter_->GenerateFilterConfigOverride(
@@ -627,7 +627,7 @@ TEST_F(XdsRbacFilterTest, GenerateServiceConfig) {
 class XdsRbacFilterConfigTest : public XdsRbacFilterTest,
                                 public ::testing::WithParamInterface<bool> {
  protected:
-  absl::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(RBAC rbac) {
+  std::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(RBAC rbac) {
     if (GetParam()) {
       RBACPerRoute rbac_per_route;
       *rbac_per_route.mutable_rbac() = rbac;
@@ -1277,7 +1277,7 @@ class XdsStatefulSessionFilterConfigTest
     : public XdsStatefulSessionFilterTest,
       public ::testing::WithParamInterface<bool> {
  protected:
-  absl::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(
+  std::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(
       StatefulSession stateful_session) {
     if (GetParam()) {
       StatefulSessionPerRoute stateful_session_per_route;

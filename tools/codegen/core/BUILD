@@ -28,7 +28,6 @@ grpc_cc_binary(
     external_deps = [
         "absl/strings",
         "absl/memory",
-        "absl/types:optional",
         "absl/types:variant",
         "libcrypto",
     ],

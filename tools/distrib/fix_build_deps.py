@@ -93,7 +93,6 @@ EXTERNAL_DEPS = {
     "absl/synchronization/notification.h": "absl/synchronization",
     "absl/time/clock.h": "absl/time",
     "absl/time/time.h": "absl/time",
-    "absl/types/optional.h": "absl/types:optional",
     "absl/types/span.h": "absl/types:span",
     "absl/types/variant.h": "absl/types:variant",
     "absl/utility/utility.h": "absl/utility",

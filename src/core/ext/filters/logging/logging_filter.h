@@ -97,7 +97,7 @@ class ClientLoggingFilter final
     static inline const NoInterceptor OnFinalize;
 
    private:
-    absl::optional<logging_filter_detail::CallData> call_data_;
+    std::optional<logging_filter_detail::CallData> call_data_;
   };
 
  private:
@@ -125,7 +125,7 @@ class ServerLoggingFilter final
     static inline const NoInterceptor OnFinalize;
 
    private:
-    absl::optional<logging_filter_detail::CallData> call_data_;
+    std::optional<logging_filter_detail::CallData> call_data_;
   };
 };
 

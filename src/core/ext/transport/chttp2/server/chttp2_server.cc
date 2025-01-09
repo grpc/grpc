@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -45,7 +46,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -212,7 +212,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
           ABSL_GUARDED_BY(&ActiveConnection::mu_);
       // State for enforcing handshake timeout on receiving HTTP/2 settings.
       Timestamp const deadline_;
-      absl::optional<EventEngine::TaskHandle> timer_handle_
+      std::optional<EventEngine::TaskHandle> timer_handle_
           ABSL_GUARDED_BY(&ActiveConnection::mu_);
       grpc_closure on_receive_settings_ ABSL_GUARDED_BY(&ActiveConnection::mu_);
       grpc_pollset_set* const interested_parties_;
@@ -250,7 +250,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     RefCountedPtr<grpc_chttp2_transport> transport_ ABSL_GUARDED_BY(&mu_) =
         nullptr;
     grpc_closure on_close_;
-    absl::optional<EventEngine::TaskHandle> drain_grace_timer_handle_
+    std::optional<EventEngine::TaskHandle> drain_grace_timer_handle_
         ABSL_GUARDED_BY(&mu_);
     // Use a raw pointer since this event_engine_ is grabbed from the
     // ChannelArgs of the listener_.
@@ -1410,7 +1410,7 @@ void NewChttp2ServerListener::OnAccept(
       std::move(endpoint));
   RefCountedPtr<ActiveConnection> connection_ref =
       connection->RefAsSubclass<ActiveConnection>();
-  absl::optional<ChannelArgs> new_args =
+  std::optional<ChannelArgs> new_args =
       self->listener_state_->AddLogicalConnection(std::move(connection),
                                                   self->args_, tcp);
   if (new_args.has_value()) {

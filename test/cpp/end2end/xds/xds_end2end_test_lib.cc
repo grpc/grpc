@@ -22,6 +22,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <thread>
@@ -34,7 +35,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/server/server.h"
@@ -491,7 +491,7 @@ std::vector<int> XdsEnd2endTest::GetBackendPorts(size_t start_index,
 }
 
 void XdsEnd2endTest::InitClient(
-    absl::optional<XdsBootstrapBuilder> builder,
+    std::optional<XdsBootstrapBuilder> builder,
     std::string lb_expected_authority,
     int xds_resource_does_not_exist_timeout_ms,
     std::string balancer_authority_override, ChannelArguments* args,
@@ -812,11 +812,11 @@ size_t XdsEnd2endTest::WaitForAllBackends(
   return num_rpcs;
 }
 
-absl::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
+std::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
     const grpc_core::DebugLocation& debug_location,
-    std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
+    std::function<std::optional<AdsServiceImpl::ResponseState>()> get_state,
     const RpcOptions& rpc_options, StatusCode expected_status) {
-  absl::optional<AdsServiceImpl::ResponseState> response_state;
+  std::optional<AdsServiceImpl::ResponseState> response_state;
   auto deadline =
       absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
   auto continue_predicate = [&]() {

@@ -25,6 +25,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
@@ -42,7 +43,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "absl/types/variant.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -372,7 +372,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
       grpc_closure closure_;
     };
 
-    absl::optional<LoadBalancingPolicy::PickResult> PickOverriddenHost(
+    std::optional<LoadBalancingPolicy::PickResult> PickOverriddenHost(
         XdsOverrideHostAttribute* override_host_attr) const;
 
     RefCountedPtr<XdsOverrideHostLb> policy_;
@@ -404,7 +404,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
     void OnTimerLocked();
 
     RefCountedPtr<XdsOverrideHostLb> policy_;
-    absl::optional<EventEngine::TaskHandle> timer_handle_;
+    std::optional<EventEngine::TaskHandle> timer_handle_;
   };
 
   ~XdsOverrideHostLb() override;
@@ -467,12 +467,12 @@ XdsOverrideHostLb::Picker::Picker(
       << "] constructed new picker " << this;
 }
 
-absl::optional<LoadBalancingPolicy::PickResult>
+std::optional<LoadBalancingPolicy::PickResult>
 XdsOverrideHostLb::Picker::PickOverriddenHost(
     XdsOverrideHostAttribute* override_host_attr) const {
   CHECK_NE(override_host_attr, nullptr);
   auto cookie_address_list = override_host_attr->cookie_address_list();
-  if (cookie_address_list.empty()) return absl::nullopt;
+  if (cookie_address_list.empty()) return std::nullopt;
   // The cookie has an address list, so look through the addresses in order.
   absl::string_view address_with_no_subchannel;
   RefCountedPtr<SubchannelWrapper> idle_subchannel;
@@ -549,7 +549,7 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
     return PickResult::Queue();
   }
   // No entry found that was not in TRANSIENT_FAILURE.
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(PickArgs args) {

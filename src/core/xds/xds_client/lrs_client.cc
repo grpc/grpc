@@ -19,6 +19,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -27,7 +28,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/endpoint/v3/load_report.upb.h"
 #include "envoy/service/load_stats/v3/lrs.upb.h"
@@ -283,7 +283,7 @@ class LrsClient::LrsChannel::RetryableCall final
 
   // Retry state.
   BackOff backoff_;
-  absl::optional<EventEngine::TaskHandle> timer_handle_
+  std::optional<EventEngine::TaskHandle> timer_handle_
       ABSL_GUARDED_BY(&LrsClient::mu_);
 
   bool shutting_down_ = false;
@@ -348,7 +348,7 @@ class LrsClient::LrsChannel::LrsCall final
     // The owning LRS call.
     RefCountedPtr<LrsCall> lrs_call_;
 
-    absl::optional<EventEngine::TaskHandle> timer_handle_
+    std::optional<EventEngine::TaskHandle> timer_handle_
         ABSL_GUARDED_BY(&LrsClient::mu_);
   };
 

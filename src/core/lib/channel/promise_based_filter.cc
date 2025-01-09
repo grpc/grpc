@@ -852,7 +852,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
             state_ = State::kPulledFromPipe;
           }
         } else {
-          *intercepted_slice_buffer_ = absl::nullopt;
+          *intercepted_slice_buffer_ = std::nullopt;
           *intercepted_flags_ = 0;
           state_ = State::kCancelled;
           flusher->AddClosure(
@@ -926,8 +926,8 @@ struct ClientCallData::RecvInitialMetadata final {
   grpc_closure on_ready;
   grpc_metadata_batch* metadata = nullptr;
   PipeSender<ServerMetadataHandle>* server_initial_metadata_publisher = nullptr;
-  absl::optional<PipeSender<ServerMetadataHandle>::PushType> metadata_push_;
-  absl::optional<PipeReceiverNextType<ServerMetadataHandle>> metadata_next_;
+  std::optional<PipeSender<ServerMetadataHandle>::PushType> metadata_push_;
+  std::optional<PipeReceiverNextType<ServerMetadataHandle>> metadata_next_;
 
   static const char* StateString(State state) {
     switch (state) {
@@ -1822,8 +1822,8 @@ struct ServerCallData::SendInitialMetadata {
   State state = kInitial;
   CapturedBatch batch;
   PipeSender<ServerMetadataHandle>* server_initial_metadata_publisher = nullptr;
-  absl::optional<PipeSender<ServerMetadataHandle>::PushType> metadata_push_;
-  absl::optional<PipeReceiverNextType<ServerMetadataHandle>> metadata_next_;
+  std::optional<PipeSender<ServerMetadataHandle>::PushType> metadata_push_;
+  std::optional<PipeReceiverNextType<ServerMetadataHandle>> metadata_next_;
 
   static const char* StateString(State state) {
     switch (state) {

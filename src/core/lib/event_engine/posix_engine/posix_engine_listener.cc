@@ -27,6 +27,7 @@
 #include <unistd.h>      // IWYU pragma: keep
 
 #include <atomic>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -37,7 +38,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"

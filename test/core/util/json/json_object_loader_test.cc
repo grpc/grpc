@@ -50,7 +50,7 @@ TYPED_TEST_P(SignedIntegerTest, IntegerFields) {
   struct TestStruct {
     TypeParam value = 0;
     TypeParam optional_value = 0;
-    absl::optional<TypeParam> absl_optional_value;
+    std::optional<TypeParam> absl_optional_value;
     std::unique_ptr<TypeParam> unique_ptr_value;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
@@ -148,7 +148,7 @@ TYPED_TEST_P(UnsignedIntegerTest, IntegerFields) {
   struct TestStruct {
     TypeParam value = 0;
     TypeParam optional_value = 0;
-    absl::optional<TypeParam> absl_optional_value;
+    std::optional<TypeParam> absl_optional_value;
     std::unique_ptr<TypeParam> unique_ptr_value;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
@@ -248,7 +248,7 @@ TYPED_TEST_P(FloatingPointTest, FloatFields) {
   struct TestStruct {
     TypeParam value = 0;
     TypeParam optional_value = 0;
-    absl::optional<TypeParam> absl_optional_value;
+    std::optional<TypeParam> absl_optional_value;
     std::unique_ptr<TypeParam> unique_ptr_value;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
@@ -340,7 +340,7 @@ TEST(JsonObjectLoader, BooleanFields) {
   struct TestStruct {
     bool value = false;
     bool optional_value = true;
-    absl::optional<bool> absl_optional_value;
+    std::optional<bool> absl_optional_value;
     std::unique_ptr<bool> unique_ptr_value;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
@@ -415,7 +415,7 @@ TEST(JsonObjectLoader, StringFields) {
   struct TestStruct {
     std::string value;
     std::string optional_value;
-    absl::optional<std::string> absl_optional_value;
+    std::optional<std::string> absl_optional_value;
     std::unique_ptr<std::string> unique_ptr_value;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
@@ -484,7 +484,7 @@ TEST(JsonObjectLoader, DurationFields) {
   struct TestStruct {
     Duration value = Duration::Zero();
     Duration optional_value = Duration::Zero();
-    absl::optional<Duration> absl_optional_value;
+    std::optional<Duration> absl_optional_value;
     std::unique_ptr<Duration> unique_ptr_value;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
@@ -578,7 +578,7 @@ TEST(JsonObjectLoader, JsonObjectFields) {
   struct TestStruct {
     Json::Object value;
     Json::Object optional_value;
-    absl::optional<Json::Object> absl_optional_value;
+    std::optional<Json::Object> absl_optional_value;
     std::unique_ptr<Json::Object> unique_ptr_value;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
@@ -651,7 +651,7 @@ TEST(JsonObjectLoader, JsonArrayFields) {
   struct TestStruct {
     Json::Array value;
     Json::Array optional_value;
-    absl::optional<Json::Array> absl_optional_value;
+    std::optional<Json::Array> absl_optional_value;
     std::unique_ptr<Json::Array> unique_ptr_value;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
@@ -724,7 +724,7 @@ TEST(JsonObjectLoader, MapFields) {
   struct TestStruct {
     std::map<std::string, int32_t> value;
     std::map<std::string, std::string> optional_value;
-    absl::optional<std::map<std::string, bool>> absl_optional_value;
+    std::optional<std::map<std::string, bool>> absl_optional_value;
     std::unique_ptr<std::map<std::string, int32_t>> unique_ptr_value;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
@@ -812,7 +812,7 @@ TEST(JsonObjectLoader, VectorFields) {
   struct TestStruct {
     std::vector<int32_t> value;
     std::vector<std::string> optional_value;
-    absl::optional<std::vector<bool>> absl_optional_value;
+    std::optional<std::vector<bool>> absl_optional_value;
     std::unique_ptr<std::vector<int32_t>> unique_ptr_value;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
@@ -909,7 +909,7 @@ TEST(JsonObjectLoader, NestedStructFields) {
   struct TestStruct {
     NestedStruct outer;
     NestedStruct optional_outer;
-    absl::optional<NestedStruct> absl_optional_outer;
+    std::optional<NestedStruct> absl_optional_outer;
     std::unique_ptr<NestedStruct> unique_ptr_outer;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
@@ -1051,11 +1051,11 @@ TEST(JsonObjectLoader, BareBool) {
 }
 
 TEST(JsonObjectLoader, BareOptional) {
-  auto parsed = Parse<absl::optional<uint32_t>>("3");
+  auto parsed = Parse<std::optional<uint32_t>>("3");
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   ASSERT_TRUE(parsed->has_value());
   EXPECT_EQ(**parsed, 3);
-  parsed = Parse<absl::optional<uint32_t>>("null");
+  parsed = Parse<std::optional<uint32_t>>("null");
   EXPECT_EQ(parsed.status().message(),
             "errors validating JSON: [field: error:is not a number]")
       << parsed.status();

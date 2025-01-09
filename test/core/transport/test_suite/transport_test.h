@@ -75,7 +75,7 @@ class TransportTest : public YodelTest {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override;
     void Orphaned() override {}
-    absl::optional<CallHandler> PopHandler();
+    std::optional<CallHandler> PopHandler();
 
    private:
     std::queue<CallHandler> handlers_;

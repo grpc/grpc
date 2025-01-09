@@ -24,6 +24,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,7 +32,6 @@
 #include "absl/random/bit_gen_ref.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "absl/types/variant.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
@@ -173,8 +173,8 @@ class HPackParser {
     static StringResult Unbase64(String s);
 
     // Main loop for Unbase64
-    static absl::optional<std::vector<uint8_t>> Unbase64Loop(
-        const uint8_t* cur, const uint8_t* end);
+    static std::optional<std::vector<uint8_t>> Unbase64Loop(const uint8_t* cur,
+                                                            const uint8_t* end);
 
     absl::variant<Slice, absl::Span<const uint8_t>, std::vector<uint8_t>>
         value_;

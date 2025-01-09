@@ -17,17 +17,18 @@
 #include <grpc/support/port_platform.h>
 #include <stdio.h>
 
+#include <optional>
+
 #include "absl/flags/marshalling.h"
 #include "absl/log/check.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
 #include "src/core/util/env.h"
 
 namespace grpc_core {
 
 namespace {
-absl::optional<std::string> LoadEnv(absl::string_view environment_variable) {
+std::optional<std::string> LoadEnv(absl::string_view environment_variable) {
   return GetEnv(std::string(environment_variable).c_str());
 }
 }  // namespace
@@ -66,7 +67,7 @@ bool LoadConfigFromEnv(absl::string_view environment_variable,
 
 std::string LoadConfig(const absl::Flag<std::vector<std::string>>& flag,
                        absl::string_view environment_variable,
-                       const absl::optional<std::string>& override,
+                       const std::optional<std::string>& override,
                        const char* default_value) {
   if (override.has_value()) return *override;
   auto from_flag = absl::GetFlag(flag);

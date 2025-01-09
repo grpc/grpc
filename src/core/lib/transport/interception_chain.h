@@ -248,7 +248,7 @@ class InterceptionChainBuilder final {
   void AddInterceptor(absl::StatusOr<RefCountedPtr<Interceptor>> interceptor);
 
   ChannelArgs args_;
-  absl::optional<CallFilters::StackBuilder> stack_builder_;
+  std::optional<CallFilters::StackBuilder> stack_builder_;
   RefCountedPtr<Interceptor> top_interceptor_;
   absl::Status status_;
   std::map<size_t, size_t> filter_type_counts_;

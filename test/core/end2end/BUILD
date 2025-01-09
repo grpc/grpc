@@ -131,7 +131,6 @@ grpc_cc_library(
         "absl/meta:type_traits",
         "absl/random",
         "absl/strings",
-        "absl/types:optional",
         "absl/types:variant",
         "gtest",
     ],
@@ -215,7 +214,6 @@ grpc_cc_library(
         "absl/random",
         "absl/status",
         "absl/strings:str_format",
-        "absl/types:optional",
         "gtest",
     ],
     deps = [
@@ -251,7 +249,6 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
         "absl/strings",
-        "absl/types:optional",
         "gtest",
     ],
     tags = ["nofixdeps"],
@@ -277,7 +274,6 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/log:check",
         "absl/strings",
-        "absl/types:optional",
         "gtest",
     ],
     tags = ["nofixdeps"],
@@ -678,7 +674,6 @@ grpc_cc_test(
         "absl/memory",
         "absl/meta:type_traits",
         "absl/strings",
-        "absl/types:optional",
         "absl/types:variant",
         "gtest",
     ],
@@ -717,7 +712,6 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
-        "absl/types:optional",
         "gtest",
     ],
     language = "C++",
@@ -748,7 +742,6 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
-        "absl/types:optional",
         "gtest",
     ],
     language = "C++",

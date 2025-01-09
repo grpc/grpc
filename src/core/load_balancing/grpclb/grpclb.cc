@@ -73,6 +73,7 @@
 #include <atomic>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -89,7 +90,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
@@ -298,7 +298,7 @@ class GrpcLb final : public LoadBalancingPolicy {
     // Created after the first serverlist is received.
     RefCountedPtr<GrpcLbClientStats> client_stats_;
     Duration client_stats_report_interval_;
-    absl::optional<EventEngine::TaskHandle> client_load_report_handle_;
+    std::optional<EventEngine::TaskHandle> client_load_report_handle_;
     bool last_client_load_report_counters_were_zero_ = false;
     bool client_load_report_is_due_ = false;
     // The closure used for the completion of sending the load report.
@@ -570,7 +570,7 @@ class GrpcLb final : public LoadBalancingPolicy {
   const Duration lb_call_timeout_;
   // Balancer call retry state.
   BackOff lb_call_backoff_;
-  absl::optional<EventEngine::TaskHandle> lb_call_retry_timer_handle_;
+  std::optional<EventEngine::TaskHandle> lb_call_retry_timer_handle_;
 
   // The deserialized response from the balancer. May be nullptr until one
   // such response has arrived.
@@ -589,7 +589,7 @@ class GrpcLb final : public LoadBalancingPolicy {
   // we have not received a serverlist from the balancer.
   const Duration fallback_at_startup_timeout_;
   bool fallback_at_startup_checks_pending_ = false;
-  absl::optional<EventEngine::TaskHandle> lb_fallback_timer_handle_;
+  std::optional<EventEngine::TaskHandle> lb_fallback_timer_handle_;
 
   // The child policy to use for the backends.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
@@ -601,7 +601,7 @@ class GrpcLb final : public LoadBalancingPolicy {
   std::map<Timestamp /*deletion time*/,
            std::vector<RefCountedPtr<SubchannelInterface>>>
       cached_subchannels_;
-  absl::optional<EventEngine::TaskHandle> subchannel_cache_timer_handle_;
+  std::optional<EventEngine::TaskHandle> subchannel_cache_timer_handle_;
 };
 
 //
@@ -899,7 +899,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS,
       /*cq=*/nullptr, grpclb_policy_->interested_parties(),
       Slice::FromStaticString("/grpc.lb.v1.LoadBalancer/BalanceLoad"),
-      /*authority=*/absl::nullopt, deadline, /*registered_method=*/true);
+      /*authority=*/std::nullopt, deadline, /*registered_method=*/true);
   // Init the LB call request payload.
   upb::Arena arena;
   grpc_slice request_payload_slice = GrpcLbRequestCreate(

@@ -26,6 +26,7 @@
 #include <initializer_list>  // IWYU pragma: keep
 #include <map>
 #include <memory>
+#include <optional>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -34,7 +35,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame.h"
@@ -89,7 +89,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   using StreamMap = absl::flat_hash_map<uint32_t, CallHandler>;
 
   uint32_t MakeStream(CallHandler call_handler);
-  absl::optional<CallHandler> LookupStream(uint32_t stream_id);
+  std::optional<CallHandler> LookupStream(uint32_t stream_id);
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
   auto OnTransportActivityDone(absl::string_view what);
   auto TransportWriteLoop(RefCountedPtr<ChaoticGoodTransport> transport);

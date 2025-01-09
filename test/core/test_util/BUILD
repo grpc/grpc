@@ -462,7 +462,6 @@ grpc_cc_library(
     name = "fuzz_config_vars",
     srcs = ["fuzz_config_vars.cc"],
     hdrs = ["fuzz_config_vars.h"],
-    external_deps = ["absl/types:optional"],
     deps = [
         "fuzz_config_vars_cc_proto",
         "fuzz_config_vars_helpers",
@@ -533,7 +532,6 @@ grpc_cc_library(
         "absl/log:log",
         "absl/status",
         "absl/strings",
-        "absl/types:optional",
         "absl/types:span",
         "gtest",
     ],

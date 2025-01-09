@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <type_traits>
@@ -36,7 +37,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -190,7 +190,7 @@ class PriorityLb final : public LoadBalancingPolicy {
       void OnTimerLocked();
 
       RefCountedPtr<ChildPriority> child_priority_;
-      absl::optional<EventEngine::TaskHandle> timer_handle_;
+      std::optional<EventEngine::TaskHandle> timer_handle_;
     };
 
     class FailoverTimer final : public InternallyRefCounted<FailoverTimer> {
@@ -203,7 +203,7 @@ class PriorityLb final : public LoadBalancingPolicy {
       void OnTimerLocked();
 
       RefCountedPtr<ChildPriority> child_priority_;
-      absl::optional<EventEngine::TaskHandle> timer_handle_;
+      std::optional<EventEngine::TaskHandle> timer_handle_;
     };
 
     // Methods for dealing with the child policy.

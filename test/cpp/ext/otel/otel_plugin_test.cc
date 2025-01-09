@@ -1040,10 +1040,10 @@ class SimpleLabelIterable : public grpc::internal::LabelsIterable {
       std::pair<absl::string_view, absl::string_view> label)
       : label_(label) {}
 
-  absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
+  std::optional<std::pair<absl::string_view, absl::string_view>> Next()
       override {
     if (iterated_) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     iterated_ = true;
     return label_;

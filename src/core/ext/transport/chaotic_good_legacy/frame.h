@@ -126,7 +126,7 @@ struct ClientFragmentFrame final : public FrameInterface {
 
   uint32_t stream_id;
   ClientMetadataHandle headers;
-  absl::optional<FragmentMessage> message;
+  std::optional<FragmentMessage> message;
   bool end_of_stream = false;
 
   bool operator==(const ClientFragmentFrame& other) const {
@@ -145,7 +145,7 @@ struct ServerFragmentFrame final : public FrameInterface {
 
   uint32_t stream_id;
   ServerMetadataHandle headers;
-  absl::optional<FragmentMessage> message;
+  std::optional<FragmentMessage> message;
   ServerMetadataHandle trailers;
 
   bool operator==(const ServerFragmentFrame& other) const {

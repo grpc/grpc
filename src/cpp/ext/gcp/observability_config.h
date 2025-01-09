@@ -21,12 +21,12 @@
 #include <stdint.h>
 
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -95,9 +95,9 @@ struct GcpObservabilityConfig {
     }
   };
 
-  absl::optional<CloudLogging> cloud_logging;
-  absl::optional<CloudMonitoring> cloud_monitoring;
-  absl::optional<CloudTrace> cloud_trace;
+  std::optional<CloudLogging> cloud_logging;
+  std::optional<CloudMonitoring> cloud_monitoring;
+  std::optional<CloudTrace> cloud_trace;
   std::string project_id;
   std::map<std::string, std::string> labels;
 
