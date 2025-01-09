@@ -53,7 +53,7 @@ void ResolverRegistry::Builder::RegisterResolverFactory(
     std::unique_ptr<ResolverFactory> factory) {
   CHECK(IsLowerCase(factory->scheme())) << factory->scheme();
   auto [_, inserted] =
-      state_.factories.emplace(factory->scheme(), std::move(factory));
+      state_.factories.try_emplace(factory->scheme(), std::move(factory));
   CHECK(inserted) << "scheme " << factory->scheme() << " already registered";
 }
 
