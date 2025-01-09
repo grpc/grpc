@@ -456,7 +456,7 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     grpc_connectivity_state state, const absl::Status& status) {
   for (const auto& watcher : watchers_) {
     subchannel_->work_serializer_.Schedule(
-        [watcher, state, status]() mutable {
+        [watcher = watcher->Ref(), state, status]() mutable {
           auto* watcher_ptr = watcher.get();
           watcher_ptr->OnConnectivityStateChange(std::move(watcher), state,
                                                  status);
