@@ -28,8 +28,7 @@
 #include "absl/status/status.h"
 #include "src/core/util/sync.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // A wrapped fd that integrates with the EventEngine poller of the current
 // platform. A GrpcPolledFd knows how to create grpc platform-specific poller
@@ -83,8 +82,7 @@ class GrpcPolledFdFactory {
   virtual void ConfigureAresChannelLocked(ares_channel channel) = 0;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_ARES == 1
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_GRPC_POLLED_FD_H

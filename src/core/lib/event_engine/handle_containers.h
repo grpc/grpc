@@ -24,8 +24,7 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // Used for heterogeneous lookup of TaskHandles in abseil containers.
 template <typename TaskHandle>
@@ -47,7 +46,6 @@ using ConnectionHandleSet = absl::flat_hash_set<
     EventEngine::ConnectionHandle,
     TaskHandleComparator<EventEngine::ConnectionHandle>::Hash>;
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_HANDLE_CONTAINERS_H

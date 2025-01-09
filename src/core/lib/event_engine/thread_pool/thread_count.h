@@ -29,8 +29,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // Tracks counts across some fixed number of shards.
 // It is intended for fast increment/decrement operations, but a slower overall
@@ -161,7 +160,6 @@ class LivingThreadCount {
   size_t living_count_ ABSL_GUARDED_BY(mu_) = 0;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_THREAD_COUNT_H
