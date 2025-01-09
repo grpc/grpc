@@ -660,9 +660,7 @@ CallState::PollReadyForPushServerToClientMessage() {
       << GRPC_DUMP_ARGS(this, server_to_client_push_state_);
   switch (server_to_client_push_state_) {
     case ServerToClientPushState::kStart:
-      LOG(FATAL) << "PollPushServerToClientMessage called before "
-                 << "PushServerInitialMetadata; "
-                 << GRPC_DUMP_ARGS(server_to_client_push_state_);
+      return Success{};
     case ServerToClientPushState::kTrailersOnly:
       return false;
     case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:
