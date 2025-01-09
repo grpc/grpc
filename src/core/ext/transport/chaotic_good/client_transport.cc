@@ -314,8 +314,9 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
                     if (!result.ok()) {
                       GRPC_TRACE_LOG(chaotic_good, INFO)
                           << "CHAOTIC_GOOD: Send cancel";
-                      if (!self->outgoing_frames_.UnbufferedImmediateSend(
-                              CancelFrame{stream_id})) {
+                      if (!self->outgoing_frames_
+                               .UnbufferedImmediateSend(CancelFrame{stream_id})
+                               .ok()) {
                         GRPC_TRACE_LOG(chaotic_good, INFO)
                             << "CHAOTIC_GOOD: Send cancel failed";
                       }
