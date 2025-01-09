@@ -1515,8 +1515,8 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     AuthorityState& authority_state =
         authority_state_map_[resource_name->authority];
     auto [it, first_watcher_for_resource] =
-        authority_state.resource_map[type].emplace(
-            resource_name->key, ResourceState());
+        authority_state.resource_map[type].emplace(resource_name->key,
+                                                   ResourceState());
     ResourceState& resource_state = it->second;
     resource_state.AddWatcher(watcher);
     if (first_watcher_for_resource) {

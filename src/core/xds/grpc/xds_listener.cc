@@ -127,13 +127,11 @@ std::string XdsListenerResource::FilterChainMap::ToString() const {
                              source_ip.prefix_range->ToString(), "}"));
           }
           if (port != 0) {
-            match_contents.push_back(
-                absl::StrCat("source_ports={", port, "}"));
+            match_contents.push_back(absl::StrCat("source_ports={", port, "}"));
           }
           contents.push_back(absl::StrCat(
               "{filter_chain_match={", absl::StrJoin(match_contents, ", "),
-              "}, filter_chain=", filter_chain.data->ToString(),
-              "}"));
+              "}, filter_chain=", filter_chain.data->ToString(), "}"));
         }
       }
     }

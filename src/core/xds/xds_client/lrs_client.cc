@@ -825,8 +825,8 @@ RefCountedPtr<LrsClient::ClusterDropStats> LrsClient::AddClusterDropStats(
       server.lrs_channel = GetOrCreateLrsChannelLocked(
           lrs_server, "load report map (drop stats)");
     }
-    auto load_report_it = server.load_report_map.emplace(
-        std::move(key), LoadReportState()).first;
+    auto load_report_it =
+        server.load_report_map.emplace(std::move(key), LoadReportState()).first;
     auto& [cluster_key, load_report_state] = *load_report_it;
     auto& [cluster_name, eds_service_name] = cluster_key;
     if (load_report_state.drop_stats != nullptr) {
@@ -889,8 +889,8 @@ LrsClient::AddClusterLocalityStats(
       server.lrs_channel = GetOrCreateLrsChannelLocked(
           std::move(lrs_server), "load report map (locality stats)");
     }
-    auto load_report_it = server.load_report_map.emplace(
-        std::move(key), LoadReportState()).first;
+    auto load_report_it =
+        server.load_report_map.emplace(std::move(key), LoadReportState()).first;
     auto& [cluster_key, load_report_state] = *load_report_it;
     auto& [cluster_name, eds_service_name] = cluster_key;
     LoadReportState::LocalityState& locality_state =
