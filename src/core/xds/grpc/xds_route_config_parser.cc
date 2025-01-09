@@ -823,8 +823,8 @@ std::shared_ptr<const XdsRouteConfigResource> XdsRouteConfigResourceParse(
   // Build a set of configured cluster_specifier_plugin names to make sure
   // each is actually referenced by a route action.
   std::set<absl::string_view> cluster_specifier_plugins_not_seen;
-  for (auto& plugin : rds_update->cluster_specifier_plugin_map) {
-    cluster_specifier_plugins_not_seen.emplace(plugin.first);
+  for (auto& [name, _] : rds_update->cluster_specifier_plugin_map) {
+    cluster_specifier_plugins_not_seen.emplace(name);
   }
   // Get the virtual hosts.
   size_t num_virtual_hosts;

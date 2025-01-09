@@ -49,16 +49,15 @@ bool XdsEndpointResource::Priority::operator==(const Priority& other) const {
 std::string XdsEndpointResource::Priority::ToString() const {
   std::vector<std::string> locality_strings;
   locality_strings.reserve(localities.size());
-  for (const auto& p : localities) {
-    locality_strings.emplace_back(p.second.ToString());
+  for (const auto& [_, locality] : localities) {
+    locality_strings.emplace_back(locality.ToString());
   }
   return absl::StrCat("[", absl::StrJoin(locality_strings, ", "), "]");
 }
 
 bool XdsEndpointResource::DropConfig::ShouldDrop(
     const std::string** category_name) {
-  for (size_t i = 0; i < drop_category_list_.size(); ++i) {
-    const auto& drop_category = drop_category_list_[i];
+  for (const auto& drop_category : drop_category_list_) {
     // Generate a random number in [0, 1000000).
     const uint32_t random = [&]() {
       MutexLock lock(&mu_);
