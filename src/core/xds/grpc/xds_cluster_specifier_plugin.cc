@@ -129,8 +129,8 @@ XdsClusterSpecifierPluginRegistry::GetPluginForType(
 
 void XdsClusterSpecifierPluginRegistry::PopulateSymtab(
     upb_DefPool* symtab) const {
-  for (const auto& p : registry_) {
-    p.second->PopulateSymtab(symtab);
+  for (const auto& [_, plugin] : registry_) {
+    plugin->PopulateSymtab(symtab);
   }
 }
 

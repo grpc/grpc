@@ -226,9 +226,7 @@ void DNSServiceResolverImpl::Shutdown() {
     auto requests = std::exchange(that->requests_, {});
     lock.Release();
 
-    for (auto& kv : requests) {
-      auto& sdRef = kv.first;
-      auto& request = kv.second;
+    for (auto& [sdRef, request] : requests) {
       GRPC_TRACE_LOG(event_engine_dns, INFO)
           << "DNSServiceResolverImpl::Shutdown sdRef: " << sdRef
           << ", this: " << thatPtr;
