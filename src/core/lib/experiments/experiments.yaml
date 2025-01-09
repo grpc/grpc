@@ -187,6 +187,13 @@
   expiry: 2025/03/01
   owner: vigneshbabu@google.com
   test_tags: []
+- name: server_listener
+  description:
+    If set, the new server listener classes are used.
+  requires: ["work_serializer_dispatch"]
+  expiry: 2025/03/31
+  owner: yashkt@google.com
+  test_tags: ["xds_end2end_test", "core_end2end_test"]
 - name: tcp_frame_size_tuning
   description:
     If set, enables TCP to use RPC size estimation made by higher layers.

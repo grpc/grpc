@@ -70,11 +70,6 @@ constexpr char kEncodedIpv4AddressLengthString[] = "08";
 constexpr char kEncodedIpv6AddressLengthString[] = "32";
 constexpr char kEmptyAddressLengthString[] = "00";
 
-const NoInterceptor ServerLoadReportingFilter::Call::OnServerInitialMetadata;
-const NoInterceptor ServerLoadReportingFilter::Call::OnClientToServerMessage;
-const NoInterceptor ServerLoadReportingFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ServerLoadReportingFilter::Call::OnServerToClientMessage;
-
 absl::StatusOr<std::unique_ptr<ServerLoadReportingFilter>>
 ServerLoadReportingFilter::Create(const ChannelArgs& channel_args,
                                   ChannelFilter::Args) {

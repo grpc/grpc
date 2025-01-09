@@ -206,7 +206,7 @@ auto ChaoticGoodServerTransport::ProcessNextFrame() {
                       << incoming_frame.header().ToString();
             return Switch(
                 incoming_frame.header().type,
-                Case<FrameType, FrameType::kClientInitialMetadata>([&, this]() {
+                Case<FrameType::kClientInitialMetadata>([&, this]() {
                   return TrySeq(
                       incoming_frame.Payload(),
                       [this,
@@ -217,23 +217,22 @@ auto ChaoticGoodServerTransport::ProcessNextFrame() {
                                 absl::get<ClientInitialMetadataFrame>(frame)));
                       });
                 }),
-                Case<FrameType, FrameType::kMessage>([&, this]() mutable {
+                Case<FrameType::kMessage>([&, this]() mutable {
                   return DispatchFrame<MessageFrame>(std::move(incoming_frame));
                 }),
-                Case<FrameType, FrameType::kBeginMessage>([&, this]() mutable {
+                Case<FrameType::kBeginMessage>([&, this]() mutable {
                   return DispatchFrame<BeginMessageFrame>(
                       std::move(incoming_frame));
                 }),
-                Case<FrameType, FrameType::kMessageChunk>([&, this]() mutable {
+                Case<FrameType::kMessageChunk>([&, this]() mutable {
                   return DispatchFrame<MessageChunkFrame>(
                       std::move(incoming_frame));
                 }),
-                Case<FrameType, FrameType::kClientEndOfStream>(
-                    [&, this]() mutable {
-                      return DispatchFrame<ClientEndOfStream>(
-                          std::move(incoming_frame));
-                    }),
-                Case<FrameType, FrameType::kCancel>([&, this]() {
+                Case<FrameType::kClientEndOfStream>([&, this]() mutable {
+                  return DispatchFrame<ClientEndOfStream>(
+                      std::move(incoming_frame));
+                }),
+                Case<FrameType::kCancel>([&, this]() {
                   auto stream =
                       ExtractStream(incoming_frame.header().stream_id);
                   GRPC_TRACE_LOG(chaotic_good, INFO)

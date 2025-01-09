@@ -34,7 +34,6 @@ def _generate_copied_files_impl(ctx):
                 strip_prefix,
             ))
         destination_path = dest + destination_path[len(strip_prefix):]
-        destination_dir = destination_path.rfind("/")
         out_file = ctx.actions.declare_file(destination_path)
         outs.append(out_file)
         ctx.actions.run_shell(

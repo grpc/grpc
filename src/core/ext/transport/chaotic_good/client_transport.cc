@@ -157,22 +157,22 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
       std::move(incoming_frames), [this](IncomingFrame incoming_frame) mutable {
         return Switch(
             incoming_frame.header().type,
-            Case<FrameType, FrameType::kServerInitialMetadata>([&, this]() {
+            Case<FrameType::kServerInitialMetadata>([&, this]() {
               return DispatchFrame<ServerInitialMetadataFrame>(
                   std::move(incoming_frame));
             }),
-            Case<FrameType, FrameType::kServerTrailingMetadata>([&, this]() {
+            Case<FrameType::kServerTrailingMetadata>([&, this]() {
               return DispatchFrame<ServerTrailingMetadataFrame>(
                   std::move(incoming_frame));
             }),
-            Case<FrameType, FrameType::kMessage>([&, this]() {
+            Case<FrameType::kMessage>([&, this]() {
               return DispatchFrame<MessageFrame>(std::move(incoming_frame));
             }),
-            Case<FrameType, FrameType::kBeginMessage>([&, this]() {
+            Case<FrameType::kBeginMessage>([&, this]() {
               return DispatchFrame<BeginMessageFrame>(
                   std::move(incoming_frame));
             }),
-            Case<FrameType, FrameType::kMessageChunk>([&, this]() {
+            Case<FrameType::kMessageChunk>([&, this]() {
               return DispatchFrame<MessageChunkFrame>(
                   std::move(incoming_frame));
             }),

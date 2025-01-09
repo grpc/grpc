@@ -152,6 +152,10 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
   void PopulateDnsUpdate(const std::string& dns_name, Resolver::Result result,
                          DnsState* dns_state);
 
+  std::string GenerateResolutionNoteForCluster(
+      absl::string_view cluster_resolution_note,
+      absl::string_view endpoint_resolution_note) const;
+
   // Starts CDS and EDS/DNS watches for the specified cluster if needed.
   // Adds an entry to cluster_config_map, which will contain the cluster
   // data if the data is available.
