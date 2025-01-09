@@ -37,7 +37,6 @@ clean () {
       kill -9 $SERVER_PID || true
   fi
   SERVER_PID=
-  exit 0
 }
 
 fail () {
@@ -55,6 +54,8 @@ pass () {
 
 EXAMPLES=(
     "helloworld:greeter_callback"
+    "helloworld:greeter_async"
+    "helloworld:greeter"
 )
 
 declare -A SERVER_ARGS=(
@@ -65,31 +66,17 @@ declare -A CLIENT_ARGS=(
     ["default"]="-target localhost:$SERVER_PORT"
 )
 
-declare -A SERVER_WAIT_COMMAND=(
-    ["default"]="lsof -i :$SERVER_PORT | grep $SERVER_PORT"
-)
-
-wait_for_server () {
-    example=$1
-    wait_command=${SERVER_WAIT_COMMAND[$example]:-${SERVER_WAIT_COMMAND["default"]}}
-    echo "$(tput setaf 4) waiting for server to start $(tput sgr 0)"
-    for i in {1..10}; do
-        eval "$wait_command" 2>&1 &>/dev/null
-        if [ $? -eq 0 ]; then
-            pass "server started"
-            return
-        fi
-        sleep 1
-    done
-    fail "cannot determine if server started"
-}
 
 declare -A EXPECTED_SERVER_OUTPUT=(
     ["helloworld:greeter_callback"]=""
+    ["helloworld:greeter_async"]=""
+    ["helloworld:greeter"]=""
 )
 
 declare -A EXPECTED_CLIENT_OUTPUT=(
     ["helloworld:greeter_callback"]="Greeter received: Hello world"
+    ["helloworld:greeter_async"]="Greeter received: Hello world"
+    ["helloworld:greeter"]="Greeter received: Hello world"
 )
 
 
@@ -110,7 +97,7 @@ for example in "${EXAMPLES[@]}"; do
     SERVER_PID=$!
     echo "Server Pid : ${SERVER_PID}"
 
-    wait_for_server $example
+    sleep 5
 
     # Build client
     if ! bazel build  ${example}_client; then
