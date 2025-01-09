@@ -659,8 +659,6 @@ CallState::PollReadyForPushServerToClientMessage() {
       << "[call_state] PollReadyForPushServerToClientMessage: "
       << GRPC_DUMP_ARGS(this, server_to_client_push_state_);
   switch (server_to_client_push_state_) {
-    case ServerToClientPushState::kStart:
-      return Success{};
     case ServerToClientPushState::kTrailersOnly:
       return false;
     case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:
@@ -669,6 +667,7 @@ CallState::PollReadyForPushServerToClientMessage() {
       return server_to_client_push_waiter_.pending();
     case ServerToClientPushState::kPushedServerInitialMetadata:
     case ServerToClientPushState::kIdle:
+    case ServerToClientPushState::kStart:
       return Success{};
     case ServerToClientPushState::kFinished:
       return Failure{};
