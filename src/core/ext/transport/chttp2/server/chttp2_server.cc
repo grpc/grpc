@@ -297,7 +297,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   MemoryQuotaRefPtr memory_quota_;
   ConnectionQuotaRefPtr connection_quota_;
   ServerConfigFetcher* config_fetcher_ = nullptr;
-  // TODO(yashykt): consider using absl::variant<> to minimize memory usage for
+  // TODO(yashykt): consider using std::variant<> to minimize memory usage for
   // disjoint cases where different fields are used.
   std::shared_ptr<experimental::PassiveListenerImpl> passive_listener_;
 };
@@ -1039,7 +1039,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
     return;
   }
   timer_handle_.reset();
-  auto t = absl::get<RefCountedPtr<grpc_chttp2_transport>>(connection_->state_);
+  auto t = std::get<RefCountedPtr<grpc_chttp2_transport>>(connection_->state_);
   t->DisconnectWithError(GRPC_ERROR_CREATE(
       "Did not receive HTTP/2 settings before handshake timeout"));
 }
@@ -1177,7 +1177,7 @@ void NewChttp2ServerListener::ActiveConnection::Start(const ChannelArgs& args) {
         // owning NewChttp2ServerListener and all associated
         // ActiveConnections have been orphaned.
         if (self->shutdown_) return;
-        absl::get<OrphanablePtr<HandshakingState>>(self->state_)
+        std::get<OrphanablePtr<HandshakingState>>(self->state_)
             ->StartLocked(args);
       },
       DEBUG_LOCATION);
@@ -1569,7 +1569,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     {
       MutexLock lock(&mu_);
       auto* new_listener_ptr =
-          absl::get_if<NewChttp2ServerListener*>(&listener_);
+          std::get_if<NewChttp2ServerListener*>(&listener_);
       if (new_listener_ptr != nullptr && *new_listener_ptr != nullptr) {
         new_listener = (*new_listener_ptr)
                            ->RefIfNonZero()
@@ -1585,7 +1585,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     RefCountedPtr<Chttp2ServerListener> listener;
     {
       MutexLock lock(&mu_);
-      auto* listener_ptr = absl::get_if<Chttp2ServerListener*>(&listener_);
+      auto* listener_ptr = std::get_if<Chttp2ServerListener*>(&listener_);
       if (listener_ptr != nullptr && *listener_ptr != nullptr) {
         listener = (*listener_ptr)
                        ->RefIfNonZero()

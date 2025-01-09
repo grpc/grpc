@@ -155,7 +155,7 @@ inline auto JoinIter(Iter begin, Iter end, FactoryFn factory_fn) {
   Factory factory(std::move(factory_fn));
   using Promise = typename Factory::Promise;
   using Result = typename Promise::Result;
-  using State = absl::variant<Promise, Result>;
+  using State = std::variant<Promise, Result>;
   std::vector<State> state;
   for (Iter it = begin; it != end; ++it) {
     state.emplace_back(factory.Make(*it));
@@ -163,7 +163,7 @@ inline auto JoinIter(Iter begin, Iter end, FactoryFn factory_fn) {
   return [state = std::move(state)]() mutable -> Poll<std::vector<Result>> {
     bool still_working = false;
     for (auto& s : state) {
-      if (auto* promise = absl::get_if<Promise>(&s)) {
+      if (auto* promise = std::get_if<Promise>(&s)) {
         auto p = (*promise)();
         if (auto* r = p.value_if_ready()) {
           s.template emplace<Result>(std::move(*r));
@@ -175,7 +175,7 @@ inline auto JoinIter(Iter begin, Iter end, FactoryFn factory_fn) {
     if (!still_working) {
       std::vector<Result> output;
       for (auto& s : state) {
-        output.emplace_back(std::move(absl::get<Result>(s)));
+        output.emplace_back(std::move(std::get<Result>(s)));
       }
       return output;
     }

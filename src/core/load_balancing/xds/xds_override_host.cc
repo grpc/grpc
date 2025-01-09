@@ -30,6 +30,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
@@ -44,7 +45,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
-#include "absl/types/variant.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
@@ -211,7 +211,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
    public:
     bool HasOwnedSubchannel() const
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
-      auto* sc = absl::get_if<RefCountedPtr<SubchannelWrapper>>(&subchannel_);
+      auto* sc = std::get_if<RefCountedPtr<SubchannelWrapper>>(&subchannel_);
       return sc != nullptr && *sc != nullptr;
     }
 
@@ -298,7 +298,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
    private:
     grpc_connectivity_state connectivity_state_
         ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_) = GRPC_CHANNEL_IDLE;
-    absl::variant<SubchannelWrapper*, RefCountedPtr<SubchannelWrapper>>
+    std::variant<SubchannelWrapper*, RefCountedPtr<SubchannelWrapper>>
         subchannel_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
     XdsHealthStatus eds_health_status_ ABSL_GUARDED_BY(
         &XdsOverrideHostLb::mu_) = XdsHealthStatus(XdsHealthStatus::kUnknown);
@@ -568,7 +568,7 @@ LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(PickArgs args) {
         "xds_override_host picker not given any child picker"));
   }
   auto result = picker_->Pick(args);
-  auto complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+  auto complete_pick = std::get_if<PickResult::Complete>(&result.result);
   if (complete_pick != nullptr) {
     auto* wrapper =
         static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());

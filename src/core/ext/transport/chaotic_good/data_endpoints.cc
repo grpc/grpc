@@ -126,11 +126,11 @@ Poll<absl::StatusOr<SliceBuffer>> InputQueues::PollRead(uint64_t ticket) {
   MutexLock lock(&mu_);
   auto it = outstanding_reads_.find(ticket);
   CHECK(it != outstanding_reads_.end()) << " ticket=" << ticket;
-  if (auto* waker = absl::get_if<Waker>(&it->second)) {
+  if (auto* waker = std::get_if<Waker>(&it->second)) {
     *waker = GetContext<Activity>()->MakeNonOwningWaker();
     return Pending{};
   }
-  auto result = std::move(absl::get<absl::StatusOr<SliceBuffer>>(it->second));
+  auto result = std::move(std::get<absl::StatusOr<SliceBuffer>>(it->second));
   outstanding_reads_.erase(it);
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: Poll for ticket #" << ticket
@@ -161,7 +161,7 @@ void InputQueues::CompleteRead(uint64_t ticket,
       << "CHAOTIC_GOOD: Complete ticket #" << ticket << ": " << buffer.status();
   auto it = outstanding_reads_.find(ticket);
   if (it == outstanding_reads_.end()) return;  // cancelled
-  waker = std::move(absl::get<Waker>(it->second));
+  waker = std::move(std::get<Waker>(it->second));
   it->second.emplace<absl::StatusOr<SliceBuffer>>(std::move(buffer));
 }
 

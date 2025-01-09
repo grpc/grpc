@@ -23,11 +23,11 @@
 
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "envoy/extensions/filters/common/fault/v3/fault.upb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.upb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.upbdefs.h"
@@ -89,7 +89,7 @@ XdsHttpFaultFilter::GenerateFilterConfig(
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse fault injection filter config");
     return absl::nullopt;

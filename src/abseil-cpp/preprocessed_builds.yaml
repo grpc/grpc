@@ -2342,7 +2342,7 @@
   - third_party/abseil-cpp/absl/types/span.h
   name: absl/types:span
   src: []
-- cmake_target: absl::variant
+- cmake_target: std::variant
   deps:
   - absl/base:base_internal
   - absl/base:config

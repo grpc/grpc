@@ -101,7 +101,7 @@ void TokenFetcherCredentials::FetchState::BackoffTimer::OnTimer() {
       << "]: fetch_state=" << fetch_state_.get() << " backoff_timer=" << this
       << ": backoff timer fired";
   auto* self_ptr =
-      absl::get_if<OrphanablePtr<BackoffTimer>>(&fetch_state_->state_);
+      std::get_if<OrphanablePtr<BackoffTimer>>(&fetch_state_->state_);
   // This condition should always be true, but check to be defensive.
   if (self_ptr != nullptr && self_ptr->get() == this) {
     // Reset pointer in fetch_state_, so that subsequent RPCs know that
@@ -135,7 +135,7 @@ void TokenFetcherCredentials::FetchState::Orphan() {
 }
 
 absl::Status TokenFetcherCredentials::FetchState::status() const {
-  auto* backoff_ptr = absl::get_if<OrphanablePtr<BackoffTimer>>(&state_);
+  auto* backoff_ptr = std::get_if<OrphanablePtr<BackoffTimer>>(&state_);
   if (backoff_ptr == nullptr || *backoff_ptr == nullptr) {
     return absl::OkStatus();
   }
@@ -210,7 +210,7 @@ TokenFetcherCredentials::FetchState::QueueCall(
   queued_call->md = std::move(initial_metadata);
   queued_calls_.insert(queued_call);
   // If backoff has expired since the last attempt, trigger a new one.
-  auto* backoff_ptr = absl::get_if<OrphanablePtr<BackoffTimer>>(&state_);
+  auto* backoff_ptr = std::get_if<OrphanablePtr<BackoffTimer>>(&state_);
   if (backoff_ptr != nullptr && backoff_ptr->get() == nullptr) {
     StartFetchAttempt();
   }

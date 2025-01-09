@@ -21,10 +21,10 @@
 
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.h"
 #include "envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.h"
@@ -90,7 +90,7 @@ Json::Object ValidateStatefulSession(
     return {};
   }
   absl::string_view* serialized_session_state =
-      absl::get_if<absl::string_view>(&extension->value);
+      std::get_if<absl::string_view>(&extension->value);
   if (serialized_session_state == nullptr) {
     errors->AddError("could not parse session state config");
     return {};
@@ -144,7 +144,7 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfig(
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse stateful session filter config");
     return absl::nullopt;
@@ -168,7 +168,7 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse stateful session filter override config");
     return absl::nullopt;

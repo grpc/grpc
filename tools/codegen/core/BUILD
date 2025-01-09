@@ -29,7 +29,6 @@ grpc_cc_binary(
         "absl/strings",
         "absl/memory",
         "absl/types:optional",
-        "absl/types:variant",
         "libcrypto",
     ],
     visibility = [

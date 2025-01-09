@@ -780,7 +780,6 @@ grpc_cc_library(
         "absl/synchronization",
         "absl/time:time",
         "absl/types:optional",
-        "absl/types:variant",
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
@@ -808,7 +807,6 @@ grpc_cc_library(
     hdrs = GPR_PUBLIC_HDRS,
     external_deps = [
         "absl/strings",
-        "absl/types:variant",
     ],
     tags = [
         "avoid_dep",
@@ -3691,7 +3689,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:cord",
         "absl/types:optional",
-        "absl/types:variant",
     ],
     language = "c++",
     visibility = ["@grpc:client_channel"],
@@ -4495,7 +4492,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:span",
-        "absl/types:variant",
     ],
     deps = [
         "gpr",
@@ -4587,7 +4583,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
         "absl/types:span",
-        "absl/types:variant",
     ],
     deps = [
         "call_tracer",
@@ -4790,7 +4785,6 @@ grpc_cc_library(
         "absl/strings:cord",
         "absl/strings:str_format",
         "absl/types:optional",
-        "absl/types:variant",
     ],
     language = "c++",
     visibility = ["@grpc:grpclb"],

@@ -26,6 +26,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/log/check.h"
@@ -35,7 +36,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -468,7 +468,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
       child_locality_map;
   if (old_cluster != nullptr) {
     auto* old_endpoint_config =
-        absl::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
+        std::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
             &old_cluster->children);
     if (old_endpoint_config != nullptr) {
       const auto& prev_priority_list =
