@@ -36,13 +36,6 @@
 
 namespace grpc_core {
 
-const NoInterceptor GrpcServerAuthzFilter::Call::OnServerInitialMetadata;
-const NoInterceptor GrpcServerAuthzFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor GrpcServerAuthzFilter::Call::OnClientToServerMessage;
-const NoInterceptor GrpcServerAuthzFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor GrpcServerAuthzFilter::Call::OnServerToClientMessage;
-const NoInterceptor GrpcServerAuthzFilter::Call::OnFinalize;
-
 GrpcServerAuthzFilter::GrpcServerAuthzFilter(
     RefCountedPtr<grpc_auth_context> auth_context, const ChannelArgs& args,
     RefCountedPtr<grpc_authorization_policy_provider> provider)

@@ -325,12 +325,12 @@ class XdsResolver final : public Resolver {
     class Call {
      public:
       void OnClientInitialMetadata(ClientMetadata& md);
-      static const NoInterceptor OnServerInitialMetadata;
-      static const NoInterceptor OnServerTrailingMetadata;
-      static const NoInterceptor OnClientToServerMessage;
-      static const NoInterceptor OnClientToServerHalfClose;
-      static const NoInterceptor OnServerToClientMessage;
-      static const NoInterceptor OnFinalize;
+      static inline const NoInterceptor OnServerInitialMetadata;
+      static inline const NoInterceptor OnServerTrailingMetadata;
+      static inline const NoInterceptor OnClientToServerMessage;
+      static inline const NoInterceptor OnClientToServerHalfClose;
+      static inline const NoInterceptor OnServerToClientMessage;
+      static inline const NoInterceptor OnFinalize;
     };
   };
 
@@ -374,18 +374,6 @@ class XdsResolver final : public Resolver {
   RefCountedPtr<const XdsConfig> current_config_;
   std::map<absl::string_view, WeakRefCountedPtr<ClusterRef>> cluster_ref_map_;
 };
-
-const NoInterceptor
-    XdsResolver::ClusterSelectionFilter::Call::OnServerInitialMetadata;
-const NoInterceptor
-    XdsResolver::ClusterSelectionFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor
-    XdsResolver::ClusterSelectionFilter::Call::OnClientToServerMessage;
-const NoInterceptor
-    XdsResolver::ClusterSelectionFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor
-    XdsResolver::ClusterSelectionFilter::Call::OnServerToClientMessage;
-const NoInterceptor XdsResolver::ClusterSelectionFilter::Call::OnFinalize;
 
 //
 // XdsResolver::RouteConfigData::RouteListIterator
