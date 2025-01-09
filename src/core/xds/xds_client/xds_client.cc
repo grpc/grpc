@@ -1514,10 +1514,10 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     MaybeRegisterResourceTypeLocked(type);
     AuthorityState& authority_state =
         authority_state_map_[resource_name->authority];
-    auto it_is_new = authority_state.resource_map[type].emplace(
-        resource_name->key, ResourceState());
-    bool first_watcher_for_resource = it_is_new.second;
-    ResourceState& resource_state = it_is_new.first->second;
+    auto [it, first_watcher_for_resource] =
+        authority_state.resource_map[type].emplace(
+            resource_name->key, ResourceState());
+    ResourceState& resource_state = it->second;
     resource_state.AddWatcher(watcher);
     if (first_watcher_for_resource) {
       // We try to add new channels in 2 cases:

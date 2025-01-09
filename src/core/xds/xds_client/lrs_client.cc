@@ -820,14 +820,15 @@ RefCountedPtr<LrsClient::ClusterDropStats> LrsClient::AddClusterDropStats(
     // they have the same lifetime.
     auto server_it =
         load_report_map_.emplace(lrs_server->Key(), LoadReportServer()).first;
-    if (server_it->second.lrs_channel == nullptr) {
-      server_it->second.lrs_channel = GetOrCreateLrsChannelLocked(
+    auto& [server_key, server] = *server_it;
+    if (server.lrs_channel == nullptr) {
+      server.lrs_channel = GetOrCreateLrsChannelLocked(
           lrs_server, "load report map (drop stats)");
     }
-    auto load_report_it = server_it->second.load_report_map
-                              .emplace(std::move(key), LoadReportState())
-                              .first;
-    LoadReportState& load_report_state = load_report_it->second;
+    auto load_report_it = server.load_report_map.emplace(
+        std::move(key), LoadReportState()).first;
+    auto& [cluster_key, load_report_state] = *load_report_it;
+    auto& [cluster_name, eds_service_name] = cluster_key;
     if (load_report_state.drop_stats != nullptr) {
       cluster_drop_stats = load_report_state.drop_stats->RefIfNonZero();
     }
@@ -837,9 +838,8 @@ RefCountedPtr<LrsClient::ClusterDropStats> LrsClient::AddClusterDropStats(
             load_report_state.drop_stats->GetSnapshotAndReset();
       }
       cluster_drop_stats = MakeRefCounted<ClusterDropStats>(
-          Ref(DEBUG_LOCATION, "DropStats"), server_it->first /*lrs_server*/,
-          load_report_it->first.first /*cluster_name*/,
-          load_report_it->first.second /*eds_service_name*/);
+          Ref(DEBUG_LOCATION, "DropStats"), server_key, cluster_name,
+          eds_service_name);
       load_report_state.drop_stats = cluster_drop_stats.get();
     }
     server_it->second.lrs_channel->MaybeStartLrsCall();
@@ -884,14 +884,15 @@ LrsClient::AddClusterLocalityStats(
     // they have the same lifetime.
     auto server_it =
         load_report_map_.emplace(lrs_server->Key(), LoadReportServer()).first;
-    if (server_it->second.lrs_channel == nullptr) {
-      server_it->second.lrs_channel = GetOrCreateLrsChannelLocked(
+    auto& [server_key, server] = *server_it;
+    if (server.lrs_channel == nullptr) {
+      server.lrs_channel = GetOrCreateLrsChannelLocked(
           std::move(lrs_server), "load report map (locality stats)");
     }
-    auto load_report_it = server_it->second.load_report_map
-                              .emplace(std::move(key), LoadReportState())
-                              .first;
-    LoadReportState& load_report_state = load_report_it->second;
+    auto load_report_it = server.load_report_map.emplace(
+        std::move(key), LoadReportState()).first;
+    auto& [cluster_key, load_report_state] = *load_report_it;
+    auto& [cluster_name, eds_service_name] = cluster_key;
     LoadReportState::LocalityState& locality_state =
         load_report_state.locality_stats[locality];
     ClusterLocalityStats*& locality_stats =
@@ -905,13 +906,12 @@ LrsClient::AddClusterLocalityStats(
             locality_stats->GetSnapshotAndReset();
       }
       cluster_locality_stats = MakeRefCounted<ClusterLocalityStats>(
-          Ref(DEBUG_LOCATION, "LocalityStats"), server_it->first /*lrs_server*/,
-          load_report_it->first.first /*cluster_name*/,
-          load_report_it->first.second /*eds_service_name*/,
-          std::move(locality), std::move(backend_metric_propagation));
+          Ref(DEBUG_LOCATION, "LocalityStats"), server_key, cluster_name,
+          eds_service_name, std::move(locality),
+          std::move(backend_metric_propagation));
       locality_stats = cluster_locality_stats.get();
     }
-    server_it->second.lrs_channel->MaybeStartLrsCall();
+    server.lrs_channel->MaybeStartLrsCall();
   }
   return cluster_locality_stats;
 }
