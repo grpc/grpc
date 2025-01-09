@@ -249,9 +249,9 @@ class RingHash final : public LoadBalancingPolicy {
           endpoints_(ring_hash_->endpoints_.size()),
           resolution_note_(ring_hash_->resolution_note_),
           request_hash_header_(ring_hash_->request_hash_header_) {
-      for (const auto& p : ring_hash_->endpoint_map_) {
-        endpoints_[p.second->index()] = p.second->GetInfoForPicker();
-        if (endpoints_[p.second->index()].state == GRPC_CHANNEL_CONNECTING) {
+      for (const auto& [_, endpoint] : ring_hash_->endpoint_map_) {
+        endpoints_[endpoint->index()] = endpoint->GetInfoForPicker();
+        if (endpoints_[endpoint->index()].state == GRPC_CHANNEL_CONNECTING) {
           has_endpoint_in_connecting_state_ = true;
         }
       }
@@ -694,8 +694,8 @@ void RingHash::ShutdownLocked() {
 }
 
 void RingHash::ResetBackoffLocked() {
-  for (const auto& p : endpoint_map_) {
-    p.second->ResetBackoffLocked();
+  for (const auto& [_, endpoint] : endpoint_map_) {
+    endpoint->ResetBackoffLocked();
   }
 }
 
@@ -708,10 +708,10 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
     std::map<EndpointAddressSet, size_t> endpoint_indices;
     (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
       const EndpointAddressSet key(endpoint.addresses());
-      auto p = endpoint_indices.emplace(key, endpoints_.size());
-      if (!p.second) {
+      auto [it, inserted] = endpoint_indices.emplace(key, endpoints_.size());
+      if (!inserted) {
         // Duplicate endpoint.  Combine weights and skip the dup.
-        EndpointAddresses& prev_endpoint = endpoints_[p.first->second];
+        EndpointAddresses& prev_endpoint = endpoints_[it->second];
         int weight_arg =
             endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
         int prev_weight_arg =
@@ -794,8 +794,8 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
   size_t num_connecting = 0;
   size_t num_ready = 0;
   size_t num_transient_failure = 0;
-  for (const auto& p : endpoint_map_) {
-    switch (p.second->connectivity_state()) {
+  for (const auto& [_, endpoint] : endpoint_map_) {
+    switch (endpoint->connectivity_state()) {
       case GRPC_CHANNEL_READY:
         ++num_ready;
         break;

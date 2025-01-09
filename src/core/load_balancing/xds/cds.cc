@@ -240,9 +240,7 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
       const auto& priority_entry = priority_list[priority];
       std::string priority_child_name =
           MakeChildPolicyName(cluster_name_, priority_child_numbers_[priority]);
-      for (const auto& p : priority_entry.localities) {
-        const auto& locality_name = p.first;
-        const auto& locality = p.second;
+      for (const auto& [locality_name, locality] : priority_entry.localities) {
         std::vector<RefCountedStringValue> hierarchical_path = {
             RefCountedStringValue(priority_child_name),
             locality_name->human_readable_string()};
@@ -478,8 +476,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
         size_t child_number =
             child_name_state_.priority_child_numbers[priority];
         const auto& localities = prev_priority_list[priority].localities;
-        for (const auto& p : localities) {
-          XdsLocalityName* locality_name = p.first;
+        for (const auto& [locality_name, _] : localities) {
           locality_child_map[locality_name] = child_number;
           child_locality_map[child_number].insert(locality_name);
         }
@@ -498,8 +495,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
     absl::optional<size_t> child_number;
     // If one of the localities in this priority already existed, reuse its
     // child number.
-    for (const auto& p : localities) {
-      XdsLocalityName* locality_name = p.first;
+    for (const auto& [locality_name, _] : localities) {
       if (!child_number.has_value()) {
         auto it = locality_child_map.find(locality_name);
         if (it != locality_child_map.end()) {

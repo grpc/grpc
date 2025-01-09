@@ -276,33 +276,33 @@ void XdsDependencyManager::Orphan() {
         xds_client_.get(), route_config_name_, route_config_watcher_,
         /*delay_unsubscription=*/false);
   }
-  for (const auto& p : cluster_watchers_) {
-    XdsClusterResourceType::CancelWatch(xds_client_.get(), p.first,
-                                        p.second.watcher,
+  for (const auto& [name, cluster_state] : cluster_watchers_) {
+    XdsClusterResourceType::CancelWatch(xds_client_.get(), name,
+                                        cluster_state.watcher,
                                         /*delay_unsubscription=*/false);
   }
-  for (const auto& p : endpoint_watchers_) {
-    XdsEndpointResourceType::CancelWatch(xds_client_.get(), p.first,
-                                         p.second.watcher,
+  for (const auto& [name, endpoint_state] : endpoint_watchers_) {
+    XdsEndpointResourceType::CancelWatch(xds_client_.get(), name,
+                                         endpoint_state.watcher,
                                          /*delay_unsubscription=*/false);
   }
   cluster_subscriptions_.clear();
   xds_client_.reset();
-  for (auto& p : dns_resolvers_) {
-    p.second.resolver.reset();
+  for (auto& [_, dns_state] : dns_resolvers_) {
+    dns_state.resolver.reset();
   }
   Unref();
 }
 
 void XdsDependencyManager::RequestReresolution() {
-  for (const auto& p : dns_resolvers_) {
-    p.second.resolver->RequestReresolutionLocked();
+  for (const auto& [_, dns_state] : dns_resolvers_) {
+    dns_state.resolver->RequestReresolutionLocked();
   }
 }
 
 void XdsDependencyManager::ResetBackoff() {
-  for (const auto& p : dns_resolvers_) {
-    p.second.resolver->ResetBackoffLocked();
+  for (const auto& [_, dns_state] : dns_resolvers_) {
+    dns_state.resolver->ResetBackoffLocked();
   }
 }
 
@@ -555,10 +555,10 @@ void XdsDependencyManager::OnEndpointUpdate(
     } else {
       std::set<absl::string_view> empty_localities;
       for (const auto& priority : (*endpoint)->priorities) {
-        for (const auto& p : priority.localities) {
-          if (p.second.endpoints.empty()) {
+        for (const auto& [name, locality] : priority.localities) {
+          if (locality.endpoints.empty()) {
             empty_localities.insert(
-                p.first->human_readable_string().as_string_view());
+                name->human_readable_string().as_string_view());
           }
         }
       }
@@ -647,10 +647,10 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
   // status here, since we need an entry in the map to avoid incorrectly
   // stopping the CDS watch, but we'll overwrite this below if we actually
   // have the data for the cluster.
-  auto p = cluster_config_map->emplace(
+  auto [it, inserted] = cluster_config_map->emplace(
       name, absl::InternalError("cluster data not yet available"));
-  if (!p.second) return true;
-  auto& cluster_config = p.first->second;
+  if (!inserted) return true;
+  auto& cluster_config = it->second;
   auto& state = cluster_watchers_[name];
   // Create a new watcher if needed.
   if (state.watcher == nullptr) {
@@ -870,8 +870,8 @@ void XdsDependencyManager::MaybeReportUpdate() {
   for (const absl::string_view& cluster : clusters_from_route_config_) {
     clusters_to_watch.insert(cluster);
   }
-  for (const auto& p : cluster_subscriptions_) {
-    clusters_to_watch.insert(p.first);
+  for (const auto& [name, _] : cluster_subscriptions_) {
+    clusters_to_watch.insert(name);
   }
   // Populate Cluster map.
   // We traverse the entire graph even if we don't yet have all of the
