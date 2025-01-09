@@ -75,10 +75,9 @@ LbMetadata::TestOnlyCopyToVector() const {
 void MetadataMutationHandler::Apply(
     LoadBalancingPolicy::MetadataMutations& metadata_mutations,
     grpc_metadata_batch* metadata) {
-  for (auto& p : metadata_mutations.metadata_) {
-    absl::string_view key = p.first;
-    Slice& value =
-        grpc_event_engine::experimental::internal::SliceCast<Slice>(p.second);
+  for (auto& [key, value_slice] : metadata_mutations.metadata_) {
+    Slice& value = grpc_event_engine::experimental::internal::SliceCast<Slice>(
+        value_slice);
     // TODO(roth): Should we prevent this from setting special keys like
     // :authority, :path, content-type, etc?
     metadata->Remove(key);
@@ -92,7 +91,7 @@ void MetadataMutationHandler::Apply(
       continue;
     }
     metadata->Append(key, std::move(value),
-                     [key](absl::string_view error, const Slice& value) {
+                     [key = key](absl::string_view error, const Slice& value) {
                        LOG(ERROR) << error << " key:" << key
                                   << " value:" << value.as_string_view();
                      });
