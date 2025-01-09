@@ -58,7 +58,7 @@ TEST(GrpcTextMapCarrierTest, GrpcTraceBinGet) {
 
 TEST(GrpcTextMapCarrierTest, OtherBinaryGet) {
   grpc_metadata_batch md;
-  md.Append("random-bin", grpc_core::Slice::FromCopiedString("value"),
+  md.Append("random-binadd", grpc_core::Slice::FromCopiedString("value"),
             [](absl::string_view, const grpc_core::Slice&) {
               FAIL() << "Failed to add tracing information in metadata.";
             });

@@ -166,11 +166,6 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& SetChannelScopeFilter(
       absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
           channel_scope_filter);
-  /// EXPERIMENTAL API
-  /// TODO(): Think about whether this should under OpenTelemetryPluginBuilder
-  /// or somewhere else
-  std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
-  MakeGrpcTraceBinTextMapPropagator();
   /// Builds and registers a global plugin that acts on all channels and servers
   /// running on the process. Must be called no more than once and must not be
   /// called if Build() is called.
@@ -187,6 +182,13 @@ class OpenTelemetryPluginBuilder {
 };
 
 namespace experimental {
+
+/// EXPERIMENTAL API
+/// TODO(): Think about whether this should under OpenTelemetryPluginBuilder
+/// or somewhere else
+std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
+MakeGrpcTraceBinTextMapPropagator();
+
 // TODO(yashykt): Delete this after the 1.62 release.
 GRPC_DEPRECATED(
     "Use grpc::OpenTelemetryPluginBuilder instead. The experimental version "

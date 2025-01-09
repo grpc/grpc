@@ -1082,14 +1082,15 @@ class GrpcTraceBinTextMapPropagator : public TextMapPropagator {
       opentelemetry::context::Context& context) noexcept override {
     opentelemetry::nostd::string_view grpc_trace_bin_val =
         carrier.Get("grpc-trace-bin");
-    std::string base64_escaped_val;
+    std::string base64_unescaped_val;
     absl::Base64Unescape(
         absl::string_view(grpc_trace_bin_val.data(), grpc_trace_bin_val.size()),
-        &base64_escaped_val);
+        &base64_unescaped_val);
     return opentelemetry::trace::SetSpan(
-        context, std::shared_ptr<opentelemetry::trace::Span>(
-                     new (std::nothrow) opentelemetry::trace::DefaultSpan(
-                         GrpcTraceBinHeaderToSpanContext(base64_escaped_val))));
+        context,
+        std::shared_ptr<opentelemetry::trace::Span>(
+            new (std::nothrow) opentelemetry::trace::DefaultSpan(
+                GrpcTraceBinHeaderToSpanContext(base64_unescaped_val))));
   }
 
   void Inject(
@@ -1311,8 +1312,10 @@ OpenTelemetryPluginBuilder::Build() {
   return impl_->Build();
 }
 
+namespace experimental {
 std::unique_ptr<TextMapPropagator> MakeGrpcTraceBinTextMapPropagator() {
   return std::make_unique<internal::GrpcTraceBinTextMapPropagator>();
 }
+}  // namespace experimental
 
 }  // namespace grpc

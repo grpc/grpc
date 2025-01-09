@@ -65,3 +65,22 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "grpc_trace_bin_text_map_propagator_test",
+    srcs = [
+        "grpc_trace_bin_text_map_propagator_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+        "otel/api",
+    ],
+    language = "C++",
+    tags = [],
+    deps = [
+        "//:grpc++",
+        "//src/cpp/ext/otel:otel_plugin",
+        "//test/core/promise:test_context",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
