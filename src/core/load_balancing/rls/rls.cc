@@ -1263,7 +1263,7 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
   // Add header data.
   if (!header_data_.empty()) {
     auto* complete_pick =
-        absl::get_if<PickResult::Complete>(&pick_result.result);
+        std::get_if<PickResult::Complete>(&pick_result.result);
     if (complete_pick != nullptr) {
       complete_pick->metadata_mutations.Set(kRlsHeaderKey, header_data_.Ref());
     }

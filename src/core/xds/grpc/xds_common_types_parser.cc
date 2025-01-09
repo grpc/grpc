@@ -322,7 +322,7 @@ CommonTlsContext CommonTlsContextParse(
     // 'combined_validation_context'. Note that this way of fetching root
     // certificates is deprecated and will be removed in the future.
     // TODO(yashykt): Remove this once it's no longer needed.
-    if (!absl::holds_alternative<
+    if (!std::holds_alternative<
             CommonTlsContext::CertificateProviderPluginInstance>(
             common_tls_context.certificate_validation_context.ca_certs)) {
       const auto* validation_context_certificate_provider_instance =

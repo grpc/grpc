@@ -28,6 +28,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/log/check.h"
@@ -44,7 +45,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "re2/re2.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/config_selector.h"
@@ -440,7 +440,7 @@ XdsResolver::RouteConfigData::CreateMethodConfig(
         cluster_weight) {
   std::vector<std::string> fields;
   const auto& route_action =
-      absl::get<XdsRouteConfigResource::Route::RouteAction>(route.action);
+      std::get<XdsRouteConfigResource::Route::RouteAction>(route.action);
   // Set retry policy if any.
   if (route_action.retry_policy.has_value() &&
       !route_action.retry_policy->retry_on.Empty()) {
@@ -486,7 +486,7 @@ XdsResolver::RouteConfigData::CreateMethodConfig(
                         route_action.max_stream_duration->ToJsonString()));
   }
   // Handle xDS HTTP filters.
-  const auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
+  const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
       resolver->current_config_->listener->listener);
   auto result = XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
       DownCast<const GrpcXdsBootstrap&>(resolver->xds_client_->bootstrap())
@@ -532,7 +532,7 @@ absl::Status XdsResolver::RouteConfigData::AddRouteEntry(
     absl::string_view key = cluster_state->cluster_key();
     clusters_.emplace(key, std::move(cluster_state));
   };
-  auto* route_action = absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+  auto* route_action = std::get_if<XdsRouteConfigResource::Route::RouteAction>(
       &route_entry->route.action);
   if (route_action != nullptr) {
     // If the route doesn't specify a timeout, set its timeout to the global
@@ -616,7 +616,7 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
   const auto& http_filter_registry =
       static_cast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
           .http_filter_registry();
-  const auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
+  const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
       resolver_->current_config_->listener->listener);
   for (const auto& http_filter : hcm.http_filters) {
     // Find filter.  This is guaranteed to succeed, because it's checked
@@ -679,7 +679,7 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
   }
   // Found a route match
   const auto* route_action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(
           &entry->route.action);
   if (route_action == nullptr) {
     return absl::UnavailableError("Matching route has inappropriate action");
@@ -807,7 +807,7 @@ bool XdsResolver::XdsRouteStateAttributeImpl::HasClusterForRoute(
     absl::string_view cluster_name) const {
   // Found a route match
   const auto* route_action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(
           &static_cast<RouteConfigData::RouteEntry*>(route_)->route.action);
   if (route_action == nullptr) return false;
   return Match(
@@ -1005,7 +1005,7 @@ XdsResolver::CreateServiceConfig() {
                    "    }\n"
                    "    } }\n"
                    "  ]"));
-  auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
+  auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
       current_config_->listener->listener);
   auto filter_configs =
       XdsRouting::GeneratePerHTTPFilterConfigsForServiceConfig(
@@ -1025,7 +1025,7 @@ void XdsResolver::GenerateResult() {
   if (xds_client_ == nullptr || current_config_ == nullptr) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map.
-  const auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
+  const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
       current_config_->listener->listener);
   auto route_config_data =
       RouteConfigData::Create(this, hcm.http_max_stream_duration);
