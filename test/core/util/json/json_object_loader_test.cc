@@ -123,8 +123,8 @@ TYPED_TEST_P(SignedIntegerTest, IntegerFields) {
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: ["
-            "field:std_optional_value error:is not a number; "
             "field:optional_value error:is not a number; "
+            "field:std_optional_value error:is not a number; "
             "field:unique_ptr_value error:is not a number; "
             "field:value error:is not a number]")
       << test_struct.status();
@@ -223,8 +223,8 @@ TYPED_TEST_P(UnsignedIntegerTest, IntegerFields) {
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: ["
-            "field:std_optional_value error:is not a number; "
             "field:optional_value error:is not a number; "
+            "field:std_optional_value error:is not a number; "
             "field:unique_ptr_value error:is not a number; "
             "field:value error:is not a number]")
       << test_struct.status();
@@ -320,8 +320,8 @@ TYPED_TEST_P(FloatingPointTest, FloatFields) {
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: ["
-            "field:std_optional_value error:is not a number; "
             "field:optional_value error:is not a number; "
+            "field:std_optional_value error:is not a number; "
             "field:unique_ptr_value error:is not a number; "
             "field:value error:is not a number]")
       << test_struct.status();
@@ -400,8 +400,8 @@ TEST(JsonObjectLoader, BooleanFields) {
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: ["
-            "field:std_optional_value error:is not a boolean; "
             "field:optional_value error:is not a boolean; "
+            "field:std_optional_value error:is not a boolean; "
             "field:unique_ptr_value error:is not a boolean; "
             "field:value error:is not a boolean]")
       << test_struct.status();
@@ -469,8 +469,8 @@ TEST(JsonObjectLoader, StringFields) {
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: ["
-            "field:std_optional_value error:is not a string; "
             "field:optional_value error:is not a string; "
+            "field:std_optional_value error:is not a string; "
             "field:unique_ptr_value error:is not a string; "
             "field:value error:is not a string]")
       << test_struct.status();
@@ -513,10 +513,10 @@ TEST(JsonObjectLoader, DurationFields) {
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: ["
-            "field:std_optional_value error:"
-            "Not a duration (too many digits after decimal); "
             "field:optional_value error:"
             "Not a duration (not a number of seconds); "
+            "field:std_optional_value error:"
+            "Not a duration (too many digits after decimal); "
             "field:value error:Not a duration (no s suffix)]")
       << test_struct.status();
   test_struct = Parse<TestStruct>("{\"value\": \"315576000001s\"}");
@@ -563,8 +563,8 @@ TEST(JsonObjectLoader, DurationFields) {
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: ["
-            "field:std_optional_value error:is not a string; "
             "field:optional_value error:is not a string; "
+            "field:std_optional_value error:is not a string; "
             "field:unique_ptr_value error:is not a string; "
             "field:value error:is not a string]")
       << test_struct.status();
@@ -636,8 +636,8 @@ TEST(JsonObjectLoader, JsonObjectFields) {
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: ["
-            "field:std_optional_value error:is not an object; "
             "field:optional_value error:is not an object; "
+            "field:std_optional_value error:is not an object; "
             "field:unique_ptr_value error:is not an object; "
             "field:value error:is not an object]")
       << test_struct.status();
@@ -709,8 +709,8 @@ TEST(JsonObjectLoader, JsonArrayFields) {
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: ["
-            "field:std_optional_value error:is not an array; "
             "field:optional_value error:is not an array; "
+            "field:std_optional_value error:is not an array; "
             "field:unique_ptr_value error:is not an array; "
             "field:value error:is not an array]")
       << test_struct.status();
@@ -786,8 +786,8 @@ TEST(JsonObjectLoader, MapFields) {
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: ["
-            "field:std_optional_value error:is not an object; "
             "field:optional_value error:is not an object; "
+            "field:std_optional_value error:is not an object; "
             "field:unique_ptr_value error:is not an object; "
             "field:value error:is not an object]")
       << test_struct.status();
@@ -798,8 +798,8 @@ TEST(JsonObjectLoader, MapFields) {
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: ["
-            "field:std_optional_value[\"c\"] error:is not a boolean; "
             "field:optional_value[\"b\"] error:is not a string; "
+            "field:std_optional_value[\"c\"] error:is not a boolean; "
             "field:value[\"a\"] error:failed to parse number]")
       << test_struct.status();
 }
@@ -870,8 +870,8 @@ TEST(JsonObjectLoader, VectorFields) {
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: ["
-            "field:std_optional_value error:is not an array; "
             "field:optional_value error:is not an array; "
+            "field:std_optional_value error:is not an array; "
             "field:unique_ptr_value error:is not an array; "
             "field:value error:is not an array]")
       << test_struct.status();
@@ -882,10 +882,10 @@ TEST(JsonObjectLoader, VectorFields) {
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: ["
-            "field:std_optional_value[0] error:is not a boolean; "
-            "field:std_optional_value[1] error:is not a boolean; "
             "field:optional_value[0] error:is not a string; "
             "field:optional_value[1] error:is not a string; "
+            "field:std_optional_value[0] error:is not a boolean; "
+            "field:std_optional_value[1] error:is not a boolean; "
             "field:value[0] error:failed to parse number; "
             "field:value[1] error:failed to parse number]")
       << test_struct.status();
