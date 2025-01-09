@@ -6635,6 +6635,7 @@ grpc_cc_library(
         "lib/transport/connectivity_state.h",
     ],
     external_deps = [
+        "absl/container:flat_hash_set",
         "absl/log:log",
         "absl/status",
     ],
