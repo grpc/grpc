@@ -213,7 +213,7 @@ TEST_F(CommonTlsConfigTest, NoCaCerts) {
   // Run test.
   auto common_tls_context = Parse(upb_proto);
   ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
-  EXPECT_TRUE(absl::holds_alternative<std::monostate>(
+  EXPECT_TRUE(std::holds_alternative<std::monostate>(
       common_tls_context->certificate_validation_context.ca_certs));
   EXPECT_THAT(common_tls_context->certificate_validation_context
                   .match_subject_alt_names,
@@ -288,7 +288,7 @@ TEST_F(CommonTlsConfigTest, SystemRootCerts) {
   // Run test.
   auto common_tls_context = Parse(upb_proto);
   ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
-  EXPECT_TRUE(absl::holds_alternative<
+  EXPECT_TRUE(std::holds_alternative<
               CommonTlsContext::CertificateValidationContext::SystemRootCerts>(
       common_tls_context->certificate_validation_context.ca_certs));
   EXPECT_THAT(common_tls_context->certificate_validation_context
@@ -338,7 +338,7 @@ TEST_F(CommonTlsConfigTest, SystemRootCertsIgnoredWithoutEnvVar) {
   // Run test.
   auto common_tls_context = Parse(upb_proto);
   ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
-  EXPECT_TRUE(absl::holds_alternative<std::monostate>(
+  EXPECT_TRUE(std::holds_alternative<std::monostate>(
       common_tls_context->certificate_validation_context.ca_certs));
   EXPECT_THAT(common_tls_context->certificate_validation_context
                   .match_subject_alt_names,
@@ -512,7 +512,7 @@ TEST_F(CommonTlsConfigTest, MatchSubjectAltNames) {
   EXPECT_EQ(match_subject_alt_names[4].type(), StringMatcher::Type::kSafeRegex);
   EXPECT_EQ(match_subject_alt_names[4].regex_matcher()->pattern(), "regex");
   EXPECT_TRUE(match_subject_alt_names[4].case_sensitive());
-  EXPECT_TRUE(absl::holds_alternative<std::monostate>(
+  EXPECT_TRUE(std::holds_alternative<std::monostate>(
       common_tls_context->certificate_validation_context.ca_certs));
   EXPECT_TRUE(common_tls_context->tls_certificate_provider_instance.Empty())
       << common_tls_context->tls_certificate_provider_instance.ToString();
@@ -557,7 +557,7 @@ TEST_F(CommonTlsConfigTest, MatchSubjectAltNamesCaseInsensitive) {
   EXPECT_EQ(match_subject_alt_names[3].type(), StringMatcher::Type::kContains);
   EXPECT_EQ(match_subject_alt_names[3].string_matcher(), "contains");
   EXPECT_FALSE(match_subject_alt_names[3].case_sensitive());
-  EXPECT_TRUE(absl::holds_alternative<std::monostate>(
+  EXPECT_TRUE(std::holds_alternative<std::monostate>(
       common_tls_context->certificate_validation_context.ca_certs));
   EXPECT_TRUE(common_tls_context->tls_certificate_provider_instance.Empty())
       << common_tls_context->tls_certificate_provider_instance.ToString();
@@ -637,7 +637,7 @@ TEST_F(ExtractXdsExtensionTest, Basic) {
                                             "unexpected errors");
   ASSERT_TRUE(extension.has_value());
   EXPECT_EQ(extension->type, "MyType");
-  ASSERT_TRUE(absl::holds_alternative<absl::string_view>(extension->value));
+  ASSERT_TRUE(std::holds_alternative<absl::string_view>(extension->value));
   EXPECT_EQ(std::get<absl::string_view>(extension->value), kValue);
 }
 
@@ -659,7 +659,7 @@ TEST_F(ExtractXdsExtensionTest, TypedStruct) {
                                             "unexpected errors");
   ASSERT_TRUE(extension.has_value());
   EXPECT_EQ(extension->type, "MyType");
-  ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
+  ASSERT_TRUE(std::holds_alternative<Json>(extension->value));
   EXPECT_EQ(JsonDump(std::get<Json>(extension->value)), "{\"foo\":\"bar\"}");
 }
 
@@ -681,7 +681,7 @@ TEST_F(ExtractXdsExtensionTest, UdpaTypedStruct) {
                                             "unexpected errors");
   ASSERT_TRUE(extension.has_value());
   EXPECT_EQ(extension->type, "MyType");
-  ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
+  ASSERT_TRUE(std::holds_alternative<Json>(extension->value));
   EXPECT_EQ(JsonDump(std::get<Json>(extension->value)), "{\"foo\":\"bar\"}");
 }
 
@@ -701,7 +701,7 @@ TEST_F(ExtractXdsExtensionTest, TypedStructWithoutValue) {
                                             "unexpected errors");
   ASSERT_TRUE(extension.has_value());
   EXPECT_EQ(extension->type, "MyType");
-  ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
+  ASSERT_TRUE(std::holds_alternative<Json>(extension->value));
   EXPECT_EQ(JsonDump(std::get<Json>(extension->value)), "{}");
 }
 
@@ -759,7 +759,7 @@ TEST_F(ExtractXdsExtensionTest, TypedStructJsonConversion) {
                                             "unexpected errors");
   ASSERT_TRUE(extension.has_value());
   EXPECT_EQ(extension->type, "envoy.ExtensionType");
-  ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
+  ASSERT_TRUE(std::holds_alternative<Json>(extension->value));
   EXPECT_EQ(JsonDump(std::get<Json>(extension->value)),
             "{"
             "\"key\":null,"

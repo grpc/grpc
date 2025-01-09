@@ -31,7 +31,7 @@ using VectorOfArgs = std::vector<std::pair<std::string, IntOrString>>;
 ChannelArgs ChannelArgsFromVector(VectorOfArgs va) {
   ChannelArgs result;
   for (auto& [key, value] : va) {
-    if (absl::holds_alternative<int>(value)) {
+    if (std::holds_alternative<int>(value)) {
       result = result.Set(key, std::get<int>(value));
     } else {
       result = result.Set(key, std::get<std::string>(value));

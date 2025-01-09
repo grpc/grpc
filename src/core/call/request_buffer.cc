@@ -78,7 +78,7 @@ StatusFlag RequestBuffer::FinishSends() {
 
 void RequestBuffer::Cancel(absl::Status error) {
   MutexLock lock(&mu_);
-  if (absl::holds_alternative<Cancelled>(state_)) return;
+  if (std::holds_alternative<Cancelled>(state_)) return;
   state_.emplace<Cancelled>(std::move(error));
   WakeupAsyncAllPullers();
 }

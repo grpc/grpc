@@ -667,7 +667,7 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
     auto nh =
         ares_resolver->callback_map_.extract(hostname_qa->callback_map_id);
     CHECK(!nh.empty());
-    CHECK(absl::holds_alternative<
+    CHECK(std::holds_alternative<
           EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
     auto callback = std::get<EventEngine::DNSResolver::LookupHostnameCallback>(
         std::move(nh.mapped()));
@@ -694,7 +694,7 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
   CHECK(!nh.empty());
-  CHECK(absl::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
+  CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
       nh.mapped()));
   auto callback = std::get<EventEngine::DNSResolver::LookupSRVCallback>(
       std::move(nh.mapped()));
@@ -755,7 +755,7 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
   CHECK(!nh.empty());
-  CHECK(absl::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
+  CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
       nh.mapped()));
   auto callback = std::get<EventEngine::DNSResolver::LookupTXTCallback>(
       std::move(nh.mapped()));

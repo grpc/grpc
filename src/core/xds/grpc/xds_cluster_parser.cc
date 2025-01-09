@@ -109,7 +109,7 @@ CommonTlsContext UpstreamTlsContextParse(
     common_tls_context =
         CommonTlsContextParse(context, common_tls_context_proto, errors);
   }
-  if (absl::holds_alternative<std::monostate>(
+  if (std::holds_alternative<std::monostate>(
           common_tls_context.certificate_validation_context.ca_certs)) {
     errors->AddError("no CA certs configured");
   }

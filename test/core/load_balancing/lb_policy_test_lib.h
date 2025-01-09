@@ -1092,11 +1092,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     EXPECT_NE(picker, nullptr) << location.file() << ":" << location.line();
     if (picker == nullptr) return false;
     auto pick_result = DoPick(picker, call_attributes, metadata);
-    EXPECT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
+    EXPECT_TRUE(std::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result))
         << PickResultString(pick_result) << "\nat " << location.file() << ":"
         << location.line();
-    return absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
+    return std::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result);
   }
 

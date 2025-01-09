@@ -72,7 +72,7 @@ std::string CommonTlsContext::CertificateValidationContext::ToString() const {
 }
 
 bool CommonTlsContext::CertificateValidationContext::Empty() const {
-  return absl::holds_alternative<std::monostate>(ca_certs) &&
+  return std::holds_alternative<std::monostate>(ca_certs) &&
          match_subject_alt_names.empty();
 }
 

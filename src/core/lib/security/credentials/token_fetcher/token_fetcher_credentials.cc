@@ -157,7 +157,7 @@ void TokenFetcherCredentials::FetchState::TokenFetchComplete(
     absl::StatusOr<RefCountedPtr<Token>> token) {
   MutexLock lock(&creds_->mu_);
   // If we were shut down, clean up.
-  if (absl::holds_alternative<Shutdown>(state_)) {
+  if (std::holds_alternative<Shutdown>(state_)) {
     if (token.ok()) token = absl::CancelledError("credentials shutdown");
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
         << "[TokenFetcherCredentials " << creds_.get()

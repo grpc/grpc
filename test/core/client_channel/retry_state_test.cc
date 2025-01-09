@@ -211,7 +211,7 @@ auto AnyRetryMethodConfig() {
          std::variant<uint32_t, grpc_status_code>
              per_attempt_recv_timeout_or_another_retriable_status_code) {
         absl::optional<uint32_t> per_attempt_recv_timeout;
-        if (absl::holds_alternative<grpc_status_code>(
+        if (std::holds_alternative<grpc_status_code>(
                 per_attempt_recv_timeout_or_another_retriable_status_code)) {
           retryable_status_codes.push_back(std::get<grpc_status_code>(
               per_attempt_recv_timeout_or_another_retriable_status_code));

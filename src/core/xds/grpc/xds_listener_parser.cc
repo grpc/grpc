@@ -404,7 +404,7 @@ XdsListenerResource::DownstreamTlsContext DownstreamTlsContextParse(
     // errors, because we don't know which fields they were found in
     // inside of CommonTlsContext, so we make the error message a bit
     // more verbose to compensate.
-    if (absl::holds_alternative<
+    if (std::holds_alternative<
             CommonTlsContext::CertificateValidationContext::SystemRootCerts>(
             downstream_tls_context.common_tls_context
                 .certificate_validation_context.ca_certs)) {

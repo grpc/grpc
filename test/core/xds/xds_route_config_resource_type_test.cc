@@ -1530,7 +1530,7 @@ TEST_F(HashPolicyTest, ValidAndUnsupportedPolicies) {
   EXPECT_TRUE(hash_policies[1].terminal);
   // hash policy 2: filter state "io.grpc.channel_id", terminal
   ASSERT_TRUE(
-      absl::holds_alternative<
+      std::holds_alternative<
           XdsRouteConfigResource::Route::RouteAction::HashPolicy::ChannelId>(
           hash_policies[2].policy));
   EXPECT_FALSE(hash_policies[2].terminal);

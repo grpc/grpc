@@ -101,7 +101,7 @@ struct LoopTraits<absl::StatusOr<LoopCtl<T>>> {
       absl::StatusOr<LoopCtl<T>> value) {
     if (!value.ok()) return value.status();
     auto& inner = *value;
-    if (absl::holds_alternative<Continue>(inner)) return Continue{};
+    if (std::holds_alternative<Continue>(inner)) return Continue{};
     return std::get<T>(std::move(inner));
   }
 };
@@ -113,7 +113,7 @@ struct LoopTraits<absl::StatusOr<LoopCtl<absl::Status>>> {
       absl::StatusOr<LoopCtl<absl::Status>> value) {
     if (!value.ok()) return value.status();
     const auto& inner = *value;
-    if (absl::holds_alternative<Continue>(inner)) return Continue{};
+    if (std::holds_alternative<Continue>(inner)) return Continue{};
     return std::get<absl::Status>(inner);
   }
 };
@@ -157,7 +157,7 @@ class Loop {
         //  - then if it's Continue, destroy the promise and recreate a new one
         //  from our factory.
         auto lc = LoopTraits<PromiseResult>::ToLoopCtl(std::move(*p));
-        if (absl::holds_alternative<Continue>(lc)) {
+        if (std::holds_alternative<Continue>(lc)) {
           GRPC_TRACE_LOG(promise_primitives, INFO)
               << "loop[" << this << "] iteration complete, continue";
           Destruct(&promise_);

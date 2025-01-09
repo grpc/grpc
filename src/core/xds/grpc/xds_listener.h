@@ -62,7 +62,7 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
     std::vector<HttpFilter> http_filters;
 
     bool operator==(const HttpConnectionManager& other) const {
-      if (absl::holds_alternative<std::string>(route_config)) {
+      if (std::holds_alternative<std::string>(route_config)) {
         if (route_config != other.route_config) return false;
       } else {
         auto& rc1 = std::get<std::shared_ptr<const XdsRouteConfigResource>>(

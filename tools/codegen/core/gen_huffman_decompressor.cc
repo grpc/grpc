@@ -1459,7 +1459,7 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
 void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
                             std::string ofs, const MatchCase& match_case,
                             bool refill, int depth, Sink* out) {
-  if (absl::holds_alternative<End>(match_case)) {
+  if (std::holds_alternative<End>(match_case)) {
     out->Add("begin_ = end_;");
     out->Add("buffer_len_ = 0;");
     return;

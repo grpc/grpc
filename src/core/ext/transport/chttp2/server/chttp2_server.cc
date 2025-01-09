@@ -1112,7 +1112,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
   handshake_mgr_.reset();
   connection_->listener_state_->OnHandshakeDone(connection_.get());
   // Clean up if we don't have a transport
-  if (!absl::holds_alternative<RefCountedPtr<grpc_chttp2_transport>>(
+  if (!std::holds_alternative<RefCountedPtr<grpc_chttp2_transport>>(
           connection_->state_)) {
     connection_->listener_state_->connection_quota()->ReleaseConnections(1);
     connection_->listener_state_->RemoveLogicalConnection(connection_.get());
@@ -1146,7 +1146,7 @@ void NewChttp2ServerListener::ActiveConnection::Orphan() {
         // shutting down and a transport has already been established, GOAWAYs
         // should be sent separately.
         shutdown_ = true;
-        if (absl::holds_alternative<OrphanablePtr<HandshakingState>>(state_)) {
+        if (std::holds_alternative<OrphanablePtr<HandshakingState>>(state_)) {
           state_ = OrphanablePtr<HandshakingState>(nullptr);
         }
         Unref();

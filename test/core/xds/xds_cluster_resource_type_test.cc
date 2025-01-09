@@ -966,7 +966,7 @@ TEST_F(TlsConfigTest, SystemRootCerts) {
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  ASSERT_TRUE(absl::holds_alternative<
+  ASSERT_TRUE(std::holds_alternative<
               CommonTlsContext::CertificateValidationContext::SystemRootCerts>(
       resource.common_tls_context.certificate_validation_context.ca_certs));
 }

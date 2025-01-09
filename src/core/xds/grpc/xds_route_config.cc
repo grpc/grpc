@@ -214,7 +214,7 @@ std::string XdsRouteConfigResource::Route::ToString() const {
       std::get_if<XdsRouteConfigResource::Route::RouteAction>(&action);
   if (route_action != nullptr) {
     contents.push_back(absl::StrCat("route=", route_action->ToString()));
-  } else if (absl::holds_alternative<
+  } else if (std::holds_alternative<
                  XdsRouteConfigResource::Route::NonForwardingAction>(action)) {
     contents.push_back("non_forwarding_action={}");
   } else {

@@ -76,7 +76,7 @@ TEST(PingRatePolicy, ClientThrottledUntilDataSent) {
   policy.SentPing();
   // Second ping is throttled since no data has been sent.
   auto result = policy.RequestSendPing(Duration::Zero(), 0);
-  EXPECT_TRUE(absl::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
+  EXPECT_TRUE(std::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
   EXPECT_EQ(std::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
             Duration::Minutes(1));
   policy.ResetPingsBeforeDataRequired();
@@ -88,7 +88,7 @@ TEST(PingRatePolicy, ClientThrottledUntilDataSent) {
   policy.SentPing();
   // After reaching limit, we are throttled again.
   result = policy.RequestSendPing(Duration::Zero(), 0);
-  EXPECT_TRUE(absl::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
+  EXPECT_TRUE(std::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
   EXPECT_EQ(std::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
             Duration::Minutes(1));
 }

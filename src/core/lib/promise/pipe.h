@@ -646,7 +646,7 @@ class Push {
         return Pending{};
       }
     }
-    DCHECK(absl::holds_alternative<AwaitingAck>(state_));
+    DCHECK(std::holds_alternative<AwaitingAck>(state_));
     return center_->PollAck();
   }
 
