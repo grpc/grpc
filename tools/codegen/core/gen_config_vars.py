@@ -321,7 +321,7 @@ with open("src/core/config/config_vars.h", "w") as H:
     print(file=H)
     print("#include <string>", file=H)
     print("#include <atomic>", file=H)
-    print('#include <optional>', file=H)
+    print("#include <optional>", file=H)
     print("#include <stdint.h>", file=H)
     print('#include "absl/strings/string_view.h"', file=H)
     print(file=H)
