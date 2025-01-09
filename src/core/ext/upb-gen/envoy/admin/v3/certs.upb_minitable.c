@@ -17,7 +17,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_admin_v3_Certificates_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_admin_v3_Certificates__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__admin__v3__Certificate_msg_init_ptr},
 };
 
@@ -26,7 +26,7 @@ static const upb_MiniTableField envoy_admin_v3_Certificates__fields[1] = {
 };
 
 const upb_MiniTable envoy__admin__v3__Certificates_msg_init = {
-  &envoy_admin_v3_Certificates_submsgs[0],
+  &envoy_admin_v3_Certificates__submsgs[0],
   &envoy_admin_v3_Certificates__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -39,7 +39,7 @@ const upb_MiniTable envoy__admin__v3__Certificates_msg_init = {
 };
 
 const upb_MiniTable* envoy__admin__v3__Certificates_msg_init_ptr = &envoy__admin__v3__Certificates_msg_init;
-static const upb_MiniTableSubInternal envoy_admin_v3_Certificate_submsgs[2] = {
+static const upb_MiniTableSubInternal envoy_admin_v3_Certificate__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &envoy__admin__v3__CertificateDetails_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__admin__v3__CertificateDetails_msg_init_ptr},
 };
@@ -50,7 +50,7 @@ static const upb_MiniTableField envoy_admin_v3_Certificate__fields[2] = {
 };
 
 const upb_MiniTable envoy__admin__v3__Certificate_msg_init = {
-  &envoy_admin_v3_Certificate_submsgs[0],
+  &envoy_admin_v3_Certificate__submsgs[0],
   &envoy_admin_v3_Certificate__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -65,7 +65,7 @@ const upb_MiniTable envoy__admin__v3__Certificate_msg_init = {
 };
 
 const upb_MiniTable* envoy__admin__v3__Certificate_msg_init_ptr = &envoy__admin__v3__Certificate_msg_init;
-static const upb_MiniTableSubInternal envoy_admin_v3_CertificateDetails_submsgs[4] = {
+static const upb_MiniTableSubInternal envoy_admin_v3_CertificateDetails__submsgs[4] = {
   {.UPB_PRIVATE(submsg) = &envoy__admin__v3__SubjectAlternateName_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
@@ -83,7 +83,7 @@ static const upb_MiniTableField envoy_admin_v3_CertificateDetails__fields[7] = {
 };
 
 const upb_MiniTable envoy__admin__v3__CertificateDetails_msg_init = {
-  &envoy_admin_v3_CertificateDetails_submsgs[0],
+  &envoy_admin_v3_CertificateDetails__submsgs[0],
   &envoy_admin_v3_CertificateDetails__fields[0],
   UPB_SIZE(56, 88), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -102,7 +102,7 @@ const upb_MiniTable envoy__admin__v3__CertificateDetails_msg_init = {
 };
 
 const upb_MiniTable* envoy__admin__v3__CertificateDetails_msg_init_ptr = &envoy__admin__v3__CertificateDetails_msg_init;
-static const upb_MiniTableSubInternal envoy_admin_v3_CertificateDetails_OcspDetails_submsgs[2] = {
+static const upb_MiniTableSubInternal envoy_admin_v3_CertificateDetails_OcspDetails__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
 };
@@ -113,7 +113,7 @@ static const upb_MiniTableField envoy_admin_v3_CertificateDetails_OcspDetails__f
 };
 
 const upb_MiniTable envoy__admin__v3__CertificateDetails__OcspDetails_msg_init = {
-  &envoy_admin_v3_CertificateDetails_OcspDetails_submsgs[0],
+  &envoy_admin_v3_CertificateDetails_OcspDetails__submsgs[0],
   &envoy_admin_v3_CertificateDetails_OcspDetails__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED

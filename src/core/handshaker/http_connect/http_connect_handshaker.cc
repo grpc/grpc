@@ -35,11 +35,11 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -111,7 +111,7 @@ void HttpConnectHandshaker::HandshakeFailedLocked(absl::Status error) {
   if (args_ != nullptr && args_->endpoint != nullptr) {
     peer_string = grpc_endpoint_get_peer(args_->endpoint.get());
   }
-  LOG_EVERY_N_SEC(ERROR, 1)
+  LOG_EVERY_N_SEC(ERROR, 60)
       << "HTTP proxy handshake with " << peer_string << " failed: " << error;
   // Invoke callback.
   FinishLocked(std::move(error));

@@ -23,6 +23,7 @@
 #include <string>
 #include <tuple>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
@@ -163,7 +164,7 @@ auto ChaoticGoodServerTransport::SendCallBody(
   // Continuously send client frame with client to server
   // messages.
   return ForEach(
-      OutgoingMessages(call_initiator),
+      MessagesFrom(call_initiator),
       // Capture the call_initator to ensure the underlying call
       // spine is alive until the SendFragment promise completes.
       [stream_id, outgoing_frames, call_initiator,
@@ -223,7 +224,6 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
                 GRPC_TRACE_VLOG(chaotic_good, 2)
                     << "CHAOTIC_GOOD: CallOutboundLoop: stream_id=" << stream_id
                     << " main_body_result=" << main_body_result;
-                return Empty{};
               }),
           call_initiator.PullServerTrailingMetadata(),
           // Capture the call_initator to ensure the underlying call_spine
@@ -421,10 +421,8 @@ void ChaoticGoodServerTransport::AbortWithError() {
   lock.Release();
   for (const auto& pair : stream_map) {
     auto call_initiator = pair.second;
-    call_initiator.SpawnInfallible("cancel", [call_initiator]() mutable {
-      call_initiator.Cancel();
-      return Empty{};
-    });
+    call_initiator.SpawnInfallible(
+        "cancel", [call_initiator]() mutable { call_initiator.Cancel(); });
   }
 }
 
@@ -473,10 +471,7 @@ absl::Status ChaoticGoodServerTransport::NewStream(
             self->ExtractStream(stream_id);
         if (call_initiator.has_value()) {
           auto c = std::move(*call_initiator);
-          c.SpawnInfallible("cancel", [c]() mutable {
-            c.Cancel();
-            return Empty{};
-          });
+          c.SpawnInfallible("cancel", [c]() mutable { c.Cancel(); });
         }
       });
   if (!on_done_added) {
@@ -488,6 +483,12 @@ absl::Status ChaoticGoodServerTransport::NewStream(
 
 void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
   RefCountedPtr<Party> cancelled_party;
+  bool close_outgoing_frames = false;
+  auto cleanup = absl::MakeCleanup([&close_outgoing_frames, this]() {
+    if (close_outgoing_frames) {
+      outgoing_frames_.MarkClosed();
+    }
+  });
   MutexLock lock(&mu_);
   bool did_stuff = false;
   if (op->start_connectivity_watch != nullptr) {
@@ -509,7 +510,7 @@ void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
   }
   if (!op->goaway_error.ok() || !op->disconnect_with_error.ok()) {
     cancelled_party = std::move(party_);
-    outgoing_frames_.MarkClosed();
+    close_outgoing_frames = true;
     state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
                             absl::UnavailableError("transport closed"),
                             "transport closed");

@@ -32,7 +32,7 @@
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -721,10 +721,11 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpListenerDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      absl::StrCat("empty address list: ", kServerName,
-                                   ": xDS listener resource does not exist"),
-                      RpcOptions().set_timeout_ms(kTimeoutMillisecond));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("empty address list \\(LDS resource ", kServerName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"),
+      RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(csds_response.config(0).generic_xds_configs(),
               ::testing::Contains(EqGenericXdsConfig(
@@ -739,8 +740,9 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpRouteConfigDoesNotExist) {
                                           kDefaultRouteConfigurationName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: ", kDefaultRouteConfigurationName,
-                   ": xDS route configuration resource does not exist"),
+      absl::StrCat("empty address list \\(RDS resource ",
+                   kDefaultRouteConfigurationName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"),
       RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(
@@ -755,7 +757,8 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpClusterDoesNotExist) {
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("CDS resource ", kDefaultClusterName, " does not exist"),
+      absl::StrCat("CDS resource ", kDefaultClusterName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)"),
       RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(csds_response.config(0).generic_xds_configs(),
@@ -769,8 +772,8 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
   balancer_->ads_service()->UnsetResource(kEdsTypeUrl, kDefaultEdsServiceName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "no children in weighted_target policy: EDS resource eds_service_name "
-      "does not exist",
+      "no children in weighted_target policy: EDS resource eds_service_name: "
+      "does not exist \\(node ID:xds_end2end_test\\)",
       RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(

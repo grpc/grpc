@@ -26,11 +26,11 @@
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -185,12 +185,14 @@ void RegisterFilter() {
 }
 
 CORE_END2END_TEST(RetryTest, RetryCancelWithMultipleSendBatches) {
+  SKIP_IF_V3();  // Need to convert filter
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<CancelCancellationMode>());
 }
 
 CORE_END2END_TEST(RetryTest, RetryDeadlineWithMultipleSendBatches) {
+  SKIP_IF_V3();  // Need to convert filter
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<DeadlineCancellationMode>());

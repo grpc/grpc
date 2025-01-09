@@ -26,7 +26,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
@@ -234,16 +234,10 @@ TEST_P(XdsGcpAuthnEnd2endTest, CacheRetainedAcrossXdsUpdates) {
       balancer_.get(), BuildListenerWithGcpAuthnFilter(), route_config);
   // Send RPCs with the header "foo" and wait for them to start failing.
   // When they do, we know that the client has seen the update.
-  SendRpcsUntil(
-      DEBUG_LOCATION,
-      [&](const RpcResult& result) {
-        if (result.status.ok()) return true;
-        EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-        EXPECT_EQ("Matching route has inappropriate action",
-                  result.status.error_message());
-        return false;
-      },
-      /*timeout_ms=*/15000, RpcOptions().set_metadata({{"foo", "bar"}}));
+  SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                       "Matching route has inappropriate action",
+                       /*timeout_ms=*/15000,
+                       RpcOptions().set_metadata({{"foo", "bar"}}));
   // Now send an RPC without the header, which will go through the new
   // instance of the GCP auth filter.
   CheckRpcSendOk(DEBUG_LOCATION);

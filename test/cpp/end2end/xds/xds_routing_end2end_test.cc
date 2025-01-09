@@ -24,7 +24,7 @@
 #include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -64,9 +64,9 @@ TEST_P(LdsTest, NotAnApiListener) {
   ServerHcmAccessor().Pack(hcm, &listener);
   balancer_->ads_service()->SetLdsResource(listener);
   // RPCs should fail.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat(kServerName, ": UNAVAILABLE: not an API listener"));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      absl::StrCat("empty address list \\(LDS resource ",
+                                   kServerName, ": not an API listener\\)"));
   // We should have ACKed the LDS resource.
   const auto deadline =
       absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
@@ -100,14 +100,10 @@ TEST_P(LdsDeletionTest, ListenerDeleted) {
   // Unset LDS resource.
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
   // Wait for RPCs to start failing.
-  SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
-    if (result.status.ok()) return true;  // Keep going.
-    EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-    EXPECT_EQ(result.status.error_message(),
-              absl::StrCat("empty address list: ", kServerName,
-                           ": xDS listener resource does not exist"));
-    return false;
-  });
+  SendRpcsUntilFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("empty address list \\(LDS resource ", kServerName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"));
   // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->lds_response_state();
   ASSERT_TRUE(response_state.has_value());
@@ -428,10 +424,12 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       absl::StrCat(
+          "empty address list \\(",
+          (GetParam().enable_rds_testing() ? "RDS" : "LDS"), " resource ",
           (GetParam().enable_rds_testing() ? kDefaultRouteConfigurationName
                                            : kServerName),
-          ": UNAVAILABLE: could not find VirtualHost for ", kServerName,
-          " in RouteConfiguration"));
+          ": could not find VirtualHost for ", kServerName,
+          " in RouteConfiguration\\)"));
   // Do a bit of polling, to allow the ACK to get to the ADS server.
   channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100));
   auto response_state = RouteConfigurationResponseState(balancer_.get());

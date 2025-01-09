@@ -14,7 +14,7 @@
 
 #include "src/core/client_channel/direct_channel.h"
 
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/client_call.h"
@@ -59,7 +59,7 @@ void DirectChannel::StartCall(UnstartedCallHandler unstarted_handler) {
       "start",
       [interception_chain = interception_chain_, unstarted_handler]() mutable {
         interception_chain->StartCall(std::move(unstarted_handler));
-        return []() { return Empty{}; };
+        return []() {};
       });
 }
 

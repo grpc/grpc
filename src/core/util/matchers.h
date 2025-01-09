@@ -91,20 +91,15 @@ class HeaderMatcher {
   // the corresponding StringMatcher::Type enum values, so that it's safe to
   // convert by casting when delegating to StringMatcher.
   static_assert(static_cast<StringMatcher::Type>(Type::kExact) ==
-                    StringMatcher::Type::kExact,
-                "");
+                StringMatcher::Type::kExact);
   static_assert(static_cast<StringMatcher::Type>(Type::kPrefix) ==
-                    StringMatcher::Type::kPrefix,
-                "");
+                StringMatcher::Type::kPrefix);
   static_assert(static_cast<StringMatcher::Type>(Type::kSuffix) ==
-                    StringMatcher::Type::kSuffix,
-                "");
+                StringMatcher::Type::kSuffix);
   static_assert(static_cast<StringMatcher::Type>(Type::kSafeRegex) ==
-                    StringMatcher::Type::kSafeRegex,
-                "");
+                StringMatcher::Type::kSafeRegex);
   static_assert(static_cast<StringMatcher::Type>(Type::kContains) ==
-                    StringMatcher::Type::kContains,
-                "");
+                StringMatcher::Type::kContains);
 
   // Creates HeaderMatcher instance. Returns error status on failure.
   static absl::StatusOr<HeaderMatcher> Create(absl::string_view name, Type type,
@@ -114,6 +109,11 @@ class HeaderMatcher {
                                               bool present_match = false,
                                               bool invert_match = false,
                                               bool case_sensitive = true);
+
+  // Creates a HeaderMatcher from an existing StringMatcher instance.
+  static HeaderMatcher CreateFromStringMatcher(absl::string_view name,
+                                               StringMatcher matcher,
+                                               bool invert_match);
 
   HeaderMatcher() = default;
   HeaderMatcher(const HeaderMatcher& other);

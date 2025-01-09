@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_EXTENSIONS_FILTERS_NETWORK_HTTP_CONNECTION_MANAGER_V3_HTTP_CONNECTION_MANAGER_PROTO_UPB_H_
-#define ENVOY_EXTENSIONS_FILTERS_NETWORK_HTTP_CONNECTION_MANAGER_V3_HTTP_CONNECTION_MANAGER_PROTO_UPB_H_
+#ifndef ENVOY_EXTENSIONS_FILTERS_NETWORK_HTTP_CONNECTION_MANAGER_V3_HTTP_CONNECTION_MANAGER_PROTO_UPB_H__UPB_H_
+#define ENVOY_EXTENSIONS_FILTERS_NETWORK_HTTP_CONNECTION_MANAGER_V3_HTTP_CONNECTION_MANAGER_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -1110,6 +1110,18 @@ UPB_INLINE bool envoy_extensions_filters_network_http_connection_manager_v3_Http
                                     &default_val, &ret);
   return ret;
 }
+UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_clear_http1_safe_max_connection_duration(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
+  const upb_MiniTableField field = {58, UPB_SIZE(201, 60), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE bool envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http1_safe_max_connection_duration(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {58, UPB_SIZE(201, 60), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_set_codec_type(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager *msg, int32_t value) {
   const upb_MiniTableField field = {1, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
@@ -1739,6 +1751,10 @@ UPB_INLINE struct envoy_extensions_filters_network_http_connection_manager_v3_Ht
 }
 UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_set_append_local_overload(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager *msg, bool value) {
   const upb_MiniTableField field = {57, UPB_SIZE(200, 59), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_set_http1_safe_max_connection_duration(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager *msg, bool value) {
+  const upb_MiniTableField field = {58, UPB_SIZE(201, 60), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
@@ -4294,4 +4310,4 @@ UPB_INLINE struct envoy_extensions_filters_network_http_connection_manager_v3_Ht
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_EXTENSIONS_FILTERS_NETWORK_HTTP_CONNECTION_MANAGER_V3_HTTP_CONNECTION_MANAGER_PROTO_UPB_H_ */
+#endif  /* ENVOY_EXTENSIONS_FILTERS_NETWORK_HTTP_CONNECTION_MANAGER_V3_HTTP_CONNECTION_MANAGER_PROTO_UPB_H__UPB_H_ */

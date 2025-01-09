@@ -24,7 +24,7 @@
 #include "absl/strings/str_split.h"
 #include "envoy/extensions/filters/http/stateful_session/v3/stateful_session.pb.h"
 #include "envoy/extensions/http/stateful_session/cookie/v3/cookie.pb.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -459,6 +459,48 @@ TEST_P(OverrideHostTest, DrainingExcludedFromOverrideSet) {
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
   EXPECT_EQ(2, backends_[2]->backend_service()->request_count());
+  ResetBackendCounters();
+}
+
+TEST_P(OverrideHostTest, UnhealthyEndpoint) {
+  CreateAndStartBackends(3);
+  Cluster cluster = default_cluster_;
+  auto* lb_config = cluster.mutable_common_lb_config();
+  auto* override_health_status_set = lb_config->mutable_override_host_status();
+  override_health_status_set->add_statuses(HealthStatus::HEALTHY);
+  override_health_status_set->add_statuses(HealthStatus::DRAINING);
+  override_health_status_set->add_statuses(HealthStatus::DEGRADED);
+  override_health_status_set->add_statuses(HealthStatus::UNKNOWN);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithStatefulSessionFilter(),
+                                   default_route_config_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(
+      EdsResourceArgs({{"locality0",
+                        {CreateEndpoint(0, HealthStatus::HEALTHY),
+                         CreateEndpoint(1, HealthStatus::HEALTHY)}}})));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  CheckRpcSendOk(DEBUG_LOCATION, 4);
+  EXPECT_EQ(2, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
+  ResetBackendCounters();
+  // Get a cookie for backends_[0].
+  auto session_cookie = GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 0);
+  ASSERT_TRUE(session_cookie.has_value());
+  LOG(INFO) << session_cookie->first << " " << session_cookie->second;
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(
+      EdsResourceArgs({{"locality0",
+                        {CreateEndpoint(0, HealthStatus::UNHEALTHY),
+                         CreateEndpoint(1, HealthStatus::HEALTHY),
+                         CreateEndpoint(2, HealthStatus::HEALTHY)}}})));
+  WaitForAllBackends(DEBUG_LOCATION, 2);
+  // Override for the draining host is not honored, RR is used instead.
+  CheckRpcSendOk(DEBUG_LOCATION, 2,
+                 RpcOptions().set_metadata({*session_cookie}));
+  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(1, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(1, backends_[2]->backend_service()->request_count());
   ResetBackendCounters();
 }
 

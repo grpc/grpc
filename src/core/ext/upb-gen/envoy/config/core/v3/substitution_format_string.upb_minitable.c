@@ -38,7 +38,7 @@ const upb_MiniTable envoy__config__core__v3__JsonFormatOptions_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__core__v3__JsonFormatOptions_msg_init_ptr = &envoy__config__core__v3__JsonFormatOptions_msg_init;
-static const upb_MiniTableSubInternal envoy_config_core_v3_SubstitutionFormatString_submsgs[4] = {
+static const upb_MiniTableSubInternal envoy_config_core_v3_SubstitutionFormatString__submsgs[4] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
@@ -56,7 +56,7 @@ static const upb_MiniTableField envoy_config_core_v3_SubstitutionFormatString__f
 };
 
 const upb_MiniTable envoy__config__core__v3__SubstitutionFormatString_msg_init = {
-  &envoy_config_core_v3_SubstitutionFormatString_submsgs[0],
+  &envoy_config_core_v3_SubstitutionFormatString__submsgs[0],
   &envoy_config_core_v3_SubstitutionFormatString__fields[0],
   UPB_SIZE(40, 64), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED

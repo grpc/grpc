@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_METADATA_V3_METADATA_PROTO_UPB_H_
-#define ENVOY_TYPE_METADATA_V3_METADATA_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_METADATA_V3_METADATA_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_METADATA_V3_METADATA_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -550,4 +550,4 @@ UPB_INLINE char* envoy_type_metadata_v3_MetadataKind_Host_serialize_ex(const env
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_METADATA_V3_METADATA_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_METADATA_V3_METADATA_PROTO_UPB_H__UPB_H_ */

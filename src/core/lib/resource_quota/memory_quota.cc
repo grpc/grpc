@@ -130,7 +130,17 @@ class SliceRefCount : public grpc_slice_refcount {
   size_t size_;
 };
 
+std::atomic<double> container_memory_pressure{0.0};
+
 }  // namespace
+
+void SetContainerMemoryPressure(double pressure) {
+  container_memory_pressure.store(pressure, std::memory_order_relaxed);
+}
+
+double ContainerMemoryPressure() {
+  return container_memory_pressure.load(std::memory_order_relaxed);
+}
 
 //
 // Reclaimer
@@ -646,7 +656,8 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   double size = quota_size;
   if (size < 1) return PressureInfo{1, 1, 1};
   PressureInfo pressure_info;
-  pressure_info.instantaneous_pressure = std::max(0.0, (size - free) / size);
+  pressure_info.instantaneous_pressure =
+      std::max({0.0, (size - free) / size, ContainerMemoryPressure()});
   pressure_info.pressure_control_value =
       pressure_tracker_.AddSampleAndGetControlValue(
           pressure_info.instantaneous_pressure);

@@ -50,10 +50,10 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -1630,8 +1630,9 @@ TEST_F(RoundRobinTest, Updates) {
   ports.clear();
   response_generator.SetNextResolution(ports);
   WaitForChannelNotReady(channel.get());
-  CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-                      "empty address list: fake resolver empty address list");
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+      "empty address list \\(fake resolver empty address list\\)");
   servers_[0]->service_.ResetCounters();
   // Next update introduces servers_[1], making the channel recover.
   LOG(INFO) << "*** BACK TO SECOND BACKEND ***";
@@ -1744,8 +1745,7 @@ TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
   result.addresses.emplace();
   result.resolution_note = "injected error";
   result.result_health_callback = [&](absl::Status status) {
-    EXPECT_EQ(absl::StatusCode::kUnavailable, status.code());
-    EXPECT_EQ("empty address list: injected error", status.message()) << status;
+    EXPECT_EQ(status, absl::UnavailableError("empty address list"));
     notification.Notify();
   };
   response_generator.SetResponse(std::move(result));
@@ -1758,6 +1758,9 @@ TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
       WaitForChannelState(channel.get(), predicate, /*try_to_connect=*/true));
   // Callback should have been run.
   notification.WaitForNotification();
+  // Make sure RPCs fail with the right status.
+  CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+                      "empty address list \\(injected error\\)");
   // Return a valid address.
   LOG(INFO) << "****** SENDING NEXT RESOLVER RESULT *******";
   StartServers(1);

@@ -21,6 +21,9 @@
 #include <tuple>
 #include <utility>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 
@@ -31,8 +34,20 @@ namespace promise_detail {
 // Implementation of mapping combinator - use this via the free function below!
 // Promise is the type of promise to poll on, Fn is a function that takes the
 // result of Promise and maps it to some new type.
+template <typename Promise, typename Fn, typename SfinaeVoid = void>
+class Map;
+
 template <typename Promise, typename Fn>
-class Map {
+class Map<Promise, Fn,
+          absl::enable_if_t<!std::is_void<
+#if (defined(__cpp_lib_is_invocable) && __cpp_lib_is_invocable >= 201703L) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
+              std::invoke_result_t<Fn, typename PromiseLike<Promise>::Result>
+#else
+              typename std::result_of<Fn(
+                  typename PromiseLike<Promise>::Result)>::type
+#endif
+              >::value>> {
  public:
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Promise promise, Fn fn)
       : promise_(std::move(promise)), fn_(std::move(fn)) {}
@@ -52,6 +67,45 @@ class Map {
     Poll<PromiseResult> r = promise_();
     if (auto* p = r.value_if_ready()) {
       return fn_(std::move(*p));
+    }
+    return Pending();
+  }
+
+ private:
+  PromiseLike<Promise> promise_;
+  Fn fn_;
+};
+
+template <typename Promise, typename Fn>
+class Map<Promise, Fn,
+          absl::enable_if_t<std::is_void<
+#if (defined(__cpp_lib_is_invocable) && __cpp_lib_is_invocable >= 201703L) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
+              std::invoke_result_t<Fn, typename PromiseLike<Promise>::Result>
+#else
+              typename std::result_of<Fn(
+                  typename PromiseLike<Promise>::Result)>::type
+#endif
+              >::value>> {
+ public:
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Promise promise, Fn fn)
+      : promise_(std::move(promise)), fn_(std::move(fn)) {}
+
+  Map(const Map&) = delete;
+  Map& operator=(const Map&) = delete;
+  // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
+  Map(Map&& other) = default;
+  // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
+  Map& operator=(Map&& other) = default;
+
+  using PromiseResult = typename PromiseLike<Promise>::Result;
+  using Result = Empty;
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
+    Poll<PromiseResult> r = promise_();
+    if (auto* p = r.value_if_ready()) {
+      fn_(std::move(*p));
+      return Empty{};
     }
     return Pending();
   }
@@ -103,6 +157,45 @@ struct JustElem {
     return std::get<kElem>(t);
   }
 };
+
+namespace promise_detail {
+template <typename Fn>
+class MapError {
+ public:
+  explicit MapError(Fn fn) : fn_(std::move(fn)) {}
+  absl::Status operator()(absl::Status status) {
+    if (status.ok()) return status;
+    return fn_(std::move(status));
+  }
+  template <typename T>
+  absl::StatusOr<T> operator()(absl::StatusOr<T> status) {
+    if (status.ok()) return status;
+    return fn_(std::move(status.status()));
+  }
+
+ private:
+  Fn fn_;
+};
+}  // namespace promise_detail
+
+// Map status->better status in the case of errors
+template <typename Promise, typename Fn>
+auto MapErrors(Promise promise, Fn fn) {
+  return Map(std::move(promise), promise_detail::MapError<Fn>(std::move(fn)));
+}
+
+// Simple mapper to add a prefix to the message of an error
+template <typename Promise>
+auto AddErrorPrefix(absl::string_view prefix, Promise promise) {
+  return MapErrors(std::move(promise), [prefix](absl::Status status) {
+    absl::Status out(status.code(), absl::StrCat(prefix, status.message()));
+    status.ForEachPayload(
+        [&out](absl::string_view name, const absl::Cord& value) {
+          out.SetPayload(name, value);
+        });
+    return out;
+  });
+}
 
 }  // namespace grpc_core
 

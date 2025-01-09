@@ -80,7 +80,6 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
         [self = WeakRefAsSubclass<ServerCall>(), error = std::move(error)] {
           self->call_handler_.PushServerTrailingMetadata(
               CancelledServerMetadataFromStatus(error));
-          return Empty{};
         });
   }
   bool is_trailers_only() const override {

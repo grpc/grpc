@@ -41,9 +41,9 @@
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 #include "src/core/client_channel/backup_poller.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/load_balancing/rls/rls.h"
@@ -1373,7 +1373,7 @@ TEST_F(RlsEnd2endTest, ConnectivityStateTransientFailure) {
                                     BuildRlsResponse({"invalid_target"}));
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "empty address list: no address in fixed_address_lb policy",
+      "empty address list (no address in fixed_address_lb policy)",
       RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);

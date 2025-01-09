@@ -48,12 +48,12 @@
 #include "re2/re2.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/config_selector.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -137,16 +137,9 @@ class XdsResolver final : public Resolver {
     explicit XdsWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
 
-    void OnUpdate(RefCountedPtr<const XdsConfig> config) override {
+    void OnUpdate(
+        absl::StatusOr<RefCountedPtr<const XdsConfig>> config) override {
       resolver_->OnUpdate(std::move(config));
-    }
-
-    void OnError(absl::string_view context, absl::Status status) override {
-      resolver_->OnError(context, std::move(status));
-    }
-
-    void OnResourceDoesNotExist(std::string context) override {
-      resolver_->OnResourceDoesNotExist(std::move(context));
     }
 
    private:
@@ -360,12 +353,11 @@ class XdsResolver final : public Resolver {
     return it->second->Ref();
   }
 
-  void OnUpdate(RefCountedPtr<const XdsConfig> config);
-  void OnError(absl::string_view context, absl::Status status);
-  void OnResourceDoesNotExist(std::string context);
+  void OnUpdate(absl::StatusOr<RefCountedPtr<const XdsConfig>> config);
 
   absl::StatusOr<RefCountedPtr<ServiceConfig>> CreateServiceConfig();
   void GenerateResult();
+  void GenerateErrorResult(std::string error);
   void MaybeRemoveUnusedClusters();
 
   std::shared_ptr<WorkSerializer> work_serializer_;
@@ -509,7 +501,7 @@ XdsResolver::RouteConfigData::CreateMethodConfig(
   const auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
       resolver->current_config_->listener->listener);
   auto result = XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
-      static_cast<const GrpcXdsBootstrap&>(resolver->xds_client_->bootstrap())
+      DownCast<const GrpcXdsBootstrap&>(resolver->xds_client_->bootstrap())
           .http_filter_registry(),
       hcm.http_filters, *resolver->current_config_->virtual_host, route,
       cluster_weight, resolver->args_);
@@ -973,42 +965,21 @@ void XdsResolver::ShutdownLocked() {
   }
 }
 
-void XdsResolver::OnUpdate(RefCountedPtr<const XdsConfig> config) {
+void XdsResolver::OnUpdate(
+    absl::StatusOr<RefCountedPtr<const XdsConfig>> config) {
   GRPC_TRACE_LOG(xds_resolver, INFO)
       << "[xds_resolver " << this << "] received updated xDS config";
   if (xds_client_ == nullptr) return;
-  current_config_ = std::move(config);
+  if (!config.ok()) {
+    LOG(ERROR) << "[xds_resolver " << this << "] config error ("
+               << config.status()
+               << ") -- clearing update and returning empty service config";
+    current_config_.reset();
+    GenerateErrorResult(std::string(config.status().message()));
+    return;
+  }
+  current_config_ = std::move(*config);
   GenerateResult();
-}
-
-void XdsResolver::OnError(absl::string_view context, absl::Status status) {
-  LOG(ERROR) << "[xds_resolver " << this
-             << "] received error from XdsClient: " << context << ": "
-             << status;
-  if (xds_client_ == nullptr) return;
-  status =
-      absl::UnavailableError(absl::StrCat(context, ": ", status.ToString()));
-  Result result;
-  result.addresses = status;
-  result.service_config = std::move(status);
-  result.args =
-      args_.SetObject(xds_client_.Ref(DEBUG_LOCATION, "xds resolver result"));
-  result_handler_->ReportResult(std::move(result));
-}
-
-void XdsResolver::OnResourceDoesNotExist(std::string context) {
-  LOG(ERROR) << "[xds_resolver " << this
-             << "] LDS/RDS resource does not exist -- clearing "
-                "update and returning empty service config";
-  if (xds_client_ == nullptr) return;
-  current_config_.reset();
-  Result result;
-  result.addresses.emplace();
-  result.service_config = ServiceConfigImpl::Create(args_, "{}");
-  CHECK(result.service_config.ok());
-  result.resolution_note = std::move(context);
-  result.args = args_;
-  result_handler_->ReportResult(std::move(result));
 }
 
 absl::StatusOr<RefCountedPtr<ServiceConfig>>
@@ -1071,8 +1042,8 @@ void XdsResolver::GenerateResult() {
   auto route_config_data =
       RouteConfigData::Create(this, hcm.http_max_stream_duration);
   if (!route_config_data.ok()) {
-    OnError("could not create ConfigSelector",
-            absl::UnavailableError(route_config_data.status().message()));
+    GenerateErrorResult(absl::StrCat("could not create ConfigSelector: ",
+                                     route_config_data.status().message()));
     return;
   }
   auto config_selector = MakeRefCounted<XdsConfigSelector>(
@@ -1091,6 +1062,16 @@ void XdsResolver::GenerateResult() {
           .SetObject(config_selector)
           .SetObject(current_config_)
           .SetObject(dependency_mgr_->Ref());
+  result_handler_->ReportResult(std::move(result));
+}
+
+void XdsResolver::GenerateErrorResult(std::string error) {
+  Result result;
+  result.addresses.emplace();
+  result.service_config = ServiceConfigImpl::Create(args_, "{}");
+  CHECK(result.service_config.ok());
+  result.resolution_note = std::move(error);
+  result.args = args_;
   result_handler_->ReportResult(std::move(result));
 }
 

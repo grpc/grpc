@@ -362,6 +362,41 @@ class YodelTest : public ::testing::Test {
         .Start(std::move(actions)...);
   }
 
+  class NoContext {
+   public:
+    explicit NoContext(grpc_event_engine::experimental::EventEngine* ee) {
+      auto arena = SimpleArenaAllocator()->MakeArena();
+      arena->SetContext(ee);
+      party_ = Party::Make(std::move(arena));
+    }
+
+    template <typename PromiseFactory>
+    void SpawnInfallible(absl::string_view name,
+                         PromiseFactory promise_factory) {
+      party_->Spawn(
+          name,
+          [party = party_,
+           promise_factory = std::move(promise_factory)]() mutable {
+            promise_detail::OncePromiseFactory<void, PromiseFactory> factory(
+                std::move(promise_factory));
+            return [party, underlying = factory.Make()]() mutable {
+              return underlying();
+            };
+          },
+          [](Empty) {});
+    }
+
+   private:
+    RefCountedPtr<Party> party_;
+  };
+
+  template <typename... Actions>
+  void SpawnTestSeqWithoutContext(
+      yodel_detail::NameAndLocation name_and_location, Actions... actions) {
+    SpawnTestSeq(NoContext{event_engine().get()}, name_and_location,
+                 std::move(actions)...);
+  }
+
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
     auto arena = state_->call_arena_allocator->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
@@ -390,6 +425,10 @@ class YodelTest : public ::testing::Test {
     return state_->event_engine;
   }
 
+  void SetMaxRandomMessageSize(size_t max_random_message_size) {
+    max_random_message_size_ = max_random_message_size;
+  }
+
  private:
   class WatchDog;
   struct State {
@@ -416,6 +455,7 @@ class YodelTest : public ::testing::Test {
   fuzzing_event_engine::Actions actions_;
   std::unique_ptr<State> state_;
   std::queue<std::shared_ptr<yodel_detail::ActionState>> pending_actions_;
+  size_t max_random_message_size_ = 1024 * 1024;
 };
 
 }  // namespace grpc_core

@@ -25,7 +25,9 @@ grpc_cc_library(
     testonly = True,
     hdrs = ["poll_matcher.h"],
     external_deps = ["gtest"],
-    visibility = ["//test/core:__subpackages__"],
+    visibility = [
+        "//test/core:__subpackages__",
+    ],
     deps = ["//src/core:poll"],
 )
 
@@ -313,7 +315,10 @@ grpc_cc_test(
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:try_seq"],
+    deps = [
+        "poll_matcher",
+        "//src/core:try_seq",
+    ],
 )
 
 grpc_cc_test(

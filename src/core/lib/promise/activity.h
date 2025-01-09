@@ -121,9 +121,14 @@ class Waker {
     return wakeable_and_arg_.ActivityDebugTag();
   }
 
-  std::string DebugString() {
+  std::string DebugString() const {
     return absl::StrFormat("Waker{%p, %d}", wakeable_and_arg_.wakeable,
                            wakeable_and_arg_.wakeup_mask);
+  }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const Waker& waker) {
+    sink.Append(waker.DebugString());
   }
 
   // This is for tests to assert that a waker is occupied or not.
@@ -167,6 +172,11 @@ class IntraActivityWaiter {
 
   std::string DebugString() const;
 
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const IntraActivityWaiter& waker) {
+    sink.Append(waker.DebugString());
+  }
+
  private:
   WakeupMask wakeups_ = 0;
 };
@@ -205,7 +215,7 @@ class Activity : public Orphanable {
   //   locked
   // - back up that assertion with a runtime check in debug builds (it's
   //   prohibitively expensive in non-debug builds)
-  static Activity* current() { return g_current_activity_; }
+  static Activity* current() { return current_ref(); }
 
   // Produce an activity-owning Waker. The produced waker will keep the activity
   // alive until it's awoken or dropped.
@@ -222,17 +232,16 @@ class Activity : public Orphanable {
  protected:
   // Check if this activity is the current activity executing on the current
   // thread.
-  bool is_current() const { return this == g_current_activity_; }
+  bool is_current() const { return this == current(); }
   // Check if there is an activity executing on the current thread.
-  static bool have_current() { return g_current_activity_ != nullptr; }
+  static bool have_current() { return current() != nullptr; }
   // Set the current activity at construction, clean it up at destruction.
   class ScopedActivity {
    public:
-    explicit ScopedActivity(Activity* activity)
-        : prior_activity_(g_current_activity_) {
-      g_current_activity_ = activity;
+    explicit ScopedActivity(Activity* activity) : prior_activity_(current()) {
+      current_ref() = activity;
     }
-    ~ScopedActivity() { g_current_activity_ = prior_activity_; }
+    ~ScopedActivity() { current_ref() = prior_activity_; }
     ScopedActivity(const ScopedActivity&) = delete;
     ScopedActivity& operator=(const ScopedActivity&) = delete;
 
@@ -241,9 +250,21 @@ class Activity : public Orphanable {
   };
 
  private:
+  static Activity*& current_ref() {
+#if !defined(_WIN32) || !defined(_DLL)
+    return g_current_activity_;
+#else
+    // Set during RunLoop to the Activity that's executing.
+    // Being set implies that mu_ is held.
+    static thread_local Activity* current_activity;
+    return current_activity;
+#endif
+  }
+#if !defined(_WIN32) || !defined(_DLL)
   // Set during RunLoop to the Activity that's executing.
   // Being set implies that mu_ is held.
   static thread_local Activity* g_current_activity_;
+#endif
 };
 
 // Owned pointer to one Activity.

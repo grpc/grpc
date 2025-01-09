@@ -34,7 +34,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -58,8 +58,8 @@
 #include <address_sorting/address_sorting.h>
 
 #include "absl/strings/str_cat.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
@@ -198,12 +198,12 @@ AresClientChannelDNSResolver::AresClientChannelDNSResolver(
     ResolverArgs args, Duration min_time_between_resolutions)
     : PollingResolver(std::move(args), min_time_between_resolutions,
                       BackOff::Options()
-                          .set_initial_backoff(Duration::Milliseconds(
-                              GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000))
+                          .set_initial_backoff(Duration::Seconds(
+                              GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS))
                           .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
                           .set_jitter(GRPC_DNS_RECONNECT_JITTER)
-                          .set_max_backoff(Duration::Milliseconds(
-                              GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
+                          .set_max_backoff(Duration::Seconds(
+                              GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS)),
                       &cares_resolver_trace),
       request_service_config_(
           !channel_args()

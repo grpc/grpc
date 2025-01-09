@@ -35,7 +35,6 @@ CallInitiator TransportTest::CreateCall(
       "start-call", [this, handler = call.handler]() mutable {
         transport_pair_.client->client_transport()->StartCall(
             handler.StartCall());
-        return Empty{};
       });
   return std::move(call.initiator);
 }

@@ -78,16 +78,6 @@ gpr_timespec (*g_orig_gpr_now_impl)(gpr_clock_type clock_type);
 FuzzingEventEngine::FuzzingEventEngine(
     Options options, const fuzzing_event_engine::Actions& actions)
     : max_delay_{options.max_delay_write, options.max_delay_run_after} {
-  tasks_by_id_.clear();
-  tasks_by_time_.clear();
-  next_task_id_ = 1;
-  current_tick_ = 0;
-  // Start at 5 seconds after the epoch.
-  // This needs to be more than 1, and otherwise is kind of arbitrary.
-  // The grpc_core::Timer code special cases the zero second time period after
-  // epoch to allow for some fancy atomic stuff.
-  now_ = Time() + std::chrono::seconds(5);
-
   // Allow the fuzzer to assign ports.
   // Once this list is exhausted, we fall back to a deterministic algorithm.
   for (auto port : actions.assign_ports()) {
@@ -140,33 +130,18 @@ gpr_timespec FuzzingEventEngine::NowAsTimespec(gpr_clock_type clock_type) {
 }
 
 void FuzzingEventEngine::Tick(Duration max_time) {
-  bool incremented_time = false;
-  while (true) {
+  if (IsSaneTimerEnvironment()) {
     std::vector<absl::AnyInvocable<void()>> to_run;
+    Duration incr = max_time;
+    DCHECK_GT(incr.count(), Duration::zero().count());
     {
       grpc_core::MutexLock lock(&*mu_);
       grpc_core::MutexLock now_lock(&*now_mu_);
-      if (!incremented_time) {
-        Duration incr = max_time;
-        // TODO(ctiller): look at tasks_by_time_ and jump forward (once iomgr
-        // timers are gone)
-        if (!tasks_by_time_.empty()) {
-          incr = std::min(incr, tasks_by_time_.begin()->first - now_);
-        }
-        if (incr < exponential_gate_time_increment_) {
-          exponential_gate_time_increment_ = std::chrono::milliseconds(1);
-        } else {
-          incr = std::min(incr, exponential_gate_time_increment_);
-          exponential_gate_time_increment_ +=
-              exponential_gate_time_increment_ / 1000;
-        }
-        incr = std::max(incr, std::chrono::duration_cast<Duration>(
-                                  std::chrono::milliseconds(1)));
-        now_ += incr;
-        CHECK_GE(now_.time_since_epoch().count(), 0);
-        ++current_tick_;
-        incremented_time = true;
+      if (!tasks_by_time_.empty()) {
+        incr = std::min(incr, tasks_by_time_.begin()->first - now_);
       }
+      now_ += incr;
+      CHECK_GE(now_.time_since_epoch().count(), 0);
       // Find newly expired timers.
       while (!tasks_by_time_.empty() && tasks_by_time_.begin()->first <= now_) {
         auto& task = *tasks_by_time_.begin()->second;
@@ -177,9 +152,56 @@ void FuzzingEventEngine::Tick(Duration max_time) {
         tasks_by_time_.erase(tasks_by_time_.begin());
       }
     }
+    OnClockIncremented(incr);
     if (to_run.empty()) return;
     for (auto& closure : to_run) {
       closure();
+    }
+  } else {
+    bool incremented_time = false;
+    while (true) {
+      std::vector<absl::AnyInvocable<void()>> to_run;
+      Duration incr = Duration::zero();
+      {
+        grpc_core::MutexLock lock(&*mu_);
+        grpc_core::MutexLock now_lock(&*now_mu_);
+        if (!incremented_time) {
+          incr = max_time;
+          // TODO(ctiller): look at tasks_by_time_ and jump forward (once iomgr
+          // timers are gone)
+          if (!tasks_by_time_.empty()) {
+            incr = std::min(incr, tasks_by_time_.begin()->first - now_);
+          }
+          if (incr < exponential_gate_time_increment_) {
+            exponential_gate_time_increment_ = std::chrono::milliseconds(1);
+          } else {
+            incr = std::min(incr, exponential_gate_time_increment_);
+            exponential_gate_time_increment_ +=
+                exponential_gate_time_increment_ / 1000;
+          }
+          incr = std::max(incr, std::chrono::duration_cast<Duration>(
+                                    std::chrono::milliseconds(1)));
+          now_ += incr;
+          CHECK_GE(now_.time_since_epoch().count(), 0);
+          ++current_tick_;
+          incremented_time = true;
+        }
+        // Find newly expired timers.
+        while (!tasks_by_time_.empty() &&
+               tasks_by_time_.begin()->first <= now_) {
+          auto& task = *tasks_by_time_.begin()->second;
+          tasks_by_id_.erase(task.id);
+          if (task.closure != nullptr) {
+            to_run.push_back(std::move(task.closure));
+          }
+          tasks_by_time_.erase(tasks_by_time_.begin());
+        }
+      }
+      OnClockIncremented(incr);
+      if (to_run.empty()) return;
+      for (auto& closure : to_run) {
+        closure();
+      }
     }
   }
 }

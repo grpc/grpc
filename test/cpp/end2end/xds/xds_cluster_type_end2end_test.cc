@@ -25,8 +25,8 @@
 #include "absl/strings/str_cat.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
 #include "src/core/client_channel/backup_poller.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
@@ -798,8 +798,8 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   }
   // When an RPC fails, we know the channel has seen the update.
   constexpr char kErrorMessage[] =
-      "empty address list: DNS resolution failed for server.example.com:443: "
-      "UNAVAILABLE: injected error";
+      "empty address list \\(DNS resolution failed for server.example.com:443: "
+      "UNAVAILABLE: injected error\\)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send an EDS update that moves locality1 to priority 0.
   args1 = EdsResourceArgs({

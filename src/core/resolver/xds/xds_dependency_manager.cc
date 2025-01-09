@@ -21,7 +21,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_join.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/util/match.h"
@@ -51,7 +51,7 @@ class XdsDependencyManager::ListenerWatcher final
       : dependency_mgr_(std::move(dependency_mgr)) {}
 
   void OnResourceChanged(
-      std::shared_ptr<const XdsListenerResource> listener,
+      absl::StatusOr<std::shared_ptr<const XdsListenerResource>> listener,
       RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [dependency_mgr = dependency_mgr_, listener = std::move(listener),
@@ -61,26 +61,13 @@ class XdsDependencyManager::ListenerWatcher final
         DEBUG_LOCATION);
   }
 
-  void OnError(
+  void OnAmbientError(
       absl::Status status,
       RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [dependency_mgr = dependency_mgr_, status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
-          dependency_mgr->OnError(dependency_mgr->listener_resource_name_,
-                                  std::move(status));
-        },
-        DEBUG_LOCATION);
-  }
-
-  void OnResourceDoesNotExist(
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
-    dependency_mgr_->work_serializer_->Run(
-        [dependency_mgr = dependency_mgr_,
-         read_delay_handle = std::move(read_delay_handle)]() {
-          dependency_mgr->OnResourceDoesNotExist(
-              absl::StrCat(dependency_mgr->listener_resource_name_,
-                           ": xDS listener resource does not exist"));
+          dependency_mgr->OnListenerAmbientError(std::move(status));
         },
         DEBUG_LOCATION);
   }
@@ -101,7 +88,8 @@ class XdsDependencyManager::RouteConfigWatcher final
       : dependency_mgr_(std::move(dependency_mgr)), name_(std::move(name)) {}
 
   void OnResourceChanged(
-      std::shared_ptr<const XdsRouteConfigResource> route_config,
+      absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
+          route_config,
       RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<RouteConfigWatcher>(),
@@ -113,25 +101,14 @@ class XdsDependencyManager::RouteConfigWatcher final
         DEBUG_LOCATION);
   }
 
-  void OnError(
+  void OnAmbientError(
       absl::Status status,
       RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<RouteConfigWatcher>(), status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
-          self->dependency_mgr_->OnError(self->name_, std::move(status));
-        },
-        DEBUG_LOCATION);
-  }
-
-  void OnResourceDoesNotExist(
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
-    dependency_mgr_->work_serializer_->Run(
-        [self = RefAsSubclass<RouteConfigWatcher>(),
-         read_delay_handle = std::move(read_delay_handle)]() {
-          self->dependency_mgr_->OnResourceDoesNotExist(absl::StrCat(
-              self->name_,
-              ": xDS route configuration resource does not exist"));
+          self->dependency_mgr_->OnRouteConfigAmbientError(self->name_,
+                                                           std::move(status));
         },
         DEBUG_LOCATION);
   }
@@ -153,7 +130,7 @@ class XdsDependencyManager::ClusterWatcher final
       : dependency_mgr_(std::move(dependency_mgr)), name_(name) {}
 
   void OnResourceChanged(
-      std::shared_ptr<const XdsClusterResource> cluster,
+      absl::StatusOr<std::shared_ptr<const XdsClusterResource>> cluster,
       RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<ClusterWatcher>(), cluster = std::move(cluster),
@@ -164,23 +141,14 @@ class XdsDependencyManager::ClusterWatcher final
         DEBUG_LOCATION);
   }
 
-  void OnError(
+  void OnAmbientError(
       absl::Status status,
       RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<ClusterWatcher>(), status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
-          self->dependency_mgr_->OnClusterError(self->name_, std::move(status));
-        },
-        DEBUG_LOCATION);
-  }
-
-  void OnResourceDoesNotExist(
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
-    dependency_mgr_->work_serializer_->Run(
-        [self = RefAsSubclass<ClusterWatcher>(),
-         read_delay_handle = std::move(read_delay_handle)]() {
-          self->dependency_mgr_->OnClusterDoesNotExist(self->name_);
+          self->dependency_mgr_->OnClusterAmbientError(self->name_,
+                                                       std::move(status));
         },
         DEBUG_LOCATION);
   }
@@ -202,7 +170,7 @@ class XdsDependencyManager::EndpointWatcher final
       : dependency_mgr_(std::move(dependency_mgr)), name_(name) {}
 
   void OnResourceChanged(
-      std::shared_ptr<const XdsEndpointResource> endpoint,
+      absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> endpoint,
       RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<EndpointWatcher>(),
@@ -214,24 +182,14 @@ class XdsDependencyManager::EndpointWatcher final
         DEBUG_LOCATION);
   }
 
-  void OnError(
+  void OnAmbientError(
       absl::Status status,
       RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<EndpointWatcher>(), status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
-          self->dependency_mgr_->OnEndpointError(self->name_,
-                                                 std::move(status));
-        },
-        DEBUG_LOCATION);
-  }
-
-  void OnResourceDoesNotExist(
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
-    dependency_mgr_->work_serializer_->Run(
-        [self = RefAsSubclass<EndpointWatcher>(),
-         read_delay_handle = std::move(read_delay_handle)]() {
-          self->dependency_mgr_->OnEndpointDoesNotExist(self->name_);
+          self->dependency_mgr_->OnEndpointAmbientError(self->name_,
+                                                        std::move(status));
         },
         DEBUG_LOCATION);
   }
@@ -349,17 +307,23 @@ void XdsDependencyManager::ResetBackoff() {
 }
 
 void XdsDependencyManager::OnListenerUpdate(
-    std::shared_ptr<const XdsListenerResource> listener) {
+    absl::StatusOr<std::shared_ptr<const XdsListenerResource>> listener) {
   GRPC_TRACE_LOG(xds_resolver, INFO)
       << "[XdsDependencyManager " << this << "] received Listener update";
   if (xds_client_ == nullptr) return;
-  const auto* hcm = absl::get_if<XdsListenerResource::HttpConnectionManager>(
-      &listener->listener);
-  if (hcm == nullptr) {
-    return OnError(listener_resource_name_,
-                   absl::UnavailableError("not an API listener"));
+  if (!listener.ok()) {
+    current_listener_.reset();
+    return ReportError("LDS", listener_resource_name_,
+                       listener.status().message());
   }
-  current_listener_ = std::move(listener);
+  const auto* hcm = absl::get_if<XdsListenerResource::HttpConnectionManager>(
+      &(*listener)->listener);
+  if (hcm == nullptr) {
+    current_listener_.reset();
+    return ReportError("LDS", listener_resource_name_, "not an API listener");
+  }
+  current_listener_ = *std::move(listener);
+  lds_resolution_note_.clear();
   Match(
       hcm->route_config,
       // RDS resource name
@@ -408,6 +372,21 @@ void XdsDependencyManager::OnListenerUpdate(
         }
         OnRouteConfigUpdate("", route_config);
       });
+}
+
+void XdsDependencyManager::OnListenerAmbientError(absl::Status status) {
+  GRPC_TRACE_LOG(xds_resolver, INFO)
+      << "[XdsDependencyManager " << this
+      << "] received Listener error: " << listener_resource_name_ << ": "
+      << status;
+  if (xds_client_ == nullptr) return;
+  if (status.ok()) {
+    lds_resolution_note_.clear();
+  } else {
+    lds_resolution_note_ = absl::StrCat(
+        "LDS resource ", listener_resource_name_, ": ", status.message());
+  }
+  MaybeReportUpdate();
 }
 
 namespace {
@@ -465,11 +444,20 @@ absl::flat_hash_set<absl::string_view> GetClustersFromVirtualHost(
 
 void XdsDependencyManager::OnRouteConfigUpdate(
     const std::string& name,
-    std::shared_ptr<const XdsRouteConfigResource> route_config) {
+    absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
+        route_config) {
   GRPC_TRACE_LOG(xds_resolver, INFO) << "[XdsDependencyManager " << this
                                      << "] received RouteConfig update for "
                                      << (name.empty() ? "<inline>" : name);
   if (xds_client_ == nullptr) return;
+  if (!route_config.ok()) {
+    current_virtual_host_ = nullptr;
+    ReportError(route_config_name_.empty() ? "LDS" : "RDS",
+                route_config_name_.empty() ? listener_resource_name_
+                                           : route_config_name_,
+                route_config.status().message());
+    return;
+  }
   // Ignore updates for stale names.
   if (name.empty()) {
     if (!route_config_name_.empty()) return;
@@ -477,138 +465,130 @@ void XdsDependencyManager::OnRouteConfigUpdate(
     if (name != route_config_name_) return;
   }
   // Find the relevant VirtualHost from the RouteConfiguration.
-  // If the resource doesn't have the right vhost, fail without updating
-  // our data.
+  // If the resource doesn't have the right vhost, fail.
   auto vhost_index = XdsRouting::FindVirtualHostForDomain(
-      XdsVirtualHostListIterator(&route_config->virtual_hosts),
+      XdsVirtualHostListIterator(&(*route_config)->virtual_hosts),
       data_plane_authority_);
   if (!vhost_index.has_value()) {
-    OnError(route_config_name_.empty() ? listener_resource_name_
-                                       : route_config_name_,
-            absl::UnavailableError(
+    current_virtual_host_ = nullptr;
+    ReportError(route_config_name_.empty() ? "LDS" : "RDS",
+                route_config_name_.empty() ? listener_resource_name_
+                                           : route_config_name_,
                 absl::StrCat("could not find VirtualHost for ",
-                             data_plane_authority_, " in RouteConfiguration")));
+                             data_plane_authority_, " in RouteConfiguration"));
     return;
   }
   // Update our data.
-  current_route_config_ = std::move(route_config);
+  current_route_config_ = std::move(*route_config);
   current_virtual_host_ = &current_route_config_->virtual_hosts[*vhost_index];
   clusters_from_route_config_ =
       GetClustersFromVirtualHost(*current_virtual_host_);
+  rds_resolution_note_.clear();
   MaybeReportUpdate();
 }
 
-void XdsDependencyManager::OnError(std::string context, absl::Status status) {
+void XdsDependencyManager::OnRouteConfigAmbientError(std::string resource_name,
+                                                     absl::Status status) {
   GRPC_TRACE_LOG(xds_resolver, INFO)
       << "[XdsDependencyManager " << this
-      << "] received Listener or RouteConfig error: " << context << " "
-      << status;
+      << "] received RouteConfig error: " << resource_name << ": " << status;
   if (xds_client_ == nullptr) return;
-  if (current_virtual_host_ != nullptr) return;
-  watcher_->OnError(context, std::move(status));
-}
-
-void XdsDependencyManager::OnResourceDoesNotExist(std::string context) {
-  GRPC_TRACE_LOG(xds_resolver, INFO)
-      << "[XdsDependencyManager " << this << "] " << context;
-  if (xds_client_ == nullptr) return;
-  current_virtual_host_ = nullptr;
-  watcher_->OnResourceDoesNotExist(std::move(context));
+  if (status.ok()) {
+    rds_resolution_note_.clear();
+  } else {
+    rds_resolution_note_ =
+        absl::StrCat("RDS resource ", resource_name, ": ", status.message());
+  }
+  MaybeReportUpdate();
 }
 
 void XdsDependencyManager::OnClusterUpdate(
     const std::string& name,
-    std::shared_ptr<const XdsClusterResource> cluster) {
+    absl::StatusOr<std::shared_ptr<const XdsClusterResource>> cluster) {
   GRPC_TRACE_LOG(xds_resolver, INFO) << "[XdsDependencyManager " << this
                                      << "] received Cluster update: " << name;
   if (xds_client_ == nullptr) return;
+  if (!cluster.ok()) {
+    cluster = absl::UnavailableError(
+        absl::StrCat("CDS resource ", name, ": ", cluster.status().message()));
+  }
   auto it = cluster_watchers_.find(name);
   if (it == cluster_watchers_.end()) return;
   it->second.update = std::move(cluster);
+  it->second.resolution_note.clear();
   MaybeReportUpdate();
 }
 
-void XdsDependencyManager::OnClusterError(const std::string& name,
-                                          absl::Status status) {
+void XdsDependencyManager::OnClusterAmbientError(const std::string& name,
+                                                 absl::Status status) {
   GRPC_TRACE_LOG(xds_resolver, INFO)
       << "[XdsDependencyManager " << this
       << "] received Cluster error: " << name << " " << status;
   if (xds_client_ == nullptr) return;
   auto it = cluster_watchers_.find(name);
   if (it == cluster_watchers_.end()) return;
-  if (it->second.update.value_or(nullptr) == nullptr) {
-    it->second.update =
-        absl::Status(status.code(), absl::StrCat(name, ": ", status.message()));
+  if (status.ok()) {
+    it->second.resolution_note.clear();
+  } else {
+    it->second.resolution_note =
+        absl::StrCat("CDS resource ", name, ": ", status.message());
   }
-  MaybeReportUpdate();
-}
-
-void XdsDependencyManager::OnClusterDoesNotExist(const std::string& name) {
-  GRPC_TRACE_LOG(xds_resolver, INFO) << "[XdsDependencyManager " << this
-                                     << "] Cluster does not exist: " << name;
-  if (xds_client_ == nullptr) return;
-  auto it = cluster_watchers_.find(name);
-  if (it == cluster_watchers_.end()) return;
-  it->second.update = absl::UnavailableError(
-      absl::StrCat("CDS resource ", name, " does not exist"));
   MaybeReportUpdate();
 }
 
 void XdsDependencyManager::OnEndpointUpdate(
     const std::string& name,
-    std::shared_ptr<const XdsEndpointResource> endpoint) {
+    absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> endpoint) {
   GRPC_TRACE_LOG(xds_resolver, INFO) << "[XdsDependencyManager " << this
                                      << "] received Endpoint update: " << name;
   if (xds_client_ == nullptr) return;
   auto it = endpoint_watchers_.find(name);
   if (it == endpoint_watchers_.end()) return;
-  if (endpoint->priorities.empty()) {
+  if (!endpoint.ok()) {
+    it->second.update.endpoints.reset();
     it->second.update.resolution_note =
-        absl::StrCat("EDS resource ", name, " contains no localities");
+        absl::StrCat("EDS resource ", name, ": ", endpoint.status().message());
   } else {
-    std::set<absl::string_view> empty_localities;
-    for (const auto& priority : endpoint->priorities) {
-      for (const auto& p : priority.localities) {
-        if (p.second.endpoints.empty()) {
-          empty_localities.insert(
-              p.first->human_readable_string().as_string_view());
+    if ((*endpoint)->priorities.empty()) {
+      it->second.update.resolution_note =
+          absl::StrCat("EDS resource ", name, ": contains no localities");
+    } else {
+      std::set<absl::string_view> empty_localities;
+      for (const auto& priority : (*endpoint)->priorities) {
+        for (const auto& p : priority.localities) {
+          if (p.second.endpoints.empty()) {
+            empty_localities.insert(
+                p.first->human_readable_string().as_string_view());
+          }
         }
       }
+      if (!empty_localities.empty()) {
+        it->second.update.resolution_note = absl::StrCat(
+            "EDS resource ", name, ": contains empty localities: [",
+            absl::StrJoin(empty_localities, "; "), "]");
+      } else {
+        it->second.update.resolution_note.clear();
+      }
     }
-    if (!empty_localities.empty()) {
-      it->second.update.resolution_note =
-          absl::StrCat("EDS resource ", name, " contains empty localities: [",
-                       absl::StrJoin(empty_localities, "; "), "]");
-    }
+    it->second.update.endpoints = std::move(*endpoint);
   }
-  it->second.update.endpoints = std::move(endpoint);
   MaybeReportUpdate();
 }
 
-void XdsDependencyManager::OnEndpointError(const std::string& name,
-                                           absl::Status status) {
+void XdsDependencyManager::OnEndpointAmbientError(const std::string& name,
+                                                  absl::Status status) {
   GRPC_TRACE_LOG(xds_resolver, INFO)
       << "[XdsDependencyManager " << this
       << "] received Endpoint error: " << name << " " << status;
   if (xds_client_ == nullptr) return;
   auto it = endpoint_watchers_.find(name);
   if (it == endpoint_watchers_.end()) return;
-  if (it->second.update.endpoints == nullptr) {
+  if (status.ok()) {
+    it->second.update.resolution_note.clear();
+  } else {
     it->second.update.resolution_note =
-        absl::StrCat("EDS resource ", name, ": ", status.ToString());
-    MaybeReportUpdate();
+        absl::StrCat("EDS resource ", name, ": ", status.message());
   }
-}
-
-void XdsDependencyManager::OnEndpointDoesNotExist(const std::string& name) {
-  GRPC_TRACE_LOG(xds_resolver, INFO) << "[XdsDependencyManager " << this
-                                     << "] Endpoint does not exist: " << name;
-  if (xds_client_ == nullptr) return;
-  auto it = endpoint_watchers_.find(name);
-  if (it == endpoint_watchers_.end()) return;
-  it->second.update.endpoints.reset();
-  it->second.update.resolution_note =
-      absl::StrCat("EDS resource ", name, " does not exist");
   MaybeReportUpdate();
 }
 
@@ -717,8 +697,25 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
           return false;
         }
         // Populate cluster config.
+        std::array<absl::string_view, 4> notes = {
+            lds_resolution_note_, rds_resolution_note_, state.resolution_note,
+            eds_state.update.resolution_note};
+        std::vector<absl::string_view> resolution_notes;
+        for (const auto& note : notes) {
+          if (!note.empty()) resolution_notes.push_back(note);
+        }
+        std::string node_id_buffer;
+        if (resolution_notes.empty()) {
+          const XdsBootstrap::Node* node =
+              DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
+                  .node();
+          if (node != nullptr) {
+            node_id_buffer = absl::StrCat("xDS node ID:", node->id());
+            resolution_notes.push_back(node_id_buffer);
+          }
+        }
         cluster_config.emplace(*state.update, eds_state.update.endpoints,
-                               eds_state.update.resolution_note);
+                               absl::StrJoin(resolution_notes, "; "));
         if (leaf_clusters != nullptr) (*leaf_clusters)->push_back(name);
         return true;
       },
@@ -863,7 +860,7 @@ void XdsDependencyManager::OnClusterSubscriptionUnref(
 
 void XdsDependencyManager::MaybeReportUpdate() {
   // Populate Listener and RouteConfig fields.
-  if (current_virtual_host_ == nullptr) return;
+  if (current_listener_ == nullptr || current_virtual_host_ == nullptr) return;
   auto config = MakeRefCounted<XdsConfig>();
   config->listener = current_listener_;
   config->route_config = current_route_config_;
@@ -943,6 +940,13 @@ void XdsDependencyManager::MaybeReportUpdate() {
       << "[XdsDependencyManager " << this
       << "] returning config: " << config->ToString();
   watcher_->OnUpdate(std::move(config));
+}
+
+void XdsDependencyManager::ReportError(absl::string_view resource_type,
+                                       absl::string_view resource_name,
+                                       absl::string_view error) {
+  watcher_->OnUpdate(absl::UnavailableError(
+      absl::StrCat(resource_type, " resource ", resource_name, ": ", error)));
 }
 
 }  // namespace grpc_core

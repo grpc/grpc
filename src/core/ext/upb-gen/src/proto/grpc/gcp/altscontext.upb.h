@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_H_
-#define SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_H_
+#ifndef SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_H__UPB_H_
+#define SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -259,4 +259,4 @@ UPB_INLINE void grpc_gcp_AltsContext_PeerAttributesEntry_set_value(grpc_gcp_Alts
 
 #include "upb/port/undef.inc"
 
-#endif  /* SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_H_ */
+#endif  /* SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_H__UPB_H_ */

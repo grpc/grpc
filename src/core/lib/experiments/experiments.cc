@@ -23,18 +23,16 @@
 
 #if defined(GRPC_CFSTREAM)
 namespace {
+const char* const description_backoff_cap_initial_at_max =
+    "Backoff library applies max_backoff even on initial_backoff.";
+const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_canary_client_privacy =
-    "If set, canary client privacy";
-const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_chaotic_good_legacy_protocol =
     "If set, use the first version of the chaotic-good protocol when that "
     "protocol is enabled.";
 const char* const additional_constraints_chaotic_good_legacy_protocol = "{}";
-const char* const description_client_privacy = "If set, client privacy";
-const char* const additional_constraints_client_privacy = "{}";
 const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "Disable buffer hint flag parsing in the transport under high memory "
     "pressure.";
@@ -86,6 +84,14 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
+const char* const description_posix_ee_skip_grpc_init =
+    "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
+    "creation and destruction.";
+const char* const additional_constraints_posix_ee_skip_grpc_init = "{}";
+const char* const description_prioritize_finished_requests =
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
+const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -101,6 +107,8 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_retry_in_callv3 = "Support retries with call-v3";
+const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_rq_fast_reject =
     "Resource quota rejects requests immediately (before allocating the "
     "request structure) under very high memory pressure.";
@@ -109,8 +117,6 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
-const char* const description_server_privacy = "If set, server privacy";
-const char* const additional_constraints_server_privacy = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -136,20 +142,23 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const char* const description_server_listener =
+    "If set, the new server listener classes are used.";
+const char* const additional_constraints_server_listener = "{}";
+const uint8_t required_experiments_server_listener[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
+     additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
-    {"canary_client_privacy", description_canary_client_privacy,
-     additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"chaotic_good_legacy_protocol", description_chaotic_good_legacy_protocol,
      additional_constraints_chaotic_good_legacy_protocol, nullptr, 0, false,
      true},
-    {"client_privacy", description_client_privacy,
-     additional_constraints_client_privacy, nullptr, 0, false, false},
     {"disable_buffer_hint_on_high_memory_pressure",
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
@@ -184,6 +193,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
+    {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
+     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, false, true},
+    {"prioritize_finished_requests", description_prioritize_finished_requests,
+     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
+     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -196,14 +210,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"retry_in_callv3", description_retry_in_callv3,
+     additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"rq_fast_reject", description_rq_fast_reject,
      additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
-    {"server_privacy", description_server_privacy,
-     additional_constraints_server_privacy, nullptr, 0, false, false},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -218,24 +232,25 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
+    {"server_listener", description_server_listener,
+     additional_constraints_server_listener,
+     required_experiments_server_listener, 1, false, true},
 };
 
 }  // namespace grpc_core
 
 #elif defined(GPR_WINDOWS)
 namespace {
+const char* const description_backoff_cap_initial_at_max =
+    "Backoff library applies max_backoff even on initial_backoff.";
+const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_canary_client_privacy =
-    "If set, canary client privacy";
-const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_chaotic_good_legacy_protocol =
     "If set, use the first version of the chaotic-good protocol when that "
     "protocol is enabled.";
 const char* const additional_constraints_chaotic_good_legacy_protocol = "{}";
-const char* const description_client_privacy = "If set, client privacy";
-const char* const additional_constraints_client_privacy = "{}";
 const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "Disable buffer hint flag parsing in the transport under high memory "
     "pressure.";
@@ -287,6 +302,14 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
+const char* const description_posix_ee_skip_grpc_init =
+    "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
+    "creation and destruction.";
+const char* const additional_constraints_posix_ee_skip_grpc_init = "{}";
+const char* const description_prioritize_finished_requests =
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
+const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -302,6 +325,8 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_retry_in_callv3 = "Support retries with call-v3";
+const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_rq_fast_reject =
     "Resource quota rejects requests immediately (before allocating the "
     "request structure) under very high memory pressure.";
@@ -310,8 +335,6 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
-const char* const description_server_privacy = "If set, server privacy";
-const char* const additional_constraints_server_privacy = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -337,20 +360,23 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const char* const description_server_listener =
+    "If set, the new server listener classes are used.";
+const char* const additional_constraints_server_listener = "{}";
+const uint8_t required_experiments_server_listener[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
+     additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
-    {"canary_client_privacy", description_canary_client_privacy,
-     additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"chaotic_good_legacy_protocol", description_chaotic_good_legacy_protocol,
      additional_constraints_chaotic_good_legacy_protocol, nullptr, 0, false,
      true},
-    {"client_privacy", description_client_privacy,
-     additional_constraints_client_privacy, nullptr, 0, false, false},
     {"disable_buffer_hint_on_high_memory_pressure",
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
@@ -385,6 +411,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
+    {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
+     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, false, true},
+    {"prioritize_finished_requests", description_prioritize_finished_requests,
+     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
+     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -397,14 +428,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"retry_in_callv3", description_retry_in_callv3,
+     additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"rq_fast_reject", description_rq_fast_reject,
      additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
-    {"server_privacy", description_server_privacy,
-     additional_constraints_server_privacy, nullptr, 0, false, false},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -419,24 +450,25 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
+    {"server_listener", description_server_listener,
+     additional_constraints_server_listener,
+     required_experiments_server_listener, 1, false, true},
 };
 
 }  // namespace grpc_core
 
 #else
 namespace {
+const char* const description_backoff_cap_initial_at_max =
+    "Backoff library applies max_backoff even on initial_backoff.";
+const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_canary_client_privacy =
-    "If set, canary client privacy";
-const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_chaotic_good_legacy_protocol =
     "If set, use the first version of the chaotic-good protocol when that "
     "protocol is enabled.";
 const char* const additional_constraints_chaotic_good_legacy_protocol = "{}";
-const char* const description_client_privacy = "If set, client privacy";
-const char* const additional_constraints_client_privacy = "{}";
 const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "Disable buffer hint flag parsing in the transport under high memory "
     "pressure.";
@@ -488,6 +520,14 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
+const char* const description_posix_ee_skip_grpc_init =
+    "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
+    "creation and destruction.";
+const char* const additional_constraints_posix_ee_skip_grpc_init = "{}";
+const char* const description_prioritize_finished_requests =
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
+const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -503,6 +543,8 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_retry_in_callv3 = "Support retries with call-v3";
+const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_rq_fast_reject =
     "Resource quota rejects requests immediately (before allocating the "
     "request structure) under very high memory pressure.";
@@ -511,8 +553,6 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
-const char* const description_server_privacy = "If set, server privacy";
-const char* const additional_constraints_server_privacy = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -538,20 +578,23 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const char* const description_server_listener =
+    "If set, the new server listener classes are used.";
+const char* const additional_constraints_server_listener = "{}";
+const uint8_t required_experiments_server_listener[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
+     additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
-    {"canary_client_privacy", description_canary_client_privacy,
-     additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"chaotic_good_legacy_protocol", description_chaotic_good_legacy_protocol,
      additional_constraints_chaotic_good_legacy_protocol, nullptr, 0, false,
      true},
-    {"client_privacy", description_client_privacy,
-     additional_constraints_client_privacy, nullptr, 0, false, false},
     {"disable_buffer_hint_on_high_memory_pressure",
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
@@ -586,6 +629,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
+    {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
+     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, false, true},
+    {"prioritize_finished_requests", description_prioritize_finished_requests,
+     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
+     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -598,14 +646,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"retry_in_callv3", description_retry_in_callv3,
+     additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"rq_fast_reject", description_rq_fast_reject,
      additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
-    {"server_privacy", description_server_privacy,
-     additional_constraints_server_privacy, nullptr, 0, false, false},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -620,6 +668,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
+    {"server_listener", description_server_listener,
+     additional_constraints_server_listener,
+     required_experiments_server_listener, 1, false, true},
 };
 
 }  // namespace grpc_core

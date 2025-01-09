@@ -36,7 +36,7 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/seq.h"
@@ -151,20 +151,17 @@ TEST_F(TransportTest, AddOneStream) {
                             ->get_pointer(HttpPathMetadata())
                             ->as_string_view(),
                         "/demo.Service/Step");
-              return Empty{};
             },
             [initiator]() mutable { return initiator.PullMessage(); },
             [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
               EXPECT_TRUE(msg.has_value());
               EXPECT_EQ(msg.value().payload()->JoinIntoString(), "12345678");
-              return Empty{};
             },
             [initiator]() mutable { return initiator.PullMessage(); },
             [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
               EXPECT_FALSE(msg.has_value());
-              return Empty{};
             },
             [initiator]() mutable {
               return initiator.PullServerTrailingMetadata();
@@ -172,7 +169,6 @@ TEST_F(TransportTest, AddOneStream) {
             [&on_done](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(), GRPC_STATUS_OK);
               on_done.Call();
-              return Empty{};
             });
       });
   // Wait until ClientTransport's internal activities to finish.
@@ -241,33 +237,28 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
                             ->get_pointer(HttpPathMetadata())
                             ->as_string_view(),
                         "/demo.Service/Step");
-              return Empty{};
             },
             initiator.PullMessage(),
             [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
               EXPECT_TRUE(msg.has_value());
               EXPECT_EQ(msg.value().payload()->JoinIntoString(), "12345678");
-              return Empty{};
             },
             initiator.PullMessage(),
             [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
               EXPECT_TRUE(msg.has_value());
               EXPECT_EQ(msg.value().payload()->JoinIntoString(), "87654321");
-              return Empty{};
             },
             initiator.PullMessage(),
             [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
               EXPECT_FALSE(msg.has_value());
-              return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
             [&on_done](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(), GRPC_STATUS_OK);
               on_done.Call();
-              return Empty{};
             });
       });
   // Wait until ClientTransport's internal activities to finish.

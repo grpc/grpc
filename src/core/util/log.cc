@@ -29,7 +29,7 @@
 #include "absl/log/globals.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/string.h"
 

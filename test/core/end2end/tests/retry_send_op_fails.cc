@@ -25,10 +25,10 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -129,6 +129,7 @@ grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
 // - second attempt returns ABORTED but does not retry, because only 2
 //   attempts are allowed
 CORE_END2END_TEST(RetryTest, RetrySendOpFails) {
+  SKIP_IF_V3();  // Need to convert filter
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()
         ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
