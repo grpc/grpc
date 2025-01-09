@@ -252,9 +252,9 @@ set(gRPC_ABSL_USED_TARGETS
   absl_type_traits
   absl_utf8_for_code_point
   absl_utility
+  absl_variant
   absl_vlog_config_internal
   absl_vlog_is_on
-  std_variant
   absl_meta
 )
 
@@ -3970,7 +3970,7 @@ target_link_libraries(gtest
   absl::strings
   absl::any
   absl::optional
-  std::variant
+  absl::variant
 )
 
 
