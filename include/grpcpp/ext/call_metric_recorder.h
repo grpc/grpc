@@ -23,7 +23,6 @@
 #include <grpcpp/support/slice.h>
 
 #include <memory>
-#include <optional>
 #include <string>
 
 #include "absl/strings/string_view.h"
