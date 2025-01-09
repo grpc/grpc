@@ -146,10 +146,7 @@ void GrpcXdsBootstrap::JsonPostLoad(const Json& /*json*/,
   // client_listener_resource_name_template field.
   {
     ValidationErrors::ScopedField field(errors, ".authorities");
-    for (const auto& p : authorities_) {
-      const std::string& name = p.first;
-      const GrpcAuthority& authority =
-          static_cast<const GrpcAuthority&>(p.second);
+    for (const auto& [name, authority] : authorities_) {
       ValidationErrors::ScopedField field(
           errors, absl::StrCat("[\"", name,
                                "\"].client_listener_resource_name_template"));
@@ -195,13 +192,13 @@ std::string GrpcXdsBootstrap::ToString() const {
                         server_listener_resource_name_template_));
   }
   parts.push_back("authorities={\n");
-  for (const auto& entry : authorities_) {
-    parts.push_back(absl::StrFormat("  %s={\n", entry.first));
+  for (const auto& [name, authority] : authorities_) {
+    parts.push_back(absl::StrFormat("  %s={\n", name));
     parts.push_back(
         absl::StrFormat("    client_listener_resource_name_template=\"%s\",\n",
-                        entry.second.client_listener_resource_name_template()));
+                        authority.client_listener_resource_name_template()));
     std::vector<std::string> server_jsons;
-    for (const XdsServer* server : entry.second.servers()) {
+    for (const XdsServer* server : authority.servers()) {
       server_jsons.emplace_back(
           JsonDump(static_cast<const GrpcXdsServer*>(server)->ToJson()));
     }
@@ -213,14 +210,14 @@ std::string GrpcXdsBootstrap::ToString() const {
   }
   parts.push_back("}\n");
   parts.push_back("certificate_providers={\n");
-  for (const auto& entry : certificate_providers_) {
+  for (const auto& [name, plugin_definition] : certificate_providers_) {
     parts.push_back(
         absl::StrFormat("  %s={\n"
                         "    plugin_name=%s\n"
                         "    config=%s\n"
                         "  },\n",
-                        entry.first, entry.second.plugin_name,
-                        entry.second.config->ToString()));
+                        name, plugin_definition.plugin_name,
+                        plugin_definition.config->ToString()));
   }
   parts.push_back("}");
   return absl::StrJoin(parts, "");

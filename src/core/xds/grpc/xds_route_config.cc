@@ -155,9 +155,7 @@ XdsRouteConfigResource::Route::RouteAction::ClusterWeight::ToString() const {
   contents.push_back(absl::StrCat("weight=", weight));
   if (!typed_per_filter_config.empty()) {
     std::vector<std::string> parts;
-    for (const auto& p : typed_per_filter_config) {
-      const std::string& key = p.first;
-      const auto& config = p.second;
+    for (const auto& [key, config] : typed_per_filter_config) {
       parts.push_back(absl::StrCat(key, "=", config.ToString()));
     }
     contents.push_back(absl::StrCat("typed_per_filter_config={",
@@ -222,9 +220,7 @@ std::string XdsRouteConfigResource::Route::ToString() const {
   }
   if (!typed_per_filter_config.empty()) {
     contents.push_back("typed_per_filter_config={");
-    for (const auto& p : typed_per_filter_config) {
-      const std::string& name = p.first;
-      const auto& config = p.second;
+    for (const auto& [name, config] : typed_per_filter_config) {
       contents.push_back(absl::StrCat("  ", name, "=", config.ToString()));
     }
     contents.push_back("}");
@@ -251,9 +247,7 @@ std::string XdsRouteConfigResource::VirtualHost::ToString() const {
   }
   parts.push_back("  ]\n");
   parts.push_back("  typed_per_filter_config={\n");
-  for (const auto& p : typed_per_filter_config) {
-    const std::string& name = p.first;
-    const auto& config = p.second;
+  for (const auto& [name, config] : typed_per_filter_config) {
     parts.push_back(absl::StrCat("    ", name, "=", config.ToString(), "\n"));
   }
   parts.push_back("  }\n");
@@ -272,8 +266,8 @@ std::string XdsRouteConfigResource::ToString() const {
     parts.push_back(vhost.ToString());
   }
   parts.push_back("cluster_specifier_plugins={\n");
-  for (const auto& it : cluster_specifier_plugin_map) {
-    parts.push_back(absl::StrFormat("%s={%s}\n", it.first, it.second));
+  for (const auto& [name, plugin] : cluster_specifier_plugin_map) {
+    parts.push_back(absl::StrFormat("%s={%s}\n", name, plugin));
   }
   parts.push_back("}");
   return absl::StrJoin(parts, "");
