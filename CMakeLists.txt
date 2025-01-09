@@ -203,6 +203,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_non_temporal_memcpy
   absl_nullability
   absl_numeric_representation
+  absl_optional
   absl_prefetch
   absl_random_bit_gen_ref
   absl_random_distributions
@@ -254,7 +255,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_variant
   absl_vlog_config_internal
   absl_vlog_is_on
-  std_optional
   absl_meta
 )
 
@@ -3969,7 +3969,7 @@ target_link_libraries(gtest
   absl::flags_usage
   absl::strings
   absl::any
-  std::optional
+  absl::optional
   absl::variant
 )
 
