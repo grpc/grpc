@@ -42,10 +42,10 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
+#include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/message_reassembly.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
@@ -79,8 +79,8 @@ namespace chaotic_good {
 class ChaoticGoodServerTransport final : public ServerTransport {
  public:
   ChaoticGoodServerTransport(const ChannelArgs& args,
-                             PromiseEndpoint control_endpoint, Config config,
-                             RefCountedPtr<ServerConnectionFactory>);
+                             FrameTransport& frame_transport,
+                             MessageChunker message_chunker);
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }
@@ -107,41 +107,34 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
   RefCountedPtr<Stream> ExtractStream(uint32_t stream_id);
   auto SendCallInitialMetadataAndBody(uint32_t stream_id,
-                                      MpscSender<ServerFrame> outgoing_frames,
                                       CallInitiator call_initiator);
-  auto SendCallBody(uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
-                    CallInitiator call_initiator);
+  auto SendCallBody(uint32_t stream_id, CallInitiator call_initiator);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
-  auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
-  auto ReadOneFrame(RefCountedPtr<ChaoticGoodTransport> transport);
   // Read different parts of the server frame from control/data endpoints
   // based on frame header.
   // Resolves to a StatusOr<tuple<SliceBuffer, SliceBuffer>>
   auto ReadFrameBody(Slice read_buffer);
   void SendCancel(uint32_t stream_id, absl::Status why);
-  absl::Status NewStream(ChaoticGoodTransport& transport,
-                         const FrameHeader& header,
-                         SliceBuffer initial_metadata_payload);
+  absl::Status NewStream(
+      uint32_t stream_id,
+      ClientInitialMetadataFrame client_initial_metadata_frame);
   template <typename T>
-  auto DispatchFrame(RefCountedPtr<ChaoticGoodTransport> transport,
-                     IncomingFrame frame);
+  auto DispatchFrame(IncomingFrame frame);
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, MessageFrame frame);
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, ClientEndOfStream frame);
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, BeginMessageFrame frame);
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, MessageChunkFrame frame);
-  auto SendFrame(ServerFrame frame, MpscSender<ServerFrame> outgoing_frames,
-                 CallInitiator call_initiator);
-  auto SendFrameAcked(ServerFrame frame,
-                      MpscSender<ServerFrame> outgoing_frames,
-                      CallInitiator call_initiator);
+  auto ProcessNextFrame();
+  auto TransportReadLoop();
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
   InterActivityLatch<void> got_acceptor_;
-  MpscReceiver<ServerFrame> outgoing_frames_;
+  MpscSender<Frame> outgoing_frames_;
+  MpscReceiver<IncomingFrame> incoming_frames_{8};
   Mutex mu_;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);

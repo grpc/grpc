@@ -25,6 +25,7 @@
 #include "absl/status/statusor.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
+#include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -46,64 +47,32 @@ struct DeterministicBitGen : public std::numeric_limits<uint64_t> {
   uint64_t operator()() { return 42; }
 };
 
-template <typename T>
-void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
+void AssertRoundTrips(const FrameInterface& input,
+                      FrameType expected_frame_type) {
   FrameHeader hdr = input.MakeHeader();
   CHECK_EQ(hdr.type, expected_frame_type);
-  CHECK_EQ(hdr.payload_connection_id, 0);
   SliceBuffer payload;
   input.SerializePayload(payload);
   CHECK_GE(hdr.payload_length, payload.Length());
-  T output;
-  auto deser = output.Deserialize(hdr, std::move(payload));
+  auto deser = ParseFrame(hdr, std::move(payload));
   CHECK_OK(deser);
-  CHECK_EQ(input.ToString(), output.ToString());
-}
-
-template <typename T>
-void FinishParseAndChecks(const FrameHeader& header, SliceBuffer payload) {
-  T parsed;
-  ExecCtx exec_ctx;  // Initialized to get this_cpu() info in global_stat().
-  auto deser = parsed.Deserialize(header, std::move(payload));
-  if (!deser.ok()) return;
-  AssertRoundTrips(parsed, header.type);
+  CHECK_EQ(input.ToString(),
+           absl::ConvertVariantTo<const FrameInterface&>(*deser).ToString());
 }
 
 void Run(const frame_fuzzer::Test& test) {
-  if (test.header().size() != FrameHeader::kFrameHeaderSize) return;
-  auto r = FrameHeader::Parse(
+  if (test.header().size() != TcpFrameHeader::kFrameHeaderSize) return;
+  auto r = TcpFrameHeader::Parse(
       reinterpret_cast<const uint8_t*>(test.header().data()));
   if (!r.ok()) return;
-  if (test.payload().size() != r->payload_length) return;
+  if (test.payload().size() != r->header.payload_length) return;
   auto arena = SimpleArenaAllocator()->MakeArena();
-  TestContext<Arena> ctx(arena.get());
   SliceBuffer payload(
       Slice::FromCopiedBuffer(test.payload().data(), test.payload().size()));
-  switch (r->type) {
-    default:
-      return;  // We don't know how to parse this frame type.
-    case FrameType::kSettings:
-      FinishParseAndChecks<SettingsFrame>(*r, std::move(payload));
-      break;
-    case FrameType::kClientInitialMetadata:
-      FinishParseAndChecks<ClientInitialMetadataFrame>(*r, std::move(payload));
-      break;
-    case FrameType::kClientEndOfStream:
-      FinishParseAndChecks<ClientEndOfStream>(*r, std::move(payload));
-      break;
-    case FrameType::kServerInitialMetadata:
-      FinishParseAndChecks<ServerInitialMetadataFrame>(*r, std::move(payload));
-      break;
-    case FrameType::kServerTrailingMetadata:
-      FinishParseAndChecks<ServerTrailingMetadataFrame>(*r, std::move(payload));
-      break;
-    case FrameType::kMessage:
-      FinishParseAndChecks<MessageFrame>(*r, std::move(payload));
-      break;
-    case FrameType::kCancel:
-      FinishParseAndChecks<CancelFrame>(*r, std::move(payload));
-      break;
-  }
+  auto frame = ParseFrame(r->header, std::move(payload));
+  if (!frame.ok()) return;
+  AssertRoundTrips(absl::ConvertVariantTo<FrameInterface&>(*frame),
+                   r->header.type);
 }
 
 }  // namespace chaotic_good
