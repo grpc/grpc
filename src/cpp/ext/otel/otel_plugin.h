@@ -538,6 +538,22 @@ class OpenTelemetryPluginImpl
       channel_scope_filter_;
 };
 
+class GrpcTextMapCarrier
+    : public opentelemetry::context::propagation::TextMapCarrier {
+ public:
+  explicit GrpcTextMapCarrier(grpc_metadata_batch* metadata)
+      : metadata_(metadata) {}
+
+  opentelemetry::nostd::string_view Get(
+      opentelemetry::nostd::string_view key) const noexcept override;
+
+  void Set(opentelemetry::nostd::string_view key,
+           opentelemetry::nostd::string_view value) noexcept override;
+
+ private:
+  grpc_metadata_batch* metadata_;
+};
+
 }  // namespace internal
 }  // namespace grpc
 

@@ -41,6 +41,7 @@
 #include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
+#include "opentelemetry/trace/context.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
@@ -108,6 +109,14 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
         return true;
       },
       parent_->otel_plugin_);
+  if (parent_->otel_plugin_->tracer_ != nullptr) {
+    GrpcTextMapCarrier carrier(send_initial_metadata);
+    opentelemetry::context::Context empty_context;
+    auto context_with_span =
+        opentelemetry::trace::SetSpan(empty_context, span_);
+    parent_->otel_plugin_->text_map_propagator_->Inject(
+        carrier, context_with_span /*TODO:fixme*/);
+  }
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
@@ -255,7 +264,7 @@ OpenTelemetryPluginImpl::ClientCallTracer::ClientCallTracer(
       otel_plugin_(otel_plugin),
       scope_config_(std::move(scope_config)) {
   if (otel_plugin_->tracer_ != nullptr) {
-    span_ = otel_plugin_->tracer_->StartSpan();
+    span_ = otel_plugin_->tracer_->StartSpan("blah");
   }
 }
 

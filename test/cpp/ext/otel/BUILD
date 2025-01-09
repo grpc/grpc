@@ -48,22 +48,20 @@ grpc_cc_library(
 )
 
 grpc_cc_test(
-    name = "otel_plugin_test",
+    name = "grpc_text_map_carrier_test",
     srcs = [
-        "otel_plugin_test.cc",
+        "grpc_text_map_carrier_test.cc",
     ],
     external_deps = [
         "gtest",
         "otel/api",
-        "otel/sdk/src/metrics",
     ],
     language = "C++",
     tags = [],
     deps = [
-        ":otel_test_library",
         "//:grpc++",
         "//src/cpp/ext/otel:otel_plugin",
+        "//test/core/promise:test_context",
         "//test/core/test_util:grpc_test_util",
-        "//test/cpp/end2end:test_service_impl",
     ],
 )

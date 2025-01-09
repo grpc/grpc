@@ -78,6 +78,11 @@ void OpenTelemetryPluginImpl::ServerCallTracer::RecordReceivedInitialMetadata(
                             /*active_plugin_options_view=*/nullptr, {},
                             /*is_client=*/false, otel_plugin_));
   }
+  if (otel_plugin_->tracer_ != nullptr) {
+    GrpcTextMapCarrier carrier(recv_initial_metadata);
+    opentelemetry::context::Context context_with_span;
+    otel_plugin_->text_map_propagator_->Extract(carrier, context_with_span);
+  }
 }
 
 void OpenTelemetryPluginImpl::ServerCallTracer::RecordSendInitialMetadata(

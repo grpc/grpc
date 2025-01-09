@@ -1146,69 +1146,59 @@ class GrpcTraceBinTextMapPropagator : public TextMapPropagator {
   }
 };
 
-class GrpcTextMapCarrier
-    : public opentelemetry::context::propagation::TextMapCarrier {
- public:
-  explicit GrpcTextMapCarrier(grpc_metadata_batch* metadata)
-      : metadata_(metadata) {}
-
-  opentelemetry::nostd::string_view Get(
-      opentelemetry::nostd::string_view key) const noexcept override {
-    absl::string_view absl_key = NoStdStringViewToAbslStringView(key);
-    std::string scratch;
-    std::string ret_val;
-    if (absl_key == "grpc-trace-bin") {
-      ret_val = absl::Base64Escape(
-          metadata_->GetStringValue(absl_key, &scratch).value_or(""));
-    } else if (absl::EndsWith(absl_key, "-bin")) {
-      // Maybe ok to support a custom binary propagator. Needs based64 encoding
-      // validation if so. Not for now.
-      LOG(ERROR) << "Binary propagator other than GrpcTraceBinPropagator is "
-                    "not supported.";
-    } else {
-      ret_val = std::string(AbslStringViewToNoStdStringView(
-          metadata_->GetStringValue(absl_key, &scratch).value_or("")));
-    }
-    if (ret_val.empty()) {
-      return "";
-    }
-    // Store the string on the arena since we are returning a string_view.
-    std::string* arena_stored_string =
-        grpc_core::GetContext<grpc_core::Arena>()->ManagedNew<std::string>(
-            ret_val);
-    return *arena_stored_string;
-    return AbslStringViewToNoStdStringView(
+opentelemetry::nostd::string_view GrpcTextMapCarrier::Get(
+    opentelemetry::nostd::string_view key) const noexcept {
+  absl::string_view absl_key = NoStdStringViewToAbslStringView(key);
+  std::string scratch;
+  std::string ret_val;
+  if (absl_key == "grpc-trace-bin") {
+    ret_val = absl::Base64Escape(
         metadata_->GetStringValue(absl_key, &scratch).value_or(""));
+  } else if (absl::EndsWith(absl_key, "-bin")) {
+    // Maybe ok to support a custom binary propagator. Needs based64 encoding
+    // validation if so. Not for now.
+    LOG(ERROR) << "Binary propagator other than GrpcTraceBinPropagator is "
+                  "not supported.";
+  } else {
+    ret_val = std::string(AbslStringViewToNoStdStringView(
+        metadata_->GetStringValue(absl_key, &scratch).value_or("")));
   }
+  if (ret_val.empty()) {
+    return "";
+  }
+  // Store the string on the arena since we are returning a string_view.
+  std::string* arena_stored_string =
+      grpc_core::GetContext<grpc_core::Arena>()->ManagedNew<std::string>(
+          ret_val);
+  return *arena_stored_string;
+  return AbslStringViewToNoStdStringView(
+      metadata_->GetStringValue(absl_key, &scratch).value_or(""));
+}
 
-  void Set(opentelemetry::nostd::string_view key,
-           opentelemetry::nostd::string_view value) noexcept override {
-    absl::string_view absl_key = NoStdStringViewToAbslStringView(key);
-    absl::string_view absl_value = NoStdStringViewToAbslStringView(value);
-    if (absl_key == "grpc-trace-bin") {
-      std::string unescaped_value;
-      if (!absl::Base64Unescape(absl_value, &unescaped_value)) {
-        return;
-      }
-      metadata_->Set(grpc_core::GrpcTraceBinMetadata(),
-                     grpc_core::Slice::FromCopiedString(unescaped_value));
-    } else if (absl::EndsWith(absl_key, "-bin")) {
-      LOG(ERROR) << "Binary propagator other than GrpcTraceBinPropagator is "
-                    "not supported.";
+void GrpcTextMapCarrier::Set(opentelemetry::nostd::string_view key,
+                             opentelemetry::nostd::string_view value) noexcept {
+  absl::string_view absl_key = NoStdStringViewToAbslStringView(key);
+  absl::string_view absl_value = NoStdStringViewToAbslStringView(value);
+  if (absl_key == "grpc-trace-bin") {
+    std::string unescaped_value;
+    if (!absl::Base64Unescape(absl_value, &unescaped_value)) {
       return;
-    } else {
-      // A propagator other than GrpcTraceBinTextMapPropagator was used.
-      metadata_->Append(
-          absl_key, grpc_core::Slice::FromCopiedString(absl_value),
-          [](absl::string_view, const grpc_core::Slice&) {
-            LOG(ERROR) << "Failed to add tracing information in metadata.";
-          });
     }
+    metadata_->Set(grpc_core::GrpcTraceBinMetadata(),
+                   grpc_core::Slice::FromCopiedString(unescaped_value));
+  } else if (absl::EndsWith(absl_key, "-bin")) {
+    LOG(ERROR) << "Binary propagator other than GrpcTraceBinPropagator is "
+                  "not supported.";
+    return;
+  } else {
+    // A propagator other than GrpcTraceBinTextMapPropagator was used.
+    metadata_->Append(absl_key, grpc_core::Slice::FromCopiedString(absl_value),
+                      [](absl::string_view, const grpc_core::Slice&) {
+                        LOG(ERROR)
+                            << "Failed to add tracing information in metadata.";
+                      });
   }
-
- private:
-  grpc_metadata_batch* metadata_;
-};
+}
 
 }  // namespace internal
 
