@@ -91,8 +91,10 @@ BANNED_EXCEPT = {
     "absl::exchange": [],
     # Use `std::make_unique()` instead.
     "absl::make_unique": [],
-    # Use `std::optional` instead.
+    # Use `std::optional` and friends instead.
     "absl::optional": [],
+    "absl::nullopt": [],
+    "absl::make_optional": [],
 }
 
 errors = 0
