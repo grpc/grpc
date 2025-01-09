@@ -597,13 +597,17 @@ class CLanguage(object):
             return (
                 "clang_7",
                 self._clang_cmake_configure_extra_args()
-                + "-DCMAKE_CXX_STANDARD=17",
+                + [
+                    "-DCMAKE_CXX_STANDARD=17",
+                ],
             )
         elif compiler == "clang19":
             return (
                 "clang_19",
                 self._clang_cmake_configure_extra_args()
-                + "-DCMAKE_CXX_STANDARD=17",
+                + [
+                    "-DCMAKE_CXX_STANDARD=17",
+                ],
             )
         else:
             raise Exception("Compiler %s not supported." % compiler)
