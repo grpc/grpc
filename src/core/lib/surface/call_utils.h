@@ -204,7 +204,7 @@ class OpHandlerImpl {
         Construct(&promise_, std::move(promise));
         state_ = State::kPromise;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kPromise: {
         GRPC_TRACE_LOG(call, INFO)
             << Activity::current()->DebugTag() << "BeginPoll " << OpName();
