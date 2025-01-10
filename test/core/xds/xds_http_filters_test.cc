@@ -97,8 +97,8 @@ class XdsHttpFilterTest : public ::testing::Test {
  protected:
   XdsHttpFilterTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(), xds_server_, nullptr,
-                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+        decode_context_{xds_client_.get(), xds_server_, upb_def_pool_.ptr(),
+                        upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error;
