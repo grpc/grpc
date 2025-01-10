@@ -42,8 +42,10 @@ namespace {
 std::atomic<absl::AnyInvocable<std::shared_ptr<EventEngine>()>*>
     g_event_engine_factory{nullptr};
 grpc_core::NoDestruct<grpc_core::Mutex> g_mu;
-grpc_core::NoDestruct<std::weak_ptr<EventEngine>> g_weak_internal_event_engine;
-grpc_core::NoDestruct<std::shared_ptr<EventEngine>> g_user_event_engine;
+grpc_core::NoDestruct<std::weak_ptr<EventEngine>> g_weak_internal_event_engine
+    ABSL_GUARDED_BY(*g_mu);
+grpc_core::NoDestruct<std::shared_ptr<EventEngine>> g_user_event_engine
+    ABSL_GUARDED_BY(*g_mu);
 
 }  // namespace
 
