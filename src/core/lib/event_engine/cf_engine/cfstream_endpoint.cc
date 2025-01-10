@@ -170,7 +170,7 @@ void CFStreamEndpointImpl::Connect(
       // wait for write stream open completed to signal connection ready
       break;
     case kCFStreamEventHasBytesAvailable:
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case kCFStreamEventEndEncountered:
       self->read_event_.SetReady();
       break;
@@ -202,7 +202,7 @@ void CFStreamEndpointImpl::WriteCallback(CFWriteStreamRef stream,
       self->open_event_.SetReady();
       break;
     case kCFStreamEventCanAcceptBytes:
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case kCFStreamEventEndEncountered:
       self->write_event_.SetReady();
       break;

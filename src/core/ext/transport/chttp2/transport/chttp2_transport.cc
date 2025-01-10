@@ -2681,7 +2681,7 @@ static void WithUrgency(grpc_chttp2_transport* t,
       break;
     case grpc_core::chttp2::FlowControlAction::Urgency::UPDATE_IMMEDIATELY:
       grpc_chttp2_initiate_write(t, reason);
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case grpc_core::chttp2::FlowControlAction::Urgency::QUEUE_UPDATE:
       action();
       break;

@@ -400,7 +400,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
           new EndpointConnectionAttempter(
               ring_hash_.Ref(DEBUG_LOCATION, "EndpointConnectionAttempter"),
               endpoint_info.endpoint);
-          ABSL_FALLTHROUGH_INTENDED;
+          [[fallthrough]];
         case GRPC_CHANNEL_CONNECTING:
           return PickResult::Queue();
         default:

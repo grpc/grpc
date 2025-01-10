@@ -91,6 +91,10 @@ BANNED_EXCEPT = {
     "absl::exchange": [],
     # Use `std::make_unique()` instead.
     "absl::make_unique": [],
+    # C++17: Use [[fallthrough]]
+    "ABSL_FALLTHROUGH_INTENDED": [],
+    # C++17: Use [[nodiscard]]
+    "ABSL_MUST_USE_RESULT": [],
     # Use `std::variant()`, `std::get()`, ... instead.
     "absl::variant": [],
     "absl::get": [],
