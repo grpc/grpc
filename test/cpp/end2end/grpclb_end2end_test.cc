@@ -186,8 +186,8 @@ struct ClientStats {
         other.num_calls_finished_with_client_failed_to_send;
     num_calls_finished_known_received +=
         other.num_calls_finished_known_received;
-    for (const auto& p : other.drop_token_counts) {
-      drop_token_counts[p.first] += p.second;
+    for (const auto& [token, count] : other.drop_token_counts) {
+      drop_token_counts[token] += count;
     }
     return *this;
   }
@@ -766,11 +766,11 @@ class GrpclbEnd2endTest : public ::testing::Test {
       const std::vector<int>& backend_ports,
       const std::map<std::string, size_t>& drop_token_counts) {
     LoadBalanceResponse response;
-    for (const auto& drop_token_count : drop_token_counts) {
-      for (size_t i = 0; i < drop_token_count.second; ++i) {
+    for (const auto& [token, count] : drop_token_counts) {
+      for (size_t i = 0; i < count; ++i) {
         auto* server = response.mutable_server_list()->add_servers();
         server->set_drop(true);
-        server->set_load_balance_token(drop_token_count.first);
+        server->set_load_balance_token(token);
       }
     }
     for (const int& backend_port : backend_ports) {

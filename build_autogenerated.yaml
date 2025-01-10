@@ -136,7 +136,6 @@ libs:
   - absl/strings:strings
   - absl/synchronization:synchronization
   - absl/time:time
-  - absl/types:variant
 - name: grpc
   build: all
   language: c

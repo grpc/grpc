@@ -318,7 +318,7 @@ void PriorityLb::ExitIdleLocked() {
 }
 
 void PriorityLb::ResetBackoffLocked() {
-  for (const auto& p : children_) p.second->ResetBackoffLocked();
+  for (const auto& [_, child] : children_) child->ResetBackoffLocked();
 }
 
 absl::Status PriorityLb::UpdateLocked(UpdateArgs args) {
@@ -334,9 +334,7 @@ absl::Status PriorityLb::UpdateLocked(UpdateArgs args) {
   // Check all existing children against the new config.
   update_in_progress_ = true;
   std::vector<std::string> errors;
-  for (const auto& p : children_) {
-    const std::string& child_name = p.first;
-    auto& child = p.second;
+  for (const auto& [child_name, child] : children_) {
     auto config_it = config_->children().find(child_name);
     if (config_it == config_->children().end()) {
       // Existing child not found in new config.  Deactivate it.

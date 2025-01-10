@@ -20,10 +20,10 @@
 
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
@@ -85,7 +85,7 @@ XdsHttpGcpAuthnFilter::GenerateFilterConfig(
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse GCP auth filter config");
     return std::nullopt;

@@ -20,10 +20,10 @@
 
 #include <map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/log/check.h"
-#include "absl/types/variant.h"
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
 #include "src/core/util/json/json.h"
@@ -57,7 +57,7 @@ XdsHttpRouterFilter::GenerateFilterConfig(
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse router filter config");
     return std::nullopt;

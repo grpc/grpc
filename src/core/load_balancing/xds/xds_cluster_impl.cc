@@ -25,6 +25,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
@@ -34,7 +35,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -191,7 +191,7 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
     // object, that object already contains the locality label.  We
     // need to store the locality label directly only in the case where
     // load reporting is disabled.
-    using LocalityData = absl::variant<
+    using LocalityData = std::variant<
         RefCountedStringValue /*locality*/,
         RefCountedPtr<LrsClient::ClusterLocalityStats> /*locality_stats*/>;
 
@@ -437,7 +437,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   }
   // Not dropping, so delegate to child picker.
   PickResult result = picker_->Pick(args);
-  auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+  auto* complete_pick = std::get_if<PickResult::Complete>(&result.result);
   if (complete_pick != nullptr) {
     auto* subchannel_wrapper =
         static_cast<StatsSubchannelWrapper*>(complete_pick->subchannel.get());
@@ -459,7 +459,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
           call_state->GetCallAttribute<XdsRouteStateAttribute>();
       if (route_state_attribute != nullptr) {
         auto* route_action =
-            absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+            std::get_if<XdsRouteConfigResource::Route::RouteAction>(
                 &route_state_attribute->route().action);
         if (route_action != nullptr && route_action->auto_host_rewrite) {
           complete_pick->authority_override =
@@ -545,7 +545,7 @@ void XdsClusterImplLb::ResetBackoffLocked() {
 }
 
 std::string GetEdsResourceName(const XdsClusterResource& cluster_resource) {
-  auto* eds = absl::get_if<XdsClusterResource::Eds>(&cluster_resource.type);
+  auto* eds = std::get_if<XdsClusterResource::Eds>(&cluster_resource.type);
   if (eds == nullptr) return "";
   return eds->eds_service_name;
 }
@@ -580,9 +580,8 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
     return status;
   }
   auto& new_cluster_config = *it->second;
-  auto* endpoint_config =
-      absl::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
-          &new_cluster_config.children);
+  auto* endpoint_config = std::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
+      &new_cluster_config.children);
   if (endpoint_config == nullptr) {
     // Should never happen.
     absl::Status status = absl::InternalError(
@@ -684,7 +683,7 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
   absl::Status status = Match(
       cluster_resource.common_tls_context.certificate_validation_context
           .ca_certs,
-      [](const absl::monostate&) {
+      [](const std::monostate&) {
         // No root cert configured.
         return absl::OkStatus();
       },

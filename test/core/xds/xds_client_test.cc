@@ -33,11 +33,11 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
-#include "absl/types/variant.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/service/discovery/v3/discovery.pb.h"
 #include "envoy/service/status/v3/csds.pb.h"
@@ -341,7 +341,7 @@ class XdsClientTest : public ::testing::Test {
      private:
       // An event delivered to the watcher.
       struct Event {
-        absl::variant<
+        std::variant<
             // OnResourceChanged()
             absl::StatusOr<std::shared_ptr<const ResourceStruct>>,
             // OnAmbientError()

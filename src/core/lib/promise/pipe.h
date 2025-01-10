@@ -23,11 +23,11 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/variant.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
@@ -637,7 +637,7 @@ class Push {
           << " Pipe push has a null center";
       return false;
     }
-    if (auto* p = absl::get_if<T>(&state_)) {
+    if (auto* p = std::get_if<T>(&state_)) {
       auto r = center_->Push(p);
       if (auto* ok = r.value_if_ready()) {
         state_.template emplace<AwaitingAck>();
@@ -646,7 +646,7 @@ class Push {
         return Pending{};
       }
     }
-    DCHECK(absl::holds_alternative<AwaitingAck>(state_));
+    DCHECK(std::holds_alternative<AwaitingAck>(state_));
     return center_->PollAck();
   }
 
@@ -658,7 +658,7 @@ class Push {
       : center_(std::move(center)), state_(std::move(push)) {}
 
   RefCountedPtr<Center<T>> center_;
-  absl::variant<T, AwaitingAck> state_;
+  std::variant<T, AwaitingAck> state_;
 };
 
 }  // namespace pipe_detail

@@ -24,9 +24,9 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
-#include "absl/types/variant.h"
 #include "re2/re2.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/util/matchers.h"
@@ -114,7 +114,7 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
           bool operator==(const ChannelId&) const { return true; }
         };
 
-        absl::variant<Header, ChannelId> policy;
+        std::variant<Header, ChannelId> policy;
         bool terminal = false;
 
         bool operator==(const HashPolicy& other) const {
@@ -156,8 +156,8 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
       std::optional<RetryPolicy> retry_policy;
 
       // Action for this route.
-      absl::variant<ClusterName, std::vector<ClusterWeight>,
-                    ClusterSpecifierPluginName>
+      std::variant<ClusterName, std::vector<ClusterWeight>,
+                   ClusterSpecifierPluginName>
           action;
 
       // Storing the timeout duration from route action:
@@ -183,7 +183,7 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
       }
     };
 
-    absl::variant<UnknownAction, RouteAction, NonForwardingAction> action;
+    std::variant<UnknownAction, RouteAction, NonForwardingAction> action;
     TypedPerFilterConfig typed_per_filter_config;
 
     bool operator==(const Route& other) const {

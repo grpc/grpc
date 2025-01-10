@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <optional>
 #include <unordered_map>
+#include <variant>
 
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
@@ -34,7 +35,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/types/variant.h"
 #include "opentelemetry/sdk/resource/semantic_conventions.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -137,7 +137,7 @@ absl::string_view GetStringValueFromAttributeMap(
   if (it == attributes.end()) {
     return "unknown";
   }
-  const auto* string_value = absl::get_if<std::string>(&it->second);
+  const auto* string_value = std::get_if<std::string>(&it->second);
   if (string_value == nullptr) {
     return "unknown";
   }

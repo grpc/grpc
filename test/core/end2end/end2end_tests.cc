@@ -106,7 +106,7 @@ void CoreEnd2endTest::TearDown() {
 }
 
 CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
-  if (auto* u = absl::get_if<UnregisteredCall>(&call_selector_)) {
+  if (auto* u = std::get_if<UnregisteredCall>(&call_selector_)) {
     std::optional<Slice> host;
     if (u->host.has_value()) host = Slice::FromCopiedString(*u->host);
     test_.ForceInitialized();
@@ -119,7 +119,7 @@ CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
   } else {
     return Call(grpc_channel_create_registered_call(
                     test_.client(), parent_call_, propagation_mask_, test_.cq(),
-                    absl::get<void*>(call_selector_), deadline_, nullptr),
+                    std::get<void*>(call_selector_), deadline_, nullptr),
                 &test_);
   }
 }

@@ -300,10 +300,7 @@ class AdsServiceImpl
       {
         grpc_core::MutexLock lock(&ads_mu_);
         if (!update_queue.empty()) {
-          const std::string resource_type =
-              std::move(update_queue.front().first);
-          const std::string resource_name =
-              std::move(update_queue.front().second);
+          auto [resource_type, resource_name] = std::move(update_queue.front());
           update_queue.pop_front();
           did_work = true;
           SentState& sent_state = sent_state_map[resource_type];
@@ -334,12 +331,9 @@ class AdsServiceImpl
     // finished.
     {
       grpc_core::MutexLock lock(&ads_mu_);
-      for (auto& p : subscription_map) {
-        const std::string& type_url = p.first;
-        SubscriptionNameMap& subscription_name_map = p.second;
-        for (auto& q : subscription_name_map) {
-          const std::string& resource_name = q.first;
-          SubscriptionState& subscription_state = q.second;
+      for (auto& [type_url, subscription_name_map] : subscription_map) {
+        for (auto& [resource_name, subscription_state] :
+             subscription_name_map) {
           ResourceNameMap& resource_name_map =
               resource_map_[type_url].resource_name_map;
           ResourceState& resource_state = resource_name_map[resource_name];
@@ -524,8 +518,7 @@ class AdsServiceImpl
     if (resource_type == kLdsTypeUrl || resource_type == kCdsTypeUrl) {
       // For LDS and CDS we must send back all subscribed resources
       // (even the unchanged ones)
-      for (const auto& p : subscription_name_map) {
-        const std::string& resource_name = p.first;
+      for (const auto& [resource_name, _] : subscription_name_map) {
         if (resources_added_to_response.find(resource_name) ==
             resources_added_to_response.end()) {
           ResourceNameMap& resource_name_map =
@@ -667,8 +660,8 @@ class LrsServiceImpl
         cpu_utilization += other.cpu_utilization;
         mem_utilization += other.mem_utilization;
         application_utilization += other.application_utilization;
-        for (const auto& p : other.load_metrics) {
-          load_metrics[p.first] += p.second;
+        for (const auto& [key, value] : other.load_metrics) {
+          load_metrics[key] += value;
         }
         return *this;
       }

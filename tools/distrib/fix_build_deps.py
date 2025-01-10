@@ -94,7 +94,6 @@ EXTERNAL_DEPS = {
     "absl/time/clock.h": "absl/time",
     "absl/time/time.h": "absl/time",
     "absl/types/span.h": "absl/types:span",
-    "absl/types/variant.h": "absl/types:variant",
     "absl/utility/utility.h": "absl/utility",
     "benchmark/benchmark.h": "benchmark",
     "address_sorting/address_sorting.h": "address_sorting",

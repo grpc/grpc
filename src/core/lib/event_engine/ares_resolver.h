@@ -28,13 +28,11 @@
 
 #include <list>
 #include <memory>
-#include <optional>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
 #include "src/core/util/orphanable.h"
@@ -89,9 +87,9 @@ class AresResolver : public RefCountedDNSResolverInterface {
   using FdNodeList = std::list<std::unique_ptr<FdNode>>;
 
   using CallbackType =
-      absl::variant<EventEngine::DNSResolver::LookupHostnameCallback,
-                    EventEngine::DNSResolver::LookupSRVCallback,
-                    EventEngine::DNSResolver::LookupTXTCallback>;
+      std::variant<EventEngine::DNSResolver::LookupHostnameCallback,
+                   EventEngine::DNSResolver::LookupSRVCallback,
+                   EventEngine::DNSResolver::LookupTXTCallback>;
 
   void CheckSocketsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   void MaybeStartTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);

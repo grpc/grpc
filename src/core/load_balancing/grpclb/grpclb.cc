@@ -77,6 +77,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/container/inlined_vector.h"
@@ -90,7 +91,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
@@ -762,7 +762,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
   // Forward pick to child policy.
   PickResult result = child_picker_->Pick(args);
   // If pick succeeded, add LB token to initial metadata.
-  auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+  auto* complete_pick = std::get_if<PickResult::Complete>(&result.result);
   if (complete_pick != nullptr) {
     const SubchannelWrapper* subchannel_wrapper =
         static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());

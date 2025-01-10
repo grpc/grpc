@@ -58,7 +58,7 @@ Promise ConstructSwitchPromise(D discriminator, Case& c, OtherCases&... cs) {
 
 template <typename D, typename... Cases>
 auto SwitchImpl(D discriminator, Cases&... cases) {
-  using Promise = absl::variant<typename Cases::Factory::Promise...>;
+  using Promise = std::variant<typename Cases::Factory::Promise...>;
   return PromiseVariant<Promise>(
       ConstructSwitchPromise<Promise>(discriminator, cases...));
 }

@@ -158,7 +158,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
     return {};
   }
   auto* serialized_hcm_config =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_hcm_config == nullptr) {
     errors->AddError("could not parse HttpConnectionManager config");
     return {};
@@ -379,7 +379,7 @@ XdsListenerResource::DownstreamTlsContext DownstreamTlsContextParse(
     return {};
   }
   absl::string_view* serialized_downstream_tls_context =
-      absl::get_if<absl::string_view>(&extension->value);
+      std::get_if<absl::string_view>(&extension->value);
   if (serialized_downstream_tls_context == nullptr) {
     errors->AddError("can't decode DownstreamTlsContext");
     return {};
@@ -404,7 +404,7 @@ XdsListenerResource::DownstreamTlsContext DownstreamTlsContextParse(
     // errors, because we don't know which fields they were found in
     // inside of CommonTlsContext, so we make the error message a bit
     // more verbose to compensate.
-    if (absl::holds_alternative<
+    if (std::holds_alternative<
             CommonTlsContext::CertificateValidationContext::SystemRootCerts>(
             downstream_tls_context.common_tls_context
                 .certificate_validation_context.ca_certs)) {
@@ -433,7 +433,7 @@ XdsListenerResource::DownstreamTlsContext DownstreamTlsContextParse(
         google_protobuf_BoolValue_value(require_client_certificate);
     if (downstream_tls_context.require_client_certificate) {
       auto* ca_cert_provider =
-          absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+          std::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
               &downstream_tls_context.common_tls_context
                    .certificate_validation_context.ca_certs);
       if (ca_cert_provider == nullptr ||

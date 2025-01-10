@@ -111,7 +111,7 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
       // Do pick.
       PickResult result = delegate_picker_->Pick(args);
       // Intercept trailing metadata.
-      auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+      auto* complete_pick = std::get_if<PickResult::Complete>(&result.result);
       if (complete_pick != nullptr) {
         complete_pick->subchannel_call_tracker =
             std::make_unique<SubchannelCallTracker>(load_report_tracker_);

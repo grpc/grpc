@@ -667,9 +667,9 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
     auto nh =
         ares_resolver->callback_map_.extract(hostname_qa->callback_map_id);
     CHECK(!nh.empty());
-    CHECK(absl::holds_alternative<
+    CHECK(std::holds_alternative<
           EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
-    auto callback = absl::get<EventEngine::DNSResolver::LookupHostnameCallback>(
+    auto callback = std::get<EventEngine::DNSResolver::LookupHostnameCallback>(
         std::move(nh.mapped()));
     if (!hostname_qa->result.empty() || hostname_qa->error_status.ok()) {
       ares_resolver->event_engine_->Run(
@@ -694,9 +694,9 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
   CHECK(!nh.empty());
-  CHECK(absl::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
+  CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
       nh.mapped()));
-  auto callback = absl::get<EventEngine::DNSResolver::LookupSRVCallback>(
+  auto callback = std::get<EventEngine::DNSResolver::LookupSRVCallback>(
       std::move(nh.mapped()));
   auto fail = [&](absl::string_view prefix) {
     std::string error_message = absl::StrFormat(
@@ -755,9 +755,9 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
   CHECK(!nh.empty());
-  CHECK(absl::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
+  CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
       nh.mapped()));
-  auto callback = absl::get<EventEngine::DNSResolver::LookupTXTCallback>(
+  auto callback = std::get<EventEngine::DNSResolver::LookupTXTCallback>(
       std::move(nh.mapped()));
   auto fail = [&](absl::string_view prefix) {
     std::string error_message = absl::StrFormat(

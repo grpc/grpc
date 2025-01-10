@@ -208,15 +208,15 @@ auto AnyRetryMethodConfig() {
       [](uint32_t max_attempts, uint32_t initial_backoff, uint32_t max_backoff,
          double backoff_multiplier,
          std::vector<grpc_status_code> retryable_status_codes,
-         absl::variant<uint32_t, grpc_status_code>
+         std::variant<uint32_t, grpc_status_code>
              per_attempt_recv_timeout_or_another_retriable_status_code) {
         std::optional<uint32_t> per_attempt_recv_timeout;
-        if (absl::holds_alternative<grpc_status_code>(
+        if (std::holds_alternative<grpc_status_code>(
                 per_attempt_recv_timeout_or_another_retriable_status_code)) {
-          retryable_status_codes.push_back(absl::get<grpc_status_code>(
+          retryable_status_codes.push_back(std::get<grpc_status_code>(
               per_attempt_recv_timeout_or_another_retriable_status_code));
         } else {
-          per_attempt_recv_timeout = absl::get<uint32_t>(
+          per_attempt_recv_timeout = std::get<uint32_t>(
               per_attempt_recv_timeout_or_another_retriable_status_code);
         }
         std::sort(retryable_status_codes.begin(), retryable_status_codes.end());

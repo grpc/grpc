@@ -32,12 +32,12 @@
 #include <memory>
 #include <optional>
 #include <utility>
+#include <variant>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -744,7 +744,7 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error);
 ///  - a count of parsed bytes in the event of a partial read: the caller should
 ///    offload responsibilities to another thread to continue parsing.
 ///  - or a status in the case of a completed read
-absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
+std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
     grpc_chttp2_transport* t, const grpc_slice& slice,
     size_t& requests_started);
 
