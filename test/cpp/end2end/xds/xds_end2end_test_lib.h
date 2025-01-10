@@ -334,12 +334,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
             recorder->RecordApplicationUtilizationMetric(
                 request_metrics.application_utilization());
           }
-          for (const auto& p : request_metrics.named_metrics()) {
-            char* key = static_cast<char*>(
-                grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
-            strncpy(key, p.first.data(), p.first.size());
-            key[p.first.size()] = '\0';
-            recorder->RecordNamedMetric(key, p.second);
+          for (const auto& [key, value] : request_metrics.named_metrics()) {
+            char* key_copy = static_cast<char*>(
+                grpc_call_arena_alloc(context->c_call(), key.size() + 1));
+            strncpy(key_copy, key.data(), key.size());
+            key_copy[key.size()] = '\0';
+            recorder->RecordNamedMetric(key_copy, value);
           }
         }
         const auto status = TestMultipleServiceImpl<RpcService>::Echo(
