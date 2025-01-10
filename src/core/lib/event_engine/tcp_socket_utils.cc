@@ -63,8 +63,7 @@
 #include "src/core/util/status_helper.h"
 #include "src/core/util/uri.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 constexpr uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
@@ -446,5 +445,4 @@ absl::StatusOr<EventEngine::ResolvedAddress> URIToResolvedAddress(
       reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

@@ -24,8 +24,7 @@
 #include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
 #include "src/core/util/strerror.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 
@@ -367,8 +366,7 @@ void CFStreamEndpointImpl::DoWrite(
   on_writable(absl::OkStatus());
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE
