@@ -59,7 +59,7 @@ std::string ValidationErrors::message(absl::string_view prefix) const {
   if (field_errors_.empty()) return "";
   std::vector<std::string> errors;
   for (const auto& [field, field_errors] : field_errors_) {
-    if (errors.size() > 1) {
+    if (field_errors.size() > 1) {
       errors.emplace_back(absl::StrCat("field:", field, " errors:[",
                                        absl::StrJoin(field_errors, "; "), "]"));
     } else {
