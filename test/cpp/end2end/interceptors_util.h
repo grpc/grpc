@@ -146,8 +146,8 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
     auto client_metadata = context->client_metadata();
-    for (const auto& pair : client_metadata) {
-      context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
+    for (const auto& [key, value] : client_metadata) {
+      context->AddTrailingMetadata(ToString(key), ToString(value));
     }
     response->set_message(request->message());
     return Status::OK;
@@ -159,8 +159,8 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
     EchoRequest req;
     EchoResponse resp;
     auto client_metadata = context->client_metadata();
-    for (const auto& pair : client_metadata) {
-      context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
+    for (const auto& [key, value] : client_metadata) {
+      context->AddTrailingMetadata(ToString(key), ToString(value));
     }
 
     while (stream->Read(&req)) {
@@ -174,8 +174,8 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
                        ServerReader<EchoRequest>* reader,
                        EchoResponse* resp) override {
     auto client_metadata = context->client_metadata();
-    for (const auto& pair : client_metadata) {
-      context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
+    for (const auto& [key, value] : client_metadata) {
+      context->AddTrailingMetadata(ToString(key), ToString(value));
     }
 
     EchoRequest req;
@@ -190,8 +190,8 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
   Status ResponseStream(ServerContext* context, const EchoRequest* req,
                         ServerWriter<EchoResponse>* writer) override {
     auto client_metadata = context->client_metadata();
-    for (const auto& pair : client_metadata) {
-      context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
+    for (const auto& [key, value] : client_metadata) {
+      context->AddTrailingMetadata(ToString(key), ToString(value));
     }
 
     EchoResponse resp;
