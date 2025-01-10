@@ -35,7 +35,7 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
+#include <variant>
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 #include "src/core/util/env.h"
@@ -233,7 +233,7 @@ struct End {
   bool operator<(End) const { return false; }
 };
 
-using MatchCase = absl::variant<Matched, Unmatched, End>;
+using MatchCase = std::variant<Matched, Unmatched, End>;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Text & numeric helper functions
@@ -431,7 +431,7 @@ class Switch : public Item {
     bool operator<(const Default&) const { return false; }
     bool operator==(const Default&) const { return true; }
   };
-  using CaseLabel = absl::variant<int, std::string, Default>;
+  using CaseLabel = std::variant<int, std::string, Default>;
   // \a cond is the condition to place at the head of the switch statement.
   // eg. "switch (cond) {".
   explicit Switch(std::string cond) : cond_(std::move(cond)) {}
@@ -1459,12 +1459,12 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
 void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
                             std::string ofs, const MatchCase& match_case,
                             bool refill, int depth, Sink* out) {
-  if (absl::holds_alternative<End>(match_case)) {
+  if (std::holds_alternative<End>(match_case)) {
     out->Add("begin_ = end_;");
     out->Add("buffer_len_ = 0;");
     return;
   }
-  if (auto* p = absl::get_if<Unmatched>(&match_case)) {
+  if (auto* p = std::get_if<Unmatched>(&match_case)) {
     if (refill) {
       int max_bits = 0;
       for (auto sym : p->syms) max_bits = std::max(max_bits, sym.bits.length());
@@ -1477,7 +1477,7 @@ void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
     }
     return;
   }
-  const auto& matched = absl::get<Matched>(match_case);
+  const auto& matched = std::get<Matched>(match_case);
   for (int i = 0; i < matched.emits; i++) {
     out->Add(absl::StrCat(
         "sink_(",

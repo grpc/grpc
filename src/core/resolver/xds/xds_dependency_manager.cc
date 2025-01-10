@@ -316,7 +316,7 @@ void XdsDependencyManager::OnListenerUpdate(
     return ReportError("LDS", listener_resource_name_,
                        listener.status().message());
   }
-  const auto* hcm = absl::get_if<XdsListenerResource::HttpConnectionManager>(
+  const auto* hcm = std::get_if<XdsListenerResource::HttpConnectionManager>(
       &(*listener)->listener);
   if (hcm == nullptr) {
     current_listener_.reset();
@@ -415,7 +415,7 @@ absl::flat_hash_set<absl::string_view> GetClustersFromVirtualHost(
   absl::flat_hash_set<absl::string_view> clusters;
   for (auto& route : virtual_host.routes) {
     auto* route_action =
-        absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+        std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
     if (route_action == nullptr) continue;
     Match(
         route_action->action,

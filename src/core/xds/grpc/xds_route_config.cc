@@ -18,13 +18,13 @@
 
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "re2/re2.h"
 #include "src/core/util/match.h"
 #include "src/core/util/matchers.h"
@@ -209,10 +209,10 @@ std::string XdsRouteConfigResource::Route::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(matchers.ToString());
   auto* route_action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&action);
   if (route_action != nullptr) {
     contents.push_back(absl::StrCat("route=", route_action->ToString()));
-  } else if (absl::holds_alternative<
+  } else if (std::holds_alternative<
                  XdsRouteConfigResource::Route::NonForwardingAction>(action)) {
     contents.push_back("non_forwarding_action={}");
   } else {

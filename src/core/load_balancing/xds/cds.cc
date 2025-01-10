@@ -26,6 +26,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/log/check.h"
@@ -35,7 +36,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -348,7 +348,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       // Can't do this for an aggregate cluster, because even if the aggregate
       // cluster itself didn't change, the leaf clusters may have changed.
       if (*new_cluster_config == *old_cluster_config &&
-          absl::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
+          std::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
               new_cluster_config->children)) {
         return absl::OkStatus();
       }
@@ -359,7 +359,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   static constexpr absl::string_view kArgXdsAggregateClusterName =
       GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_aggregate_cluster_name";
   if (XdsAggregateClusterBackwardCompatibilityEnabled()) {
-    if (absl::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
+    if (std::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
             new_cluster_config->children)) {
       auto aggregate_cluster = args.args.GetString(kArgXdsAggregateClusterName);
       if (aggregate_cluster.has_value()) {
@@ -458,7 +458,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
     const XdsConfig::ClusterConfig* old_cluster,
     const XdsConfig::ClusterConfig& new_cluster,
     const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) const {
-  CHECK(!absl::holds_alternative<XdsConfig::ClusterConfig::AggregateConfig>(
+  CHECK(!std::holds_alternative<XdsConfig::ClusterConfig::AggregateConfig>(
       new_cluster.children));
   // First, build some maps from locality to child number and the reverse
   // from old_cluster and child_name_state_.
@@ -468,7 +468,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
       child_locality_map;
   if (old_cluster != nullptr) {
     auto* old_endpoint_config =
-        absl::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
+        std::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
             &old_cluster->children);
     if (old_endpoint_config != nullptr) {
       const auto& prev_priority_list =
@@ -542,7 +542,7 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
     const XdsClusterResource* aggregate_cluster_resource) {
   const auto& cluster_resource = *new_cluster.cluster;
   const bool is_logical_dns =
-      absl::holds_alternative<XdsClusterResource::LogicalDns>(
+      std::holds_alternative<XdsClusterResource::LogicalDns>(
           cluster_resource.type);
   // Determine what xDS LB policy to use.
   Json xds_lb_policy;
