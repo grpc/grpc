@@ -291,7 +291,7 @@ std::string StatusToString(const absl::Status& status) {
                                    absl::CHexEscape(payload_view), "\""));
       }
     } else {
-      std::optional<absl::string_view> payload_view = payload.TryFlat();
+      auto payload_view = payload.TryFlat();
       std::string payload_str = absl::CHexEscape(
           payload_view.has_value() ? *payload_view : std::string(payload));
       kvs.push_back(absl::StrCat(type_url, ":\"", payload_str, "\""));
@@ -350,7 +350,7 @@ google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
     memcpy(type_url_buf, type_url.data(), type_url.size());
     google_protobuf_Any_set_type_url(
         any, upb_StringView_FromDataAndSize(type_url_buf, type_url.size()));
-    std::optional<absl::string_view> v_view = payload.TryFlat();
+    auto v_view = payload.TryFlat();
     if (v_view.has_value()) {
       google_protobuf_Any_set_value(
           any, upb_StringView_FromDataAndSize(v_view->data(), v_view->size()));
