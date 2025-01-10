@@ -116,26 +116,24 @@ XdsHttpFaultFilter::GenerateFilterConfig(
   if (fault_abort != nullptr) {
     ValidationErrors::ScopedField field(errors, ".abort");
     grpc_status_code abort_grpc_status_code = GRPC_STATUS_OK;
-    // Try if gRPC status code is set first
-    int abort_grpc_status_code_raw =
-        envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
-            fault_abort);
-    if (abort_grpc_status_code_raw != 0) {
+    // Try if gRPC status code is set first.  Otherwise, use HTTP status.
+    if (int abort_grpc_status_code_raw =
+            envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
+                fault_abort);
+        abort_grpc_status_code_raw != 0) {
       if (!grpc_status_code_from_int(abort_grpc_status_code_raw,
                                      &abort_grpc_status_code)) {
         ValidationErrors::ScopedField field(errors, ".grpc_status");
         errors->AddError(absl::StrCat("invalid gRPC status code: ",
                                       abort_grpc_status_code_raw));
       }
-    } else {
-      // if gRPC status code is empty, check http status
-      int abort_http_status_code =
-          envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
-              fault_abort);
-      if (abort_http_status_code != 0 && abort_http_status_code != 200) {
-        abort_grpc_status_code =
-            grpc_http2_status_to_grpc_status(abort_http_status_code);
-      }
+    } else if (
+        int abort_http_status_code =
+            envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
+                fault_abort);
+        abort_http_status_code != 0 && abort_http_status_code != 200) {
+      abort_grpc_status_code =
+          grpc_http2_status_to_grpc_status(abort_http_status_code);
     }
     // Set the abort_code, even if it's OK
     fault_injection_policy_json["abortCode"] =

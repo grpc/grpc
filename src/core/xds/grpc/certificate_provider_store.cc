@@ -103,13 +103,11 @@ CertificateProviderStore::CreateOrGetCertificateProvider(
     if (result != nullptr) {
       certificate_providers_map_.insert({result->key(), result.get()});
     }
-  } else {
-    result =
-        it->second->RefIfNonZero().TakeAsSubclass<CertificateProviderWrapper>();
-    if (result == nullptr) {
-      result = CreateCertificateProviderLocked(key);
-      it->second = result.get();
-    }
+  } else if (result = it->second->RefIfNonZero()
+                          .TakeAsSubclass<CertificateProviderWrapper>();
+             result == nullptr) {
+    result = CreateCertificateProviderLocked(key);
+    it->second = result.get();
   }
   return result;
 }

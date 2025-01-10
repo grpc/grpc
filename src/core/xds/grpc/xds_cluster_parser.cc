@@ -453,24 +453,23 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
             custom_cluster_type);
     if (typed_config == nullptr) {
       errors.AddError("field not present");
+    } else if (absl::string_view type_url = absl::StripPrefix(
+                   UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
+                   "type.googleapis.com/");
+               type_url ==
+               "envoy.extensions.clusters.aggregate.v3.ClusterConfig") {
+      // Retrieve aggregate clusters.
+      ValidationErrors::ScopedField field(
+          &errors,
+          ".value[envoy.extensions.clusters.aggregate.v3.ClusterConfig]");
+      absl::string_view serialized_config =
+          UpbStringToAbsl(google_protobuf_Any_value(typed_config));
+      cds_update->type =
+          AggregateClusterParse(context, serialized_config, &errors);
     } else {
-      absl::string_view type_url = absl::StripPrefix(
-          UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
-          "type.googleapis.com/");
-      if (type_url != "envoy.extensions.clusters.aggregate.v3.ClusterConfig") {
-        ValidationErrors::ScopedField field(&errors, ".type_url");
-        errors.AddError(
-            absl::StrCat("unknown cluster_type extension: ", type_url));
-      } else {
-        // Retrieve aggregate clusters.
-        ValidationErrors::ScopedField field(
-            &errors,
-            ".value[envoy.extensions.clusters.aggregate.v3.ClusterConfig]");
-        absl::string_view serialized_config =
-            UpbStringToAbsl(google_protobuf_Any_value(typed_config));
-        cds_update->type =
-            AggregateClusterParse(context, serialized_config, &errors);
-      }
+      ValidationErrors::ScopedField field(&errors, ".type_url");
+      errors.AddError(
+          absl::StrCat("unknown cluster_type extension: ", type_url));
     }
   } else {
     ValidationErrors::ScopedField field(&errors, ".type");
