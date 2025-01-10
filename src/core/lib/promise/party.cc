@@ -18,6 +18,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <limits>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
@@ -131,6 +132,9 @@ class Party::Handle final : public Wakeable {
   Party* party_ ABSL_GUARDED_BY(mu_);
 };
 
+///////////////////////////////////////////////////////////////////////////////
+// Party::Participant
+
 Wakeable* Party::Participant::MakeNonOwningWakeable(Party* party) {
   if (handle_ == nullptr) {
     handle_ = new Handle(party);
@@ -145,6 +149,39 @@ Party::Participant::~Participant() {
     handle_->DropActivity();
   }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// Party::SpawnSerializer
+
+bool Party::SpawnSerializer::PollParticipantPromise() {
+  while (true) {
+    if (active_ == nullptr) {
+      active_ = next_.Pop().value_or(nullptr);
+      if (active_ == nullptr) {
+        // We always continue: there might be something new pushed on
+        return false;
+      }
+    }
+    if (active_->PollParticipantPromise()) {
+      active_ = nullptr;
+      continue;
+    }
+    return false;
+  }
+}
+
+void Party::SpawnSerializer::Destroy() {
+  if (active_ != nullptr) {
+    active_->Destroy();
+  }
+  while (auto* p = next_.Pop().value_or(nullptr)) {
+    p->Destroy();
+  }
+  Destruct(this);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Party
 
 Party::~Party() {}
 
@@ -394,7 +431,7 @@ uint64_t Party::NextAllocationMask(uint64_t current_allocation_mask) {
 }
 #endif
 
-void Party::AddParticipant(Participant* participant) {
+size_t Party::AddParticipant(Participant* participant) {
   GRPC_LATENT_SEE_INNER_SCOPE("Party::AddParticipant");
   uint64_t state = state_.load(std::memory_order_acquire);
   uint64_t allocated;
@@ -409,8 +446,7 @@ void Party::AddParticipant(Participant* participant) {
     allocated = (state & kAllocatedMask) >> kAllocatedShift;
     wakeup_mask = NextAllocationMask(allocated);
     if (GPR_UNLIKELY((wakeup_mask & kWakeupMask) == 0)) {
-      DelayAddParticipant(participant);
-      return;
+      return std::numeric_limits<size_t>::max();
     }
     DCHECK_NE(wakeup_mask & kWakeupMask, 0u)
         << "No available slots for new participant; allocated=" << allocated
@@ -429,10 +465,13 @@ void Party::AddParticipant(Participant* participant) {
       << " [participant=" << participant << "]";
   participants_[slot].store(participant, std::memory_order_release);
   // Now we need to wake up the party.
-  WakeupFromState(new_state, wakeup_mask);
+  WakeupFromState<true>(new_state, wakeup_mask);
+  return slot;
 }
 
-void Party::DelayAddParticipant(Participant* participant) {
+void Party::MaybeAsyncAddParticipant(Participant* participant) {
+  const size_t slot = AddParticipant(participant);
+  if (slot != std::numeric_limits<size_t>::max()) return;
   // We need to delay the addition of participants.
   IncrementRefCount();
   VLOG_EVERY_N_SEC(2, 10) << "Delaying addition of participant to party "
@@ -441,7 +480,7 @@ void Party::DelayAddParticipant(Participant* participant) {
       [this, participant]() mutable {
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
-        AddParticipant(participant);
+        MaybeAsyncAddParticipant(participant);
         Unref();
       });
 }

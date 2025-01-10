@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include <atomic>
+#include <limits>
 #include <string>
 #include <utility>
 
@@ -125,6 +126,33 @@ class Party : public Activity, private Wakeable {
     uint64_t prev_state_;
   };
 
+  class SpawnSerializer final : private Participant {
+   public:
+    template <class Factory>
+    void Spawn(Factory factory) {
+      auto empty_completion = [](Empty) {};
+      next_.Push(new ParticipantImpl<Factory, decltype(empty_completion)>(
+          "SpawnSerializer", std::move(factory), empty_completion));
+      party_->WakeupFromState<false>(
+          party_->state_.load(std::memory_order_relaxed), wakeup_mask_);
+    }
+
+    bool PollParticipantPromise() override;
+    void Destroy() override;
+
+   private:
+    friend class Party;
+    friend class Arena;
+
+    explicit SpawnSerializer(Party* party)
+        : next_(party->arena()), party_(party) {}
+
+    ArenaSpsc<Participant*, false> next_;
+    Participant* active_ = nullptr;
+    WakeupMask wakeup_mask_;
+    Party* const party_;
+  };
+
   static RefCountedPtr<Party> Make(RefCountedPtr<Arena> arena) {
     auto* arena_ptr = arena.get();
     return RefCountedPtr<Party>(arena_ptr->New<Party>(std::move(arena)));
@@ -183,6 +211,14 @@ class Party : public Activity, private Wakeable {
   }
 
   Arena* arena() { return arena_.get(); }
+
+  SpawnSerializer* MakeSpawnSerializer() {
+    auto* const serializer = arena_->New<SpawnSerializer>(this);
+    const size_t slot = AddParticipant(serializer);
+    DCHECK_NE(slot, std::numeric_limits<size_t>::max());
+    serializer->wakeup_mask_ = 1ull << slot;
+    return serializer;
+  }
 
  protected:
   friend class Arena;
@@ -383,9 +419,10 @@ class Party : public Activity, private Wakeable {
       Unref();
       return;
     }
-    WakeupFromState(state_.load(std::memory_order_relaxed), wakeup_mask);
+    WakeupFromState<true>(state_.load(std::memory_order_relaxed), wakeup_mask);
   }
 
+  template <bool kReffed>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void WakeupFromState(
       uint64_t cur_state, WakeupMask wakeup_mask) {
     GRPC_LATENT_SEE_INNER_SCOPE("Party::WakeupFromState");
@@ -396,8 +433,13 @@ class Party : public Activity, private Wakeable {
         // If the party is locked, we need to set the wakeup bits, and then
         // we'll immediately unref. Since something is running this should never
         // bring the refcount to zero.
-        DCHECK_GT(cur_state & kRefMask, kOneRef);
-        auto new_state = (cur_state | wakeup_mask) - kOneRef;
+        if (kReffed) {
+          DCHECK_GT(cur_state & kRefMask, kOneRef);
+        } else {
+          DCHECK_GE(cur_state & kRefMask, kOneRef);
+        }
+        const uint64_t new_state =
+            (cur_state | wakeup_mask) - (kReffed ? kOneRef : 0);
         if (state_.compare_exchange_weak(cur_state, new_state,
                                          std::memory_order_release)) {
           LogStateChange("Wakeup", cur_state, cur_state | wakeup_mask);
@@ -406,9 +448,11 @@ class Party : public Activity, private Wakeable {
       } else {
         // If the party is not locked, we need to lock it and run.
         DCHECK_EQ(cur_state & kWakeupMask, 0u);
-        if (state_.compare_exchange_weak(cur_state, cur_state | kLocked,
+        const uint64_t new_state =
+            (cur_state | kLocked) + (kReffed ? 0 : kOneRef);
+        if (state_.compare_exchange_weak(cur_state, new_state,
                                          std::memory_order_acq_rel)) {
-          LogStateChange("WakeupAndRun", cur_state, cur_state | kLocked);
+          LogStateChange("WakeupAndRun", cur_state, new_state);
           wakeup_mask_ |= wakeup_mask;
           RunLockedAndUnref(this, cur_state);
           return;
@@ -421,8 +465,8 @@ class Party : public Activity, private Wakeable {
   void Drop(WakeupMask wakeup_mask) final;
 
   // Add a participant (backs Spawn, after type erasure to ParticipantFactory).
-  void AddParticipant(Participant* participant);
-  void DelayAddParticipant(Participant* participant);
+  size_t AddParticipant(Participant* participant);
+  void MaybeAsyncAddParticipant(Participant* participant);
 
   static uint64_t NextAllocationMask(uint64_t current_allocation_mask);
 
@@ -457,7 +501,7 @@ template <typename Factory, typename OnComplete>
 void Party::Spawn(absl::string_view name, Factory promise_factory,
                   OnComplete on_complete) {
   GRPC_TRACE_LOG(party_state, INFO) << "PARTY[" << this << "]: spawn " << name;
-  AddParticipant(new ParticipantImpl<Factory, OnComplete>(
+  MaybeAsyncAddParticipant(new ParticipantImpl<Factory, OnComplete>(
       name, std::move(promise_factory), std::move(on_complete)));
 }
 
@@ -467,7 +511,7 @@ auto Party::SpawnWaitable(absl::string_view name, Factory promise_factory) {
   auto participant = MakeRefCounted<PromiseParticipantImpl<Factory>>(
       name, std::move(promise_factory));
   Participant* p = participant->Ref().release();
-  AddParticipant(p);
+  MaybeAsyncAddParticipant(p);
   return [participant = std::move(participant)]() mutable {
     return participant->PollCompletion();
   };

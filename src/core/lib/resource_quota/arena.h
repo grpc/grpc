@@ -30,6 +30,7 @@
 #include <stddef.h>
 
 #include <atomic>
+#include <cstddef>
 #include <iosfwd>
 #include <memory>
 #include <utility>
@@ -373,17 +374,10 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
 // Arena backed single-producer-single-consumer queue
 // Based on implementation from
 // https://www.1024cores.net/home/lock-free-algorithms/queues/unbounded-spsc-queue
-template <typename T>
+template <typename T, bool kOptimizeAlignment = true>
 class ArenaSpsc {
  public:
-  explicit ArenaSpsc(Arena* arena) : arena_(arena) {
-    Node* n = arena_->New<Node>();
-    n->next.store(nullptr, std::memory_order_relaxed);
-    tail_.store(n, std::memory_order_relaxed);
-    head_ = n;
-    first_ = n;
-    tail_copy_ = n;
-  }
+  explicit ArenaSpsc(Arena* arena) : arena_(arena) {}
 
   ~ArenaSpsc() {
     while (Pop().has_value()) {
@@ -416,6 +410,7 @@ class ArenaSpsc {
  private:
   struct Node {
     Node() {}
+    explicit Node(std::nullptr_t) : next{nullptr} {}
     std::atomic<Node*> next;
     union {
       T value;
@@ -438,15 +433,17 @@ class ArenaSpsc {
   }
 
   Arena* const arena_;
+  Node first_node_{nullptr};
   // Accessed mainly by consumer, infrequently by producer
-  std::atomic<Node*> tail_;
+  std::atomic<Node*> tail_{&first_node_};
   // Ensure alignment on next cacheline to deliminate producer and consumer
   // Head of queue
-  alignas(GPR_CACHELINE_SIZE) Node* head_;
+  alignas(kOptimizeAlignment ? GPR_CACHELINE_SIZE
+                             : alignof(Node*)) Node* head_{&first_node_};
   // Last unused node
-  Node* first_;
+  Node* first_{&first_node_};
   // Helper, points somewhere between first and tail
-  Node* tail_copy_;
+  Node* tail_copy_{&first_node_};
 };
 
 // Arenas form a context for activities
