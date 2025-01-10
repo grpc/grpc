@@ -15662,7 +15662,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(file_descriptors_test PUBLIC cxx_std_14)
+  target_compile_features(file_descriptors_test PUBLIC cxx_std_17)
   target_include_directories(file_descriptors_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
@@ -24826,7 +24826,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       )
     endif()
   endif()
-  target_compile_features(posix_system_api_test PUBLIC cxx_std_14)
+  target_compile_features(posix_system_api_test PUBLIC cxx_std_17)
   target_include_directories(posix_system_api_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
