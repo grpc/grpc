@@ -158,9 +158,9 @@ void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value) {
 
 std::optional<intptr_t> StatusGetInt(const absl::Status& status,
                                      StatusIntProperty key) {
-  std::optional<absl::Cord> p = status.GetPayload(GetStatusIntPropertyUrl(key));
+  auto p = status.GetPayload(GetStatusIntPropertyUrl(key));
   if (p.has_value()) {
-    std::optional<absl::string_view> sv = p->TryFlat();
+    auto sv = p->TryFlat();
     intptr_t value;
     if (sv.has_value()) {
       if (absl::SimpleAtoi(*sv, &value)) {
@@ -182,7 +182,7 @@ void StatusSetStr(absl::Status* status, StatusStrProperty key,
 
 std::optional<std::string> StatusGetStr(const absl::Status& status,
                                         StatusStrProperty key) {
-  std::optional<absl::Cord> p = status.GetPayload(GetStatusStrPropertyUrl(key));
+  auto p = status.GetPayload(GetStatusStrPropertyUrl(key));
   if (p.has_value()) {
     return std::string(*p);
   }
@@ -224,8 +224,7 @@ void StatusAddChild(absl::Status* status, absl::Status child) {
   size_t buf_len = 0;
   char* buf = google_rpc_Status_serialize(msg, arena.ptr(), &buf_len);
   // Append (msg-length and msg) to children payload
-  std::optional<absl::Cord> old_children =
-      status->GetPayload(kChildrenPropertyUrl);
+  auto old_children = status->GetPayload(kChildrenPropertyUrl);
   absl::Cord children;
   if (old_children.has_value()) {
     children = *old_children;
@@ -238,7 +237,7 @@ void StatusAddChild(absl::Status* status, absl::Status child) {
 }
 
 std::vector<absl::Status> StatusGetChildren(absl::Status status) {
-  std::optional<absl::Cord> children = status.GetPayload(kChildrenPropertyUrl);
+  auto children = status.GetPayload(kChildrenPropertyUrl);
   return children.has_value() ? ParseChildren(*children)
                               : std::vector<absl::Status>();
 }
