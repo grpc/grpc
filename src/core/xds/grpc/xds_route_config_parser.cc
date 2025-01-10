@@ -448,7 +448,6 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
 }
 
 XdsRouteConfigResource::RetryPolicy RetryPolicyParse(
-    const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RetryPolicy* retry_policy_proto,
     ValidationErrors* errors) {
   XdsRouteConfigResource::RetryPolicy retry_policy;
@@ -624,7 +623,7 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
       envoy_config_route_v3_RouteAction_retry_policy(route_action_proto);
   if (retry_policy != nullptr) {
     ValidationErrors::ScopedField field(errors, ".retry_policy");
-    route_action.retry_policy = RetryPolicyParse(context, retry_policy, errors);
+    route_action.retry_policy = RetryPolicyParse(retry_policy, errors);
   }
   // Host rewrite field.
   if (XdsAuthorityRewriteEnabled() &&
@@ -874,8 +873,7 @@ std::shared_ptr<const XdsRouteConfigResource> XdsRouteConfigResourceParse(
         envoy_config_route_v3_VirtualHost_retry_policy(virtual_hosts[i]);
     if (retry_policy != nullptr) {
       ValidationErrors::ScopedField field(errors, ".retry_policy");
-      virtual_host_retry_policy =
-          RetryPolicyParse(context, retry_policy, errors);
+      virtual_host_retry_policy = RetryPolicyParse(retry_policy, errors);
     }
     // Parse routes.
     ValidationErrors::ScopedField field2(errors, ".routes");
