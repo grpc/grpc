@@ -1959,6 +1959,8 @@ src/core/lib/event_engine/posix_engine/ev_poll_posix.h \
 src/core/lib/event_engine/posix_engine/event_poller.h \
 src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
 src/core/lib/event_engine/posix_engine/event_poller_posix_default.h \
+src/core/lib/event_engine/posix_engine/file_descriptors.cc \
+src/core/lib/event_engine/posix_engine/file_descriptors.h \
 src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h \
 src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
 src/core/lib/event_engine/posix_engine/internal_errqueue.h \
@@ -1975,6 +1977,8 @@ src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
 src/core/lib/event_engine/posix_engine/posix_engine_listener.h \
 src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc \
 src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h \
+src/core/lib/event_engine/posix_engine/posix_system_api.cc \
+src/core/lib/event_engine/posix_engine/posix_system_api.h \
 src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
 src/core/lib/event_engine/posix_engine/tcp_socket_utils.h \
 src/core/lib/event_engine/posix_engine/timer.cc \

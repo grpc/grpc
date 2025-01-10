@@ -841,6 +841,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptors.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
@@ -850,6 +851,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/posix_system_api.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -1713,6 +1715,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptors.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
@@ -1720,6 +1723,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/posix_system_api.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
   - src/core/lib/event_engine/posix_engine/timer_heap.cc
@@ -2434,6 +2438,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptors.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
@@ -2443,6 +2448,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/posix_system_api.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -2884,6 +2890,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptors.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
@@ -2891,6 +2898,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/posix_system_api.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
   - src/core/lib/event_engine/posix_engine/timer_heap.cc
@@ -4515,6 +4523,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptors.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
@@ -4524,6 +4533,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/posix_system_api.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -4836,6 +4846,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptors.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
@@ -4843,6 +4854,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/posix_system_api.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
   - src/core/lib/event_engine/posix_engine/timer_heap.cc
@@ -6934,6 +6946,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptors.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
@@ -6943,6 +6956,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/posix_system_api.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -7223,6 +7237,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptors.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
@@ -7230,6 +7245,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/posix_system_api.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
   - src/core/lib/event_engine/posix_engine/timer_heap.cc
@@ -10755,6 +10771,25 @@ targets:
   - test/core/test_util/tracer_util.cc
   deps:
   - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: file_descriptors_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/posix/posix_engine_test_utils.h
+  src:
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/posix/file_descriptors_test.cc
+  - test/core/event_engine/posix/posix_engine_test_utils.cc
+  deps:
+  - gtest
+  - grpc++
   - grpc_test_util
   platforms:
   - linux
@@ -16004,6 +16039,26 @@ targets:
   platforms:
   - linux
   - posix
+- name: posix_system_api_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/posix/posix_engine_test_utils.h
+  src:
+  - examples/protos/helloworld.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/posix/posix_engine_test_utils.cc
+  - test/core/event_engine/posix/posix_system_api_test.cc
+  deps:
+  - gtest
+  - grpc++
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: pre_stop_hook_server_test
   gtest: true
   build: test

@@ -28,7 +28,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/hash/hash.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -207,6 +206,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
+  absl::Status HandlePreFork();
+  absl::Status HandleForkInChild();
 
 #ifdef GRPC_POSIX_SOCKET_TCP
   // The posix EventEngine returned by this method would have a shared ownership
@@ -238,7 +239,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
       std::shared_ptr<PosixEnginePollerManager> poller_manager);
 
   ConnectionHandle CreateEndpointFromUnconnectedFdInternal(
-      int fd, EventEngine::OnConnectCallback on_connect,
+      FileDescriptor fd, EventEngine::OnConnectCallback on_connect,
       const EventEngine::ResolvedAddress& addr, const PosixTcpOptions& options,
       MemoryAllocator memory_allocator, EventEngine::Duration timeout);
 
@@ -257,6 +258,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 #ifdef GRPC_POSIX_SOCKET_TCP
   std::shared_ptr<PosixEnginePollerManager> poller_manager_;
 #endif  // GRPC_POSIX_SOCKET_TCP
+  grpc_core::Mutex fork_mutex_;
 };
 
 }  // namespace grpc_event_engine::experimental
