@@ -356,7 +356,7 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
         break;
       case FlowControlAction::Urgency::UPDATE_IMMEDIATELY:
         scheduled_write_ = true;
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case FlowControlAction::Urgency::QUEUE_UPDATE:
         f();
         break;

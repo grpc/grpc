@@ -648,7 +648,7 @@ class HPackParser::Parser {
           // literal key
           return StartParseLiteralKey(true);
         }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case 5:
       case 6:
         // inline encoded key index
@@ -674,7 +674,7 @@ class HPackParser::Parser {
               HpackParseResult::IllegalHpackOpCode());
           return false;
         }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case 9:
       case 10:
       case 11:

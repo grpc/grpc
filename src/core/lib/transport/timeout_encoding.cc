@@ -109,19 +109,19 @@ Slice Timeout::Encode() const {
     case 5:
       *p++ = '0' + n / 10000;
       n %= 10000;
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case 4:
       *p++ = '0' + n / 1000;
       n %= 1000;
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case 3:
       *p++ = '0' + n / 100;
       n %= 100;
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case 2:
       *p++ = '0' + n / 10;
       n %= 10;
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case 1:
       *p++ = '0' + n;
   }
@@ -131,28 +131,28 @@ Slice Timeout::Encode() const {
       break;
     case Unit::kHundredMilliseconds:
       *p++ = '0';
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case Unit::kTenMilliseconds:
       *p++ = '0';
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case Unit::kMilliseconds:
       *p++ = 'm';
       break;
     case Unit::kHundredSeconds:
       *p++ = '0';
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case Unit::kTenSeconds:
       *p++ = '0';
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case Unit::kSeconds:
       *p++ = 'S';
       break;
     case Unit::kHundredMinutes:
       *p++ = '0';
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case Unit::kTenMinutes:
       *p++ = '0';
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case Unit::kMinutes:
       *p++ = 'M';
       break;

@@ -494,7 +494,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
       } else {
         break;
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case State::kPushedToPipe: {
       CHECK(push_.has_value());
       auto r_push = (*push_)();
@@ -824,7 +824,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
       }
       CHECK(state_ == State::kPushedToPipe ||
             state_ == State::kCompletedWhilePushedToPipe);
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case State::kCompletedWhilePushedToPipe:
     case State::kPushedToPipe: {
       CHECK(push_.has_value());
@@ -871,7 +871,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
         break;
       }
     }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case State::kCompletedWhilePulledFromPipe:
     case State::kPulledFromPipe: {
       CHECK(push_.has_value());
@@ -1038,7 +1038,7 @@ class ClientCallData::PollContext {
           repoll_ = true;  // ensure Push() gets polled.
           self_->recv_initial_metadata_->metadata_next_.emplace(
               self_->server_initial_metadata_pipe()->receiver.Next());
-          ABSL_FALLTHROUGH_INTENDED;
+          [[fallthrough]];
         case RecvInitialMetadata::kCompleteAndPushedToPipe: {
           CHECK(self_->recv_initial_metadata_->metadata_next_.has_value());
           Poll<NextResult<ServerMetadataHandle>> p =

@@ -245,7 +245,7 @@ void SecurityHandshaker::OnPeerCheckedFn(grpc_error_handle error) {
   tsi_frame_protector* protector = nullptr;
   switch (frame_protector_type) {
     case TSI_FRAME_PROTECTOR_ZERO_COPY:
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case TSI_FRAME_PROTECTOR_NORMAL_OR_ZERO_COPY:
       // Create zero-copy frame protector.
       result = tsi_handshaker_result_create_zero_copy_grpc_protector(
