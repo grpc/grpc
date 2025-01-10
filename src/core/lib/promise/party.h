@@ -36,6 +36,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/dump_args.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 
@@ -48,6 +49,71 @@ namespace party_detail {
 static constexpr size_t kMaxParticipants = 16;
 
 }  // namespace party_detail
+
+class Party;
+
+class PromiseSerializer {
+ private:
+  friend class Party;
+
+  class Step {
+   public:
+    Step() : step_(0) {}
+    explicit Step(uint32_t step) : step_(step) {}
+
+    uint32_t step() const { return step_; }
+
+    template <typename Sink>
+    friend void AbslStringify(Sink& sink, Step step) {
+      sink.Append(absl::StrCat("Step[", step.step(), "]"));
+    }
+
+   private:
+    uint32_t step_;
+  };
+
+  Step BeginStep() {
+    auto step = Step(next_step_.fetch_add(1));
+    LOG(INFO) << "BeginStep: " << GRPC_DUMP_ARGS(this, step);
+    return step;
+  }
+  void CompleteStep(Step step) {
+    LOG(INFO) << "CompleteStep: "
+              << GRPC_DUMP_ARGS(this, completed_step_, step, waiter_);
+    CHECK_EQ(completed_step_ + 1, step.step());
+    completed_step_ = step.step();
+    waiter_.Wake();
+  }
+
+  auto AwaitStep(Step step) {
+    return [this, step]() -> Poll<Empty> {
+      LOG(INFO) << "AwaitStep: " << GRPC_DUMP_ARGS(this, completed_step_, step);
+      if (completed_step_ < step.step() - 1) {
+        return waiter_.pending();
+      }
+      return Empty{};
+    };
+  }
+
+  template <typename PromiseFactory>
+  auto WrapPromiseFactory(PromiseFactory promise_factory) {
+    auto step = BeginStep();
+    return
+        [this, step, promise_factory = std::move(promise_factory)]() mutable {
+          return Seq(AwaitStep(step), std::move(promise_factory),
+                     [this, step](auto x) {
+                       CompleteStep(step);
+                       return x;
+                     });
+        };
+  }
+
+  static constexpr const uint32_t kCancelled =
+      std::numeric_limits<uint32_t>::max();
+  std::atomic<uint32_t> next_step_{1};
+  uint32_t completed_step_{0};
+  IntraActivityWaiter waiter_;
+};
 
 // A Party is an Activity with multiple participant promises.
 class Party : public Activity, private Wakeable {
@@ -144,9 +210,15 @@ class Party : public Activity, private Wakeable {
   template <typename Factory, typename OnComplete>
   void Spawn(absl::string_view name, Factory promise_factory,
              OnComplete on_complete);
+  template <typename Factory, typename OnComplete>
+  void Spawn(absl::string_view name, PromiseSerializer* serializer,
+             Factory promise_factory, OnComplete on_complete);
 
   template <typename Factory>
   auto SpawnWaitable(absl::string_view name, Factory factory);
+  template <typename Factory>
+  auto SpawnWaitable(absl::string_view name, PromiseSerializer* serializer,
+                     Factory factory);
 
   void Orphan() final { Crash("unused"); }
 
@@ -461,6 +533,13 @@ void Party::Spawn(absl::string_view name, Factory promise_factory,
       name, std::move(promise_factory), std::move(on_complete)));
 }
 
+template <typename Factory, typename OnComplete>
+void Party::Spawn(absl::string_view name, PromiseSerializer* serializer,
+                  Factory promise_factory, OnComplete on_complete) {
+  Spawn(name, serializer->WrapPromiseFactory(std::move(promise_factory)),
+        std::move(on_complete));
+}
+
 template <typename Factory>
 auto Party::SpawnWaitable(absl::string_view name, Factory promise_factory) {
   GRPC_TRACE_LOG(party_state, INFO) << "PARTY[" << this << "]: spawn " << name;
@@ -471,6 +550,13 @@ auto Party::SpawnWaitable(absl::string_view name, Factory promise_factory) {
   return [participant = std::move(participant)]() mutable {
     return participant->PollCompletion();
   };
+}
+
+template <typename Factory>
+auto Party::SpawnWaitable(absl::string_view name, PromiseSerializer* serializer,
+                          Factory promise_factory) {
+  return SpawnWaitable(
+      name, serializer->WrapPromiseFactory(std::move(promise_factory)));
 }
 
 }  // namespace grpc_core

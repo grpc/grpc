@@ -156,6 +156,26 @@ class CallSpine final : public Party {
     Spawn(name, std::move(promise_factory), [](Empty) {});
   }
 
+  template <typename PromiseFactory>
+  void SpawnInfallible(absl::string_view name,
+                       PromiseSerializer* promise_serializer,
+                       PromiseFactory promise_factory) {
+    Spawn(name, promise_serializer, std::move(promise_factory), [](Empty) {});
+  }
+
+  auto SpawnGuardedOnComplete(DebugLocation whence) {
+    return [this, whence](auto r) {
+      if (!IsStatusOk(r)) {
+        GRPC_TRACE_LOG(promise_primitives, INFO)
+            << "SpawnGuarded sees failure: " << r
+            << " (source: " << whence.file() << ":" << whence.line() << ")";
+        auto status = StatusCast<ServerMetadataHandle>(std::move(r));
+        status->Set(GrpcCallWasCancelled(), true);
+        PushServerTrailingMetadata(std::move(status));
+      }
+    };
+  }
+
   // Spawn a promise that returns some status-like type; if the status
   // represents failure automatically cancel the rest of the call.
   template <typename PromiseFactory>
@@ -169,16 +189,22 @@ class CallSpine final : public Party {
         std::is_same<bool,
                      decltype(IsStatusOk(std::declval<ResultType>()))>::value,
         "SpawnGuarded promise must return a status-like object");
-    Spawn(name, std::move(promise_factory), [this, whence](ResultType r) {
-      if (!IsStatusOk(r)) {
-        GRPC_TRACE_LOG(promise_primitives, INFO)
-            << "SpawnGuarded sees failure: " << r
-            << " (source: " << whence.file() << ":" << whence.line() << ")";
-        auto status = StatusCast<ServerMetadataHandle>(std::move(r));
-        status->Set(GrpcCallWasCancelled(), true);
-        PushServerTrailingMetadata(std::move(status));
-      }
-    });
+    Spawn(name, std::move(promise_factory), SpawnGuardedOnComplete(whence));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnGuarded(absl::string_view name, PromiseSerializer* serializer,
+                    PromiseFactory promise_factory, DebugLocation whence = {}) {
+    using FactoryType =
+        promise_detail::OncePromiseFactory<void, PromiseFactory>;
+    using PromiseType = typename FactoryType::Promise;
+    using ResultType = typename PromiseType::Result;
+    static_assert(
+        std::is_same<bool,
+                     decltype(IsStatusOk(std::declval<ResultType>()))>::value,
+        "SpawnGuarded promise must return a status-like object");
+    Spawn(name, serializer, std::move(promise_factory),
+          SpawnGuardedOnComplete(whence));
   }
 
   // Wrap a promise so that if the call completes that promise is cancelled.
@@ -203,7 +229,7 @@ class CallSpine final : public Party {
 
   void SpawnPushServerInitialMetadata(ServerMetadataHandle md) {
     SpawnInfallible(
-        "push-server-initial-metadata",
+        "push-server-initial-metadata", &server_to_client_serializer_,
         [md = std::move(md), self = RefAsSubclass<CallSpine>()]() mutable {
           self->CancelIfFailed(self->PushServerInitialMetadata(std::move(md)));
         });
@@ -211,7 +237,7 @@ class CallSpine final : public Party {
 
   auto SpawnPushServerToClientMessage(MessageHandle msg) {
     return SpawnWaitable(
-        "push-message",
+        "push-message", &server_to_client_serializer_,
         [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
           return self->CancelIfFails(
               self->PushServerToClientMessage(std::move(msg)));
@@ -220,7 +246,7 @@ class CallSpine final : public Party {
 
   auto SpawnPushClientToServerMessage(MessageHandle msg) {
     return SpawnWaitable(
-        "push-message",
+        "push-message", &client_to_server_serializer_,
         [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
           return self->CancelIfFails(
               self->PushClientToServerMessage(std::move(msg)));
@@ -228,19 +254,26 @@ class CallSpine final : public Party {
   }
 
   void SpawnFinishSends() {
-    SpawnInfallible("finish-sends", [self = RefAsSubclass<CallSpine>()]() {
-      self->FinishSends();
-      return Empty{};
-    });
+    SpawnInfallible("finish-sends", &client_to_server_serializer_,
+                    [self = RefAsSubclass<CallSpine>()]() {
+                      self->FinishSends();
+                      return Empty{};
+                    });
   }
 
   void SpawnPushServerTrailingMetadata(ServerMetadataHandle md) {
-    SpawnInfallible(
-        "push-server-trailing-metadata",
-        [md = std::move(md), self = RefAsSubclass<CallSpine>()]() mutable {
-          self->PushServerTrailingMetadata(std::move(md));
-          return Empty{};
-        });
+    const bool was_cancelled = md->get(GrpcCallWasCancelled()).value_or(false);
+    auto promise = [md = std::move(md),
+                    self = RefAsSubclass<CallSpine>()]() mutable {
+      self->PushServerTrailingMetadata(std::move(md));
+      return Empty{};
+    };
+    if (was_cancelled) {
+      SpawnInfallible("push-server-trailing-metadata", std::move(promise));
+    } else {
+      SpawnInfallible("push-server-trailing-metadata",
+                      &server_to_client_serializer_, std::move(promise));
+    }
   }
 
   void SpawnCancel() {
@@ -279,6 +312,8 @@ class CallSpine final : public Party {
   absl::AnyInvocable<void(bool)> on_done_{nullptr};
   // Call spines that should be cancelled if this spine is cancelled
   absl::InlinedVector<RefCountedPtr<CallSpine>, 3> child_calls_;
+  PromiseSerializer server_to_client_serializer_;
+  PromiseSerializer client_to_server_serializer_;
 };
 
 class CallHandler;

@@ -655,6 +655,7 @@ grpc_cc_library(
         "arena",
         "construct_destruct",
         "context",
+        "dump_args",
         "event_engine_context",
         "latent_see",
         "poll",
