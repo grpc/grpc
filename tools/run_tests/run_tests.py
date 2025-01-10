@@ -891,7 +891,7 @@ class PythonLanguage(object):
         elif args.compiler == "pypy3":
             return (pypy32_config,)
         elif args.compiler == "python_alpine":
-            return (python310_config,)
+            return (python311_config,)
         elif args.compiler == "all_the_cpythons":
             return (
                 python38_config,
