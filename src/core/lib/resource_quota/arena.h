@@ -410,6 +410,7 @@ class ArenaSpsc {
  private:
   struct Node {
     Node() {}
+    ~Node() {}
     explicit Node(std::nullptr_t) : next{nullptr} {}
     std::atomic<Node*> next;
     union {
