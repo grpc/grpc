@@ -20,10 +20,10 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <variant>
 
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
-#include "absl/types/variant.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -172,8 +172,8 @@ struct CancelFrame final : public FrameInterface {
   }
 };
 
-using ClientFrame = absl::variant<ClientFragmentFrame, CancelFrame>;
-using ServerFrame = absl::variant<ServerFragmentFrame>;
+using ClientFrame = std::variant<ClientFragmentFrame, CancelFrame>;
+using ServerFrame = std::variant<ServerFragmentFrame>;
 
 inline FrameInterface& GetFrameInterface(ClientFrame& frame) {
   return MatchMutable(

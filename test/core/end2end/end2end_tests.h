@@ -35,6 +35,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
@@ -44,7 +45,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -219,7 +219,7 @@ class CoreEnd2endTest : public ::testing::Test {
 
     // Specify the host (otherwise nullptr is passed)
     ClientCallBuilder& Host(std::string host) {
-      absl::get<UnregisteredCall>(call_selector_).host = std::move(host);
+      std::get<UnregisteredCall>(call_selector_).host = std::move(host);
       return *this;
     }
     // Specify the timeout (otherwise gpr_inf_future is passed) - this time is
@@ -241,7 +241,7 @@ class CoreEnd2endTest : public ::testing::Test {
       std::string method;
       absl::optional<std::string> host;
     };
-    absl::variant<void*, UnregisteredCall> call_selector_;
+    std::variant<void*, UnregisteredCall> call_selector_;
     grpc_call* parent_call_ = nullptr;
     uint32_t propagation_mask_ = GRPC_PROPAGATE_DEFAULTS;
     gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_REALTIME);

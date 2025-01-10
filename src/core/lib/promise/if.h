@@ -19,9 +19,9 @@
 
 #include <memory>
 #include <utility>
+#include <variant>
 
 #include "absl/status/statusor.h"
-#include "absl/types/variant.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
@@ -117,7 +117,7 @@ class If {
                           FalseFactory(std::move(if_false))}) {}
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
-    return absl::visit(CallPoll<false>{this}, state_);
+    return std::visit(CallPoll<false>{this}, state_);
   }
 
  private:
@@ -126,7 +126,7 @@ class If {
     TrueFactory if_true;
     FalseFactory if_false;
   };
-  using State = absl::variant<Evaluating, TruePromise, FalsePromise>;
+  using State = std::variant<Evaluating, TruePromise, FalsePromise>;
   State state_;
 
   template <bool kSetState>

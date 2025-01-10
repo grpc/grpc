@@ -23,8 +23,7 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/util/debug_location.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 /// On ingress, ensure that an EventEngine exists in channel args via
 /// preconditioning.
@@ -53,7 +52,6 @@ class DefaultEventEngineScope {
   ~DefaultEventEngineScope() { ShutdownDefaultEventEngine(); }
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_DEFAULT_EVENT_ENGINE_H

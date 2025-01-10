@@ -812,7 +812,6 @@ grpc_fuzz_test(
     name = "tdigest_fuzztest",
     srcs = ["tdigest_fuzztest.cc"],
     external_deps = [
-        "absl/types:variant",
         "fuzztest",
         "fuzztest_main",
         "gtest",

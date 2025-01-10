@@ -23,7 +23,6 @@ grpc_cc_test(
     external_deps = [
         "absl/log:log",
         "gtest",
-        "absl/types:variant",
     ],
     language = "C++",
     tags = [

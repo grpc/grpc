@@ -187,7 +187,7 @@ void test_fails(void) {
         break;
       case GRPC_TIMERS_NOT_CHECKED:
         polling_deadline = grpc_core::Timestamp::ProcessEpoch();
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         ASSERT_TRUE(GRPC_LOG_IF_ERROR(
             "pollset_work",
@@ -339,7 +339,7 @@ void test_fails_bad_addr_no_leak(void) {
         break;
       case GRPC_TIMERS_NOT_CHECKED:
         polling_deadline = grpc_core::Timestamp::ProcessEpoch();
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         ASSERT_TRUE(GRPC_LOG_IF_ERROR(
             "pollset_work",

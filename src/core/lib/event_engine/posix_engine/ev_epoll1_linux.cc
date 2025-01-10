@@ -53,8 +53,7 @@
 
 #define MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION 1
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class Epoll1EventHandle : public EventHandle {
  public:
@@ -575,14 +574,12 @@ void Epoll1Poller::PostforkParent() {}
 // TODO(vigneshbabu): implement
 void Epoll1Poller::PostforkChild() {}
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #else  // defined(GRPC_LINUX_EPOLL)
 #if defined(GRPC_POSIX_SOCKET_EV_EPOLL1)
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Poller;
@@ -629,8 +626,7 @@ void Epoll1Poller::PostforkParent() {}
 
 void Epoll1Poller::PostforkChild() {}
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // defined(GRPC_POSIX_SOCKET_EV_EPOLL1)
 #endif  // !defined(GRPC_LINUX_EPOLL)

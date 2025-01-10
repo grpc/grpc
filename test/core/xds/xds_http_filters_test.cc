@@ -24,13 +24,13 @@
 
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
-#include "absl/types/variant.h"
 #include "envoy/config/core/v3/address.pb.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/core/v3/extension.pb.h"

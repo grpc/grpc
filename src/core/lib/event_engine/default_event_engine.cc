@@ -35,8 +35,7 @@
 #include "src/core/lib/event_engine/thready_event_engine/thready_event_engine.h"  // IWYU pragma: keep
 #endif
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 // TODO(hork): delete the factory once all known users have migrated away
@@ -142,5 +141,4 @@ void RegisterEventEngineChannelArgPreconditioning(
       grpc_event_engine::experimental::EnsureEventEngineInChannelArgs);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

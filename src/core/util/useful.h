@@ -19,11 +19,11 @@
 
 #include <cstddef>
 #include <limits>
+#include <variant>
 
 #include "absl/log/check.h"
 #include "absl/numeric/bits.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 
 /// useful utilities that don't belong anywhere else
 
@@ -66,12 +66,12 @@ int QsortCompare(const T& a, const T& b) {
 }
 
 template <typename... X>
-int QsortCompare(const absl::variant<X...>& a, const absl::variant<X...>& b) {
+int QsortCompare(const std::variant<X...>& a, const std::variant<X...>& b) {
   const int index = QsortCompare(a.index(), b.index());
   if (index != 0) return index;
-  return absl::visit(
+  return std::visit(
       [&](const auto& x) {
-        return QsortCompare(x, absl::get<absl::remove_cvref_t<decltype(x)>>(b));
+        return QsortCompare(x, std::get<absl::remove_cvref_t<decltype(x)>>(b));
       },
       a);
 }

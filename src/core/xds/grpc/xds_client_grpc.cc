@@ -360,9 +360,9 @@ namespace {
 std::vector<RefCountedPtr<GrpcXdsClient>> GetAllXdsClients() {
   MutexLock lock(g_mu);
   std::vector<RefCountedPtr<GrpcXdsClient>> xds_clients;
-  for (const auto& key_client : *g_xds_client_map) {
+  for (const auto& [_, client] : *g_xds_client_map) {
     auto xds_client =
-        key_client.second->RefIfNonZero(DEBUG_LOCATION, "DumpAllClientConfigs");
+        client->RefIfNonZero(DEBUG_LOCATION, "DumpAllClientConfigs");
     if (xds_client != nullptr) {
       xds_clients.emplace_back(xds_client.TakeAsSubclass<GrpcXdsClient>());
     }

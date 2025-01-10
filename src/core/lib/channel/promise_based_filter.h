@@ -739,7 +739,7 @@ MakeFilterCall(Derived* derived) {
 // the call lifecycle.
 // The type of these members matters, and is selectable by the class
 // author. For $INTERCEPTOR_NAME in the above list:
-// - static const NoInterceptor $INTERCEPTOR_NAME:
+// - static inline const NoInterceptor $INTERCEPTOR_NAME:
 //   defines that this filter does not intercept this event.
 //   there is zero runtime cost added to handling that event by this filter.
 // - void $INTERCEPTOR_NAME($VALUE_TYPE&):
@@ -771,7 +771,7 @@ MakeFilterCall(Derived* derived) {
 // relevant return type listed above.
 // Finally, OnFinalize can be added to intecept call finalization.
 // It must have one of the signatures:
-// - static const NoInterceptor OnFinalize:
+// - static inline const NoInterceptor OnFinalize:
 //   the filter does not intercept call finalization.
 // - void OnFinalize(const grpc_call_final_info*):
 //   the filter intercepts call finalization.
