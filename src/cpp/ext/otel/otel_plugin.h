@@ -405,6 +405,8 @@ class OpenTelemetryPluginImpl
       grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
   OptionalLabelStringToKey(absl::string_view key);
 
+  static absl::string_view GetMethodFromPath(const grpc_core::Slice& path);
+
   // grpc::OpenTelemetryPlugin:
   void AddToChannelArguments(grpc::ChannelArguments* args) override;
   void AddToServerBuilder(grpc::ServerBuilder* builder) override;

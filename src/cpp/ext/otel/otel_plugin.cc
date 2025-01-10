@@ -257,9 +257,9 @@ OpenTelemetryPluginBuilderImpl::SetChannelScopeFilter(
 }
 
 absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
-  if (meter_provider_ == nullptr) {
+  if (meter_provider_ == nullptr && tracer_provider_ == nullptr) {
     return absl::InvalidArgumentError(
-        "Need to configure a valid meter provider.");
+        "Need to configure a valid meter provider or tracer provider.");
   }
   grpc_core::GlobalStatsPluginRegistry::RegisterStatsPlugin(
       std::make_shared<OpenTelemetryPluginImpl>(
@@ -432,194 +432,197 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                     opentelemetry::trace::Tracer>()),
       text_map_propagator_(std::move(text_map_propagator)),
       channel_scope_filter_(std::move(channel_scope_filter)) {
-  auto meter = meter_provider_->GetMeter("grpc-c++", GRPC_CPP_VERSION_STRING);
-  // Per-call metrics.
-  if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
-                           kClientAttemptStartedInstrumentName)) {
-    client_.attempt.started = meter->CreateUInt64Counter(
-        std::string(grpc::OpenTelemetryPluginBuilder::
-                        kClientAttemptStartedInstrumentName),
-        "Number of client call attempts started", "{attempt}");
-  }
-  if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
-                           kClientAttemptDurationInstrumentName)) {
-    client_.attempt.duration = meter->CreateDoubleHistogram(
-        std::string(grpc::OpenTelemetryPluginBuilder::
-                        kClientAttemptDurationInstrumentName),
-        "End-to-end time taken to complete a client call attempt", "s");
-  }
-  if (metrics.contains(
-          grpc::OpenTelemetryPluginBuilder::
-              kClientAttemptSentTotalCompressedMessageSizeInstrumentName)) {
-    client_.attempt.sent_total_compressed_message_size =
-        meter->CreateUInt64Histogram(
-            std::string(
-                grpc::OpenTelemetryPluginBuilder::
-                    kClientAttemptSentTotalCompressedMessageSizeInstrumentName),
-            "Compressed message bytes sent per client call attempt", "By");
-  }
-  if (metrics.contains(
-          grpc::OpenTelemetryPluginBuilder::
-              kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName)) {
-    client_.attempt.rcvd_total_compressed_message_size =
-        meter->CreateUInt64Histogram(
-            std::string(
-                grpc::OpenTelemetryPluginBuilder::
-                    kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName),
-            "Compressed message bytes received per call attempt", "By");
-  }
-  if (metrics.contains(
-          grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName)) {
-    server_.call.started = meter->CreateUInt64Counter(
-        std::string(
-            grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName),
-        "Number of server calls started", "{call}");
-  }
-  if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
-                           kServerCallDurationInstrumentName)) {
-    server_.call.duration = meter->CreateDoubleHistogram(
-        std::string(grpc::OpenTelemetryPluginBuilder::
-                        kServerCallDurationInstrumentName),
-        "End-to-end time taken to complete a call from server transport's "
-        "perspective",
-        "s");
-  }
-  if (metrics.contains(
-          grpc::OpenTelemetryPluginBuilder::
-              kServerCallSentTotalCompressedMessageSizeInstrumentName)) {
-    server_.call.sent_total_compressed_message_size =
-        meter->CreateUInt64Histogram(
-            std::string(
-                grpc::OpenTelemetryPluginBuilder::
-                    kServerCallSentTotalCompressedMessageSizeInstrumentName),
-            "Compressed message bytes sent per server call", "By");
-  }
-  if (metrics.contains(
-          grpc::OpenTelemetryPluginBuilder::
-              kServerCallRcvdTotalCompressedMessageSizeInstrumentName)) {
-    server_.call.rcvd_total_compressed_message_size =
-        meter->CreateUInt64Histogram(
-            std::string(
-                grpc::OpenTelemetryPluginBuilder::
-                    kServerCallRcvdTotalCompressedMessageSizeInstrumentName),
-            "Compressed message bytes received per server call", "By");
-  }
-  // Store optional label keys for per call metrics
-  CHECK(static_cast<size_t>(grpc_core::ClientCallTracer::CallAttemptTracer::
-                                OptionalLabelKey::kSize) <=
-        kOptionalLabelsSizeLimit);
-  for (const auto& key : optional_label_keys) {
-    auto optional_key = OptionalLabelStringToKey(key);
-    if (optional_key.has_value()) {
-      per_call_optional_label_bits_.set(
-          static_cast<size_t>(optional_key.value()));
+  if (meter_provider_ != nullptr) {
+    auto meter = meter_provider_->GetMeter("grpc-c++", GRPC_CPP_VERSION_STRING);
+    // Per-call metrics.
+    if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
+                             kClientAttemptStartedInstrumentName)) {
+      client_.attempt.started = meter->CreateUInt64Counter(
+          std::string(grpc::OpenTelemetryPluginBuilder::
+                          kClientAttemptStartedInstrumentName),
+          "Number of client call attempts started", "{attempt}");
     }
-  }
-  // Non-per-call metrics.
-  grpc_core::GlobalInstrumentsRegistry::ForEach(
-      [&, this](const grpc_core::GlobalInstrumentsRegistry::
-                    GlobalInstrumentDescriptor& descriptor) {
-        CHECK(descriptor.optional_label_keys.size() <=
-              kOptionalLabelsSizeLimit);
-        if (instruments_data_.size() < descriptor.index + 1) {
-          instruments_data_.resize(descriptor.index + 1);
-        }
-        if (!metrics.contains(descriptor.name)) {
-          return;
-        }
-        switch (descriptor.instrument_type) {
-          case grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCounter:
-            switch (descriptor.value_type) {
-              case grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64:
-                instruments_data_[descriptor.index].instrument =
-                    meter->CreateUInt64Counter(
-                        std::string(descriptor.name),
-                        std::string(descriptor.description),
-                        std::string(descriptor.unit));
-                break;
-              case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble:
-                instruments_data_[descriptor.index].instrument =
-                    meter->CreateDoubleCounter(
-                        std::string(descriptor.name),
-                        std::string(descriptor.description),
-                        std::string(descriptor.unit));
-                break;
-              default:
-                grpc_core::Crash(
-                    absl::StrFormat("Unknown or unsupported value type: %d",
-                                    descriptor.value_type));
-            }
-            break;
-          case grpc_core::GlobalInstrumentsRegistry::InstrumentType::kHistogram:
-            switch (descriptor.value_type) {
-              case grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64:
-                instruments_data_[descriptor.index].instrument =
-                    meter->CreateUInt64Histogram(
-                        std::string(descriptor.name),
-                        std::string(descriptor.description),
-                        std::string(descriptor.unit));
-                break;
-              case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble:
-                instruments_data_[descriptor.index].instrument =
-                    meter->CreateDoubleHistogram(
-                        std::string(descriptor.name),
-                        std::string(descriptor.description),
-                        std::string(descriptor.unit));
-                break;
-              default:
-                grpc_core::Crash(
-                    absl::StrFormat("Unknown or unsupported value type: %d",
-                                    descriptor.value_type));
-            }
-            break;
-          case grpc_core::GlobalInstrumentsRegistry::InstrumentType::
-              kCallbackGauge:
-            switch (descriptor.value_type) {
-              case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64: {
-                auto observable_state =
-                    std::make_unique<CallbackGaugeState<int64_t>>();
-                observable_state->id = descriptor.index;
-                observable_state->ot_plugin = this;
-                observable_state->instrument =
-                    meter->CreateInt64ObservableGauge(
-                        std::string(descriptor.name),
-                        std::string(descriptor.description),
-                        std::string(descriptor.unit));
-                instruments_data_[descriptor.index].instrument =
-                    std::move(observable_state);
-                break;
-              }
-              case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble: {
-                auto observable_state =
-                    std::make_unique<CallbackGaugeState<double>>();
-                observable_state->id = descriptor.index;
-                observable_state->ot_plugin = this;
-                observable_state->instrument =
-                    meter->CreateDoubleObservableGauge(
-                        std::string(descriptor.name),
-                        std::string(descriptor.description),
-                        std::string(descriptor.unit));
-                instruments_data_[descriptor.index].instrument =
-                    std::move(observable_state);
-                break;
-              }
-              default:
-                grpc_core::Crash(
-                    absl::StrFormat("Unknown or unsupported value type: %d",
-                                    descriptor.value_type));
-            }
-            break;
-          default:
-            grpc_core::Crash(absl::StrFormat("Unknown instrument_type: %d",
-                                             descriptor.instrument_type));
-        }
-        for (size_t i = 0; i < descriptor.optional_label_keys.size(); ++i) {
-          if (optional_label_keys.find(descriptor.optional_label_keys[i]) !=
-              optional_label_keys.end()) {
-            instruments_data_[descriptor.index].optional_labels_bits.set(i);
+    if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
+                             kClientAttemptDurationInstrumentName)) {
+      client_.attempt.duration = meter->CreateDoubleHistogram(
+          std::string(grpc::OpenTelemetryPluginBuilder::
+                          kClientAttemptDurationInstrumentName),
+          "End-to-end time taken to complete a client call attempt", "s");
+    }
+    if (metrics.contains(
+            grpc::OpenTelemetryPluginBuilder::
+                kClientAttemptSentTotalCompressedMessageSizeInstrumentName)) {
+      client_.attempt
+          .sent_total_compressed_message_size = meter->CreateUInt64Histogram(
+          std::string(
+              grpc::OpenTelemetryPluginBuilder::
+                  kClientAttemptSentTotalCompressedMessageSizeInstrumentName),
+          "Compressed message bytes sent per client call attempt", "By");
+    }
+    if (metrics.contains(
+            grpc::OpenTelemetryPluginBuilder::
+                kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName)) {
+      client_.attempt
+          .rcvd_total_compressed_message_size = meter->CreateUInt64Histogram(
+          std::string(
+              grpc::OpenTelemetryPluginBuilder::
+                  kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName),
+          "Compressed message bytes received per call attempt", "By");
+    }
+    if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
+                             kServerCallStartedInstrumentName)) {
+      server_.call.started = meter->CreateUInt64Counter(
+          std::string(grpc::OpenTelemetryPluginBuilder::
+                          kServerCallStartedInstrumentName),
+          "Number of server calls started", "{call}");
+    }
+    if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
+                             kServerCallDurationInstrumentName)) {
+      server_.call.duration = meter->CreateDoubleHistogram(
+          std::string(grpc::OpenTelemetryPluginBuilder::
+                          kServerCallDurationInstrumentName),
+          "End-to-end time taken to complete a call from server transport's "
+          "perspective",
+          "s");
+    }
+    if (metrics.contains(
+            grpc::OpenTelemetryPluginBuilder::
+                kServerCallSentTotalCompressedMessageSizeInstrumentName)) {
+      server_.call.sent_total_compressed_message_size =
+          meter->CreateUInt64Histogram(
+              std::string(
+                  grpc::OpenTelemetryPluginBuilder::
+                      kServerCallSentTotalCompressedMessageSizeInstrumentName),
+              "Compressed message bytes sent per server call", "By");
+    }
+    if (metrics.contains(
+            grpc::OpenTelemetryPluginBuilder::
+                kServerCallRcvdTotalCompressedMessageSizeInstrumentName)) {
+      server_.call.rcvd_total_compressed_message_size =
+          meter->CreateUInt64Histogram(
+              std::string(
+                  grpc::OpenTelemetryPluginBuilder::
+                      kServerCallRcvdTotalCompressedMessageSizeInstrumentName),
+              "Compressed message bytes received per server call", "By");
+    }
+    // Store optional label keys for per call metrics
+    CHECK(static_cast<size_t>(grpc_core::ClientCallTracer::CallAttemptTracer::
+                                  OptionalLabelKey::kSize) <=
+          kOptionalLabelsSizeLimit);
+    for (const auto& key : optional_label_keys) {
+      auto optional_key = OptionalLabelStringToKey(key);
+      if (optional_key.has_value()) {
+        per_call_optional_label_bits_.set(
+            static_cast<size_t>(optional_key.value()));
+      }
+    }
+    // Non-per-call metrics.
+    grpc_core::GlobalInstrumentsRegistry::ForEach(
+        [&, this](const grpc_core::GlobalInstrumentsRegistry::
+                      GlobalInstrumentDescriptor& descriptor) {
+          CHECK(descriptor.optional_label_keys.size() <=
+                kOptionalLabelsSizeLimit);
+          if (instruments_data_.size() < descriptor.index + 1) {
+            instruments_data_.resize(descriptor.index + 1);
           }
-        }
-      });
+          if (!metrics.contains(descriptor.name)) {
+            return;
+          }
+          switch (descriptor.instrument_type) {
+            case grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCounter:
+              switch (descriptor.value_type) {
+                case grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64:
+                  instruments_data_[descriptor.index].instrument =
+                      meter->CreateUInt64Counter(
+                          std::string(descriptor.name),
+                          std::string(descriptor.description),
+                          std::string(descriptor.unit));
+                  break;
+                case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble:
+                  instruments_data_[descriptor.index].instrument =
+                      meter->CreateDoubleCounter(
+                          std::string(descriptor.name),
+                          std::string(descriptor.description),
+                          std::string(descriptor.unit));
+                  break;
+                default:
+                  grpc_core::Crash(
+                      absl::StrFormat("Unknown or unsupported value type: %d",
+                                      descriptor.value_type));
+              }
+              break;
+            case grpc_core::GlobalInstrumentsRegistry::InstrumentType::
+                kHistogram:
+              switch (descriptor.value_type) {
+                case grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64:
+                  instruments_data_[descriptor.index].instrument =
+                      meter->CreateUInt64Histogram(
+                          std::string(descriptor.name),
+                          std::string(descriptor.description),
+                          std::string(descriptor.unit));
+                  break;
+                case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble:
+                  instruments_data_[descriptor.index].instrument =
+                      meter->CreateDoubleHistogram(
+                          std::string(descriptor.name),
+                          std::string(descriptor.description),
+                          std::string(descriptor.unit));
+                  break;
+                default:
+                  grpc_core::Crash(
+                      absl::StrFormat("Unknown or unsupported value type: %d",
+                                      descriptor.value_type));
+              }
+              break;
+            case grpc_core::GlobalInstrumentsRegistry::InstrumentType::
+                kCallbackGauge:
+              switch (descriptor.value_type) {
+                case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64: {
+                  auto observable_state =
+                      std::make_unique<CallbackGaugeState<int64_t>>();
+                  observable_state->id = descriptor.index;
+                  observable_state->ot_plugin = this;
+                  observable_state->instrument =
+                      meter->CreateInt64ObservableGauge(
+                          std::string(descriptor.name),
+                          std::string(descriptor.description),
+                          std::string(descriptor.unit));
+                  instruments_data_[descriptor.index].instrument =
+                      std::move(observable_state);
+                  break;
+                }
+                case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble: {
+                  auto observable_state =
+                      std::make_unique<CallbackGaugeState<double>>();
+                  observable_state->id = descriptor.index;
+                  observable_state->ot_plugin = this;
+                  observable_state->instrument =
+                      meter->CreateDoubleObservableGauge(
+                          std::string(descriptor.name),
+                          std::string(descriptor.description),
+                          std::string(descriptor.unit));
+                  instruments_data_[descriptor.index].instrument =
+                      std::move(observable_state);
+                  break;
+                }
+                default:
+                  grpc_core::Crash(
+                      absl::StrFormat("Unknown or unsupported value type: %d",
+                                      descriptor.value_type));
+              }
+              break;
+            default:
+              grpc_core::Crash(absl::StrFormat("Unknown instrument_type: %d",
+                                               descriptor.instrument_type));
+          }
+          for (size_t i = 0; i < descriptor.optional_label_keys.size(); ++i) {
+            if (optional_label_keys.find(descriptor.optional_label_keys[i]) !=
+                optional_label_keys.end()) {
+              instruments_data_[descriptor.index].optional_labels_bits.set(i);
+            }
+          }
+        });
+  }
 }
 
 OpenTelemetryPluginImpl::~OpenTelemetryPluginImpl() {
@@ -678,6 +681,15 @@ OpenTelemetryPluginImpl::OptionalLabelStringToKey(absl::string_view key) {
   return absl::nullopt;
 }
 
+absl::string_view OpenTelemetryPluginImpl::GetMethodFromPath(
+    const grpc_core::Slice& path) {
+  if (path.empty()) {
+    return "";
+  }
+  // Check for leading '/' and trim it if present.
+  return absl::StripPrefix(path.as_string_view(), "/");
+}
+
 std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
 OpenTelemetryPluginImpl::IsEnabledForChannel(
     const OpenTelemetryPluginBuilder::ChannelScope& scope) const {
@@ -716,6 +728,9 @@ void OpenTelemetryPluginImpl::AddCounter(
     grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
     uint64_t value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {
+  if (meter_provider_ == nullptr) {
+    return;
+  }
   const auto& instrument_data = instruments_data_.at(handle.index);
   if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
     // This instrument is disabled.
@@ -746,6 +761,9 @@ void OpenTelemetryPluginImpl::AddCounter(
     grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
     double value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {
+  if (meter_provider_ == nullptr) {
+    return;
+  }
   const auto& instrument_data = instruments_data_.at(handle.index);
   if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
     // This instrument is disabled.
@@ -776,6 +794,9 @@ void OpenTelemetryPluginImpl::RecordHistogram(
     grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
     uint64_t value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {
+  if (meter_provider_ == nullptr) {
+    return;
+  }
   const auto& instrument_data = instruments_data_.at(handle.index);
   if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
     // This instrument is disabled.
@@ -808,6 +829,9 @@ void OpenTelemetryPluginImpl::RecordHistogram(
     grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
     double value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {
+  if (meter_provider_ == nullptr) {
+    return;
+  }
   const auto& instrument_data = instruments_data_.at(handle.index);
   if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
     // This instrument is disabled.
@@ -838,6 +862,9 @@ void OpenTelemetryPluginImpl::RecordHistogram(
 
 void OpenTelemetryPluginImpl::AddCallback(
     grpc_core::RegisteredMetricCallback* callback) {
+  if (meter_provider_ == nullptr) {
+    return;
+  }
   std::vector<
       absl::variant<CallbackGaugeState<int64_t>*, CallbackGaugeState<double>*>>
       gauges_that_need_to_add_callback;
@@ -914,6 +941,9 @@ void OpenTelemetryPluginImpl::AddCallback(
 
 void OpenTelemetryPluginImpl::RemoveCallback(
     grpc_core::RegisteredMetricCallback* callback) {
+  if (meter_provider_ == nullptr) {
+    return;
+  }
   {
     grpc_core::MutexLock lock(&mu_);
     callback_timestamps_.erase(callback);
