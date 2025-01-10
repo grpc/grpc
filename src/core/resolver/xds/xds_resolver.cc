@@ -494,10 +494,9 @@ XdsResolver::RouteConfigData::CreateMethodConfig(
       hcm.http_filters, *resolver->current_config_->virtual_host, route,
       cluster_weight, resolver->args_);
   if (!result.ok()) return result.status();
-  for (const auto& p : result->per_filter_configs) {
-    fields.emplace_back(absl::StrCat("    \"", p.first, "\": [\n",
-                                     absl::StrJoin(p.second, ",\n"),
-                                     "\n    ]"));
+  for (const auto& [name, config] : result->per_filter_configs) {
+    fields.emplace_back(absl::StrCat("    \"", name, "\": [\n",
+                                     absl::StrJoin(config, ",\n"), "\n    ]"));
   }
   // Construct service config.
   if (!fields.empty()) {
@@ -973,18 +972,18 @@ void XdsResolver::OnUpdate(
 absl::StatusOr<RefCountedPtr<ServiceConfig>>
 XdsResolver::CreateServiceConfig() {
   std::vector<std::string> clusters;
-  for (const auto& cluster : cluster_ref_map_) {
-    absl::string_view child_name = cluster.first;
-    if (absl::ConsumePrefix(&child_name, "cluster_specifier_plugin:")) {
+  for (const auto& [child_name, _] : cluster_ref_map_) {
+    absl::string_view cluster_name = child_name;
+    if (absl::ConsumePrefix(&cluster_name, "cluster_specifier_plugin:")) {
       clusters.push_back(absl::StrFormat(
           "      \"%s\":{\n"
           "        \"childPolicy\": %s\n"
           "       }",
-          cluster.first,
+          child_name,
           current_config_->route_config->cluster_specifier_plugin_map.at(
-              std::string(child_name))));
+              std::string(cluster_name))));
     } else {
-      absl::ConsumePrefix(&child_name, "cluster:");
+      absl::ConsumePrefix(&cluster_name, "cluster:");
       clusters.push_back(
           absl::StrFormat("      \"%s\":{\n"
                           "        \"childPolicy\":[ {\n"
@@ -993,7 +992,7 @@ XdsResolver::CreateServiceConfig() {
                           "          }\n"
                           "        } ]\n"
                           "       }",
-                          cluster.first, child_name));
+                          child_name, cluster_name));
     }
   }
   std::vector<std::string> config_parts;
@@ -1013,9 +1012,9 @@ XdsResolver::CreateServiceConfig() {
               .http_filter_registry(),
           hcm.http_filters, args_);
   if (!filter_configs.ok()) return filter_configs.status();
-  for (const auto& p : filter_configs->per_filter_configs) {
+  for (const auto& [name, config] : filter_configs->per_filter_configs) {
     config_parts.emplace_back(absl::StrCat(
-        "  \"", p.first, "\": [\n", absl::StrJoin(p.second, ",\n"), "\n  ]"));
+        "  \"", name, "\": [\n", absl::StrJoin(config, ",\n"), "\n  ]"));
   }
   std::string json = absl::StrCat("{", absl::StrJoin(config_parts, ",\n"), "}");
   return ServiceConfigImpl::Create(filter_configs->args, json.c_str());

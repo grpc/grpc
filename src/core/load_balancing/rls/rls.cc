@@ -288,17 +288,16 @@ class RlsLb final : public LoadBalancingPolicy {
     template <typename H>
     friend H AbslHashValue(H h, const RequestKey& key) {
       std::hash<std::string> string_hasher;
-      for (auto& kv : key.key_map) {
-        h = H::combine(std::move(h), string_hasher(kv.first),
-                       string_hasher(kv.second));
+      for (auto& [key, value] : key.key_map) {
+        h = H::combine(std::move(h), string_hasher(key), string_hasher(value));
       }
       return h;
     }
 
     size_t Size() const {
       size_t size = sizeof(RequestKey);
-      for (auto& kv : key_map) {
-        size += kv.first.length() + kv.second.length();
+      for (auto& [key, value] : key_map) {
+        size += key.length() + value.length();
       }
       return size;
     }
@@ -993,9 +992,7 @@ std::map<std::string, std::string> BuildKeyMap(
   // Construct key map using key builder.
   std::map<std::string, std::string> key_map;
   // Add header keys.
-  for (const auto& p : key_builder->header_keys) {
-    const std::string& key = p.first;
-    const std::vector<std::string>& header_names = p.second;
+  for (const auto& [key, header_names] : key_builder->header_keys) {
     for (const std::string& header_name : header_names) {
       std::string buffer;
       absl::optional<absl::string_view> value =
@@ -1431,8 +1428,8 @@ void RlsLb::Cache::Resize(size_t bytes,
 }
 
 void RlsLb::Cache::ResetAllBackoff() {
-  for (auto& p : map_) {
-    p.second->ResetBackoff();
+  for (auto& [_, entry] : map_) {
+    entry->ResetBackoff();
   }
   lb_policy_->UpdatePickerAsync();
 }
@@ -1440,8 +1437,8 @@ void RlsLb::Cache::ResetAllBackoff() {
 std::vector<RefCountedPtr<RlsLb::ChildPolicyWrapper>> RlsLb::Cache::Shutdown() {
   std::vector<RefCountedPtr<ChildPolicyWrapper>>
       child_policy_wrappers_to_delete;
-  for (auto& entry : map_) {
-    entry.second->TakeChildPolicyWrappers(&child_policy_wrappers_to_delete);
+  for (auto& [_, entry] : map_) {
+    entry->TakeChildPolicyWrappers(&child_policy_wrappers_to_delete);
   }
   map_.clear();
   lru_list_.clear();
@@ -1880,10 +1877,10 @@ grpc_byte_buffer* RlsLb::RlsRequest::MakeRequestProto() {
       grpc_lookup_v1_RouteLookupRequest_new(arena.ptr());
   grpc_lookup_v1_RouteLookupRequest_set_target_type(
       req, upb_StringView_FromDataAndSize(kGrpc, sizeof(kGrpc) - 1));
-  for (const auto& kv : key_.key_map) {
+  for (const auto& [key, value] : key_.key_map) {
     grpc_lookup_v1_RouteLookupRequest_key_map_set(
-        req, upb_StringView_FromDataAndSize(kv.first.data(), kv.first.size()),
-        upb_StringView_FromDataAndSize(kv.second.data(), kv.second.size()),
+        req, upb_StringView_FromDataAndSize(key.data(), key.size()),
+        upb_StringView_FromDataAndSize(value.data(), value.size()),
         arena.ptr());
   }
   grpc_lookup_v1_RouteLookupRequest_set_reason(req, reason_);
@@ -2055,8 +2052,8 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
     if (update_child_policies) {
       GRPC_TRACE_LOG(rls_lb, INFO)
           << "[rlslb " << this << "] starting child policy updates";
-      for (auto& p : child_policy_map_) {
-        p.second->StartUpdate(&child_policy_to_delete);
+      for (auto& [_, child] : child_policy_map_) {
+        child->StartUpdate(&child_policy_to_delete);
       }
     } else if (created_default_child) {
       GRPC_TRACE_LOG(rls_lb, INFO)
@@ -2069,11 +2066,11 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   if (update_child_policies) {
     GRPC_TRACE_LOG(rls_lb, INFO)
         << "[rlslb " << this << "] finishing child policy updates";
-    for (auto& p : child_policy_map_) {
-      absl::Status status = p.second->MaybeFinishUpdate();
+    for (auto& [name, child] : child_policy_map_) {
+      absl::Status status = child->MaybeFinishUpdate();
       if (!status.ok()) {
         errors.emplace_back(
-            absl::StrCat("target ", p.first, ": ", status.ToString()));
+            absl::StrCat("target ", name, ": ", status.ToString()));
       }
     }
   } else if (created_default_child) {
@@ -2117,8 +2114,8 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
 
 void RlsLb::ExitIdleLocked() {
   MutexLock lock(&mu_);
-  for (auto& child_entry : child_policy_map_) {
-    child_entry.second->ExitIdleLocked();
+  for (auto& [_, child] : child_policy_map_) {
+    child->ExitIdleLocked();
   }
 }
 
@@ -2128,8 +2125,8 @@ void RlsLb::ResetBackoffLocked() {
     rls_channel_->ResetBackoff();
     cache_.ResetAllBackoff();
   }
-  for (auto& child : child_policy_map_) {
-    child.second->ResetBackoffLocked();
+  for (auto& [_, child] : child_policy_map_) {
+    child->ResetBackoffLocked();
   }
 }
 
@@ -2191,10 +2188,10 @@ void RlsLb::UpdatePickerLocked() {
     {
       MutexLock lock(&mu_);
       if (is_shutdown_) return;
-      for (auto& p : child_policy_map_) {
-        grpc_connectivity_state child_state = p.second->connectivity_state();
+      for (auto& [_, child] : child_policy_map_) {
+        grpc_connectivity_state child_state = child->connectivity_state();
         GRPC_TRACE_LOG(rls_lb, INFO)
-            << "[rlslb " << this << "] target " << p.second->target()
+            << "[rlslb " << this << "] target " << child->target()
             << " in state " << ConnectivityStateName(child_state);
         if (child_state == GRPC_CHANNEL_READY) {
           state = GRPC_CHANNEL_READY;
@@ -2389,9 +2386,9 @@ struct GrpcKeyBuilder {
       duplicate_key_check_func(header.key,
                                absl::StrCat(".headers[", i, "].key"));
     }
-    for (const auto& p : constant_keys) {
-      duplicate_key_check_func(
-          p.first, absl::StrCat(".constantKeys[\"", p.first, "\"]"));
+    for (const auto& [key, value] : constant_keys) {
+      duplicate_key_check_func(key,
+                               absl::StrCat(".constantKeys[\"", key, "\"]"));
     }
     if (extra_keys.host_key.has_value()) {
       duplicate_key_check_func(*extra_keys.host_key, ".extraKeys.host");
