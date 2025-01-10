@@ -28,6 +28,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
@@ -41,7 +42,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -582,7 +582,7 @@ WeightedRoundRobin::PickResult WeightedRoundRobin::Picker::Pick(PickArgs args) {
   auto result = endpoint_info.picker->Pick(args);
   // Collect per-call utilization data if needed.
   if (!config_->enable_oob_load_report()) {
-    auto* complete = absl::get_if<PickResult::Complete>(&result.result);
+    auto* complete = std::get_if<PickResult::Complete>(&result.result);
     if (complete != nullptr) {
       complete->subchannel_call_tracker =
           std::make_unique<SubchannelCallTracker>(

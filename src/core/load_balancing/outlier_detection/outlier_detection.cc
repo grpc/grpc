@@ -31,6 +31,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
@@ -41,7 +42,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -551,7 +551,7 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
   }
   // Delegate to child picker
   PickResult result = picker_->Pick(args);
-  auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+  auto* complete_pick = std::get_if<PickResult::Complete>(&result.result);
   if (complete_pick != nullptr) {
     auto* subchannel_wrapper =
         static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());

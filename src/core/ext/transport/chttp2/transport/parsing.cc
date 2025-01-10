@@ -29,6 +29,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
@@ -39,7 +40,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -206,7 +206,7 @@ std::string FrameTypeString(uint8_t frame_type, uint8_t flags) {
 }
 }  // namespace
 
-absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
+std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
     grpc_chttp2_transport* t, const grpc_slice& slice,
     size_t& requests_started) {
   GRPC_LATENT_SEE_INNER_SCOPE("grpc_chttp2_perform_read");

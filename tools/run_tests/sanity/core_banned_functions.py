@@ -95,6 +95,11 @@ BANNED_EXCEPT = {
     "ABSL_FALLTHROUGH_INTENDED": [],
     # C++17: Use [[nodiscard]]
     "ABSL_MUST_USE_RESULT": [],
+    # Use `std::variant()`, `std::get()`, ... instead.
+    "absl::variant": [],
+    "absl::get": [],
+    "absl::get_if": [],
+    "absl::has_alternative": [],
 }
 
 errors = 0

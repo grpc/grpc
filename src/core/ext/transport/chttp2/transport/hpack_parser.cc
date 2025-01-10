@@ -27,6 +27,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/base/attributes.h"
 #include "absl/log/check.h"
@@ -37,7 +38,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
-#include "absl/types/variant.h"
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
@@ -339,12 +339,12 @@ class HPackParser::Input {
 };
 
 absl::string_view HPackParser::String::string_view() const {
-  if (auto* p = absl::get_if<Slice>(&value_)) {
+  if (auto* p = std::get_if<Slice>(&value_)) {
     return p->as_string_view();
-  } else if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
+  } else if (auto* p = std::get_if<absl::Span<const uint8_t>>(&value_)) {
     return absl::string_view(reinterpret_cast<const char*>(p->data()),
                              p->size());
-  } else if (auto* p = absl::get_if<std::vector<uint8_t>>(&value_)) {
+  } else if (auto* p = std::get_if<std::vector<uint8_t>>(&value_)) {
     return absl::string_view(reinterpret_cast<const char*>(p->data()),
                              p->size());
   }
@@ -479,13 +479,13 @@ absl::optional<std::vector<uint8_t>> HPackParser::String::Unbase64Loop(
 
 HPackParser::String::StringResult HPackParser::String::Unbase64(String s) {
   absl::optional<std::vector<uint8_t>> result;
-  if (auto* p = absl::get_if<Slice>(&s.value_)) {
+  if (auto* p = std::get_if<Slice>(&s.value_)) {
     result = Unbase64Loop(p->begin(), p->end());
   }
-  if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&s.value_)) {
+  if (auto* p = std::get_if<absl::Span<const uint8_t>>(&s.value_)) {
     result = Unbase64Loop(p->begin(), p->end());
   }
-  if (auto* p = absl::get_if<std::vector<uint8_t>>(&s.value_)) {
+  if (auto* p = std::get_if<std::vector<uint8_t>>(&s.value_)) {
     result = Unbase64Loop(p->data(), p->data() + p->size());
   }
   if (!result.has_value()) {
@@ -960,7 +960,7 @@ class HPackParser::Parser {
             : String::Parse(input_, state_.is_string_huff_compressed,
                             state_.string_length);
     absl::string_view key_string;
-    if (auto* s = absl::get_if<Slice>(&state_.key)) {
+    if (auto* s = std::get_if<Slice>(&state_.key)) {
       key_string = s->as_string_view();
       if (state_.field_error.ok()) {
         auto r = ValidateKey(key_string);
@@ -970,7 +970,7 @@ class HPackParser::Parser {
         }
       }
     } else {
-      const auto* memento = absl::get<const HPackTable::Memento*>(state_.key);
+      const auto* memento = std::get<const HPackTable::Memento*>(state_.key);
       key_string = memento->md.key();
       if (state_.field_error.ok() && memento->parse_status.get() != nullptr) {
         input_->SetErrorAndContinueParsing(*memento->parse_status);
@@ -1072,11 +1072,11 @@ class HPackParser::Parser {
 };
 
 Slice HPackParser::String::Take() {
-  if (auto* p = absl::get_if<Slice>(&value_)) {
+  if (auto* p = std::get_if<Slice>(&value_)) {
     return p->Copy();
-  } else if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
+  } else if (auto* p = std::get_if<absl::Span<const uint8_t>>(&value_)) {
     return Slice::FromCopiedBuffer(*p);
-  } else if (auto* p = absl::get_if<std::vector<uint8_t>>(&value_)) {
+  } else if (auto* p = std::get_if<std::vector<uint8_t>>(&value_)) {
     return Slice::FromCopiedBuffer(*p);
   }
   GPR_UNREACHABLE_CODE(return Slice());
