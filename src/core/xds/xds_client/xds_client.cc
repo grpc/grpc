@@ -925,8 +925,8 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
   }
   // Parse the resource.
   XdsResourceType::DecodeContext resource_type_context = {
-      xds_client(), xds_channel()->server_, &xds_client_trace,
-      xds_client()->def_pool_.ptr(), context->arena.ptr()};
+      xds_client(), xds_channel()->server_, xds_client()->def_pool_.ptr(),
+      context->arena.ptr()};
   XdsResourceType::DecodeResult decode_result =
       context->type->Decode(resource_type_context, serialized_resource);
   // If we didn't already have the resource name from the Resource

@@ -135,7 +135,7 @@ void MaybeLogHttpConnectionManager(
     const XdsResourceType::DecodeContext& context,
     const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
         http_connection_manager_config) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
             context.symtab);
@@ -952,7 +952,7 @@ absl::StatusOr<std::shared_ptr<const XdsListenerResource>> LdsResourceParse(
 
 void MaybeLogListener(const XdsResourceType::DecodeContext& context,
                       const envoy_config_listener_v3_Listener* listener) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_config_listener_v3_Listener_getmsgdef(context.symtab);
     char buf[10240];
@@ -982,13 +982,13 @@ XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
       UpbStringToStdString(envoy_config_listener_v3_Listener_name(resource));
   auto listener = LdsResourceParse(context, resource);
   if (!listener.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(ERROR) << "[xds_client " << context.client << "] invalid Listener "
                  << *result.name << ": " << listener.status();
     }
     result.resource = listener.status();
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(INFO) << "[xds_client " << context.client << "] parsed Listener "
                 << *result.name << ": " << (*listener)->ToString();
     }
