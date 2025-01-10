@@ -370,6 +370,85 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
   RefCountedPtr<ArenaFactory> arena_factory_;
 };
 
+// Arena backed single-producer-single-consumer queue
+// Based on implementation from
+// https://www.1024cores.net/home/lock-free-algorithms/queues/unbounded-spsc-queue
+template <typename T>
+class ArenaSpsc {
+ public:
+  explicit ArenaSpsc(Arena* arena) : arena_(arena) {
+    Node* n = arena_->New<Node>();
+    n->next.store(nullptr, std::memory_order_relaxed);
+    tail_.store(n, std::memory_order_relaxed);
+    head_ = n;
+    first_ = n;
+    tail_copy_ = n;
+  }
+
+  ~ArenaSpsc() {
+    while (Pop().has_value()) {
+    }
+  }
+
+  ArenaSpsc(const ArenaSpsc&) = delete;
+  ArenaSpsc& operator=(const ArenaSpsc&) = delete;
+
+  void Push(T&& value) {
+    Node* n = AllocNode();
+    Construct(&n->value, std::move(value));
+    n->next.store(nullptr, std::memory_order_relaxed);
+    head_->next.store(n, std::memory_order_release);
+    head_ = n;
+  }
+
+  absl::optional<T> Pop() {
+    Node* n = tail_.load(std::memory_order_relaxed);
+    Node* next = n->next.load(std::memory_order_acquire);
+    if (next == nullptr) {
+      return absl::nullopt;
+    }
+    T result = std::move(next->value);
+    Destruct(&next->value);
+    tail_.store(next, std::memory_order_release);
+    return result;
+  }
+
+ private:
+  struct Node {
+    Node() {}
+    std::atomic<Node*> next;
+    union {
+      T value;
+    };
+  };
+
+  Node* AllocNode() {
+    if (first_ != tail_copy_) {
+      Node* n = first_;
+      first_ = first_->next.load(std::memory_order_relaxed);
+      return n;
+    }
+    tail_copy_ = tail_.load(std::memory_order_acquire);
+    if (first_ != tail_copy_) {
+      Node* n = first_;
+      first_ = first_->next.load(std::memory_order_relaxed);
+      return n;
+    }
+    return arena_->New<Node>();
+  }
+
+  Arena* const arena_;
+  // Accessed mainly by consumer, infrequently by producer
+  std::atomic<Node*> tail_;
+  // Ensure alignment on next cacheline to deliminate producer and consumer
+  // Head of queue
+  alignas(GPR_CACHELINE_SIZE) Node* head_;
+  // Last unused node
+  Node* first_;
+  // Helper, points somewhere between first and tail
+  Node* tail_copy_;
+};
+
 // Arenas form a context for activities
 template <>
 struct ContextType<Arena> {};
