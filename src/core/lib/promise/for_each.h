@@ -58,6 +58,13 @@ struct Done<StatusFlag> {
   }
 };
 
+template <>
+struct Done<Success> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static StatusFlag Make(bool cancelled) {
+    return StatusFlag(!cancelled);
+  }
+};
+
 template <typename T, typename SfinaeVoid = void>
 struct NextValueTraits;
 
@@ -111,10 +118,12 @@ class ForEach {
   using ActionFactory =
       promise_detail::RepeatedPromiseFactory<ReaderResultValue, Action>;
   using ActionPromise = typename ActionFactory::Promise;
+  using ActionResult =
+      typename PollTraits<decltype(std::declval<ActionPromise>()())>::Type;
 
  public:
-  using Result =
-      typename PollTraits<decltype(std::declval<ActionPromise>()())>::Type;
+  using Result = decltype(Done<ActionResult>::Make(false));
+
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ForEach(Reader reader, Action action,
                                                DebugLocation whence = {})
       : reader_(std::move(reader)),
