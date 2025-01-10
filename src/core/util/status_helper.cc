@@ -199,10 +199,9 @@ void StatusSetTime(absl::Status* status, StatusTimeProperty key,
 
 std::optional<absl::Time> StatusGetTime(const absl::Status& status,
                                         StatusTimeProperty key) {
-  std::optional<absl::Cord> p =
-      status.GetPayload(GetStatusTimePropertyUrl(key));
+  auto p = status.GetPayload(GetStatusTimePropertyUrl(key));
   if (p.has_value()) {
-    std::optional<absl::string_view> sv = p->TryFlat();
+    auto sv = p->TryFlat();
     absl::Time time;
     if (sv.has_value()) {
       if (absl::ParseTime(absl::RFC3339_full, sv.value(), &time, nullptr)) {
