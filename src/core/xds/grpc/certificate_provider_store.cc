@@ -117,26 +117,23 @@ CertificateProviderStore::CreateOrGetCertificateProvider(
 RefCountedPtr<CertificateProviderStore::CertificateProviderWrapper>
 CertificateProviderStore::CreateCertificateProviderLocked(
     absl::string_view key) {
-  auto plugin_config_it = plugin_config_map_.find(std::string(key));
-  if (plugin_config_it == plugin_config_map_.end()) {
-    return nullptr;
-  }
+  auto it = plugin_config_map_.find(std::string(key));
+  if (it == plugin_config_map_.end()) return nullptr;
+  const auto& [name, definition] = *it;
   CertificateProviderFactory* factory =
       CoreConfiguration::Get()
           .certificate_provider_registry()
-          .LookupCertificateProviderFactory(
-              plugin_config_it->second.plugin_name);
+          .LookupCertificateProviderFactory(definition.plugin_name);
   if (factory == nullptr) {
     // This should never happen since an entry is only inserted in the
     // plugin_config_map_ if the corresponding factory was found when parsing
     // the xDS bootstrap file.
-    LOG(ERROR) << "Certificate provider factory "
-               << plugin_config_it->second.plugin_name << " not found";
+    LOG(ERROR) << "Certificate provider factory " << definition.plugin_name
+               << " not found";
     return nullptr;
   }
   return MakeRefCounted<CertificateProviderWrapper>(
-      factory->CreateCertificateProvider(plugin_config_it->second.config),
-      Ref(), plugin_config_it->first);
+      factory->CreateCertificateProvider(definition.config), Ref(), name);
 }
 
 void CertificateProviderStore::ReleaseCertificateProvider(
