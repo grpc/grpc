@@ -100,6 +100,10 @@ BANNED_EXCEPT = {
     "absl::get": [],
     "absl::get_if": [],
     "absl::has_alternative": [],
+    # Use `std::optional` and friends instead.
+    "absl::optional": ["src/core/config/config_vars.cc"],
+    "absl::nullopt": [],
+    "absl::make_optional": [],
 }
 
 errors = 0

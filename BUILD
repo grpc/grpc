@@ -3002,6 +3002,7 @@ grpc_cc_library(
     external_deps = [
         "absl/flags:flag",
         "absl/strings",
+        "absl/types:optional",
     ],
     deps = [
         "gpr_platform",
