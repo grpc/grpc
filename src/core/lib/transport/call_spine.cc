@@ -46,27 +46,26 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
        on_server_trailing_metadata_from_initiator =
            std::move(on_server_trailing_metadata_from_initiator)]() mutable {
         return Seq(
-            call_initiator.CancelIfFails(
-                TrySeq(call_initiator.PullServerInitialMetadata(),
-                       [call_handler, call_initiator](
-                           absl::optional<ServerMetadataHandle> md) mutable {
-                         const bool has_md = md.has_value();
-                         return If(
-                             has_md,
-                             [&call_handler, &call_initiator,
-                              md = std::move(md)]() mutable {
-                               call_handler.SpawnPushServerInitialMetadata(
-                                   std::move(*md));
-                               return ForEach(
-                                   MessagesFrom(call_initiator),
-                                   [call_handler](MessageHandle msg) mutable {
-                                     call_handler.SpawnPushMessage(
-                                         std::move(msg));
-                                     return Success{};
-                                   });
-                             },
-                             []() -> StatusFlag { return Success{}; });
-                       })),
+            call_initiator.CancelIfFails(TrySeq(
+                call_initiator.PullServerInitialMetadata(),
+                [call_handler, call_initiator](
+                    absl::optional<ServerMetadataHandle> md) mutable {
+                  const bool has_md = md.has_value();
+                  return If(
+                      has_md,
+                      [&call_handler, &call_initiator,
+                       md = std::move(md)]() mutable {
+                        call_handler.SpawnPushServerInitialMetadata(
+                            std::move(*md));
+                        return ForEach(
+                            MessagesFrom(call_initiator),
+                            [call_handler](MessageHandle msg) mutable {
+                              call_handler.SpawnPushMessage(std::move(msg));
+                              return Success{};
+                            });
+                      },
+                      []() -> StatusFlag { return Success{}; });
+                })),
             call_initiator.PullServerTrailingMetadata(),
             [call_handler,
              on_server_trailing_metadata_from_initiator =
