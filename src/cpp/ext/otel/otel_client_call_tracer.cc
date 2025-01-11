@@ -92,9 +92,11 @@ OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::CallAttemptTracer(
         attributes = {
             std::make_pair("previous-rpc-attempts", attempt_num),
             std::make_pair("transparent-retry", is_transparent_retry)};
+    opentelemetry::trace::StartSpanOptions options;
+    options.parent = parent_->span_->GetContext();
     span_ = parent_->otel_plugin_->tracer_->StartSpan(
-        absl::StrCat("Attempt.", GetMethodFromPath(parent_->path_)),
-        attributes);
+        absl::StrCat("Attempt.", GetMethodFromPath(parent_->path_)), attributes,
+        options);
   }
 }
 

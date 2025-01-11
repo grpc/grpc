@@ -34,8 +34,14 @@ namespace grpc {
 namespace testing {
 namespace {
 
+using opentelemetry::sdk::trace::SpanData;
+using opentelemetry::sdk::trace::SpanDataEvent;
+using ::testing::Pair;
+using ::testing::UnorderedElementsAre;
+using ::testing::VariantWith;
+
 class OTelTracingTest : public ::testing::Test {
- public:
+ protected:
   void SetUp() override {
     grpc_core::CoreConfiguration::Reset();
     grpc_init();
@@ -47,6 +53,7 @@ class OTelTracingTest : public ::testing::Test {
             opentelemetry::sdk::trace::SimpleSpanProcessorFactory::Create(
                 opentelemetry::exporter::memory::InMemorySpanExporterFactory::
                     Create(data_)));
+    tracer_ = tracer_provider->GetTracer("grpc-test");
     ASSERT_TRUE(OpenTelemetryPluginBuilder()
                     .SetTracerProvider(std::move(tracer_provider))
                     .SetTextMapPropagator(
@@ -82,14 +89,115 @@ class OTelTracingTest : public ::testing::Test {
     grpc::Status status = stub_->Echo(&context, request, &response);
   }
 
- private:
+  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer> tracer_;
   std::shared_ptr<opentelemetry::exporter::memory::InMemorySpanData> data_;
   CallbackTestServiceImpl service_;
   std::unique_ptr<grpc::Server> server_;
   std::unique_ptr<EchoTestService::Stub> stub_;
 };
 
-TEST_F(OTelTracingTest, Basic) { SendRPC(); }
+TEST_F(OTelTracingTest, Basic) {
+  SendRPC();
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  auto spans = data_->GetSpans();
+  SpanData* client_span;
+  SpanData* attempt_span;
+  SpanData* server_span;
+  // Verify that we get 3 spans -
+  // 1) Client RPC Span - Sent.grpc.testing.EchoTestService/Echo
+  // 2) Attempt Span - Attempt.grpc.testing.EchoTestService/Echo
+  // 3) Server RPC Span - Recv.grpc.testing.EchoTestService/Echo
+  EXPECT_EQ(spans.size(), 3);
+  for (const auto& span : spans) {
+    EXPECT_TRUE(span->GetSpanContext().IsValid());
+    if (span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo") {
+      attempt_span = span.get();
+      EXPECT_THAT(span->GetAttributes(),
+                  UnorderedElementsAre(
+                      Pair("transparent-retry", VariantWith<bool>(false)),
+                      Pair("previous-rpc-attempts", VariantWith<uint64_t>(0))));
+      // Verify outbound message event
+      const auto outbound_message_event =
+          std::find_if(span->GetEvents().begin(), span->GetEvents().end(),
+                       [](const SpanDataEvent& event) {
+                         return event.GetName() == "Outbound message";
+                       });
+      EXPECT_NE(outbound_message_event, span->GetEvents().end());
+      EXPECT_THAT(outbound_message_event->GetAttributes(),
+                  UnorderedElementsAre(
+                      Pair("sequence-number", VariantWith<uint64_t>(0)),
+                      Pair("message-size", VariantWith<uint64_t>(5))));
+      // Verify inbound message event
+      const auto inbound_message_event =
+          std::find_if(span->GetEvents().begin(), span->GetEvents().end(),
+                       [](const SpanDataEvent& event) {
+                         return event.GetName() == "Inbound message";
+                       });
+      EXPECT_NE(inbound_message_event, span->GetEvents().end());
+      EXPECT_THAT(inbound_message_event->GetAttributes(),
+                  UnorderedElementsAre(
+                      Pair("sequence-number", VariantWith<uint64_t>(0)),
+                      Pair("message-size", VariantWith<uint64_t>(5))));
+      EXPECT_EQ(span->GetStatus(), opentelemetry::trace::StatusCode::kOk);
+    } else if (span->GetName() == "Recv.grpc.testing.EchoTestService/Echo") {
+      server_span = span.get();
+      // Verify outbound message event
+      const auto outbound_message_event =
+          std::find_if(span->GetEvents().begin(), span->GetEvents().end(),
+                       [](const SpanDataEvent& event) {
+                         return event.GetName() == "Outbound message";
+                       });
+      EXPECT_NE(outbound_message_event, span->GetEvents().end());
+      EXPECT_THAT(outbound_message_event->GetAttributes(),
+                  UnorderedElementsAre(
+                      Pair("sequence-number", VariantWith<uint64_t>(0)),
+                      Pair("message-size", VariantWith<uint64_t>(5))));
+      // Verify inbound message event
+      const auto inbound_message_event =
+          std::find_if(span->GetEvents().begin(), span->GetEvents().end(),
+                       [](const SpanDataEvent& event) {
+                         return event.GetName() == "Inbound message";
+                       });
+      EXPECT_NE(inbound_message_event, span->GetEvents().end());
+      EXPECT_THAT(inbound_message_event->GetAttributes(),
+                  UnorderedElementsAre(
+                      Pair("sequence-number", VariantWith<uint64_t>(0)),
+                      Pair("message-size", VariantWith<uint64_t>(5))));
+      EXPECT_EQ(span->GetStatus(), opentelemetry::trace::StatusCode::kOk);
+    } else {
+      client_span = span.get();
+      EXPECT_EQ(span->GetName(), "Sent.grpc.testing.EchoTestService/Echo");
+    }
+  }
+  // Check parent-child relationship
+  EXPECT_EQ(client_span->GetTraceId(), attempt_span->GetTraceId());
+  EXPECT_EQ(attempt_span->GetParentSpanId(), client_span->GetSpanId());
+  EXPECT_EQ(attempt_span->GetTraceId(), server_span->GetTraceId());
+  EXPECT_EQ(server_span->GetParentSpanId(), attempt_span->GetSpanId());
+}
+
+TEST_F(OTelTracingTest, TestApplicationContextFlows) {
+  {
+    auto span = tracer_->StartSpan("TestSpan");
+    auto scope = opentelemetry::sdk::trace::Tracer::WithActiveSpan(span);
+    SendRPC();
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  auto spans = data_->GetSpans();
+  EXPECT_EQ(spans.size(), 4);
+  const auto test_span = std::find_if(
+      spans.begin(), spans.end(), [](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "TestSpan";
+      });
+  EXPECT_NE(test_span, spans.end());
+  const auto client_span = std::find_if(
+      spans.begin(), spans.end(), [](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Sent.grpc.testing.EchoTestService/Echo";
+      });
+  EXPECT_NE(test_span, spans.end());
+  EXPECT_EQ((*test_span)->GetTraceId(), (*client_span)->GetTraceId());
+  EXPECT_EQ((*client_span)->GetParentSpanId(), (*test_span)->GetSpanId());
+}
 
 }  // namespace
 }  // namespace testing
