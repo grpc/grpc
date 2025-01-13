@@ -34,15 +34,15 @@ TEST(SwitchTest, ThreeImmediateCases) {
   std::string execution_order;
   auto test_switch = [&execution_order](int discriminator) {
     execution_order.clear();
-    return Switch(discriminator, Case<int, 1>([&execution_order] {
+    return Switch(discriminator, Case<1>([&execution_order] {
                     absl::StrAppend(&execution_order, "1");
                     return 100;
                   }),
-                  Case<int, 2>([&execution_order] {
+                  Case<2>([&execution_order] {
                     absl::StrAppend(&execution_order, "2");
                     return 200;
                   }),
-                  Case<int, 3>([&execution_order] {
+                  Case<3>([&execution_order] {
                     absl::StrAppend(&execution_order, "3");
                     return 300;
                   }),
@@ -53,16 +53,12 @@ TEST(SwitchTest, ThreeImmediateCases) {
   };
   EXPECT_EQ(test_switch(0)(), Poll<int>(-1));
   EXPECT_STREQ(execution_order.c_str(), "D");
-
   EXPECT_EQ(test_switch(1)(), Poll<int>(100));
   EXPECT_STREQ(execution_order.c_str(), "1");
-
   EXPECT_EQ(test_switch(2)(), Poll<int>(200));
   EXPECT_STREQ(execution_order.c_str(), "2");
-
   EXPECT_EQ(test_switch(3)(), Poll<int>(300));
   EXPECT_STREQ(execution_order.c_str(), "3");
-
   EXPECT_EQ(test_switch(4)(), Poll<int>(-1));
   EXPECT_STREQ(execution_order.c_str(), "D");
 }
@@ -72,20 +68,19 @@ TEST(SwitchTest, Pending) {
   bool is_pending = true;
   auto test_switch = [&execution_order, &is_pending](int discriminator) {
     execution_order.clear();
-    return Switch(discriminator,
-                  Case<int, 0>([&execution_order]() -> Poll<int> {
+    return Switch(discriminator, Case<0>([&execution_order]() -> Poll<int> {
                     absl::StrAppend(&execution_order, "0");
                     return Pending{};
                   }),
-                  Case<int, 1>([&execution_order] {
+                  Case<1>([&execution_order] {
                     absl::StrAppend(&execution_order, "1");
                     return 100;
                   }),
-                  Case<int, 2>([&execution_order] {
+                  Case<2>([&execution_order] {
                     absl::StrAppend(&execution_order, "2");
                     return 200;
                   }),
-                  Case<int, 3>([&execution_order, &is_pending]() -> Poll<int> {
+                  Case<3>([&execution_order, &is_pending]() -> Poll<int> {
                     absl::StrAppend(&execution_order, "3");
                     if (is_pending) return Pending{};
                     return 300;
