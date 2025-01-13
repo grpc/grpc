@@ -210,7 +210,7 @@ class Party : public Activity, private Wakeable {
   };
 
   // Spawn one promise into the party.
-  // The party will poll the promise until it is resolved, or until the party is
+  // The party can poll the promise until it is resolved, or until the party is
   // shut down.
   // The on_complete callback will be called with the result of the
   // promise if it completes.
@@ -220,6 +220,8 @@ class Party : public Activity, private Wakeable {
   // promise is created - so the promise should not retain any of these.
   // This function is thread safe. We can Spawn different promises onto the
   // same party from different threads.
+  // A party can hold upto 16 unresolved promises at a time. However, this
+  // number might change in the future.
   template <typename Factory, typename OnComplete>
   void Spawn(absl::string_view name, Factory promise_factory,
              OnComplete on_complete);
