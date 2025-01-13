@@ -31,7 +31,7 @@ struct MatchFloat {
   float fval = -1.0f;
 };
 
-using V = absl::variant<MatchInt, MatchFloat, std::string>;
+using V = std::variant<MatchInt, MatchFloat, std::string>;
 
 TEST(MatchPromiseTest, ThreeTypedImmediate) {
   std::string execution_order;
