@@ -28,8 +28,7 @@
 #include "src/core/util/host_port.h"
 #include "src/core/util/status_helper.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
@@ -107,7 +106,6 @@ void NativeWindowsDNSResolver::LookupTXT(
   });
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GPR_WINDOWS

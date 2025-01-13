@@ -101,8 +101,7 @@
 // backtrace will be printed for every running thread, and the process will
 // abort.
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 // TODO(ctiller): grpc_core::Timestamp, Duration have very specific contracts
@@ -620,5 +619,4 @@ bool WorkStealingThreadPool::WorkSignal::WaitWithTimeout(
   return cv_.WaitWithTimeout(&mu_, absl::Milliseconds(time.millis()));
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

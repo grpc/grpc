@@ -22,8 +22,7 @@
 
 #include "absl/status/statusor.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // Returns true if resolved_addr is an IPv4-mapped IPv6 address within the
 //  ::ffff:0.0.0.0/96 range, or false otherwise.
@@ -86,7 +85,6 @@ absl::StatusOr<std::string> ResolvedAddressToURI(
 absl::StatusOr<EventEngine::ResolvedAddress> URIToResolvedAddress(
     std::string address_str);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_TCP_SOCKET_UTILS_H

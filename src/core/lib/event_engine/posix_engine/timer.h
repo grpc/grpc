@@ -35,8 +35,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/time_averaged_stats.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 struct Timer {
   int64_t deadline;
@@ -158,7 +157,6 @@ class TimerList {
   const std::unique_ptr<Shard*[]> shard_queue_ ABSL_GUARDED_BY(mu_);
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TIMER_H

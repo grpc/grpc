@@ -30,8 +30,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 static const size_t kInvalidHeapIndex = std::numeric_limits<size_t>::max();
 static const double kAddDeadlineScale = 0.33;
@@ -306,5 +305,4 @@ TimerList::TimerCheck(grpc_core::Timestamp* next) {
   return std::move(run);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

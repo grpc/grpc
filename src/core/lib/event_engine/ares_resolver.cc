@@ -76,8 +76,7 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #endif
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 
@@ -810,8 +809,7 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
       });
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 void noop_inject_channel_config(ares_channel* /*channel*/) {}
 
