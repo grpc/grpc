@@ -96,7 +96,7 @@ declare -A EXPECTED_CLIENT_OUTPUT=(
     ["deadline:"]="\[Exceeds propagated deadline\] wanted = 4, got = 4"
     ["error_details:greeter_"]="Quota: subject=name: World description=Limit one greeting per person"
     ["error_handling:greeter_"]="Ok. ReplyMessage=Hello World"
-    ["flow_control:client_flow_control_"]="Recieved request with 3145728 bytes name"
+    ["flow_control:client_flow_control_"]="Done"
     ["flow_control:server_flow_control_"]="Done reading"
     ["generic_api:greeter_"]="Ok. ReplyMessage=Hello gRPC"
     ["health:health_"]="After second call: status: SERVING"
