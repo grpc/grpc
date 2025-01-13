@@ -281,7 +281,7 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
   DCHECK_EQ(prev_state & ~(kRefMask | kAllocatedMask), 0u)
       << "Party should have contained no wakeups on lock";
   prev_state |= kLocked;
-  absl::optional<ScopedTimeCache> time_cache;
+  std::optional<ScopedTimeCache> time_cache;
 #if !TARGET_OS_IPHONE
   if (IsTimeCachingInPartyEnabled()) {
     time_cache.emplace();

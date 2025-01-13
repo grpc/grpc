@@ -115,13 +115,13 @@ absl::string_view EvaluateArgs::GetMethod() const {
   return absl::string_view();
 }
 
-absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
+std::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
     absl::string_view key, std::string* concatenated_value) const {
   if (metadata_ == nullptr) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   if (absl::EqualsIgnoreCase(key, "te")) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   if (absl::EqualsIgnoreCase(key, "host")) {
     // Maps legacy host header to :authority.

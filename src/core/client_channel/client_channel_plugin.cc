@@ -19,7 +19,8 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/client_channel/retry_service_config.h"

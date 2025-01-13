@@ -83,11 +83,11 @@ struct NextValueTraits<T, absl::void_t<typename T::value_type>> {
 };
 
 template <typename T>
-struct NextValueTraits<ValueOrFailure<absl::optional<T>>> {
+struct NextValueTraits<ValueOrFailure<std::optional<T>>> {
   using Value = T;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static NextValueType Type(
-      const ValueOrFailure<absl::optional<T>>& t) {
+      const ValueOrFailure<std::optional<T>>& t) {
     if (t.ok()) {
       if (t.value().has_value()) return NextValueType::kValue;
       return NextValueType::kEndOfStream;
@@ -96,7 +96,7 @@ struct NextValueTraits<ValueOrFailure<absl::optional<T>>> {
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Value&& TakeValue(
-      ValueOrFailure<absl::optional<T>>& t) {
+      ValueOrFailure<std::optional<T>>& t) {
     return std::move(**t);
   }
 };

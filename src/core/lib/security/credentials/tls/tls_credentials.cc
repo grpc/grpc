@@ -24,11 +24,11 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
 #include "absl/log/log.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
@@ -103,7 +103,7 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 TlsCredentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target_name, grpc_core::ChannelArgs* args) {
-  absl::optional<std::string> overridden_target_name =
+  std::optional<std::string> overridden_target_name =
       args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
   auto* ssl_session_cache = args->GetObject<tsi::SslSessionLRUCache>();
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =

@@ -2509,7 +2509,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     return std::move(trailing_metadata_);
   }
 
-  absl::optional<OrcaLoadReport> backend_load_report() {
+  std::optional<OrcaLoadReport> backend_load_report() {
     grpc_core::MutexLock lock(&mu_);
     return std::move(load_report_);
   }
@@ -2570,7 +2570,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   grpc_core::CondVar cond_;
   absl::Status last_status_;
   grpc_core::MetadataVector trailing_metadata_;
-  absl::optional<OrcaLoadReport> load_report_;
+  std::optional<OrcaLoadReport> load_report_;
 };
 
 ClientLbInterceptTrailingMetadataTest*
@@ -2966,9 +2966,9 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
     grpc_core::CoreConfiguration::Reset();
   }
 
-  absl::optional<BackendMetricReport> GetBackendMetricReport() {
+  std::optional<BackendMetricReport> GetBackendMetricReport() {
     grpc_core::MutexLock lock(&mu_);
-    if (backend_metric_reports_.empty()) return absl::nullopt;
+    if (backend_metric_reports_.empty()) return std::nullopt;
     auto result = std::move(backend_metric_reports_.front());
     backend_metric_reports_.pop_front();
     return result;

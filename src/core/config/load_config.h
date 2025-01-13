@@ -18,12 +18,12 @@
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/flags/flag.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 
 namespace grpc_core {
 

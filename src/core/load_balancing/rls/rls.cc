@@ -42,6 +42,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <random>
 #include <set>
 #include <string>
@@ -61,7 +62,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
@@ -534,7 +534,7 @@ class RlsLb final : public LoadBalancingPolicy {
         void OnBackoffTimerLocked();
 
         RefCountedPtr<Entry> entry_;
-        absl::optional<EventEngine::TaskHandle> backoff_timer_task_handle_
+        std::optional<EventEngine::TaskHandle> backoff_timer_task_handle_
             ABSL_GUARDED_BY(&RlsLb::mu_);
       };
 
@@ -623,7 +623,7 @@ class RlsLb final : public LoadBalancingPolicy {
     std::list<RequestKey> lru_list_ ABSL_GUARDED_BY(&RlsLb::mu_);
     std::unordered_map<RequestKey, OrphanablePtr<Entry>, absl::Hash<RequestKey>>
         map_ ABSL_GUARDED_BY(&RlsLb::mu_);
-    absl::optional<EventEngine::TaskHandle> cleanup_timer_handle_;
+    std::optional<EventEngine::TaskHandle> cleanup_timer_handle_;
   };
 
   // Channel for communicating with the RLS server.
@@ -836,13 +836,13 @@ void RlsLb::ChildPolicyWrapper::Orphaned() {
   picker_.reset();
 }
 
-absl::optional<Json> InsertOrUpdateChildPolicyField(const std::string& field,
-                                                    const std::string& value,
-                                                    const Json& config,
-                                                    ValidationErrors* errors) {
+std::optional<Json> InsertOrUpdateChildPolicyField(const std::string& field,
+                                                   const std::string& value,
+                                                   const Json& config,
+                                                   ValidationErrors* errors) {
   if (config.type() != Json::Type::kArray) {
     errors->AddError("is not an array");
-    return absl::nullopt;
+    return std::nullopt;
   }
   const size_t original_num_errors = errors->size();
   Json::Array array;
@@ -871,7 +871,7 @@ absl::optional<Json> InsertOrUpdateChildPolicyField(const std::string& field,
       }
     }
   }
-  if (errors->size() != original_num_errors) return absl::nullopt;
+  if (errors->size() != original_num_errors) return std::nullopt;
   return Json::FromArray(std::move(array));
 }
 
@@ -995,7 +995,7 @@ std::map<std::string, std::string> BuildKeyMap(
   for (const auto& [key, header_names] : key_builder->header_keys) {
     for (const std::string& header_name : header_names) {
       std::string buffer;
-      absl::optional<absl::string_view> value =
+      std::optional<absl::string_view> value =
           initial_metadata->Lookup(header_name, &buffer);
       if (value.has_value()) {
         key_map[key] = std::string(*value);
@@ -1614,7 +1614,7 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
   // (This is ugly, but it seems better than propagating all channel args
   // from the parent channel by default and then having a giant
   // exclude list of args to strip out, like we do in grpclb.)
-  absl::optional<absl::string_view> fake_security_expected_targets =
+  std::optional<absl::string_view> fake_security_expected_targets =
       lb_policy_->channel_args_.GetString(
           GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
   if (fake_security_expected_targets.has_value()) {
@@ -1764,7 +1764,7 @@ void RlsLb::RlsRequest::StartCallLocked() {
   call_ = rls_channel_->channel()->CreateCall(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
       lb_policy_->interested_parties(),
-      Slice::FromStaticString(kRlsRequestPath), /*authority=*/absl::nullopt,
+      Slice::FromStaticString(kRlsRequestPath), /*authority=*/std::nullopt,
       deadline_, /*registered_method=*/true);
   grpc_op ops[6];
   memset(ops, 0, sizeof(ops));
@@ -2263,7 +2263,7 @@ struct GrpcKeyBuilder {
   struct NameMatcher {
     std::string key;
     std::vector<std::string> names;
-    absl::optional<bool> required_match;
+    std::optional<bool> required_match;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
@@ -2309,9 +2309,9 @@ struct GrpcKeyBuilder {
   };
 
   struct ExtraKeys {
-    absl::optional<std::string> host_key;
-    absl::optional<std::string> service_key;
-    absl::optional<std::string> method_key;
+    std::optional<std::string> host_key;
+    std::optional<std::string> service_key;
+    std::optional<std::string> method_key;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
@@ -2325,7 +2325,7 @@ struct GrpcKeyBuilder {
 
     void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors) {
       auto check_field = [&](const std::string& field_name,
-                             absl::optional<std::string>* struct_field) {
+                             std::optional<std::string>* struct_field) {
         ValidationErrors::ScopedField field(errors,
                                             absl::StrCat(".", field_name));
         if (struct_field->has_value() && (*struct_field)->empty()) {

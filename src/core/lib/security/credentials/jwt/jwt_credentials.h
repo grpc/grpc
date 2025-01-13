@@ -26,13 +26,13 @@
 #include <grpc/support/time.h>
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
@@ -84,7 +84,7 @@ class grpc_service_account_jwt_access_credentials
     std::string service_url;
     gpr_timespec jwt_expiration;
   };
-  absl::optional<Cache> cached_;
+  std::optional<Cache> cached_;
 
   grpc_auth_json_key key_;
   gpr_timespec jwt_lifetime_;

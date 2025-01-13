@@ -82,7 +82,7 @@ void CallSpineTest::UnaryRequest(CallInitiator initiator, CallHandler handler) {
         return initiator.PullServerInitialMetadata();
       },
       [initiator](
-          ValueOrFailure<absl::optional<ServerMetadataHandle>> md) mutable {
+          ValueOrFailure<std::optional<ServerMetadataHandle>> md) mutable {
         EXPECT_TRUE(md.ok());
         EXPECT_TRUE(md.value().has_value());
         EXPECT_EQ(*md.value().value()->get_pointer(ContentTypeMetadata()),
