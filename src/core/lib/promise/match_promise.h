@@ -29,14 +29,14 @@ namespace promise_detail {
 // Match Promise Combinator
 //
 // Input:
-// The first input is an absl::variant<...> object.
+// The first input is an std::variant<...> object.
 // The remaining inputs are either
 // 1. Promises which take one of the variant types as input parameter and return
 //    Poll<T>
 // 2. Functors that take one of the variant types as input parameter and return
 //    a Promise with return type Poll<T>
 // 3. There MUST be one input promise/functor corresponding to each type in the
-//    absl::variant<...> input
+//    std::variant<...> input
 // 4. The return type of all promises must be the same.
 //
 // Returns:
@@ -44,7 +44,7 @@ namespace promise_detail {
 //
 // Polling the Match combinator works in the following way :
 // The Match combinator selects which of the input promises to execute based on
-// the value of the absl::variant. Only 1 of the input promises will be executed
+// the value of the std::variant. Only 1 of the input promises will be executed
 // on polling the Match combinator. Like all other promises, the Match
 // combinator can be polled till it resolves.
 //
