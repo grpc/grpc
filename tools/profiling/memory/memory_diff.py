@@ -199,17 +199,17 @@ else:
     # -- this biases reporting towards increases, which is what we want to act on
     #    most regularly
     if call_increase > 0:
-        check_on_pr.label_significance_on_pr("per-call-memory", 1)
+        check_on_pr.label_increase_decrease_on_pr("per-call-memory", 1)
     elif call_decrease > 0:
-        check_on_pr.label_significance_on_pr("per-call-memory", -1)
+        check_on_pr.label_increase_decrease_on_pr("per-call-memory", -1)
     else:
-        check_on_pr.label_significance_on_pr("per-call-memory", 0)
+        check_on_pr.label_increase_decrease_on_pr("per-call-memory", 0)
     if channel_increase > 0:
-        check_on_pr.label_significance_on_pr("per-channel-memory", 1)
+        check_on_pr.label_increase_decrease_on_pr("per-channel-memory", 1)
     elif channel_decrease > 0:
-        check_on_pr.label_significance_on_pr("per-channel-memory", -1)
+        check_on_pr.label_increase_decrease_on_pr("per-channel-memory", -1)
     else:
-        check_on_pr.label_significance_on_pr("per-channel-memory", 0)
+        check_on_pr.label_increase_decrease_on_pr("per-channel-memory", 0)
 
 print(text)
 check_on_pr.check_on_pr("Memory Difference", "```\n%s\n```" % text)
