@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer", "grpc_fuzz_test")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test", "grpc_proto_fuzzer")
 
 licenses(["notice"])
 
@@ -181,5 +181,8 @@ grpc_fuzz_test(
         "fuzztest_main",
         "gtest",
     ],
-    deps = ["//src/core:arena", "//src/core:match"],
+    deps = [
+        "//src/core:arena",
+        "//src/core:match",
+    ],
 )
