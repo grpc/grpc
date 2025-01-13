@@ -66,6 +66,7 @@ namespace grpc_core {
 //   auto next2 = [](std::string i) { return [i]() { return i + "c"; }; };
 //   EXPECT_EQ(Seq(initial, next1, next2)(), Poll<std::string>("abc"));
 // }
+//
 // For a complete understanding of all possible uses and nuances of Seq look at
 // ThreeTypedPendingThens in file seq_test.cc
 
