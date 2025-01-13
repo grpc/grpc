@@ -211,7 +211,6 @@ class XdsClient::XdsChannel::AdsCall final
       timer_handle_ = ads_call_->xds_client()->engine()->RunAfter(
           ads_call_->xds_client()->request_timeout_,
           [self = Ref(DEBUG_LOCATION, "timer")]() {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             self->OnTimer();
           });
@@ -632,7 +631,6 @@ void XdsClient::XdsChannel::RetryableCall<T>::StartRetryTimerLocked() {
   timer_handle_ = xds_channel()->xds_client()->engine()->RunAfter(
       delay,
       [self = this->Ref(DEBUG_LOCATION, "RetryableCall+retry_timer_start")]() {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnRetryTimer();
       });

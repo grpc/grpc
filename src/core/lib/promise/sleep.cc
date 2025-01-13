@@ -58,7 +58,6 @@ Sleep::ActiveClosure::ActiveClosure(Timestamp deadline)
           deadline - Timestamp::Now(), this)) {}
 
 void Sleep::ActiveClosure::Run() {
-  ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
   auto waker = std::move(waker_);
   if (Unref()) {

@@ -1138,7 +1138,6 @@ RlsLb::Cache::Entry::BackoffTimer::BackoffTimer(RefCountedPtr<Entry> entry,
   backoff_timer_task_handle_ =
       entry_->lb_policy_->channel_control_helper()->GetEventEngine()->RunAfter(
           delay, [self = Ref(DEBUG_LOCATION, "BackoffTimer")]() mutable {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto self_ptr = self.get();
             self_ptr->entry_->lb_policy_->work_serializer()->Run(
@@ -1471,7 +1470,6 @@ void RlsLb::Cache::StartCleanupTimer() {
           kCacheCleanupTimerInterval,
           [this, lb_policy = lb_policy_->Ref(DEBUG_LOCATION,
                                              "CacheCleanupTimer")]() mutable {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             lb_policy_->work_serializer()->Run(
                 [this, lb_policy = std::move(lb_policy)]() {

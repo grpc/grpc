@@ -439,7 +439,6 @@ void SetXdsFallbackBootstrapConfig(const char* config) {
 
 // The returned bytes may contain NULL(0), so we can't use c-string.
 grpc_slice grpc_dump_xds_configs(void) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::GrpcXdsClient::DumpAllClientConfigs();
 }

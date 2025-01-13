@@ -168,14 +168,9 @@ void grpc_shutdown(void) {
   grpc_core::MutexLock lock(g_init_mu);
 
   if (--g_initializations == 0) {
-    grpc_core::ApplicationCallbackExecCtx* acec =
-        grpc_core::ApplicationCallbackExecCtx::Get();
     if (!grpc_iomgr_is_any_background_poller_thread() &&
         !grpc_event_engine::experimental::TimerManager::
             IsTimerManagerThread() &&
-        (acec == nullptr ||
-         (acec->Flags() & GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD) ==
-             0) &&
         grpc_core::ExecCtx::Get() == nullptr) {
       // just run clean-up when this is called on non-executor thread.
       VLOG(2) << "grpc_shutdown starts clean-up now";

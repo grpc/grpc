@@ -90,7 +90,6 @@ Channel::RegisteredCall* Channel::RegisterCall(const char* method,
 //
 
 void grpc_channel_destroy(grpc_channel* channel) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_channel_destroy(channel=" << channel << ")";
@@ -104,7 +103,6 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
                                     grpc_slice method, const grpc_slice* host,
                                     gpr_timespec deadline, void* reserved) {
   CHECK(!reserved);
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::Channel::FromC(channel)->CreateCall(
       parent_call, propagation_mask, completion_queue, nullptr,
@@ -122,7 +120,6 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
                             << ", method=" << method << ", host=" << host
                             << ", reserved=" << reserved << ")";
   CHECK(!reserved);
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::Channel::FromC(channel)->RegisterCall(method, host);
 }
@@ -143,7 +140,6 @@ grpc_call* grpc_channel_create_registered_call(
       << ", tv_nsec: " << deadline.tv_nsec
       << ", clock_type: " << (int)deadline.clock_type
       << " }, reserved=" << reserved << ")";
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::Channel::FromC(channel)->CreateCall(
       parent_call, propagation_mask, completion_queue, nullptr, rc->path.Ref(),
@@ -165,13 +161,11 @@ char* grpc_channel_get_target(grpc_channel* channel) {
 
 void grpc_channel_get_info(grpc_channel* channel,
                            const grpc_channel_info* channel_info) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Channel::FromC(channel)->GetInfo(channel_info);
 }
 
 void grpc_channel_reset_connect_backoff(grpc_channel* channel) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_channel_reset_connect_backoff(channel=" << channel << ")";
@@ -184,7 +178,6 @@ int grpc_channel_support_connectivity_watcher(grpc_channel* channel) {
 
 grpc_connectivity_state grpc_channel_check_connectivity_state(
     grpc_channel* channel, int try_to_connect) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_channel_check_connectivity_state(channel=" << channel
@@ -196,7 +189,6 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
 void grpc_channel_watch_connectivity_state(
     grpc_channel* channel, grpc_connectivity_state last_observed_state,
     gpr_timespec deadline, grpc_completion_queue* cq, void* tag) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_channel_watch_connectivity_state(channel=" << channel

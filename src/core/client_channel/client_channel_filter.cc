@@ -2293,7 +2293,6 @@ void ClientChannelFilter::FilterBasedCallData::RetryCheckResolutionLocked() {
   // Do an async callback to resume call processing, so that we're not
   // doing it while holding the channel's resolution mutex.
   chand()->owning_stack_->EventEngine()->Run([this]() {
-    ApplicationCallbackExecCtx application_exec_ctx;
     ExecCtx exec_ctx;
     TryCheckResolution(/*was_queued=*/true);
   });

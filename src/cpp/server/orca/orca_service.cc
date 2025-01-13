@@ -160,7 +160,6 @@ bool OrcaService::Reactor::MaybeCancelTimer() {
 }
 
 void OrcaService::Reactor::OnTimer() {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc::internal::MutexLock lock(&timer_mu_);
   timer_handle_.reset();

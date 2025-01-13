@@ -348,7 +348,6 @@ class MetadataCredentialsPluginWrapper final : private internal::GrpcLibrary {
   static void Destroy(void* wrapper) {
     if (wrapper == nullptr) return;
     grpc_event_engine::experimental::GetDefaultEventEngine()->Run([wrapper] {
-      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
       grpc_core::ExecCtx exec_ctx;
       delete static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
     });

@@ -226,7 +226,6 @@ void HttpRequest::Start() {
         ->LookupHostname(
             [this](absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
                        addresses_or) {
-              ApplicationCallbackExecCtx callback_exec_ctx;
               ExecCtx exec_ctx;
               OnResolved(addresses_or);
             },

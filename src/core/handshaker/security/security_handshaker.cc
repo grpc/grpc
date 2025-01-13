@@ -440,7 +440,6 @@ void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler(
     grpc_error_handle error) {
   args_->event_engine->Run([self = RefAsSubclass<SecurityHandshaker>(),
                             error = std::move(error)]() mutable {
-    ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     self->OnHandshakeDataReceivedFromPeerFn(std::move(error));
     // Avoid destruction outside of an ExecCtx (since this is non-cancelable).
@@ -472,7 +471,6 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler(
     grpc_error_handle error) {
   args_->event_engine->Run([self = RefAsSubclass<SecurityHandshaker>(),
                             error = std::move(error)]() mutable {
-    ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     self->OnHandshakeDataSentToPeerFn(std::move(error));
     // Avoid destruction outside of an ExecCtx (since this is non-cancelable).

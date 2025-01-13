@@ -290,7 +290,6 @@ MakeInProcessTransportPair(const ChannelArgs& server_channel_args) {
 grpc_channel* grpc_inproc_channel_create(grpc_server* server,
                                          const grpc_channel_args* args,
                                          void* reserved) {
-  grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   const auto channel_args = grpc_core::CoreConfiguration::Get()
                                 .channel_args_preconditioning()
