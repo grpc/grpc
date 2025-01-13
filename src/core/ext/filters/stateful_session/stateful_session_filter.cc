@@ -54,11 +54,6 @@
 
 namespace grpc_core {
 
-const NoInterceptor StatefulSessionFilter::Call::OnClientToServerMessage;
-const NoInterceptor StatefulSessionFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor StatefulSessionFilter::Call::OnServerToClientMessage;
-const NoInterceptor StatefulSessionFilter::Call::OnFinalize;
-
 UniqueTypeName XdsOverrideHostAttribute::TypeName() {
   static UniqueTypeName::Factory kFactory("xds_override_host");
   return kFactory.Create();

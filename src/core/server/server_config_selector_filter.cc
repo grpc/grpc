@@ -71,12 +71,12 @@ class ServerConfigSelectorFilter final
    public:
     absl::Status OnClientInitialMetadata(ClientMetadata& md,
                                          ServerConfigSelectorFilter* filter);
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
   };
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector() {
@@ -158,13 +158,6 @@ absl::Status ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
       std::move(call_config->service_config), call_config->method_configs);
   return absl::OkStatus();
 }
-
-const NoInterceptor ServerConfigSelectorFilter::Call::OnServerInitialMetadata;
-const NoInterceptor ServerConfigSelectorFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor ServerConfigSelectorFilter::Call::OnClientToServerMessage;
-const NoInterceptor ServerConfigSelectorFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ServerConfigSelectorFilter::Call::OnServerToClientMessage;
-const NoInterceptor ServerConfigSelectorFilter::Call::OnFinalize;
 
 }  // namespace
 

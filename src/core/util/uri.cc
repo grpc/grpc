@@ -261,9 +261,9 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
     for (absl::string_view query_param : absl::StrSplit(tmp_query, '&')) {
       const std::pair<absl::string_view, absl::string_view> possible_kv =
           absl::StrSplit(query_param, absl::MaxSplits('=', 1));
-      if (possible_kv.first.empty()) continue;
-      query_param_pairs.push_back({PercentDecode(possible_kv.first),
-                                   PercentDecode(possible_kv.second)});
+      auto& [key, value] = possible_kv;
+      if (key.empty()) continue;
+      query_param_pairs.push_back({PercentDecode(key), PercentDecode(value)});
     }
     if (offset == remaining.npos) {
       remaining = "";

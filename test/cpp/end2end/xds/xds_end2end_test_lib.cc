@@ -331,8 +331,8 @@ void XdsEnd2endTest::BalancerServerThread::ShutdownAllServices() {
 
 void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
                                           EchoRequest* request) const {
-  for (const auto& item : metadata) {
-    context->AddMetadata(item.first, item.second);
+  for (const auto& [key, value] : metadata) {
+    context->AddMetadata(key, value);
   }
   if (timeout_ms != 0) {
     context->set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
@@ -622,12 +622,12 @@ Status XdsEnd2endTest::SendRpc(
       break;
   }
   if (server_initial_metadata != nullptr) {
-    for (const auto& it : context.GetServerInitialMetadata()) {
-      std::string header(it.first.data(), it.first.size());
+    for (const auto& [key, value] : context.GetServerInitialMetadata()) {
+      std::string header(key.data(), key.size());
       // Guard against implementation-specific header case - RFC 2616
       absl::AsciiStrToLower(&header);
-      server_initial_metadata->emplace(
-          header, std::string(it.second.data(), it.second.size()));
+      server_initial_metadata->emplace(header,
+                                       std::string(value.data(), value.size()));
     }
   }
   return status;

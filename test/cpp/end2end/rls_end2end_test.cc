@@ -106,12 +106,12 @@ class MyTestServiceImpl : public BackendService {
                     ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
     IncreaseRequestCount();
     auto client_metadata = context->client_metadata();
-    auto range = client_metadata.equal_range("x-google-rls-data");
+    auto [start, end] = client_metadata.equal_range("x-google-rls-data");
     {
       grpc::internal::MutexLock lock(&mu_);
-      for (auto it = range.first; it != range.second; ++it) {
-        rls_header_data_.insert(
-            std::string(it->second.begin(), it->second.length()));
+      for (auto it = start; it != end; ++it) {
+        auto& [_, value] = *it;
+        rls_header_data_.emplace(value.begin(), value.length());
       }
     }
     IncreaseResponseCount();
@@ -256,8 +256,8 @@ class RlsEnd2endTest : public ::testing::Test {
 
     // Populates context.
     void SetupRpc(ClientContext* context) const {
-      for (const auto& item : metadata) {
-        context->AddMetadata(item.first, item.second);
+      for (const auto& [key, value] : metadata) {
+        context->AddMetadata(key, value);
       }
       if (timeout_ms != 0) {
         context->set_deadline(

@@ -162,7 +162,7 @@ def grpc_cc_library(
         defines = [],
         deps = [],
         select_deps = None,
-        standalone = False,
+        standalone = False,  # @unused
         language = "C++",
         testonly = False,
         visibility = None,

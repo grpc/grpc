@@ -39,11 +39,11 @@ void PopulateListValue(google_protobuf_ListValue* list_value,
 
 void PopulateMetadata(google_protobuf_Struct* metadata_pb,
                       const Json::Object& metadata, upb_Arena* arena) {
-  for (const auto& p : metadata) {
-    google_protobuf_Value* value = google_protobuf_Value_new(arena);
-    PopulateMetadataValue(value, p.second, arena);
-    google_protobuf_Struct_fields_set(
-        metadata_pb, StdStringToUpbString(p.first), value, arena);
+  for (const auto& [key, value] : metadata) {
+    google_protobuf_Value* value_proto = google_protobuf_Value_new(arena);
+    PopulateMetadataValue(value_proto, value, arena);
+    google_protobuf_Struct_fields_set(metadata_pb, StdStringToUpbString(key),
+                                      value_proto, arena);
   }
 }
 
