@@ -501,7 +501,8 @@ std::shared_ptr<EventEngine> CreateEventEngine();
 /// Set the default EventEngine instance, which will be used throughout gRPC
 ///
 /// gRPC will hold a ref to this engine. For your engine to be shut down, you
-/// must call \a ShutdownDefaultEventEngine at the end of your program.
+/// must call \a ShutdownDefaultEventEngine at the end of your program, or
+/// \a SetDefaultEventEngine(nullptr).
 ///
 /// Earlier calls to \a GetDefaultEventEngine will still hold a ref to the
 /// previous default engine instance, if any.
@@ -517,23 +518,18 @@ void SetDefaultEventEngine(std::shared_ptr<EventEngine> engine);
 /// EventEngine instance.
 std::shared_ptr<EventEngine> GetDefaultEventEngine();
 
-/// Waits for all refs on the DefaultEventEngine to be released, and resets the
-/// CreateEventEngine factory to create and return one of the default internal
-/// EventEngines.
+/// Resets the CreateEventEngine factory to create and return one of the default
+/// internal EventEngines, and blocks until all refs on the active default
+/// engine have been released (destroying that engine).
 ///
-/// If you called \a SetDefaultEventEngine, you must call \a
-/// ShutdownDefaultEventEngine. If you don't, the default engine will never be
-/// destroyed.
+/// If you called \a SetDefaultEventEngine, you must call either
+/// \a ShutdownDefaultEventEngine or \a SetDefaultEventEngine(nullptr) at the
+/// end of your program. If you don't, the engine will never be destroyed.
 ///
-/// By default, this method will return when all refs are released and the
-/// engine has been destroyed. If \a wait is false, this function will reset the
-/// internal gRPC state to that there will be no _new uses_ of the
-/// application-provided engine, but the function will not wait for the engine
-/// to be destroyed.
-///
-/// Note that this method will never return if you also hold a ref to that
-/// default engine anywhere else in your application.
-void ShutdownDefaultEventEngine(bool wait = true);
+/// If you want to reset the default engine to one of gRPC's internal versions
+/// without waiting for all references to be released on the current default
+/// engine, call \a SetDefaultEventEngine(nullptr).
+void ShutdownDefaultEventEngine();
 
 bool operator==(const EventEngine::TaskHandle& lhs,
                 const EventEngine::TaskHandle& rhs);

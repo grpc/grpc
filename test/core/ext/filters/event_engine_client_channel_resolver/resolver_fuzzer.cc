@@ -282,7 +282,7 @@ DEFINE_PROTO_FUZZER(const event_engine_client_channel_resolver::Msg& msg) {
       engine->Tick();
     }
   }
-  grpc_event_engine::experimental::ShutdownDefaultEventEngine(/*wait=*/false);
+  grpc_event_engine::experimental::ShutdownDefaultEventEngine();
   // If orphaned early, callbacks may still need to run, which may keep the
   // resolver alive.
   while (engine.use_count() > 1) engine->Tick();

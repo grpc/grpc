@@ -2912,6 +2912,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "default_event_engine_factory",
+        "match",
         "no_destruct",
         "thready_event_engine",
         "wait_for_single_owner",
