@@ -164,8 +164,8 @@ def gen_opt_seq_state(n, f):
     fwd_fs = ", ".join(f"std::forward<F{i}>(f{i})" for i in range(n-1))
     if n > 7:
         print(f"template <template <typename> class Traits, typename P, {typename_fs}>", file=f)
-        print(f"auto FoldSeqState(P&& p, {args_fs}) {{", file=f)
-        print(f"  return SeqState(std::forward<P>(p), {fwd_fs});", file=f)
+        print(f"auto FoldSeqState(P&& p, {args_fs}, DebugLocation whence) {{", file=f)
+        print(f"  return SeqState<Traits, P, {fs}>(std::forward<P>(p), {fwd_fs}, whence);", file=f)
         print("}", file=f)
         return
 

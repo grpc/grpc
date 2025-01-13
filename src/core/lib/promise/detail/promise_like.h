@@ -107,10 +107,15 @@ class PromiseLike<
   GPR_NO_UNIQUE_ADDRESS RemoveCVRef<F> f_;
 
  public:
+  static constexpr bool kInstantaneous = true;
   // NOLINTNEXTLINE - internal detail that drastically simplifies calling code.
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION PromiseLike(F&& f)
       : f_(std::forward<F>(f)) {}
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Empty> operator()() {
+    f_();
+    return Empty{};
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto CallUnderlyingFn() {
     f_();
     return Empty{};
   }

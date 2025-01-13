@@ -18,6 +18,6 @@ template <template<typename> class Traits, ${",".join(f"typename F{i}" for i in 
 auto SeqFactoryMap(${",".join(f"F{i}&& f{i}" for i in range(0,n-1))}) {
   return [${",".join(f"f{i} = std::forward<F{i}>(f{i})" for i in range(0,n-1))}](auto x) mutable {
     OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap(next.Make(), ${",".join(f"std::move(f{i})" for i in range(1,n-1))});
+    return SeqMap<Traits>(next.Make(std::move(x)), ${",".join(f"std::move(f{i})" for i in range(1,n-1))});
   };
 }

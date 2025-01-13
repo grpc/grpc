@@ -6509,7 +6509,7 @@ auto SeqFactoryMap(F0&& f0, F1&& f1) {
   return
       [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1)](auto x) mutable {
         OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-        return SeqMap(next.Make(), std::move(f1));
+        return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1));
       };
 }
 
@@ -6519,7 +6519,8 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2) {
   return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
           f2 = std::forward<F2>(f2)](auto x) mutable {
     OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap(next.Make(), std::move(f1), std::move(f2));
+    return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
+                          std::move(f2));
   };
 }
 
@@ -6530,7 +6531,8 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3) {
       [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
        f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3)](auto x) mutable {
         OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-        return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3));
+        return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
+                              std::move(f2), std::move(f3));
       };
 }
 
@@ -6541,22 +6543,22 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4) {
           f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
           f4 = std::forward<F4>(f4)](auto x) mutable {
     OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
-                  std::move(f4));
+    return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1), std::move(f2),
+                          std::move(f3), std::move(f4));
   };
 }
 
 template <template <typename> class Traits, typename F0, typename F1,
           typename F2, typename F3, typename F4, typename F5>
 auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5) {
-  return
-      [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
-       f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
-       f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5)](auto x) mutable {
-        OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-        return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
-                      std::move(f4), std::move(f5));
-      };
+  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+          f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+          f4 = std::forward<F4>(f4),
+          f5 = std::forward<F5>(f5)](auto x) mutable {
+    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+    return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1), std::move(f2),
+                          std::move(f3), std::move(f4), std::move(f5));
+  };
 }
 
 template <template <typename> class Traits, typename F0, typename F1,
@@ -6568,8 +6570,9 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
           f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
           f6 = std::forward<F6>(f6)](auto x) mutable {
     OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
-                  std::move(f4), std::move(f5), std::move(f6));
+    return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1), std::move(f2),
+                          std::move(f3), std::move(f4), std::move(f5),
+                          std::move(f6));
   };
 }
 
@@ -6578,15 +6581,16 @@ template <template <typename> class Traits, typename F0, typename F1,
           typename F7>
 auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
                    F6&& f6, F7&& f7) {
-  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
-          f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
-          f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
-          f6 = std::forward<F6>(f6),
-          f7 = std::forward<F7>(f7)](auto x) mutable {
-    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
-                  std::move(f4), std::move(f5), std::move(f6), std::move(f7));
-  };
+  return
+      [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+       f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+       f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+       f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7)](auto x) mutable {
+        OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+        return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
+                              std::move(f2), std::move(f3), std::move(f4),
+                              std::move(f5), std::move(f6), std::move(f7));
+      };
 }
 
 template <template <typename> class Traits, typename F0, typename F1,
@@ -6600,9 +6604,9 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
           f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
           f8 = std::forward<F8>(f8)](auto x) mutable {
     OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
-                  std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-                  std::move(f8));
+    return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1), std::move(f2),
+                          std::move(f3), std::move(f4), std::move(f5),
+                          std::move(f6), std::move(f7), std::move(f8));
   };
 }
 
@@ -6618,9 +6622,10 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
        f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
        f8 = std::forward<F8>(f8), f9 = std::forward<F9>(f9)](auto x) mutable {
         OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-        return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
-                      std::move(f4), std::move(f5), std::move(f6),
-                      std::move(f7), std::move(f8), std::move(f9));
+        return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
+                              std::move(f2), std::move(f3), std::move(f4),
+                              std::move(f5), std::move(f6), std::move(f7),
+                              std::move(f8), std::move(f9));
       };
 }
 
@@ -6636,9 +6641,10 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
           f8 = std::forward<F8>(f8), f9 = std::forward<F9>(f9),
           f10 = std::forward<F10>(f10)](auto x) mutable {
     OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
-                  std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-                  std::move(f8), std::move(f9), std::move(f10));
+    return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1), std::move(f2),
+                          std::move(f3), std::move(f4), std::move(f5),
+                          std::move(f6), std::move(f7), std::move(f8),
+                          std::move(f9), std::move(f10));
   };
 }
 
@@ -6655,9 +6661,10 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
           f10 = std::forward<F10>(f10),
           f11 = std::forward<F11>(f11)](auto x) mutable {
     OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
-                  std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-                  std::move(f8), std::move(f9), std::move(f10), std::move(f11));
+    return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1), std::move(f2),
+                          std::move(f3), std::move(f4), std::move(f5),
+                          std::move(f6), std::move(f7), std::move(f8),
+                          std::move(f9), std::move(f10), std::move(f11));
   };
 }
 
@@ -7740,67 +7747,70 @@ template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6>
 auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                  F6&& f6) {
-  return SeqState(std::forward<P>(p), std::forward<F0>(f0),
-                  std::forward<F1>(f1), std::forward<F2>(f2),
-                  std::forward<F3>(f3), std::forward<F4>(f4),
-                  std::forward<F5>(f5), std::forward<F6>(f6));
+                  F6&& f6, DebugLocation whence) {
+  return SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6>(
+      std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+      std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+      std::forward<F5>(f5), std::forward<F6>(f6), whence);
 }
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7>
 auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                  F6&& f6, F7&& f7) {
-  return SeqState(
+                  F6&& f6, F7&& f7, DebugLocation whence) {
+  return SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7>(
       std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
       std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
-      std::forward<F5>(f5), std::forward<F6>(f6), std::forward<F7>(f7));
+      std::forward<F5>(f5), std::forward<F6>(f6), std::forward<F7>(f7), whence);
 }
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8>
 auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                  F6&& f6, F7&& f7, F8&& f8) {
-  return SeqState(std::forward<P>(p), std::forward<F0>(f0),
-                  std::forward<F1>(f1), std::forward<F2>(f2),
-                  std::forward<F3>(f3), std::forward<F4>(f4),
-                  std::forward<F5>(f5), std::forward<F6>(f6),
-                  std::forward<F7>(f7), std::forward<F8>(f8));
+                  F6&& f6, F7&& f7, F8&& f8, DebugLocation whence) {
+  return SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8>(
+      std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+      std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+      std::forward<F5>(f5), std::forward<F6>(f6), std::forward<F7>(f7),
+      std::forward<F8>(f8), whence);
 }
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8, typename F9>
 auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                  F6&& f6, F7&& f7, F8&& f8, F9&& f9) {
-  return SeqState(
+                  F6&& f6, F7&& f7, F8&& f8, F9&& f9, DebugLocation whence) {
+  return SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9>(
       std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
       std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
       std::forward<F5>(f5), std::forward<F6>(f6), std::forward<F7>(f7),
-      std::forward<F8>(f8), std::forward<F9>(f9));
+      std::forward<F8>(f8), std::forward<F9>(f9), whence);
 }
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8, typename F9, typename F10>
 auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                  F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10) {
-  return SeqState(
+                  F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10,
+                  DebugLocation whence) {
+  return SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10>(
       std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
       std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
       std::forward<F5>(f5), std::forward<F6>(f6), std::forward<F7>(f7),
-      std::forward<F8>(f8), std::forward<F9>(f9), std::forward<F10>(f10));
+      std::forward<F8>(f8), std::forward<F9>(f9), std::forward<F10>(f10),
+      whence);
 }
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8, typename F9, typename F10,
           typename F11>
 auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                  F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10, F11&& f11) {
-  return SeqState(
+                  F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10, F11&& f11,
+                  DebugLocation whence) {
+  return SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11>(
       std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
       std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
       std::forward<F5>(f5), std::forward<F6>(f6), std::forward<F7>(f7),
       std::forward<F8>(f8), std::forward<F9>(f9), std::forward<F10>(f10),
-      std::forward<F11>(f11));
+      std::forward<F11>(f11), whence);
 }
 
 }  // namespace promise_detail
