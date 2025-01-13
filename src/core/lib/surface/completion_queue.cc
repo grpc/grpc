@@ -857,7 +857,6 @@ static void cq_end_op_for_callback(
         grpc_core::ExecCtx exec_ctx;
         (*functor->functor_run)(functor, ok);
       });
-  return;
 }
 
 void grpc_cq_end_op(grpc_completion_queue* cq, void* tag,
