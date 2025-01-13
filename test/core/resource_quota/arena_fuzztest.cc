@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
 #include <queue>
 #include <string>
 #include <utility>
@@ -55,6 +56,34 @@ void ArenaSpscIsAQueue(std::vector<QueueOp> ops) {
   }
 }
 FUZZ_TEST(MyTestSuite, ArenaSpscIsAQueue);
+
+struct Nothing {};
+
+void ArenaSpscDoesNotLeak(std::vector<bool> ops) {
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto spsc = ArenaSpsc<std::shared_ptr<Nothing>>(arena.get());
+  std::queue<std::shared_ptr<Nothing>> q;
+
+  for (const auto& op : ops) {
+    // true ==> push, false ==> pop
+    // We check the shared_ptr value on pop to ensure queue behavior.
+    // We do memory allocations and leave things in an fuzzer controlled state
+    // to ensure that we don't leak memory.
+    if (op) {
+      auto ptr = std::make_shared<Nothing>();
+      q.push(ptr);
+      spsc.Push(ptr);
+    } else {
+      if (q.empty()) {
+        EXPECT_FALSE(spsc.Pop().has_value());
+      } else {
+        EXPECT_EQ(spsc.Pop().value(), q.front());
+        q.pop();
+      }
+    }
+  }
+}
+FUZZ_TEST(MyTestSuite, ArenaSpscDoesNotLeak);
 
 }  // namespace
 }  // namespace grpc_core
