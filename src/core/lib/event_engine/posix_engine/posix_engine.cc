@@ -21,7 +21,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -34,12 +33,9 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
-#include "src/core/lib/event_engine/forkable.h"
-#include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h"
@@ -50,7 +46,6 @@
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/crash.h"
-#include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 
@@ -79,19 +74,6 @@
 using namespace std::chrono_literals;
 
 namespace grpc_event_engine::experimental {
-
-namespace {
-
-grpc_core::NoDestruct<ObjectGroupForkHandler> g_timer_fork_manager;
-
-class TimerForkCallbackMethods {
- public:
-  static void Prefork() { g_timer_fork_manager->Prefork(); }
-  static void PostforkParent() { g_timer_fork_manager->PostforkParent(); }
-  static void PostforkChild() { g_timer_fork_manager->PostforkChild(); }
-};
-
-}  // namespace
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -366,10 +348,6 @@ PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
       connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
-  g_timer_fork_manager->RegisterForkable(
-      timer_manager_, TimerForkCallbackMethods::Prefork,
-      TimerForkCallbackMethods::PostforkParent,
-      TimerForkCallbackMethods::PostforkChild);
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   poller_manager_ = std::make_shared<PosixEnginePollerManager>(poller);
 #endif
@@ -381,10 +359,6 @@ PosixEventEngine::PosixEventEngine()
       connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
-  g_timer_fork_manager->RegisterForkable(
-      timer_manager_, TimerForkCallbackMethods::Prefork,
-      TimerForkCallbackMethods::PostforkParent,
-      TimerForkCallbackMethods::PostforkChild);
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
   // The threadpool must be instantiated after the poller otherwise, the

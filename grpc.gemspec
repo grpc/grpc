@@ -1171,8 +1171,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/extensions/chaotic_good_extension.h )
   s.files += %w( src/core/lib/event_engine/extensions/supports_fd.h )
   s.files += %w( src/core/lib/event_engine/extensions/tcp_trace.h )
-  s.files += %w( src/core/lib/event_engine/forkable.cc )
-  s.files += %w( src/core/lib/event_engine/forkable.h )
   s.files += %w( src/core/lib/event_engine/grpc_polled_fd.h )
   s.files += %w( src/core/lib/event_engine/handle_containers.h )
   s.files += %w( src/core/lib/event_engine/memory_allocator_factory.h )
