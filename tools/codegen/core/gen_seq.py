@@ -16,162 +16,14 @@
 
 import sys
 
+from mako.lookup import TemplateLookup
 from mako.template import Template
 
-seq_state = Template(
-    """
-<%def name="decl(promise_name, i, n)">
-using Promise${i} = ${promise_name};
-% if i < n-1:
-using NextFactory${i} = OncePromiseFactory<typename Promise${i}::Result, F${i}>;
-${decl(f"typename NextFactory{i}::Promise", i+1, n)}
-% endif
-</%def>
-
-<%def name="state(i, n)">
-% if i == 0:
-Promise0 current_promise;
-NextFactory0 next_factory;
-% elif i == n-1:
-union {
-    struct { ${state(i-1, n)} } prior;
-    Promise${i} current_promise;
-};
-% else:
-union {
-    struct { ${state(i-1, n)} } prior;
-    P${i} current_promise;
-};
-NextFactory${i} next_factory;
-% endif
-</%def>
-
-template <template<typename> class Traits, typename P, ${",".join(f"typename F{i}" for i in range(0,n-1))}>
-struct SeqState<Traits, P, ${",".join(f"F{i}" for i in range(0,n-1))}> {
-<% name="PromiseLike<P>" %>
-% for i in range(0,n-1):
-using Promise${i} = ${name};
-using PromiseResult${i} = typename Promise${i}::Result;
-using PromiseResultTraits${i} = Traits<PromiseResult${i}>;
-using NextFactory${i} = OncePromiseFactory<typename PromiseResultTraits${i}::UnwrappedType, F${i}>;
-<% name=f"typename NextFactory{i}::Promise" %>\\
-% endfor
-using Promise${n-1} = ${name};
-using PromiseResult${n-1} = typename Promise${n-1}::Result;
-using PromiseResultTraits${n-1} = Traits<PromiseResult${n-1}>;
-using Result = typename PromiseResultTraits${n-1}::WrappedType;
-% if n == 1:
-Promise0 current_promise;
-% else:
-%  for i in range(0,n-1):
-struct Running${i} {
-%   if i != 0:
-union {
-  GPR_NO_UNIQUE_ADDRESS Running${i-1} prior;
-%   endif
-  GPR_NO_UNIQUE_ADDRESS Promise${i} current_promise;
-%   if i != 0:
-};
-%   endif
-GPR_NO_UNIQUE_ADDRESS NextFactory${i} next_factory;
-};
-%  endfor
-union {
-    GPR_NO_UNIQUE_ADDRESS Running${n-2} prior;
-    GPR_NO_UNIQUE_ADDRESS Promise${n-1} current_promise;
-};
-% endif
-  enum class State : uint8_t { ${",".join(f"kState{i}" for i in range(0,n))} };
-  GPR_NO_UNIQUE_ADDRESS State state = State::kState0;
-  GPR_NO_UNIQUE_ADDRESS DebugLocation whence;
-
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(P&& p,
-           ${",".join(f"F{i}&& f{i}" for i in range(0,n-1))},
-           DebugLocation whence) noexcept: whence(whence)  {
-    Construct(&${"prior."*(n-1)}current_promise, std::forward<P>(p));
-% for i in range(0,n-1):
-    Construct(&${"prior."*(n-1-i)}next_factory, std::forward<F${i}>(f${i}));
-% endfor
-  }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~SeqState() {
-    switch (state) {
-% for i in range(0,n-1):
-     case State::kState${i}:
-      Destruct(&${"prior."*(n-1-i)}current_promise);
-      goto tail${i};
-% endfor
-     case State::kState${n-1}:
-      Destruct(&current_promise);
-      return;
-    }
-% for i in range(0,n-1):
-tail${i}:
-    Destruct(&${"prior."*(n-1-i)}next_factory);
-% endfor
-  }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&${"prior."*(n-1)}current_promise,
-            other.${"prior."*(n-1)}current_promise);
-% for i in range(0,n-1):
-    Construct(&${"prior."*(n-1-i)}next_factory,
-              other.${"prior."*(n-1-i)}next_factory);
-% endfor
-  }
-  SeqState& operator=(const SeqState& other) = delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&${"prior."*(n-1)}current_promise,
-              std::move(other.${"prior."*(n-1)}current_promise));
-% for i in range(0,n-1):
-    Construct(&${"prior."*(n-1-i)}next_factory,
-              std::move(other.${"prior."*(n-1-i)}next_factory));
-% endfor
-  }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) = delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
-    switch (state) {
-% for i in range(0,n-1):
-      case State::kState${i}: {
-        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
-                << "seq[" << this << "]: begin poll step ${i+1}/${n}";
-        auto result = ${"prior."*(n-1-i)}current_promise();
-        PromiseResult${i}* p = result.value_if_ready();
-        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
-                << "seq[" << this << "]: poll step ${i+1}/${n} gets "
-                << (p != nullptr
-                    ? (PromiseResultTraits${i}::IsOk(*p)
-                      ? "ready"
-                      : absl::StrCat("early-error:", PromiseResultTraits${i}::ErrorString(*p)).c_str())
-                    : "pending");
-        if (p == nullptr) return Pending{};
-        if (!PromiseResultTraits${i}::IsOk(*p)) {
-          return PromiseResultTraits${i}::template ReturnValue<Result>(std::move(*p));
-        }
-        Destruct(&${"prior."*(n-1-i)}current_promise);
-        auto next_promise = PromiseResultTraits${i}::CallFactory(&${"prior."*(n-1-i)}next_factory, std::move(*p));
-        Destruct(&${"prior."*(n-1-i)}next_factory);
-        Construct(&${"prior."*(n-2-i)}current_promise, std::move(next_promise));
-        state = State::kState${i+1};
-      }
-      [[fallthrough]];
-% endfor
-      default:
-      case State::kState${n-1}: {
-        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
-                << "seq[" << this << "]: begin poll step ${n}/${n}";
-        auto result = current_promise();
-        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
-                << "seq[" << this << "]: poll step ${n}/${n} gets "
-                << (result.ready()? "ready" : "pending");
-        auto* p = result.value_if_ready();
-        if (p == nullptr) return Pending{};
-        return Result(std::move(*p));
-      }
-    }
-  }
-};"""
-)
+tmpl_lookup = TemplateLookup(directories=["tools/codegen/core/templates/"])
+seq_state = tmpl_lookup.get_template("seq_state.mako")
+seq_state_types = tmpl_lookup.get_template("seq_state_types.mako")
+seq_map = tmpl_lookup.get_template("seq_map.mako")
+seq_factory_map = tmpl_lookup.get_template("seq_factory_map.mako")
 
 front_matter = """
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_SEQ_STATE_H
@@ -196,6 +48,7 @@ front_matter = """
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/map.h"
 
 // A sequence under some traits for some set of callables P, Fs.
 // P should be a promise-like object that yields a value.
@@ -240,6 +93,15 @@ namespace grpc_core {
 namespace promise_detail {
 template <template<typename> class Traits, typename P, typename... Fs>
 struct SeqState;
+template <template<typename> class Traits, typename P, typename... Fs>
+struct SeqStateTypes;
+"""
+
+seq_map_decls = """
+template <template<typename> class Traits, typename P, typename... F>
+using SeqMapType = decltype(SeqMap<Traits>(std::declval<P>(), std::declval<F>()...));
+template <template<typename> class Traits, typename... F>
+using SeqFactoryMapType = decltype(SeqFactoryMap<Traits>(std::declval<F>()...));
 """
 
 end_matter = """
@@ -274,9 +136,85 @@ with open(sys.argv[0]) as my_source:
 
 copyright = [line[2:].rstrip() for line in copyright]
 
+def finish_fold(fold, type_args, instantiate_args, f):
+  # print(f"// fold={fold}", file=f)
+  if len(fold) == 1:
+    if fold[0] != -1:
+      type_args.append(f"F{fold[0]}")
+      instantiate_args.append(f"std::forward<F{fold[0]}>(f{fold[0]})")
+    else:
+      type_args.append("P")
+      instantiate_args.append("std::forward<P>(p)")
+  else:
+    if fold[0] != -1:
+      fs = ", ".join(f"F{i}" for i in fold)
+      fwd_fs = ", ".join(f"std::forward<F{i}>(f{i})" for i in fold)
+      type_args.append(f"SeqFactoryMapType<Traits, {fs}>")
+      instantiate_args.append(f"SeqFactoryMap<Traits>({fwd_fs})")
+    else:
+      fs = ", ".join(f"F{i}" for i in fold[1:])
+      fwd_fs = ", ".join(f"std::forward<F{i}>(f{i})" for i in fold[1:])
+      type_args.append(f"SeqMapType<Traits, P, {fs}>")
+      instantiate_args.append(f"SeqMap<Traits>(std::forward<P>(p), {fwd_fs})")
+
+def gen_opt_seq_state(n, f):
+    typename_fs = ", ".join(f"typename F{i}" for i in range(n-1))
+    args_fs = ", ".join(f"F{i}&& f{i}" for i in range(n-1))
+    fs = ", ".join(f"F{i}" for i in range(n-1))
+    fwd_fs = ", ".join(f"std::forward<F{i}>(f{i})" for i in range(n-1))
+    if n > 7:
+        print(f"template <template <typename> class Traits, typename P, {typename_fs}>", file=f)
+        print(f"auto FoldSeqState(P&& p, {args_fs}) {{", file=f)
+        print(f"  return SeqState(std::forward<P>(p), {fwd_fs});", file=f)
+        print("}", file=f)
+        return
+
+    print(f"template <template <typename> class Traits, uint32_t kInstantBits, typename P, {typename_fs}>", file=f)
+    print(f"auto FoldSeqStateImpl(P&& p, {args_fs}, DebugLocation whence) {{", file=f)
+    for i in range(0, 1<<(n-1)):
+      type_args = []
+      instantiate_args = []
+      fold = [-1]
+      for j in range(n-1):
+        if (i & (1<<j)):
+          fold.append(j)
+        else:
+          finish_fold(fold, type_args, instantiate_args, f)
+          fold = [j]
+      finish_fold(fold, type_args, instantiate_args, f)
+      print(f"  if constexpr (kInstantBits == {bin(i)}) {{", file=f)
+      assert len(type_args) == len(instantiate_args)
+      if len(type_args) == 1:
+        print(f"    return {instantiate_args[0]};", file=f)
+      else:
+        print(f"    return SeqState<Traits, {','.join(type_args)}>({','.join(instantiate_args)}, whence);", file=f)
+      print("  }", file=f)
+    print("}", file=f)
+
+    print(f"template <template <typename> class Traits, typename P, {typename_fs}>", file=f)
+    print(f"auto FoldSeqState(P&& p, {args_fs}, DebugLocation whence) {{", file=f)
+    print(f"  using Types = SeqStateTypes<Traits, P, {fs}>;", file=f)
+    instant_bits = ' | '.join(
+      f"(Types::NextFactory{i}::kInstantaneousPromise? {1<<i} : 0)"
+      for i in range(0, n-1)
+    )
+    print(f"  static constexpr uint32_t kInstantBits = {instant_bits};", file=f)
+    print(f"  return FoldSeqStateImpl<Traits, kInstantBits>(std::forward<P>(p), {fwd_fs}, whence);", file=f)
+    print("}", file=f)
+
 with open("src/core/lib/promise/detail/seq_state.h", "w") as f:
     put_banner([f], copyright)
     print(front_matter, file=f)
     for n in range(2, 14):
+        print(seq_state_types.render(n=n), file=f)
+    for n in range(2, 14):
         print(seq_state.render(n=n), file=f)
+    for n in range(2, 14):
+        print(seq_map.render(n=n), file=f)
+    for n in range(3, 14):
+        print(seq_factory_map.render(n=n), file=f)
+    print(seq_map_decls, file=f)
+    print(file=f)
+    for n in range(2, 14):
+        gen_opt_seq_state(n, f)
     print(end_matter, file=f)

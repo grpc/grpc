@@ -29,6 +29,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/debug_location.h"
@@ -76,18 +77,603 @@ namespace grpc_core {
 namespace promise_detail {
 template <template <typename> class Traits, typename P, typename... Fs>
 struct SeqState;
+template <template <typename> class Traits, typename P, typename... Fs>
+struct SeqStateTypes;
 
 template <template <typename> class Traits, typename P, typename F0>
-struct SeqState<Traits, P, F0> {
+struct SeqStateTypes<Traits, P, F0> {
   using Promise0 = PromiseLike<P>;
   using PromiseResult0 = typename Promise0::Result;
   using PromiseResultTraits0 = Traits<PromiseResult0>;
   using NextFactory0 =
       OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
+
   using Promise1 = typename NextFactory0::Promise;
   using PromiseResult1 = typename Promise1::Result;
   using PromiseResultTraits1 = Traits<PromiseResult1>;
   using Result = typename PromiseResultTraits1::WrappedType;
+};
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1>
+struct SeqStateTypes<Traits, P, F0, F1> {
+  using Promise0 = PromiseLike<P>;
+  using PromiseResult0 = typename Promise0::Result;
+  using PromiseResultTraits0 = Traits<PromiseResult0>;
+  using NextFactory0 =
+      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
+
+  using Promise1 = typename NextFactory0::Promise;
+  using PromiseResult1 = typename Promise1::Result;
+  using PromiseResultTraits1 = Traits<PromiseResult1>;
+  using NextFactory1 =
+      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
+
+  using Promise2 = typename NextFactory1::Promise;
+  using PromiseResult2 = typename Promise2::Result;
+  using PromiseResultTraits2 = Traits<PromiseResult2>;
+  using Result = typename PromiseResultTraits2::WrappedType;
+};
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2>
+struct SeqStateTypes<Traits, P, F0, F1, F2> {
+  using Promise0 = PromiseLike<P>;
+  using PromiseResult0 = typename Promise0::Result;
+  using PromiseResultTraits0 = Traits<PromiseResult0>;
+  using NextFactory0 =
+      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
+
+  using Promise1 = typename NextFactory0::Promise;
+  using PromiseResult1 = typename Promise1::Result;
+  using PromiseResultTraits1 = Traits<PromiseResult1>;
+  using NextFactory1 =
+      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
+
+  using Promise2 = typename NextFactory1::Promise;
+  using PromiseResult2 = typename Promise2::Result;
+  using PromiseResultTraits2 = Traits<PromiseResult2>;
+  using NextFactory2 =
+      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
+
+  using Promise3 = typename NextFactory2::Promise;
+  using PromiseResult3 = typename Promise3::Result;
+  using PromiseResultTraits3 = Traits<PromiseResult3>;
+  using Result = typename PromiseResultTraits3::WrappedType;
+};
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3>
+struct SeqStateTypes<Traits, P, F0, F1, F2, F3> {
+  using Promise0 = PromiseLike<P>;
+  using PromiseResult0 = typename Promise0::Result;
+  using PromiseResultTraits0 = Traits<PromiseResult0>;
+  using NextFactory0 =
+      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
+
+  using Promise1 = typename NextFactory0::Promise;
+  using PromiseResult1 = typename Promise1::Result;
+  using PromiseResultTraits1 = Traits<PromiseResult1>;
+  using NextFactory1 =
+      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
+
+  using Promise2 = typename NextFactory1::Promise;
+  using PromiseResult2 = typename Promise2::Result;
+  using PromiseResultTraits2 = Traits<PromiseResult2>;
+  using NextFactory2 =
+      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
+
+  using Promise3 = typename NextFactory2::Promise;
+  using PromiseResult3 = typename Promise3::Result;
+  using PromiseResultTraits3 = Traits<PromiseResult3>;
+  using NextFactory3 =
+      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
+
+  using Promise4 = typename NextFactory3::Promise;
+  using PromiseResult4 = typename Promise4::Result;
+  using PromiseResultTraits4 = Traits<PromiseResult4>;
+  using Result = typename PromiseResultTraits4::WrappedType;
+};
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4>
+struct SeqStateTypes<Traits, P, F0, F1, F2, F3, F4> {
+  using Promise0 = PromiseLike<P>;
+  using PromiseResult0 = typename Promise0::Result;
+  using PromiseResultTraits0 = Traits<PromiseResult0>;
+  using NextFactory0 =
+      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
+
+  using Promise1 = typename NextFactory0::Promise;
+  using PromiseResult1 = typename Promise1::Result;
+  using PromiseResultTraits1 = Traits<PromiseResult1>;
+  using NextFactory1 =
+      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
+
+  using Promise2 = typename NextFactory1::Promise;
+  using PromiseResult2 = typename Promise2::Result;
+  using PromiseResultTraits2 = Traits<PromiseResult2>;
+  using NextFactory2 =
+      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
+
+  using Promise3 = typename NextFactory2::Promise;
+  using PromiseResult3 = typename Promise3::Result;
+  using PromiseResultTraits3 = Traits<PromiseResult3>;
+  using NextFactory3 =
+      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
+
+  using Promise4 = typename NextFactory3::Promise;
+  using PromiseResult4 = typename Promise4::Result;
+  using PromiseResultTraits4 = Traits<PromiseResult4>;
+  using NextFactory4 =
+      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
+
+  using Promise5 = typename NextFactory4::Promise;
+  using PromiseResult5 = typename Promise5::Result;
+  using PromiseResultTraits5 = Traits<PromiseResult5>;
+  using Result = typename PromiseResultTraits5::WrappedType;
+};
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5>
+struct SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5> {
+  using Promise0 = PromiseLike<P>;
+  using PromiseResult0 = typename Promise0::Result;
+  using PromiseResultTraits0 = Traits<PromiseResult0>;
+  using NextFactory0 =
+      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
+
+  using Promise1 = typename NextFactory0::Promise;
+  using PromiseResult1 = typename Promise1::Result;
+  using PromiseResultTraits1 = Traits<PromiseResult1>;
+  using NextFactory1 =
+      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
+
+  using Promise2 = typename NextFactory1::Promise;
+  using PromiseResult2 = typename Promise2::Result;
+  using PromiseResultTraits2 = Traits<PromiseResult2>;
+  using NextFactory2 =
+      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
+
+  using Promise3 = typename NextFactory2::Promise;
+  using PromiseResult3 = typename Promise3::Result;
+  using PromiseResultTraits3 = Traits<PromiseResult3>;
+  using NextFactory3 =
+      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
+
+  using Promise4 = typename NextFactory3::Promise;
+  using PromiseResult4 = typename Promise4::Result;
+  using PromiseResultTraits4 = Traits<PromiseResult4>;
+  using NextFactory4 =
+      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
+
+  using Promise5 = typename NextFactory4::Promise;
+  using PromiseResult5 = typename Promise5::Result;
+  using PromiseResultTraits5 = Traits<PromiseResult5>;
+  using NextFactory5 =
+      OncePromiseFactory<typename PromiseResultTraits5::UnwrappedType, F5>;
+
+  using Promise6 = typename NextFactory5::Promise;
+  using PromiseResult6 = typename Promise6::Result;
+  using PromiseResultTraits6 = Traits<PromiseResult6>;
+  using Result = typename PromiseResultTraits6::WrappedType;
+};
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6>
+struct SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
+  using Promise0 = PromiseLike<P>;
+  using PromiseResult0 = typename Promise0::Result;
+  using PromiseResultTraits0 = Traits<PromiseResult0>;
+  using NextFactory0 =
+      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
+
+  using Promise1 = typename NextFactory0::Promise;
+  using PromiseResult1 = typename Promise1::Result;
+  using PromiseResultTraits1 = Traits<PromiseResult1>;
+  using NextFactory1 =
+      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
+
+  using Promise2 = typename NextFactory1::Promise;
+  using PromiseResult2 = typename Promise2::Result;
+  using PromiseResultTraits2 = Traits<PromiseResult2>;
+  using NextFactory2 =
+      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
+
+  using Promise3 = typename NextFactory2::Promise;
+  using PromiseResult3 = typename Promise3::Result;
+  using PromiseResultTraits3 = Traits<PromiseResult3>;
+  using NextFactory3 =
+      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
+
+  using Promise4 = typename NextFactory3::Promise;
+  using PromiseResult4 = typename Promise4::Result;
+  using PromiseResultTraits4 = Traits<PromiseResult4>;
+  using NextFactory4 =
+      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
+
+  using Promise5 = typename NextFactory4::Promise;
+  using PromiseResult5 = typename Promise5::Result;
+  using PromiseResultTraits5 = Traits<PromiseResult5>;
+  using NextFactory5 =
+      OncePromiseFactory<typename PromiseResultTraits5::UnwrappedType, F5>;
+
+  using Promise6 = typename NextFactory5::Promise;
+  using PromiseResult6 = typename Promise6::Result;
+  using PromiseResultTraits6 = Traits<PromiseResult6>;
+  using NextFactory6 =
+      OncePromiseFactory<typename PromiseResultTraits6::UnwrappedType, F6>;
+
+  using Promise7 = typename NextFactory6::Promise;
+  using PromiseResult7 = typename Promise7::Result;
+  using PromiseResultTraits7 = Traits<PromiseResult7>;
+  using Result = typename PromiseResultTraits7::WrappedType;
+};
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7>
+struct SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
+  using Promise0 = PromiseLike<P>;
+  using PromiseResult0 = typename Promise0::Result;
+  using PromiseResultTraits0 = Traits<PromiseResult0>;
+  using NextFactory0 =
+      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
+
+  using Promise1 = typename NextFactory0::Promise;
+  using PromiseResult1 = typename Promise1::Result;
+  using PromiseResultTraits1 = Traits<PromiseResult1>;
+  using NextFactory1 =
+      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
+
+  using Promise2 = typename NextFactory1::Promise;
+  using PromiseResult2 = typename Promise2::Result;
+  using PromiseResultTraits2 = Traits<PromiseResult2>;
+  using NextFactory2 =
+      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
+
+  using Promise3 = typename NextFactory2::Promise;
+  using PromiseResult3 = typename Promise3::Result;
+  using PromiseResultTraits3 = Traits<PromiseResult3>;
+  using NextFactory3 =
+      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
+
+  using Promise4 = typename NextFactory3::Promise;
+  using PromiseResult4 = typename Promise4::Result;
+  using PromiseResultTraits4 = Traits<PromiseResult4>;
+  using NextFactory4 =
+      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
+
+  using Promise5 = typename NextFactory4::Promise;
+  using PromiseResult5 = typename Promise5::Result;
+  using PromiseResultTraits5 = Traits<PromiseResult5>;
+  using NextFactory5 =
+      OncePromiseFactory<typename PromiseResultTraits5::UnwrappedType, F5>;
+
+  using Promise6 = typename NextFactory5::Promise;
+  using PromiseResult6 = typename Promise6::Result;
+  using PromiseResultTraits6 = Traits<PromiseResult6>;
+  using NextFactory6 =
+      OncePromiseFactory<typename PromiseResultTraits6::UnwrappedType, F6>;
+
+  using Promise7 = typename NextFactory6::Promise;
+  using PromiseResult7 = typename Promise7::Result;
+  using PromiseResultTraits7 = Traits<PromiseResult7>;
+  using NextFactory7 =
+      OncePromiseFactory<typename PromiseResultTraits7::UnwrappedType, F7>;
+
+  using Promise8 = typename NextFactory7::Promise;
+  using PromiseResult8 = typename Promise8::Result;
+  using PromiseResultTraits8 = Traits<PromiseResult8>;
+  using Result = typename PromiseResultTraits8::WrappedType;
+};
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8>
+struct SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
+  using Promise0 = PromiseLike<P>;
+  using PromiseResult0 = typename Promise0::Result;
+  using PromiseResultTraits0 = Traits<PromiseResult0>;
+  using NextFactory0 =
+      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
+
+  using Promise1 = typename NextFactory0::Promise;
+  using PromiseResult1 = typename Promise1::Result;
+  using PromiseResultTraits1 = Traits<PromiseResult1>;
+  using NextFactory1 =
+      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
+
+  using Promise2 = typename NextFactory1::Promise;
+  using PromiseResult2 = typename Promise2::Result;
+  using PromiseResultTraits2 = Traits<PromiseResult2>;
+  using NextFactory2 =
+      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
+
+  using Promise3 = typename NextFactory2::Promise;
+  using PromiseResult3 = typename Promise3::Result;
+  using PromiseResultTraits3 = Traits<PromiseResult3>;
+  using NextFactory3 =
+      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
+
+  using Promise4 = typename NextFactory3::Promise;
+  using PromiseResult4 = typename Promise4::Result;
+  using PromiseResultTraits4 = Traits<PromiseResult4>;
+  using NextFactory4 =
+      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
+
+  using Promise5 = typename NextFactory4::Promise;
+  using PromiseResult5 = typename Promise5::Result;
+  using PromiseResultTraits5 = Traits<PromiseResult5>;
+  using NextFactory5 =
+      OncePromiseFactory<typename PromiseResultTraits5::UnwrappedType, F5>;
+
+  using Promise6 = typename NextFactory5::Promise;
+  using PromiseResult6 = typename Promise6::Result;
+  using PromiseResultTraits6 = Traits<PromiseResult6>;
+  using NextFactory6 =
+      OncePromiseFactory<typename PromiseResultTraits6::UnwrappedType, F6>;
+
+  using Promise7 = typename NextFactory6::Promise;
+  using PromiseResult7 = typename Promise7::Result;
+  using PromiseResultTraits7 = Traits<PromiseResult7>;
+  using NextFactory7 =
+      OncePromiseFactory<typename PromiseResultTraits7::UnwrappedType, F7>;
+
+  using Promise8 = typename NextFactory7::Promise;
+  using PromiseResult8 = typename Promise8::Result;
+  using PromiseResultTraits8 = Traits<PromiseResult8>;
+  using NextFactory8 =
+      OncePromiseFactory<typename PromiseResultTraits8::UnwrappedType, F8>;
+
+  using Promise9 = typename NextFactory8::Promise;
+  using PromiseResult9 = typename Promise9::Result;
+  using PromiseResultTraits9 = Traits<PromiseResult9>;
+  using Result = typename PromiseResultTraits9::WrappedType;
+};
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8, typename F9>
+struct SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
+  using Promise0 = PromiseLike<P>;
+  using PromiseResult0 = typename Promise0::Result;
+  using PromiseResultTraits0 = Traits<PromiseResult0>;
+  using NextFactory0 =
+      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
+
+  using Promise1 = typename NextFactory0::Promise;
+  using PromiseResult1 = typename Promise1::Result;
+  using PromiseResultTraits1 = Traits<PromiseResult1>;
+  using NextFactory1 =
+      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
+
+  using Promise2 = typename NextFactory1::Promise;
+  using PromiseResult2 = typename Promise2::Result;
+  using PromiseResultTraits2 = Traits<PromiseResult2>;
+  using NextFactory2 =
+      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
+
+  using Promise3 = typename NextFactory2::Promise;
+  using PromiseResult3 = typename Promise3::Result;
+  using PromiseResultTraits3 = Traits<PromiseResult3>;
+  using NextFactory3 =
+      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
+
+  using Promise4 = typename NextFactory3::Promise;
+  using PromiseResult4 = typename Promise4::Result;
+  using PromiseResultTraits4 = Traits<PromiseResult4>;
+  using NextFactory4 =
+      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
+
+  using Promise5 = typename NextFactory4::Promise;
+  using PromiseResult5 = typename Promise5::Result;
+  using PromiseResultTraits5 = Traits<PromiseResult5>;
+  using NextFactory5 =
+      OncePromiseFactory<typename PromiseResultTraits5::UnwrappedType, F5>;
+
+  using Promise6 = typename NextFactory5::Promise;
+  using PromiseResult6 = typename Promise6::Result;
+  using PromiseResultTraits6 = Traits<PromiseResult6>;
+  using NextFactory6 =
+      OncePromiseFactory<typename PromiseResultTraits6::UnwrappedType, F6>;
+
+  using Promise7 = typename NextFactory6::Promise;
+  using PromiseResult7 = typename Promise7::Result;
+  using PromiseResultTraits7 = Traits<PromiseResult7>;
+  using NextFactory7 =
+      OncePromiseFactory<typename PromiseResultTraits7::UnwrappedType, F7>;
+
+  using Promise8 = typename NextFactory7::Promise;
+  using PromiseResult8 = typename Promise8::Result;
+  using PromiseResultTraits8 = Traits<PromiseResult8>;
+  using NextFactory8 =
+      OncePromiseFactory<typename PromiseResultTraits8::UnwrappedType, F8>;
+
+  using Promise9 = typename NextFactory8::Promise;
+  using PromiseResult9 = typename Promise9::Result;
+  using PromiseResultTraits9 = Traits<PromiseResult9>;
+  using NextFactory9 =
+      OncePromiseFactory<typename PromiseResultTraits9::UnwrappedType, F9>;
+
+  using Promise10 = typename NextFactory9::Promise;
+  using PromiseResult10 = typename Promise10::Result;
+  using PromiseResultTraits10 = Traits<PromiseResult10>;
+  using Result = typename PromiseResultTraits10::WrappedType;
+};
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8, typename F9, typename F10>
+struct SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
+  using Promise0 = PromiseLike<P>;
+  using PromiseResult0 = typename Promise0::Result;
+  using PromiseResultTraits0 = Traits<PromiseResult0>;
+  using NextFactory0 =
+      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
+
+  using Promise1 = typename NextFactory0::Promise;
+  using PromiseResult1 = typename Promise1::Result;
+  using PromiseResultTraits1 = Traits<PromiseResult1>;
+  using NextFactory1 =
+      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
+
+  using Promise2 = typename NextFactory1::Promise;
+  using PromiseResult2 = typename Promise2::Result;
+  using PromiseResultTraits2 = Traits<PromiseResult2>;
+  using NextFactory2 =
+      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
+
+  using Promise3 = typename NextFactory2::Promise;
+  using PromiseResult3 = typename Promise3::Result;
+  using PromiseResultTraits3 = Traits<PromiseResult3>;
+  using NextFactory3 =
+      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
+
+  using Promise4 = typename NextFactory3::Promise;
+  using PromiseResult4 = typename Promise4::Result;
+  using PromiseResultTraits4 = Traits<PromiseResult4>;
+  using NextFactory4 =
+      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
+
+  using Promise5 = typename NextFactory4::Promise;
+  using PromiseResult5 = typename Promise5::Result;
+  using PromiseResultTraits5 = Traits<PromiseResult5>;
+  using NextFactory5 =
+      OncePromiseFactory<typename PromiseResultTraits5::UnwrappedType, F5>;
+
+  using Promise6 = typename NextFactory5::Promise;
+  using PromiseResult6 = typename Promise6::Result;
+  using PromiseResultTraits6 = Traits<PromiseResult6>;
+  using NextFactory6 =
+      OncePromiseFactory<typename PromiseResultTraits6::UnwrappedType, F6>;
+
+  using Promise7 = typename NextFactory6::Promise;
+  using PromiseResult7 = typename Promise7::Result;
+  using PromiseResultTraits7 = Traits<PromiseResult7>;
+  using NextFactory7 =
+      OncePromiseFactory<typename PromiseResultTraits7::UnwrappedType, F7>;
+
+  using Promise8 = typename NextFactory7::Promise;
+  using PromiseResult8 = typename Promise8::Result;
+  using PromiseResultTraits8 = Traits<PromiseResult8>;
+  using NextFactory8 =
+      OncePromiseFactory<typename PromiseResultTraits8::UnwrappedType, F8>;
+
+  using Promise9 = typename NextFactory8::Promise;
+  using PromiseResult9 = typename Promise9::Result;
+  using PromiseResultTraits9 = Traits<PromiseResult9>;
+  using NextFactory9 =
+      OncePromiseFactory<typename PromiseResultTraits9::UnwrappedType, F9>;
+
+  using Promise10 = typename NextFactory9::Promise;
+  using PromiseResult10 = typename Promise10::Result;
+  using PromiseResultTraits10 = Traits<PromiseResult10>;
+  using NextFactory10 =
+      OncePromiseFactory<typename PromiseResultTraits10::UnwrappedType, F10>;
+
+  using Promise11 = typename NextFactory10::Promise;
+  using PromiseResult11 = typename Promise11::Result;
+  using PromiseResultTraits11 = Traits<PromiseResult11>;
+  using Result = typename PromiseResultTraits11::WrappedType;
+};
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8, typename F9, typename F10,
+          typename F11>
+struct SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10,
+                     F11> {
+  using Promise0 = PromiseLike<P>;
+  using PromiseResult0 = typename Promise0::Result;
+  using PromiseResultTraits0 = Traits<PromiseResult0>;
+  using NextFactory0 =
+      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
+
+  using Promise1 = typename NextFactory0::Promise;
+  using PromiseResult1 = typename Promise1::Result;
+  using PromiseResultTraits1 = Traits<PromiseResult1>;
+  using NextFactory1 =
+      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
+
+  using Promise2 = typename NextFactory1::Promise;
+  using PromiseResult2 = typename Promise2::Result;
+  using PromiseResultTraits2 = Traits<PromiseResult2>;
+  using NextFactory2 =
+      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
+
+  using Promise3 = typename NextFactory2::Promise;
+  using PromiseResult3 = typename Promise3::Result;
+  using PromiseResultTraits3 = Traits<PromiseResult3>;
+  using NextFactory3 =
+      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
+
+  using Promise4 = typename NextFactory3::Promise;
+  using PromiseResult4 = typename Promise4::Result;
+  using PromiseResultTraits4 = Traits<PromiseResult4>;
+  using NextFactory4 =
+      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
+
+  using Promise5 = typename NextFactory4::Promise;
+  using PromiseResult5 = typename Promise5::Result;
+  using PromiseResultTraits5 = Traits<PromiseResult5>;
+  using NextFactory5 =
+      OncePromiseFactory<typename PromiseResultTraits5::UnwrappedType, F5>;
+
+  using Promise6 = typename NextFactory5::Promise;
+  using PromiseResult6 = typename Promise6::Result;
+  using PromiseResultTraits6 = Traits<PromiseResult6>;
+  using NextFactory6 =
+      OncePromiseFactory<typename PromiseResultTraits6::UnwrappedType, F6>;
+
+  using Promise7 = typename NextFactory6::Promise;
+  using PromiseResult7 = typename Promise7::Result;
+  using PromiseResultTraits7 = Traits<PromiseResult7>;
+  using NextFactory7 =
+      OncePromiseFactory<typename PromiseResultTraits7::UnwrappedType, F7>;
+
+  using Promise8 = typename NextFactory7::Promise;
+  using PromiseResult8 = typename Promise8::Result;
+  using PromiseResultTraits8 = Traits<PromiseResult8>;
+  using NextFactory8 =
+      OncePromiseFactory<typename PromiseResultTraits8::UnwrappedType, F8>;
+
+  using Promise9 = typename NextFactory8::Promise;
+  using PromiseResult9 = typename Promise9::Result;
+  using PromiseResultTraits9 = Traits<PromiseResult9>;
+  using NextFactory9 =
+      OncePromiseFactory<typename PromiseResultTraits9::UnwrappedType, F9>;
+
+  using Promise10 = typename NextFactory9::Promise;
+  using PromiseResult10 = typename Promise10::Result;
+  using PromiseResultTraits10 = Traits<PromiseResult10>;
+  using NextFactory10 =
+      OncePromiseFactory<typename PromiseResultTraits10::UnwrappedType, F10>;
+
+  using Promise11 = typename NextFactory10::Promise;
+  using PromiseResult11 = typename Promise11::Result;
+  using PromiseResultTraits11 = Traits<PromiseResult11>;
+  using NextFactory11 =
+      OncePromiseFactory<typename PromiseResultTraits11::UnwrappedType, F11>;
+
+  using Promise12 = typename NextFactory11::Promise;
+  using PromiseResult12 = typename Promise12::Result;
+  using PromiseResultTraits12 = Traits<PromiseResult12>;
+  using Result = typename PromiseResultTraits12::WrappedType;
+};
+
+template <template <typename> class Traits, typename P, typename F0>
+struct SeqState<Traits, P, F0> {
+  using Types = SeqStateTypes<Traits, P, F0>;
+  using Promise0 = typename Types::Promise0;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using Promise1 = typename Types::Promise1;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using NextFactory0 = typename Types::NextFactory0;
+  using Result = typename Types::Result;
   struct Running0 {
     GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
@@ -133,7 +719,7 @@ struct SeqState<Traits, P, F0> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     switch (state) {
       case State::kState0: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -185,20 +771,19 @@ struct SeqState<Traits, P, F0> {
 template <template <typename> class Traits, typename P, typename F0,
           typename F1>
 struct SeqState<Traits, P, F0, F1> {
-  using Promise0 = PromiseLike<P>;
-  using PromiseResult0 = typename Promise0::Result;
-  using PromiseResultTraits0 = Traits<PromiseResult0>;
-  using NextFactory0 =
-      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
-  using Promise1 = typename NextFactory0::Promise;
-  using PromiseResult1 = typename Promise1::Result;
-  using PromiseResultTraits1 = Traits<PromiseResult1>;
-  using NextFactory1 =
-      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
-  using Promise2 = typename NextFactory1::Promise;
-  using PromiseResult2 = typename Promise2::Result;
-  using PromiseResultTraits2 = Traits<PromiseResult2>;
-  using Result = typename PromiseResultTraits2::WrappedType;
+  using Types = SeqStateTypes<Traits, P, F0, F1>;
+  using Promise0 = typename Types::Promise0;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using Promise1 = typename Types::Promise1;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using Promise2 = typename Types::Promise2;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using Result = typename Types::Result;
   struct Running0 {
     GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
@@ -261,7 +846,7 @@ struct SeqState<Traits, P, F0, F1> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     switch (state) {
       case State::kState0: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -342,25 +927,23 @@ struct SeqState<Traits, P, F0, F1> {
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2>
 struct SeqState<Traits, P, F0, F1, F2> {
-  using Promise0 = PromiseLike<P>;
-  using PromiseResult0 = typename Promise0::Result;
-  using PromiseResultTraits0 = Traits<PromiseResult0>;
-  using NextFactory0 =
-      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
-  using Promise1 = typename NextFactory0::Promise;
-  using PromiseResult1 = typename Promise1::Result;
-  using PromiseResultTraits1 = Traits<PromiseResult1>;
-  using NextFactory1 =
-      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
-  using Promise2 = typename NextFactory1::Promise;
-  using PromiseResult2 = typename Promise2::Result;
-  using PromiseResultTraits2 = Traits<PromiseResult2>;
-  using NextFactory2 =
-      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
-  using Promise3 = typename NextFactory2::Promise;
-  using PromiseResult3 = typename Promise3::Result;
-  using PromiseResultTraits3 = Traits<PromiseResult3>;
-  using Result = typename PromiseResultTraits3::WrappedType;
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2>;
+  using Promise0 = typename Types::Promise0;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using Promise1 = typename Types::Promise1;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using Promise2 = typename Types::Promise2;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using Promise3 = typename Types::Promise3;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using Result = typename Types::Result;
   struct Running0 {
     GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
@@ -442,7 +1025,7 @@ struct SeqState<Traits, P, F0, F1, F2> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     switch (state) {
       case State::kState0: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -552,30 +1135,27 @@ struct SeqState<Traits, P, F0, F1, F2> {
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3>
 struct SeqState<Traits, P, F0, F1, F2, F3> {
-  using Promise0 = PromiseLike<P>;
-  using PromiseResult0 = typename Promise0::Result;
-  using PromiseResultTraits0 = Traits<PromiseResult0>;
-  using NextFactory0 =
-      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
-  using Promise1 = typename NextFactory0::Promise;
-  using PromiseResult1 = typename Promise1::Result;
-  using PromiseResultTraits1 = Traits<PromiseResult1>;
-  using NextFactory1 =
-      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
-  using Promise2 = typename NextFactory1::Promise;
-  using PromiseResult2 = typename Promise2::Result;
-  using PromiseResultTraits2 = Traits<PromiseResult2>;
-  using NextFactory2 =
-      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
-  using Promise3 = typename NextFactory2::Promise;
-  using PromiseResult3 = typename Promise3::Result;
-  using PromiseResultTraits3 = Traits<PromiseResult3>;
-  using NextFactory3 =
-      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
-  using Promise4 = typename NextFactory3::Promise;
-  using PromiseResult4 = typename Promise4::Result;
-  using PromiseResultTraits4 = Traits<PromiseResult4>;
-  using Result = typename PromiseResultTraits4::WrappedType;
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3>;
+  using Promise0 = typename Types::Promise0;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using Promise1 = typename Types::Promise1;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using Promise2 = typename Types::Promise2;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using Promise3 = typename Types::Promise3;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using Promise4 = typename Types::Promise4;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using Result = typename Types::Result;
   struct Running0 {
     GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
@@ -674,7 +1254,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     switch (state) {
       case State::kState0: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -813,35 +1393,31 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4>
 struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
-  using Promise0 = PromiseLike<P>;
-  using PromiseResult0 = typename Promise0::Result;
-  using PromiseResultTraits0 = Traits<PromiseResult0>;
-  using NextFactory0 =
-      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
-  using Promise1 = typename NextFactory0::Promise;
-  using PromiseResult1 = typename Promise1::Result;
-  using PromiseResultTraits1 = Traits<PromiseResult1>;
-  using NextFactory1 =
-      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
-  using Promise2 = typename NextFactory1::Promise;
-  using PromiseResult2 = typename Promise2::Result;
-  using PromiseResultTraits2 = Traits<PromiseResult2>;
-  using NextFactory2 =
-      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
-  using Promise3 = typename NextFactory2::Promise;
-  using PromiseResult3 = typename Promise3::Result;
-  using PromiseResultTraits3 = Traits<PromiseResult3>;
-  using NextFactory3 =
-      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
-  using Promise4 = typename NextFactory3::Promise;
-  using PromiseResult4 = typename Promise4::Result;
-  using PromiseResultTraits4 = Traits<PromiseResult4>;
-  using NextFactory4 =
-      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
-  using Promise5 = typename NextFactory4::Promise;
-  using PromiseResult5 = typename Promise5::Result;
-  using PromiseResultTraits5 = Traits<PromiseResult5>;
-  using Result = typename PromiseResultTraits5::WrappedType;
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4>;
+  using Promise0 = typename Types::Promise0;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using Promise1 = typename Types::Promise1;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using Promise2 = typename Types::Promise2;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using Promise3 = typename Types::Promise3;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using Promise4 = typename Types::Promise4;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using Promise5 = typename Types::Promise5;
+  using PromiseResult5 = typename Types::PromiseResult5;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using Result = typename Types::Result;
   struct Running0 {
     GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
@@ -966,7 +1542,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     switch (state) {
       case State::kState0: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -1135,40 +1711,35 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5>
 struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
-  using Promise0 = PromiseLike<P>;
-  using PromiseResult0 = typename Promise0::Result;
-  using PromiseResultTraits0 = Traits<PromiseResult0>;
-  using NextFactory0 =
-      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
-  using Promise1 = typename NextFactory0::Promise;
-  using PromiseResult1 = typename Promise1::Result;
-  using PromiseResultTraits1 = Traits<PromiseResult1>;
-  using NextFactory1 =
-      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
-  using Promise2 = typename NextFactory1::Promise;
-  using PromiseResult2 = typename Promise2::Result;
-  using PromiseResultTraits2 = Traits<PromiseResult2>;
-  using NextFactory2 =
-      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
-  using Promise3 = typename NextFactory2::Promise;
-  using PromiseResult3 = typename Promise3::Result;
-  using PromiseResultTraits3 = Traits<PromiseResult3>;
-  using NextFactory3 =
-      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
-  using Promise4 = typename NextFactory3::Promise;
-  using PromiseResult4 = typename Promise4::Result;
-  using PromiseResultTraits4 = Traits<PromiseResult4>;
-  using NextFactory4 =
-      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
-  using Promise5 = typename NextFactory4::Promise;
-  using PromiseResult5 = typename Promise5::Result;
-  using PromiseResultTraits5 = Traits<PromiseResult5>;
-  using NextFactory5 =
-      OncePromiseFactory<typename PromiseResultTraits5::UnwrappedType, F5>;
-  using Promise6 = typename NextFactory5::Promise;
-  using PromiseResult6 = typename Promise6::Result;
-  using PromiseResultTraits6 = Traits<PromiseResult6>;
-  using Result = typename PromiseResultTraits6::WrappedType;
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5>;
+  using Promise0 = typename Types::Promise0;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using Promise1 = typename Types::Promise1;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using Promise2 = typename Types::Promise2;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using Promise3 = typename Types::Promise3;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using Promise4 = typename Types::Promise4;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using Promise5 = typename Types::Promise5;
+  using PromiseResult5 = typename Types::PromiseResult5;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using Promise6 = typename Types::Promise6;
+  using PromiseResult6 = typename Types::PromiseResult6;
+  using PromiseResultTraits6 = typename Types::PromiseResultTraits6;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using NextFactory5 = typename Types::NextFactory5;
+  using Result = typename Types::Result;
   struct Running0 {
     GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
@@ -1315,7 +1886,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     switch (state) {
       case State::kState0: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -1515,45 +2086,39 @@ template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6>
 struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
-  using Promise0 = PromiseLike<P>;
-  using PromiseResult0 = typename Promise0::Result;
-  using PromiseResultTraits0 = Traits<PromiseResult0>;
-  using NextFactory0 =
-      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
-  using Promise1 = typename NextFactory0::Promise;
-  using PromiseResult1 = typename Promise1::Result;
-  using PromiseResultTraits1 = Traits<PromiseResult1>;
-  using NextFactory1 =
-      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
-  using Promise2 = typename NextFactory1::Promise;
-  using PromiseResult2 = typename Promise2::Result;
-  using PromiseResultTraits2 = Traits<PromiseResult2>;
-  using NextFactory2 =
-      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
-  using Promise3 = typename NextFactory2::Promise;
-  using PromiseResult3 = typename Promise3::Result;
-  using PromiseResultTraits3 = Traits<PromiseResult3>;
-  using NextFactory3 =
-      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
-  using Promise4 = typename NextFactory3::Promise;
-  using PromiseResult4 = typename Promise4::Result;
-  using PromiseResultTraits4 = Traits<PromiseResult4>;
-  using NextFactory4 =
-      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
-  using Promise5 = typename NextFactory4::Promise;
-  using PromiseResult5 = typename Promise5::Result;
-  using PromiseResultTraits5 = Traits<PromiseResult5>;
-  using NextFactory5 =
-      OncePromiseFactory<typename PromiseResultTraits5::UnwrappedType, F5>;
-  using Promise6 = typename NextFactory5::Promise;
-  using PromiseResult6 = typename Promise6::Result;
-  using PromiseResultTraits6 = Traits<PromiseResult6>;
-  using NextFactory6 =
-      OncePromiseFactory<typename PromiseResultTraits6::UnwrappedType, F6>;
-  using Promise7 = typename NextFactory6::Promise;
-  using PromiseResult7 = typename Promise7::Result;
-  using PromiseResultTraits7 = Traits<PromiseResult7>;
-  using Result = typename PromiseResultTraits7::WrappedType;
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6>;
+  using Promise0 = typename Types::Promise0;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using Promise1 = typename Types::Promise1;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using Promise2 = typename Types::Promise2;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using Promise3 = typename Types::Promise3;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using Promise4 = typename Types::Promise4;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using Promise5 = typename Types::Promise5;
+  using PromiseResult5 = typename Types::PromiseResult5;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using Promise6 = typename Types::Promise6;
+  using PromiseResult6 = typename Types::PromiseResult6;
+  using PromiseResultTraits6 = typename Types::PromiseResultTraits6;
+  using Promise7 = typename Types::Promise7;
+  using PromiseResult7 = typename Types::PromiseResult7;
+  using PromiseResultTraits7 = typename Types::PromiseResultTraits7;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using NextFactory5 = typename Types::NextFactory5;
+  using NextFactory6 = typename Types::NextFactory6;
+  using Result = typename Types::Result;
   struct Running0 {
     GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
@@ -1722,7 +2287,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     switch (state) {
       case State::kState0: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -1954,50 +2519,43 @@ template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7>
 struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
-  using Promise0 = PromiseLike<P>;
-  using PromiseResult0 = typename Promise0::Result;
-  using PromiseResultTraits0 = Traits<PromiseResult0>;
-  using NextFactory0 =
-      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
-  using Promise1 = typename NextFactory0::Promise;
-  using PromiseResult1 = typename Promise1::Result;
-  using PromiseResultTraits1 = Traits<PromiseResult1>;
-  using NextFactory1 =
-      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
-  using Promise2 = typename NextFactory1::Promise;
-  using PromiseResult2 = typename Promise2::Result;
-  using PromiseResultTraits2 = Traits<PromiseResult2>;
-  using NextFactory2 =
-      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
-  using Promise3 = typename NextFactory2::Promise;
-  using PromiseResult3 = typename Promise3::Result;
-  using PromiseResultTraits3 = Traits<PromiseResult3>;
-  using NextFactory3 =
-      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
-  using Promise4 = typename NextFactory3::Promise;
-  using PromiseResult4 = typename Promise4::Result;
-  using PromiseResultTraits4 = Traits<PromiseResult4>;
-  using NextFactory4 =
-      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
-  using Promise5 = typename NextFactory4::Promise;
-  using PromiseResult5 = typename Promise5::Result;
-  using PromiseResultTraits5 = Traits<PromiseResult5>;
-  using NextFactory5 =
-      OncePromiseFactory<typename PromiseResultTraits5::UnwrappedType, F5>;
-  using Promise6 = typename NextFactory5::Promise;
-  using PromiseResult6 = typename Promise6::Result;
-  using PromiseResultTraits6 = Traits<PromiseResult6>;
-  using NextFactory6 =
-      OncePromiseFactory<typename PromiseResultTraits6::UnwrappedType, F6>;
-  using Promise7 = typename NextFactory6::Promise;
-  using PromiseResult7 = typename Promise7::Result;
-  using PromiseResultTraits7 = Traits<PromiseResult7>;
-  using NextFactory7 =
-      OncePromiseFactory<typename PromiseResultTraits7::UnwrappedType, F7>;
-  using Promise8 = typename NextFactory7::Promise;
-  using PromiseResult8 = typename Promise8::Result;
-  using PromiseResultTraits8 = Traits<PromiseResult8>;
-  using Result = typename PromiseResultTraits8::WrappedType;
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7>;
+  using Promise0 = typename Types::Promise0;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using Promise1 = typename Types::Promise1;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using Promise2 = typename Types::Promise2;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using Promise3 = typename Types::Promise3;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using Promise4 = typename Types::Promise4;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using Promise5 = typename Types::Promise5;
+  using PromiseResult5 = typename Types::PromiseResult5;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using Promise6 = typename Types::Promise6;
+  using PromiseResult6 = typename Types::PromiseResult6;
+  using PromiseResultTraits6 = typename Types::PromiseResultTraits6;
+  using Promise7 = typename Types::Promise7;
+  using PromiseResult7 = typename Types::PromiseResult7;
+  using PromiseResultTraits7 = typename Types::PromiseResultTraits7;
+  using Promise8 = typename Types::Promise8;
+  using PromiseResult8 = typename Types::PromiseResult8;
+  using PromiseResultTraits8 = typename Types::PromiseResultTraits8;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using NextFactory5 = typename Types::NextFactory5;
+  using NextFactory6 = typename Types::NextFactory6;
+  using NextFactory7 = typename Types::NextFactory7;
+  using Result = typename Types::Result;
   struct Running0 {
     GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
@@ -2188,7 +2746,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     switch (state) {
       case State::kState0: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -2453,55 +3011,47 @@ template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8>
 struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
-  using Promise0 = PromiseLike<P>;
-  using PromiseResult0 = typename Promise0::Result;
-  using PromiseResultTraits0 = Traits<PromiseResult0>;
-  using NextFactory0 =
-      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
-  using Promise1 = typename NextFactory0::Promise;
-  using PromiseResult1 = typename Promise1::Result;
-  using PromiseResultTraits1 = Traits<PromiseResult1>;
-  using NextFactory1 =
-      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
-  using Promise2 = typename NextFactory1::Promise;
-  using PromiseResult2 = typename Promise2::Result;
-  using PromiseResultTraits2 = Traits<PromiseResult2>;
-  using NextFactory2 =
-      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
-  using Promise3 = typename NextFactory2::Promise;
-  using PromiseResult3 = typename Promise3::Result;
-  using PromiseResultTraits3 = Traits<PromiseResult3>;
-  using NextFactory3 =
-      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
-  using Promise4 = typename NextFactory3::Promise;
-  using PromiseResult4 = typename Promise4::Result;
-  using PromiseResultTraits4 = Traits<PromiseResult4>;
-  using NextFactory4 =
-      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
-  using Promise5 = typename NextFactory4::Promise;
-  using PromiseResult5 = typename Promise5::Result;
-  using PromiseResultTraits5 = Traits<PromiseResult5>;
-  using NextFactory5 =
-      OncePromiseFactory<typename PromiseResultTraits5::UnwrappedType, F5>;
-  using Promise6 = typename NextFactory5::Promise;
-  using PromiseResult6 = typename Promise6::Result;
-  using PromiseResultTraits6 = Traits<PromiseResult6>;
-  using NextFactory6 =
-      OncePromiseFactory<typename PromiseResultTraits6::UnwrappedType, F6>;
-  using Promise7 = typename NextFactory6::Promise;
-  using PromiseResult7 = typename Promise7::Result;
-  using PromiseResultTraits7 = Traits<PromiseResult7>;
-  using NextFactory7 =
-      OncePromiseFactory<typename PromiseResultTraits7::UnwrappedType, F7>;
-  using Promise8 = typename NextFactory7::Promise;
-  using PromiseResult8 = typename Promise8::Result;
-  using PromiseResultTraits8 = Traits<PromiseResult8>;
-  using NextFactory8 =
-      OncePromiseFactory<typename PromiseResultTraits8::UnwrappedType, F8>;
-  using Promise9 = typename NextFactory8::Promise;
-  using PromiseResult9 = typename Promise9::Result;
-  using PromiseResultTraits9 = Traits<PromiseResult9>;
-  using Result = typename PromiseResultTraits9::WrappedType;
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8>;
+  using Promise0 = typename Types::Promise0;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using Promise1 = typename Types::Promise1;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using Promise2 = typename Types::Promise2;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using Promise3 = typename Types::Promise3;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using Promise4 = typename Types::Promise4;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using Promise5 = typename Types::Promise5;
+  using PromiseResult5 = typename Types::PromiseResult5;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using Promise6 = typename Types::Promise6;
+  using PromiseResult6 = typename Types::PromiseResult6;
+  using PromiseResultTraits6 = typename Types::PromiseResultTraits6;
+  using Promise7 = typename Types::Promise7;
+  using PromiseResult7 = typename Types::PromiseResult7;
+  using PromiseResultTraits7 = typename Types::PromiseResultTraits7;
+  using Promise8 = typename Types::Promise8;
+  using PromiseResult8 = typename Types::PromiseResult8;
+  using PromiseResultTraits8 = typename Types::PromiseResultTraits8;
+  using Promise9 = typename Types::Promise9;
+  using PromiseResult9 = typename Types::PromiseResult9;
+  using PromiseResultTraits9 = typename Types::PromiseResultTraits9;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using NextFactory5 = typename Types::NextFactory5;
+  using NextFactory6 = typename Types::NextFactory6;
+  using NextFactory7 = typename Types::NextFactory7;
+  using NextFactory8 = typename Types::NextFactory8;
+  using Result = typename Types::Result;
   struct Running0 {
     GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
@@ -2722,7 +3272,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     switch (state) {
       case State::kState0: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -3022,60 +3572,52 @@ template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8, typename F9>
 struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
-  using Promise0 = PromiseLike<P>;
-  using PromiseResult0 = typename Promise0::Result;
-  using PromiseResultTraits0 = Traits<PromiseResult0>;
-  using NextFactory0 =
-      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
-  using Promise1 = typename NextFactory0::Promise;
-  using PromiseResult1 = typename Promise1::Result;
-  using PromiseResultTraits1 = Traits<PromiseResult1>;
-  using NextFactory1 =
-      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
-  using Promise2 = typename NextFactory1::Promise;
-  using PromiseResult2 = typename Promise2::Result;
-  using PromiseResultTraits2 = Traits<PromiseResult2>;
-  using NextFactory2 =
-      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
-  using Promise3 = typename NextFactory2::Promise;
-  using PromiseResult3 = typename Promise3::Result;
-  using PromiseResultTraits3 = Traits<PromiseResult3>;
-  using NextFactory3 =
-      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
-  using Promise4 = typename NextFactory3::Promise;
-  using PromiseResult4 = typename Promise4::Result;
-  using PromiseResultTraits4 = Traits<PromiseResult4>;
-  using NextFactory4 =
-      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
-  using Promise5 = typename NextFactory4::Promise;
-  using PromiseResult5 = typename Promise5::Result;
-  using PromiseResultTraits5 = Traits<PromiseResult5>;
-  using NextFactory5 =
-      OncePromiseFactory<typename PromiseResultTraits5::UnwrappedType, F5>;
-  using Promise6 = typename NextFactory5::Promise;
-  using PromiseResult6 = typename Promise6::Result;
-  using PromiseResultTraits6 = Traits<PromiseResult6>;
-  using NextFactory6 =
-      OncePromiseFactory<typename PromiseResultTraits6::UnwrappedType, F6>;
-  using Promise7 = typename NextFactory6::Promise;
-  using PromiseResult7 = typename Promise7::Result;
-  using PromiseResultTraits7 = Traits<PromiseResult7>;
-  using NextFactory7 =
-      OncePromiseFactory<typename PromiseResultTraits7::UnwrappedType, F7>;
-  using Promise8 = typename NextFactory7::Promise;
-  using PromiseResult8 = typename Promise8::Result;
-  using PromiseResultTraits8 = Traits<PromiseResult8>;
-  using NextFactory8 =
-      OncePromiseFactory<typename PromiseResultTraits8::UnwrappedType, F8>;
-  using Promise9 = typename NextFactory8::Promise;
-  using PromiseResult9 = typename Promise9::Result;
-  using PromiseResultTraits9 = Traits<PromiseResult9>;
-  using NextFactory9 =
-      OncePromiseFactory<typename PromiseResultTraits9::UnwrappedType, F9>;
-  using Promise10 = typename NextFactory9::Promise;
-  using PromiseResult10 = typename Promise10::Result;
-  using PromiseResultTraits10 = Traits<PromiseResult10>;
-  using Result = typename PromiseResultTraits10::WrappedType;
+  using Types =
+      SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9>;
+  using Promise0 = typename Types::Promise0;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using Promise1 = typename Types::Promise1;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using Promise2 = typename Types::Promise2;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using Promise3 = typename Types::Promise3;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using Promise4 = typename Types::Promise4;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using Promise5 = typename Types::Promise5;
+  using PromiseResult5 = typename Types::PromiseResult5;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using Promise6 = typename Types::Promise6;
+  using PromiseResult6 = typename Types::PromiseResult6;
+  using PromiseResultTraits6 = typename Types::PromiseResultTraits6;
+  using Promise7 = typename Types::Promise7;
+  using PromiseResult7 = typename Types::PromiseResult7;
+  using PromiseResultTraits7 = typename Types::PromiseResultTraits7;
+  using Promise8 = typename Types::Promise8;
+  using PromiseResult8 = typename Types::PromiseResult8;
+  using PromiseResultTraits8 = typename Types::PromiseResultTraits8;
+  using Promise9 = typename Types::Promise9;
+  using PromiseResult9 = typename Types::PromiseResult9;
+  using PromiseResultTraits9 = typename Types::PromiseResultTraits9;
+  using Promise10 = typename Types::Promise10;
+  using PromiseResult10 = typename Types::PromiseResult10;
+  using PromiseResultTraits10 = typename Types::PromiseResultTraits10;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using NextFactory5 = typename Types::NextFactory5;
+  using NextFactory6 = typename Types::NextFactory6;
+  using NextFactory7 = typename Types::NextFactory7;
+  using NextFactory8 = typename Types::NextFactory8;
+  using NextFactory9 = typename Types::NextFactory9;
+  using Result = typename Types::Result;
   struct Running0 {
     GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
@@ -3322,7 +3864,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     switch (state) {
       case State::kState0: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -3658,65 +4200,56 @@ template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8, typename F9, typename F10>
 struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
-  using Promise0 = PromiseLike<P>;
-  using PromiseResult0 = typename Promise0::Result;
-  using PromiseResultTraits0 = Traits<PromiseResult0>;
-  using NextFactory0 =
-      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
-  using Promise1 = typename NextFactory0::Promise;
-  using PromiseResult1 = typename Promise1::Result;
-  using PromiseResultTraits1 = Traits<PromiseResult1>;
-  using NextFactory1 =
-      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
-  using Promise2 = typename NextFactory1::Promise;
-  using PromiseResult2 = typename Promise2::Result;
-  using PromiseResultTraits2 = Traits<PromiseResult2>;
-  using NextFactory2 =
-      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
-  using Promise3 = typename NextFactory2::Promise;
-  using PromiseResult3 = typename Promise3::Result;
-  using PromiseResultTraits3 = Traits<PromiseResult3>;
-  using NextFactory3 =
-      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
-  using Promise4 = typename NextFactory3::Promise;
-  using PromiseResult4 = typename Promise4::Result;
-  using PromiseResultTraits4 = Traits<PromiseResult4>;
-  using NextFactory4 =
-      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
-  using Promise5 = typename NextFactory4::Promise;
-  using PromiseResult5 = typename Promise5::Result;
-  using PromiseResultTraits5 = Traits<PromiseResult5>;
-  using NextFactory5 =
-      OncePromiseFactory<typename PromiseResultTraits5::UnwrappedType, F5>;
-  using Promise6 = typename NextFactory5::Promise;
-  using PromiseResult6 = typename Promise6::Result;
-  using PromiseResultTraits6 = Traits<PromiseResult6>;
-  using NextFactory6 =
-      OncePromiseFactory<typename PromiseResultTraits6::UnwrappedType, F6>;
-  using Promise7 = typename NextFactory6::Promise;
-  using PromiseResult7 = typename Promise7::Result;
-  using PromiseResultTraits7 = Traits<PromiseResult7>;
-  using NextFactory7 =
-      OncePromiseFactory<typename PromiseResultTraits7::UnwrappedType, F7>;
-  using Promise8 = typename NextFactory7::Promise;
-  using PromiseResult8 = typename Promise8::Result;
-  using PromiseResultTraits8 = Traits<PromiseResult8>;
-  using NextFactory8 =
-      OncePromiseFactory<typename PromiseResultTraits8::UnwrappedType, F8>;
-  using Promise9 = typename NextFactory8::Promise;
-  using PromiseResult9 = typename Promise9::Result;
-  using PromiseResultTraits9 = Traits<PromiseResult9>;
-  using NextFactory9 =
-      OncePromiseFactory<typename PromiseResultTraits9::UnwrappedType, F9>;
-  using Promise10 = typename NextFactory9::Promise;
-  using PromiseResult10 = typename Promise10::Result;
-  using PromiseResultTraits10 = Traits<PromiseResult10>;
-  using NextFactory10 =
-      OncePromiseFactory<typename PromiseResultTraits10::UnwrappedType, F10>;
-  using Promise11 = typename NextFactory10::Promise;
-  using PromiseResult11 = typename Promise11::Result;
-  using PromiseResultTraits11 = Traits<PromiseResult11>;
-  using Result = typename PromiseResultTraits11::WrappedType;
+  using Types =
+      SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10>;
+  using Promise0 = typename Types::Promise0;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using Promise1 = typename Types::Promise1;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using Promise2 = typename Types::Promise2;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using Promise3 = typename Types::Promise3;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using Promise4 = typename Types::Promise4;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using Promise5 = typename Types::Promise5;
+  using PromiseResult5 = typename Types::PromiseResult5;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using Promise6 = typename Types::Promise6;
+  using PromiseResult6 = typename Types::PromiseResult6;
+  using PromiseResultTraits6 = typename Types::PromiseResultTraits6;
+  using Promise7 = typename Types::Promise7;
+  using PromiseResult7 = typename Types::PromiseResult7;
+  using PromiseResultTraits7 = typename Types::PromiseResultTraits7;
+  using Promise8 = typename Types::Promise8;
+  using PromiseResult8 = typename Types::PromiseResult8;
+  using PromiseResultTraits8 = typename Types::PromiseResultTraits8;
+  using Promise9 = typename Types::Promise9;
+  using PromiseResult9 = typename Types::PromiseResult9;
+  using PromiseResultTraits9 = typename Types::PromiseResultTraits9;
+  using Promise10 = typename Types::Promise10;
+  using PromiseResult10 = typename Types::PromiseResult10;
+  using PromiseResultTraits10 = typename Types::PromiseResultTraits10;
+  using Promise11 = typename Types::Promise11;
+  using PromiseResult11 = typename Types::PromiseResult11;
+  using PromiseResultTraits11 = typename Types::PromiseResultTraits11;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using NextFactory5 = typename Types::NextFactory5;
+  using NextFactory6 = typename Types::NextFactory6;
+  using NextFactory7 = typename Types::NextFactory7;
+  using NextFactory8 = typename Types::NextFactory8;
+  using NextFactory9 = typename Types::NextFactory9;
+  using NextFactory10 = typename Types::NextFactory10;
+  using Result = typename Types::Result;
   struct Running0 {
     GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
@@ -3989,7 +4522,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     switch (state) {
       case State::kState0: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -4363,70 +4896,60 @@ template <template <typename> class Traits, typename P, typename F0,
           typename F6, typename F7, typename F8, typename F9, typename F10,
           typename F11>
 struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
-  using Promise0 = PromiseLike<P>;
-  using PromiseResult0 = typename Promise0::Result;
-  using PromiseResultTraits0 = Traits<PromiseResult0>;
-  using NextFactory0 =
-      OncePromiseFactory<typename PromiseResultTraits0::UnwrappedType, F0>;
-  using Promise1 = typename NextFactory0::Promise;
-  using PromiseResult1 = typename Promise1::Result;
-  using PromiseResultTraits1 = Traits<PromiseResult1>;
-  using NextFactory1 =
-      OncePromiseFactory<typename PromiseResultTraits1::UnwrappedType, F1>;
-  using Promise2 = typename NextFactory1::Promise;
-  using PromiseResult2 = typename Promise2::Result;
-  using PromiseResultTraits2 = Traits<PromiseResult2>;
-  using NextFactory2 =
-      OncePromiseFactory<typename PromiseResultTraits2::UnwrappedType, F2>;
-  using Promise3 = typename NextFactory2::Promise;
-  using PromiseResult3 = typename Promise3::Result;
-  using PromiseResultTraits3 = Traits<PromiseResult3>;
-  using NextFactory3 =
-      OncePromiseFactory<typename PromiseResultTraits3::UnwrappedType, F3>;
-  using Promise4 = typename NextFactory3::Promise;
-  using PromiseResult4 = typename Promise4::Result;
-  using PromiseResultTraits4 = Traits<PromiseResult4>;
-  using NextFactory4 =
-      OncePromiseFactory<typename PromiseResultTraits4::UnwrappedType, F4>;
-  using Promise5 = typename NextFactory4::Promise;
-  using PromiseResult5 = typename Promise5::Result;
-  using PromiseResultTraits5 = Traits<PromiseResult5>;
-  using NextFactory5 =
-      OncePromiseFactory<typename PromiseResultTraits5::UnwrappedType, F5>;
-  using Promise6 = typename NextFactory5::Promise;
-  using PromiseResult6 = typename Promise6::Result;
-  using PromiseResultTraits6 = Traits<PromiseResult6>;
-  using NextFactory6 =
-      OncePromiseFactory<typename PromiseResultTraits6::UnwrappedType, F6>;
-  using Promise7 = typename NextFactory6::Promise;
-  using PromiseResult7 = typename Promise7::Result;
-  using PromiseResultTraits7 = Traits<PromiseResult7>;
-  using NextFactory7 =
-      OncePromiseFactory<typename PromiseResultTraits7::UnwrappedType, F7>;
-  using Promise8 = typename NextFactory7::Promise;
-  using PromiseResult8 = typename Promise8::Result;
-  using PromiseResultTraits8 = Traits<PromiseResult8>;
-  using NextFactory8 =
-      OncePromiseFactory<typename PromiseResultTraits8::UnwrappedType, F8>;
-  using Promise9 = typename NextFactory8::Promise;
-  using PromiseResult9 = typename Promise9::Result;
-  using PromiseResultTraits9 = Traits<PromiseResult9>;
-  using NextFactory9 =
-      OncePromiseFactory<typename PromiseResultTraits9::UnwrappedType, F9>;
-  using Promise10 = typename NextFactory9::Promise;
-  using PromiseResult10 = typename Promise10::Result;
-  using PromiseResultTraits10 = Traits<PromiseResult10>;
-  using NextFactory10 =
-      OncePromiseFactory<typename PromiseResultTraits10::UnwrappedType, F10>;
-  using Promise11 = typename NextFactory10::Promise;
-  using PromiseResult11 = typename Promise11::Result;
-  using PromiseResultTraits11 = Traits<PromiseResult11>;
-  using NextFactory11 =
-      OncePromiseFactory<typename PromiseResultTraits11::UnwrappedType, F11>;
-  using Promise12 = typename NextFactory11::Promise;
-  using PromiseResult12 = typename Promise12::Result;
-  using PromiseResultTraits12 = Traits<PromiseResult12>;
-  using Result = typename PromiseResultTraits12::WrappedType;
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9,
+                              F10, F11>;
+  using Promise0 = typename Types::Promise0;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using Promise1 = typename Types::Promise1;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using Promise2 = typename Types::Promise2;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using Promise3 = typename Types::Promise3;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using Promise4 = typename Types::Promise4;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using Promise5 = typename Types::Promise5;
+  using PromiseResult5 = typename Types::PromiseResult5;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using Promise6 = typename Types::Promise6;
+  using PromiseResult6 = typename Types::PromiseResult6;
+  using PromiseResultTraits6 = typename Types::PromiseResultTraits6;
+  using Promise7 = typename Types::Promise7;
+  using PromiseResult7 = typename Types::PromiseResult7;
+  using PromiseResultTraits7 = typename Types::PromiseResultTraits7;
+  using Promise8 = typename Types::Promise8;
+  using PromiseResult8 = typename Types::PromiseResult8;
+  using PromiseResultTraits8 = typename Types::PromiseResultTraits8;
+  using Promise9 = typename Types::Promise9;
+  using PromiseResult9 = typename Types::PromiseResult9;
+  using PromiseResultTraits9 = typename Types::PromiseResultTraits9;
+  using Promise10 = typename Types::Promise10;
+  using PromiseResult10 = typename Types::PromiseResult10;
+  using PromiseResultTraits10 = typename Types::PromiseResultTraits10;
+  using Promise11 = typename Types::Promise11;
+  using PromiseResult11 = typename Types::PromiseResult11;
+  using PromiseResultTraits11 = typename Types::PromiseResultTraits11;
+  using Promise12 = typename Types::Promise12;
+  using PromiseResult12 = typename Types::PromiseResult12;
+  using PromiseResultTraits12 = typename Types::PromiseResultTraits12;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using NextFactory5 = typename Types::NextFactory5;
+  using NextFactory6 = typename Types::NextFactory6;
+  using NextFactory7 = typename Types::NextFactory7;
+  using NextFactory8 = typename Types::NextFactory8;
+  using NextFactory9 = typename Types::NextFactory9;
+  using NextFactory10 = typename Types::NextFactory10;
+  using NextFactory11 = typename Types::NextFactory11;
+  using Result = typename Types::Result;
   struct Running0 {
     GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
@@ -4726,7 +5249,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     switch (state) {
       case State::kState0: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -5131,6 +5654,2154 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
     }
   }
 };
+
+template <template <typename> class Traits, typename P, typename F0>
+auto SeqMap(P&& p, F0&& f0) {
+  using Types = SeqStateTypes<Traits, P, F0>;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using NextFactory0 = typename Types::NextFactory0;
+  using Result = typename PromiseResultTraits1::WrappedType;
+  return ::grpc_core::Map(
+      std::forward<P>(p),
+      [f0 = NextFactory0(std::forward<F0>(f0))](PromiseResult0 r0) mutable {
+        if (!PromiseResultTraits0::IsOk(r0)) {
+          return PromiseResultTraits0::template ReturnValue<Result>(
+              std::move(r0));
+        }
+        return MakeAndCall(std::move(r0), f0);
+      });
+}
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1>
+auto SeqMap(P&& p, F0&& f0, F1&& f1) {
+  using Types = SeqStateTypes<Traits, P, F0, F1>;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using Result = typename PromiseResultTraits2::WrappedType;
+  return ::grpc_core::Map(
+      std::forward<P>(p),
+      [f0 = NextFactory0(std::forward<F0>(f0)),
+       f1 = NextFactory1(std::forward<F1>(f1))](PromiseResult0 r0) mutable {
+        if (!PromiseResultTraits0::IsOk(r0)) {
+          return PromiseResultTraits0::template ReturnValue<Result>(
+              std::move(r0));
+        }
+        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        if (!PromiseResultTraits1::IsOk(r1)) {
+          return PromiseResultTraits1::template ReturnValue<Result>(
+              std::move(r1));
+        }
+        return MakeAndCall(std::move(r1), f1);
+      });
+}
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2>
+auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2>;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using Result = typename PromiseResultTraits3::WrappedType;
+  return ::grpc_core::Map(
+      std::forward<P>(p),
+      [f0 = NextFactory0(std::forward<F0>(f0)),
+       f1 = NextFactory1(std::forward<F1>(f1)),
+       f2 = NextFactory2(std::forward<F2>(f2))](PromiseResult0 r0) mutable {
+        if (!PromiseResultTraits0::IsOk(r0)) {
+          return PromiseResultTraits0::template ReturnValue<Result>(
+              std::move(r0));
+        }
+        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        if (!PromiseResultTraits1::IsOk(r1)) {
+          return PromiseResultTraits1::template ReturnValue<Result>(
+              std::move(r1));
+        }
+        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        if (!PromiseResultTraits2::IsOk(r2)) {
+          return PromiseResultTraits2::template ReturnValue<Result>(
+              std::move(r2));
+        }
+        return MakeAndCall(std::move(r2), f2);
+      });
+}
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3>
+auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3>;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using Result = typename PromiseResultTraits4::WrappedType;
+  return ::grpc_core::Map(
+      std::forward<P>(p),
+      [f0 = NextFactory0(std::forward<F0>(f0)),
+       f1 = NextFactory1(std::forward<F1>(f1)),
+       f2 = NextFactory2(std::forward<F2>(f2)),
+       f3 = NextFactory3(std::forward<F3>(f3))](PromiseResult0 r0) mutable {
+        if (!PromiseResultTraits0::IsOk(r0)) {
+          return PromiseResultTraits0::template ReturnValue<Result>(
+              std::move(r0));
+        }
+        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        if (!PromiseResultTraits1::IsOk(r1)) {
+          return PromiseResultTraits1::template ReturnValue<Result>(
+              std::move(r1));
+        }
+        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        if (!PromiseResultTraits2::IsOk(r2)) {
+          return PromiseResultTraits2::template ReturnValue<Result>(
+              std::move(r2));
+        }
+        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        if (!PromiseResultTraits3::IsOk(r3)) {
+          return PromiseResultTraits3::template ReturnValue<Result>(
+              std::move(r3));
+        }
+        return MakeAndCall(std::move(r3), f3);
+      });
+}
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4>
+auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4>;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using Result = typename PromiseResultTraits5::WrappedType;
+  return ::grpc_core::Map(
+      std::forward<P>(p),
+      [f0 = NextFactory0(std::forward<F0>(f0)),
+       f1 = NextFactory1(std::forward<F1>(f1)),
+       f2 = NextFactory2(std::forward<F2>(f2)),
+       f3 = NextFactory3(std::forward<F3>(f3)),
+       f4 = NextFactory4(std::forward<F4>(f4))](PromiseResult0 r0) mutable {
+        if (!PromiseResultTraits0::IsOk(r0)) {
+          return PromiseResultTraits0::template ReturnValue<Result>(
+              std::move(r0));
+        }
+        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        if (!PromiseResultTraits1::IsOk(r1)) {
+          return PromiseResultTraits1::template ReturnValue<Result>(
+              std::move(r1));
+        }
+        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        if (!PromiseResultTraits2::IsOk(r2)) {
+          return PromiseResultTraits2::template ReturnValue<Result>(
+              std::move(r2));
+        }
+        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        if (!PromiseResultTraits3::IsOk(r3)) {
+          return PromiseResultTraits3::template ReturnValue<Result>(
+              std::move(r3));
+        }
+        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        if (!PromiseResultTraits4::IsOk(r4)) {
+          return PromiseResultTraits4::template ReturnValue<Result>(
+              std::move(r4));
+        }
+        return MakeAndCall(std::move(r4), f4);
+      });
+}
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5>
+auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5>;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResult5 = typename Types::PromiseResult5;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using PromiseResultTraits6 = typename Types::PromiseResultTraits6;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using NextFactory5 = typename Types::NextFactory5;
+  using Result = typename PromiseResultTraits6::WrappedType;
+  return ::grpc_core::Map(
+      std::forward<P>(p),
+      [f0 = NextFactory0(std::forward<F0>(f0)),
+       f1 = NextFactory1(std::forward<F1>(f1)),
+       f2 = NextFactory2(std::forward<F2>(f2)),
+       f3 = NextFactory3(std::forward<F3>(f3)),
+       f4 = NextFactory4(std::forward<F4>(f4)),
+       f5 = NextFactory5(std::forward<F5>(f5))](PromiseResult0 r0) mutable {
+        if (!PromiseResultTraits0::IsOk(r0)) {
+          return PromiseResultTraits0::template ReturnValue<Result>(
+              std::move(r0));
+        }
+        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        if (!PromiseResultTraits1::IsOk(r1)) {
+          return PromiseResultTraits1::template ReturnValue<Result>(
+              std::move(r1));
+        }
+        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        if (!PromiseResultTraits2::IsOk(r2)) {
+          return PromiseResultTraits2::template ReturnValue<Result>(
+              std::move(r2));
+        }
+        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        if (!PromiseResultTraits3::IsOk(r3)) {
+          return PromiseResultTraits3::template ReturnValue<Result>(
+              std::move(r3));
+        }
+        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        if (!PromiseResultTraits4::IsOk(r4)) {
+          return PromiseResultTraits4::template ReturnValue<Result>(
+              std::move(r4));
+        }
+        PromiseResult5 r5 = MakeAndCall(std::move(r4), f4);
+        if (!PromiseResultTraits5::IsOk(r5)) {
+          return PromiseResultTraits5::template ReturnValue<Result>(
+              std::move(r5));
+        }
+        return MakeAndCall(std::move(r5), f5);
+      });
+}
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6>
+auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+            F6&& f6) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6>;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResult5 = typename Types::PromiseResult5;
+  using PromiseResult6 = typename Types::PromiseResult6;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using PromiseResultTraits6 = typename Types::PromiseResultTraits6;
+  using PromiseResultTraits7 = typename Types::PromiseResultTraits7;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using NextFactory5 = typename Types::NextFactory5;
+  using NextFactory6 = typename Types::NextFactory6;
+  using Result = typename PromiseResultTraits7::WrappedType;
+  return ::grpc_core::Map(
+      std::forward<P>(p),
+      [f0 = NextFactory0(std::forward<F0>(f0)),
+       f1 = NextFactory1(std::forward<F1>(f1)),
+       f2 = NextFactory2(std::forward<F2>(f2)),
+       f3 = NextFactory3(std::forward<F3>(f3)),
+       f4 = NextFactory4(std::forward<F4>(f4)),
+       f5 = NextFactory5(std::forward<F5>(f5)),
+       f6 = NextFactory6(std::forward<F6>(f6))](PromiseResult0 r0) mutable {
+        if (!PromiseResultTraits0::IsOk(r0)) {
+          return PromiseResultTraits0::template ReturnValue<Result>(
+              std::move(r0));
+        }
+        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        if (!PromiseResultTraits1::IsOk(r1)) {
+          return PromiseResultTraits1::template ReturnValue<Result>(
+              std::move(r1));
+        }
+        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        if (!PromiseResultTraits2::IsOk(r2)) {
+          return PromiseResultTraits2::template ReturnValue<Result>(
+              std::move(r2));
+        }
+        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        if (!PromiseResultTraits3::IsOk(r3)) {
+          return PromiseResultTraits3::template ReturnValue<Result>(
+              std::move(r3));
+        }
+        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        if (!PromiseResultTraits4::IsOk(r4)) {
+          return PromiseResultTraits4::template ReturnValue<Result>(
+              std::move(r4));
+        }
+        PromiseResult5 r5 = MakeAndCall(std::move(r4), f4);
+        if (!PromiseResultTraits5::IsOk(r5)) {
+          return PromiseResultTraits5::template ReturnValue<Result>(
+              std::move(r5));
+        }
+        PromiseResult6 r6 = MakeAndCall(std::move(r5), f5);
+        if (!PromiseResultTraits6::IsOk(r6)) {
+          return PromiseResultTraits6::template ReturnValue<Result>(
+              std::move(r6));
+        }
+        return MakeAndCall(std::move(r6), f6);
+      });
+}
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7>
+auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+            F6&& f6, F7&& f7) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7>;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResult5 = typename Types::PromiseResult5;
+  using PromiseResult6 = typename Types::PromiseResult6;
+  using PromiseResult7 = typename Types::PromiseResult7;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using PromiseResultTraits6 = typename Types::PromiseResultTraits6;
+  using PromiseResultTraits7 = typename Types::PromiseResultTraits7;
+  using PromiseResultTraits8 = typename Types::PromiseResultTraits8;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using NextFactory5 = typename Types::NextFactory5;
+  using NextFactory6 = typename Types::NextFactory6;
+  using NextFactory7 = typename Types::NextFactory7;
+  using Result = typename PromiseResultTraits8::WrappedType;
+  return ::grpc_core::Map(
+      std::forward<P>(p),
+      [f0 = NextFactory0(std::forward<F0>(f0)),
+       f1 = NextFactory1(std::forward<F1>(f1)),
+       f2 = NextFactory2(std::forward<F2>(f2)),
+       f3 = NextFactory3(std::forward<F3>(f3)),
+       f4 = NextFactory4(std::forward<F4>(f4)),
+       f5 = NextFactory5(std::forward<F5>(f5)),
+       f6 = NextFactory6(std::forward<F6>(f6)),
+       f7 = NextFactory7(std::forward<F7>(f7))](PromiseResult0 r0) mutable {
+        if (!PromiseResultTraits0::IsOk(r0)) {
+          return PromiseResultTraits0::template ReturnValue<Result>(
+              std::move(r0));
+        }
+        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        if (!PromiseResultTraits1::IsOk(r1)) {
+          return PromiseResultTraits1::template ReturnValue<Result>(
+              std::move(r1));
+        }
+        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        if (!PromiseResultTraits2::IsOk(r2)) {
+          return PromiseResultTraits2::template ReturnValue<Result>(
+              std::move(r2));
+        }
+        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        if (!PromiseResultTraits3::IsOk(r3)) {
+          return PromiseResultTraits3::template ReturnValue<Result>(
+              std::move(r3));
+        }
+        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        if (!PromiseResultTraits4::IsOk(r4)) {
+          return PromiseResultTraits4::template ReturnValue<Result>(
+              std::move(r4));
+        }
+        PromiseResult5 r5 = MakeAndCall(std::move(r4), f4);
+        if (!PromiseResultTraits5::IsOk(r5)) {
+          return PromiseResultTraits5::template ReturnValue<Result>(
+              std::move(r5));
+        }
+        PromiseResult6 r6 = MakeAndCall(std::move(r5), f5);
+        if (!PromiseResultTraits6::IsOk(r6)) {
+          return PromiseResultTraits6::template ReturnValue<Result>(
+              std::move(r6));
+        }
+        PromiseResult7 r7 = MakeAndCall(std::move(r6), f6);
+        if (!PromiseResultTraits7::IsOk(r7)) {
+          return PromiseResultTraits7::template ReturnValue<Result>(
+              std::move(r7));
+        }
+        return MakeAndCall(std::move(r7), f7);
+      });
+}
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8>
+auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+            F6&& f6, F7&& f7, F8&& f8) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8>;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResult5 = typename Types::PromiseResult5;
+  using PromiseResult6 = typename Types::PromiseResult6;
+  using PromiseResult7 = typename Types::PromiseResult7;
+  using PromiseResult8 = typename Types::PromiseResult8;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using PromiseResultTraits6 = typename Types::PromiseResultTraits6;
+  using PromiseResultTraits7 = typename Types::PromiseResultTraits7;
+  using PromiseResultTraits8 = typename Types::PromiseResultTraits8;
+  using PromiseResultTraits9 = typename Types::PromiseResultTraits9;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using NextFactory5 = typename Types::NextFactory5;
+  using NextFactory6 = typename Types::NextFactory6;
+  using NextFactory7 = typename Types::NextFactory7;
+  using NextFactory8 = typename Types::NextFactory8;
+  using Result = typename PromiseResultTraits9::WrappedType;
+  return ::grpc_core::Map(
+      std::forward<P>(p),
+      [f0 = NextFactory0(std::forward<F0>(f0)),
+       f1 = NextFactory1(std::forward<F1>(f1)),
+       f2 = NextFactory2(std::forward<F2>(f2)),
+       f3 = NextFactory3(std::forward<F3>(f3)),
+       f4 = NextFactory4(std::forward<F4>(f4)),
+       f5 = NextFactory5(std::forward<F5>(f5)),
+       f6 = NextFactory6(std::forward<F6>(f6)),
+       f7 = NextFactory7(std::forward<F7>(f7)),
+       f8 = NextFactory8(std::forward<F8>(f8))](PromiseResult0 r0) mutable {
+        if (!PromiseResultTraits0::IsOk(r0)) {
+          return PromiseResultTraits0::template ReturnValue<Result>(
+              std::move(r0));
+        }
+        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        if (!PromiseResultTraits1::IsOk(r1)) {
+          return PromiseResultTraits1::template ReturnValue<Result>(
+              std::move(r1));
+        }
+        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        if (!PromiseResultTraits2::IsOk(r2)) {
+          return PromiseResultTraits2::template ReturnValue<Result>(
+              std::move(r2));
+        }
+        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        if (!PromiseResultTraits3::IsOk(r3)) {
+          return PromiseResultTraits3::template ReturnValue<Result>(
+              std::move(r3));
+        }
+        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        if (!PromiseResultTraits4::IsOk(r4)) {
+          return PromiseResultTraits4::template ReturnValue<Result>(
+              std::move(r4));
+        }
+        PromiseResult5 r5 = MakeAndCall(std::move(r4), f4);
+        if (!PromiseResultTraits5::IsOk(r5)) {
+          return PromiseResultTraits5::template ReturnValue<Result>(
+              std::move(r5));
+        }
+        PromiseResult6 r6 = MakeAndCall(std::move(r5), f5);
+        if (!PromiseResultTraits6::IsOk(r6)) {
+          return PromiseResultTraits6::template ReturnValue<Result>(
+              std::move(r6));
+        }
+        PromiseResult7 r7 = MakeAndCall(std::move(r6), f6);
+        if (!PromiseResultTraits7::IsOk(r7)) {
+          return PromiseResultTraits7::template ReturnValue<Result>(
+              std::move(r7));
+        }
+        PromiseResult8 r8 = MakeAndCall(std::move(r7), f7);
+        if (!PromiseResultTraits8::IsOk(r8)) {
+          return PromiseResultTraits8::template ReturnValue<Result>(
+              std::move(r8));
+        }
+        return MakeAndCall(std::move(r8), f8);
+      });
+}
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8, typename F9>
+auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+            F6&& f6, F7&& f7, F8&& f8, F9&& f9) {
+  using Types =
+      SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9>;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResult5 = typename Types::PromiseResult5;
+  using PromiseResult6 = typename Types::PromiseResult6;
+  using PromiseResult7 = typename Types::PromiseResult7;
+  using PromiseResult8 = typename Types::PromiseResult8;
+  using PromiseResult9 = typename Types::PromiseResult9;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using PromiseResultTraits6 = typename Types::PromiseResultTraits6;
+  using PromiseResultTraits7 = typename Types::PromiseResultTraits7;
+  using PromiseResultTraits8 = typename Types::PromiseResultTraits8;
+  using PromiseResultTraits9 = typename Types::PromiseResultTraits9;
+  using PromiseResultTraits10 = typename Types::PromiseResultTraits10;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using NextFactory5 = typename Types::NextFactory5;
+  using NextFactory6 = typename Types::NextFactory6;
+  using NextFactory7 = typename Types::NextFactory7;
+  using NextFactory8 = typename Types::NextFactory8;
+  using NextFactory9 = typename Types::NextFactory9;
+  using Result = typename PromiseResultTraits10::WrappedType;
+  return ::grpc_core::Map(
+      std::forward<P>(p),
+      [f0 = NextFactory0(std::forward<F0>(f0)),
+       f1 = NextFactory1(std::forward<F1>(f1)),
+       f2 = NextFactory2(std::forward<F2>(f2)),
+       f3 = NextFactory3(std::forward<F3>(f3)),
+       f4 = NextFactory4(std::forward<F4>(f4)),
+       f5 = NextFactory5(std::forward<F5>(f5)),
+       f6 = NextFactory6(std::forward<F6>(f6)),
+       f7 = NextFactory7(std::forward<F7>(f7)),
+       f8 = NextFactory8(std::forward<F8>(f8)),
+       f9 = NextFactory9(std::forward<F9>(f9))](PromiseResult0 r0) mutable {
+        if (!PromiseResultTraits0::IsOk(r0)) {
+          return PromiseResultTraits0::template ReturnValue<Result>(
+              std::move(r0));
+        }
+        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        if (!PromiseResultTraits1::IsOk(r1)) {
+          return PromiseResultTraits1::template ReturnValue<Result>(
+              std::move(r1));
+        }
+        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        if (!PromiseResultTraits2::IsOk(r2)) {
+          return PromiseResultTraits2::template ReturnValue<Result>(
+              std::move(r2));
+        }
+        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        if (!PromiseResultTraits3::IsOk(r3)) {
+          return PromiseResultTraits3::template ReturnValue<Result>(
+              std::move(r3));
+        }
+        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        if (!PromiseResultTraits4::IsOk(r4)) {
+          return PromiseResultTraits4::template ReturnValue<Result>(
+              std::move(r4));
+        }
+        PromiseResult5 r5 = MakeAndCall(std::move(r4), f4);
+        if (!PromiseResultTraits5::IsOk(r5)) {
+          return PromiseResultTraits5::template ReturnValue<Result>(
+              std::move(r5));
+        }
+        PromiseResult6 r6 = MakeAndCall(std::move(r5), f5);
+        if (!PromiseResultTraits6::IsOk(r6)) {
+          return PromiseResultTraits6::template ReturnValue<Result>(
+              std::move(r6));
+        }
+        PromiseResult7 r7 = MakeAndCall(std::move(r6), f6);
+        if (!PromiseResultTraits7::IsOk(r7)) {
+          return PromiseResultTraits7::template ReturnValue<Result>(
+              std::move(r7));
+        }
+        PromiseResult8 r8 = MakeAndCall(std::move(r7), f7);
+        if (!PromiseResultTraits8::IsOk(r8)) {
+          return PromiseResultTraits8::template ReturnValue<Result>(
+              std::move(r8));
+        }
+        PromiseResult9 r9 = MakeAndCall(std::move(r8), f8);
+        if (!PromiseResultTraits9::IsOk(r9)) {
+          return PromiseResultTraits9::template ReturnValue<Result>(
+              std::move(r9));
+        }
+        return MakeAndCall(std::move(r9), f9);
+      });
+}
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8, typename F9, typename F10>
+auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+            F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10) {
+  using Types =
+      SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10>;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResult5 = typename Types::PromiseResult5;
+  using PromiseResult6 = typename Types::PromiseResult6;
+  using PromiseResult7 = typename Types::PromiseResult7;
+  using PromiseResult8 = typename Types::PromiseResult8;
+  using PromiseResult9 = typename Types::PromiseResult9;
+  using PromiseResult10 = typename Types::PromiseResult10;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using PromiseResultTraits6 = typename Types::PromiseResultTraits6;
+  using PromiseResultTraits7 = typename Types::PromiseResultTraits7;
+  using PromiseResultTraits8 = typename Types::PromiseResultTraits8;
+  using PromiseResultTraits9 = typename Types::PromiseResultTraits9;
+  using PromiseResultTraits10 = typename Types::PromiseResultTraits10;
+  using PromiseResultTraits11 = typename Types::PromiseResultTraits11;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using NextFactory5 = typename Types::NextFactory5;
+  using NextFactory6 = typename Types::NextFactory6;
+  using NextFactory7 = typename Types::NextFactory7;
+  using NextFactory8 = typename Types::NextFactory8;
+  using NextFactory9 = typename Types::NextFactory9;
+  using NextFactory10 = typename Types::NextFactory10;
+  using Result = typename PromiseResultTraits11::WrappedType;
+  return ::grpc_core::Map(
+      std::forward<P>(p),
+      [f0 = NextFactory0(std::forward<F0>(f0)),
+       f1 = NextFactory1(std::forward<F1>(f1)),
+       f2 = NextFactory2(std::forward<F2>(f2)),
+       f3 = NextFactory3(std::forward<F3>(f3)),
+       f4 = NextFactory4(std::forward<F4>(f4)),
+       f5 = NextFactory5(std::forward<F5>(f5)),
+       f6 = NextFactory6(std::forward<F6>(f6)),
+       f7 = NextFactory7(std::forward<F7>(f7)),
+       f8 = NextFactory8(std::forward<F8>(f8)),
+       f9 = NextFactory9(std::forward<F9>(f9)),
+       f10 = NextFactory10(std::forward<F10>(f10))](PromiseResult0 r0) mutable {
+        if (!PromiseResultTraits0::IsOk(r0)) {
+          return PromiseResultTraits0::template ReturnValue<Result>(
+              std::move(r0));
+        }
+        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        if (!PromiseResultTraits1::IsOk(r1)) {
+          return PromiseResultTraits1::template ReturnValue<Result>(
+              std::move(r1));
+        }
+        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        if (!PromiseResultTraits2::IsOk(r2)) {
+          return PromiseResultTraits2::template ReturnValue<Result>(
+              std::move(r2));
+        }
+        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        if (!PromiseResultTraits3::IsOk(r3)) {
+          return PromiseResultTraits3::template ReturnValue<Result>(
+              std::move(r3));
+        }
+        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        if (!PromiseResultTraits4::IsOk(r4)) {
+          return PromiseResultTraits4::template ReturnValue<Result>(
+              std::move(r4));
+        }
+        PromiseResult5 r5 = MakeAndCall(std::move(r4), f4);
+        if (!PromiseResultTraits5::IsOk(r5)) {
+          return PromiseResultTraits5::template ReturnValue<Result>(
+              std::move(r5));
+        }
+        PromiseResult6 r6 = MakeAndCall(std::move(r5), f5);
+        if (!PromiseResultTraits6::IsOk(r6)) {
+          return PromiseResultTraits6::template ReturnValue<Result>(
+              std::move(r6));
+        }
+        PromiseResult7 r7 = MakeAndCall(std::move(r6), f6);
+        if (!PromiseResultTraits7::IsOk(r7)) {
+          return PromiseResultTraits7::template ReturnValue<Result>(
+              std::move(r7));
+        }
+        PromiseResult8 r8 = MakeAndCall(std::move(r7), f7);
+        if (!PromiseResultTraits8::IsOk(r8)) {
+          return PromiseResultTraits8::template ReturnValue<Result>(
+              std::move(r8));
+        }
+        PromiseResult9 r9 = MakeAndCall(std::move(r8), f8);
+        if (!PromiseResultTraits9::IsOk(r9)) {
+          return PromiseResultTraits9::template ReturnValue<Result>(
+              std::move(r9));
+        }
+        PromiseResult10 r10 = MakeAndCall(std::move(r9), f9);
+        if (!PromiseResultTraits10::IsOk(r10)) {
+          return PromiseResultTraits10::template ReturnValue<Result>(
+              std::move(r10));
+        }
+        return MakeAndCall(std::move(r10), f10);
+      });
+}
+
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8, typename F9, typename F10,
+          typename F11>
+auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+            F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10, F11&& f11) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9,
+                              F10, F11>;
+  using PromiseResult0 = typename Types::PromiseResult0;
+  using PromiseResult1 = typename Types::PromiseResult1;
+  using PromiseResult2 = typename Types::PromiseResult2;
+  using PromiseResult3 = typename Types::PromiseResult3;
+  using PromiseResult4 = typename Types::PromiseResult4;
+  using PromiseResult5 = typename Types::PromiseResult5;
+  using PromiseResult6 = typename Types::PromiseResult6;
+  using PromiseResult7 = typename Types::PromiseResult7;
+  using PromiseResult8 = typename Types::PromiseResult8;
+  using PromiseResult9 = typename Types::PromiseResult9;
+  using PromiseResult10 = typename Types::PromiseResult10;
+  using PromiseResult11 = typename Types::PromiseResult11;
+  using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
+  using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
+  using PromiseResultTraits2 = typename Types::PromiseResultTraits2;
+  using PromiseResultTraits3 = typename Types::PromiseResultTraits3;
+  using PromiseResultTraits4 = typename Types::PromiseResultTraits4;
+  using PromiseResultTraits5 = typename Types::PromiseResultTraits5;
+  using PromiseResultTraits6 = typename Types::PromiseResultTraits6;
+  using PromiseResultTraits7 = typename Types::PromiseResultTraits7;
+  using PromiseResultTraits8 = typename Types::PromiseResultTraits8;
+  using PromiseResultTraits9 = typename Types::PromiseResultTraits9;
+  using PromiseResultTraits10 = typename Types::PromiseResultTraits10;
+  using PromiseResultTraits11 = typename Types::PromiseResultTraits11;
+  using PromiseResultTraits12 = typename Types::PromiseResultTraits12;
+  using NextFactory0 = typename Types::NextFactory0;
+  using NextFactory1 = typename Types::NextFactory1;
+  using NextFactory2 = typename Types::NextFactory2;
+  using NextFactory3 = typename Types::NextFactory3;
+  using NextFactory4 = typename Types::NextFactory4;
+  using NextFactory5 = typename Types::NextFactory5;
+  using NextFactory6 = typename Types::NextFactory6;
+  using NextFactory7 = typename Types::NextFactory7;
+  using NextFactory8 = typename Types::NextFactory8;
+  using NextFactory9 = typename Types::NextFactory9;
+  using NextFactory10 = typename Types::NextFactory10;
+  using NextFactory11 = typename Types::NextFactory11;
+  using Result = typename PromiseResultTraits12::WrappedType;
+  return ::grpc_core::Map(
+      std::forward<P>(p),
+      [f0 = NextFactory0(std::forward<F0>(f0)),
+       f1 = NextFactory1(std::forward<F1>(f1)),
+       f2 = NextFactory2(std::forward<F2>(f2)),
+       f3 = NextFactory3(std::forward<F3>(f3)),
+       f4 = NextFactory4(std::forward<F4>(f4)),
+       f5 = NextFactory5(std::forward<F5>(f5)),
+       f6 = NextFactory6(std::forward<F6>(f6)),
+       f7 = NextFactory7(std::forward<F7>(f7)),
+       f8 = NextFactory8(std::forward<F8>(f8)),
+       f9 = NextFactory9(std::forward<F9>(f9)),
+       f10 = NextFactory10(std::forward<F10>(f10)),
+       f11 = NextFactory11(std::forward<F11>(f11))](PromiseResult0 r0) mutable {
+        if (!PromiseResultTraits0::IsOk(r0)) {
+          return PromiseResultTraits0::template ReturnValue<Result>(
+              std::move(r0));
+        }
+        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        if (!PromiseResultTraits1::IsOk(r1)) {
+          return PromiseResultTraits1::template ReturnValue<Result>(
+              std::move(r1));
+        }
+        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        if (!PromiseResultTraits2::IsOk(r2)) {
+          return PromiseResultTraits2::template ReturnValue<Result>(
+              std::move(r2));
+        }
+        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        if (!PromiseResultTraits3::IsOk(r3)) {
+          return PromiseResultTraits3::template ReturnValue<Result>(
+              std::move(r3));
+        }
+        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        if (!PromiseResultTraits4::IsOk(r4)) {
+          return PromiseResultTraits4::template ReturnValue<Result>(
+              std::move(r4));
+        }
+        PromiseResult5 r5 = MakeAndCall(std::move(r4), f4);
+        if (!PromiseResultTraits5::IsOk(r5)) {
+          return PromiseResultTraits5::template ReturnValue<Result>(
+              std::move(r5));
+        }
+        PromiseResult6 r6 = MakeAndCall(std::move(r5), f5);
+        if (!PromiseResultTraits6::IsOk(r6)) {
+          return PromiseResultTraits6::template ReturnValue<Result>(
+              std::move(r6));
+        }
+        PromiseResult7 r7 = MakeAndCall(std::move(r6), f6);
+        if (!PromiseResultTraits7::IsOk(r7)) {
+          return PromiseResultTraits7::template ReturnValue<Result>(
+              std::move(r7));
+        }
+        PromiseResult8 r8 = MakeAndCall(std::move(r7), f7);
+        if (!PromiseResultTraits8::IsOk(r8)) {
+          return PromiseResultTraits8::template ReturnValue<Result>(
+              std::move(r8));
+        }
+        PromiseResult9 r9 = MakeAndCall(std::move(r8), f8);
+        if (!PromiseResultTraits9::IsOk(r9)) {
+          return PromiseResultTraits9::template ReturnValue<Result>(
+              std::move(r9));
+        }
+        PromiseResult10 r10 = MakeAndCall(std::move(r9), f9);
+        if (!PromiseResultTraits10::IsOk(r10)) {
+          return PromiseResultTraits10::template ReturnValue<Result>(
+              std::move(r10));
+        }
+        PromiseResult11 r11 = MakeAndCall(std::move(r10), f10);
+        if (!PromiseResultTraits11::IsOk(r11)) {
+          return PromiseResultTraits11::template ReturnValue<Result>(
+              std::move(r11));
+        }
+        return MakeAndCall(std::move(r11), f11);
+      });
+}
+
+template <template <typename> class Traits, typename F0, typename F1>
+auto SeqFactoryMap(F0&& f0, F1&& f1) {
+  return
+      [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1)](auto x) mutable {
+        OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+        return SeqMap(next.Make(), std::move(f1));
+      };
+}
+
+template <template <typename> class Traits, typename F0, typename F1,
+          typename F2>
+auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2) {
+  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+          f2 = std::forward<F2>(f2)](auto x) mutable {
+    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+    return SeqMap(next.Make(), std::move(f1), std::move(f2));
+  };
+}
+
+template <template <typename> class Traits, typename F0, typename F1,
+          typename F2, typename F3>
+auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3) {
+  return
+      [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+       f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3)](auto x) mutable {
+        OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+        return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3));
+      };
+}
+
+template <template <typename> class Traits, typename F0, typename F1,
+          typename F2, typename F3, typename F4>
+auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4) {
+  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+          f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+          f4 = std::forward<F4>(f4)](auto x) mutable {
+    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+    return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
+                  std::move(f4));
+  };
+}
+
+template <template <typename> class Traits, typename F0, typename F1,
+          typename F2, typename F3, typename F4, typename F5>
+auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5) {
+  return
+      [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+       f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+       f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5)](auto x) mutable {
+        OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+        return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
+                      std::move(f4), std::move(f5));
+      };
+}
+
+template <template <typename> class Traits, typename F0, typename F1,
+          typename F2, typename F3, typename F4, typename F5, typename F6>
+auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+                   F6&& f6) {
+  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+          f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+          f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+          f6 = std::forward<F6>(f6)](auto x) mutable {
+    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+    return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
+                  std::move(f4), std::move(f5), std::move(f6));
+  };
+}
+
+template <template <typename> class Traits, typename F0, typename F1,
+          typename F2, typename F3, typename F4, typename F5, typename F6,
+          typename F7>
+auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+                   F6&& f6, F7&& f7) {
+  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+          f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+          f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+          f6 = std::forward<F6>(f6),
+          f7 = std::forward<F7>(f7)](auto x) mutable {
+    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+    return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
+                  std::move(f4), std::move(f5), std::move(f6), std::move(f7));
+  };
+}
+
+template <template <typename> class Traits, typename F0, typename F1,
+          typename F2, typename F3, typename F4, typename F5, typename F6,
+          typename F7, typename F8>
+auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+                   F6&& f6, F7&& f7, F8&& f8) {
+  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+          f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+          f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+          f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
+          f8 = std::forward<F8>(f8)](auto x) mutable {
+    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+    return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
+                  std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+                  std::move(f8));
+  };
+}
+
+template <template <typename> class Traits, typename F0, typename F1,
+          typename F2, typename F3, typename F4, typename F5, typename F6,
+          typename F7, typename F8, typename F9>
+auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+                   F6&& f6, F7&& f7, F8&& f8, F9&& f9) {
+  return
+      [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+       f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+       f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+       f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
+       f8 = std::forward<F8>(f8), f9 = std::forward<F9>(f9)](auto x) mutable {
+        OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+        return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
+                      std::move(f4), std::move(f5), std::move(f6),
+                      std::move(f7), std::move(f8), std::move(f9));
+      };
+}
+
+template <template <typename> class Traits, typename F0, typename F1,
+          typename F2, typename F3, typename F4, typename F5, typename F6,
+          typename F7, typename F8, typename F9, typename F10>
+auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+                   F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10) {
+  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+          f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+          f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+          f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
+          f8 = std::forward<F8>(f8), f9 = std::forward<F9>(f9),
+          f10 = std::forward<F10>(f10)](auto x) mutable {
+    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+    return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
+                  std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+                  std::move(f8), std::move(f9), std::move(f10));
+  };
+}
+
+template <template <typename> class Traits, typename F0, typename F1,
+          typename F2, typename F3, typename F4, typename F5, typename F6,
+          typename F7, typename F8, typename F9, typename F10, typename F11>
+auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+                   F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10, F11&& f11) {
+  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+          f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+          f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+          f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
+          f8 = std::forward<F8>(f8), f9 = std::forward<F9>(f9),
+          f10 = std::forward<F10>(f10),
+          f11 = std::forward<F11>(f11)](auto x) mutable {
+    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+    return SeqMap(next.Make(), std::move(f1), std::move(f2), std::move(f3),
+                  std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+                  std::move(f8), std::move(f9), std::move(f10), std::move(f11));
+  };
+}
+
+template <template <typename> class Traits, typename P, typename... F>
+using SeqMapType =
+    decltype(SeqMap<Traits>(std::declval<P>(), std::declval<F>()...));
+template <template <typename> class Traits, typename... F>
+using SeqFactoryMapType = decltype(SeqFactoryMap<Traits>(std::declval<F>()...));
+
+template <template <typename> class Traits, uint32_t kInstantBits, typename P,
+          typename F0>
+auto FoldSeqStateImpl(P&& p, F0&& f0, DebugLocation whence) {
+  if constexpr (kInstantBits == 0b0) {
+    return SeqState<Traits, P, F0>(std::forward<P>(p), std::forward<F0>(f0),
+                                   whence);
+  }
+  if constexpr (kInstantBits == 0b1) {
+    return SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0));
+  }
+}
+template <template <typename> class Traits, typename P, typename F0>
+auto FoldSeqState(P&& p, F0&& f0, DebugLocation whence) {
+  using Types = SeqStateTypes<Traits, P, F0>;
+  static constexpr uint32_t kInstantBits =
+      (Types::NextFactory0::kInstantaneousPromise ? 1 : 0);
+  return FoldSeqStateImpl<Traits, kInstantBits>(std::forward<P>(p),
+                                                std::forward<F0>(f0), whence);
+}
+template <template <typename> class Traits, uint32_t kInstantBits, typename P,
+          typename F0, typename F1>
+auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, DebugLocation whence) {
+  if constexpr (kInstantBits == 0b0) {
+    return SeqState<Traits, P, F0, F1>(std::forward<P>(p), std::forward<F0>(f0),
+                                       std::forward<F1>(f1), whence);
+  }
+  if constexpr (kInstantBits == 0b1) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1), whence);
+  }
+  if constexpr (kInstantBits == 0b10) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b11) {
+    return SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                          std::forward<F1>(f1));
+  }
+}
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1>
+auto FoldSeqState(P&& p, F0&& f0, F1&& f1, DebugLocation whence) {
+  using Types = SeqStateTypes<Traits, P, F0, F1>;
+  static constexpr uint32_t kInstantBits =
+      (Types::NextFactory0::kInstantaneousPromise ? 1 : 0) |
+      (Types::NextFactory1::kInstantaneousPromise ? 2 : 0);
+  return FoldSeqStateImpl<Traits, kInstantBits>(
+      std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1), whence);
+}
+template <template <typename> class Traits, uint32_t kInstantBits, typename P,
+          typename F0, typename F1, typename F2>
+auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, DebugLocation whence) {
+  if constexpr (kInstantBits == 0b0) {
+    return SeqState<Traits, P, F0, F1, F2>(
+        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+        std::forward<F2>(f2), whence);
+  }
+  if constexpr (kInstantBits == 0b1) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1, F2>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1), std::forward<F2>(f2), whence);
+  }
+  if constexpr (kInstantBits == 0b10) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        std::forward<F2>(f2), whence);
+  }
+  if constexpr (kInstantBits == 0b11) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>, F2>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1)),
+        std::forward<F2>(f2), whence);
+  }
+  if constexpr (kInstantBits == 0b100) {
+    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>>(
+        std::forward<P>(p), std::forward<F0>(f0),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b101) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>,
+                    SeqFactoryMapType<Traits, F1, F2>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b110) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
+                              std::forward<F2>(f2)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b111) {
+    return SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                          std::forward<F1>(f1), std::forward<F2>(f2));
+  }
+}
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2>
+auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, DebugLocation whence) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2>;
+  static constexpr uint32_t kInstantBits =
+      (Types::NextFactory0::kInstantaneousPromise ? 1 : 0) |
+      (Types::NextFactory1::kInstantaneousPromise ? 2 : 0) |
+      (Types::NextFactory2::kInstantaneousPromise ? 4 : 0);
+  return FoldSeqStateImpl<Traits, kInstantBits>(
+      std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+      std::forward<F2>(f2), whence);
+}
+template <template <typename> class Traits, uint32_t kInstantBits, typename P,
+          typename F0, typename F1, typename F2, typename F3>
+auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
+                      DebugLocation whence) {
+  if constexpr (kInstantBits == 0b0) {
+    return SeqState<Traits, P, F0, F1, F2, F3>(
+        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+        std::forward<F2>(f2), std::forward<F3>(f3), whence);
+  }
+  if constexpr (kInstantBits == 0b1) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1, F2, F3>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b10) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2, F3>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        std::forward<F2>(f2), std::forward<F3>(f3), whence);
+  }
+  if constexpr (kInstantBits == 0b11) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>, F2, F3>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1)),
+        std::forward<F2>(f2), std::forward<F3>(f3), whence);
+  }
+  if constexpr (kInstantBits == 0b100) {
+    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>, F3>(
+        std::forward<P>(p), std::forward<F0>(f0),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        std::forward<F3>(f3), whence);
+  }
+  if constexpr (kInstantBits == 0b101) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>,
+                    SeqFactoryMapType<Traits, F1, F2>, F3>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        std::forward<F3>(f3), whence);
+  }
+  if constexpr (kInstantBits == 0b110) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>, F3>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
+                              std::forward<F2>(f2)),
+        std::forward<F3>(f3), whence);
+  }
+  if constexpr (kInstantBits == 0b111) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2>, F3>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1), std::forward<F2>(f2)),
+        std::forward<F3>(f3), whence);
+  }
+  if constexpr (kInstantBits == 0b1000) {
+    return SeqState<Traits, P, F0, F1, SeqFactoryMapType<Traits, F2, F3>>(
+        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b1001) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1,
+                    SeqFactoryMapType<Traits, F2, F3>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b1010) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>,
+                    SeqFactoryMapType<Traits, F2, F3>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b1011) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>,
+                    SeqFactoryMapType<Traits, F2, F3>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1)),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b1100) {
+    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2, F3>>(
+        std::forward<P>(p), std::forward<F0>(f0),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
+                              std::forward<F3>(f3)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b1101) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>,
+                    SeqFactoryMapType<Traits, F1, F2, F3>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
+                              std::forward<F3>(f3)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b1110) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2, F3>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
+                              std::forward<F2>(f2), std::forward<F3>(f3)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b1111) {
+    return SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                          std::forward<F1>(f1), std::forward<F2>(f2),
+                          std::forward<F3>(f3));
+  }
+}
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3>
+auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
+                  DebugLocation whence) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3>;
+  static constexpr uint32_t kInstantBits =
+      (Types::NextFactory0::kInstantaneousPromise ? 1 : 0) |
+      (Types::NextFactory1::kInstantaneousPromise ? 2 : 0) |
+      (Types::NextFactory2::kInstantaneousPromise ? 4 : 0) |
+      (Types::NextFactory3::kInstantaneousPromise ? 8 : 0);
+  return FoldSeqStateImpl<Traits, kInstantBits>(
+      std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+      std::forward<F2>(f2), std::forward<F3>(f3), whence);
+}
+template <template <typename> class Traits, uint32_t kInstantBits, typename P,
+          typename F0, typename F1, typename F2, typename F3, typename F4>
+auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
+                      DebugLocation whence) {
+  if constexpr (kInstantBits == 0b0) {
+    return SeqState<Traits, P, F0, F1, F2, F3, F4>(
+        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+        std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b1) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1, F2, F3, F4>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3),
+        std::forward<F4>(f4), whence);
+  }
+  if constexpr (kInstantBits == 0b10) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2, F3, F4>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b11) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>, F2, F3, F4>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1)),
+        std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b100) {
+    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>, F3, F4>(
+        std::forward<P>(p), std::forward<F0>(f0),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        std::forward<F3>(f3), std::forward<F4>(f4), whence);
+  }
+  if constexpr (kInstantBits == 0b101) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>,
+                    SeqFactoryMapType<Traits, F1, F2>, F3, F4>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        std::forward<F3>(f3), std::forward<F4>(f4), whence);
+  }
+  if constexpr (kInstantBits == 0b110) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>, F3, F4>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
+                              std::forward<F2>(f2)),
+        std::forward<F3>(f3), std::forward<F4>(f4), whence);
+  }
+  if constexpr (kInstantBits == 0b111) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2>, F3, F4>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1), std::forward<F2>(f2)),
+        std::forward<F3>(f3), std::forward<F4>(f4), whence);
+  }
+  if constexpr (kInstantBits == 0b1000) {
+    return SeqState<Traits, P, F0, F1, SeqFactoryMapType<Traits, F2, F3>, F4>(
+        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        std::forward<F4>(f4), whence);
+  }
+  if constexpr (kInstantBits == 0b1001) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1,
+                    SeqFactoryMapType<Traits, F2, F3>, F4>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        std::forward<F4>(f4), whence);
+  }
+  if constexpr (kInstantBits == 0b1010) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>,
+                    SeqFactoryMapType<Traits, F2, F3>, F4>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        std::forward<F4>(f4), whence);
+  }
+  if constexpr (kInstantBits == 0b1011) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>,
+                    SeqFactoryMapType<Traits, F2, F3>, F4>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1)),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        std::forward<F4>(f4), whence);
+  }
+  if constexpr (kInstantBits == 0b1100) {
+    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2, F3>, F4>(
+        std::forward<P>(p), std::forward<F0>(f0),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
+                              std::forward<F3>(f3)),
+        std::forward<F4>(f4), whence);
+  }
+  if constexpr (kInstantBits == 0b1101) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>,
+                    SeqFactoryMapType<Traits, F1, F2, F3>, F4>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
+                              std::forward<F3>(f3)),
+        std::forward<F4>(f4), whence);
+  }
+  if constexpr (kInstantBits == 0b1110) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2, F3>, F4>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
+                              std::forward<F2>(f2), std::forward<F3>(f3)),
+        std::forward<F4>(f4), whence);
+  }
+  if constexpr (kInstantBits == 0b1111) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2, F3>, F4>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1), std::forward<F2>(f2),
+                       std::forward<F3>(f3)),
+        std::forward<F4>(f4), whence);
+  }
+  if constexpr (kInstantBits == 0b10000) {
+    return SeqState<Traits, P, F0, F1, F2, SeqFactoryMapType<Traits, F3, F4>>(
+        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+        std::forward<F2>(f2),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b10001) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1, F2,
+                    SeqFactoryMapType<Traits, F3, F4>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1), std::forward<F2>(f2),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b10010) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2,
+                    SeqFactoryMapType<Traits, F3, F4>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        std::forward<F2>(f2),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b10011) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>, F2,
+                    SeqFactoryMapType<Traits, F3, F4>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1)),
+        std::forward<F2>(f2),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b10100) {
+    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>,
+                    SeqFactoryMapType<Traits, F3, F4>>(
+        std::forward<P>(p), std::forward<F0>(f0),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b10101) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>,
+                    SeqFactoryMapType<Traits, F1, F2>,
+                    SeqFactoryMapType<Traits, F3, F4>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b10110) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>,
+                    SeqFactoryMapType<Traits, F3, F4>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
+                              std::forward<F2>(f2)),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b10111) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2>,
+                    SeqFactoryMapType<Traits, F3, F4>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b11000) {
+    return SeqState<Traits, P, F0, F1, SeqFactoryMapType<Traits, F2, F3, F4>>(
+        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
+                              std::forward<F4>(f4)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b11001) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1,
+                    SeqFactoryMapType<Traits, F2, F3, F4>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
+                              std::forward<F4>(f4)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b11010) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>,
+                    SeqFactoryMapType<Traits, F2, F3, F4>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
+                              std::forward<F4>(f4)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b11011) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>,
+                    SeqFactoryMapType<Traits, F2, F3, F4>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1)),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
+                              std::forward<F4>(f4)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b11100) {
+    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2, F3, F4>>(
+        std::forward<P>(p), std::forward<F0>(f0),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
+                              std::forward<F3>(f3), std::forward<F4>(f4)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b11101) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>,
+                    SeqFactoryMapType<Traits, F1, F2, F3, F4>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
+                              std::forward<F3>(f3), std::forward<F4>(f4)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b11110) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2, F3, F4>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
+                              std::forward<F2>(f2), std::forward<F3>(f3),
+                              std::forward<F4>(f4)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b11111) {
+    return SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                          std::forward<F1>(f1), std::forward<F2>(f2),
+                          std::forward<F3>(f3), std::forward<F4>(f4));
+  }
+}
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4>
+auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
+                  DebugLocation whence) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4>;
+  static constexpr uint32_t kInstantBits =
+      (Types::NextFactory0::kInstantaneousPromise ? 1 : 0) |
+      (Types::NextFactory1::kInstantaneousPromise ? 2 : 0) |
+      (Types::NextFactory2::kInstantaneousPromise ? 4 : 0) |
+      (Types::NextFactory3::kInstantaneousPromise ? 8 : 0) |
+      (Types::NextFactory4::kInstantaneousPromise ? 16 : 0);
+  return FoldSeqStateImpl<Traits, kInstantBits>(
+      std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+      std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4), whence);
+}
+template <template <typename> class Traits, uint32_t kInstantBits, typename P,
+          typename F0, typename F1, typename F2, typename F3, typename F4,
+          typename F5>
+auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
+                      F5&& f5, DebugLocation whence) {
+  if constexpr (kInstantBits == 0b0) {
+    return SeqState<Traits, P, F0, F1, F2, F3, F4, F5>(
+        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+        std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b1) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1, F2, F3, F4, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3),
+        std::forward<F4>(f4), std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b10) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2, F3, F4,
+                    F5>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b11) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>, F2, F3, F4, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1)),
+        std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b100) {
+    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>, F3, F4,
+                    F5>(
+        std::forward<P>(p), std::forward<F0>(f0),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b101) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>,
+                    SeqFactoryMapType<Traits, F1, F2>, F3, F4, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b110) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>, F3, F4,
+                    F5>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
+                              std::forward<F2>(f2)),
+        std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b111) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2>, F3, F4, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1), std::forward<F2>(f2)),
+        std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b1000) {
+    return SeqState<Traits, P, F0, F1, SeqFactoryMapType<Traits, F2, F3>, F4,
+                    F5>(
+        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        std::forward<F4>(f4), std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b1001) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1,
+                    SeqFactoryMapType<Traits, F2, F3>, F4, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        std::forward<F4>(f4), std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b1010) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>,
+                    SeqFactoryMapType<Traits, F2, F3>, F4, F5>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        std::forward<F4>(f4), std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b1011) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>,
+                    SeqFactoryMapType<Traits, F2, F3>, F4, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1)),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        std::forward<F4>(f4), std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b1100) {
+    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2, F3>, F4,
+                    F5>(
+        std::forward<P>(p), std::forward<F0>(f0),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
+                              std::forward<F3>(f3)),
+        std::forward<F4>(f4), std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b1101) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>,
+                    SeqFactoryMapType<Traits, F1, F2, F3>, F4, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
+                              std::forward<F3>(f3)),
+        std::forward<F4>(f4), std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b1110) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2, F3>, F4,
+                    F5>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
+                              std::forward<F2>(f2), std::forward<F3>(f3)),
+        std::forward<F4>(f4), std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b1111) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2, F3>, F4, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1), std::forward<F2>(f2),
+                       std::forward<F3>(f3)),
+        std::forward<F4>(f4), std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b10000) {
+    return SeqState<Traits, P, F0, F1, F2, SeqFactoryMapType<Traits, F3, F4>,
+                    F5>(
+        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+        std::forward<F2>(f2),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b10001) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1, F2,
+                    SeqFactoryMapType<Traits, F3, F4>, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1), std::forward<F2>(f2),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b10010) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2,
+                    SeqFactoryMapType<Traits, F3, F4>, F5>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        std::forward<F2>(f2),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b10011) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>, F2,
+                    SeqFactoryMapType<Traits, F3, F4>, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1)),
+        std::forward<F2>(f2),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b10100) {
+    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>,
+                    SeqFactoryMapType<Traits, F3, F4>, F5>(
+        std::forward<P>(p), std::forward<F0>(f0),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b10101) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>,
+                    SeqFactoryMapType<Traits, F1, F2>,
+                    SeqFactoryMapType<Traits, F3, F4>, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b10110) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>,
+                    SeqFactoryMapType<Traits, F3, F4>, F5>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
+                              std::forward<F2>(f2)),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b10111) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2>,
+                    SeqFactoryMapType<Traits, F3, F4>, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b11000) {
+    return SeqState<Traits, P, F0, F1, SeqFactoryMapType<Traits, F2, F3, F4>,
+                    F5>(
+        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
+                              std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b11001) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1,
+                    SeqFactoryMapType<Traits, F2, F3, F4>, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
+                              std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b11010) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>,
+                    SeqFactoryMapType<Traits, F2, F3, F4>, F5>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
+                              std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b11011) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>,
+                    SeqFactoryMapType<Traits, F2, F3, F4>, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1)),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
+                              std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b11100) {
+    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2, F3, F4>,
+                    F5>(
+        std::forward<P>(p), std::forward<F0>(f0),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
+                              std::forward<F3>(f3), std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b11101) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>,
+                    SeqFactoryMapType<Traits, F1, F2, F3, F4>, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
+                              std::forward<F3>(f3), std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b11110) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2, F3, F4>,
+                    F5>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
+                              std::forward<F2>(f2), std::forward<F3>(f3),
+                              std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b11111) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2, F3, F4>, F5>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1), std::forward<F2>(f2),
+                       std::forward<F3>(f3), std::forward<F4>(f4)),
+        std::forward<F5>(f5), whence);
+  }
+  if constexpr (kInstantBits == 0b100000) {
+    return SeqState<Traits, P, F0, F1, F2, F3,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+        std::forward<F2>(f2), std::forward<F3>(f3),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b100001) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1, F2, F3,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b100010) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2, F3,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        std::forward<F2>(f2), std::forward<F3>(f3),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b100011) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>, F2, F3,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1)),
+        std::forward<F2>(f2), std::forward<F3>(f3),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b100100) {
+    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>, F3,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        std::forward<P>(p), std::forward<F0>(f0),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        std::forward<F3>(f3),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b100101) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>,
+                    SeqFactoryMapType<Traits, F1, F2>, F3,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        std::forward<F3>(f3),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b100110) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>, F3,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
+                              std::forward<F2>(f2)),
+        std::forward<F3>(f3),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b100111) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2>, F3,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1), std::forward<F2>(f2)),
+        std::forward<F3>(f3),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b101000) {
+    return SeqState<Traits, P, F0, F1, SeqFactoryMapType<Traits, F2, F3>,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b101001) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1,
+                    SeqFactoryMapType<Traits, F2, F3>,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b101010) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>,
+                    SeqFactoryMapType<Traits, F2, F3>,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b101011) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>,
+                    SeqFactoryMapType<Traits, F2, F3>,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1)),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b101100) {
+    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2, F3>,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        std::forward<P>(p), std::forward<F0>(f0),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
+                              std::forward<F3>(f3)),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b101101) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>,
+                    SeqFactoryMapType<Traits, F1, F2, F3>,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
+                              std::forward<F3>(f3)),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b101110) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2, F3>,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
+                              std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b101111) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2, F3>,
+                    SeqFactoryMapType<Traits, F4, F5>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1), std::forward<F2>(f2),
+                       std::forward<F3>(f3)),
+        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b110000) {
+    return SeqState<Traits, P, F0, F1, F2,
+                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+        std::forward<F2>(f2),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
+                              std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b110001) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1, F2,
+                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1), std::forward<F2>(f2),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
+                              std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b110010) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2,
+                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        std::forward<F2>(f2),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
+                              std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b110011) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>, F2,
+                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1)),
+        std::forward<F2>(f2),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
+                              std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b110100) {
+    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>,
+                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+        std::forward<P>(p), std::forward<F0>(f0),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
+                              std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b110101) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>,
+                    SeqFactoryMapType<Traits, F1, F2>,
+                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
+                              std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b110110) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>,
+                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
+                              std::forward<F2>(f2)),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
+                              std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b110111) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2>,
+                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
+                              std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b111000) {
+    return SeqState<Traits, P, F0, F1,
+                    SeqFactoryMapType<Traits, F2, F3, F4, F5>>(
+        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
+                              std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b111001) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1,
+                    SeqFactoryMapType<Traits, F2, F3, F4, F5>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        std::forward<F1>(f1),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
+                              std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b111010) {
+    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>,
+                    SeqFactoryMapType<Traits, F2, F3, F4, F5>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
+                              std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b111011) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>,
+                    SeqFactoryMapType<Traits, F2, F3, F4, F5>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                       std::forward<F1>(f1)),
+        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
+                              std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b111100) {
+    return SeqState<Traits, P, F0,
+                    SeqFactoryMapType<Traits, F1, F2, F3, F4, F5>>(
+        std::forward<P>(p), std::forward<F0>(f0),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
+                              std::forward<F3>(f3), std::forward<F4>(f4),
+                              std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b111101) {
+    return SeqState<Traits, SeqMapType<Traits, P, F0>,
+                    SeqFactoryMapType<Traits, F1, F2, F3, F4, F5>>(
+        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
+                              std::forward<F3>(f3), std::forward<F4>(f4),
+                              std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b111110) {
+    return SeqState<Traits, P,
+                    SeqFactoryMapType<Traits, F0, F1, F2, F3, F4, F5>>(
+        std::forward<P>(p),
+        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
+                              std::forward<F2>(f2), std::forward<F3>(f3),
+                              std::forward<F4>(f4), std::forward<F5>(f5)),
+        whence);
+  }
+  if constexpr (kInstantBits == 0b111111) {
+    return SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                          std::forward<F1>(f1), std::forward<F2>(f2),
+                          std::forward<F3>(f3), std::forward<F4>(f4),
+                          std::forward<F5>(f5));
+  }
+}
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5>
+auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+                  DebugLocation whence) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5>;
+  static constexpr uint32_t kInstantBits =
+      (Types::NextFactory0::kInstantaneousPromise ? 1 : 0) |
+      (Types::NextFactory1::kInstantaneousPromise ? 2 : 0) |
+      (Types::NextFactory2::kInstantaneousPromise ? 4 : 0) |
+      (Types::NextFactory3::kInstantaneousPromise ? 8 : 0) |
+      (Types::NextFactory4::kInstantaneousPromise ? 16 : 0) |
+      (Types::NextFactory5::kInstantaneousPromise ? 32 : 0);
+  return FoldSeqStateImpl<Traits, kInstantBits>(
+      std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+      std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+      std::forward<F5>(f5), whence);
+}
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6>
+auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+                  F6&& f6) {
+  return SeqState(std::forward<P>(p), std::forward<F0>(f0),
+                  std::forward<F1>(f1), std::forward<F2>(f2),
+                  std::forward<F3>(f3), std::forward<F4>(f4),
+                  std::forward<F5>(f5), std::forward<F6>(f6));
+}
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7>
+auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+                  F6&& f6, F7&& f7) {
+  return SeqState(
+      std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+      std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+      std::forward<F5>(f5), std::forward<F6>(f6), std::forward<F7>(f7));
+}
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8>
+auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+                  F6&& f6, F7&& f7, F8&& f8) {
+  return SeqState(std::forward<P>(p), std::forward<F0>(f0),
+                  std::forward<F1>(f1), std::forward<F2>(f2),
+                  std::forward<F3>(f3), std::forward<F4>(f4),
+                  std::forward<F5>(f5), std::forward<F6>(f6),
+                  std::forward<F7>(f7), std::forward<F8>(f8));
+}
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8, typename F9>
+auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+                  F6&& f6, F7&& f7, F8&& f8, F9&& f9) {
+  return SeqState(
+      std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+      std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+      std::forward<F5>(f5), std::forward<F6>(f6), std::forward<F7>(f7),
+      std::forward<F8>(f8), std::forward<F9>(f9));
+}
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8, typename F9, typename F10>
+auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+                  F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10) {
+  return SeqState(
+      std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+      std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+      std::forward<F5>(f5), std::forward<F6>(f6), std::forward<F7>(f7),
+      std::forward<F8>(f8), std::forward<F9>(f9), std::forward<F10>(f10));
+}
+template <template <typename> class Traits, typename P, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8, typename F9, typename F10,
+          typename F11>
+auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+                  F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10, F11&& f11) {
+  return SeqState(
+      std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+      std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+      std::forward<F5>(f5), std::forward<F6>(f6), std::forward<F7>(f7),
+      std::forward<F8>(f8), std::forward<F9>(f9), std::forward<F10>(f10),
+      std::forward<F11>(f11));
+}
 
 }  // namespace promise_detail
 }  // namespace grpc_core

@@ -220,9 +220,7 @@ class TrySeq {
       : state_(std::forward<P>(promise), std::forward<Fs>(factories)...,
                whence) {}
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()() {
-    return state_.PollOnce();
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()() { return state_(); }
 
  private:
   SeqState<TrySeqTraits, P, Fs...> state_;

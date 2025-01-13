@@ -26,7 +26,6 @@
 #include "src/core/lib/promise/detail/seq_state.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/type_list.h"
 
 namespace grpc_core {
 
@@ -62,15 +61,16 @@ class Seq {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Seq(P&& promise,
                                                     Fs&&... factories,
                                                     DebugLocation whence)
-      : state_(std::forward<P>(promise), std::forward<Fs>(factories)...,
-               whence) {}
-
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()() {
-    return state_.PollOnce();
+      : state_(FoldSeqState<SeqTraits>(
+            std::forward<P>(promise), std::forward<Fs>(factories)..., whence)) {
   }
 
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()() { return state_(); }
+
  private:
-  SeqState<SeqTraits, P, Fs...> state_;
+  using StateType = decltype(FoldSeqState<SeqTraits>(
+      std::declval<P>(), std::declval<Fs>()..., DebugLocation()));
+  StateType state_;
 };
 
 template <typename Iter, typename Factory, typename Argument>

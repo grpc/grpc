@@ -192,14 +192,15 @@ class OncePromiseFactory {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Promise Make(Arg&& a) {
     return PromiseFactoryImpl(std::move(f_), std::forward<Arg>(a));
   }
-
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
-  std::enable_if_t<kInstantaneousPromise, typename Promise::Result> MakeAndCall(
-      Arg&& a) {
-    return PromiseFactoryImpl(std::move(f_), std::forward<Arg>(a))
-        .CallUnderlyingFn();
-  }
 };
+
+template <typename A, typename F>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+    std::enable_if_t<OncePromiseFactory<A, F>::kInstantaneousPromise,
+                     typename OncePromiseFactory<A, F>::Promise::Result>
+    MakeAndCall(A&& a, OncePromiseFactory<A, F>& f) {
+  return f.Make(std::forward<A>(a)).CallUnderlyingFn();
+}
 
 template <typename F>
 class OncePromiseFactory<void, F> {
@@ -217,13 +218,15 @@ class OncePromiseFactory<void, F> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Promise Make() {
     return PromiseFactoryImpl(std::move(f_));
   }
-
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
-  std::enable_if_t<kInstantaneousPromise, typename Promise::Result>
-  MakeAndCall() {
-    return PromiseFactoryImpl(std::move(f_)).CallUnderlyingFn();
-  }
 };
+
+template <typename F>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+    std::enable_if_t<OncePromiseFactory<void, F>::kInstantaneousPromise,
+                     typename OncePromiseFactory<void, F>::Promise::Result>
+    MakeAndCall(OncePromiseFactory<void, F>& f) {
+  return f.Make().CallUnderlyingFn();
+}
 
 template <typename A, typename F>
 class RepeatedPromiseFactory {
