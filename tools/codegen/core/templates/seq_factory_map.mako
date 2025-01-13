@@ -15,7 +15,7 @@ limitations under the License.
 </%doc>
 
 template <template<typename> class Traits, typename Arg, ${",".join(f"typename F{i}" for i in range(0,n-1))}>
-auto SeqFactoryMap(${",".join(f"F{i}&& f{i}" for i in range(0,n-1))}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqFactoryMap(${",".join(f"F{i}&& f{i}" for i in range(0,n-1))}) {
   if constexpr (!std::is_same_v<Arg, void>) {
     return [${",".join(f"f{i} = std::forward<F{i}>(f{i})" for i in range(0,n-1))}](Arg x) mutable {
       OncePromiseFactory<decltype(x), F0> next(std::move(f0));

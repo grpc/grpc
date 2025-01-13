@@ -6600,7 +6600,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
 
 template <template <typename> class Traits, typename Arg, typename F0,
           typename F1>
-auto SeqFactoryMap(F0&& f0, F1&& f1) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqFactoryMap(F0&& f0, F1&& f1) {
   if constexpr (!std::is_same_v<Arg, void>) {
     return
         [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1)](Arg x) mutable {
@@ -6617,7 +6617,8 @@ auto SeqFactoryMap(F0&& f0, F1&& f1) {
 
 template <template <typename> class Traits, typename Arg, typename F0,
           typename F1, typename F2>
-auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqFactoryMap(F0&& f0, F1&& f1,
+                                                        F2&& f2) {
   if constexpr (!std::is_same_v<Arg, void>) {
     return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
             f2 = std::forward<F2>(f2)](Arg x) mutable {
@@ -6636,7 +6637,8 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2) {
 
 template <template <typename> class Traits, typename Arg, typename F0,
           typename F1, typename F2, typename F3>
-auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqFactoryMap(F0&& f0, F1&& f1,
+                                                        F2&& f2, F3&& f3) {
   if constexpr (!std::is_same_v<Arg, void>) {
     return
         [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
@@ -6657,7 +6659,9 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3) {
 
 template <template <typename> class Traits, typename Arg, typename F0,
           typename F1, typename F2, typename F3, typename F4>
-auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqFactoryMap(F0&& f0, F1&& f1,
+                                                        F2&& f2, F3&& f3,
+                                                        F4&& f4) {
   if constexpr (!std::is_same_v<Arg, void>) {
     return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
             f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
@@ -6679,7 +6683,9 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4) {
 
 template <template <typename> class Traits, typename Arg, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5>
-auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqFactoryMap(F0&& f0, F1&& f1,
+                                                        F2&& f2, F3&& f3,
+                                                        F4&& f4, F5&& f5) {
   if constexpr (!std::is_same_v<Arg, void>) {
     return
         [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
@@ -6704,8 +6710,10 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5) {
 template <template <typename> class Traits, typename Arg, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6>
-auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                   F6&& f6) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqFactoryMap(F0&& f0, F1&& f1,
+                                                        F2&& f2, F3&& f3,
+                                                        F4&& f4, F5&& f5,
+                                                        F6&& f6) {
   if constexpr (!std::is_same_v<Arg, void>) {
     return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
             f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
@@ -6732,8 +6740,10 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
 template <template <typename> class Traits, typename Arg, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7>
-auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                   F6&& f6, F7&& f7) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqFactoryMap(F0&& f0, F1&& f1,
+                                                        F2&& f2, F3&& f3,
+                                                        F4&& f4, F5&& f5,
+                                                        F6&& f6, F7&& f7) {
   if constexpr (!std::is_same_v<Arg, void>) {
     return
         [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
@@ -6761,8 +6771,11 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
 template <template <typename> class Traits, typename Arg, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8>
-auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                   F6&& f6, F7&& f7, F8&& f8) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqFactoryMap(F0&& f0, F1&& f1,
+                                                        F2&& f2, F3&& f3,
+                                                        F4&& f4, F5&& f5,
+                                                        F6&& f6, F7&& f7,
+                                                        F8&& f8) {
   if constexpr (!std::is_same_v<Arg, void>) {
     return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
             f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
@@ -6792,8 +6805,11 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
 template <template <typename> class Traits, typename Arg, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8, typename F9>
-auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                   F6&& f6, F7&& f7, F8&& f8, F9&& f9) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqFactoryMap(F0&& f0, F1&& f1,
+                                                        F2&& f2, F3&& f3,
+                                                        F4&& f4, F5&& f5,
+                                                        F6&& f6, F7&& f7,
+                                                        F8&& f8, F9&& f9) {
   if constexpr (!std::is_same_v<Arg, void>) {
     return
         [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
@@ -6825,8 +6841,9 @@ auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
 template <template <typename> class Traits, typename Arg, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8, typename F9, typename F10>
-auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                   F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqFactoryMap(
+    F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5, F6&& f6, F7&& f7,
+    F8&& f8, F9&& f9, F10&& f10) {
   if constexpr (!std::is_same_v<Arg, void>) {
     return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
             f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
@@ -6860,8 +6877,9 @@ template <template <typename> class Traits, typename Arg, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8, typename F9, typename F10,
           typename F11>
-auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                   F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10, F11&& f11) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqFactoryMap(
+    F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5, F6&& f6, F7&& f7,
+    F8&& f8, F9&& f9, F10&& f10, F11&& f11) {
   if constexpr (!std::is_same_v<Arg, void>) {
     return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
             f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
