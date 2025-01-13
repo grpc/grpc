@@ -27,6 +27,7 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/log/check.h"
@@ -39,7 +40,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
@@ -409,7 +409,7 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     bool is_optional = false;
     if (extension->type == "envoy.config.route.v3.FilterConfig") {
       absl::string_view* serialized_config =
-          absl::get_if<absl::string_view>(&extension->value);
+          std::get_if<absl::string_view>(&extension->value);
       if (serialized_config == nullptr) {
         errors->AddError("could not parse FilterConfig");
         continue;
@@ -780,7 +780,7 @@ absl::optional<XdsRouteConfigResource::Route> ParseRoute(
       route_action->retry_policy = virtual_host_retry_policy;
     }
     // Mark off plugins used in route action.
-    auto* cluster_specifier_action = absl::get_if<
+    auto* cluster_specifier_action = std::get_if<
         XdsRouteConfigResource::Route::RouteAction::ClusterSpecifierPluginName>(
         &route_action->action);
     if (cluster_specifier_action != nullptr) {
@@ -823,8 +823,8 @@ std::shared_ptr<const XdsRouteConfigResource> XdsRouteConfigResourceParse(
   // Build a set of configured cluster_specifier_plugin names to make sure
   // each is actually referenced by a route action.
   std::set<absl::string_view> cluster_specifier_plugins_not_seen;
-  for (auto& plugin : rds_update->cluster_specifier_plugin_map) {
-    cluster_specifier_plugins_not_seen.emplace(plugin.first);
+  for (auto& [name, _] : rds_update->cluster_specifier_plugin_map) {
+    cluster_specifier_plugins_not_seen.emplace(name);
   }
   // Get the virtual hosts.
   size_t num_virtual_hosts;

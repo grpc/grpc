@@ -33,6 +33,7 @@
 #include <set>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
@@ -46,7 +47,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -1631,22 +1631,22 @@ T HandlePickResult(
     std::function<T(LoadBalancingPolicy::PickResult::Fail*)> fail_func,
     std::function<T(LoadBalancingPolicy::PickResult::Drop*)> drop_func) {
   auto* complete_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Complete>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Complete>(&result->result);
   if (complete_pick != nullptr) {
     return complete_func(complete_pick);
   }
   auto* queue_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Queue>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Queue>(&result->result);
   if (queue_pick != nullptr) {
     return queue_func(queue_pick);
   }
   auto* fail_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Fail>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Fail>(&result->result);
   if (fail_pick != nullptr) {
     return fail_func(fail_pick);
   }
   auto* drop_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
   CHECK_NE(drop_pick, nullptr);
   return drop_func(drop_pick);
 }

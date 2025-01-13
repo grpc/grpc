@@ -35,6 +35,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
@@ -49,7 +50,6 @@
 #include "absl/synchronization/notification.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
-#include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -475,7 +475,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       EXPECT_FALSE(queue_.empty()) << location.file() << ":" << location.line();
       if (queue_.empty()) return absl::nullopt;
       Event& event = queue_.front();
-      auto* update = absl::get_if<StateUpdate>(&event);
+      auto* update = std::get_if<StateUpdate>(&event);
       EXPECT_NE(update, nullptr)
           << "unexpected event " << EventString(event) << " at "
           << location.file() << ":" << location.line();
@@ -496,7 +496,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       EXPECT_FALSE(queue_.empty()) << location.file() << ":" << location.line();
       if (queue_.empty()) return absl::nullopt;
       Event& event = queue_.front();
-      auto* reresolution = absl::get_if<ReresolutionRequested>(&event);
+      auto* reresolution = std::get_if<ReresolutionRequested>(&event);
       EXPECT_NE(reresolution, nullptr)
           << "unexpected event " << EventString(event) << " at "
           << location.file() << ":" << location.line();
@@ -544,7 +544,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     };
 
     // Represents an event reported by the LB policy.
-    using Event = absl::variant<StateUpdate, ReresolutionRequested>;
+    using Event = std::variant<StateUpdate, ReresolutionRequested>;
 
     // Returns a human-readable representation of an event.
     static std::string EventString(const Event& event) {
@@ -1092,11 +1092,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     EXPECT_NE(picker, nullptr) << location.file() << ":" << location.line();
     if (picker == nullptr) return false;
     auto pick_result = DoPick(picker, call_attributes, metadata);
-    EXPECT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
+    EXPECT_TRUE(std::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result))
         << PickResultString(pick_result) << "\nat " << location.file() << ":"
         << location.line();
-    return absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
+    return std::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result);
   }
 
@@ -1120,7 +1120,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return absl::nullopt;
     }
     auto pick_result = DoPick(picker, call_attributes, metadata);
-    auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
+    auto* complete = std::get_if<LoadBalancingPolicy::PickResult::Complete>(
         &pick_result.result);
     EXPECT_NE(complete, nullptr) << PickResultString(pick_result) << " at "
                                  << location.file() << ":" << location.line();
@@ -1393,8 +1393,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                       std::function<void(const absl::Status&)> check_status,
                       SourceLocation location = SourceLocation()) {
     auto pick_result = DoPick(picker);
-    auto* fail = absl::get_if<LoadBalancingPolicy::PickResult::Fail>(
-        &pick_result.result);
+    auto* fail =
+        std::get_if<LoadBalancingPolicy::PickResult::Fail>(&pick_result.result);
     ASSERT_NE(fail, nullptr) << PickResultString(pick_result) << " at "
                              << location.file() << ":" << location.line();
     check_status(fail->status);

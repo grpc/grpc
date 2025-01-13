@@ -87,7 +87,7 @@ CommonTlsContext UpstreamTlsContextParse(
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) {
   const absl::string_view* serialized_upstream_tls_context =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_upstream_tls_context == nullptr) {
     errors->AddError("can't decode UpstreamTlsContext");
     return {};
@@ -109,7 +109,7 @@ CommonTlsContext UpstreamTlsContextParse(
     common_tls_context =
         CommonTlsContextParse(context, common_tls_context_proto, errors);
   }
-  if (absl::holds_alternative<absl::monostate>(
+  if (std::holds_alternative<std::monostate>(
           common_tls_context.certificate_validation_context.ca_certs)) {
     errors->AddError("no CA certs configured");
   }
@@ -120,7 +120,7 @@ CommonTlsContext Http11ProxyUpstreamTransportParse(
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) {
   const absl::string_view* serialized =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized == nullptr) {
     errors->AddError("can't decode Http11ProxyUpstreamTransport");
     return {};
@@ -402,7 +402,7 @@ void ParseUpstreamConfig(
     return;
   }
   absl::string_view* serialized_http_protocol_options =
-      absl::get_if<absl::string_view>(&extension->value);
+      std::get_if<absl::string_view>(&extension->value);
   if (serialized_http_protocol_options == nullptr) {
     errors->AddError("can't decode HttpProtocolOptions");
     return;

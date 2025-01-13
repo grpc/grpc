@@ -51,11 +51,6 @@
 
 namespace grpc_core {
 
-const NoInterceptor HttpClientFilter::Call::OnServerToClientMessage;
-const NoInterceptor HttpClientFilter::Call::OnClientToServerMessage;
-const NoInterceptor HttpClientFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor HttpClientFilter::Call::OnFinalize;
-
 const grpc_channel_filter HttpClientFilter::kFilter =
     MakePromiseBasedFilter<HttpClientFilter, FilterEndpoint::kClient,
                            kFilterExaminesServerInitialMetadata>();

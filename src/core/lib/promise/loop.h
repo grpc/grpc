@@ -18,16 +18,58 @@
 #include <grpc/support/port_platform.h>
 
 #include <utility>
+#include <variant>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/variant.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
+
+// A Loop combinator
+//
+// Input:
+//
+// 1. A Loop combinator takes as input only one promise or promise factory.
+// 2. This input promise or promise factory should have a return type of either
+//    a.  LoopCtl<T> which is an alias for std::variant<Continue, T>
+//    b.  Or Poll<LoopCtl<T>>
+//
+// Running of the Loop combinator:
+//
+// 1. The input promise is guranteed to run at least once when the combinator
+//    is invoked.
+// 2. The Loop combinators execution will keep running input promise for
+//    as long as the input promise returns the Continue() object.
+// 3. The Loop breaks if
+//    a.  the input promise returns T.
+//    b.  the input promise returns Pending{}.
+//
+// The execution of multiple iterations of the input
+// promise happen on the same thread.
+//
+// Return:
+//
+// The Loop combinator when executed will return Poll<T>.
+//
+// Example:
+//
+// {
+//   std::string execution_order;
+//   int i = 0;
+//   Poll<int> retval = Loop([&execution_order, &i]() -> LoopCtl<int> {
+//     absl::StrAppend(&execution_order, i);
+//     i++;
+//     if (i < 5) return Continue();
+//     return i;
+//   })();
+//   EXPECT_TRUE(retval.ready());
+//   EXPECT_EQ(retval.value(), 5);
+//   EXPECT_STREQ(execution_order.c_str(), "01234");
+// }
 
 // Special type - signals to loop to take another iteration, instead of
 // finishing
@@ -36,7 +78,7 @@ struct Continue {};
 // Result of polling a loop promise - either Continue looping, or return a value
 // T
 template <typename T>
-using LoopCtl = absl::variant<Continue, T>;
+using LoopCtl = std::variant<Continue, T>;
 
 namespace promise_detail {
 
@@ -59,8 +101,8 @@ struct LoopTraits<absl::StatusOr<LoopCtl<T>>> {
       absl::StatusOr<LoopCtl<T>> value) {
     if (!value.ok()) return value.status();
     auto& inner = *value;
-    if (absl::holds_alternative<Continue>(inner)) return Continue{};
-    return absl::get<T>(std::move(inner));
+    if (std::holds_alternative<Continue>(inner)) return Continue{};
+    return std::get<T>(std::move(inner));
   }
 };
 
@@ -71,8 +113,8 @@ struct LoopTraits<absl::StatusOr<LoopCtl<absl::Status>>> {
       absl::StatusOr<LoopCtl<absl::Status>> value) {
     if (!value.ok()) return value.status();
     const auto& inner = *value;
-    if (absl::holds_alternative<Continue>(inner)) return Continue{};
-    return absl::get<absl::Status>(inner);
+    if (std::holds_alternative<Continue>(inner)) return Continue{};
+    return std::get<absl::Status>(inner);
   }
 };
 
@@ -115,7 +157,7 @@ class Loop {
         //  - then if it's Continue, destroy the promise and recreate a new one
         //  from our factory.
         auto lc = LoopTraits<PromiseResult>::ToLoopCtl(std::move(*p));
-        if (absl::holds_alternative<Continue>(lc)) {
+        if (std::holds_alternative<Continue>(lc)) {
           GRPC_TRACE_LOG(promise_primitives, INFO)
               << "loop[" << this << "] iteration complete, continue";
           Destruct(&promise_);
@@ -125,7 +167,7 @@ class Loop {
         GRPC_TRACE_LOG(promise_primitives, INFO)
             << "loop[" << this << "] iteration complete, return";
         //  - otherwise there's our result... return it out.
-        return absl::get<Result>(std::move(lc));
+        return std::get<Result>(std::move(lc));
       } else {
         // Otherwise the inner promise was pending, so we are pending.
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -145,9 +187,6 @@ class Loop {
 
 }  // namespace promise_detail
 
-// Looping combinator.
-// Expects F returns LoopCtl<T> - if it's Continue, then run the loop again -
-// otherwise yield the returned value as the result of the loop.
 template <typename F>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Loop<F> Loop(F f) {
   return promise_detail::Loop<F>(std::move(f));

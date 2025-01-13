@@ -44,13 +44,6 @@
 
 namespace grpc_core {
 
-const NoInterceptor BackendMetricFilter::Call::OnClientInitialMetadata;
-const NoInterceptor BackendMetricFilter::Call::OnServerInitialMetadata;
-const NoInterceptor BackendMetricFilter::Call::OnClientToServerMessage;
-const NoInterceptor BackendMetricFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor BackendMetricFilter::Call::OnServerToClientMessage;
-const NoInterceptor BackendMetricFilter::Call::OnFinalize;
-
 namespace {
 absl::optional<std::string> MaybeSerializeBackendMetrics(
     BackendMetricProvider* provider) {
