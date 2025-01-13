@@ -52,9 +52,9 @@ namespace grpc_core {
 // TEST(SwitchTest, Sample) {
 //   auto test_switch = [](int discriminator) {
 //     return Switch(discriminator,
-//                   Case<int, 1>([] { return 100; }),
-//                   Case<int, 2>([] { return 200; }),
-//                   Case<int, 3>([]() -> Poll<int> { return Pending{}; }),
+//                   Case<1>([] { return 100; }),
+//                   Case<2>([] { return 200; }),
+//                   Case<3>([]() -> Poll<int> { return Pending{}; }),
 //                   Default([] { return -1; }));
 //   };
 //   EXPECT_EQ(test_switch(1)(), Poll<int>(100));
