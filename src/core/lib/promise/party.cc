@@ -154,20 +154,22 @@ Party::Participant::~Participant() {
 // Party::SpawnSerializer
 
 bool Party::SpawnSerializer::PollParticipantPromise() {
-  while (true) {
-    if (active_ == nullptr) {
-      active_ = next_.Pop().value_or(nullptr);
-      if (active_ == nullptr) {
-        // We always continue: there might be something new pushed on
-        return false;
-      }
-    }
-    if (active_->PollParticipantPromise()) {
-      active_ = nullptr;
-      continue;
-    }
-    return false;
+  if (active_ == nullptr) {
+    active_ = next_.Pop().value_or(nullptr);
   }
+  while (active_ != nullptr) {
+    // If the active participant is incomplete, we are also incomplete.
+    if (!active_->PollParticipantPromise()) return false;
+    // Otherwise, yank the next participant from the queue.
+    active_ = next_.Pop().value_or(nullptr);
+  }
+  // If we have no active participant and no more participants in the queue, we
+  // can return. `true` here indicates this participant is done - we never
+  // return that value as we'd not be able to continue polling.
+  // TODO(ctiller): if ArenaSpsc had a way to signal 'first item added' to the
+  // queue, we could use that as a signal to re-add the participant and allow
+  // ourselves to be removed. Consider if that would help.
+  return false;
 }
 
 void Party::SpawnSerializer::Destroy() {

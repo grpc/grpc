@@ -387,6 +387,8 @@ class ArenaSpsc {
   ArenaSpsc(const ArenaSpsc&) = delete;
   ArenaSpsc& operator=(const ArenaSpsc&) = delete;
 
+  // Push `value` onto the queue; at most one thread can be calling this at a
+  // time.
   void Push(T value) {
     Node* n = AllocNode();
     Construct(&n->value, std::move(value));
@@ -395,12 +397,12 @@ class ArenaSpsc {
     head_ = n;
   }
 
-  absl::optional<T> Pop() {
+  // Pop a value from the queue; at most one thread can be calling this at a
+  // time. If the queue was empty when called, returns nullopt.
+  std::optional<T> Pop() {
     Node* n = tail_.load(std::memory_order_relaxed);
     Node* next = n->next.load(std::memory_order_acquire);
-    if (next == nullptr) {
-      return absl::nullopt;
-    }
+    if (next == nullptr) return std::nullopt;
     T result = std::move(next->value);
     Destruct(&next->value);
     tail_.store(next, std::memory_order_release);

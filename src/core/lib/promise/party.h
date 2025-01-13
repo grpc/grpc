@@ -126,8 +126,45 @@ class Party : public Activity, private Wakeable {
     uint64_t prev_state_;
   };
 
+  // SpawnSerializer is a helper class to serialize the execution of multiple
+  // promises on a party.
+  //
+  // Provides the guarantee that given:
+  //   SpawnSerializer* serializer = party->MakeSpawnSerializer();
+  //   serializer->Spawn([] { /* promise 1 */; });
+  //   serializer->Spawn([] { /* promise 2 */; });
+  // 1. promise 1 will be resolved before promise 2 is started.
+  // 2. promise 1 and promise 2 will execute on `party`.
+  //
+  // It's possible to have multiple SpawnSerializer instances on a party.
+  // Once created, the SpawnSerializer is only valid until the party is
+  // released - note that SpawnSerializer itself does not hold a ref to the
+  // party.
+  //
+  // Each SpawnSerializer consumes one slot in the party's participant array for
+  // the lifetime of the party - that is that a SpawnSerializer counts as one of
+  // the sixteen promises executing on a Party.
+  //
+  // The promises spawned by SpawnSerializer *DO NOT* count towards the sixteen
+  // promise limit.
+  //
+  // The size of this type matters, and so we leverage private inheritance to
+  // minimize the number of pointers needed to be kept per instance.
   class SpawnSerializer final : private Participant {
    public:
+    // Spawn a promise into the party.
+    //
+    // The promise will be polled until it is resolved, or until the party is
+    // shut down.
+    //
+    // Later promises spawned by this serializer will not be polled until this
+    // promise is resolved, and then one at a time in the order they were
+    // spawned.
+    //
+    // Spawn itself is not thread safe: at most one thread can call Spawn at a
+    // time. Just as the execution of promises is serialized by this type, the
+    // spawning of promises is expected to be serialized by some external entity
+    // (usually this is a Seq running on a different party).
     template <class Factory>
     void Spawn(Factory factory) {
       auto empty_completion = [](Empty) {};
@@ -137,19 +174,24 @@ class Party : public Activity, private Wakeable {
           party_->state_.load(std::memory_order_relaxed), wakeup_mask_);
     }
 
-    bool PollParticipantPromise() override;
-    void Destroy() override;
-
    private:
     friend class Party;
     friend class Arena;
 
+    bool PollParticipantPromise() override;
+    void Destroy() override;
+
     explicit SpawnSerializer(Party* party)
         : next_(party->arena()), party_(party) {}
 
+    // Queue of promises to be executed after the active promise resolves.
     ArenaSpsc<Participant*, false> next_;
+    // The promise currently being executed.
     Participant* active_ = nullptr;
+    // The wakeup mask for this serializers participant.
+    // Allows us to wake up the party when a new promise is added to the queue.
     WakeupMask wakeup_mask_;
+    // The party this serializer is running on.
     Party* const party_;
   };
 

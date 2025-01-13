@@ -200,6 +200,15 @@ class CallSpine final : public Party {
 
   // Spawned operations: these are callable from /outside/ the call; they spawn
   // an operation into the call and execute that operation.
+  //
+  // Server -> client operations are serialized in the order they are spawned.
+  // Client -> server operations are serialized in the order they are spawned.
+  //
+  // It's required that at most one thread call a server->client operation at a
+  // time, and likewise for client->server operations. There is no requirement
+  // that there be synchronization between the two directionalities.
+  //
+  // No ordering is given between the `Spawn` and the basic operations.
 
   void SpawnPushServerInitialMetadata(ServerMetadataHandle md) {
     server_to_client_serializer()->Spawn(
