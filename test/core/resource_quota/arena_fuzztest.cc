@@ -49,7 +49,7 @@ void ArenaSpscIsAQueue(std::vector<QueueOp> ops) {
           }
         },
         [&](Push push) {
-          //      q.push(push.value);
+          q.push(push.value);
           spsc.Push(push.value);
         });
   }
