@@ -195,7 +195,7 @@ class PickFirst final : public LoadBalancingPolicy {
 
         // TODO(roth): Once we remove pollset_set, we should no longer
         // need to hold a ref to PickFirst.  Instead, we can make this a
-        // raw pointer and put it in an absl::variant with subchannel_data_.
+        // raw pointer and put it in an std::variant with subchannel_data_.
         RefCountedPtr<PickFirst> pick_first_;
 
         RefCountedPtr<SubchannelInterface> subchannel_;

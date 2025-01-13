@@ -24,7 +24,7 @@ def cc_grpc_library(
         proto_only = False,
         well_known_protos = False,
         generate_mocks = False,
-        use_external = False,
+        use_external = False,  # @unused
         grpc_only = False,
         **kwargs):
     """Generates C++ grpc classes for services defined in a proto file.
