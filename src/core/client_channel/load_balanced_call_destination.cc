@@ -62,22 +62,22 @@ T HandlePickResult(
     std::function<T(LoadBalancingPolicy::PickResult::Fail*)> fail_func,
     std::function<T(LoadBalancingPolicy::PickResult::Drop*)> drop_func) {
   auto* complete_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Complete>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Complete>(&result->result);
   if (complete_pick != nullptr) {
     return complete_func(complete_pick);
   }
   auto* queue_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Queue>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Queue>(&result->result);
   if (queue_pick != nullptr) {
     return queue_func(queue_pick);
   }
   auto* fail_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Fail>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Fail>(&result->result);
   if (fail_pick != nullptr) {
     return fail_func(fail_pick);
   }
   auto* drop_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
   CHECK(drop_pick != nullptr);
   return drop_func(drop_pick);
 }

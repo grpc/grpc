@@ -154,7 +154,7 @@ tail${i}:
         Construct(&${"prior."*(n-2-i)}current_promise, std::move(next_promise));
         state = State::kState${i+1};
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
 % endfor
       default:
       case State::kState${n-1}: {

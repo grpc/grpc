@@ -41,6 +41,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "src/core/filter/blackboard.h"
+#include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -76,83 +77,7 @@ namespace grpc_core {
 
 class ChannelFilter {
  public:
-  class Args {
-   public:
-    Args() : Args(nullptr, nullptr) {}
-    Args(grpc_channel_stack* channel_stack,
-         grpc_channel_element* channel_element,
-         const Blackboard* old_blackboard = nullptr,
-         Blackboard* new_blackboard = nullptr)
-        : impl_(ChannelStackBased{channel_stack, channel_element}),
-          old_blackboard_(old_blackboard),
-          new_blackboard_(new_blackboard) {}
-    // While we're moving to call-v3 we need to have access to
-    // grpc_channel_stack & friends here. That means that we can't rely on this
-    // type signature from interception_chain.h, which means that we need a way
-    // of constructing this object without naming it ===> implicit construction.
-    // TODO(ctiller): remove this once we're fully on call-v3
-    // NOLINTNEXTLINE(google-explicit-constructor)
-    Args(size_t instance_id, const Blackboard* old_blackboard = nullptr,
-         Blackboard* new_blackboard = nullptr)
-        : impl_(V3Based{instance_id}),
-          old_blackboard_(old_blackboard),
-          new_blackboard_(new_blackboard) {}
-
-    ABSL_DEPRECATED("Direct access to channel stack is deprecated")
-    grpc_channel_stack* channel_stack() const {
-      return absl::get<ChannelStackBased>(impl_).channel_stack;
-    }
-
-    // Get the instance id of this filter.
-    // This id is unique amongst all filters /of the same type/ and densely
-    // packed (starting at 0) for a given channel stack instantiation.
-    // eg. for a stack with filter types A B C A B D A the instance ids would be
-    // 0 0 0 1 1 0 2.
-    // This is useful for filters that need to store per-instance data in a
-    // parallel data structure.
-    size_t instance_id() const {
-      return Match(
-          impl_,
-          [](const ChannelStackBased& cs) {
-            return grpc_channel_stack_filter_instance_number(
-                cs.channel_stack, cs.channel_element);
-          },
-          [](const V3Based& v3) { return v3.instance_id; });
-    }
-
-    // If a filter state object of type T exists for key from a previous
-    // filter stack, retains it for the new filter stack we're constructing.
-    // Otherwise, invokes create_func() to create a new filter state
-    // object for the new filter stack.  Returns the new filter state object.
-    template <typename T>
-    RefCountedPtr<T> GetOrCreateState(
-        const std::string& key,
-        absl::FunctionRef<RefCountedPtr<T>()> create_func) {
-      RefCountedPtr<T> state;
-      if (old_blackboard_ != nullptr) state = old_blackboard_->Get<T>(key);
-      if (state == nullptr) state = create_func();
-      if (new_blackboard_ != nullptr) new_blackboard_->Set(key, state);
-      return state;
-    }
-
-   private:
-    friend class ChannelFilter;
-
-    struct ChannelStackBased {
-      grpc_channel_stack* channel_stack;
-      grpc_channel_element* channel_element;
-    };
-
-    struct V3Based {
-      size_t instance_id;
-    };
-
-    using Impl = absl::variant<ChannelStackBased, V3Based>;
-    Impl impl_;
-
-    const Blackboard* old_blackboard_ = nullptr;
-    Blackboard* new_blackboard_ = nullptr;
-  };
+  using Args = FilterArgs;
 
   // Perform post-initialization step (if any).
   virtual void PostInit() {}
@@ -814,7 +739,7 @@ MakeFilterCall(Derived* derived) {
 // the call lifecycle.
 // The type of these members matters, and is selectable by the class
 // author. For $INTERCEPTOR_NAME in the above list:
-// - static const NoInterceptor $INTERCEPTOR_NAME:
+// - static inline const NoInterceptor $INTERCEPTOR_NAME:
 //   defines that this filter does not intercept this event.
 //   there is zero runtime cost added to handling that event by this filter.
 // - void $INTERCEPTOR_NAME($VALUE_TYPE&):
@@ -846,7 +771,7 @@ MakeFilterCall(Derived* derived) {
 // relevant return type listed above.
 // Finally, OnFinalize can be added to intecept call finalization.
 // It must have one of the signatures:
-// - static const NoInterceptor OnFinalize:
+// - static inline const NoInterceptor OnFinalize:
 //   the filter does not intercept call finalization.
 // - void OnFinalize(const grpc_call_final_info*):
 //   the filter intercepts call finalization.
@@ -1649,8 +1574,9 @@ struct ChannelFilterWithFlagsMethods {
     CHECK(args->is_last == ((kFlags & kFilterIsLast) != 0));
     auto status = F::Create(
         args->channel_args,
-        ChannelFilter::Args(args->channel_stack, elem, args->old_blackboard,
-                            args->new_blackboard));
+        ChannelFilter::Args(args->channel_stack, elem,
+                            grpc_channel_stack_filter_instance_number,
+                            args->old_blackboard, args->new_blackboard));
     if (!status.ok()) {
       new (elem->channel_data) F*(nullptr);
       return absl_status_to_grpc_error(status.status());

@@ -260,11 +260,11 @@ void XdsClusterManagerLb::ShutdownLocked() {
 }
 
 void XdsClusterManagerLb::ExitIdleLocked() {
-  for (auto& p : children_) p.second->ExitIdleLocked();
+  for (auto& [_, child] : children_) child->ExitIdleLocked();
 }
 
 void XdsClusterManagerLb::ResetBackoffLocked() {
-  for (auto& p : children_) p.second->ResetBackoffLocked();
+  for (auto& [_, child] : children_) child->ResetBackoffLocked();
 }
 
 absl::Status XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
@@ -275,18 +275,15 @@ absl::Status XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   config_ = args.config.TakeAsSubclass<XdsClusterManagerLbConfig>();
   // Deactivate the children not in the new config.
-  for (const auto& p : children_) {
-    const std::string& name = p.first;
-    ClusterChild* child = p.second.get();
+  for (const auto& [name, child] : children_) {
     if (config_->cluster_map().find(name) == config_->cluster_map().end()) {
       child->DeactivateLocked();
     }
   }
   // Add or update the children in the new config.
   std::vector<std::string> errors;
-  for (const auto& p : config_->cluster_map()) {
-    const std::string& name = p.first;
-    const RefCountedPtr<LoadBalancingPolicy::Config>& config = p.second.config;
+  for (const auto& [name, cluster] : config_->cluster_map()) {
+    const RefCountedPtr<LoadBalancingPolicy::Config>& config = cluster.config;
     auto& child = children_[name];
     if (child == nullptr) {
       child = MakeOrphanable<ClusterChild>(
@@ -322,9 +319,7 @@ void XdsClusterManagerLb::UpdateStateLocked() {
   size_t num_ready = 0;
   size_t num_connecting = 0;
   size_t num_idle = 0;
-  for (const auto& p : children_) {
-    const auto& child_name = p.first;
-    const ClusterChild* child = p.second.get();
+  for (const auto& [child_name, child] : children_) {
     // Skip the children that are not in the latest update.
     if (config_->cluster_map().find(child_name) ==
         config_->cluster_map().end()) {
@@ -365,8 +360,7 @@ void XdsClusterManagerLb::UpdateStateLocked() {
       << "[xds_cluster_manager_lb " << this << "] connectivity changed to "
       << ConnectivityStateName(connectivity_state);
   ClusterPicker::ClusterMap cluster_map;
-  for (const auto& p : config_->cluster_map()) {
-    const std::string& cluster_name = p.first;
+  for (const auto& [cluster_name, _] : config_->cluster_map()) {
     RefCountedPtr<SubchannelPicker>& child_picker = cluster_map[cluster_name];
     child_picker = children_[cluster_name]->picker();
     if (child_picker == nullptr) {

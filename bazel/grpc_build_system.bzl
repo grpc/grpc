@@ -162,7 +162,7 @@ def grpc_cc_library(
         defines = [],
         deps = [],
         select_deps = None,
-        standalone = False,
+        standalone = False,  # @unused
         language = "C++",
         testonly = False,
         visibility = None,
@@ -624,6 +624,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         srcs = srcs,
         deps = core_deps,
         tags = tags,
+        alwayslink = 1,
     )
 
     for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
@@ -832,7 +833,7 @@ def grpc_objc_library(
         srcs = srcs,
         non_arc_srcs = non_arc_srcs,
         textual_hdrs = textual_hdrs,
-        copts = GRPC_DEFAULT_COPTS + ["-ObjC++", "-std=gnu++14"],
+        copts = GRPC_DEFAULT_COPTS + ["-ObjC++", "-std=gnu++17"],
         testonly = testonly,
         data = data,
         deps = deps,

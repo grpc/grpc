@@ -164,7 +164,7 @@ auto ChaoticGoodServerTransport::SendCallBody(
   // Continuously send client frame with client to server
   // messages.
   return ForEach(
-      OutgoingMessages(call_initiator),
+      MessagesFrom(call_initiator),
       // Capture the call_initator to ensure the underlying call
       // spine is alive until the SendFragment promise completes.
       [stream_id, outgoing_frames, call_initiator,
@@ -297,10 +297,10 @@ auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
             auto& buffers = std::get<1>(frame_bytes);
             return Switch(
                 frame_header.type,
-                Case<FrameType, FrameType::kSettings>([]() -> absl::Status {
+                Case<FrameType::kSettings>([]() -> absl::Status {
                   return absl::InternalError("Unexpected settings frame");
                 }),
-                Case<FrameType, FrameType::kFragment>(
+                Case<FrameType::kFragment>(
                     [this, &frame_header, &buffers, transport]() {
                       return If(
                           frame_header.flags.is_set(0),
@@ -313,7 +313,7 @@ auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
                                 frame_header, std::move(buffers), *transport);
                           });
                     }),
-                Case<FrameType, FrameType::kCancel>([this, &frame_header]() {
+                Case<FrameType::kCancel>([this, &frame_header]() {
                   absl::optional<CallInitiator> call_initiator =
                       ExtractStream(frame_header.stream_id);
                   GRPC_TRACE_LOG(chaotic_good, INFO)

@@ -21,6 +21,8 @@
 #include "absl/random/bit_gen_ref.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/call/yodel/yodel_test.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
@@ -30,6 +32,7 @@ namespace grpc_core {
 struct ClientAndServerTransportPair {
   OrphanablePtr<Transport> client;
   OrphanablePtr<Transport> server;
+  bool is_slow = false;
 };
 
 using TransportFixture = absl::AnyInvocable<ClientAndServerTransportPair(
@@ -48,6 +51,25 @@ class TransportTest : public YodelTest {
 
   CallHandler TickUntilServerCall();
 
+  ChannelArgs MakeChannelArgs() {
+    return CoreConfiguration::Get()
+        .channel_args_preconditioning()
+        .PreconditionChannelArgs(nullptr)
+        .SetObject<grpc_event_engine::experimental::EventEngine>(
+            event_engine());
+  }
+
+  template <typename... PromiseEndpoints>
+  chaotic_good::Config MakeConfig(PromiseEndpoints... promise_endpoints) {
+    chaotic_good::Config config(MakeChannelArgs());
+    auto name_endpoint = [i = 0]() mutable { return absl::StrCat(++i); };
+    std::vector<int> this_is_only_here_to_unpack_the_following_statement{
+        (config.ServerAddPendingDataEndpoint(ImmediateConnection(
+             name_endpoint(), std::move(promise_endpoints))),
+         0)...};
+    return config;
+  }
+
  private:
   class ServerCallDestination final : public UnstartedCallDestination {
    public:
@@ -59,7 +81,12 @@ class TransportTest : public YodelTest {
     std::queue<CallHandler> handlers_;
   };
 
-  void InitTest() override { transport_pair_ = fixture_(event_engine()); }
+  void InitTest() override {
+    transport_pair_ = fixture_(event_engine());
+    if (transport_pair_.is_slow) {
+      SetMaxRandomMessageSize(1024);
+    }
+  }
 
   void Shutdown() override {
     transport_pair_.client.reset();

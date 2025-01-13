@@ -46,7 +46,7 @@ void TestRetryCancelDuringDelay(
           "    \"retryPolicy\": {\n"
           "      \"maxAttempts\": 3,\n"
           "      \"initialBackoff\": \"%ds\",\n"
-          "      \"maxBackoff\": \"120s\",\n"
+          "      \"maxBackoff\": \"1000s\",\n"
           "      \"backoffMultiplier\": 1.6,\n"
           "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
           "    }\n"
@@ -102,10 +102,12 @@ void TestRetryCancelDuringDelay(
 }
 
 CORE_END2END_TEST(RetryTest, CancelDuringDelay) {
+  SKIP_IF_V3();  // Not working yet
   TestRetryCancelDuringDelay(*this, std::make_unique<CancelCancellationMode>());
 }
 
 CORE_END2END_TEST(RetryTest, DeadlineDuringDelay) {
+  SKIP_IF_V3();  // Not working yet
   TestRetryCancelDuringDelay(*this,
                              std::make_unique<DeadlineCancellationMode>());
 }

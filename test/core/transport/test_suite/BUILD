@@ -81,6 +81,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chaotic_good_one_byte_chunk_fixture",
+    testonly = 1,
+    srcs = ["chaotic_good_one_byte_chunk_fixture.cc"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    deps = [
+        "chaotic_good_fixture_helpers",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
     name = "test",
     testonly = 1,
     srcs = ["transport_test.cc"],
@@ -92,6 +106,7 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
+        "//src/core:chaotic_good_config",
         "//test/core/call/yodel:yodel_test",
     ],
 )
@@ -160,5 +175,16 @@ grpc_transport_test(
         ":chaotic_good_single_connection_fixture",
         ":no_op",
         ":stress",
+    ],
+)
+
+grpc_transport_test(
+    name = "chaotic_good_one_byte_chunk",
+    deps = [
+        ":call_content",
+        ":call_shapes",
+        ":chaotic_good_one_byte_chunk_fixture",
+        ":no_op",
+        # explicity exclude: ":stress" -- too expensive for this fixture
     ],
 )

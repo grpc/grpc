@@ -412,8 +412,8 @@ void HealthProducer::OnConnectivityStateChange(grpc_connectivity_state state,
   }
   state_ = state;
   status_ = status;
-  for (const auto& p : health_checkers_) {
-    p.second->OnConnectivityStateChangeLocked(state, status);
+  for (const auto& [_, health_checker] : health_checkers_) {
+    health_checker->OnConnectivityStateChangeLocked(state, status);
   }
   for (HealthWatcher* watcher : non_health_watchers_) {
     watcher->Notify(state, status);

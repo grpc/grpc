@@ -98,7 +98,7 @@ TEST(SetTest, OutOfScopeErrorCode) {
 }
 
 TEST(SetTest, ValidScopeErrorCode) {
-  for (int c = StatusCode::OK; c <= StatusCode::UNAUTHENTICATED; c++) {
+  for (int c = StatusCode::CANCELLED; c <= StatusCode::UNAUTHENTICATED; c++) {
     google::rpc::Status expected;
     expected.set_code(c);
     expected.set_message("I am an error message");

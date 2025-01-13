@@ -39,7 +39,7 @@ absl::Status grpc_chttp2_security_frame_parser_parse(void* parser,
 
   grpc_chttp2_security_frame_parser* p =
       static_cast<grpc_chttp2_security_frame_parser*>(parser);
-  p->payload.Append(grpc_core::Slice(slice));
+  p->payload.Append(grpc_core::Slice(grpc_core::CSliceRef(slice)));
 
   if (is_last) {
     // Send security frame payload to endpoint.
@@ -59,8 +59,6 @@ absl::Status grpc_chttp2_security_frame_parser_begin_frame(
 void grpc_chttp2_security_frame_create(grpc_slice_buffer* payload,
                                        uint32_t length,
                                        grpc_slice_buffer* frame) {
-  // does this frame need padding for security?
-  // do we need to worry about max frame size? it's 16 bytes
   grpc_slice hdr;
   uint8_t* p;
   static const size_t header_size = 9;

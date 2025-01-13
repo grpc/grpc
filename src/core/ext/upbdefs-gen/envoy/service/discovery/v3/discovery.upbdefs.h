@@ -34,6 +34,11 @@ UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_ResourceName_getmsgd
   return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.ResourceName");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_ResourceError_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.ResourceError");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.DiscoveryRequest");
