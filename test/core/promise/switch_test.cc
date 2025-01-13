@@ -51,14 +51,19 @@ TEST(SwitchTest, ThreeImmediateCases) {
                     return -1;
                   }));
   };
+
   EXPECT_EQ(test_switch(0)(), Poll<int>(-1));
   EXPECT_STREQ(execution_order.c_str(), "D");
+
   EXPECT_EQ(test_switch(1)(), Poll<int>(100));
   EXPECT_STREQ(execution_order.c_str(), "1");
+
   EXPECT_EQ(test_switch(2)(), Poll<int>(200));
   EXPECT_STREQ(execution_order.c_str(), "2");
+
   EXPECT_EQ(test_switch(3)(), Poll<int>(300));
   EXPECT_STREQ(execution_order.c_str(), "3");
+
   EXPECT_EQ(test_switch(4)(), Poll<int>(-1));
   EXPECT_STREQ(execution_order.c_str(), "D");
 }
@@ -117,15 +122,15 @@ TEST(SwitchTest, ThreeCasesFromEnum) {
 
   auto test_switch = [&execution_order](X value) {
     execution_order.clear();
-    return Switch(value, Case<X, X::A>([&execution_order] {
+    return Switch(value, Case<X::A>([&execution_order] {
                     absl::StrAppend(&execution_order, "A");
                     return 100;
                   }),
-                  Case<X, X::B>([&execution_order] {
+                  Case<X::B>([&execution_order] {
                     absl::StrAppend(&execution_order, "B");
                     return 200;
                   }),
-                  Case<X, X::C>([&execution_order] {
+                  Case<X::C>([&execution_order] {
                     absl::StrAppend(&execution_order, "C");
                     return 300;
                   }),
