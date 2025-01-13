@@ -213,12 +213,3 @@ def label_significance_on_pr(name, change, labels=_CHANGE_LABELS):
         json=new,
     )
     print("Result of setting labels on PR:", resp.text)
-
-
-def label_increase_decrease_on_pr(name, change, significant):
-    if change <= -significant:
-        label_significance_on_pr(name, -1, _INCREASE_DECREASE)
-    elif change >= significant:
-        label_significance_on_pr(name, 1, _INCREASE_DECREASE)
-    else:
-        label_significance_on_pr(name, 0, _INCREASE_DECREASE)
