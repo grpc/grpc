@@ -49,8 +49,7 @@
 #include "src/core/util/strerror.h"
 #include "src/core/util/time.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 PosixEngineListenerImpl::PosixEngineListenerImpl(
     PosixEventEngineWithFdSupport::PosixAcceptCallback on_accept,
@@ -330,7 +329,6 @@ PosixEngineListenerImpl::~PosixEngineListenerImpl() {
   }
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_POSIX_SOCKET_TCP

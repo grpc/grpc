@@ -63,13 +63,6 @@ namespace grpc_core {
 const grpc_channel_filter ServerAuthFilter::kFilter =
     MakePromiseBasedFilter<ServerAuthFilter, FilterEndpoint::kServer>();
 
-const NoInterceptor ServerAuthFilter::Call::OnClientToServerMessage;
-const NoInterceptor ServerAuthFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ServerAuthFilter::Call::OnServerToClientMessage;
-const NoInterceptor ServerAuthFilter::Call::OnServerInitialMetadata;
-const NoInterceptor ServerAuthFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor ServerAuthFilter::Call::OnFinalize;
-
 namespace {
 
 class ArrayEncoder {

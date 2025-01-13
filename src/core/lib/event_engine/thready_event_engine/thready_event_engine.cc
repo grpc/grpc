@@ -25,8 +25,7 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 void ThreadyEventEngine::Asynchronously(absl::AnyInvocable<void()> fn) {
   grpc_core::Thread t("thready_event_engine", std::move(fn), nullptr,
@@ -180,5 +179,4 @@ void ThreadyEventEngine::ThreadyDNSResolver::LookupTXT(
       name);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

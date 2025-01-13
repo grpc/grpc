@@ -220,7 +220,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "if_test",
     srcs = ["if_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -245,7 +248,11 @@ grpc_cc_test(
 grpc_cc_test(
     name = "loop_test",
     srcs = ["loop_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/strings",
+    ],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -268,6 +275,7 @@ grpc_cc_test(
         "poll_matcher",
         "//src/core:join",
         "//src/core:poll",
+        "//src/core:status_flag",
     ],
 )
 

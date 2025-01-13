@@ -70,16 +70,16 @@ class LrsClient : public DualRefCounted<LrsClient> {
 
       Snapshot& operator+=(const Snapshot& other) {
         uncategorized_drops += other.uncategorized_drops;
-        for (const auto& p : other.categorized_drops) {
-          categorized_drops[p.first] += p.second;
+        for (const auto& [category, drops] : other.categorized_drops) {
+          categorized_drops[category] += drops;
         }
         return *this;
       }
 
       bool IsZero() const {
         if (uncategorized_drops != 0) return false;
-        for (const auto& p : categorized_drops) {
-          if (p.second != 0) return false;
+        for (const auto& [_, drops] : categorized_drops) {
+          if (drops != 0) return false;
         }
         return true;
       }
@@ -166,8 +166,8 @@ class LrsClient : public DualRefCounted<LrsClient> {
         cpu_utilization += other.cpu_utilization;
         mem_utilization += other.mem_utilization;
         application_utilization += other.application_utilization;
-        for (const auto& p : other.backend_metrics) {
-          backend_metrics[p.first] += p.second;
+        for (const auto& [name, value] : other.backend_metrics) {
+          backend_metrics[name] += value;
         }
         return *this;
       }
@@ -179,8 +179,8 @@ class LrsClient : public DualRefCounted<LrsClient> {
             !application_utilization.IsZero()) {
           return false;
         }
-        for (const auto& p : backend_metrics) {
-          if (!p.second.IsZero()) return false;
+        for (const auto& [_, value] : backend_metrics) {
+          if (!value.IsZero()) return false;
         }
         return true;
       }

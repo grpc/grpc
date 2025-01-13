@@ -94,6 +94,10 @@ TEST(SwitchTest, Pending) {
                     absl::StrAppend(&execution_order, "D");
                     return -1;
                   }));
+  auto test_switch = [](int d) {
+    return Switch(d, Case<42>([]() -> Poll<int> { return Pending{}; }),
+                  Case<1>([] { return 25; }), Case<2>([] { return 95; }),
+                  Case<3>([] { return 68; }), Default([] { return 52; }));
   };
 
   EXPECT_EQ(test_switch(0)(), Poll<int>(Pending{}));

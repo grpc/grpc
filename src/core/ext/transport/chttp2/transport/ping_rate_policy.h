@@ -20,8 +20,8 @@
 
 #include <iosfwd>
 #include <string>
+#include <variant>
 
-#include "absl/types/variant.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 
@@ -49,7 +49,7 @@ class Chttp2PingRatePolicy {
     }
   };
   using RequestSendPingResult =
-      absl::variant<SendGranted, TooManyRecentPings, TooSoon>;
+      std::variant<SendGranted, TooManyRecentPings, TooSoon>;
 
   // Request that one ping be sent.
   // Returns:
