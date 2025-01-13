@@ -46,8 +46,7 @@
 #endif
 #endif  // ifdef GRPC_LINUX_ERRQUEUE
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 struct PosixTcpOptions {
   static constexpr int kDefaultReadChunkSize = 8192;
@@ -323,7 +322,6 @@ struct PosixSocketWrapper::PosixSocketCreateResult {
 
 bool SetSocketDualStack(int fd);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H

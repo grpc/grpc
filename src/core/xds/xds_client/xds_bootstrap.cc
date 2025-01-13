@@ -34,4 +34,13 @@ bool XdsFederationEnabled() {
   return parse_succeeded && parsed_value;
 }
 
+// TODO(roth): Remove this once the feature passes interop tests.
+bool XdsDataErrorHandlingEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
 }  // namespace grpc_core

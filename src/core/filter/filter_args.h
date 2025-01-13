@@ -51,7 +51,7 @@ class FilterArgs {
 
   ABSL_DEPRECATED("Direct access to channel stack is deprecated")
   grpc_channel_stack* channel_stack() const {
-    return absl::get<ChannelStackBased>(impl_).channel_stack;
+    return std::get<ChannelStackBased>(impl_).channel_stack;
   }
 
   // Get the instance id of this filter.
@@ -100,7 +100,7 @@ class FilterArgs {
     size_t instance_id;
   };
 
-  using Impl = absl::variant<ChannelStackBased, V3Based>;
+  using Impl = std::variant<ChannelStackBased, V3Based>;
   Impl impl_;
 
   const Blackboard* old_blackboard_ = nullptr;

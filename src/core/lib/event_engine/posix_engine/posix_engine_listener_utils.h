@@ -20,8 +20,7 @@
 #include "absl/status/statusor.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // This interface exists to allow different EventEngines to implement different
 // custom interception operations while a socket is Appended. The
@@ -83,7 +82,6 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_LISTENER_UTILS_H

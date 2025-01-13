@@ -28,20 +28,19 @@
 
 #include <list>
 #include <memory>
+#include <variant>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/sync.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class AresResolver : public RefCountedDNSResolverInterface {
  public:
@@ -89,9 +88,9 @@ class AresResolver : public RefCountedDNSResolverInterface {
   using FdNodeList = std::list<std::unique_ptr<FdNode>>;
 
   using CallbackType =
-      absl::variant<EventEngine::DNSResolver::LookupHostnameCallback,
-                    EventEngine::DNSResolver::LookupSRVCallback,
-                    EventEngine::DNSResolver::LookupTXTCallback>;
+      std::variant<EventEngine::DNSResolver::LookupHostnameCallback,
+                   EventEngine::DNSResolver::LookupSRVCallback,
+                   EventEngine::DNSResolver::LookupTXTCallback>;
 
   void CheckSocketsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   void MaybeStartTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
@@ -125,8 +124,7 @@ class AresResolver : public RefCountedDNSResolverInterface {
   std::shared_ptr<EventEngine> event_engine_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 // Exposed in this header for C-core tests only
 extern void (*event_engine_grpc_ares_test_only_inject_config)(
