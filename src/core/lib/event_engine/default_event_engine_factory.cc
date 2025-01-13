@@ -22,38 +22,32 @@
 #if defined(GPR_WINDOWS)
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
   return std::make_unique<WindowsEventEngine>();
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 #elif defined(GRPC_CFSTREAM)
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
   return std::make_unique<CFEventEngine>();
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 #else
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
   return std::make_unique<PosixEventEngine>();
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif

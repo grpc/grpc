@@ -92,8 +92,7 @@
 
 #define MAX_READ_IOVEC 64
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 
@@ -1361,13 +1360,11 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
                                          std::move(allocator), options);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* /*handle*/, PosixEngineClosure* /*on_shutdown*/,
@@ -1376,7 +1373,6 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
   grpc_core::Crash("Cannot create PosixEndpoint on this platform");
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_POSIX_SOCKET_TCP

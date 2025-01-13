@@ -40,8 +40,7 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/sync.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class AresResolver : public RefCountedDNSResolverInterface {
  public:
@@ -125,8 +124,7 @@ class AresResolver : public RefCountedDNSResolverInterface {
   std::shared_ptr<EventEngine> event_engine_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 // Exposed in this header for C-core tests only
 extern void (*event_engine_grpc_ares_test_only_inject_config)(

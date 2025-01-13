@@ -82,7 +82,7 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
         if (filter->allow_put_requests_) {
           break;
         }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case HttpMethodMetadata::kInvalid:
       case HttpMethodMetadata::kGet:
         return MalformedRequest("Bad method header");
