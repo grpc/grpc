@@ -14,10 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 </%doc>
 
-template <template<typename> class Traits, ${",".join(f"typename F{i}" for i in range(0,n-1))}>
+template <template<typename> class Traits, typename Arg, ${",".join(f"typename F{i}" for i in range(0,n-1))}>
 auto SeqFactoryMap(${",".join(f"F{i}&& f{i}" for i in range(0,n-1))}) {
-  return [${",".join(f"f{i} = std::forward<F{i}>(f{i})" for i in range(0,n-1))}](auto x) mutable {
-    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap<Traits>(next.Make(std::move(x)), ${",".join(f"std::move(f{i})" for i in range(1,n-1))});
-  };
+  if constexpr (!std::is_same_v<Arg, void>) {
+    return [${",".join(f"f{i} = std::forward<F{i}>(f{i})" for i in range(0,n-1))}](Arg x) mutable {
+      OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(std::move(x)), ${",".join(f"std::move(f{i})" for i in range(1,n-1))});
+    };
+  } else {
+    return [${",".join(f"f{i} = std::forward<F{i}>(f{i})" for i in range(0,n-1))}]() mutable {
+      OncePromiseFactory<void, F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(), ${",".join(f"std::move(f{i})" for i in range(1,n-1))});
+    };
+  }
 }

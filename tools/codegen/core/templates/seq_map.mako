@@ -15,7 +15,7 @@ limitations under the License.
 </%doc>
 
 template <template<typename> class Traits, typename P, ${",".join(f"typename F{i}" for i in range(0,n-1))}>
-auto SeqMap(P&& p, ${",".join(f"F{i}&& f{i}" for i in range(0,n-1))}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, ${",".join(f"F{i}&& f{i}" for i in range(0,n-1))}) {
 using Types = SeqStateTypes<Traits, P, ${",".join(f"F{i}" for i in range(0,n-1))}>;
 % for i in range(0,n-1):
 using PromiseResult${i} = typename Types::PromiseResult${i};
@@ -35,12 +35,13 @@ using Result = typename PromiseResultTraits${n-1}::WrappedType;
             if (!PromiseResultTraits${i}::IsOk(r${i})) {
                 return PromiseResultTraits${i}::template ReturnValue<Result>(std::move(r${i}));
             }
-            PromiseResult${i+1} r${i+1} = MakeAndCall(std::move(r${i}), f${i});
+            PromiseResult${i+1} r${i+1} =
+                PromiseResultTraits${i}::CallFactoryThenPromise(&f${i}, std::move(r${i}));
 % endfor
             if (!PromiseResultTraits${n-2}::IsOk(r${n-2})) {
                 return PromiseResultTraits${n-2}::template ReturnValue<Result>(std::move(r${n-2}));
             }
-            return MakeAndCall(std::move(r${n-2}), f${n-2});
+            return Result(PromiseResultTraits${n-2}::CallFactoryThenPromise(&f${n-2}, std::move(r${n-2})));
         }
     );
 }

@@ -100,8 +100,8 @@ struct SeqStateTypes;
 seq_map_decls = """
 template <template<typename> class Traits, typename P, typename... F>
 using SeqMapType = decltype(SeqMap<Traits>(std::declval<P>(), std::declval<F>()...));
-template <template<typename> class Traits, typename... F>
-using SeqFactoryMapType = decltype(SeqFactoryMap<Traits>(std::declval<F>()...));
+template <template<typename> class Traits, typename Arg, typename... F>
+using SeqFactoryMapType = decltype(SeqFactoryMap<Traits, Arg>(std::declval<F>()...));
 """
 
 end_matter = """
@@ -149,8 +149,9 @@ def finish_fold(fold, type_args, instantiate_args, f):
     if fold[0] != -1:
       fs = ", ".join(f"F{i}" for i in fold)
       fwd_fs = ", ".join(f"std::forward<F{i}>(f{i})" for i in fold)
-      type_args.append(f"SeqFactoryMapType<Traits, {fs}>")
-      instantiate_args.append(f"SeqFactoryMap<Traits>({fwd_fs})")
+      arg = f"typename Types::PromiseResultTraits{fold[0]}::UnwrappedType"
+      type_args.append(f"SeqFactoryMapType<Traits, {arg}, {fs}>")
+      instantiate_args.append(f"SeqFactoryMap<Traits, {arg}>({fwd_fs})")
     else:
       fs = ", ".join(f"F{i}" for i in fold[1:])
       fwd_fs = ", ".join(f"std::forward<F{i}>(f{i})" for i in fold[1:])
@@ -164,13 +165,15 @@ def gen_opt_seq_state(n, f):
     fwd_fs = ", ".join(f"std::forward<F{i}>(f{i})" for i in range(n-1))
     if n > 7:
         print(f"template <template <typename> class Traits, typename P, {typename_fs}>", file=f)
-        print(f"auto FoldSeqState(P&& p, {args_fs}, DebugLocation whence) {{", file=f)
+        print(f"GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, {args_fs}, DebugLocation whence) {{", file=f)
         print(f"  return SeqState<Traits, P, {fs}>(std::forward<P>(p), {fwd_fs}, whence);", file=f)
         print("}", file=f)
         return
 
     print(f"template <template <typename> class Traits, uint32_t kInstantBits, typename P, {typename_fs}>", file=f)
-    print(f"auto FoldSeqStateImpl(P&& p, {args_fs}, DebugLocation whence) {{", file=f)
+    print(f"GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqStateImpl(P&& p, {args_fs}, DebugLocation whence) {{", file=f)
+    if n > 2:
+      print(f"  using Types = SeqStateTypes<Traits, P, {fs}>;", file=f)
     for i in range(0, 1<<(n-1)):
       type_args = []
       instantiate_args = []
@@ -192,7 +195,7 @@ def gen_opt_seq_state(n, f):
     print("}", file=f)
 
     print(f"template <template <typename> class Traits, typename P, {typename_fs}>", file=f)
-    print(f"auto FoldSeqState(P&& p, {args_fs}, DebugLocation whence) {{", file=f)
+    print(f"GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, {args_fs}, DebugLocation whence) {{", file=f)
     print(f"  using Types = SeqStateTypes<Traits, P, {fs}>;", file=f)
     instant_bits = ' | '.join(
       f"(Types::NextFactory{i}::kInstantaneousPromise? {1<<i} : 0)"

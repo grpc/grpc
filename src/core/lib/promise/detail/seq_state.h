@@ -5656,7 +5656,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
 };
 
 template <template <typename> class Traits, typename P, typename F0>
-auto SeqMap(P&& p, F0&& f0) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0) {
   using Types = SeqStateTypes<Traits, P, F0>;
   using PromiseResult0 = typename Types::PromiseResult0;
   using PromiseResultTraits0 = typename Types::PromiseResultTraits0;
@@ -5670,13 +5670,14 @@ auto SeqMap(P&& p, F0&& f0) {
           return PromiseResultTraits0::template ReturnValue<Result>(
               std::move(r0));
         }
-        return MakeAndCall(std::move(r0), f0);
+        return Result(
+            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0)));
       });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
           typename F1>
-auto SeqMap(P&& p, F0&& f0, F1&& f1) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1) {
   using Types = SeqStateTypes<Traits, P, F0, F1>;
   using PromiseResult0 = typename Types::PromiseResult0;
   using PromiseResult1 = typename Types::PromiseResult1;
@@ -5694,18 +5695,21 @@ auto SeqMap(P&& p, F0&& f0, F1&& f1) {
           return PromiseResultTraits0::template ReturnValue<Result>(
               std::move(r0));
         }
-        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        PromiseResult1 r1 =
+            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
         if (!PromiseResultTraits1::IsOk(r1)) {
           return PromiseResultTraits1::template ReturnValue<Result>(
               std::move(r1));
         }
-        return MakeAndCall(std::move(r1), f1);
+        return Result(
+            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1)));
       });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2>
-auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
+                                                 F2&& f2) {
   using Types = SeqStateTypes<Traits, P, F0, F1, F2>;
   using PromiseResult0 = typename Types::PromiseResult0;
   using PromiseResult1 = typename Types::PromiseResult1;
@@ -5727,23 +5731,27 @@ auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2) {
           return PromiseResultTraits0::template ReturnValue<Result>(
               std::move(r0));
         }
-        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        PromiseResult1 r1 =
+            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
         if (!PromiseResultTraits1::IsOk(r1)) {
           return PromiseResultTraits1::template ReturnValue<Result>(
               std::move(r1));
         }
-        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        PromiseResult2 r2 =
+            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
         if (!PromiseResultTraits2::IsOk(r2)) {
           return PromiseResultTraits2::template ReturnValue<Result>(
               std::move(r2));
         }
-        return MakeAndCall(std::move(r2), f2);
+        return Result(
+            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2)));
       });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3>
-auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
+                                                 F2&& f2, F3&& f3) {
   using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3>;
   using PromiseResult0 = typename Types::PromiseResult0;
   using PromiseResult1 = typename Types::PromiseResult1;
@@ -5769,28 +5777,33 @@ auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3) {
           return PromiseResultTraits0::template ReturnValue<Result>(
               std::move(r0));
         }
-        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        PromiseResult1 r1 =
+            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
         if (!PromiseResultTraits1::IsOk(r1)) {
           return PromiseResultTraits1::template ReturnValue<Result>(
               std::move(r1));
         }
-        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        PromiseResult2 r2 =
+            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
         if (!PromiseResultTraits2::IsOk(r2)) {
           return PromiseResultTraits2::template ReturnValue<Result>(
               std::move(r2));
         }
-        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        PromiseResult3 r3 =
+            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
         if (!PromiseResultTraits3::IsOk(r3)) {
           return PromiseResultTraits3::template ReturnValue<Result>(
               std::move(r3));
         }
-        return MakeAndCall(std::move(r3), f3);
+        return Result(
+            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3)));
       });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4>
-auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
+                                                 F2&& f2, F3&& f3, F4&& f4) {
   using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4>;
   using PromiseResult0 = typename Types::PromiseResult0;
   using PromiseResult1 = typename Types::PromiseResult1;
@@ -5820,33 +5833,40 @@ auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4) {
           return PromiseResultTraits0::template ReturnValue<Result>(
               std::move(r0));
         }
-        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        PromiseResult1 r1 =
+            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
         if (!PromiseResultTraits1::IsOk(r1)) {
           return PromiseResultTraits1::template ReturnValue<Result>(
               std::move(r1));
         }
-        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        PromiseResult2 r2 =
+            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
         if (!PromiseResultTraits2::IsOk(r2)) {
           return PromiseResultTraits2::template ReturnValue<Result>(
               std::move(r2));
         }
-        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        PromiseResult3 r3 =
+            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
         if (!PromiseResultTraits3::IsOk(r3)) {
           return PromiseResultTraits3::template ReturnValue<Result>(
               std::move(r3));
         }
-        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        PromiseResult4 r4 =
+            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
         if (!PromiseResultTraits4::IsOk(r4)) {
           return PromiseResultTraits4::template ReturnValue<Result>(
               std::move(r4));
         }
-        return MakeAndCall(std::move(r4), f4);
+        return Result(
+            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4)));
       });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5>
-auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
+                                                 F2&& f2, F3&& f3, F4&& f4,
+                                                 F5&& f5) {
   using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5>;
   using PromiseResult0 = typename Types::PromiseResult0;
   using PromiseResult1 = typename Types::PromiseResult1;
@@ -5880,40 +5900,47 @@ auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5) {
           return PromiseResultTraits0::template ReturnValue<Result>(
               std::move(r0));
         }
-        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        PromiseResult1 r1 =
+            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
         if (!PromiseResultTraits1::IsOk(r1)) {
           return PromiseResultTraits1::template ReturnValue<Result>(
               std::move(r1));
         }
-        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        PromiseResult2 r2 =
+            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
         if (!PromiseResultTraits2::IsOk(r2)) {
           return PromiseResultTraits2::template ReturnValue<Result>(
               std::move(r2));
         }
-        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        PromiseResult3 r3 =
+            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
         if (!PromiseResultTraits3::IsOk(r3)) {
           return PromiseResultTraits3::template ReturnValue<Result>(
               std::move(r3));
         }
-        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        PromiseResult4 r4 =
+            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
         if (!PromiseResultTraits4::IsOk(r4)) {
           return PromiseResultTraits4::template ReturnValue<Result>(
               std::move(r4));
         }
-        PromiseResult5 r5 = MakeAndCall(std::move(r4), f4);
+        PromiseResult5 r5 =
+            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
         if (!PromiseResultTraits5::IsOk(r5)) {
           return PromiseResultTraits5::template ReturnValue<Result>(
               std::move(r5));
         }
-        return MakeAndCall(std::move(r5), f5);
+        return Result(
+            PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5)));
       });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6>
-auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-            F6&& f6) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
+                                                 F2&& f2, F3&& f3, F4&& f4,
+                                                 F5&& f5, F6&& f6) {
   using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6>;
   using PromiseResult0 = typename Types::PromiseResult0;
   using PromiseResult1 = typename Types::PromiseResult1;
@@ -5951,45 +5978,53 @@ auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
           return PromiseResultTraits0::template ReturnValue<Result>(
               std::move(r0));
         }
-        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        PromiseResult1 r1 =
+            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
         if (!PromiseResultTraits1::IsOk(r1)) {
           return PromiseResultTraits1::template ReturnValue<Result>(
               std::move(r1));
         }
-        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        PromiseResult2 r2 =
+            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
         if (!PromiseResultTraits2::IsOk(r2)) {
           return PromiseResultTraits2::template ReturnValue<Result>(
               std::move(r2));
         }
-        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        PromiseResult3 r3 =
+            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
         if (!PromiseResultTraits3::IsOk(r3)) {
           return PromiseResultTraits3::template ReturnValue<Result>(
               std::move(r3));
         }
-        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        PromiseResult4 r4 =
+            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
         if (!PromiseResultTraits4::IsOk(r4)) {
           return PromiseResultTraits4::template ReturnValue<Result>(
               std::move(r4));
         }
-        PromiseResult5 r5 = MakeAndCall(std::move(r4), f4);
+        PromiseResult5 r5 =
+            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
         if (!PromiseResultTraits5::IsOk(r5)) {
           return PromiseResultTraits5::template ReturnValue<Result>(
               std::move(r5));
         }
-        PromiseResult6 r6 = MakeAndCall(std::move(r5), f5);
+        PromiseResult6 r6 =
+            PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
         if (!PromiseResultTraits6::IsOk(r6)) {
           return PromiseResultTraits6::template ReturnValue<Result>(
               std::move(r6));
         }
-        return MakeAndCall(std::move(r6), f6);
+        return Result(
+            PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6)));
       });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7>
-auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-            F6&& f6, F7&& f7) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
+                                                 F2&& f2, F3&& f3, F4&& f4,
+                                                 F5&& f5, F6&& f6, F7&& f7) {
   using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7>;
   using PromiseResult0 = typename Types::PromiseResult0;
   using PromiseResult1 = typename Types::PromiseResult1;
@@ -6031,50 +6066,60 @@ auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
           return PromiseResultTraits0::template ReturnValue<Result>(
               std::move(r0));
         }
-        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        PromiseResult1 r1 =
+            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
         if (!PromiseResultTraits1::IsOk(r1)) {
           return PromiseResultTraits1::template ReturnValue<Result>(
               std::move(r1));
         }
-        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        PromiseResult2 r2 =
+            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
         if (!PromiseResultTraits2::IsOk(r2)) {
           return PromiseResultTraits2::template ReturnValue<Result>(
               std::move(r2));
         }
-        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        PromiseResult3 r3 =
+            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
         if (!PromiseResultTraits3::IsOk(r3)) {
           return PromiseResultTraits3::template ReturnValue<Result>(
               std::move(r3));
         }
-        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        PromiseResult4 r4 =
+            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
         if (!PromiseResultTraits4::IsOk(r4)) {
           return PromiseResultTraits4::template ReturnValue<Result>(
               std::move(r4));
         }
-        PromiseResult5 r5 = MakeAndCall(std::move(r4), f4);
+        PromiseResult5 r5 =
+            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
         if (!PromiseResultTraits5::IsOk(r5)) {
           return PromiseResultTraits5::template ReturnValue<Result>(
               std::move(r5));
         }
-        PromiseResult6 r6 = MakeAndCall(std::move(r5), f5);
+        PromiseResult6 r6 =
+            PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
         if (!PromiseResultTraits6::IsOk(r6)) {
           return PromiseResultTraits6::template ReturnValue<Result>(
               std::move(r6));
         }
-        PromiseResult7 r7 = MakeAndCall(std::move(r6), f6);
+        PromiseResult7 r7 =
+            PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6));
         if (!PromiseResultTraits7::IsOk(r7)) {
           return PromiseResultTraits7::template ReturnValue<Result>(
               std::move(r7));
         }
-        return MakeAndCall(std::move(r7), f7);
+        return Result(
+            PromiseResultTraits7::CallFactoryThenPromise(&f7, std::move(r7)));
       });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8>
-auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-            F6&& f6, F7&& f7, F8&& f8) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
+                                                 F2&& f2, F3&& f3, F4&& f4,
+                                                 F5&& f5, F6&& f6, F7&& f7,
+                                                 F8&& f8) {
   using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8>;
   using PromiseResult0 = typename Types::PromiseResult0;
   using PromiseResult1 = typename Types::PromiseResult1;
@@ -6120,55 +6165,66 @@ auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
           return PromiseResultTraits0::template ReturnValue<Result>(
               std::move(r0));
         }
-        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        PromiseResult1 r1 =
+            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
         if (!PromiseResultTraits1::IsOk(r1)) {
           return PromiseResultTraits1::template ReturnValue<Result>(
               std::move(r1));
         }
-        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        PromiseResult2 r2 =
+            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
         if (!PromiseResultTraits2::IsOk(r2)) {
           return PromiseResultTraits2::template ReturnValue<Result>(
               std::move(r2));
         }
-        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        PromiseResult3 r3 =
+            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
         if (!PromiseResultTraits3::IsOk(r3)) {
           return PromiseResultTraits3::template ReturnValue<Result>(
               std::move(r3));
         }
-        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        PromiseResult4 r4 =
+            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
         if (!PromiseResultTraits4::IsOk(r4)) {
           return PromiseResultTraits4::template ReturnValue<Result>(
               std::move(r4));
         }
-        PromiseResult5 r5 = MakeAndCall(std::move(r4), f4);
+        PromiseResult5 r5 =
+            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
         if (!PromiseResultTraits5::IsOk(r5)) {
           return PromiseResultTraits5::template ReturnValue<Result>(
               std::move(r5));
         }
-        PromiseResult6 r6 = MakeAndCall(std::move(r5), f5);
+        PromiseResult6 r6 =
+            PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
         if (!PromiseResultTraits6::IsOk(r6)) {
           return PromiseResultTraits6::template ReturnValue<Result>(
               std::move(r6));
         }
-        PromiseResult7 r7 = MakeAndCall(std::move(r6), f6);
+        PromiseResult7 r7 =
+            PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6));
         if (!PromiseResultTraits7::IsOk(r7)) {
           return PromiseResultTraits7::template ReturnValue<Result>(
               std::move(r7));
         }
-        PromiseResult8 r8 = MakeAndCall(std::move(r7), f7);
+        PromiseResult8 r8 =
+            PromiseResultTraits7::CallFactoryThenPromise(&f7, std::move(r7));
         if (!PromiseResultTraits8::IsOk(r8)) {
           return PromiseResultTraits8::template ReturnValue<Result>(
               std::move(r8));
         }
-        return MakeAndCall(std::move(r8), f8);
+        return Result(
+            PromiseResultTraits8::CallFactoryThenPromise(&f8, std::move(r8)));
       });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8, typename F9>
-auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-            F6&& f6, F7&& f7, F8&& f8, F9&& f9) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
+                                                 F2&& f2, F3&& f3, F4&& f4,
+                                                 F5&& f5, F6&& f6, F7&& f7,
+                                                 F8&& f8, F9&& f9) {
   using Types =
       SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9>;
   using PromiseResult0 = typename Types::PromiseResult0;
@@ -6219,60 +6275,72 @@ auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
           return PromiseResultTraits0::template ReturnValue<Result>(
               std::move(r0));
         }
-        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        PromiseResult1 r1 =
+            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
         if (!PromiseResultTraits1::IsOk(r1)) {
           return PromiseResultTraits1::template ReturnValue<Result>(
               std::move(r1));
         }
-        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        PromiseResult2 r2 =
+            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
         if (!PromiseResultTraits2::IsOk(r2)) {
           return PromiseResultTraits2::template ReturnValue<Result>(
               std::move(r2));
         }
-        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        PromiseResult3 r3 =
+            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
         if (!PromiseResultTraits3::IsOk(r3)) {
           return PromiseResultTraits3::template ReturnValue<Result>(
               std::move(r3));
         }
-        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        PromiseResult4 r4 =
+            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
         if (!PromiseResultTraits4::IsOk(r4)) {
           return PromiseResultTraits4::template ReturnValue<Result>(
               std::move(r4));
         }
-        PromiseResult5 r5 = MakeAndCall(std::move(r4), f4);
+        PromiseResult5 r5 =
+            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
         if (!PromiseResultTraits5::IsOk(r5)) {
           return PromiseResultTraits5::template ReturnValue<Result>(
               std::move(r5));
         }
-        PromiseResult6 r6 = MakeAndCall(std::move(r5), f5);
+        PromiseResult6 r6 =
+            PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
         if (!PromiseResultTraits6::IsOk(r6)) {
           return PromiseResultTraits6::template ReturnValue<Result>(
               std::move(r6));
         }
-        PromiseResult7 r7 = MakeAndCall(std::move(r6), f6);
+        PromiseResult7 r7 =
+            PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6));
         if (!PromiseResultTraits7::IsOk(r7)) {
           return PromiseResultTraits7::template ReturnValue<Result>(
               std::move(r7));
         }
-        PromiseResult8 r8 = MakeAndCall(std::move(r7), f7);
+        PromiseResult8 r8 =
+            PromiseResultTraits7::CallFactoryThenPromise(&f7, std::move(r7));
         if (!PromiseResultTraits8::IsOk(r8)) {
           return PromiseResultTraits8::template ReturnValue<Result>(
               std::move(r8));
         }
-        PromiseResult9 r9 = MakeAndCall(std::move(r8), f8);
+        PromiseResult9 r9 =
+            PromiseResultTraits8::CallFactoryThenPromise(&f8, std::move(r8));
         if (!PromiseResultTraits9::IsOk(r9)) {
           return PromiseResultTraits9::template ReturnValue<Result>(
               std::move(r9));
         }
-        return MakeAndCall(std::move(r9), f9);
+        return Result(
+            PromiseResultTraits9::CallFactoryThenPromise(&f9, std::move(r9)));
       });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8, typename F9, typename F10>
-auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-            F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
+                                                 F2&& f2, F3&& f3, F4&& f4,
+                                                 F5&& f5, F6&& f6, F7&& f7,
+                                                 F8&& f8, F9&& f9, F10&& f10) {
   using Types =
       SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10>;
   using PromiseResult0 = typename Types::PromiseResult0;
@@ -6327,57 +6395,68 @@ auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
           return PromiseResultTraits0::template ReturnValue<Result>(
               std::move(r0));
         }
-        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        PromiseResult1 r1 =
+            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
         if (!PromiseResultTraits1::IsOk(r1)) {
           return PromiseResultTraits1::template ReturnValue<Result>(
               std::move(r1));
         }
-        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        PromiseResult2 r2 =
+            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
         if (!PromiseResultTraits2::IsOk(r2)) {
           return PromiseResultTraits2::template ReturnValue<Result>(
               std::move(r2));
         }
-        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        PromiseResult3 r3 =
+            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
         if (!PromiseResultTraits3::IsOk(r3)) {
           return PromiseResultTraits3::template ReturnValue<Result>(
               std::move(r3));
         }
-        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        PromiseResult4 r4 =
+            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
         if (!PromiseResultTraits4::IsOk(r4)) {
           return PromiseResultTraits4::template ReturnValue<Result>(
               std::move(r4));
         }
-        PromiseResult5 r5 = MakeAndCall(std::move(r4), f4);
+        PromiseResult5 r5 =
+            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
         if (!PromiseResultTraits5::IsOk(r5)) {
           return PromiseResultTraits5::template ReturnValue<Result>(
               std::move(r5));
         }
-        PromiseResult6 r6 = MakeAndCall(std::move(r5), f5);
+        PromiseResult6 r6 =
+            PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
         if (!PromiseResultTraits6::IsOk(r6)) {
           return PromiseResultTraits6::template ReturnValue<Result>(
               std::move(r6));
         }
-        PromiseResult7 r7 = MakeAndCall(std::move(r6), f6);
+        PromiseResult7 r7 =
+            PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6));
         if (!PromiseResultTraits7::IsOk(r7)) {
           return PromiseResultTraits7::template ReturnValue<Result>(
               std::move(r7));
         }
-        PromiseResult8 r8 = MakeAndCall(std::move(r7), f7);
+        PromiseResult8 r8 =
+            PromiseResultTraits7::CallFactoryThenPromise(&f7, std::move(r7));
         if (!PromiseResultTraits8::IsOk(r8)) {
           return PromiseResultTraits8::template ReturnValue<Result>(
               std::move(r8));
         }
-        PromiseResult9 r9 = MakeAndCall(std::move(r8), f8);
+        PromiseResult9 r9 =
+            PromiseResultTraits8::CallFactoryThenPromise(&f8, std::move(r8));
         if (!PromiseResultTraits9::IsOk(r9)) {
           return PromiseResultTraits9::template ReturnValue<Result>(
               std::move(r9));
         }
-        PromiseResult10 r10 = MakeAndCall(std::move(r9), f9);
+        PromiseResult10 r10 =
+            PromiseResultTraits9::CallFactoryThenPromise(&f9, std::move(r9));
         if (!PromiseResultTraits10::IsOk(r10)) {
           return PromiseResultTraits10::template ReturnValue<Result>(
               std::move(r10));
         }
-        return MakeAndCall(std::move(r10), f10);
+        return Result(PromiseResultTraits10::CallFactoryThenPromise(
+            &f10, std::move(r10)));
       });
 }
 
@@ -6385,8 +6464,11 @@ template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8, typename F9, typename F10,
           typename F11>
-auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-            F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10, F11&& f11) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
+                                                 F2&& f2, F3&& f3, F4&& f4,
+                                                 F5&& f5, F6&& f6, F7&& f7,
+                                                 F8&& f8, F9&& f9, F10&& f10,
+                                                 F11&& f11) {
   using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9,
                               F10, F11>;
   using PromiseResult0 = typename Types::PromiseResult0;
@@ -6445,238 +6527,383 @@ auto SeqMap(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
           return PromiseResultTraits0::template ReturnValue<Result>(
               std::move(r0));
         }
-        PromiseResult1 r1 = MakeAndCall(std::move(r0), f0);
+        PromiseResult1 r1 =
+            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
         if (!PromiseResultTraits1::IsOk(r1)) {
           return PromiseResultTraits1::template ReturnValue<Result>(
               std::move(r1));
         }
-        PromiseResult2 r2 = MakeAndCall(std::move(r1), f1);
+        PromiseResult2 r2 =
+            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
         if (!PromiseResultTraits2::IsOk(r2)) {
           return PromiseResultTraits2::template ReturnValue<Result>(
               std::move(r2));
         }
-        PromiseResult3 r3 = MakeAndCall(std::move(r2), f2);
+        PromiseResult3 r3 =
+            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
         if (!PromiseResultTraits3::IsOk(r3)) {
           return PromiseResultTraits3::template ReturnValue<Result>(
               std::move(r3));
         }
-        PromiseResult4 r4 = MakeAndCall(std::move(r3), f3);
+        PromiseResult4 r4 =
+            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
         if (!PromiseResultTraits4::IsOk(r4)) {
           return PromiseResultTraits4::template ReturnValue<Result>(
               std::move(r4));
         }
-        PromiseResult5 r5 = MakeAndCall(std::move(r4), f4);
+        PromiseResult5 r5 =
+            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
         if (!PromiseResultTraits5::IsOk(r5)) {
           return PromiseResultTraits5::template ReturnValue<Result>(
               std::move(r5));
         }
-        PromiseResult6 r6 = MakeAndCall(std::move(r5), f5);
+        PromiseResult6 r6 =
+            PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
         if (!PromiseResultTraits6::IsOk(r6)) {
           return PromiseResultTraits6::template ReturnValue<Result>(
               std::move(r6));
         }
-        PromiseResult7 r7 = MakeAndCall(std::move(r6), f6);
+        PromiseResult7 r7 =
+            PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6));
         if (!PromiseResultTraits7::IsOk(r7)) {
           return PromiseResultTraits7::template ReturnValue<Result>(
               std::move(r7));
         }
-        PromiseResult8 r8 = MakeAndCall(std::move(r7), f7);
+        PromiseResult8 r8 =
+            PromiseResultTraits7::CallFactoryThenPromise(&f7, std::move(r7));
         if (!PromiseResultTraits8::IsOk(r8)) {
           return PromiseResultTraits8::template ReturnValue<Result>(
               std::move(r8));
         }
-        PromiseResult9 r9 = MakeAndCall(std::move(r8), f8);
+        PromiseResult9 r9 =
+            PromiseResultTraits8::CallFactoryThenPromise(&f8, std::move(r8));
         if (!PromiseResultTraits9::IsOk(r9)) {
           return PromiseResultTraits9::template ReturnValue<Result>(
               std::move(r9));
         }
-        PromiseResult10 r10 = MakeAndCall(std::move(r9), f9);
+        PromiseResult10 r10 =
+            PromiseResultTraits9::CallFactoryThenPromise(&f9, std::move(r9));
         if (!PromiseResultTraits10::IsOk(r10)) {
           return PromiseResultTraits10::template ReturnValue<Result>(
               std::move(r10));
         }
-        PromiseResult11 r11 = MakeAndCall(std::move(r10), f10);
+        PromiseResult11 r11 =
+            PromiseResultTraits10::CallFactoryThenPromise(&f10, std::move(r10));
         if (!PromiseResultTraits11::IsOk(r11)) {
           return PromiseResultTraits11::template ReturnValue<Result>(
               std::move(r11));
         }
-        return MakeAndCall(std::move(r11), f11);
+        return Result(PromiseResultTraits11::CallFactoryThenPromise(
+            &f11, std::move(r11)));
       });
 }
 
-template <template <typename> class Traits, typename F0, typename F1>
+template <template <typename> class Traits, typename Arg, typename F0,
+          typename F1>
 auto SeqFactoryMap(F0&& f0, F1&& f1) {
-  return
-      [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1)](auto x) mutable {
-        OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-        return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1));
-      };
+  if constexpr (!std::is_same_v<Arg, void>) {
+    return
+        [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1)](Arg x) mutable {
+          OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+          return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1));
+        };
+  } else {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1)]() mutable {
+      OncePromiseFactory<void, F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(), std::move(f1));
+    };
+  }
 }
 
-template <template <typename> class Traits, typename F0, typename F1,
-          typename F2>
+template <template <typename> class Traits, typename Arg, typename F0,
+          typename F1, typename F2>
 auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2) {
-  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
-          f2 = std::forward<F2>(f2)](auto x) mutable {
-    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
-                          std::move(f2));
-  };
+  if constexpr (!std::is_same_v<Arg, void>) {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+            f2 = std::forward<F2>(f2)](Arg x) mutable {
+      OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
+                            std::move(f2));
+    };
+  } else {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+            f2 = std::forward<F2>(f2)]() mutable {
+      OncePromiseFactory<void, F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(), std::move(f1), std::move(f2));
+    };
+  }
 }
 
-template <template <typename> class Traits, typename F0, typename F1,
-          typename F2, typename F3>
+template <template <typename> class Traits, typename Arg, typename F0,
+          typename F1, typename F2, typename F3>
 auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3) {
-  return
-      [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
-       f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3)](auto x) mutable {
-        OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-        return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
-                              std::move(f2), std::move(f3));
-      };
+  if constexpr (!std::is_same_v<Arg, void>) {
+    return
+        [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+         f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3)](Arg x) mutable {
+          OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+          return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
+                                std::move(f2), std::move(f3));
+        };
+  } else {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+            f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3)]() mutable {
+      OncePromiseFactory<void, F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(), std::move(f1), std::move(f2),
+                            std::move(f3));
+    };
+  }
 }
 
-template <template <typename> class Traits, typename F0, typename F1,
-          typename F2, typename F3, typename F4>
+template <template <typename> class Traits, typename Arg, typename F0,
+          typename F1, typename F2, typename F3, typename F4>
 auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4) {
-  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
-          f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
-          f4 = std::forward<F4>(f4)](auto x) mutable {
-    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1), std::move(f2),
-                          std::move(f3), std::move(f4));
-  };
+  if constexpr (!std::is_same_v<Arg, void>) {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+            f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+            f4 = std::forward<F4>(f4)](Arg x) mutable {
+      OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
+                            std::move(f2), std::move(f3), std::move(f4));
+    };
+  } else {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+            f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+            f4 = std::forward<F4>(f4)]() mutable {
+      OncePromiseFactory<void, F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(), std::move(f1), std::move(f2),
+                            std::move(f3), std::move(f4));
+    };
+  }
 }
 
-template <template <typename> class Traits, typename F0, typename F1,
-          typename F2, typename F3, typename F4, typename F5>
+template <template <typename> class Traits, typename Arg, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5>
 auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5) {
-  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
-          f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
-          f4 = std::forward<F4>(f4),
-          f5 = std::forward<F5>(f5)](auto x) mutable {
-    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1), std::move(f2),
-                          std::move(f3), std::move(f4), std::move(f5));
-  };
+  if constexpr (!std::is_same_v<Arg, void>) {
+    return
+        [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+         f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+         f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5)](Arg x) mutable {
+          OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+          return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
+                                std::move(f2), std::move(f3), std::move(f4),
+                                std::move(f5));
+        };
+  } else {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+            f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+            f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5)]() mutable {
+      OncePromiseFactory<void, F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(), std::move(f1), std::move(f2),
+                            std::move(f3), std::move(f4), std::move(f5));
+    };
+  }
 }
 
-template <template <typename> class Traits, typename F0, typename F1,
-          typename F2, typename F3, typename F4, typename F5, typename F6>
+template <template <typename> class Traits, typename Arg, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6>
 auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
                    F6&& f6) {
-  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
-          f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
-          f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
-          f6 = std::forward<F6>(f6)](auto x) mutable {
-    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1), std::move(f2),
-                          std::move(f3), std::move(f4), std::move(f5),
-                          std::move(f6));
-  };
+  if constexpr (!std::is_same_v<Arg, void>) {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+            f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+            f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+            f6 = std::forward<F6>(f6)](Arg x) mutable {
+      OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
+                            std::move(f2), std::move(f3), std::move(f4),
+                            std::move(f5), std::move(f6));
+    };
+  } else {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+            f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+            f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+            f6 = std::forward<F6>(f6)]() mutable {
+      OncePromiseFactory<void, F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(), std::move(f1), std::move(f2),
+                            std::move(f3), std::move(f4), std::move(f5),
+                            std::move(f6));
+    };
+  }
 }
 
-template <template <typename> class Traits, typename F0, typename F1,
-          typename F2, typename F3, typename F4, typename F5, typename F6,
-          typename F7>
+template <template <typename> class Traits, typename Arg, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7>
 auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
                    F6&& f6, F7&& f7) {
-  return
-      [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
-       f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
-       f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
-       f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7)](auto x) mutable {
-        OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-        return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
-                              std::move(f2), std::move(f3), std::move(f4),
-                              std::move(f5), std::move(f6), std::move(f7));
-      };
+  if constexpr (!std::is_same_v<Arg, void>) {
+    return
+        [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+         f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+         f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+         f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7)](Arg x) mutable {
+          OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+          return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
+                                std::move(f2), std::move(f3), std::move(f4),
+                                std::move(f5), std::move(f6), std::move(f7));
+        };
+  } else {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+            f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+            f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+            f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7)]() mutable {
+      OncePromiseFactory<void, F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(), std::move(f1), std::move(f2),
+                            std::move(f3), std::move(f4), std::move(f5),
+                            std::move(f6), std::move(f7));
+    };
+  }
 }
 
-template <template <typename> class Traits, typename F0, typename F1,
-          typename F2, typename F3, typename F4, typename F5, typename F6,
-          typename F7, typename F8>
+template <template <typename> class Traits, typename Arg, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8>
 auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
                    F6&& f6, F7&& f7, F8&& f8) {
-  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
-          f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
-          f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
-          f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
-          f8 = std::forward<F8>(f8)](auto x) mutable {
-    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1), std::move(f2),
-                          std::move(f3), std::move(f4), std::move(f5),
-                          std::move(f6), std::move(f7), std::move(f8));
-  };
+  if constexpr (!std::is_same_v<Arg, void>) {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+            f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+            f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+            f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
+            f8 = std::forward<F8>(f8)](Arg x) mutable {
+      OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
+                            std::move(f2), std::move(f3), std::move(f4),
+                            std::move(f5), std::move(f6), std::move(f7),
+                            std::move(f8));
+    };
+  } else {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+            f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+            f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+            f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
+            f8 = std::forward<F8>(f8)]() mutable {
+      OncePromiseFactory<void, F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(), std::move(f1), std::move(f2),
+                            std::move(f3), std::move(f4), std::move(f5),
+                            std::move(f6), std::move(f7), std::move(f8));
+    };
+  }
 }
 
-template <template <typename> class Traits, typename F0, typename F1,
-          typename F2, typename F3, typename F4, typename F5, typename F6,
-          typename F7, typename F8, typename F9>
+template <template <typename> class Traits, typename Arg, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8, typename F9>
 auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
                    F6&& f6, F7&& f7, F8&& f8, F9&& f9) {
-  return
-      [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
-       f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
-       f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
-       f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
-       f8 = std::forward<F8>(f8), f9 = std::forward<F9>(f9)](auto x) mutable {
-        OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-        return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
-                              std::move(f2), std::move(f3), std::move(f4),
-                              std::move(f5), std::move(f6), std::move(f7),
-                              std::move(f8), std::move(f9));
-      };
+  if constexpr (!std::is_same_v<Arg, void>) {
+    return
+        [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+         f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+         f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+         f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
+         f8 = std::forward<F8>(f8), f9 = std::forward<F9>(f9)](Arg x) mutable {
+          OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+          return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
+                                std::move(f2), std::move(f3), std::move(f4),
+                                std::move(f5), std::move(f6), std::move(f7),
+                                std::move(f8), std::move(f9));
+        };
+  } else {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+            f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+            f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+            f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
+            f8 = std::forward<F8>(f8), f9 = std::forward<F9>(f9)]() mutable {
+      OncePromiseFactory<void, F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(), std::move(f1), std::move(f2),
+                            std::move(f3), std::move(f4), std::move(f5),
+                            std::move(f6), std::move(f7), std::move(f8),
+                            std::move(f9));
+    };
+  }
 }
 
-template <template <typename> class Traits, typename F0, typename F1,
-          typename F2, typename F3, typename F4, typename F5, typename F6,
-          typename F7, typename F8, typename F9, typename F10>
+template <template <typename> class Traits, typename Arg, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8, typename F9, typename F10>
 auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
                    F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10) {
-  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
-          f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
-          f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
-          f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
-          f8 = std::forward<F8>(f8), f9 = std::forward<F9>(f9),
-          f10 = std::forward<F10>(f10)](auto x) mutable {
-    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1), std::move(f2),
-                          std::move(f3), std::move(f4), std::move(f5),
-                          std::move(f6), std::move(f7), std::move(f8),
-                          std::move(f9), std::move(f10));
-  };
+  if constexpr (!std::is_same_v<Arg, void>) {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+            f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+            f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+            f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
+            f8 = std::forward<F8>(f8), f9 = std::forward<F9>(f9),
+            f10 = std::forward<F10>(f10)](Arg x) mutable {
+      OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1),
+                            std::move(f2), std::move(f3), std::move(f4),
+                            std::move(f5), std::move(f6), std::move(f7),
+                            std::move(f8), std::move(f9), std::move(f10));
+    };
+  } else {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+            f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+            f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+            f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
+            f8 = std::forward<F8>(f8), f9 = std::forward<F9>(f9),
+            f10 = std::forward<F10>(f10)]() mutable {
+      OncePromiseFactory<void, F0> next(std::move(f0));
+      return SeqMap<Traits>(next.Make(), std::move(f1), std::move(f2),
+                            std::move(f3), std::move(f4), std::move(f5),
+                            std::move(f6), std::move(f7), std::move(f8),
+                            std::move(f9), std::move(f10));
+    };
+  }
 }
 
-template <template <typename> class Traits, typename F0, typename F1,
-          typename F2, typename F3, typename F4, typename F5, typename F6,
-          typename F7, typename F8, typename F9, typename F10, typename F11>
+template <template <typename> class Traits, typename Arg, typename F0,
+          typename F1, typename F2, typename F3, typename F4, typename F5,
+          typename F6, typename F7, typename F8, typename F9, typename F10,
+          typename F11>
 auto SeqFactoryMap(F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
                    F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10, F11&& f11) {
-  return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
-          f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
-          f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
-          f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
-          f8 = std::forward<F8>(f8), f9 = std::forward<F9>(f9),
-          f10 = std::forward<F10>(f10),
-          f11 = std::forward<F11>(f11)](auto x) mutable {
-    OncePromiseFactory<decltype(x), F0> next(std::move(f0));
-    return SeqMap<Traits>(next.Make(std::move(x)), std::move(f1), std::move(f2),
-                          std::move(f3), std::move(f4), std::move(f5),
-                          std::move(f6), std::move(f7), std::move(f8),
-                          std::move(f9), std::move(f10), std::move(f11));
-  };
+  if constexpr (!std::is_same_v<Arg, void>) {
+    return [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+            f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+            f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+            f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
+            f8 = std::forward<F8>(f8), f9 = std::forward<F9>(f9),
+            f10 = std::forward<F10>(f10),
+            f11 = std::forward<F11>(f11)](Arg x) mutable {
+      OncePromiseFactory<decltype(x), F0> next(std::move(f0));
+      return SeqMap<Traits>(
+          next.Make(std::move(x)), std::move(f1), std::move(f2), std::move(f3),
+          std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+          std::move(f8), std::move(f9), std::move(f10), std::move(f11));
+    };
+  } else {
+    return
+        [f0 = std::forward<F0>(f0), f1 = std::forward<F1>(f1),
+         f2 = std::forward<F2>(f2), f3 = std::forward<F3>(f3),
+         f4 = std::forward<F4>(f4), f5 = std::forward<F5>(f5),
+         f6 = std::forward<F6>(f6), f7 = std::forward<F7>(f7),
+         f8 = std::forward<F8>(f8), f9 = std::forward<F9>(f9),
+         f10 = std::forward<F10>(f10), f11 = std::forward<F11>(f11)]() mutable {
+          OncePromiseFactory<void, F0> next(std::move(f0));
+          return SeqMap<Traits>(next.Make(), std::move(f1), std::move(f2),
+                                std::move(f3), std::move(f4), std::move(f5),
+                                std::move(f6), std::move(f7), std::move(f8),
+                                std::move(f9), std::move(f10), std::move(f11));
+        };
+  }
 }
 
 template <template <typename> class Traits, typename P, typename... F>
 using SeqMapType =
     decltype(SeqMap<Traits>(std::declval<P>(), std::declval<F>()...));
-template <template <typename> class Traits, typename... F>
-using SeqFactoryMapType = decltype(SeqFactoryMap<Traits>(std::declval<F>()...));
+template <template <typename> class Traits, typename Arg, typename... F>
+using SeqFactoryMapType =
+    decltype(SeqFactoryMap<Traits, Arg>(std::declval<F>()...));
 
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename F0>
-auto FoldSeqStateImpl(P&& p, F0&& f0, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqStateImpl(
+    P&& p, F0&& f0, DebugLocation whence) {
   if constexpr (kInstantBits == 0b0) {
     return SeqState<Traits, P, F0>(std::forward<P>(p), std::forward<F0>(f0),
                                    whence);
@@ -6686,7 +6913,8 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, DebugLocation whence) {
   }
 }
 template <template <typename> class Traits, typename P, typename F0>
-auto FoldSeqState(P&& p, F0&& f0, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0,
+                                                       DebugLocation whence) {
   using Types = SeqStateTypes<Traits, P, F0>;
   static constexpr uint32_t kInstantBits =
       (Types::NextFactory0::kInstantaneousPromise ? 1 : 0);
@@ -6695,7 +6923,9 @@ auto FoldSeqState(P&& p, F0&& f0, DebugLocation whence) {
 }
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename F0, typename F1>
-auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqStateImpl(
+    P&& p, F0&& f0, F1&& f1, DebugLocation whence) {
+  using Types = SeqStateTypes<Traits, P, F0, F1>;
   if constexpr (kInstantBits == 0b0) {
     return SeqState<Traits, P, F0, F1>(std::forward<P>(p), std::forward<F0>(f0),
                                        std::forward<F1>(f1), whence);
@@ -6706,9 +6936,15 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, DebugLocation whence) {
         std::forward<F1>(f1), whence);
   }
   if constexpr (kInstantBits == 0b10) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1)),
         whence);
   }
   if constexpr (kInstantBits == 0b11) {
@@ -6718,7 +6954,8 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, DebugLocation whence) {
 }
 template <template <typename> class Traits, typename P, typename F0,
           typename F1>
-auto FoldSeqState(P&& p, F0&& f0, F1&& f1, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0, F1&& f1,
+                                                       DebugLocation whence) {
   using Types = SeqStateTypes<Traits, P, F0, F1>;
   static constexpr uint32_t kInstantBits =
       (Types::NextFactory0::kInstantaneousPromise ? 1 : 0) |
@@ -6728,7 +6965,9 @@ auto FoldSeqState(P&& p, F0&& f0, F1&& f1, DebugLocation whence) {
 }
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename F0, typename F1, typename F2>
-auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqStateImpl(
+    P&& p, F0&& f0, F1&& f1, F2&& f2, DebugLocation whence) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2>;
   if constexpr (kInstantBits == 0b0) {
     return SeqState<Traits, P, F0, F1, F2>(
         std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
@@ -6740,10 +6979,16 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, DebugLocation whence) {
         std::forward<F1>(f1), std::forward<F2>(f2), whence);
   }
   if constexpr (kInstantBits == 0b10) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2>(
-        std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
-        std::forward<F2>(f2), whence);
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>,
+        F2>(std::forward<P>(p),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType>(
+                std::forward<F0>(f0), std::forward<F1>(f1)),
+            std::forward<F2>(f2), whence);
   }
   if constexpr (kInstantBits == 0b11) {
     return SeqState<Traits, SeqMapType<Traits, P, F0, F1>, F2>(
@@ -6752,23 +6997,39 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, DebugLocation whence) {
         std::forward<F2>(f2), whence);
   }
   if constexpr (kInstantBits == 0b100) {
-    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>>(
+    return SeqState<
+        Traits, P, F0,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>>(
         std::forward<P>(p), std::forward<F0>(f0),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2)),
         whence);
   }
   if constexpr (kInstantBits == 0b101) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>,
-                    SeqFactoryMapType<Traits, F1, F2>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2)),
         whence);
   }
   if constexpr (kInstantBits == 0b110) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1, F2>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
-                              std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2)),
         whence);
   }
   if constexpr (kInstantBits == 0b111) {
@@ -6778,7 +7039,9 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, DebugLocation whence) {
 }
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2>
-auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0, F1&& f1,
+                                                       F2&& f2,
+                                                       DebugLocation whence) {
   using Types = SeqStateTypes<Traits, P, F0, F1, F2>;
   static constexpr uint32_t kInstantBits =
       (Types::NextFactory0::kInstantaneousPromise ? 1 : 0) |
@@ -6790,8 +7053,9 @@ auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, DebugLocation whence) {
 }
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename F0, typename F1, typename F2, typename F3>
-auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
-                      DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqStateImpl(
+    P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, DebugLocation whence) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3>;
   if constexpr (kInstantBits == 0b0) {
     return SeqState<Traits, P, F0, F1, F2, F3>(
         std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
@@ -6804,9 +7068,16 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
         whence);
   }
   if constexpr (kInstantBits == 0b10) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2, F3>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>,
+        F2, F3>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1)),
         std::forward<F2>(f2), std::forward<F3>(f3), whence);
   }
   if constexpr (kInstantBits == 0b11) {
@@ -6816,23 +7087,40 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
         std::forward<F2>(f2), std::forward<F3>(f3), whence);
   }
   if constexpr (kInstantBits == 0b100) {
-    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>, F3>(
-        std::forward<P>(p), std::forward<F0>(f0),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
-        std::forward<F3>(f3), whence);
+    return SeqState<
+        Traits, P, F0,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>,
+        F3>(std::forward<P>(p), std::forward<F0>(f0),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType>(
+                std::forward<F1>(f1), std::forward<F2>(f2)),
+            std::forward<F3>(f3), whence);
   }
   if constexpr (kInstantBits == 0b101) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>,
-                    SeqFactoryMapType<Traits, F1, F2>, F3>(
-        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
-        std::forward<F3>(f3), whence);
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>,
+        F3>(SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType>(
+                std::forward<F1>(f1), std::forward<F2>(f2)),
+            std::forward<F3>(f3), whence);
   }
   if constexpr (kInstantBits == 0b110) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>, F3>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1, F2>,
+        F3>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
-                              std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2)),
         std::forward<F3>(f3), whence);
   }
   if constexpr (kInstantBits == 0b111) {
@@ -6842,55 +7130,96 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
         std::forward<F3>(f3), whence);
   }
   if constexpr (kInstantBits == 0b1000) {
-    return SeqState<Traits, P, F0, F1, SeqFactoryMapType<Traits, F2, F3>>(
+    return SeqState<
+        Traits, P, F0, F1,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>>(
         std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3)),
         whence);
   }
   if constexpr (kInstantBits == 0b1001) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1,
-                    SeqFactoryMapType<Traits, F2, F3>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>, F1,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
         std::forward<F1>(f1),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3)),
         whence);
   }
   if constexpr (kInstantBits == 0b1010) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>,
-                    SeqFactoryMapType<Traits, F2, F3>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3)),
         whence);
   }
   if constexpr (kInstantBits == 0b1011) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>,
-                    SeqFactoryMapType<Traits, F2, F3>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
                        std::forward<F1>(f1)),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3)),
         whence);
   }
   if constexpr (kInstantBits == 0b1100) {
-    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2, F3>>(
+    return SeqState<
+        Traits, P, F0,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2, F3>>(
         std::forward<P>(p), std::forward<F0>(f0),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
-                              std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3)),
         whence);
   }
   if constexpr (kInstantBits == 0b1101) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>,
-                    SeqFactoryMapType<Traits, F1, F2, F3>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2, F3>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
-                              std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3)),
         whence);
   }
   if constexpr (kInstantBits == 0b1110) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2, F3>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1, F2, F3>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
-                              std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+            std::forward<F3>(f3)),
         whence);
   }
   if constexpr (kInstantBits == 0b1111) {
@@ -6901,8 +7230,9 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
 }
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3>
-auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
-                  DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0, F1&& f1,
+                                                       F2&& f2, F3&& f3,
+                                                       DebugLocation whence) {
   using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3>;
   static constexpr uint32_t kInstantBits =
       (Types::NextFactory0::kInstantaneousPromise ? 1 : 0) |
@@ -6915,8 +7245,9 @@ auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
 }
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename F0, typename F1, typename F2, typename F3, typename F4>
-auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
-                      DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqStateImpl(
+    P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, DebugLocation whence) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4>;
   if constexpr (kInstantBits == 0b0) {
     return SeqState<Traits, P, F0, F1, F2, F3, F4>(
         std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
@@ -6930,9 +7261,16 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
         std::forward<F4>(f4), whence);
   }
   if constexpr (kInstantBits == 0b10) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2, F3, F4>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>,
+        F2, F3, F4>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1)),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
         whence);
   }
@@ -6944,23 +7282,42 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
         whence);
   }
   if constexpr (kInstantBits == 0b100) {
-    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>, F3, F4>(
+    return SeqState<
+        Traits, P, F0,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>,
+        F3, F4>(
         std::forward<P>(p), std::forward<F0>(f0),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2)),
         std::forward<F3>(f3), std::forward<F4>(f4), whence);
   }
   if constexpr (kInstantBits == 0b101) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>,
-                    SeqFactoryMapType<Traits, F1, F2>, F3, F4>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>,
+        F3, F4>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2)),
         std::forward<F3>(f3), std::forward<F4>(f4), whence);
   }
   if constexpr (kInstantBits == 0b110) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>, F3, F4>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1, F2>,
+        F3, F4>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
-                              std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2)),
         std::forward<F3>(f3), std::forward<F4>(f4), whence);
   }
   if constexpr (kInstantBits == 0b111) {
@@ -6970,56 +7327,99 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
         std::forward<F3>(f3), std::forward<F4>(f4), whence);
   }
   if constexpr (kInstantBits == 0b1000) {
-    return SeqState<Traits, P, F0, F1, SeqFactoryMapType<Traits, F2, F3>, F4>(
-        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
-        std::forward<F4>(f4), whence);
+    return SeqState<
+        Traits, P, F0, F1,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>,
+        F4>(std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType>(
+                std::forward<F2>(f2), std::forward<F3>(f3)),
+            std::forward<F4>(f4), whence);
   }
   if constexpr (kInstantBits == 0b1001) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1,
-                    SeqFactoryMapType<Traits, F2, F3>, F4>(
-        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        std::forward<F1>(f1),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
-        std::forward<F4>(f4), whence);
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>, F1,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>,
+        F4>(SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+            std::forward<F1>(f1),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType>(
+                std::forward<F2>(f2), std::forward<F3>(f3)),
+            std::forward<F4>(f4), whence);
   }
   if constexpr (kInstantBits == 0b1010) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>,
-                    SeqFactoryMapType<Traits, F2, F3>, F4>(
-        std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
-        std::forward<F4>(f4), whence);
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>,
+        F4>(std::forward<P>(p),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType>(
+                std::forward<F0>(f0), std::forward<F1>(f1)),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType>(
+                std::forward<F2>(f2), std::forward<F3>(f3)),
+            std::forward<F4>(f4), whence);
   }
   if constexpr (kInstantBits == 0b1011) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>,
-                    SeqFactoryMapType<Traits, F2, F3>, F4>(
-        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
-                       std::forward<F1>(f1)),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
-        std::forward<F4>(f4), whence);
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>,
+        F4>(SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                           std::forward<F1>(f1)),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType>(
+                std::forward<F2>(f2), std::forward<F3>(f3)),
+            std::forward<F4>(f4), whence);
   }
   if constexpr (kInstantBits == 0b1100) {
-    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2, F3>, F4>(
+    return SeqState<
+        Traits, P, F0,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2, F3>,
+        F4>(
         std::forward<P>(p), std::forward<F0>(f0),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
-                              std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3)),
         std::forward<F4>(f4), whence);
   }
   if constexpr (kInstantBits == 0b1101) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>,
-                    SeqFactoryMapType<Traits, F1, F2, F3>, F4>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2, F3>,
+        F4>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
-                              std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3)),
         std::forward<F4>(f4), whence);
   }
   if constexpr (kInstantBits == 0b1110) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2, F3>, F4>(
-        std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
-                              std::forward<F2>(f2), std::forward<F3>(f3)),
-        std::forward<F4>(f4), whence);
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1, F2, F3>,
+        F4>(std::forward<P>(p),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType>(
+                std::forward<F0>(f0), std::forward<F1>(f1),
+                std::forward<F2>(f2), std::forward<F3>(f3)),
+            std::forward<F4>(f4), whence);
   }
   if constexpr (kInstantBits == 0b1111) {
     return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2, F3>, F4>(
@@ -7029,127 +7429,225 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
         std::forward<F4>(f4), whence);
   }
   if constexpr (kInstantBits == 0b10000) {
-    return SeqState<Traits, P, F0, F1, F2, SeqFactoryMapType<Traits, F3, F4>>(
+    return SeqState<
+        Traits, P, F0, F1, F2,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>>(
         std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
         std::forward<F2>(f2),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4)),
         whence);
   }
   if constexpr (kInstantBits == 0b10001) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1, F2,
-                    SeqFactoryMapType<Traits, F3, F4>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>, F1, F2,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
         std::forward<F1>(f1), std::forward<F2>(f2),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4)),
         whence);
   }
   if constexpr (kInstantBits == 0b10010) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2,
-                    SeqFactoryMapType<Traits, F3, F4>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>,
+        F2,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1)),
         std::forward<F2>(f2),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4)),
         whence);
   }
   if constexpr (kInstantBits == 0b10011) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>, F2,
-                    SeqFactoryMapType<Traits, F3, F4>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1>, F2,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
                        std::forward<F1>(f1)),
         std::forward<F2>(f2),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4)),
         whence);
   }
   if constexpr (kInstantBits == 0b10100) {
-    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>,
-                    SeqFactoryMapType<Traits, F3, F4>>(
+    return SeqState<
+        Traits, P, F0,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>>(
         std::forward<P>(p), std::forward<F0>(f0),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4)),
         whence);
   }
   if constexpr (kInstantBits == 0b10101) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>,
-                    SeqFactoryMapType<Traits, F1, F2>,
-                    SeqFactoryMapType<Traits, F3, F4>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4)),
         whence);
   }
   if constexpr (kInstantBits == 0b10110) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>,
-                    SeqFactoryMapType<Traits, F3, F4>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1, F2>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
-                              std::forward<F2>(f2)),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4)),
         whence);
   }
   if constexpr (kInstantBits == 0b10111) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2>,
-                    SeqFactoryMapType<Traits, F3, F4>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1, F2>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
                        std::forward<F1>(f1), std::forward<F2>(f2)),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4)),
         whence);
   }
   if constexpr (kInstantBits == 0b11000) {
-    return SeqState<Traits, P, F0, F1, SeqFactoryMapType<Traits, F2, F3, F4>>(
+    return SeqState<
+        Traits, P, F0, F1,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3, F4>>(
         std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
-                              std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4)),
         whence);
   }
   if constexpr (kInstantBits == 0b11001) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1,
-                    SeqFactoryMapType<Traits, F2, F3, F4>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>, F1,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3, F4>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
         std::forward<F1>(f1),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
-                              std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4)),
         whence);
   }
   if constexpr (kInstantBits == 0b11010) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>,
-                    SeqFactoryMapType<Traits, F2, F3, F4>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3, F4>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
-                              std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4)),
         whence);
   }
   if constexpr (kInstantBits == 0b11011) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>,
-                    SeqFactoryMapType<Traits, F2, F3, F4>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3, F4>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
                        std::forward<F1>(f1)),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
-                              std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4)),
         whence);
   }
   if constexpr (kInstantBits == 0b11100) {
-    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2, F3, F4>>(
+    return SeqState<
+        Traits, P, F0,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2, F3, F4>>(
         std::forward<P>(p), std::forward<F0>(f0),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
-                              std::forward<F3>(f3), std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3),
+            std::forward<F4>(f4)),
         whence);
   }
   if constexpr (kInstantBits == 0b11101) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>,
-                    SeqFactoryMapType<Traits, F1, F2, F3, F4>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2, F3, F4>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
-                              std::forward<F3>(f3), std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3),
+            std::forward<F4>(f4)),
         whence);
   }
   if constexpr (kInstantBits == 0b11110) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2, F3, F4>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1, F2, F3, F4>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
-                              std::forward<F2>(f2), std::forward<F3>(f3),
-                              std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+            std::forward<F3>(f3), std::forward<F4>(f4)),
         whence);
   }
   if constexpr (kInstantBits == 0b11111) {
@@ -7160,8 +7658,10 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
 }
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4>
-auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
-                  DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0, F1&& f1,
+                                                       F2&& f2, F3&& f3,
+                                                       F4&& f4,
+                                                       DebugLocation whence) {
   using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4>;
   static constexpr uint32_t kInstantBits =
       (Types::NextFactory0::kInstantaneousPromise ? 1 : 0) |
@@ -7176,8 +7676,10 @@ auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename F0, typename F1, typename F2, typename F3, typename F4,
           typename F5>
-auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
-                      F5&& f5, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqStateImpl(
+    P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+    DebugLocation whence) {
+  using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5>;
   if constexpr (kInstantBits == 0b0) {
     return SeqState<Traits, P, F0, F1, F2, F3, F4, F5>(
         std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
@@ -7191,10 +7693,16 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
         std::forward<F4>(f4), std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b10) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2, F3, F4,
-                    F5>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>,
+        F2, F3, F4, F5>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1)),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
         std::forward<F5>(f5), whence);
   }
@@ -7206,27 +7714,44 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
         std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b100) {
-    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>, F3, F4,
-                    F5>(
+    return SeqState<
+        Traits, P, F0,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>,
+        F3, F4, F5>(
         std::forward<P>(p), std::forward<F0>(f0),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2)),
         std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5),
         whence);
   }
   if constexpr (kInstantBits == 0b101) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>,
-                    SeqFactoryMapType<Traits, F1, F2>, F3, F4, F5>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>,
+        F3, F4, F5>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2)),
         std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5),
         whence);
   }
   if constexpr (kInstantBits == 0b110) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>, F3, F4,
-                    F5>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1, F2>,
+        F3, F4, F5>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
-                              std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2)),
         std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5),
         whence);
   }
@@ -7238,58 +7763,103 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
         whence);
   }
   if constexpr (kInstantBits == 0b1000) {
-    return SeqState<Traits, P, F0, F1, SeqFactoryMapType<Traits, F2, F3>, F4,
-                    F5>(
+    return SeqState<
+        Traits, P, F0, F1,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>,
+        F4, F5>(
         std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3)),
         std::forward<F4>(f4), std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b1001) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1,
-                    SeqFactoryMapType<Traits, F2, F3>, F4, F5>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>, F1,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>,
+        F4, F5>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
         std::forward<F1>(f1),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3)),
         std::forward<F4>(f4), std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b1010) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>,
-                    SeqFactoryMapType<Traits, F2, F3>, F4, F5>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>,
+        F4, F5>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3)),
         std::forward<F4>(f4), std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b1011) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>,
-                    SeqFactoryMapType<Traits, F2, F3>, F4, F5>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>,
+        F4, F5>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
                        std::forward<F1>(f1)),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3)),
         std::forward<F4>(f4), std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b1100) {
-    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2, F3>, F4,
-                    F5>(
+    return SeqState<
+        Traits, P, F0,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2, F3>,
+        F4, F5>(
         std::forward<P>(p), std::forward<F0>(f0),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
-                              std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3)),
         std::forward<F4>(f4), std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b1101) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>,
-                    SeqFactoryMapType<Traits, F1, F2, F3>, F4, F5>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2, F3>,
+        F4, F5>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
-                              std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3)),
         std::forward<F4>(f4), std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b1110) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2, F3>, F4,
-                    F5>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1, F2, F3>,
+        F4, F5>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
-                              std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+            std::forward<F3>(f3)),
         std::forward<F4>(f4), std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b1111) {
@@ -7300,131 +7870,231 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
         std::forward<F4>(f4), std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b10000) {
-    return SeqState<Traits, P, F0, F1, F2, SeqFactoryMapType<Traits, F3, F4>,
-                    F5>(
-        std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
-        std::forward<F2>(f2),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
-        std::forward<F5>(f5), whence);
+    return SeqState<
+        Traits, P, F0, F1, F2,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>,
+        F5>(std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
+            std::forward<F2>(f2),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType>(
+                std::forward<F3>(f3), std::forward<F4>(f4)),
+            std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b10001) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1, F2,
-                    SeqFactoryMapType<Traits, F3, F4>, F5>(
-        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        std::forward<F1>(f1), std::forward<F2>(f2),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
-        std::forward<F5>(f5), whence);
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>, F1, F2,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>,
+        F5>(SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+            std::forward<F1>(f1), std::forward<F2>(f2),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType>(
+                std::forward<F3>(f3), std::forward<F4>(f4)),
+            std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b10010) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2,
-                    SeqFactoryMapType<Traits, F3, F4>, F5>(
-        std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
-        std::forward<F2>(f2),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
-        std::forward<F5>(f5), whence);
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>,
+        F2,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>,
+        F5>(std::forward<P>(p),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType>(
+                std::forward<F0>(f0), std::forward<F1>(f1)),
+            std::forward<F2>(f2),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType>(
+                std::forward<F3>(f3), std::forward<F4>(f4)),
+            std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b10011) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>, F2,
-                    SeqFactoryMapType<Traits, F3, F4>, F5>(
-        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
-                       std::forward<F1>(f1)),
-        std::forward<F2>(f2),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
-        std::forward<F5>(f5), whence);
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1>, F2,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>,
+        F5>(SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                           std::forward<F1>(f1)),
+            std::forward<F2>(f2),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType>(
+                std::forward<F3>(f3), std::forward<F4>(f4)),
+            std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b10100) {
-    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>,
-                    SeqFactoryMapType<Traits, F3, F4>, F5>(
-        std::forward<P>(p), std::forward<F0>(f0),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
-        std::forward<F5>(f5), whence);
+    return SeqState<
+        Traits, P, F0,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>,
+        F5>(std::forward<P>(p), std::forward<F0>(f0),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType>(
+                std::forward<F1>(f1), std::forward<F2>(f2)),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType>(
+                std::forward<F3>(f3), std::forward<F4>(f4)),
+            std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b10101) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>,
-                    SeqFactoryMapType<Traits, F1, F2>,
-                    SeqFactoryMapType<Traits, F3, F4>, F5>(
-        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
-        std::forward<F5>(f5), whence);
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>,
+        F5>(SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType>(
+                std::forward<F1>(f1), std::forward<F2>(f2)),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType>(
+                std::forward<F3>(f3), std::forward<F4>(f4)),
+            std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b10110) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>,
-                    SeqFactoryMapType<Traits, F3, F4>, F5>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1, F2>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>,
+        F5>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
-                              std::forward<F2>(f2)),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4)),
         std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b10111) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2>,
-                    SeqFactoryMapType<Traits, F3, F4>, F5>(
-        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
-                       std::forward<F1>(f1), std::forward<F2>(f2)),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4)),
-        std::forward<F5>(f5), whence);
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1, F2>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4>,
+        F5>(SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
+                           std::forward<F1>(f1), std::forward<F2>(f2)),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType>(
+                std::forward<F3>(f3), std::forward<F4>(f4)),
+            std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b11000) {
-    return SeqState<Traits, P, F0, F1, SeqFactoryMapType<Traits, F2, F3, F4>,
-                    F5>(
+    return SeqState<
+        Traits, P, F0, F1,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3, F4>,
+        F5>(
         std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
-                              std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4)),
         std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b11001) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1,
-                    SeqFactoryMapType<Traits, F2, F3, F4>, F5>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>, F1,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3, F4>,
+        F5>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
         std::forward<F1>(f1),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
-                              std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4)),
         std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b11010) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>,
-                    SeqFactoryMapType<Traits, F2, F3, F4>, F5>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3, F4>,
+        F5>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
-                              std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4)),
         std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b11011) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>,
-                    SeqFactoryMapType<Traits, F2, F3, F4>, F5>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3, F4>,
+        F5>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
                        std::forward<F1>(f1)),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
-                              std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4)),
         std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b11100) {
-    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2, F3, F4>,
-                    F5>(
-        std::forward<P>(p), std::forward<F0>(f0),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
-                              std::forward<F3>(f3), std::forward<F4>(f4)),
-        std::forward<F5>(f5), whence);
+    return SeqState<
+        Traits, P, F0,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2, F3, F4>,
+        F5>(std::forward<P>(p), std::forward<F0>(f0),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType>(
+                std::forward<F1>(f1), std::forward<F2>(f2),
+                std::forward<F3>(f3), std::forward<F4>(f4)),
+            std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b11101) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>,
-                    SeqFactoryMapType<Traits, F1, F2, F3, F4>, F5>(
-        SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
-                              std::forward<F3>(f3), std::forward<F4>(f4)),
-        std::forward<F5>(f5), whence);
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2, F3, F4>,
+        F5>(SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
+            SeqFactoryMap<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType>(
+                std::forward<F1>(f1), std::forward<F2>(f2),
+                std::forward<F3>(f3), std::forward<F4>(f4)),
+            std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b11110) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2, F3, F4>,
-                    F5>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1, F2, F3, F4>,
+        F5>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
-                              std::forward<F2>(f2), std::forward<F3>(f3),
-                              std::forward<F4>(f4)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+            std::forward<F3>(f3), std::forward<F4>(f4)),
         std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b11111) {
@@ -7435,288 +8105,512 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
         std::forward<F5>(f5), whence);
   }
   if constexpr (kInstantBits == 0b100000) {
-    return SeqState<Traits, P, F0, F1, F2, F3,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, P, F0, F1, F2, F3,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
         std::forward<F2>(f2), std::forward<F3>(f3),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b100001) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1, F2, F3,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>, F1, F2, F3,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
         std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b100010) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2, F3,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>,
+        F2, F3,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1)),
         std::forward<F2>(f2), std::forward<F3>(f3),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b100011) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>, F2, F3,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1>, F2, F3,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
                        std::forward<F1>(f1)),
         std::forward<F2>(f2), std::forward<F3>(f3),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b100100) {
-    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>, F3,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, P, F0,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>,
+        F3,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         std::forward<P>(p), std::forward<F0>(f0),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2)),
         std::forward<F3>(f3),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b100101) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>,
-                    SeqFactoryMapType<Traits, F1, F2>, F3,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>,
+        F3,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2)),
         std::forward<F3>(f3),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b100110) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>, F3,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1, F2>,
+        F3,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
-                              std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2)),
         std::forward<F3>(f3),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b100111) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2>, F3,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1, F2>, F3,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
                        std::forward<F1>(f1), std::forward<F2>(f2)),
         std::forward<F3>(f3),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b101000) {
-    return SeqState<Traits, P, F0, F1, SeqFactoryMapType<Traits, F2, F3>,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, P, F0, F1,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b101001) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1,
-                    SeqFactoryMapType<Traits, F2, F3>,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>, F1,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
         std::forward<F1>(f1),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b101010) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>,
-                    SeqFactoryMapType<Traits, F2, F3>,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b101011) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>,
-                    SeqFactoryMapType<Traits, F2, F3>,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
                        std::forward<F1>(f1)),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3)),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b101100) {
-    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2, F3>,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, P, F0,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2, F3>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         std::forward<P>(p), std::forward<F0>(f0),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
-                              std::forward<F3>(f3)),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b101101) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>,
-                    SeqFactoryMapType<Traits, F1, F2, F3>,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2, F3>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
-                              std::forward<F3>(f3)),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b101110) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2, F3>,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1, F2, F3>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
-                              std::forward<F2>(f2), std::forward<F3>(f3)),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+            std::forward<F3>(f3)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b101111) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2, F3>,
-                    SeqFactoryMapType<Traits, F4, F5>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1, F2, F3>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits4::UnwrappedType,
+                          F4, F5>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
                        std::forward<F1>(f1), std::forward<F2>(f2),
                        std::forward<F3>(f3)),
-        SeqFactoryMap<Traits>(std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits4::UnwrappedType>(
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b110000) {
-    return SeqState<Traits, P, F0, F1, F2,
-                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+    return SeqState<
+        Traits, P, F0, F1, F2,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4, F5>>(
         std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
         std::forward<F2>(f2),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
-                              std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b110001) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1, F2,
-                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>, F1, F2,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4, F5>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
         std::forward<F1>(f1), std::forward<F2>(f2),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
-                              std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b110010) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>, F2,
-                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>,
+        F2,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4, F5>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1)),
         std::forward<F2>(f2),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
-                              std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b110011) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>, F2,
-                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1>, F2,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4, F5>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
                        std::forward<F1>(f1)),
         std::forward<F2>(f2),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
-                              std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b110100) {
-    return SeqState<Traits, P, F0, SeqFactoryMapType<Traits, F1, F2>,
-                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+    return SeqState<
+        Traits, P, F0,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4, F5>>(
         std::forward<P>(p), std::forward<F0>(f0),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
-                              std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b110101) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>,
-                    SeqFactoryMapType<Traits, F1, F2>,
-                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4, F5>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2)),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
-                              std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b110110) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1, F2>,
-                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1, F2>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4, F5>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
-                              std::forward<F2>(f2)),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
-                              std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b110111) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1, F2>,
-                    SeqFactoryMapType<Traits, F3, F4, F5>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1, F2>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits3::UnwrappedType,
+                          F3, F4, F5>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
                        std::forward<F1>(f1), std::forward<F2>(f2)),
-        SeqFactoryMap<Traits>(std::forward<F3>(f3), std::forward<F4>(f4),
-                              std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits3::UnwrappedType>(
+            std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b111000) {
-    return SeqState<Traits, P, F0, F1,
-                    SeqFactoryMapType<Traits, F2, F3, F4, F5>>(
+    return SeqState<
+        Traits, P, F0, F1,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3, F4, F5>>(
         std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
-                              std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+            std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b111001) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>, F1,
-                    SeqFactoryMapType<Traits, F2, F3, F4, F5>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>, F1,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3, F4, F5>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
         std::forward<F1>(f1),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
-                              std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+            std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b111010) {
-    return SeqState<Traits, P, SeqFactoryMapType<Traits, F0, F1>,
-                    SeqFactoryMapType<Traits, F2, F3, F4, F5>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3, F4, F5>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1)),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
-                              std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+            std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b111011) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0, F1>,
-                    SeqFactoryMapType<Traits, F2, F3, F4, F5>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0, F1>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits2::UnwrappedType,
+                          F2, F3, F4, F5>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0),
                        std::forward<F1>(f1)),
-        SeqFactoryMap<Traits>(std::forward<F2>(f2), std::forward<F3>(f3),
-                              std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits2::UnwrappedType>(
+            std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
+            std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b111100) {
-    return SeqState<Traits, P, F0,
-                    SeqFactoryMapType<Traits, F1, F2, F3, F4, F5>>(
+    return SeqState<
+        Traits, P, F0,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2, F3, F4, F5>>(
         std::forward<P>(p), std::forward<F0>(f0),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
-                              std::forward<F3>(f3), std::forward<F4>(f4),
-                              std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3),
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b111101) {
-    return SeqState<Traits, SeqMapType<Traits, P, F0>,
-                    SeqFactoryMapType<Traits, F1, F2, F3, F4, F5>>(
+    return SeqState<
+        Traits, SeqMapType<Traits, P, F0>,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits1::UnwrappedType,
+                          F1, F2, F3, F4, F5>>(
         SeqMap<Traits>(std::forward<P>(p), std::forward<F0>(f0)),
-        SeqFactoryMap<Traits>(std::forward<F1>(f1), std::forward<F2>(f2),
-                              std::forward<F3>(f3), std::forward<F4>(f4),
-                              std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits1::UnwrappedType>(
+            std::forward<F1>(f1), std::forward<F2>(f2), std::forward<F3>(f3),
+            std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b111110) {
-    return SeqState<Traits, P,
-                    SeqFactoryMapType<Traits, F0, F1, F2, F3, F4, F5>>(
+    return SeqState<
+        Traits, P,
+        SeqFactoryMapType<Traits,
+                          typename Types::PromiseResultTraits0::UnwrappedType,
+                          F0, F1, F2, F3, F4, F5>>(
         std::forward<P>(p),
-        SeqFactoryMap<Traits>(std::forward<F0>(f0), std::forward<F1>(f1),
-                              std::forward<F2>(f2), std::forward<F3>(f3),
-                              std::forward<F4>(f4), std::forward<F5>(f5)),
+        SeqFactoryMap<Traits,
+                      typename Types::PromiseResultTraits0::UnwrappedType>(
+            std::forward<F0>(f0), std::forward<F1>(f1), std::forward<F2>(f2),
+            std::forward<F3>(f3), std::forward<F4>(f4), std::forward<F5>(f5)),
         whence);
   }
   if constexpr (kInstantBits == 0b111111) {
@@ -7728,8 +8622,10 @@ auto FoldSeqStateImpl(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
 }
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5>
-auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                  DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0, F1&& f1,
+                                                       F2&& f2, F3&& f3,
+                                                       F4&& f4, F5&& f5,
+                                                       DebugLocation whence) {
   using Types = SeqStateTypes<Traits, P, F0, F1, F2, F3, F4, F5>;
   static constexpr uint32_t kInstantBits =
       (Types::NextFactory0::kInstantaneousPromise ? 1 : 0) |
@@ -7746,8 +8642,11 @@ auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6>
-auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                  F6&& f6, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0, F1&& f1,
+                                                       F2&& f2, F3&& f3,
+                                                       F4&& f4, F5&& f5,
+                                                       F6&& f6,
+                                                       DebugLocation whence) {
   return SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6>(
       std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
       std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -7756,8 +8655,11 @@ auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7>
-auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                  F6&& f6, F7&& f7, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0, F1&& f1,
+                                                       F2&& f2, F3&& f3,
+                                                       F4&& f4, F5&& f5,
+                                                       F6&& f6, F7&& f7,
+                                                       DebugLocation whence) {
   return SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7>(
       std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
       std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -7766,8 +8668,9 @@ auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8>
-auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                  F6&& f6, F7&& f7, F8&& f8, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(
+    P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5, F6&& f6,
+    F7&& f7, F8&& f8, DebugLocation whence) {
   return SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8>(
       std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
       std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -7777,8 +8680,9 @@ auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8, typename F9>
-auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                  F6&& f6, F7&& f7, F8&& f8, F9&& f9, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(
+    P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5, F6&& f6,
+    F7&& f7, F8&& f8, F9&& f9, DebugLocation whence) {
   return SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9>(
       std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
       std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -7788,9 +8692,9 @@ auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
 template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8, typename F9, typename F10>
-auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                  F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10,
-                  DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(
+    P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5, F6&& f6,
+    F7&& f7, F8&& f8, F9&& f9, F10&& f10, DebugLocation whence) {
   return SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10>(
       std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
       std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -7802,9 +8706,9 @@ template <template <typename> class Traits, typename P, typename F0,
           typename F1, typename F2, typename F3, typename F4, typename F5,
           typename F6, typename F7, typename F8, typename F9, typename F10,
           typename F11>
-auto FoldSeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-                  F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10, F11&& f11,
-                  DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(
+    P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5, F6&& f6,
+    F7&& f7, F8&& f8, F9&& f9, F10&& f10, F11&& f11, DebugLocation whence) {
   return SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11>(
       std::forward<P>(p), std::forward<F0>(f0), std::forward<F1>(f1),
       std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
