@@ -709,6 +709,7 @@ grpc_cc_test(
         "//src/core:event_engine_memory_allocator",
         "//src/core:inter_activity_latch",
         "//src/core:memory_quota",
+        "//src/core:mpsc",
         "//src/core:notification",
         "//src/core:poll",
         "//src/core:resource_quota",
