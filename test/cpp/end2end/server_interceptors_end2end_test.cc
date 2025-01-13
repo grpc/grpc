@@ -94,9 +94,9 @@ class LoggingInterceptor : public experimental::Interceptor {
       auto* map = methods->GetSendTrailingMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
-        found = absl::StartsWith(pair.first, "testkey") &&
-                absl::StartsWith(pair.second, "testvalue");
+      for (const auto& [key, value] : *map) {
+        found = absl::StartsWith(key, "testkey") &&
+                absl::StartsWith(value, "testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
@@ -108,9 +108,8 @@ class LoggingInterceptor : public experimental::Interceptor {
       auto* map = methods->GetRecvInitialMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+      for (const auto& [key, value] : *map) {
+        found = key.starts_with("testkey") && value.starts_with("testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
