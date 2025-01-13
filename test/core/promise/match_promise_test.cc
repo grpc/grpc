@@ -30,7 +30,7 @@ TEST(MatchPromiseTest, Works) {
   struct Float {
     float x;
   };
-  using V = absl::variant<Int, Float, std::string>;
+  using V = std::variant<Int, Float, std::string>;
   auto make_promise = [](V v) -> Promise<std::string> {
     return MatchPromise(
         std::move(v),

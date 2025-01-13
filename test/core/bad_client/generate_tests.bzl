@@ -56,7 +56,7 @@ def grpc_bad_client_tests():
             "//:grpc_http_filters",
         ],
     )
-    for t, topt in BAD_CLIENT_TESTS.items():
+    for t, _ in BAD_CLIENT_TESTS.items():
         grpc_cc_test(
             name = "%s_bad_client_test" % t,
             srcs = ["tests/%s.cc" % t],

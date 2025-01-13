@@ -47,11 +47,6 @@
 
 namespace grpc_core {
 
-const NoInterceptor HttpServerFilter::Call::OnClientToServerMessage;
-const NoInterceptor HttpServerFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor HttpServerFilter::Call::OnServerToClientMessage;
-const NoInterceptor HttpServerFilter::Call::OnFinalize;
-
 const grpc_channel_filter HttpServerFilter::kFilter =
     MakePromiseBasedFilter<HttpServerFilter, FilterEndpoint::kServer,
                            kFilterExaminesServerInitialMetadata>();
@@ -87,7 +82,7 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
         if (filter->allow_put_requests_) {
           break;
         }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case HttpMethodMetadata::kInvalid:
       case HttpMethodMetadata::kGet:
         return MalformedRequest("Bad method header");

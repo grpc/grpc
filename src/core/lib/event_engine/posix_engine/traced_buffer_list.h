@@ -26,8 +26,7 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/sync.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 struct ConnectionMetrics {  // Delivery rate in Bytes/s.
   absl::optional<uint64_t> delivery_rate;
@@ -176,7 +175,6 @@ class TracedBufferList {
 void TcpSetWriteTimestampsCallback(
     absl::AnyInvocable<void(void*, Timestamps*, absl::Status)>);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TRACED_BUFFER_LIST_H

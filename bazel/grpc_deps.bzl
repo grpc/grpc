@@ -150,6 +150,9 @@ def grpc_deps():
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20240722.0.tar.gz",
                 "https://github.com/abseil/abseil-cpp/archive/20240722.0.tar.gz",
             ],
+            repo_mapping = {
+                "@googletest": "@com_google_googletest",
+            },
         )
 
     if "bazel_toolchains" not in native.existing_rules():

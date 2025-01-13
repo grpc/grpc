@@ -39,6 +39,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/base/attributes.h"
@@ -54,7 +55,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -2681,7 +2681,7 @@ static void WithUrgency(grpc_chttp2_transport* t,
       break;
     case grpc_core::chttp2::FlowControlAction::Urgency::UPDATE_IMMEDIATELY:
       grpc_chttp2_initiate_write(t, reason);
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case grpc_core::chttp2::FlowControlAction::Urgency::QUEUE_UPDATE:
       action();
       break;
@@ -2766,7 +2766,7 @@ static void read_action_parse_loop_locked(
          i < t->read_buffer.count && errors[1] == absl::OkStatus(); i++) {
       auto r = grpc_chttp2_perform_read(t.get(), t->read_buffer.slices[i],
                                         requests_started);
-      if (auto* partial_read_size = absl::get_if<size_t>(&r)) {
+      if (auto* partial_read_size = std::get_if<size_t>(&r)) {
         for (size_t j = 0; j < i; j++) {
           grpc_core::CSliceUnref(grpc_slice_buffer_take_first(&t->read_buffer));
         }
@@ -2782,7 +2782,7 @@ static void read_action_parse_loop_locked(
         // Early return: we queued to retry later.
         return;
       } else {
-        errors[1] = std::move(absl::get<absl::Status>(r));
+        errors[1] = std::move(std::get<absl::Status>(r));
       }
     }
     if (errors[1] != absl::OkStatus()) {

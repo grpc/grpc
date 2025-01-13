@@ -97,13 +97,13 @@ class ServerMessageSizeFilter final
 
   class Call {
    public:
-    static const NoInterceptor OnClientInitialMetadata;
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientInitialMetadata;
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
     ServerMetadataHandle OnClientToServerMessage(
         const Message& message, ServerMessageSizeFilter* filter);
-    static const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnClientToServerHalfClose;
     ServerMetadataHandle OnServerToClientMessage(
         const Message& message, ServerMessageSizeFilter* filter);
   };
@@ -129,12 +129,12 @@ class ClientMessageSizeFilter final
    public:
     explicit Call(ClientMessageSizeFilter* filter);
 
-    static const NoInterceptor OnClientInitialMetadata;
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientInitialMetadata;
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
     ServerMetadataHandle OnClientToServerMessage(const Message& message);
-    static const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnClientToServerHalfClose;
     ServerMetadataHandle OnServerToClientMessage(const Message& message);
 
    private:

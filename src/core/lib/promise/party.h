@@ -371,7 +371,7 @@ class Party : public Activity, private Wakeable {
           Construct(&promise_, std::move(p));
           state_.store(State::kPromise, std::memory_order_relaxed);
         }
-          ABSL_FALLTHROUGH_INTENDED;
+          [[fallthrough]];
         case State::kPromise: {
           auto p = promise_();
           if (auto* r = p.value_if_ready()) {

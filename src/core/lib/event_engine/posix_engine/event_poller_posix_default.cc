@@ -27,8 +27,7 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/no_destruct.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 namespace {
@@ -82,5 +81,4 @@ std::shared_ptr<PosixEventPoller> MakeDefaultPoller(Scheduler* /*scheduler*/) {
 
 #endif  // GRPC_POSIX_SOCKET_TCP
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

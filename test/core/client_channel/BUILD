@@ -173,7 +173,6 @@ grpc_fuzz_test(
     name = "retry_state_test",
     srcs = ["retry_state_test.cc"],
     external_deps = [
-        "absl/types:variant",
         "fuzztest",
         "fuzztest_main",
         "gtest",

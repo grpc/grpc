@@ -32,8 +32,7 @@
 
 static thread_local bool g_timer_thread;
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 void TimerManager::RunSomeTimers(
     std::vector<experimental::EventEngine::Closure*> timers) {
@@ -150,5 +149,4 @@ void TimerManager::PrepareFork() { Shutdown(); }
 void TimerManager::PostforkParent() { RestartPostFork(); }
 void TimerManager::PostforkChild() { RestartPostFork(); }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
