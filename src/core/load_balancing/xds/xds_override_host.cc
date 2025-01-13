@@ -30,6 +30,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
@@ -44,7 +45,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
-#include "absl/types/variant.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
@@ -211,7 +211,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
    public:
     bool HasOwnedSubchannel() const
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
-      auto* sc = absl::get_if<RefCountedPtr<SubchannelWrapper>>(&subchannel_);
+      auto* sc = std::get_if<RefCountedPtr<SubchannelWrapper>>(&subchannel_);
       return sc != nullptr && *sc != nullptr;
     }
 
@@ -298,7 +298,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
    private:
     grpc_connectivity_state connectivity_state_
         ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_) = GRPC_CHANNEL_IDLE;
-    absl::variant<SubchannelWrapper*, RefCountedPtr<SubchannelWrapper>>
+    std::variant<SubchannelWrapper*, RefCountedPtr<SubchannelWrapper>>
         subchannel_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
     XdsHealthStatus eds_health_status_ ABSL_GUARDED_BY(
         &XdsOverrideHostLb::mu_) = XdsHealthStatus(XdsHealthStatus::kUnknown);
@@ -568,7 +568,7 @@ LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(PickArgs args) {
         "xds_override_host picker not given any child picker"));
   }
   auto result = picker_->Pick(args);
-  auto complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+  auto complete_pick = std::get_if<PickResult::Complete>(&result.result);
   if (complete_pick != nullptr) {
     auto* wrapper =
         static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
@@ -659,8 +659,8 @@ void XdsOverrideHostLb::ResetState() {
     std::vector<RefCountedPtr<SubchannelWrapper>> subchannel_refs_to_drop;
     MutexLock lock(&mu_);
     subchannel_refs_to_drop.reserve(subchannel_map_.size());
-    for (auto& p : subchannel_map_) {
-      p.second->UnsetSubchannel(&subchannel_refs_to_drop);
+    for (auto& [_, subchannel_entry] : subchannel_map_) {
+      subchannel_entry->UnsetSubchannel(&subchannel_refs_to_drop);
     }
     subchannel_map_.clear();
   }
@@ -886,9 +886,7 @@ void XdsOverrideHostLb::UpdateAddressMap(
         ++it;
       }
     }
-    for (auto& p : addresses_for_map) {
-      const auto& address = p.first;
-      auto& address_info = p.second;
+    for (auto& [address, address_info] : addresses_for_map) {
       auto it = subchannel_map_.find(address);
       if (it == subchannel_map_.end()) {
         GRPC_TRACE_LOG(xds_override_host_lb, INFO)
@@ -977,20 +975,20 @@ void XdsOverrideHostLb::CleanupSubchannels() {
   {
     MutexLock lock(&mu_);
     if (subchannel_map_.empty()) return;
-    for (const auto& p : subchannel_map_) {
-      if (p.second->last_used_time() <= idle_threshold) {
-        auto subchannel = p.second->TakeOwnedSubchannel();
+    for (const auto& [address, subchannel_entry] : subchannel_map_) {
+      if (subchannel_entry->last_used_time() <= idle_threshold) {
+        auto subchannel = subchannel_entry->TakeOwnedSubchannel();
         if (subchannel != nullptr) {
           GRPC_TRACE_LOG(xds_override_host_lb, INFO)
               << "[xds_override_host_lb " << this
-              << "] dropping subchannel for " << p.first;
+              << "] dropping subchannel for " << address;
           subchannel_refs_to_drop.push_back(std::move(subchannel));
         }
       } else {
         // Not dropping the subchannel.  Check the entry's last_used_time to
         // determine the next time at which the timer needs to run.
         const Duration next_time_for_entry =
-            p.second->last_used_time() + connection_idle_timeout_ - now;
+            subchannel_entry->last_used_time() + connection_idle_timeout_ - now;
         next_time = std::min(next_time, next_time_for_entry);
       }
     }

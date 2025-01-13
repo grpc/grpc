@@ -31,7 +31,6 @@ grpc_cc_library(
         "absl/log:log",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/types:variant",
         "gtest",
     ],
     language = "C++",
@@ -132,7 +131,6 @@ grpc_cc_library(
         "absl/random",
         "absl/strings",
         "absl/types:optional",
-        "absl/types:variant",
         "gtest",
     ],
     deps = [
@@ -679,7 +677,6 @@ grpc_cc_test(
         "absl/meta:type_traits",
         "absl/strings",
         "absl/types:optional",
-        "absl/types:variant",
         "gtest",
     ],
     language = "C++",

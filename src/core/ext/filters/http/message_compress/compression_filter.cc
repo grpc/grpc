@@ -52,13 +52,6 @@
 
 namespace grpc_core {
 
-const NoInterceptor ServerCompressionFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ServerCompressionFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor ServerCompressionFilter::Call::OnFinalize;
-const NoInterceptor ClientCompressionFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ClientCompressionFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor ClientCompressionFilter::Call::OnFinalize;
-
 const grpc_channel_filter ClientCompressionFilter::kFilter =
     MakePromiseBasedFilter<ClientCompressionFilter, FilterEndpoint::kClient,
                            kFilterExaminesServerInitialMetadata |

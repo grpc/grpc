@@ -204,7 +204,7 @@ class OpHandlerImpl {
         Construct(&promise_, std::move(promise));
         state_ = State::kPromise;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kPromise: {
         GRPC_TRACE_LOG(call, INFO)
             << Activity::current()->DebugTag() << "BeginPoll " << OpName();
@@ -294,11 +294,11 @@ class WaitForCqEndOp {
   WaitForCqEndOp(const WaitForCqEndOp&) = delete;
   WaitForCqEndOp& operator=(const WaitForCqEndOp&) = delete;
   WaitForCqEndOp(WaitForCqEndOp&& other) noexcept
-      : state_(std::move(absl::get<NotStarted>(other.state_))) {
+      : state_(std::move(std::get<NotStarted>(other.state_))) {
     other.state_.emplace<Invalid>();
   }
   WaitForCqEndOp& operator=(WaitForCqEndOp&& other) noexcept {
-    state_ = std::move(absl::get<NotStarted>(other.state_));
+    state_ = std::move(std::get<NotStarted>(other.state_));
     other.state_.emplace<Invalid>();
     return *this;
   }
@@ -317,7 +317,7 @@ class WaitForCqEndOp {
     std::atomic<bool> done{false};
   };
   struct Invalid {};
-  using State = absl::variant<NotStarted, Started, Invalid>;
+  using State = std::variant<NotStarted, Started, Invalid>;
 
   static std::string StateString(const State& state);
 

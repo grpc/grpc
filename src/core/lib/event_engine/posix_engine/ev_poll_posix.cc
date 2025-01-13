@@ -62,8 +62,7 @@ static const intptr_t kClosureReady = 1;
 static const int kPollinCheck = POLLIN | POLLHUP | POLLERR;
 static const int kPolloutCheck = POLLOUT | POLLHUP | POLLERR;
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 using Events = absl::InlinedVector<PollEventHandle*, 5>;
 
@@ -844,15 +843,13 @@ std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
   return nullptr;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #else  // GRPC_POSIX_SOCKET_EV_POLL
 
 #include "src/core/util/crash.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 PollPoller::PollPoller(Scheduler* /* engine */) {
   grpc_core::Crash("unimplemented");
@@ -900,7 +897,6 @@ void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* /*handle*/) {
   grpc_core::Crash("unimplemented");
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_POSIX_SOCKET_EV_POLL

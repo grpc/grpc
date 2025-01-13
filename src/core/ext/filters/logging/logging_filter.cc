@@ -70,9 +70,6 @@
 
 namespace grpc_core {
 
-const NoInterceptor ClientLoggingFilter::Call::OnFinalize;
-const NoInterceptor ServerLoggingFilter::Call::OnFinalize;
-
 namespace {
 
 LoggingSink* g_logging_sink = nullptr;

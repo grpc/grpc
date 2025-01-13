@@ -444,7 +444,7 @@ class Subchannel::ConnectedSubchannelStateWatcher final
 
 void Subchannel::ConnectivityStateWatcherList::AddWatcherLocked(
     RefCountedPtr<ConnectivityStateWatcherInterface> watcher) {
-  watchers_.insert(std::make_pair(watcher.get(), std::move(watcher)));
+  watchers_.insert(std::move(watcher));
 }
 
 void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
@@ -454,9 +454,9 @@ void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
 
 void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     grpc_connectivity_state state, const absl::Status& status) {
-  for (const auto& p : watchers_) {
+  for (const auto& watcher : watchers_) {
     subchannel_->work_serializer_.Schedule(
-        [watcher = p.second->Ref(), state, status]() mutable {
+        [watcher = watcher->Ref(), state, status]() mutable {
           auto* watcher_ptr = watcher.get();
           watcher_ptr->OnConnectivityStateChange(std::move(watcher), state,
                                                  status);

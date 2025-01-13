@@ -39,11 +39,6 @@
 
 namespace grpc_core {
 
-const NoInterceptor ClientLoadReportingFilter::Call::OnServerToClientMessage;
-const NoInterceptor ClientLoadReportingFilter::Call::OnClientToServerMessage;
-const NoInterceptor ClientLoadReportingFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ClientLoadReportingFilter::Call::OnFinalize;
-
 const grpc_channel_filter ClientLoadReportingFilter::kFilter =
     MakePromiseBasedFilter<ClientLoadReportingFilter, FilterEndpoint::kClient,
                            kFilterExaminesServerInitialMetadata>();

@@ -50,13 +50,6 @@
 
 namespace grpc_core {
 
-const NoInterceptor FaultInjectionFilter::Call::OnServerInitialMetadata;
-const NoInterceptor FaultInjectionFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor FaultInjectionFilter::Call::OnClientToServerMessage;
-const NoInterceptor FaultInjectionFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor FaultInjectionFilter::Call::OnServerToClientMessage;
-const NoInterceptor FaultInjectionFilter::Call::OnFinalize;
-
 namespace {
 
 std::atomic<uint32_t> g_active_faults{0};

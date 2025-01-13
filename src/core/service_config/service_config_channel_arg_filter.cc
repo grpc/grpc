@@ -81,29 +81,17 @@ class ServiceConfigChannelArgFilter final
    public:
     void OnClientInitialMetadata(ClientMetadata& md,
                                  ServiceConfigChannelArgFilter* filter);
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
   };
 
  private:
   RefCountedPtr<ServiceConfig> service_config_;
 };
-
-const NoInterceptor
-    ServiceConfigChannelArgFilter::Call::OnServerInitialMetadata;
-const NoInterceptor
-    ServiceConfigChannelArgFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor
-    ServiceConfigChannelArgFilter::Call::OnClientToServerMessage;
-const NoInterceptor
-    ServiceConfigChannelArgFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor
-    ServiceConfigChannelArgFilter::Call::OnServerToClientMessage;
-const NoInterceptor ServiceConfigChannelArgFilter::Call::OnFinalize;
 
 void ServiceConfigChannelArgFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ServiceConfigChannelArgFilter* filter) {
