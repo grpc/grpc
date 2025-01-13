@@ -21,7 +21,7 @@ cd $(dirname $0)/../../..
 
 echo "Current dir ${PWD}"
 
-cd "examples/cpp"
+cd "examples/cpp" || exit 1
 
 export TMPDIR=$(mktemp -d)
 trap "rm -rf ${TMPDIR}" EXIT
@@ -52,39 +52,66 @@ pass () {
     echo "$(tput setaf 2) $1 $(tput sgr 0)"
 }
 
+# "server", "client" suffix will be added in loop 
 EXAMPLES=(
-    "helloworld:greeter_callback"
-    "helloworld:greeter_async"
-    "helloworld:greeter"
+    "helloworld:greeter_callback_"
+    "helloworld:greeter_async_"
+    "helloworld:greeter_"
+    "auth:ssl_"
+    "cancellation:"
+    "compression:compression_"
+    "deadline:"
+    "error_details:greeter_"
+    "error_handling:greeter_"
+    "flow_control:server_flow_control_"
+    "flow_control:client_flow_control_"
+    "generic_api:greeter_"
+    "health:health_"
+    "interceptors:keyvaluestore_"
+    "keepalive:greeter_callback_"
+    "load_balancing:lb_"
+    "metadata:metadata_"
+    "multiplex:multiplex_"
+    "retry:"
+    "route_guide:route_guide_callback_"
 )
 
 declare -A SERVER_ARGS=(
-    ["default"]="-port $SERVER_PORT"
+    ["default"]=""
 )
 
 declare -A CLIENT_ARGS=(
-    ["default"]="-target localhost:$SERVER_PORT"
+    ["default"]=""
 )
 
-
 declare -A EXPECTED_SERVER_OUTPUT=(
-    ["helloworld:greeter_callback"]=""
-    ["helloworld:greeter_async"]=""
-    ["helloworld:greeter"]=""
+    ["default"]="Server listening"
+    ["unix_abstract_sockets:"]="" 
 )
 
 declare -A EXPECTED_CLIENT_OUTPUT=(
-    ["helloworld:greeter_callback"]="Greeter received: Hello world"
-    ["helloworld:greeter_async"]="Greeter received: Hello world"
-    ["helloworld:greeter"]="Greeter received: Hello world"
+    ["default"]="Greeter received: Hello world"
+    ["cancellation:"]="Count 9 : Count 9 Ack"
+    ["compression:compression_"]="Greeter received: Hello world world world"
+    ["deadline:"]="\[Exceeds propagated deadline\] wanted = 4, got = 4"
+    ["error_details:greeter_"]="Quota: subject=name: World description=Limit one greeting per person"
+    ["error_handling:greeter_"]="Ok. ReplyMessage=Hello World"
+    ["flow_control:client_flow_control_"]="Recieved request with 3145728 bytes name"
+    ["flow_control:server_flow_control_"]="Done sending messages"
+    ["generic_api:greeter_"]="Ok. ReplyMessage=Hello gRPC"
+    ["health:health_"]="After second call: status: SERVING"
+    ["interceptors:keyvaluestore_"]="key4 found in map"
+    ["metadata:metadata_"]="Client received trailing metadata from server: trailing metadata value"
+    ["multiplex:multiplex_"]="Found feature: Feature: latitude: 50, longitude: 100"
+    ["route_guide:route_guide_callback_"]="Got message First message at 0, 0"
+    ["unix_abstract_sockets:"]="Received: arst"
 )
-
 
 for example in "${EXAMPLES[@]}"; do
     echo "$(tput setaf 4) testing: ${example} $(tput sgr 0)"
 
     # Build server
-    if ! bazel build  ${example}_server; then
+    if ! bazel build  ${example}server; then
         fail "failed to build server"
     else
         pass "successfully built server"
@@ -93,14 +120,14 @@ for example in "${EXAMPLES[@]}"; do
     # Start server
     SERVER_LOG="$(mktemp)"
     server_args=${SERVER_ARGS[$example]:-${SERVER_ARGS["default"]}}
-    bazel run ${example}_server -- $server_args &> $SERVER_LOG  &
+    bazel run ${example}server -- $server_args &> $SERVER_LOG  &
     SERVER_PID=$!
     echo "Server Pid : ${SERVER_PID}"
 
     sleep 5
 
     # Build client
-    if ! bazel build  ${example}_client; then
+    if ! bazel build  ${example}client; then
         fail "failed to build client"
     else
         pass "successfully built client"
@@ -109,7 +136,7 @@ for example in "${EXAMPLES[@]}"; do
     # Start client
     CLIENT_LOG="$(mktemp)"
     client_args=${CLIENT_ARGS[$example]:-${CLIENT_ARGS["default"]}}
-    if ! timeout 20 bazel run ${example}_client -- $client_args &> $CLIENT_LOG; then
+    if ! timeout 120 bazel run ${example}client -- $client_args &> $CLIENT_LOG; then
         fail "client failed to communicate with server
         got server log:
         $(cat $SERVER_LOG)
@@ -136,7 +163,6 @@ for example in "${EXAMPLES[@]}"; do
             pass "server log contains expected output: ${EXPECTED_SERVER_OUTPUT[$example]}"
         fi
     fi
-
 
     # Check client log for expected output if expecting an
     # output
