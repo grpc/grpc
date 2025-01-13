@@ -15,6 +15,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -22,7 +23,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
@@ -323,7 +323,7 @@ class Fuzzer {
   std::function<void()> wakeup_;
   // If we are certain of the final status, then that. Otherwise, nullopt if we
   // don't know.
-  absl::optional<absl::Status> expected_status_;
+  std::optional<absl::Status> expected_status_;
   // Has on_done been called?
   bool done_ = false;
   // Wakers that may be scheduled

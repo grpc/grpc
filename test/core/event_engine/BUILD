@@ -40,7 +40,6 @@ grpc_cc_test(
     srcs = ["forkable_test.cc"],
     external_deps = [
         "absl/log:log",
-        "absl/types:optional",
         "gtest",
     ],
     deps = [
@@ -73,7 +72,6 @@ grpc_cc_test(
     name = "endpoint_config_test",
     srcs = ["endpoint_config_test.cc"],
     external_deps = [
-        "absl/types:optional",
         "gtest",
     ],
     language = "C++",

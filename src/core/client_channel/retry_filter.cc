@@ -19,11 +19,11 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_filter_legacy_call_data.h"
 #include "src/core/client_channel/retry_service_config.h"

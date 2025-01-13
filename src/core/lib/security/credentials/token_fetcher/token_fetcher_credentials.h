@@ -135,7 +135,7 @@ class TokenFetcherCredentials : public grpc_call_credentials {
 
       RefCountedPtr<FetchState> fetch_state_;
       const absl::Status status_;
-      absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
           timer_handle_ ABSL_GUARDED_BY(&TokenFetcherCredentials::mu_);
     };
 

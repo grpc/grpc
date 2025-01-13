@@ -110,8 +110,8 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
       parent_call, propagation_mask, completion_queue, nullptr,
       grpc_core::Slice(grpc_core::CSliceRef(method)),
       host != nullptr
-          ? absl::optional<grpc_core::Slice>(grpc_core::CSliceRef(*host))
-          : absl::nullopt,
+          ? std::optional<grpc_core::Slice>(grpc_core::CSliceRef(*host))
+          : std::nullopt,
       grpc_core::Timestamp::FromTimespecRoundUp(deadline),
       /*registered_method=*/false);
 }
@@ -148,8 +148,8 @@ grpc_call* grpc_channel_create_registered_call(
   return grpc_core::Channel::FromC(channel)->CreateCall(
       parent_call, propagation_mask, completion_queue, nullptr, rc->path.Ref(),
       rc->authority.has_value()
-          ? absl::optional<grpc_core::Slice>(rc->authority->Ref())
-          : absl::nullopt,
+          ? std::optional<grpc_core::Slice>(rc->authority->Ref())
+          : std::nullopt,
       grpc_core::Timestamp::FromTimespecRoundUp(deadline),
       /*registered_method=*/true);
 }

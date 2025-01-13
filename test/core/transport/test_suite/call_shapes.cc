@@ -27,7 +27,7 @@ TRANSPORT_TEST(MetadataOnlyRequest) {
         initiator.FinishSends();
         return initiator.PullServerInitialMetadata();
       },
-      [&](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+      [&](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
         EXPECT_TRUE(md.ok());
         EXPECT_TRUE(md.value().has_value());
         EXPECT_EQ(*md.value().value()->get_pointer(ContentTypeMetadata()),
@@ -80,7 +80,7 @@ TRANSPORT_TEST(MetadataOnlyRequestServerAbortsAfterInitialMetadata) {
         // We don't close the sending stream here.
         return initiator.PullServerInitialMetadata();
       },
-      [&](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+      [&](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
         EXPECT_TRUE(md.ok());
         EXPECT_TRUE(md.value().has_value());
         EXPECT_EQ(*md.value().value()->get_pointer(ContentTypeMetadata()),
@@ -131,7 +131,7 @@ TRANSPORT_TEST(MetadataOnlyRequestServerAbortsImmediately) {
         // We don't close the sending stream here.
         return initiator.PullServerInitialMetadata();
       },
-      [&](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+      [&](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
         EXPECT_TRUE(md.ok());
         EXPECT_FALSE(md.value().has_value());
         return initiator.PullServerTrailingMetadata();
@@ -184,7 +184,7 @@ TRANSPORT_TEST(UnaryRequest) {
         initiator.FinishSends();
         return initiator.PullServerInitialMetadata();
       },
-      [&](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+      [&](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
         EXPECT_TRUE(md.ok());
         EXPECT_TRUE(md.value().has_value());
         EXPECT_EQ(*md.value().value()->get_pointer(ContentTypeMetadata()),
@@ -260,7 +260,7 @@ TRANSPORT_TEST(UnaryRequestOmitCheckEndOfStream) {
         initiator.FinishSends();
         return initiator.PullServerInitialMetadata();
       },
-      [&](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+      [&](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
         EXPECT_TRUE(md.ok());
         EXPECT_TRUE(md.value().has_value());
         EXPECT_EQ(*md.value().value()->get_pointer(ContentTypeMetadata()),
@@ -318,7 +318,7 @@ TRANSPORT_TEST(UnaryRequestWaitForServerInitialMetadataBeforeSendingPayload) {
   SpawnTestSeq(
       initiator, "initiator",
       [&]() mutable { return initiator.PullServerInitialMetadata(); },
-      [&](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+      [&](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
         EXPECT_TRUE(md.ok());
         EXPECT_TRUE(md.value().has_value());
         EXPECT_EQ(*md.value().value()->get_pointer(ContentTypeMetadata()),
@@ -393,7 +393,7 @@ TRANSPORT_TEST(ClientStreamingRequest) {
   SpawnTestSeq(
       initiator, "initiator",
       [&]() mutable { return initiator.PullServerInitialMetadata(); },
-      [&](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+      [&](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
         EXPECT_TRUE(md.ok());
         EXPECT_TRUE(md.value().has_value());
         EXPECT_EQ(*md.value().value()->get_pointer(ContentTypeMetadata()),
@@ -500,7 +500,7 @@ TRANSPORT_TEST(ServerStreamingRequest) {
   SpawnTestSeq(
       initiator, "initiator",
       [&]() mutable { return initiator.PullServerInitialMetadata(); },
-      [&](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+      [&](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
         EXPECT_TRUE(md.ok());
         EXPECT_TRUE(md.value().has_value());
         EXPECT_EQ(*md.value().value()->get_pointer(ContentTypeMetadata()),

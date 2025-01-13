@@ -329,8 +329,8 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   self->connection_->NewConnectionID();
   SettingsFrame frame;
   frame.headers =
-      SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
-                       absl::nullopt}
+      SettingsMetadata{std::nullopt, self->connection_->connection_id_,
+                       std::nullopt}
           .ToMetadataBatch();
   bool saw_encoding_errors = false;
   auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_,
@@ -346,7 +346,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   // Send data endpoint setting frame
   SettingsFrame frame;
   frame.headers =
-      SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
+      SettingsMetadata{std::nullopt, self->connection_->connection_id_,
                        self->connection_->data_alignment_}
           .ToMetadataBatch();
   bool saw_encoding_errors = false;

@@ -119,7 +119,6 @@ grpc_cc_test(
         "absl/base:core_headers",
         "absl/log:log",
         "absl/strings",
-        "absl/types:optional",
         "gtest",
     ],
     language = "c++",
@@ -148,7 +147,6 @@ grpc_proto_fuzzer(
     external_deps = [
         "absl/status",
         "absl/strings",
-        "absl/types:optional",
     ],
     language = "C++",
     proto = "memory_quota_fuzzer.proto",

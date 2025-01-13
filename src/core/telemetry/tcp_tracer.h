@@ -23,10 +23,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 
 namespace grpc_core {
 
@@ -53,87 +53,87 @@ class TcpTracerInterface {
     // Congestion control name.
     std::string congestion_ctrl;
     // Delivery rate in Bps.
-    absl::optional<uint64_t> delivery_rate;
+    std::optional<uint64_t> delivery_rate;
     // Total bytes retransmitted so far.
-    absl::optional<uint64_t> data_retx;
+    std::optional<uint64_t> data_retx;
     // Total bytes sent so far.
-    absl::optional<uint64_t> data_sent;
+    std::optional<uint64_t> data_sent;
     // Total packets lost so far.
     // Includes lost or spuriously retransmitted packets.
-    absl::optional<uint32_t> packet_retx;
+    std::optional<uint32_t> packet_retx;
     // Total packets spuriously retransmitted so far.
-    absl::optional<uint32_t> packet_spurious_retx;
+    std::optional<uint32_t> packet_spurious_retx;
     // Total packets sent so far.
-    absl::optional<uint32_t> packet_sent;
+    std::optional<uint32_t> packet_sent;
     // Total packets delivered so far.
-    absl::optional<uint32_t> packet_delivered;
+    std::optional<uint32_t> packet_delivered;
     // Total packets delivered so far with ECE marked.
     // This metric is smaller than or equal to packet_delivered.
-    absl::optional<uint32_t> packet_delivered_ce;
+    std::optional<uint32_t> packet_delivered_ce;
     // Total bytes in write queue but not sent.
-    absl::optional<uint64_t> data_notsent;
+    std::optional<uint64_t> data_notsent;
     // Minimum RTT observed in usec.
-    absl::optional<uint32_t> min_rtt;
+    std::optional<uint32_t> min_rtt;
     // Smoothed RTT in usec
-    absl::optional<uint32_t> srtt;
+    std::optional<uint32_t> srtt;
     // TTL or hop limit of a packet received
     // Only available with ACKED timestamps.
-    absl::optional<uint32_t> ttl;
+    std::optional<uint32_t> ttl;
     // Represents the number of recurring retransmissions of
     // the first sequence that is not acknowledged yet.
-    absl::optional<uint32_t> recurring_retrans;
+    std::optional<uint32_t> recurring_retrans;
     // Network RTT using hardware timestamps (in usec).
     // A value of -1 indicates that net_rtt could not be measured.
-    absl::optional<int32_t> net_rtt_usec;
+    std::optional<int32_t> net_rtt_usec;
     // Timeout-triggered rehash attempts.
-    absl::optional<uint32_t> timeout_rehash;
+    std::optional<uint32_t> timeout_rehash;
     // Rehash due to ECN congestion.
-    absl::optional<uint32_t> ecn_rehash;
+    std::optional<uint32_t> ecn_rehash;
     // Earliest departure time (CLOCK_MONOTONIC).
     // Only available with SCHEDULED and SENT timestamps.
-    absl::optional<uint64_t> edt;
+    std::optional<uint64_t> edt;
     // If the delivery rate is limited by the application, this is set to
     // true.
-    absl::optional<bool> is_delivery_rate_app_limited;
+    std::optional<bool> is_delivery_rate_app_limited;
     // Pacing rate of the connection in Bps.
-    absl::optional<uint64_t> pacing_rate;
+    std::optional<uint64_t> pacing_rate;
     // Send congestion window in packets.
-    absl::optional<uint32_t> congestion_window;
+    std::optional<uint32_t> congestion_window;
     // Maximum degree of reordering (i.e., maximum number of packets reodered)
     // on the connection.
-    absl::optional<uint32_t> reordering;
+    std::optional<uint32_t> reordering;
     // Cumulative duration (in usec) that the transport protocol
     // was busy sending time.
-    absl::optional<uint64_t> busy_usec;
+    std::optional<uint64_t> busy_usec;
     // Cumulative duration (in usec) that the transport protocol
     // was limited by the receive window size.
-    absl::optional<uint64_t> rwnd_limited_usec;
+    std::optional<uint64_t> rwnd_limited_usec;
     // Cumulative duration (in usec) that the transport protocol
     // was limited by the send buffer size.
-    absl::optional<uint64_t> sndbuf_limited_usec;
+    std::optional<uint64_t> sndbuf_limited_usec;
     // Slow start size threshold in packets.
     // Set to TCP_INFINITE_SSTHRESH when still in slow start.
-    absl::optional<uint32_t> snd_ssthresh;
+    std::optional<uint32_t> snd_ssthresh;
     // The extra time it takes for the receiver to generate the
     // acknowledgement after receiving the last packet. This metric is not
     // cumulative. Only available with ACKED timestamps.
-    absl::optional<uint32_t> time_to_ack_usec;
+    std::optional<uint32_t> time_to_ack_usec;
     // Last socket error code. Only populated for CLOSED timestamps.
-    absl::optional<uint32_t> socket_errno;
+    std::optional<uint32_t> socket_errno;
     // Peer's receive window after scaling (tcpi_snd_wnd).
     // Only available with SENDMSG timestamps.
-    absl::optional<uint32_t> peer_rwnd;
+    std::optional<uint32_t> peer_rwnd;
     // Receive queue drops.
-    absl::optional<uint32_t> rcvq_drops;
+    std::optional<uint32_t> rcvq_drops;
     // The NIC Rx delay reported by the remote host.
-    absl::optional<uint32_t> nic_rx_delay_usec;
+    std::optional<uint32_t> nic_rx_delay_usec;
   };
 
   virtual ~TcpTracerInterface() = default;
   // Records a per-message event with an optional snapshot of connection
   // metrics.
   virtual void RecordEvent(Type type, absl::Time time, size_t byte_offset,
-                           absl::optional<ConnectionMetrics> metrics) = 0;
+                           std::optional<ConnectionMetrics> metrics) = 0;
   // Records a snapshot of connection metrics.
   virtual void RecordConnectionMetrics(ConnectionMetrics metrics) = 0;
 };

@@ -70,7 +70,7 @@ void DirectChannel::GetInfo(const grpc_channel_info*) {
 grpc_call* DirectChannel::CreateCall(
     grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* /*pollset_set_alternative*/,
-    Slice path, absl::optional<Slice> authority, Timestamp deadline,
+    Slice path, std::optional<Slice> authority, Timestamp deadline,
     bool /*registered_method*/) {
   auto arena = call_arena_allocator()->MakeArena();
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(

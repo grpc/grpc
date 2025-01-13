@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
@@ -36,7 +37,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
@@ -115,7 +115,7 @@ class HPackParser::Input {
 
   // Retrieve the current character, or nullopt if end of stream
   // Do not advance
-  absl::optional<uint8_t> peek() const {
+  std::optional<uint8_t> peek() const {
     if (end_of_stream()) {
       return {};
     }
@@ -124,17 +124,17 @@ class HPackParser::Input {
 
   // Retrieve and advance past the current character, or return nullopt if end
   // of stream
-  absl::optional<uint8_t> Next() {
+  std::optional<uint8_t> Next() {
     if (end_of_stream()) {
       UnexpectedEOF(/*min_progress_size=*/1);
-      return absl::optional<uint8_t>();
+      return std::optional<uint8_t>();
     }
     return *begin_++;
   }
 
   // Helper to parse a varint delta on top of value, return nullopt on failure
   // (setting error)
-  absl::optional<uint32_t> ParseVarint(uint32_t value) {
+  std::optional<uint32_t> ParseVarint(uint32_t value) {
     // TODO(ctiller): break out a variant of this when we know there are at
     // least 5 bytes in input_
     auto cur = Next();
@@ -190,7 +190,7 @@ class HPackParser::Input {
   }
 
   // Parse a string prefix
-  absl::optional<StringPrefix> ParseStringPrefix() {
+  std::optional<StringPrefix> ParseStringPrefix() {
     auto cur = Next();
     if (!cur.has_value()) {
       DCHECK(eof_error());
@@ -285,17 +285,17 @@ class HPackParser::Input {
 
  private:
   // Helper to set the error to out of range for ParseVarint
-  absl::optional<uint32_t> ParseVarintOutOfRange(uint32_t value,
-                                                 uint8_t last_byte) {
+  std::optional<uint32_t> ParseVarintOutOfRange(uint32_t value,
+                                                uint8_t last_byte) {
     SetErrorAndStopParsing(
         HpackParseResult::VarintOutOfRangeError(value, last_byte));
-    return absl::optional<uint32_t>();
+    return std::optional<uint32_t>();
   }
 
   // Helper to set the error in the case of a malicious encoding
-  absl::optional<uint32_t> ParseVarintMaliciousEncoding() {
+  std::optional<uint32_t> ParseVarintMaliciousEncoding() {
     SetErrorAndStopParsing(HpackParseResult::MaliciousVarintEncodingError());
-    return absl::optional<uint32_t>();
+    return std::optional<uint32_t>();
   }
 
   // If no error is set, set it to the given error (i.e. first error wins)
@@ -396,7 +396,7 @@ HPackParser::String::StringResult HPackParser::String::ParseUncompressed(
   }
 }
 
-absl::optional<std::vector<uint8_t>> HPackParser::String::Unbase64Loop(
+std::optional<std::vector<uint8_t>> HPackParser::String::Unbase64Loop(
     const uint8_t* cur, const uint8_t* end) {
   while (cur != end && end[-1] == '=') {
     --end;
@@ -478,7 +478,7 @@ absl::optional<std::vector<uint8_t>> HPackParser::String::Unbase64Loop(
 }
 
 HPackParser::String::StringResult HPackParser::String::Unbase64(String s) {
-  absl::optional<std::vector<uint8_t>> result;
+  std::optional<std::vector<uint8_t>> result;
   if (auto* p = std::get_if<Slice>(&s.value_)) {
     result = Unbase64Loop(p->begin(), p->end());
   }
@@ -756,7 +756,7 @@ class HPackParser::Parser {
     return true;
   }
 
-  bool FinishHeaderOmitFromTable(absl::optional<HPackTable::Memento> md) {
+  bool FinishHeaderOmitFromTable(std::optional<HPackTable::Memento> md) {
     // Allow higher code to just pass in failures ... simplifies things a bit.
     if (!md.has_value()) return false;
     FinishHeaderOmitFromTable(*md);
@@ -1028,7 +1028,7 @@ class HPackParser::Parser {
   }
 
   // Emit an indexed field
-  bool FinishIndexed(absl::optional<uint32_t> index) {
+  bool FinishIndexed(std::optional<uint32_t> index) {
     state_.dynamic_table_updates_allowed = 0;
     if (!index.has_value()) return false;
     const auto* elem = state_.hpack_table.Lookup(*index);
@@ -1041,7 +1041,7 @@ class HPackParser::Parser {
   }
 
   // finish parsing a max table size change
-  bool FinishMaxTableSize(absl::optional<uint32_t> size) {
+  bool FinishMaxTableSize(std::optional<uint32_t> size) {
     if (!size.has_value()) return false;
     if (state_.dynamic_table_updates_allowed == 0) {
       input_->SetErrorAndStopParsing(
