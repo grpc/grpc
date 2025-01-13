@@ -120,8 +120,8 @@ class GPR_DLL ConfigVars {
   std::string ssl_cipher_suites_;
   std::string experiments_;
   std::string trace_;
-  std::optional<std::string> override_system_ssl_roots_dir_;
-  std::optional<std::string> override_default_ssl_roots_file_path_;
+  absl::optional<std::string> override_system_ssl_roots_dir_;
+  absl::optional<std::string> override_default_ssl_roots_file_path_;
 };
 
 }  // namespace grpc_core
