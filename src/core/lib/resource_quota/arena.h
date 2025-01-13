@@ -387,7 +387,7 @@ class ArenaSpsc {
   ArenaSpsc(const ArenaSpsc&) = delete;
   ArenaSpsc& operator=(const ArenaSpsc&) = delete;
 
-  void Push(T&& value) {
+  void Push(T value) {
     Node* n = AllocNode();
     Construct(&n->value, std::move(value));
     n->next.store(nullptr, std::memory_order_relaxed);
