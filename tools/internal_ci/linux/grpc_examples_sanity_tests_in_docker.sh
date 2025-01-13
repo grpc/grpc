@@ -97,7 +97,7 @@ declare -A EXPECTED_CLIENT_OUTPUT=(
     ["error_details:greeter_"]="Quota: subject=name: World description=Limit one greeting per person"
     ["error_handling:greeter_"]="Ok. ReplyMessage=Hello World"
     ["flow_control:client_flow_control_"]="Recieved request with 3145728 bytes name"
-    ["flow_control:server_flow_control_"]="Done sending messages"
+    ["flow_control:server_flow_control_"]="Done reading"
     ["generic_api:greeter_"]="Ok. ReplyMessage=Hello gRPC"
     ["health:health_"]="After second call: status: SERVING"
     ["interceptors:keyvaluestore_"]="key4 found in map"
