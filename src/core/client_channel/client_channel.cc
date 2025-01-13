@@ -262,8 +262,7 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         << subchannel_wrapper_->subchannel_.get()
         << " watcher=" << watcher_.get()
         << " state=" << ConnectivityStateName(state) << " status=" << status;
-    std::optional<absl::Cord> keepalive_throttling =
-        status.GetPayload(kKeepaliveThrottlingKey);
+    auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
     if (keepalive_throttling.has_value()) {
       int new_keepalive_time = -1;
       if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
