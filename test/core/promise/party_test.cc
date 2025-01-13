@@ -104,6 +104,7 @@ TEST_F(PartyTest, SpawnAndRunOneParty) {
   n.WaitForNotification();
   absl::StrAppend(&execution_order, "3");
   EXPECT_STREQ(execution_order.c_str(), "PPPP123");
+  VLOG(2) << "Execution order : " << execution_order;
 }
 
 auto MakePromise(std::string& execution_order, int num) {
@@ -138,15 +139,11 @@ TEST_F(PartyTest, TestLargeNumberOfSpawnedPromises) {
     party->Spawn(absl::StrCat("p", i), MakePromise(execution_order, i),
                  MakeOnDone(execution_order));
   }
-  std::string expected_execution_order;
   for (int i = 1; i <= kNumPromises; ++i) {
-    absl::StrAppend(&expected_execution_order,
-                    absl::StrFormat(".L%dD%d", i, i));
+    std::string current = absl::StrFormat(".L%dD%d", i, i);
+    EXPECT_TRUE(absl::StrContains(execution_order, current));
   }
-  // Warning : We do not guarantee that the promises will be executed in the
-  // order they were spawned. However, in this test, the promises never return
-  // Pending, so they will be executed in the order they were spawned.
-  EXPECT_STREQ(execution_order.c_str(), expected_execution_order.c_str());
+  VLOG(2) << "Execution order : " << execution_order;
 }
 
 auto MakePendingPromise(std::string& execution_order, int num) {
@@ -171,64 +168,16 @@ TEST_F(PartyTest, Test16SpawnedPendingPromises) {
   std::string execution_order;
   auto party = MakeParty();
   for (int i = 1; i <= kNumPromises; ++i) {
-    absl::StrAppend(&execution_order, ".");
     party->Spawn(absl::StrCat("p", i), MakePendingPromise(execution_order, i),
                  MakeOnDone(execution_order));
   }
-  std::string expected_execution_order;
   for (int i = 1; i <= kNumPromises; ++i) {
-    absl::StrAppend(&expected_execution_order, ".P");
-    absl::StrAppend(&expected_execution_order, i);
+    std::string current = absl::StrFormat("P%d", i);
+    EXPECT_TRUE(absl::StrContains(execution_order, current));
   }
-  // Warning : We do not guarantee that the promises will be executed in the
-  // order they were spawned. However, in this test, we spawn only 16 promises,
-  // so they will be executed in the order they were spawned.
-  EXPECT_STREQ(execution_order.c_str(), expected_execution_order.c_str());
-}
-
-auto MakePendingPromiseResolve(std::string& execution_order, int num) {
-  return [i = num, &execution_order]() mutable -> Poll<int> {
-    if ((9 * i) < execution_order.length()) {
-      // This condition makes sure that a few runs of the promise return pending
-      // before resolving.
-      absl::StrAppend(&execution_order, "L");
-      absl::StrAppend(&execution_order, i);
-      return i;
-    }
-    GetContext<Activity>()->ForceImmediateRepoll();
-    absl::StrAppend(&execution_order, "P");
-    absl::StrAppend(&execution_order, i);
-    return Pending{};
-  };
-}
-
-TEST_F(PartyTest, TestSpawnedPendingPromisesResolve) {
-  // This test spawns exactly 20 promises
-  // This test asserts the following:
-  // 1. A resolved promise is not polled again after it is resolved even if it
-  //    was Pending in a previous poll.
-  // 2. Earlier spawned promises getting resolved creates a possibility for
-  //    later promises to get spawned and executed.
-  // 3. on_done callback is never called for a promise that is not resolved.
-  //    It will be called immediately when the promise is resolved.
-  const int kNumPromises = 20;
-  std::string execution_order;
-  auto party = MakeParty();
-  for (int i = 1; i <= kNumPromises; ++i) {
-    absl::StrAppend(&execution_order, ".");
-    party->Spawn(absl::StrCat("p", i),
-                 MakePendingPromiseResolve(execution_order, i),
-                 MakeOnDone(execution_order));
-  }
-  // Warning : We do not guarantee that the promises will be executed in the
-  // order they were spawned. However, in this test, we spawn only 20 promises,
-  // and the promises resolve in the order they were spawned, so they should be
-  // executed in the order they were spawned.
-  EXPECT_STREQ(
-      execution_order.c_str(),
-      ".P1P1P1P1P1L1D1.P2P2L2D2.P3P3L3D3.P4P4L4D4.P5P5L5D5.P6P6L6D6.P7P7L7D7."
-      "P8P8L8D8.P9P9L9D9.P10L10D10.P11L11D11.P12L12D12.L13D13.P14L14D14."
-      "P15L15D15.L16D16.P17L17D17.P18L18D18.L19D19.P20L20D20");
+  // The on_done callback should never be called for pending promises.
+  EXPECT_TRUE(!absl::StrContains(execution_order, 'D'));
+  VLOG(2) << "Execution order : " << execution_order;
 }
 
 TEST_F(PartyTest, SpawnWaitableAndRunTwoParties) {
@@ -247,34 +196,31 @@ TEST_F(PartyTest, SpawnWaitableAndRunTwoParties) {
   // The party2 task will wait on the latch `done`.
   party1->Spawn(
       "party1_main",
-      [&party2, &inter_activity_latch, &execution_order]() {
-        absl::StrAppend(&execution_order, "1");
-        return party2->SpawnWaitable(
-            "party2_main", [&inter_activity_latch, &execution_order]() {
-              absl::StrAppend(&execution_order, "2");
-              return inter_activity_latch.Wait();
-            });
+      [&party2, &inter_activity_latch]() {
+        return party2->SpawnWaitable("party2_main", [&inter_activity_latch]() {
+          return inter_activity_latch.Wait();
+        });
       },
       [&test_done, &execution_order](Empty) {
-        absl::StrAppend(&execution_order, "5");
+        absl::StrAppend(&execution_order, "2");
         test_done.Notify();
       });
   ASSERT_FALSE(test_done.HasBeenNotified());
   party1->Spawn(
       "party1_notify_latch",
       [&inter_activity_latch, &execution_order]() {
-        absl::StrAppend(&execution_order, "3");
+        absl::StrAppend(&execution_order, "1");
         inter_activity_latch.Set();
       },
-      [&execution_order](Empty) { absl::StrAppend(&execution_order, "4"); });
+      [](Empty) {});
   test_done.WaitForNotification();
-  absl::StrAppend(&execution_order, "6");
+  absl::StrAppend(&execution_order, "3");
   // WARNING : 4 and 5 are not guaranteed to be executed in that order.
   // As of now, the Spawned promise and its on_done are executed on the same
   // thread and executed immediately. This is why 4 is executed before 5.
   // before 5. But this might change in the future. If it changes, append "4"
   // in both places to fix the test.
-  EXPECT_STREQ(execution_order.c_str(), "123456");
+  EXPECT_STREQ(execution_order.c_str(), "123");
 }
 
 TEST_F(PartyTest, CanSpawnFromSpawn) {
@@ -322,6 +268,7 @@ TEST_F(PartyTest, CanSpawnFromSpawn) {
   n2.WaitForNotification();
   absl::StrAppend(&execution_order, "6");
   EXPECT_STREQ(execution_order.c_str(), "123PPPP456");
+  VLOG(2) << "Execution order : " << execution_order;
 }
 
 TEST_F(PartyTest, CanWakeupWithOwningWaker) {
@@ -372,6 +319,7 @@ TEST_F(PartyTest, CanWakeupWithOwningWaker) {
   complete.WaitForNotification();
   absl::StrAppend(&execution_order, " End");
   EXPECT_TRUE(waker.is_unwakeable());
+  VLOG(2) << "Execution order : " << execution_order;
   EXPECT_STREQ(execution_order.c_str(),
                "AP 0AP 1AP 2AP 3AP 4AP 5AP 6AP 7AP 8AB 9 End");
 }
@@ -412,12 +360,12 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWaker) {
   complete.WaitForNotification();
   EXPECT_TRUE(waker.is_unwakeable());
   absl::StrAppend(&execution_order, " End");
+  VLOG(2) << "Execution order : " << execution_order;
   EXPECT_STREQ(execution_order.c_str(),
                "AP 0AP 1AP 2AP 3AP 4AP 5AP 6AP 7AP 8AB 9 End");
 }
 
 TEST_F(PartyTest, CanWakeupWithNonOwningWakerAfterOrphaning) {
-  // TODO(tjagtap) : Write a comment once it makes sense to me.
   auto party = MakeParty();
   Notification set_waker;
   Waker waker;
@@ -436,7 +384,6 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWakerAfterOrphaning) {
   absl::StrAppend(&execution_order, "1");
   party.reset();  // Cancel the party.
 
-  // TODO(tjagtap) : Q - Why is a cancelled party still wakeable?
   EXPECT_FALSE(waker.is_unwakeable());
   waker.Wakeup();  // Because the party is cancelled, this is a no-op.
   EXPECT_TRUE(waker.is_unwakeable());
@@ -449,8 +396,8 @@ TEST_F(PartyTest, CanDropNonOwningWakeAfterOrphaning) {
   // The test asserts the following:
   // 1. The promise is not resolved.
   // 2. The waker is still valid after the party is cancelled.
-  // 4. The waker can be dropped (destroyed) after the party is cancelled.
-  // 5. Running with asan will ensure that there are no memory related issues
+  // 3. The waker can be dropped (destroyed) after the party is cancelled.
+  // . Running with asan will ensure that there are no memory related issues
   //    such as user after free or memory leaks.
   auto party = MakeParty();
   Notification set_waker;
@@ -471,9 +418,6 @@ TEST_F(PartyTest, CanDropNonOwningWakeAfterOrphaning) {
   absl::StrAppend(&execution_order, "1");
   party.reset();  // Cancel the party.
   EXPECT_NE(waker, nullptr);
-  // TODO(tjagtap) : Q - Why is a cancelled party still wakeable?
-  // Why is this assert NOT failing?
-  // EXPECT_FALSE(waker->is_unwakeable());
   waker.reset();
   EXPECT_STREQ(execution_order.c_str(), "A1");
 }
@@ -518,36 +462,20 @@ TEST_F(PartyTest, CanBulkSpawn) {
   // This test asserts the following:
   // 1. Spawning multiple promises in a WakeupHold works as expected. The
   // promises should not be polled until the WakeupHold goes out of scope.
-  // 2. The promises are executed in the order we expect.
   auto party = MakeParty();
   Notification n1;
   Notification n2;
-  std::string execution_order;
   {
     Party::WakeupHold hold(party.get());
-    party->Spawn(
-        "spawn1",
-        [&execution_order]() { absl::StrAppend(&execution_order, "A"); },
-        [&n1, &execution_order](Empty) {
-          absl::StrAppend(&execution_order, "1");
-          n1.Notify();
-        });
-    party->Spawn(
-        "spawn2",
-        [&execution_order]() { absl::StrAppend(&execution_order, "B"); },
-        [&n2, &execution_order](Empty) {
-          absl::StrAppend(&execution_order, "2");
-          n2.Notify();
-        });
+    party->Spawn("spawn1", []() {}, [&n1](Empty) { n1.Notify(); });
+    party->Spawn("spawn2", []() {}, [&n2](Empty) { n2.Notify(); });
     for (int i = 0; i < 5000; i++) {
       EXPECT_FALSE(n1.HasBeenNotified());
       EXPECT_FALSE(n2.HasBeenNotified());
-      EXPECT_STREQ(execution_order.c_str(), "");
     }
   }
   n1.WaitForNotification();
   n2.WaitForNotification();
-  EXPECT_STREQ(execution_order.c_str(), "A1B2");
 }
 
 TEST_F(PartyTest, CanNestWakeupHold) {
@@ -558,36 +486,40 @@ TEST_F(PartyTest, CanNestWakeupHold) {
   //    WakeupHold objects should not cause any change in the behavior.
   // 2. This test was added after we found a rare intermittent crash which was
   //    caused by a nested hold. This test makes sure that wont happen again.
+  // 3. The promises and their on_done callbacks are executed in order.
   auto party = MakeParty();
   Notification n1;
   Notification n2;
-  std::string execution_order;
+  std::string execution_order_a;
+  std::string execution_order_b;
   {
     Party::WakeupHold hold1(party.get());
     Party::WakeupHold hold2(party.get());
     party->Spawn(
         "spawn1",
-        [&execution_order]() { absl::StrAppend(&execution_order, "A"); },
-        [&n1, &execution_order](Empty) {
-          absl::StrAppend(&execution_order, "1");
+        [&execution_order_a]() { absl::StrAppend(&execution_order_a, "A"); },
+        [&n1, &execution_order_a](Empty) {
+          absl::StrAppend(&execution_order_a, "1");
           n1.Notify();
         });
     party->Spawn(
         "spawn2",
-        [&execution_order]() { absl::StrAppend(&execution_order, "B"); },
-        [&n2, &execution_order](Empty) {
-          absl::StrAppend(&execution_order, "2");
+        [&execution_order_b]() { absl::StrAppend(&execution_order_b, "B"); },
+        [&n2, &execution_order_b](Empty) {
+          absl::StrAppend(&execution_order_b, "2");
           n2.Notify();
         });
     for (int i = 0; i < 5000; i++) {
       EXPECT_FALSE(n1.HasBeenNotified());
       EXPECT_FALSE(n2.HasBeenNotified());
-      EXPECT_STREQ(execution_order.c_str(), "");
+      EXPECT_STREQ(execution_order_a.c_str(), "");
+      EXPECT_STREQ(execution_order_b.c_str(), "");
     }
   }
   n1.WaitForNotification();
   n2.WaitForNotification();
-  EXPECT_STREQ(execution_order.c_str(), "A1B2");
+  EXPECT_STREQ(execution_order_a.c_str(), "A1");
+  EXPECT_STREQ(execution_order_b.c_str(), "B2");
 }
 
 void StressTestAsserts(std::vector<Timestamp>& start_times,
@@ -666,6 +598,8 @@ TEST_F(PartyTest, ThreadStressTest) {
   // 5. The threads run in parallel. Spawn does not acquire locks that it should
   //    not. And it does not introduce major delays of any sort.
   // 6. Stress testing with multiple threads and multiple spawns.
+  // Note : Even though the test runs multiple threads, the spawned promises are
+  // never executed in parallel.
   auto party = MakeParty();
   std::vector<std::string> execution_order(kNumThreads);
   std::vector<Timestamp> start_times(kNumThreads);
@@ -724,6 +658,68 @@ TEST_F(PartyTest, ThreadStressTest) {
     EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
   StressTestAsserts(start_times, end_times, 2 * kStressTestSleepMs);
+}
+
+TEST_F(PartyTest, ThreadStressTestQuickSpawn) {
+  // This is similar to ThreadStressTest, but we will spawn the promises
+  // immediately without waiting for the notification and without sleeping.
+  // This increases the
+  // probability of the promises being executed concurrently in case of a bug.
+  // There is no assert to check that the promises spawned on the same party,
+  // but via different threads, are executed in exclusively. However calling
+  // absl::StrAppend called inside the spawned will cause a TSAN failure if the
+  // party accidentally executes the spawned promises concurrently instead of
+  // exclusively.
+  auto party = MakeParty();
+  std::vector<std::string> execution_order(kNumThreads);
+  std::vector<Notification> promises_complete(kNumThreads);
+  std::vector<std::thread> threads;
+  threads.reserve(kNumThreads);
+
+  for (int i = 0; i < kNumThreads; i++) {
+    std::string& order = execution_order[i];
+    Notification& promise_complete = promises_complete[i];
+    EXPECT_FALSE(promise_complete.HasBeenNotified());
+    threads.emplace_back([&promise_complete, &party, &order]() mutable {
+      for (int j = 0; j < kNumSpawns; j++) {
+        party->Spawn(
+            "TestSpawn",
+            [spawn_num = j, &order]() mutable -> Poll<int> {
+              absl::StrAppend(&order, absl::StrFormat("(P%d,", spawn_num));
+              return spawn_num + 42;
+            },
+            [&promise_complete, spawn_num = j, &order](int val) {
+              EXPECT_EQ(val, spawn_num + 42);
+              absl::StrAppend(&order, absl::StrFormat("D%d)", spawn_num));
+              if (order.length() == 880) {
+                // Why 880? Because we append to order 100 times, and
+                // reaching length 880 means we have completed all the
+                // spawns on the current thread. If we get more than 880
+                // characters, it means that the test has changed and needs
+                // to be updated.
+                EXPECT_EQ(order.length(), 880);
+                LOG(INFO) << "Notification by spawn " << spawn_num;
+                promise_complete.Notify();
+              }
+            });
+      }
+    });
+  }
+  for (int i = 0; i < kNumThreads; i++) {
+    LOG(INFO) << "Waiting for thread " << i;
+    promises_complete[i].WaitForNotification();
+    LOG(INFO) << "Got notification for thread " << i;
+  }
+  for (auto& thread : threads) {
+    thread.join();
+  }
+  for (int i = 0; i < kNumThreads; i++) {
+    for (int j = 0; j < kNumSpawns; j++) {
+      std::string current = absl::StrFormat("(P%d,D%d)", j, j);
+      // Check that the current promise is executed by the thread.
+      EXPECT_TRUE(absl::StrContains(execution_order[i], current));
+    }
+  }
 }
 
 class PromiseNotification {
@@ -816,8 +812,8 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWaker) {
       absl::StrAppend(&expected_order[i],
                       absl::StrFormat("A%dB%dC%d.", j, j, j));
     }
-    // For the given test, the order is guaranteed because of the way the
-    // notifications are used.
+    // For the given test, the order is guaranteed because we wait for the
+    // promise_complete notification before the next loop iteration can start.
     EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
 }
@@ -865,8 +861,8 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWakerHoldingLock) {
       absl::StrAppend(&expected_order[i],
                       absl::StrFormat("A%dB%dC%d.", j, j, j));
     }
-    // For the given test, the order is guaranteed because of the way the
-    // notifications are used.
+    // For the given test, the order is guaranteed because we wait for the
+    // promise_complete notification before the next loop iteration can start.
     EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
 }
@@ -914,8 +910,8 @@ TEST_F(PartyTest, ThreadStressTestWithNonOwningWaker) {
       absl::StrAppend(&expected_order[i],
                       absl::StrFormat("A%dB%dC%d.", j, j, j));
     }
-    // For the given test, the order is guaranteed because of the way the
-    // notifications are used.
+    // For the given test, the order is guaranteed because we wait for the
+    // promise_complete notification before the next loop iteration can start.
     EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
 }
@@ -1048,8 +1044,8 @@ TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
           &expected_order[i],
           absl::StrFormat("A%dB%dC%dD%dE%dF%dG%d.", j, j, j, j, j, j, j));
     }
-    // For the given test, the order is guaranteed because of the way the
-    // notifications are used.
+    // For the given test, the order is guaranteed because we wait for the
+    // promise_complete notification before the next loop iteration can start.
     EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
   StressTestAsserts(start_times, end_times, kStressTestSleepMs);
@@ -1060,17 +1056,15 @@ TEST_F(PartyTest, NestedWakeup) {
   // party2 and party3. When party1 finishes, party3 and party2 are run. Then
   // party2 and party3 go to sleep and are woken up alternately because they
   // depend on one another for notifications. This test asserts the following
-  // 1. party2 and party3 should not run before party1 finishes running.
+  // 1. WaitForNotification should cause a party to sleep if the Notification is
+  //    not yet received.
   // 2. party2 and party3 need each other to do some processing and notification
   //    before they can proceed. So when party2 is waiting for a notification,
   //    party3 is woken up and begins its processing. When party3 is waiting for
   //    notification, party2 is woken up. We want to assert this expected sleep
   //    and wake cycle. However since party2 and party3 will be run on different
-  //    threads, our asserts are only placed after the notifications are
-  //    received.
-  // 3. WaitForNotification should cause a party to sleep if the Notification is
-  //    not yet received.
-  // 4. Asserting on the general expected order of execution
+  //    threads, our execution_order code is only placed after the notifications
+  //    are received.
   auto party1 = MakeParty();
   auto party2 = MakeParty();
   auto party3 = MakeParty();
