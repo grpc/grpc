@@ -18,6 +18,7 @@
 #include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
+#include <type_traits>
 #include <utility>
 
 #include "src/core/lib/promise/detail/basic_seq.h"
@@ -25,6 +26,7 @@
 #include "src/core/lib/promise/detail/seq_state.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/type_list.h"
 
 namespace grpc_core {
 

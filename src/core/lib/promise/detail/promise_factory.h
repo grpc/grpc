@@ -76,14 +76,14 @@ struct ResultOfT<F(Args...),
 };
 
 template <typename F, typename... Args>
-struct ResultOfT<F(Args...)&,
+struct ResultOfT<F(Args...) &,
                  absl::void_t<decltype(std::declval<RemoveCVRef<F>>()(
                      std::declval<Args>()...))>> {
   using T = decltype(std::declval<RemoveCVRef<F>>()(std::declval<Args>()...));
 };
 
 template <typename F, typename... Args>
-struct ResultOfT<const F(Args...)&,
+struct ResultOfT<const F(Args...) &,
                  absl::void_t<decltype(std::declval<RemoveCVRef<F>>()(
                      std::declval<Args>()...))>> {
   using T = decltype(std::declval<RemoveCVRef<F>>()(std::declval<Args>()...));
@@ -184,12 +184,20 @@ class OncePromiseFactory {
   using Arg = A;
   using Promise =
       decltype(PromiseFactoryImpl(std::move(f_), std::declval<A>()));
+  static constexpr bool kInstantaneousPromise = Promise::kInstantaneous;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit OncePromiseFactory(F f)
       : f_(std::move(f)) {}
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Promise Make(Arg&& a) {
     return PromiseFactoryImpl(std::move(f_), std::forward<Arg>(a));
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+  std::enable_if_t<kInstantaneousPromise, typename Promise::Result> MakeAndCall(
+      Arg&& a) {
+    return PromiseFactoryImpl(std::move(f_), std::forward<Arg>(a))
+        .CallUnderlyingFn();
   }
 };
 
@@ -201,12 +209,19 @@ class OncePromiseFactory<void, F> {
  public:
   using Arg = void;
   using Promise = decltype(PromiseFactoryImpl(std::move(f_)));
+  static constexpr bool kInstantaneousPromise = Promise::kInstantaneous;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit OncePromiseFactory(F f)
       : f_(std::move(f)) {}
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Promise Make() {
     return PromiseFactoryImpl(std::move(f_));
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+  std::enable_if_t<kInstantaneousPromise, typename Promise::Result>
+  MakeAndCall() {
+    return PromiseFactoryImpl(std::move(f_)).CallUnderlyingFn();
   }
 };
 
