@@ -16,25 +16,28 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <memory>
-
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 
 namespace grpc_event_engine::experimental {
 
 class EventFdWakeupFd : public WakeupFd {
  public:
-  EventFdWakeupFd() : WakeupFd() {}
+  explicit EventFdWakeupFd(SystemApi* system_api) : system_api_(system_api) {}
   ~EventFdWakeupFd() override;
   absl::Status ConsumeWakeup() override;
   absl::Status Wakeup() override;
-  static absl::StatusOr<std::unique_ptr<WakeupFd>> CreateEventFdWakeupFd();
-  static bool IsSupported();
+  absl::StatusOr<std::unique_ptr<WakeupFd>> Restart() override;
+  static absl::StatusOr<std::unique_ptr<WakeupFd>> CreateEventFdWakeupFd(
+      SystemApi& system_api);
+  static bool IsSupported(SystemApi& system_api);
 
  private:
   absl::Status Init();
+
+  SystemApi* system_api_;
 };
 
 }  // namespace grpc_event_engine::experimental

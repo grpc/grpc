@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "absl/strings/str_cat.h"
+#include "src/core/lib/event_engine/posix_engine/posix_system_api.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
 
@@ -37,23 +38,25 @@ namespace grpc_event_engine::experimental {
 #ifdef GRPC_LINUX_EVENTFD
 
 absl::Status EventFdWakeupFd::Init() {
-  int read_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-  int write_fd = -1;
-  if (read_fd < 0) {
+  FileDescriptor read_fd = system_api_->EventFd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+  if (!read_fd.ready()) {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrCat("eventfd: ", grpc_core::StrError(errno)));
   }
-  SetWakeupFds(read_fd, write_fd);
+  SetWakeupFds(read_fd, FileDescriptor());
   return absl::OkStatus();
 }
 
 absl::Status EventFdWakeupFd::ConsumeWakeup() {
   eventfd_t value;
-  int err;
+  absl::StatusOr<int> err;
   do {
-    err = eventfd_read(ReadFd(), &value);
-  } while (err < 0 && errno == EINTR);
-  if (err < 0 && errno != EAGAIN) {
+    err = system_api_->EventFdRead(ReadFd(), &value);
+  } while (err.ok() && *err < 0 && errno == EINTR);
+  if (!err.ok()) {
+    return std::move(err).status();
+  }
+  if (*err < 0 && errno != EAGAIN) {
     return absl::Status(
         absl::StatusCode::kInternal,
         absl::StrCat("eventfd_read: ", grpc_core::StrError(errno)));
@@ -62,11 +65,14 @@ absl::Status EventFdWakeupFd::ConsumeWakeup() {
 }
 
 absl::Status EventFdWakeupFd::Wakeup() {
-  int err;
+  absl::StatusOr<int> err;
   do {
-    err = eventfd_write(ReadFd(), 1);
-  } while (err < 0 && errno == EINTR);
-  if (err < 0) {
+    err = system_api_->EventFdWrite(ReadFd(), 1);
+    if (!err.ok()) {
+      return std::move(err).status();
+    }
+  } while (*err < 0 && errno == EINTR);
+  if (*err < 0) {
     return absl::Status(
         absl::StatusCode::kInternal,
         absl::StrCat("eventfd_write: ", grpc_core::StrError(errno)));
@@ -75,21 +81,26 @@ absl::Status EventFdWakeupFd::Wakeup() {
 }
 
 EventFdWakeupFd::~EventFdWakeupFd() {
-  if (ReadFd() != 0) {
-    close(ReadFd());
+  if (ReadFd().ready()) {
+    system_api_->Close(ReadFd());
   }
 }
 
-bool EventFdWakeupFd::IsSupported() {
-  EventFdWakeupFd event_fd_wakeup_fd;
+absl::StatusOr<std::unique_ptr<WakeupFd>> EventFdWakeupFd::Restart() {
+  return CreateEventFdWakeupFd(*system_api_);
+}
+
+bool EventFdWakeupFd::IsSupported(SystemApi& system_api) {
+  EventFdWakeupFd event_fd_wakeup_fd(&system_api);
   return event_fd_wakeup_fd.Init().ok();
 }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>>
-EventFdWakeupFd::CreateEventFdWakeupFd() {
-  static bool kIsEventFdWakeupFdSupported = EventFdWakeupFd::IsSupported();
+EventFdWakeupFd::CreateEventFdWakeupFd(SystemApi& system_api) {
+  static bool kIsEventFdWakeupFdSupported =
+      EventFdWakeupFd::IsSupported(system_api);
   if (kIsEventFdWakeupFdSupported) {
-    auto event_fd_wakeup_fd = std::make_unique<EventFdWakeupFd>();
+    auto event_fd_wakeup_fd = std::make_unique<EventFdWakeupFd>(&system_api);
     auto status = event_fd_wakeup_fd->Init();
     if (status.ok()) {
       return std::unique_ptr<WakeupFd>(std::move(event_fd_wakeup_fd));
@@ -111,10 +122,10 @@ absl::Status EventFdWakeupFd::ConsumeWakeup() {
 
 absl::Status EventFdWakeupFd::Wakeup() { grpc_core::Crash("unimplemented"); }
 
-bool EventFdWakeupFd::IsSupported() { return false; }
+bool EventFdWakeupFd::IsSupported(SystemApi& /*system_api*/) { return false; }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>>
-EventFdWakeupFd::CreateEventFdWakeupFd() {
+EventFdWakeupFd::CreateEventFdWakeupFd(SystemApi& /*system_api*/) {
   return absl::NotFoundError("Eventfd wakeup fd is not supported");
 }
 
