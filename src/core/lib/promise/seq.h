@@ -59,97 +59,15 @@ namespace grpc_core {
 // thread.
 //
 // Example :
-// TEST(SeqTest, ThreeTypedPendingThens) {
-//   std::string execution_order;
-//   bool pending_a = true;
-//   bool pending_b = true;
-//   bool pending_c = true;
-//   bool pending_d = true;
-//   struct A { int a_ = -1; };
-//   struct B { int b_ = -1; };
-//   struct C { int c_ = -1; };
-//   struct D { int d_ = -1; };
 //
-//   auto initial = [&execution_order, &pending_a]() -> Poll<A> {
-//     absl::StrAppend(&execution_order, "0");
-//     if (pending_a) {
-//       absl::StrAppend(&execution_order, "P");
-//       return Pending{};
-//     }
-//     absl::StrAppend(&execution_order, "a");
-//     return A{100};
-//   };
-//
-//   auto next1 = [&execution_order, &pending_b](A a) {
-//     absl::StrAppend(&execution_order, "1");
-//     return [&execution_order, &pending_b, a]() -> Poll<B> {
-//       EXPECT_EQ(a.a_, 100);
-//       if (pending_b) {
-//         absl::StrAppend(&execution_order, "P");
-//         return Pending{};
-//       }
-//       absl::StrAppend(&execution_order, "b");
-//       return B{200};
-//     };
-//   };
-//
-//   auto next2 = [&execution_order, &pending_c](B b) {
-//     absl::StrAppend(&execution_order, "2");
-//     return [&execution_order, &pending_c, b]() -> Poll<C> {
-//       EXPECT_EQ(b.b_, 200);
-//       if (pending_c) {
-//         absl::StrAppend(&execution_order, "P");
-//         return Pending{};
-//       }
-//       absl::StrAppend(&execution_order, "c");
-//       return C{300};
-//     };
-//   };
-//
-//   auto next3 = [&execution_order, &pending_d](C c) {
-//     absl::StrAppend(&execution_order, "3");
-//     return [&execution_order, &pending_d, c]() -> Poll<D> {
-//       EXPECT_EQ(c.c_, 300);
-//       if (pending_d) {
-//         absl::StrAppend(&execution_order, "P");
-//         return Pending{};
-//       }
-//       absl::StrAppend(&execution_order, "d");
-//       return D{400};
-//     };
-//   };
-//
-//   auto seq_combinator = Seq(initial, next1, next2, next3);
-//
-//   auto retval = seq_combinator();
-//   EXPECT_TRUE(retval.pending());
-//   EXPECT_STREQ(execution_order.c_str(), "0P");
-//
-//   execution_order.clear();
-//   pending_a = false;
-//   retval = seq_combinator();
-//   EXPECT_TRUE(retval.pending());
-//   EXPECT_STREQ(execution_order.c_str(), "0a1P");
-//
-//   execution_order.clear();
-//   pending_b = false;
-//   retval = seq_combinator();
-//   EXPECT_TRUE(retval.pending());
-//   EXPECT_STREQ(execution_order.c_str(), "b2P");
-//
-//   execution_order.clear();
-//   pending_c = false;
-//   retval = seq_combinator();
-//   EXPECT_TRUE(retval.pending());
-//   EXPECT_STREQ(execution_order.c_str(), "c3P");
-//
-//   execution_order.clear();
-//   pending_d = false;
-//   retval = seq_combinator();
-//   EXPECT_TRUE(retval.ready());
-//   EXPECT_EQ(retval.value().d_, 400);
-//   EXPECT_STREQ(execution_order.c_str(), "d");
+// TEST(SeqTest, TwoThens) {
+//   auto initial = [] { return std::string("a"); };
+//   auto next1 = [](std::string i) { return [i]() { return i + "b"; }; };
+//   auto next2 = [](std::string i) { return [i]() { return i + "c"; }; };
+//   EXPECT_EQ(Seq(initial, next1, next2)(), Poll<std::string>("abc"));
 // }
+// For a complete understanding of all possible uses and nuances of Seq look at
+// ThreeTypedPendingThens in file seq_test.cc
 
 namespace promise_detail {
 
