@@ -24,8 +24,7 @@
 #include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
 #include "src/core/util/strerror.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 
@@ -170,7 +169,7 @@ void CFStreamEndpointImpl::Connect(
       // wait for write stream open completed to signal connection ready
       break;
     case kCFStreamEventHasBytesAvailable:
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case kCFStreamEventEndEncountered:
       self->read_event_.SetReady();
       break;
@@ -202,7 +201,7 @@ void CFStreamEndpointImpl::WriteCallback(CFWriteStreamRef stream,
       self->open_event_.SetReady();
       break;
     case kCFStreamEventCanAcceptBytes:
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case kCFStreamEventEndEncountered:
       self->write_event_.SetReady();
       break;
@@ -367,8 +366,7 @@ void CFStreamEndpointImpl::DoWrite(
   on_writable(absl::OkStatus());
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE

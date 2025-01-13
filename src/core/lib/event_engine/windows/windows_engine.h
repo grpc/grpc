@@ -40,8 +40,7 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class WindowsEventEngine : public EventEngine,
                            public grpc_core::KeepsGrpcInitialized {
@@ -276,8 +275,7 @@ class WindowsEventEngine : public EventEngine,
   IOCPWorkClosure iocp_worker_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif
 

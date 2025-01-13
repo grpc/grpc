@@ -29,8 +29,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 IOCP::IOCP(ThreadPool* thread_pool) noexcept
     : thread_pool_(thread_pool),
@@ -137,7 +136,6 @@ DWORD IOCP::WSASocketFlagsInit() {
   return wsa_socket_flags;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GPR_WINDOWS

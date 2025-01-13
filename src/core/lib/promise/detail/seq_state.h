@@ -163,7 +163,7 @@ struct SeqState<Traits, P, F0> {
         Construct(&current_promise, std::move(next_promise));
         state = State::kState1;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       default:
       case State::kState1: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -291,7 +291,7 @@ struct SeqState<Traits, P, F0, F1> {
         Construct(&prior.current_promise, std::move(next_promise));
         state = State::kState1;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState1: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -320,7 +320,7 @@ struct SeqState<Traits, P, F0, F1> {
         Construct(&current_promise, std::move(next_promise));
         state = State::kState2;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       default:
       case State::kState2: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -472,7 +472,7 @@ struct SeqState<Traits, P, F0, F1, F2> {
         Construct(&prior.prior.current_promise, std::move(next_promise));
         state = State::kState1;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState1: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -501,7 +501,7 @@ struct SeqState<Traits, P, F0, F1, F2> {
         Construct(&prior.current_promise, std::move(next_promise));
         state = State::kState2;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState2: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -530,7 +530,7 @@ struct SeqState<Traits, P, F0, F1, F2> {
         Construct(&current_promise, std::move(next_promise));
         state = State::kState3;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       default:
       case State::kState3: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -704,7 +704,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
         Construct(&prior.prior.prior.current_promise, std::move(next_promise));
         state = State::kState1;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState1: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -733,7 +733,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
         Construct(&prior.prior.current_promise, std::move(next_promise));
         state = State::kState2;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState2: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -762,7 +762,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
         Construct(&prior.current_promise, std::move(next_promise));
         state = State::kState3;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState3: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -791,7 +791,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
         Construct(&current_promise, std::move(next_promise));
         state = State::kState4;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       default:
       case State::kState4: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -997,7 +997,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
                   std::move(next_promise));
         state = State::kState1;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState1: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -1026,7 +1026,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
         Construct(&prior.prior.prior.current_promise, std::move(next_promise));
         state = State::kState2;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState2: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -1055,7 +1055,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
         Construct(&prior.prior.current_promise, std::move(next_promise));
         state = State::kState3;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState3: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -1084,7 +1084,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
         Construct(&prior.current_promise, std::move(next_promise));
         state = State::kState4;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState4: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -1113,7 +1113,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
         Construct(&current_promise, std::move(next_promise));
         state = State::kState5;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       default:
       case State::kState5: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -1346,7 +1346,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
                   std::move(next_promise));
         state = State::kState1;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState1: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -1376,7 +1376,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
                   std::move(next_promise));
         state = State::kState2;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState2: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -1405,7 +1405,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
         Construct(&prior.prior.prior.current_promise, std::move(next_promise));
         state = State::kState3;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState3: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -1434,7 +1434,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
         Construct(&prior.prior.current_promise, std::move(next_promise));
         state = State::kState4;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState4: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -1463,7 +1463,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
         Construct(&prior.current_promise, std::move(next_promise));
         state = State::kState5;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState5: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -1492,7 +1492,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
         Construct(&current_promise, std::move(next_promise));
         state = State::kState6;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       default:
       case State::kState6: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -1755,7 +1755,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
                   std::move(next_promise));
         state = State::kState1;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState1: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -1785,7 +1785,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
                   std::move(next_promise));
         state = State::kState2;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState2: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -1815,7 +1815,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
                   std::move(next_promise));
         state = State::kState3;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState3: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -1844,7 +1844,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
         Construct(&prior.prior.prior.current_promise, std::move(next_promise));
         state = State::kState4;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState4: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -1873,7 +1873,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
         Construct(&prior.prior.current_promise, std::move(next_promise));
         state = State::kState5;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState5: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -1902,7 +1902,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
         Construct(&prior.current_promise, std::move(next_promise));
         state = State::kState6;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState6: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -1931,7 +1931,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
         Construct(&current_promise, std::move(next_promise));
         state = State::kState7;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       default:
       case State::kState7: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -2222,7 +2222,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
                   std::move(next_promise));
         state = State::kState1;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState1: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -2254,7 +2254,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
                   std::move(next_promise));
         state = State::kState2;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState2: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -2284,7 +2284,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
                   std::move(next_promise));
         state = State::kState3;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState3: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -2314,7 +2314,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
                   std::move(next_promise));
         state = State::kState4;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState4: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -2343,7 +2343,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
         Construct(&prior.prior.prior.current_promise, std::move(next_promise));
         state = State::kState5;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState5: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -2372,7 +2372,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
         Construct(&prior.prior.current_promise, std::move(next_promise));
         state = State::kState6;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState6: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -2401,7 +2401,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
         Construct(&prior.current_promise, std::move(next_promise));
         state = State::kState7;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState7: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -2430,7 +2430,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
         Construct(&current_promise, std::move(next_promise));
         state = State::kState8;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       default:
       case State::kState8: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -2758,7 +2758,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
             std::move(next_promise));
         state = State::kState1;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState1: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -2791,7 +2791,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
                   std::move(next_promise));
         state = State::kState2;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState2: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -2823,7 +2823,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
                   std::move(next_promise));
         state = State::kState3;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState3: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -2853,7 +2853,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
                   std::move(next_promise));
         state = State::kState4;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState4: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -2883,7 +2883,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
                   std::move(next_promise));
         state = State::kState5;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState5: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -2912,7 +2912,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
         Construct(&prior.prior.prior.current_promise, std::move(next_promise));
         state = State::kState6;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState6: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -2941,7 +2941,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
         Construct(&prior.prior.current_promise, std::move(next_promise));
         state = State::kState7;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState7: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -2970,7 +2970,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
         Construct(&prior.current_promise, std::move(next_promise));
         state = State::kState8;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState8: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -2999,7 +2999,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
         Construct(&current_promise, std::move(next_promise));
         state = State::kState9;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       default:
       case State::kState9: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -3359,7 +3359,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
                   std::move(next_promise));
         state = State::kState1;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState1: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -3394,7 +3394,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
             std::move(next_promise));
         state = State::kState2;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState2: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -3427,7 +3427,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
                   std::move(next_promise));
         state = State::kState3;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState3: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -3459,7 +3459,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
                   std::move(next_promise));
         state = State::kState4;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState4: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -3489,7 +3489,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
                   std::move(next_promise));
         state = State::kState5;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState5: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -3519,7 +3519,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
                   std::move(next_promise));
         state = State::kState6;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState6: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -3548,7 +3548,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
         Construct(&prior.prior.prior.current_promise, std::move(next_promise));
         state = State::kState7;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState7: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -3577,7 +3577,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
         Construct(&prior.prior.current_promise, std::move(next_promise));
         state = State::kState8;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState8: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -3606,7 +3606,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
         Construct(&prior.current_promise, std::move(next_promise));
         state = State::kState9;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState9: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -3635,7 +3635,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
         Construct(&current_promise, std::move(next_promise));
         state = State::kState10;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       default:
       case State::kState10: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -4026,7 +4026,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
                   std::move(next_promise));
         state = State::kState1;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState1: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4062,7 +4062,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
                   std::move(next_promise));
         state = State::kState2;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState2: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4097,7 +4097,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
             std::move(next_promise));
         state = State::kState3;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState3: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4130,7 +4130,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
                   std::move(next_promise));
         state = State::kState4;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState4: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4162,7 +4162,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
                   std::move(next_promise));
         state = State::kState5;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState5: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4192,7 +4192,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
                   std::move(next_promise));
         state = State::kState6;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState6: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4222,7 +4222,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
                   std::move(next_promise));
         state = State::kState7;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState7: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4251,7 +4251,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
         Construct(&prior.prior.prior.current_promise, std::move(next_promise));
         state = State::kState8;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState8: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4280,7 +4280,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
         Construct(&prior.prior.current_promise, std::move(next_promise));
         state = State::kState9;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState9: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4309,7 +4309,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
         Construct(&prior.current_promise, std::move(next_promise));
         state = State::kState10;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState10: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4339,7 +4339,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
         Construct(&current_promise, std::move(next_promise));
         state = State::kState11;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       default:
       case State::kState11: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -4763,7 +4763,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
                   std::move(next_promise));
         state = State::kState1;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState1: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4799,7 +4799,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
                   std::move(next_promise));
         state = State::kState2;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState2: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4835,7 +4835,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
                   std::move(next_promise));
         state = State::kState3;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState3: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4870,7 +4870,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
             std::move(next_promise));
         state = State::kState4;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState4: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4903,7 +4903,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
                   std::move(next_promise));
         state = State::kState5;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState5: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4935,7 +4935,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
                   std::move(next_promise));
         state = State::kState6;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState6: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4965,7 +4965,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
                   std::move(next_promise));
         state = State::kState7;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState7: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -4995,7 +4995,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
                   std::move(next_promise));
         state = State::kState8;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState8: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -5024,7 +5024,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
         Construct(&prior.prior.prior.current_promise, std::move(next_promise));
         state = State::kState9;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState9: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -5053,7 +5053,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
         Construct(&prior.prior.current_promise, std::move(next_promise));
         state = State::kState10;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState10: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -5083,7 +5083,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
         Construct(&prior.current_promise, std::move(next_promise));
         state = State::kState11;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kState11: {
         GRPC_TRACE_LOG(promise_primitives, INFO)
                 .AtLocation(whence.file(), whence.line())
@@ -5113,7 +5113,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
         Construct(&current_promise, std::move(next_promise));
         state = State::kState12;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       default:
       case State::kState12: {
         GRPC_TRACE_LOG(promise_primitives, INFO)

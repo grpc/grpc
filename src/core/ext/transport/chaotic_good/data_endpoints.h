@@ -153,7 +153,7 @@ class InputQueues : public RefCounted<InputQueues> {
   void AddEndpoint(uint32_t connection_id);
 
  private:
-  using ReadState = absl::variant<absl::StatusOr<SliceBuffer>, Waker>;
+  using ReadState = std::variant<absl::StatusOr<SliceBuffer>, Waker>;
 
   absl::StatusOr<uint64_t> CreateTicket(uint32_t connection_id, size_t length);
   Poll<absl::StatusOr<SliceBuffer>> PollRead(uint64_t ticket);

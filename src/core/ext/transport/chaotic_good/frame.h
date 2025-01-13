@@ -19,10 +19,10 @@
 
 #include <cstdint>
 #include <string>
+#include <variant>
 
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
-#include "absl/types/variant.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -180,11 +180,11 @@ struct MessageChunkFrame final : public FrameInterface {
 };
 
 using ClientFrame =
-    absl::variant<ClientInitialMetadataFrame, MessageFrame, BeginMessageFrame,
-                  MessageChunkFrame, ClientEndOfStream, CancelFrame>;
+    std::variant<ClientInitialMetadataFrame, MessageFrame, BeginMessageFrame,
+                 MessageChunkFrame, ClientEndOfStream, CancelFrame>;
 using ServerFrame =
-    absl::variant<ServerInitialMetadataFrame, MessageFrame, BeginMessageFrame,
-                  MessageChunkFrame, ServerTrailingMetadataFrame>;
+    std::variant<ServerInitialMetadataFrame, MessageFrame, BeginMessageFrame,
+                 MessageChunkFrame, ServerTrailingMetadataFrame>;
 
 }  // namespace chaotic_good
 }  // namespace grpc_core

@@ -83,7 +83,7 @@ class ActiveConnectionTestPeer {
         handshaking_state = nullptr;
     connection_->work_serializer_.Run(
         [&]() {
-          handshaking_state = absl::get<OrphanablePtr<
+          handshaking_state = std::get<OrphanablePtr<
               NewChttp2ServerListener::ActiveConnection::HandshakingState>>(
                                   connection_->state_)
                                   .get();
