@@ -50,7 +50,7 @@ namespace grpc_core {
 // 3. You need a way to run these promises to completion by repolling them as
 // needed.
 //
-// Creating a Party
+// Creating a new Party
 // A Party must only be created using Party::Make function.
 //
 // Spawning a promise on a Party
@@ -88,7 +88,7 @@ namespace grpc_core {
 //
 // Gurantees of a Party
 // 1. All promises spawned on one party are guranteed to be run serially. their
-// execution will not happen in parallel.
+// execution will not happen in concurrently.
 // 2. If a promise is executed, its on_complete is guranteed to be executed as
 // long as the party is not cancelled.
 // 3. Once a party is cancelled, promises that were Spawned onto the party, but
@@ -99,15 +99,12 @@ namespace grpc_core {
 // 6. A promise or promise factory that is passed to a Spawn function could
 // either be a single simple promise, or it could be a promise combinator such
 // as TrySeq, TryJoin, Loop or any such promise combinator. Nesting of these
-// promise combinators is allowed too.
+// promise combinators is allowed.
 // 7. You can re-use the same party to spawn new promises as long as the older
 // promises have been resolved.
-// 7. A party participant is a promise which was spawned on a party and is not
-// yet resolved. We gurantee safe working of upto 10 un-resolved participatns on
-// a party at a time. More than this could cause delays in the Spawn functions
-// or other issues. TODO(tjagtap) - What issues?.
-// TODO(tjagtap) : We are not commiting to 16, but we need to commit atleast
-// some minimum number right?
+// 8. A party participant is a promise which was spawned on a party and is not
+// yet resolved. We gurantee safe working of upto 16 un-resolved participatns on
+// a party at a time.
 //
 // Non-Gurantees of a Party
 // 1. Promises spawned on one party are not guranteed to execute in the same
@@ -227,8 +224,6 @@ class Party : public Activity, private Wakeable {
   void Spawn(absl::string_view name, Factory promise_factory,
              OnComplete on_complete);
 
-  // This is similar to the Spawn function.
-  // TODO(tjagtap) : What does it do differently? Waiting for what?
   template <typename Factory>
   auto SpawnWaitable(absl::string_view name, Factory factory);
 
