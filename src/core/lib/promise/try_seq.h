@@ -44,9 +44,13 @@ namespace promise_detail {
 // 3. The remaining inputs to TrySeq combinator are Promise Factories (functors
 // that return a promise). The input type of the Nth functor should be the
 // return value of the (N-1)th promise.
-// 4. Functors can return promises with return type StatusOr<> to signal that a
-// value is fed forward, or Status to indicate only success/failure. In the case
-// of returning Status, the next functor in the chain takes no arguments.
+// 4. Functors can return promises with return type any of the following :
+//    1. StatusOr<> to signal that a value is fed forward, or Status to
+//       indicate only success/failure. In the case of returning Status, the
+//       next functor in the chain takes no arguments.
+//    2. StatusFlag and ValueOrStatus can be return types if rich error
+//       information is not necessar. In this case the next functor in the chain
+//       takes no arguments.
 //
 // Return :
 // Polling the TrySeq Promise combinator returns Poll<StatusOr<T>> where T is
