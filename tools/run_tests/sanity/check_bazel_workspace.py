@@ -160,6 +160,11 @@ with open(os.path.join("bazel", "grpc_deps.bzl"), "r") as f:
     eval_state = BazelEvalState(names_and_urls)
     bazel_file = f.read()
 
+# Remove bzlmod specific functions
+bazel_file = re.sub(
+    r"^grpc_repo_deps_ext.*$", "", bazel_file, flags=re.MULTILINE
+)
+
 # grpc_deps.bzl only defines 'grpc_deps' and 'grpc_test_only_deps', add these
 # lines to call them.
 bazel_file += "\ngrpc_deps()\n"
