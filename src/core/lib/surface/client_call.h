@@ -59,7 +59,7 @@ class ClientCall final
  public:
   ClientCall(grpc_call* parent_call, uint32_t propagation_mask,
              grpc_completion_queue* cq, Slice path,
-             absl::optional<Slice> authority, bool registered_method,
+             std::optional<Slice> authority, bool registered_method,
              Timestamp deadline, grpc_compression_options compression_options,
              RefCountedPtr<Arena> arena,
              RefCountedPtr<UnstartedCallDestination> destination);
@@ -181,7 +181,7 @@ class ClientCall final
 
 grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
                           grpc_completion_queue* cq, Slice path,
-                          absl::optional<Slice> authority,
+                          std::optional<Slice> authority,
                           bool registered_method, Timestamp deadline,
                           grpc_compression_options compression_options,
                           RefCountedPtr<Arena> arena,

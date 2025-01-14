@@ -55,14 +55,14 @@ RetryState::RetryState(
                                    ? Duration::Zero()
                                    : retry_policy_->max_backoff())) {}
 
-absl::optional<Duration> RetryState::ShouldRetry(
+std::optional<Duration> RetryState::ShouldRetry(
     const ServerMetadata& md, bool committed,
     absl::FunctionRef<std::string()> lazy_attempt_debug_string) {
   // If no retry policy, don't retry.
   if (retry_policy_ == nullptr) {
     GRPC_TRACE_LOG(retry, INFO)
         << lazy_attempt_debug_string() << " no retry policy";
-    return absl::nullopt;
+    return std::nullopt;
   }
   const auto status = md.get(GrpcStatusMetadata());
   if (status.has_value()) {
@@ -72,14 +72,14 @@ absl::optional<Duration> RetryState::ShouldRetry(
       }
       GRPC_TRACE_LOG(retry, INFO)
           << lazy_attempt_debug_string() << " call succeeded";
-      return absl::nullopt;
+      return std::nullopt;
     }
     // Status is not OK.  Check whether the status is retryable.
     if (!retry_policy_->retryable_status_codes().Contains(*status)) {
       GRPC_TRACE_LOG(retry, INFO) << lazy_attempt_debug_string() << ": status "
                                   << grpc_status_code_to_string(*status)
                                   << " not configured as retryable";
-      return absl::nullopt;
+      return std::nullopt;
     }
   }
   // Record the failure and check whether retries are throttled.
@@ -93,13 +93,13 @@ absl::optional<Duration> RetryState::ShouldRetry(
       !retry_throttle_data_->RecordFailure()) {
     GRPC_TRACE_LOG(retry, INFO)
         << lazy_attempt_debug_string() << " retries throttled";
-    return absl::nullopt;
+    return std::nullopt;
   }
   // Check whether the call is committed.
   if (committed) {
     GRPC_TRACE_LOG(retry, INFO)
         << lazy_attempt_debug_string() << " retries already committed";
-    return absl::nullopt;
+    return std::nullopt;
   }
   // Check whether we have retries remaining.
   ++num_attempts_completed_;
@@ -107,14 +107,14 @@ absl::optional<Duration> RetryState::ShouldRetry(
     GRPC_TRACE_LOG(retry, INFO)
         << lazy_attempt_debug_string() << " exceeded "
         << retry_policy_->max_attempts() << " retry attempts";
-    return absl::nullopt;
+    return std::nullopt;
   }
   // Check server push-back.
   const auto server_pushback = md.get(GrpcRetryPushbackMsMetadata());
   if (server_pushback.has_value() && server_pushback < Duration::Zero()) {
     GRPC_TRACE_LOG(retry, INFO) << lazy_attempt_debug_string()
                                 << " not retrying due to server push-back";
-    return absl::nullopt;
+    return std::nullopt;
   }
   // We should retry.
   Duration next_attempt_timeout;
@@ -346,7 +346,7 @@ auto RetryInterceptor::Attempt::ServerToClientGotTrailersOnlyResponse() {
 auto RetryInterceptor::Attempt::ServerToClient() {
   return TrySeq(
       initiator_.PullServerInitialMetadata(),
-      [self = Ref()](absl::optional<ServerMetadataHandle> metadata) {
+      [self = Ref()](std::optional<ServerMetadataHandle> metadata) {
         const bool has_md = metadata.has_value();
         return If(
             has_md,

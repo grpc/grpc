@@ -20,6 +20,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <thread>
@@ -32,7 +33,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/server/server.h"

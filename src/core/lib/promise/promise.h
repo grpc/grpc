@@ -17,12 +17,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <type_traits>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 
@@ -38,7 +38,7 @@ using Promise = absl::AnyInvocable<Poll<T>()>;
 // nothing.
 template <typename Promise>
 auto NowOrNever(Promise promise)
-    -> absl::optional<typename promise_detail::PromiseLike<Promise>::Result> {
+    -> std::optional<typename promise_detail::PromiseLike<Promise>::Result> {
   auto r = promise_detail::PromiseLike<Promise>(std::move(promise))();
   if (auto* p = r.value_if_ready()) {
     return std::move(*p);

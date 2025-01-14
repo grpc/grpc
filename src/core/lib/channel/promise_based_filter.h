@@ -28,6 +28,7 @@
 #include <atomic>
 #include <memory>
 #include <new>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -39,7 +40,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/filter/blackboard.h"
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/call_finalization.h"
@@ -456,7 +456,7 @@ inline auto InterceptClientToServerMessageHandler(
     void (Derived::Call::*fn)(const Message&),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
-  return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+  return [call_data](MessageHandle msg) -> std::optional<MessageHandle> {
     call_data->call.OnClientToServerMessage(*msg);
     return std::move(msg);
   };
@@ -467,12 +467,12 @@ inline auto InterceptClientToServerMessageHandler(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
-  return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+  return [call_data](MessageHandle msg) -> std::optional<MessageHandle> {
     auto return_md = call_data->call.OnClientToServerMessage(*msg);
     if (return_md == nullptr) return std::move(msg);
-    if (call_data->error_latch.is_set()) return absl::nullopt;
+    if (call_data->error_latch.is_set()) return std::nullopt;
     call_data->error_latch.Set(std::move(return_md));
-    return absl::nullopt;
+    return std::nullopt;
   };
 }
 
@@ -481,13 +481,13 @@ inline auto InterceptClientToServerMessageHandler(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
-  return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+  return [call_data](MessageHandle msg) -> std::optional<MessageHandle> {
     auto return_md =
         call_data->call.OnClientToServerMessage(*msg, call_data->channel);
     if (return_md == nullptr) return std::move(msg);
-    if (call_data->error_latch.is_set()) return absl::nullopt;
+    if (call_data->error_latch.is_set()) return std::nullopt;
     call_data->error_latch.Set(std::move(return_md));
-    return absl::nullopt;
+    return std::nullopt;
   };
 }
 
@@ -496,7 +496,7 @@ inline auto InterceptClientToServerMessageHandler(
     MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
-  return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+  return [call_data](MessageHandle msg) -> std::optional<MessageHandle> {
     return call_data->call.OnClientToServerMessage(std::move(msg),
                                                    call_data->channel);
   };
@@ -507,13 +507,13 @@ inline auto InterceptClientToServerMessageHandler(
     absl::StatusOr<MessageHandle> (Derived::Call::*fn)(MessageHandle, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
-  return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+  return [call_data](MessageHandle msg) -> std::optional<MessageHandle> {
     auto r = call_data->call.OnClientToServerMessage(std::move(msg),
                                                      call_data->channel);
     if (r.ok()) return std::move(*r);
-    if (call_data->error_latch.is_set()) return absl::nullopt;
+    if (call_data->error_latch.is_set()) return std::nullopt;
     call_data->error_latch.Set(ServerMetadataFromStatus(r.status()));
-    return absl::nullopt;
+    return std::nullopt;
   };
 }
 
@@ -565,11 +565,11 @@ inline void InterceptServerInitialMetadata(
   DCHECK(fn == &Derived::Call::OnServerInitialMetadata);
   call_args.server_initial_metadata->InterceptAndMap(
       [call_data](
-          ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
+          ServerMetadataHandle md) -> std::optional<ServerMetadataHandle> {
         auto status = call_data->call.OnServerInitialMetadata(*md);
         if (!status.ok() && !call_data->error_latch.is_set()) {
           call_data->error_latch.Set(ServerMetadataFromStatus(status));
-          return absl::nullopt;
+          return std::nullopt;
         }
         return std::move(md);
       });
@@ -594,12 +594,12 @@ inline void InterceptServerInitialMetadata(
   DCHECK(fn == &Derived::Call::OnServerInitialMetadata);
   call_args.server_initial_metadata->InterceptAndMap(
       [call_data](
-          ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
+          ServerMetadataHandle md) -> std::optional<ServerMetadataHandle> {
         auto status =
             call_data->call.OnServerInitialMetadata(*md, call_data->channel);
         if (!status.ok() && !call_data->error_latch.is_set()) {
           call_data->error_latch.Set(ServerMetadataFromStatus(status));
-          return absl::nullopt;
+          return std::nullopt;
         }
         return std::move(md);
       });
@@ -614,7 +614,7 @@ inline void InterceptServerToClientMessage(
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
   call_args.server_to_client_messages->InterceptAndMap(
-      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+      [call_data](MessageHandle msg) -> std::optional<MessageHandle> {
         call_data->call.OnServerToClientMessage(*msg);
         return std::move(msg);
       });
@@ -626,12 +626,12 @@ inline void InterceptServerToClientMessage(
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
   call_args.server_to_client_messages->InterceptAndMap(
-      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+      [call_data](MessageHandle msg) -> std::optional<MessageHandle> {
         auto return_md = call_data->call.OnServerToClientMessage(*msg);
         if (return_md == nullptr) return std::move(msg);
-        if (call_data->error_latch.is_set()) return absl::nullopt;
+        if (call_data->error_latch.is_set()) return std::nullopt;
         call_data->error_latch.Set(std::move(return_md));
-        return absl::nullopt;
+        return std::nullopt;
       });
 }
 
@@ -641,13 +641,13 @@ inline void InterceptServerToClientMessage(
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
   call_args.server_to_client_messages->InterceptAndMap(
-      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+      [call_data](MessageHandle msg) -> std::optional<MessageHandle> {
         auto return_md =
             call_data->call.OnServerToClientMessage(*msg, call_data->channel);
         if (return_md == nullptr) return std::move(msg);
-        if (call_data->error_latch.is_set()) return absl::nullopt;
+        if (call_data->error_latch.is_set()) return std::nullopt;
         call_data->error_latch.Set(std::move(return_md));
-        return absl::nullopt;
+        return std::nullopt;
       });
 }
 
@@ -657,7 +657,7 @@ inline void InterceptServerToClientMessage(
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
   call_args.server_to_client_messages->InterceptAndMap(
-      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+      [call_data](MessageHandle msg) -> std::optional<MessageHandle> {
         return call_data->call.OnServerToClientMessage(std::move(msg),
                                                        call_data->channel);
       });
@@ -669,13 +669,13 @@ inline void InterceptServerToClientMessage(
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
   call_args.server_to_client_messages->InterceptAndMap(
-      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+      [call_data](MessageHandle msg) -> std::optional<MessageHandle> {
         auto r = call_data->call.OnServerToClientMessage(std::move(msg),
                                                          call_data->channel);
         if (r.ok()) return std::move(*r);
-        if (call_data->error_latch.is_set()) return absl::nullopt;
+        if (call_data->error_latch.is_set()) return std::nullopt;
         call_data->error_latch.Set(ServerMetadataFromStatus(r.status()));
-        return absl::nullopt;
+        return std::nullopt;
       });
 }
 
@@ -1098,8 +1098,8 @@ class BaseCallData : public Activity, private Wakeable {
     BaseCallData* const base_;
     State state_ = State::kInitial;
     Interceptor* const interceptor_;
-    absl::optional<PipeSender<MessageHandle>::PushType> push_;
-    absl::optional<PipeReceiverNextType<MessageHandle>> next_;
+    std::optional<PipeSender<MessageHandle>::PushType> push_;
+    std::optional<PipeReceiverNextType<MessageHandle>> next_;
     CapturedBatch batch_;
     grpc_closure* intercepted_on_complete_;
     grpc_closure on_complete_ =
@@ -1197,10 +1197,10 @@ class BaseCallData : public Activity, private Wakeable {
     Interceptor* const interceptor_;
     State state_ = State::kInitial;
     uint32_t scratch_flags_;
-    absl::optional<SliceBuffer>* intercepted_slice_buffer_;
+    std::optional<SliceBuffer>* intercepted_slice_buffer_;
     uint32_t* intercepted_flags_;
-    absl::optional<PipeSender<MessageHandle>::PushType> push_;
-    absl::optional<PipeReceiverNextType<MessageHandle>> next_;
+    std::optional<PipeSender<MessageHandle>::PushType> push_;
+    std::optional<PipeReceiverNextType<MessageHandle>> next_;
     absl::Status completed_status_;
     grpc_closure* intercepted_on_complete_;
     grpc_closure on_complete_ =

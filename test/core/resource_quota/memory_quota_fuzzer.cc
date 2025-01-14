@@ -22,11 +22,11 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -120,16 +120,16 @@ class Fuzzer {
           allocations_.erase(action.allocation());
           break;
         case memory_quota_fuzzer::Action::kPostReclaimer: {
-          std::function<void(absl::optional<ReclamationSweep>)> reclaimer;
+          std::function<void(std::optional<ReclamationSweep>)> reclaimer;
           auto cfg = action.post_reclaimer();
           if (cfg.synchronous()) {
-            reclaimer = [this, cfg](absl::optional<ReclamationSweep>) {
+            reclaimer = [this, cfg](std::optional<ReclamationSweep>) {
               RunMsg(cfg.msg());
             };
           } else {
-            reclaimer = [cfg, this](absl::optional<ReclamationSweep> sweep) {
+            reclaimer = [cfg, this](std::optional<ReclamationSweep> sweep) {
               struct Args {
-                absl::optional<ReclamationSweep> sweep;
+                std::optional<ReclamationSweep> sweep;
                 memory_quota_fuzzer::Msg msg;
                 Fuzzer* fuzzer;
               };
@@ -150,7 +150,7 @@ class Fuzzer {
                   auto call_checker = CallChecker::MakeOptional();
                   a->PostReclaimer(pass,
                                    [reclaimer, call_checker](
-                                       absl::optional<ReclamationSweep> sweep) {
+                                       std::optional<ReclamationSweep> sweep) {
                                      call_checker->Called();
                                      reclaimer(std::move(sweep));
                                    });

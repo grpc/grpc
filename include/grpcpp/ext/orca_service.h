@@ -27,10 +27,10 @@
 #include <grpcpp/support/status.h>
 
 #include <cstdint>
+#include <optional>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 
 namespace grpc {
 
@@ -77,9 +77,9 @@ class OrcaService : public Service {
   const absl::Duration min_report_duration_;
   grpc::internal::Mutex mu_;
   // Contains the last serialized metrics from server_metric_recorder_.
-  absl::optional<Slice> response_slice_ ABSL_GUARDED_BY(mu_);
+  std::optional<Slice> response_slice_ ABSL_GUARDED_BY(mu_);
   // The update sequence number of metrics serialized in response_slice_.
-  absl::optional<uint64_t> response_slice_seq_ ABSL_GUARDED_BY(mu_);
+  std::optional<uint64_t> response_slice_seq_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace experimental

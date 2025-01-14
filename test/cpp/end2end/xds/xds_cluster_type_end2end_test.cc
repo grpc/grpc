@@ -51,7 +51,7 @@ class ClusterTypeTest : public XdsEnd2endTest {
 
   // Subclasses must call this to initialize.
   void LogicalDnsInitClient(
-      absl::optional<XdsBootstrapBuilder> builder = absl::nullopt,
+      std::optional<XdsBootstrapBuilder> builder = std::nullopt,
       std::shared_ptr<ChannelCredentials> credentials = nullptr) {
     ChannelArguments args;
     args.SetPointerWithVtable(

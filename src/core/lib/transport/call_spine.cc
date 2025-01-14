@@ -51,7 +51,7 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
             call_initiator.CancelIfFails(
                 TrySeq(call_initiator.PullServerInitialMetadata(),
                        [call_handler, call_initiator](
-                           absl::optional<ServerMetadataHandle> md) mutable {
+                           std::optional<ServerMetadataHandle> md) mutable {
                          const bool has_md = md.has_value();
                          return If(
                              has_md,
