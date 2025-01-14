@@ -5663,16 +5663,14 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0) {
   using PromiseResultTraits1 = typename Types::PromiseResultTraits1;
   using NextFactory0 = typename Types::NextFactory0;
   using Result = typename PromiseResultTraits1::WrappedType;
-  return ::grpc_core::Map(
-      std::forward<P>(p),
-      [f0 = NextFactory0(std::forward<F0>(f0))](PromiseResult0 r0) mutable {
-        if (!PromiseResultTraits0::IsOk(r0)) {
-          return PromiseResultTraits0::template ReturnValue<Result>(
-              std::move(r0));
-        }
-        return Result(
-            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0)));
-      });
+  return Map(std::forward<P>(p), [f0 = NextFactory0(std::forward<F0>(f0))](
+                                     PromiseResult0 r0) mutable {
+    if (!PromiseResultTraits0::IsOk(r0)) {
+      return PromiseResultTraits0::template ReturnValue<Result>(std::move(r0));
+    }
+    return Result(
+        PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0)));
+  });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
@@ -5687,23 +5685,20 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1) {
   using NextFactory0 = typename Types::NextFactory0;
   using NextFactory1 = typename Types::NextFactory1;
   using Result = typename PromiseResultTraits2::WrappedType;
-  return ::grpc_core::Map(
-      std::forward<P>(p),
-      [f0 = NextFactory0(std::forward<F0>(f0)),
-       f1 = NextFactory1(std::forward<F1>(f1))](PromiseResult0 r0) mutable {
-        if (!PromiseResultTraits0::IsOk(r0)) {
-          return PromiseResultTraits0::template ReturnValue<Result>(
-              std::move(r0));
-        }
-        PromiseResult1 r1 =
-            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
-        if (!PromiseResultTraits1::IsOk(r1)) {
-          return PromiseResultTraits1::template ReturnValue<Result>(
-              std::move(r1));
-        }
-        return Result(
-            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1)));
-      });
+  return Map(std::forward<P>(p), [f0 = NextFactory0(std::forward<F0>(f0)),
+                                  f1 = NextFactory1(std::forward<F1>(f1))](
+                                     PromiseResult0 r0) mutable {
+    if (!PromiseResultTraits0::IsOk(r0)) {
+      return PromiseResultTraits0::template ReturnValue<Result>(std::move(r0));
+    }
+    PromiseResult1 r1 =
+        PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
+    if (!PromiseResultTraits1::IsOk(r1)) {
+      return PromiseResultTraits1::template ReturnValue<Result>(std::move(r1));
+    }
+    return Result(
+        PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1)));
+  });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
@@ -5722,30 +5717,26 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
   using NextFactory1 = typename Types::NextFactory1;
   using NextFactory2 = typename Types::NextFactory2;
   using Result = typename PromiseResultTraits3::WrappedType;
-  return ::grpc_core::Map(
-      std::forward<P>(p),
-      [f0 = NextFactory0(std::forward<F0>(f0)),
-       f1 = NextFactory1(std::forward<F1>(f1)),
-       f2 = NextFactory2(std::forward<F2>(f2))](PromiseResult0 r0) mutable {
-        if (!PromiseResultTraits0::IsOk(r0)) {
-          return PromiseResultTraits0::template ReturnValue<Result>(
-              std::move(r0));
-        }
-        PromiseResult1 r1 =
-            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
-        if (!PromiseResultTraits1::IsOk(r1)) {
-          return PromiseResultTraits1::template ReturnValue<Result>(
-              std::move(r1));
-        }
-        PromiseResult2 r2 =
-            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
-        if (!PromiseResultTraits2::IsOk(r2)) {
-          return PromiseResultTraits2::template ReturnValue<Result>(
-              std::move(r2));
-        }
-        return Result(
-            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2)));
-      });
+  return Map(std::forward<P>(p), [f0 = NextFactory0(std::forward<F0>(f0)),
+                                  f1 = NextFactory1(std::forward<F1>(f1)),
+                                  f2 = NextFactory2(std::forward<F2>(f2))](
+                                     PromiseResult0 r0) mutable {
+    if (!PromiseResultTraits0::IsOk(r0)) {
+      return PromiseResultTraits0::template ReturnValue<Result>(std::move(r0));
+    }
+    PromiseResult1 r1 =
+        PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
+    if (!PromiseResultTraits1::IsOk(r1)) {
+      return PromiseResultTraits1::template ReturnValue<Result>(std::move(r1));
+    }
+    PromiseResult2 r2 =
+        PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
+    if (!PromiseResultTraits2::IsOk(r2)) {
+      return PromiseResultTraits2::template ReturnValue<Result>(std::move(r2));
+    }
+    return Result(
+        PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2)));
+  });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
@@ -5767,37 +5758,32 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
   using NextFactory2 = typename Types::NextFactory2;
   using NextFactory3 = typename Types::NextFactory3;
   using Result = typename PromiseResultTraits4::WrappedType;
-  return ::grpc_core::Map(
-      std::forward<P>(p),
-      [f0 = NextFactory0(std::forward<F0>(f0)),
-       f1 = NextFactory1(std::forward<F1>(f1)),
-       f2 = NextFactory2(std::forward<F2>(f2)),
-       f3 = NextFactory3(std::forward<F3>(f3))](PromiseResult0 r0) mutable {
-        if (!PromiseResultTraits0::IsOk(r0)) {
-          return PromiseResultTraits0::template ReturnValue<Result>(
-              std::move(r0));
-        }
-        PromiseResult1 r1 =
-            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
-        if (!PromiseResultTraits1::IsOk(r1)) {
-          return PromiseResultTraits1::template ReturnValue<Result>(
-              std::move(r1));
-        }
-        PromiseResult2 r2 =
-            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
-        if (!PromiseResultTraits2::IsOk(r2)) {
-          return PromiseResultTraits2::template ReturnValue<Result>(
-              std::move(r2));
-        }
-        PromiseResult3 r3 =
-            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
-        if (!PromiseResultTraits3::IsOk(r3)) {
-          return PromiseResultTraits3::template ReturnValue<Result>(
-              std::move(r3));
-        }
-        return Result(
-            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3)));
-      });
+  return Map(std::forward<P>(p), [f0 = NextFactory0(std::forward<F0>(f0)),
+                                  f1 = NextFactory1(std::forward<F1>(f1)),
+                                  f2 = NextFactory2(std::forward<F2>(f2)),
+                                  f3 = NextFactory3(std::forward<F3>(f3))](
+                                     PromiseResult0 r0) mutable {
+    if (!PromiseResultTraits0::IsOk(r0)) {
+      return PromiseResultTraits0::template ReturnValue<Result>(std::move(r0));
+    }
+    PromiseResult1 r1 =
+        PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
+    if (!PromiseResultTraits1::IsOk(r1)) {
+      return PromiseResultTraits1::template ReturnValue<Result>(std::move(r1));
+    }
+    PromiseResult2 r2 =
+        PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
+    if (!PromiseResultTraits2::IsOk(r2)) {
+      return PromiseResultTraits2::template ReturnValue<Result>(std::move(r2));
+    }
+    PromiseResult3 r3 =
+        PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
+    if (!PromiseResultTraits3::IsOk(r3)) {
+      return PromiseResultTraits3::template ReturnValue<Result>(std::move(r3));
+    }
+    return Result(
+        PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3)));
+  });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
@@ -5822,44 +5808,38 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
   using NextFactory3 = typename Types::NextFactory3;
   using NextFactory4 = typename Types::NextFactory4;
   using Result = typename PromiseResultTraits5::WrappedType;
-  return ::grpc_core::Map(
-      std::forward<P>(p),
-      [f0 = NextFactory0(std::forward<F0>(f0)),
-       f1 = NextFactory1(std::forward<F1>(f1)),
-       f2 = NextFactory2(std::forward<F2>(f2)),
-       f3 = NextFactory3(std::forward<F3>(f3)),
-       f4 = NextFactory4(std::forward<F4>(f4))](PromiseResult0 r0) mutable {
-        if (!PromiseResultTraits0::IsOk(r0)) {
-          return PromiseResultTraits0::template ReturnValue<Result>(
-              std::move(r0));
-        }
-        PromiseResult1 r1 =
-            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
-        if (!PromiseResultTraits1::IsOk(r1)) {
-          return PromiseResultTraits1::template ReturnValue<Result>(
-              std::move(r1));
-        }
-        PromiseResult2 r2 =
-            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
-        if (!PromiseResultTraits2::IsOk(r2)) {
-          return PromiseResultTraits2::template ReturnValue<Result>(
-              std::move(r2));
-        }
-        PromiseResult3 r3 =
-            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
-        if (!PromiseResultTraits3::IsOk(r3)) {
-          return PromiseResultTraits3::template ReturnValue<Result>(
-              std::move(r3));
-        }
-        PromiseResult4 r4 =
-            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
-        if (!PromiseResultTraits4::IsOk(r4)) {
-          return PromiseResultTraits4::template ReturnValue<Result>(
-              std::move(r4));
-        }
-        return Result(
-            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4)));
-      });
+  return Map(std::forward<P>(p), [f0 = NextFactory0(std::forward<F0>(f0)),
+                                  f1 = NextFactory1(std::forward<F1>(f1)),
+                                  f2 = NextFactory2(std::forward<F2>(f2)),
+                                  f3 = NextFactory3(std::forward<F3>(f3)),
+                                  f4 = NextFactory4(std::forward<F4>(f4))](
+                                     PromiseResult0 r0) mutable {
+    if (!PromiseResultTraits0::IsOk(r0)) {
+      return PromiseResultTraits0::template ReturnValue<Result>(std::move(r0));
+    }
+    PromiseResult1 r1 =
+        PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
+    if (!PromiseResultTraits1::IsOk(r1)) {
+      return PromiseResultTraits1::template ReturnValue<Result>(std::move(r1));
+    }
+    PromiseResult2 r2 =
+        PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
+    if (!PromiseResultTraits2::IsOk(r2)) {
+      return PromiseResultTraits2::template ReturnValue<Result>(std::move(r2));
+    }
+    PromiseResult3 r3 =
+        PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
+    if (!PromiseResultTraits3::IsOk(r3)) {
+      return PromiseResultTraits3::template ReturnValue<Result>(std::move(r3));
+    }
+    PromiseResult4 r4 =
+        PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
+    if (!PromiseResultTraits4::IsOk(r4)) {
+      return PromiseResultTraits4::template ReturnValue<Result>(std::move(r4));
+    }
+    return Result(
+        PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4)));
+  });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
@@ -5888,51 +5868,44 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
   using NextFactory4 = typename Types::NextFactory4;
   using NextFactory5 = typename Types::NextFactory5;
   using Result = typename PromiseResultTraits6::WrappedType;
-  return ::grpc_core::Map(
-      std::forward<P>(p),
-      [f0 = NextFactory0(std::forward<F0>(f0)),
-       f1 = NextFactory1(std::forward<F1>(f1)),
-       f2 = NextFactory2(std::forward<F2>(f2)),
-       f3 = NextFactory3(std::forward<F3>(f3)),
-       f4 = NextFactory4(std::forward<F4>(f4)),
-       f5 = NextFactory5(std::forward<F5>(f5))](PromiseResult0 r0) mutable {
-        if (!PromiseResultTraits0::IsOk(r0)) {
-          return PromiseResultTraits0::template ReturnValue<Result>(
-              std::move(r0));
-        }
-        PromiseResult1 r1 =
-            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
-        if (!PromiseResultTraits1::IsOk(r1)) {
-          return PromiseResultTraits1::template ReturnValue<Result>(
-              std::move(r1));
-        }
-        PromiseResult2 r2 =
-            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
-        if (!PromiseResultTraits2::IsOk(r2)) {
-          return PromiseResultTraits2::template ReturnValue<Result>(
-              std::move(r2));
-        }
-        PromiseResult3 r3 =
-            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
-        if (!PromiseResultTraits3::IsOk(r3)) {
-          return PromiseResultTraits3::template ReturnValue<Result>(
-              std::move(r3));
-        }
-        PromiseResult4 r4 =
-            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
-        if (!PromiseResultTraits4::IsOk(r4)) {
-          return PromiseResultTraits4::template ReturnValue<Result>(
-              std::move(r4));
-        }
-        PromiseResult5 r5 =
-            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
-        if (!PromiseResultTraits5::IsOk(r5)) {
-          return PromiseResultTraits5::template ReturnValue<Result>(
-              std::move(r5));
-        }
-        return Result(
-            PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5)));
-      });
+  return Map(std::forward<P>(p), [f0 = NextFactory0(std::forward<F0>(f0)),
+                                  f1 = NextFactory1(std::forward<F1>(f1)),
+                                  f2 = NextFactory2(std::forward<F2>(f2)),
+                                  f3 = NextFactory3(std::forward<F3>(f3)),
+                                  f4 = NextFactory4(std::forward<F4>(f4)),
+                                  f5 = NextFactory5(std::forward<F5>(f5))](
+                                     PromiseResult0 r0) mutable {
+    if (!PromiseResultTraits0::IsOk(r0)) {
+      return PromiseResultTraits0::template ReturnValue<Result>(std::move(r0));
+    }
+    PromiseResult1 r1 =
+        PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
+    if (!PromiseResultTraits1::IsOk(r1)) {
+      return PromiseResultTraits1::template ReturnValue<Result>(std::move(r1));
+    }
+    PromiseResult2 r2 =
+        PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
+    if (!PromiseResultTraits2::IsOk(r2)) {
+      return PromiseResultTraits2::template ReturnValue<Result>(std::move(r2));
+    }
+    PromiseResult3 r3 =
+        PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
+    if (!PromiseResultTraits3::IsOk(r3)) {
+      return PromiseResultTraits3::template ReturnValue<Result>(std::move(r3));
+    }
+    PromiseResult4 r4 =
+        PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
+    if (!PromiseResultTraits4::IsOk(r4)) {
+      return PromiseResultTraits4::template ReturnValue<Result>(std::move(r4));
+    }
+    PromiseResult5 r5 =
+        PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
+    if (!PromiseResultTraits5::IsOk(r5)) {
+      return PromiseResultTraits5::template ReturnValue<Result>(std::move(r5));
+    }
+    return Result(
+        PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5)));
+  });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
@@ -5965,58 +5938,50 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
   using NextFactory5 = typename Types::NextFactory5;
   using NextFactory6 = typename Types::NextFactory6;
   using Result = typename PromiseResultTraits7::WrappedType;
-  return ::grpc_core::Map(
-      std::forward<P>(p),
-      [f0 = NextFactory0(std::forward<F0>(f0)),
-       f1 = NextFactory1(std::forward<F1>(f1)),
-       f2 = NextFactory2(std::forward<F2>(f2)),
-       f3 = NextFactory3(std::forward<F3>(f3)),
-       f4 = NextFactory4(std::forward<F4>(f4)),
-       f5 = NextFactory5(std::forward<F5>(f5)),
-       f6 = NextFactory6(std::forward<F6>(f6))](PromiseResult0 r0) mutable {
-        if (!PromiseResultTraits0::IsOk(r0)) {
-          return PromiseResultTraits0::template ReturnValue<Result>(
-              std::move(r0));
-        }
-        PromiseResult1 r1 =
-            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
-        if (!PromiseResultTraits1::IsOk(r1)) {
-          return PromiseResultTraits1::template ReturnValue<Result>(
-              std::move(r1));
-        }
-        PromiseResult2 r2 =
-            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
-        if (!PromiseResultTraits2::IsOk(r2)) {
-          return PromiseResultTraits2::template ReturnValue<Result>(
-              std::move(r2));
-        }
-        PromiseResult3 r3 =
-            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
-        if (!PromiseResultTraits3::IsOk(r3)) {
-          return PromiseResultTraits3::template ReturnValue<Result>(
-              std::move(r3));
-        }
-        PromiseResult4 r4 =
-            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
-        if (!PromiseResultTraits4::IsOk(r4)) {
-          return PromiseResultTraits4::template ReturnValue<Result>(
-              std::move(r4));
-        }
-        PromiseResult5 r5 =
-            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
-        if (!PromiseResultTraits5::IsOk(r5)) {
-          return PromiseResultTraits5::template ReturnValue<Result>(
-              std::move(r5));
-        }
-        PromiseResult6 r6 =
-            PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
-        if (!PromiseResultTraits6::IsOk(r6)) {
-          return PromiseResultTraits6::template ReturnValue<Result>(
-              std::move(r6));
-        }
-        return Result(
-            PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6)));
-      });
+  return Map(std::forward<P>(p), [f0 = NextFactory0(std::forward<F0>(f0)),
+                                  f1 = NextFactory1(std::forward<F1>(f1)),
+                                  f2 = NextFactory2(std::forward<F2>(f2)),
+                                  f3 = NextFactory3(std::forward<F3>(f3)),
+                                  f4 = NextFactory4(std::forward<F4>(f4)),
+                                  f5 = NextFactory5(std::forward<F5>(f5)),
+                                  f6 = NextFactory6(std::forward<F6>(f6))](
+                                     PromiseResult0 r0) mutable {
+    if (!PromiseResultTraits0::IsOk(r0)) {
+      return PromiseResultTraits0::template ReturnValue<Result>(std::move(r0));
+    }
+    PromiseResult1 r1 =
+        PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
+    if (!PromiseResultTraits1::IsOk(r1)) {
+      return PromiseResultTraits1::template ReturnValue<Result>(std::move(r1));
+    }
+    PromiseResult2 r2 =
+        PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
+    if (!PromiseResultTraits2::IsOk(r2)) {
+      return PromiseResultTraits2::template ReturnValue<Result>(std::move(r2));
+    }
+    PromiseResult3 r3 =
+        PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
+    if (!PromiseResultTraits3::IsOk(r3)) {
+      return PromiseResultTraits3::template ReturnValue<Result>(std::move(r3));
+    }
+    PromiseResult4 r4 =
+        PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
+    if (!PromiseResultTraits4::IsOk(r4)) {
+      return PromiseResultTraits4::template ReturnValue<Result>(std::move(r4));
+    }
+    PromiseResult5 r5 =
+        PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
+    if (!PromiseResultTraits5::IsOk(r5)) {
+      return PromiseResultTraits5::template ReturnValue<Result>(std::move(r5));
+    }
+    PromiseResult6 r6 =
+        PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
+    if (!PromiseResultTraits6::IsOk(r6)) {
+      return PromiseResultTraits6::template ReturnValue<Result>(std::move(r6));
+    }
+    return Result(
+        PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6)));
+  });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
@@ -6052,65 +6017,56 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
   using NextFactory6 = typename Types::NextFactory6;
   using NextFactory7 = typename Types::NextFactory7;
   using Result = typename PromiseResultTraits8::WrappedType;
-  return ::grpc_core::Map(
-      std::forward<P>(p),
-      [f0 = NextFactory0(std::forward<F0>(f0)),
-       f1 = NextFactory1(std::forward<F1>(f1)),
-       f2 = NextFactory2(std::forward<F2>(f2)),
-       f3 = NextFactory3(std::forward<F3>(f3)),
-       f4 = NextFactory4(std::forward<F4>(f4)),
-       f5 = NextFactory5(std::forward<F5>(f5)),
-       f6 = NextFactory6(std::forward<F6>(f6)),
-       f7 = NextFactory7(std::forward<F7>(f7))](PromiseResult0 r0) mutable {
-        if (!PromiseResultTraits0::IsOk(r0)) {
-          return PromiseResultTraits0::template ReturnValue<Result>(
-              std::move(r0));
-        }
-        PromiseResult1 r1 =
-            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
-        if (!PromiseResultTraits1::IsOk(r1)) {
-          return PromiseResultTraits1::template ReturnValue<Result>(
-              std::move(r1));
-        }
-        PromiseResult2 r2 =
-            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
-        if (!PromiseResultTraits2::IsOk(r2)) {
-          return PromiseResultTraits2::template ReturnValue<Result>(
-              std::move(r2));
-        }
-        PromiseResult3 r3 =
-            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
-        if (!PromiseResultTraits3::IsOk(r3)) {
-          return PromiseResultTraits3::template ReturnValue<Result>(
-              std::move(r3));
-        }
-        PromiseResult4 r4 =
-            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
-        if (!PromiseResultTraits4::IsOk(r4)) {
-          return PromiseResultTraits4::template ReturnValue<Result>(
-              std::move(r4));
-        }
-        PromiseResult5 r5 =
-            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
-        if (!PromiseResultTraits5::IsOk(r5)) {
-          return PromiseResultTraits5::template ReturnValue<Result>(
-              std::move(r5));
-        }
-        PromiseResult6 r6 =
-            PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
-        if (!PromiseResultTraits6::IsOk(r6)) {
-          return PromiseResultTraits6::template ReturnValue<Result>(
-              std::move(r6));
-        }
-        PromiseResult7 r7 =
-            PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6));
-        if (!PromiseResultTraits7::IsOk(r7)) {
-          return PromiseResultTraits7::template ReturnValue<Result>(
-              std::move(r7));
-        }
-        return Result(
-            PromiseResultTraits7::CallFactoryThenPromise(&f7, std::move(r7)));
-      });
+  return Map(std::forward<P>(p), [f0 = NextFactory0(std::forward<F0>(f0)),
+                                  f1 = NextFactory1(std::forward<F1>(f1)),
+                                  f2 = NextFactory2(std::forward<F2>(f2)),
+                                  f3 = NextFactory3(std::forward<F3>(f3)),
+                                  f4 = NextFactory4(std::forward<F4>(f4)),
+                                  f5 = NextFactory5(std::forward<F5>(f5)),
+                                  f6 = NextFactory6(std::forward<F6>(f6)),
+                                  f7 = NextFactory7(std::forward<F7>(f7))](
+                                     PromiseResult0 r0) mutable {
+    if (!PromiseResultTraits0::IsOk(r0)) {
+      return PromiseResultTraits0::template ReturnValue<Result>(std::move(r0));
+    }
+    PromiseResult1 r1 =
+        PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
+    if (!PromiseResultTraits1::IsOk(r1)) {
+      return PromiseResultTraits1::template ReturnValue<Result>(std::move(r1));
+    }
+    PromiseResult2 r2 =
+        PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
+    if (!PromiseResultTraits2::IsOk(r2)) {
+      return PromiseResultTraits2::template ReturnValue<Result>(std::move(r2));
+    }
+    PromiseResult3 r3 =
+        PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
+    if (!PromiseResultTraits3::IsOk(r3)) {
+      return PromiseResultTraits3::template ReturnValue<Result>(std::move(r3));
+    }
+    PromiseResult4 r4 =
+        PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
+    if (!PromiseResultTraits4::IsOk(r4)) {
+      return PromiseResultTraits4::template ReturnValue<Result>(std::move(r4));
+    }
+    PromiseResult5 r5 =
+        PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
+    if (!PromiseResultTraits5::IsOk(r5)) {
+      return PromiseResultTraits5::template ReturnValue<Result>(std::move(r5));
+    }
+    PromiseResult6 r6 =
+        PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
+    if (!PromiseResultTraits6::IsOk(r6)) {
+      return PromiseResultTraits6::template ReturnValue<Result>(std::move(r6));
+    }
+    PromiseResult7 r7 =
+        PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6));
+    if (!PromiseResultTraits7::IsOk(r7)) {
+      return PromiseResultTraits7::template ReturnValue<Result>(std::move(r7));
+    }
+    return Result(
+        PromiseResultTraits7::CallFactoryThenPromise(&f7, std::move(r7)));
+  });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
@@ -6150,72 +6106,62 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
   using NextFactory7 = typename Types::NextFactory7;
   using NextFactory8 = typename Types::NextFactory8;
   using Result = typename PromiseResultTraits9::WrappedType;
-  return ::grpc_core::Map(
-      std::forward<P>(p),
-      [f0 = NextFactory0(std::forward<F0>(f0)),
-       f1 = NextFactory1(std::forward<F1>(f1)),
-       f2 = NextFactory2(std::forward<F2>(f2)),
-       f3 = NextFactory3(std::forward<F3>(f3)),
-       f4 = NextFactory4(std::forward<F4>(f4)),
-       f5 = NextFactory5(std::forward<F5>(f5)),
-       f6 = NextFactory6(std::forward<F6>(f6)),
-       f7 = NextFactory7(std::forward<F7>(f7)),
-       f8 = NextFactory8(std::forward<F8>(f8))](PromiseResult0 r0) mutable {
-        if (!PromiseResultTraits0::IsOk(r0)) {
-          return PromiseResultTraits0::template ReturnValue<Result>(
-              std::move(r0));
-        }
-        PromiseResult1 r1 =
-            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
-        if (!PromiseResultTraits1::IsOk(r1)) {
-          return PromiseResultTraits1::template ReturnValue<Result>(
-              std::move(r1));
-        }
-        PromiseResult2 r2 =
-            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
-        if (!PromiseResultTraits2::IsOk(r2)) {
-          return PromiseResultTraits2::template ReturnValue<Result>(
-              std::move(r2));
-        }
-        PromiseResult3 r3 =
-            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
-        if (!PromiseResultTraits3::IsOk(r3)) {
-          return PromiseResultTraits3::template ReturnValue<Result>(
-              std::move(r3));
-        }
-        PromiseResult4 r4 =
-            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
-        if (!PromiseResultTraits4::IsOk(r4)) {
-          return PromiseResultTraits4::template ReturnValue<Result>(
-              std::move(r4));
-        }
-        PromiseResult5 r5 =
-            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
-        if (!PromiseResultTraits5::IsOk(r5)) {
-          return PromiseResultTraits5::template ReturnValue<Result>(
-              std::move(r5));
-        }
-        PromiseResult6 r6 =
-            PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
-        if (!PromiseResultTraits6::IsOk(r6)) {
-          return PromiseResultTraits6::template ReturnValue<Result>(
-              std::move(r6));
-        }
-        PromiseResult7 r7 =
-            PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6));
-        if (!PromiseResultTraits7::IsOk(r7)) {
-          return PromiseResultTraits7::template ReturnValue<Result>(
-              std::move(r7));
-        }
-        PromiseResult8 r8 =
-            PromiseResultTraits7::CallFactoryThenPromise(&f7, std::move(r7));
-        if (!PromiseResultTraits8::IsOk(r8)) {
-          return PromiseResultTraits8::template ReturnValue<Result>(
-              std::move(r8));
-        }
-        return Result(
-            PromiseResultTraits8::CallFactoryThenPromise(&f8, std::move(r8)));
-      });
+  return Map(std::forward<P>(p), [f0 = NextFactory0(std::forward<F0>(f0)),
+                                  f1 = NextFactory1(std::forward<F1>(f1)),
+                                  f2 = NextFactory2(std::forward<F2>(f2)),
+                                  f3 = NextFactory3(std::forward<F3>(f3)),
+                                  f4 = NextFactory4(std::forward<F4>(f4)),
+                                  f5 = NextFactory5(std::forward<F5>(f5)),
+                                  f6 = NextFactory6(std::forward<F6>(f6)),
+                                  f7 = NextFactory7(std::forward<F7>(f7)),
+                                  f8 = NextFactory8(std::forward<F8>(f8))](
+                                     PromiseResult0 r0) mutable {
+    if (!PromiseResultTraits0::IsOk(r0)) {
+      return PromiseResultTraits0::template ReturnValue<Result>(std::move(r0));
+    }
+    PromiseResult1 r1 =
+        PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
+    if (!PromiseResultTraits1::IsOk(r1)) {
+      return PromiseResultTraits1::template ReturnValue<Result>(std::move(r1));
+    }
+    PromiseResult2 r2 =
+        PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
+    if (!PromiseResultTraits2::IsOk(r2)) {
+      return PromiseResultTraits2::template ReturnValue<Result>(std::move(r2));
+    }
+    PromiseResult3 r3 =
+        PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
+    if (!PromiseResultTraits3::IsOk(r3)) {
+      return PromiseResultTraits3::template ReturnValue<Result>(std::move(r3));
+    }
+    PromiseResult4 r4 =
+        PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
+    if (!PromiseResultTraits4::IsOk(r4)) {
+      return PromiseResultTraits4::template ReturnValue<Result>(std::move(r4));
+    }
+    PromiseResult5 r5 =
+        PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
+    if (!PromiseResultTraits5::IsOk(r5)) {
+      return PromiseResultTraits5::template ReturnValue<Result>(std::move(r5));
+    }
+    PromiseResult6 r6 =
+        PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
+    if (!PromiseResultTraits6::IsOk(r6)) {
+      return PromiseResultTraits6::template ReturnValue<Result>(std::move(r6));
+    }
+    PromiseResult7 r7 =
+        PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6));
+    if (!PromiseResultTraits7::IsOk(r7)) {
+      return PromiseResultTraits7::template ReturnValue<Result>(std::move(r7));
+    }
+    PromiseResult8 r8 =
+        PromiseResultTraits7::CallFactoryThenPromise(&f7, std::move(r7));
+    if (!PromiseResultTraits8::IsOk(r8)) {
+      return PromiseResultTraits8::template ReturnValue<Result>(std::move(r8));
+    }
+    return Result(
+        PromiseResultTraits8::CallFactoryThenPromise(&f8, std::move(r8)));
+  });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
@@ -6259,79 +6205,68 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
   using NextFactory8 = typename Types::NextFactory8;
   using NextFactory9 = typename Types::NextFactory9;
   using Result = typename PromiseResultTraits10::WrappedType;
-  return ::grpc_core::Map(
-      std::forward<P>(p),
-      [f0 = NextFactory0(std::forward<F0>(f0)),
-       f1 = NextFactory1(std::forward<F1>(f1)),
-       f2 = NextFactory2(std::forward<F2>(f2)),
-       f3 = NextFactory3(std::forward<F3>(f3)),
-       f4 = NextFactory4(std::forward<F4>(f4)),
-       f5 = NextFactory5(std::forward<F5>(f5)),
-       f6 = NextFactory6(std::forward<F6>(f6)),
-       f7 = NextFactory7(std::forward<F7>(f7)),
-       f8 = NextFactory8(std::forward<F8>(f8)),
-       f9 = NextFactory9(std::forward<F9>(f9))](PromiseResult0 r0) mutable {
-        if (!PromiseResultTraits0::IsOk(r0)) {
-          return PromiseResultTraits0::template ReturnValue<Result>(
-              std::move(r0));
-        }
-        PromiseResult1 r1 =
-            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
-        if (!PromiseResultTraits1::IsOk(r1)) {
-          return PromiseResultTraits1::template ReturnValue<Result>(
-              std::move(r1));
-        }
-        PromiseResult2 r2 =
-            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
-        if (!PromiseResultTraits2::IsOk(r2)) {
-          return PromiseResultTraits2::template ReturnValue<Result>(
-              std::move(r2));
-        }
-        PromiseResult3 r3 =
-            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
-        if (!PromiseResultTraits3::IsOk(r3)) {
-          return PromiseResultTraits3::template ReturnValue<Result>(
-              std::move(r3));
-        }
-        PromiseResult4 r4 =
-            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
-        if (!PromiseResultTraits4::IsOk(r4)) {
-          return PromiseResultTraits4::template ReturnValue<Result>(
-              std::move(r4));
-        }
-        PromiseResult5 r5 =
-            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
-        if (!PromiseResultTraits5::IsOk(r5)) {
-          return PromiseResultTraits5::template ReturnValue<Result>(
-              std::move(r5));
-        }
-        PromiseResult6 r6 =
-            PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
-        if (!PromiseResultTraits6::IsOk(r6)) {
-          return PromiseResultTraits6::template ReturnValue<Result>(
-              std::move(r6));
-        }
-        PromiseResult7 r7 =
-            PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6));
-        if (!PromiseResultTraits7::IsOk(r7)) {
-          return PromiseResultTraits7::template ReturnValue<Result>(
-              std::move(r7));
-        }
-        PromiseResult8 r8 =
-            PromiseResultTraits7::CallFactoryThenPromise(&f7, std::move(r7));
-        if (!PromiseResultTraits8::IsOk(r8)) {
-          return PromiseResultTraits8::template ReturnValue<Result>(
-              std::move(r8));
-        }
-        PromiseResult9 r9 =
-            PromiseResultTraits8::CallFactoryThenPromise(&f8, std::move(r8));
-        if (!PromiseResultTraits9::IsOk(r9)) {
-          return PromiseResultTraits9::template ReturnValue<Result>(
-              std::move(r9));
-        }
-        return Result(
-            PromiseResultTraits9::CallFactoryThenPromise(&f9, std::move(r9)));
-      });
+  return Map(std::forward<P>(p), [f0 = NextFactory0(std::forward<F0>(f0)),
+                                  f1 = NextFactory1(std::forward<F1>(f1)),
+                                  f2 = NextFactory2(std::forward<F2>(f2)),
+                                  f3 = NextFactory3(std::forward<F3>(f3)),
+                                  f4 = NextFactory4(std::forward<F4>(f4)),
+                                  f5 = NextFactory5(std::forward<F5>(f5)),
+                                  f6 = NextFactory6(std::forward<F6>(f6)),
+                                  f7 = NextFactory7(std::forward<F7>(f7)),
+                                  f8 = NextFactory8(std::forward<F8>(f8)),
+                                  f9 = NextFactory9(std::forward<F9>(f9))](
+                                     PromiseResult0 r0) mutable {
+    if (!PromiseResultTraits0::IsOk(r0)) {
+      return PromiseResultTraits0::template ReturnValue<Result>(std::move(r0));
+    }
+    PromiseResult1 r1 =
+        PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
+    if (!PromiseResultTraits1::IsOk(r1)) {
+      return PromiseResultTraits1::template ReturnValue<Result>(std::move(r1));
+    }
+    PromiseResult2 r2 =
+        PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
+    if (!PromiseResultTraits2::IsOk(r2)) {
+      return PromiseResultTraits2::template ReturnValue<Result>(std::move(r2));
+    }
+    PromiseResult3 r3 =
+        PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
+    if (!PromiseResultTraits3::IsOk(r3)) {
+      return PromiseResultTraits3::template ReturnValue<Result>(std::move(r3));
+    }
+    PromiseResult4 r4 =
+        PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
+    if (!PromiseResultTraits4::IsOk(r4)) {
+      return PromiseResultTraits4::template ReturnValue<Result>(std::move(r4));
+    }
+    PromiseResult5 r5 =
+        PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
+    if (!PromiseResultTraits5::IsOk(r5)) {
+      return PromiseResultTraits5::template ReturnValue<Result>(std::move(r5));
+    }
+    PromiseResult6 r6 =
+        PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
+    if (!PromiseResultTraits6::IsOk(r6)) {
+      return PromiseResultTraits6::template ReturnValue<Result>(std::move(r6));
+    }
+    PromiseResult7 r7 =
+        PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6));
+    if (!PromiseResultTraits7::IsOk(r7)) {
+      return PromiseResultTraits7::template ReturnValue<Result>(std::move(r7));
+    }
+    PromiseResult8 r8 =
+        PromiseResultTraits7::CallFactoryThenPromise(&f7, std::move(r7));
+    if (!PromiseResultTraits8::IsOk(r8)) {
+      return PromiseResultTraits8::template ReturnValue<Result>(std::move(r8));
+    }
+    PromiseResult9 r9 =
+        PromiseResultTraits8::CallFactoryThenPromise(&f8, std::move(r8));
+    if (!PromiseResultTraits9::IsOk(r9)) {
+      return PromiseResultTraits9::template ReturnValue<Result>(std::move(r9));
+    }
+    return Result(
+        PromiseResultTraits9::CallFactoryThenPromise(&f9, std::move(r9)));
+  });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
@@ -6378,86 +6313,75 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
   using NextFactory9 = typename Types::NextFactory9;
   using NextFactory10 = typename Types::NextFactory10;
   using Result = typename PromiseResultTraits11::WrappedType;
-  return ::grpc_core::Map(
-      std::forward<P>(p),
-      [f0 = NextFactory0(std::forward<F0>(f0)),
-       f1 = NextFactory1(std::forward<F1>(f1)),
-       f2 = NextFactory2(std::forward<F2>(f2)),
-       f3 = NextFactory3(std::forward<F3>(f3)),
-       f4 = NextFactory4(std::forward<F4>(f4)),
-       f5 = NextFactory5(std::forward<F5>(f5)),
-       f6 = NextFactory6(std::forward<F6>(f6)),
-       f7 = NextFactory7(std::forward<F7>(f7)),
-       f8 = NextFactory8(std::forward<F8>(f8)),
-       f9 = NextFactory9(std::forward<F9>(f9)),
-       f10 = NextFactory10(std::forward<F10>(f10))](PromiseResult0 r0) mutable {
-        if (!PromiseResultTraits0::IsOk(r0)) {
-          return PromiseResultTraits0::template ReturnValue<Result>(
-              std::move(r0));
-        }
-        PromiseResult1 r1 =
-            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
-        if (!PromiseResultTraits1::IsOk(r1)) {
-          return PromiseResultTraits1::template ReturnValue<Result>(
-              std::move(r1));
-        }
-        PromiseResult2 r2 =
-            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
-        if (!PromiseResultTraits2::IsOk(r2)) {
-          return PromiseResultTraits2::template ReturnValue<Result>(
-              std::move(r2));
-        }
-        PromiseResult3 r3 =
-            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
-        if (!PromiseResultTraits3::IsOk(r3)) {
-          return PromiseResultTraits3::template ReturnValue<Result>(
-              std::move(r3));
-        }
-        PromiseResult4 r4 =
-            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
-        if (!PromiseResultTraits4::IsOk(r4)) {
-          return PromiseResultTraits4::template ReturnValue<Result>(
-              std::move(r4));
-        }
-        PromiseResult5 r5 =
-            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
-        if (!PromiseResultTraits5::IsOk(r5)) {
-          return PromiseResultTraits5::template ReturnValue<Result>(
-              std::move(r5));
-        }
-        PromiseResult6 r6 =
-            PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
-        if (!PromiseResultTraits6::IsOk(r6)) {
-          return PromiseResultTraits6::template ReturnValue<Result>(
-              std::move(r6));
-        }
-        PromiseResult7 r7 =
-            PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6));
-        if (!PromiseResultTraits7::IsOk(r7)) {
-          return PromiseResultTraits7::template ReturnValue<Result>(
-              std::move(r7));
-        }
-        PromiseResult8 r8 =
-            PromiseResultTraits7::CallFactoryThenPromise(&f7, std::move(r7));
-        if (!PromiseResultTraits8::IsOk(r8)) {
-          return PromiseResultTraits8::template ReturnValue<Result>(
-              std::move(r8));
-        }
-        PromiseResult9 r9 =
-            PromiseResultTraits8::CallFactoryThenPromise(&f8, std::move(r8));
-        if (!PromiseResultTraits9::IsOk(r9)) {
-          return PromiseResultTraits9::template ReturnValue<Result>(
-              std::move(r9));
-        }
-        PromiseResult10 r10 =
-            PromiseResultTraits9::CallFactoryThenPromise(&f9, std::move(r9));
-        if (!PromiseResultTraits10::IsOk(r10)) {
-          return PromiseResultTraits10::template ReturnValue<Result>(
-              std::move(r10));
-        }
-        return Result(PromiseResultTraits10::CallFactoryThenPromise(
-            &f10, std::move(r10)));
-      });
+  return Map(std::forward<P>(p), [f0 = NextFactory0(std::forward<F0>(f0)),
+                                  f1 = NextFactory1(std::forward<F1>(f1)),
+                                  f2 = NextFactory2(std::forward<F2>(f2)),
+                                  f3 = NextFactory3(std::forward<F3>(f3)),
+                                  f4 = NextFactory4(std::forward<F4>(f4)),
+                                  f5 = NextFactory5(std::forward<F5>(f5)),
+                                  f6 = NextFactory6(std::forward<F6>(f6)),
+                                  f7 = NextFactory7(std::forward<F7>(f7)),
+                                  f8 = NextFactory8(std::forward<F8>(f8)),
+                                  f9 = NextFactory9(std::forward<F9>(f9)),
+                                  f10 = NextFactory10(std::forward<F10>(f10))](
+                                     PromiseResult0 r0) mutable {
+    if (!PromiseResultTraits0::IsOk(r0)) {
+      return PromiseResultTraits0::template ReturnValue<Result>(std::move(r0));
+    }
+    PromiseResult1 r1 =
+        PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
+    if (!PromiseResultTraits1::IsOk(r1)) {
+      return PromiseResultTraits1::template ReturnValue<Result>(std::move(r1));
+    }
+    PromiseResult2 r2 =
+        PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
+    if (!PromiseResultTraits2::IsOk(r2)) {
+      return PromiseResultTraits2::template ReturnValue<Result>(std::move(r2));
+    }
+    PromiseResult3 r3 =
+        PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
+    if (!PromiseResultTraits3::IsOk(r3)) {
+      return PromiseResultTraits3::template ReturnValue<Result>(std::move(r3));
+    }
+    PromiseResult4 r4 =
+        PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
+    if (!PromiseResultTraits4::IsOk(r4)) {
+      return PromiseResultTraits4::template ReturnValue<Result>(std::move(r4));
+    }
+    PromiseResult5 r5 =
+        PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
+    if (!PromiseResultTraits5::IsOk(r5)) {
+      return PromiseResultTraits5::template ReturnValue<Result>(std::move(r5));
+    }
+    PromiseResult6 r6 =
+        PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
+    if (!PromiseResultTraits6::IsOk(r6)) {
+      return PromiseResultTraits6::template ReturnValue<Result>(std::move(r6));
+    }
+    PromiseResult7 r7 =
+        PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6));
+    if (!PromiseResultTraits7::IsOk(r7)) {
+      return PromiseResultTraits7::template ReturnValue<Result>(std::move(r7));
+    }
+    PromiseResult8 r8 =
+        PromiseResultTraits7::CallFactoryThenPromise(&f7, std::move(r7));
+    if (!PromiseResultTraits8::IsOk(r8)) {
+      return PromiseResultTraits8::template ReturnValue<Result>(std::move(r8));
+    }
+    PromiseResult9 r9 =
+        PromiseResultTraits8::CallFactoryThenPromise(&f8, std::move(r8));
+    if (!PromiseResultTraits9::IsOk(r9)) {
+      return PromiseResultTraits9::template ReturnValue<Result>(std::move(r9));
+    }
+    PromiseResult10 r10 =
+        PromiseResultTraits9::CallFactoryThenPromise(&f9, std::move(r9));
+    if (!PromiseResultTraits10::IsOk(r10)) {
+      return PromiseResultTraits10::template ReturnValue<Result>(
+          std::move(r10));
+    }
+    return Result(
+        PromiseResultTraits10::CallFactoryThenPromise(&f10, std::move(r10)));
+  });
 }
 
 template <template <typename> class Traits, typename P, typename F0,
@@ -6509,93 +6433,82 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, F0&& f0, F1&& f1,
   using NextFactory10 = typename Types::NextFactory10;
   using NextFactory11 = typename Types::NextFactory11;
   using Result = typename PromiseResultTraits12::WrappedType;
-  return ::grpc_core::Map(
-      std::forward<P>(p),
-      [f0 = NextFactory0(std::forward<F0>(f0)),
-       f1 = NextFactory1(std::forward<F1>(f1)),
-       f2 = NextFactory2(std::forward<F2>(f2)),
-       f3 = NextFactory3(std::forward<F3>(f3)),
-       f4 = NextFactory4(std::forward<F4>(f4)),
-       f5 = NextFactory5(std::forward<F5>(f5)),
-       f6 = NextFactory6(std::forward<F6>(f6)),
-       f7 = NextFactory7(std::forward<F7>(f7)),
-       f8 = NextFactory8(std::forward<F8>(f8)),
-       f9 = NextFactory9(std::forward<F9>(f9)),
-       f10 = NextFactory10(std::forward<F10>(f10)),
-       f11 = NextFactory11(std::forward<F11>(f11))](PromiseResult0 r0) mutable {
-        if (!PromiseResultTraits0::IsOk(r0)) {
-          return PromiseResultTraits0::template ReturnValue<Result>(
-              std::move(r0));
-        }
-        PromiseResult1 r1 =
-            PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
-        if (!PromiseResultTraits1::IsOk(r1)) {
-          return PromiseResultTraits1::template ReturnValue<Result>(
-              std::move(r1));
-        }
-        PromiseResult2 r2 =
-            PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
-        if (!PromiseResultTraits2::IsOk(r2)) {
-          return PromiseResultTraits2::template ReturnValue<Result>(
-              std::move(r2));
-        }
-        PromiseResult3 r3 =
-            PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
-        if (!PromiseResultTraits3::IsOk(r3)) {
-          return PromiseResultTraits3::template ReturnValue<Result>(
-              std::move(r3));
-        }
-        PromiseResult4 r4 =
-            PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
-        if (!PromiseResultTraits4::IsOk(r4)) {
-          return PromiseResultTraits4::template ReturnValue<Result>(
-              std::move(r4));
-        }
-        PromiseResult5 r5 =
-            PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
-        if (!PromiseResultTraits5::IsOk(r5)) {
-          return PromiseResultTraits5::template ReturnValue<Result>(
-              std::move(r5));
-        }
-        PromiseResult6 r6 =
-            PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
-        if (!PromiseResultTraits6::IsOk(r6)) {
-          return PromiseResultTraits6::template ReturnValue<Result>(
-              std::move(r6));
-        }
-        PromiseResult7 r7 =
-            PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6));
-        if (!PromiseResultTraits7::IsOk(r7)) {
-          return PromiseResultTraits7::template ReturnValue<Result>(
-              std::move(r7));
-        }
-        PromiseResult8 r8 =
-            PromiseResultTraits7::CallFactoryThenPromise(&f7, std::move(r7));
-        if (!PromiseResultTraits8::IsOk(r8)) {
-          return PromiseResultTraits8::template ReturnValue<Result>(
-              std::move(r8));
-        }
-        PromiseResult9 r9 =
-            PromiseResultTraits8::CallFactoryThenPromise(&f8, std::move(r8));
-        if (!PromiseResultTraits9::IsOk(r9)) {
-          return PromiseResultTraits9::template ReturnValue<Result>(
-              std::move(r9));
-        }
-        PromiseResult10 r10 =
-            PromiseResultTraits9::CallFactoryThenPromise(&f9, std::move(r9));
-        if (!PromiseResultTraits10::IsOk(r10)) {
-          return PromiseResultTraits10::template ReturnValue<Result>(
-              std::move(r10));
-        }
-        PromiseResult11 r11 =
-            PromiseResultTraits10::CallFactoryThenPromise(&f10, std::move(r10));
-        if (!PromiseResultTraits11::IsOk(r11)) {
-          return PromiseResultTraits11::template ReturnValue<Result>(
-              std::move(r11));
-        }
-        return Result(PromiseResultTraits11::CallFactoryThenPromise(
-            &f11, std::move(r11)));
-      });
+  return Map(std::forward<P>(p), [f0 = NextFactory0(std::forward<F0>(f0)),
+                                  f1 = NextFactory1(std::forward<F1>(f1)),
+                                  f2 = NextFactory2(std::forward<F2>(f2)),
+                                  f3 = NextFactory3(std::forward<F3>(f3)),
+                                  f4 = NextFactory4(std::forward<F4>(f4)),
+                                  f5 = NextFactory5(std::forward<F5>(f5)),
+                                  f6 = NextFactory6(std::forward<F6>(f6)),
+                                  f7 = NextFactory7(std::forward<F7>(f7)),
+                                  f8 = NextFactory8(std::forward<F8>(f8)),
+                                  f9 = NextFactory9(std::forward<F9>(f9)),
+                                  f10 = NextFactory10(std::forward<F10>(f10)),
+                                  f11 = NextFactory11(std::forward<F11>(f11))](
+                                     PromiseResult0 r0) mutable {
+    if (!PromiseResultTraits0::IsOk(r0)) {
+      return PromiseResultTraits0::template ReturnValue<Result>(std::move(r0));
+    }
+    PromiseResult1 r1 =
+        PromiseResultTraits0::CallFactoryThenPromise(&f0, std::move(r0));
+    if (!PromiseResultTraits1::IsOk(r1)) {
+      return PromiseResultTraits1::template ReturnValue<Result>(std::move(r1));
+    }
+    PromiseResult2 r2 =
+        PromiseResultTraits1::CallFactoryThenPromise(&f1, std::move(r1));
+    if (!PromiseResultTraits2::IsOk(r2)) {
+      return PromiseResultTraits2::template ReturnValue<Result>(std::move(r2));
+    }
+    PromiseResult3 r3 =
+        PromiseResultTraits2::CallFactoryThenPromise(&f2, std::move(r2));
+    if (!PromiseResultTraits3::IsOk(r3)) {
+      return PromiseResultTraits3::template ReturnValue<Result>(std::move(r3));
+    }
+    PromiseResult4 r4 =
+        PromiseResultTraits3::CallFactoryThenPromise(&f3, std::move(r3));
+    if (!PromiseResultTraits4::IsOk(r4)) {
+      return PromiseResultTraits4::template ReturnValue<Result>(std::move(r4));
+    }
+    PromiseResult5 r5 =
+        PromiseResultTraits4::CallFactoryThenPromise(&f4, std::move(r4));
+    if (!PromiseResultTraits5::IsOk(r5)) {
+      return PromiseResultTraits5::template ReturnValue<Result>(std::move(r5));
+    }
+    PromiseResult6 r6 =
+        PromiseResultTraits5::CallFactoryThenPromise(&f5, std::move(r5));
+    if (!PromiseResultTraits6::IsOk(r6)) {
+      return PromiseResultTraits6::template ReturnValue<Result>(std::move(r6));
+    }
+    PromiseResult7 r7 =
+        PromiseResultTraits6::CallFactoryThenPromise(&f6, std::move(r6));
+    if (!PromiseResultTraits7::IsOk(r7)) {
+      return PromiseResultTraits7::template ReturnValue<Result>(std::move(r7));
+    }
+    PromiseResult8 r8 =
+        PromiseResultTraits7::CallFactoryThenPromise(&f7, std::move(r7));
+    if (!PromiseResultTraits8::IsOk(r8)) {
+      return PromiseResultTraits8::template ReturnValue<Result>(std::move(r8));
+    }
+    PromiseResult9 r9 =
+        PromiseResultTraits8::CallFactoryThenPromise(&f8, std::move(r8));
+    if (!PromiseResultTraits9::IsOk(r9)) {
+      return PromiseResultTraits9::template ReturnValue<Result>(std::move(r9));
+    }
+    PromiseResult10 r10 =
+        PromiseResultTraits9::CallFactoryThenPromise(&f9, std::move(r9));
+    if (!PromiseResultTraits10::IsOk(r10)) {
+      return PromiseResultTraits10::template ReturnValue<Result>(
+          std::move(r10));
+    }
+    PromiseResult11 r11 =
+        PromiseResultTraits10::CallFactoryThenPromise(&f10, std::move(r10));
+    if (!PromiseResultTraits11::IsOk(r11)) {
+      return PromiseResultTraits11::template ReturnValue<Result>(
+          std::move(r11));
+    }
+    return Result(
+        PromiseResultTraits11::CallFactoryThenPromise(&f11, std::move(r11)));
+  });
 }
 
 template <template <typename> class Traits, typename Arg, typename F0,
