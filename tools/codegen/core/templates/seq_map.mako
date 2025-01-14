@@ -27,7 +27,7 @@ using PromiseResultTraits${i} = typename Types::PromiseResultTraits${i};
 using NextFactory${i} = typename Types::NextFactory${i};
 % endfor
 using Result = typename PromiseResultTraits${n-1}::WrappedType;
-    return ::grpc_core::Map(
+    return Map(
         std::forward<P>(p),
         [${",".join(f"f{i} = NextFactory{i}(std::forward<F{i}>(f{i}))" for i in range(0,n-1))}]
         (PromiseResult0 r0) mutable {
