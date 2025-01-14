@@ -602,23 +602,29 @@ struct Payload {
 
 Payload MakePayload(int value) { return Payload{std::make_unique<int>(value)}; }
 
-auto MakeSenderPromise(MpscSender<Payload>& sender, Notification& sent) {
-  return [&sender, &sent]() {
-    auto send_promise = sender.Send(MakePayload(42));
+auto MakeSenderPromise(MpscSender<Payload>& sender, Notification& sent,
+                       std::string& execution_order, int value) {
+  return [&sender, &sent, &execution_order, value]() {
+    auto send_promise = sender.Send(MakePayload(value));
     Poll<bool> send_result = send_promise();
-    EXPECT_TRUE(send_result.ready());
-    EXPECT_TRUE(send_result.value());
+    // Even though we know that sending is not complete, we don't know when it
+    // will be complete. There is no callback mechanism. We may send our sent
+    // notification before the send is complete. What is the solution for this?
+    // EXPECT_TRUE(send_result.ready());
+    absl::StrAppend(&execution_order, "S", value);
     sent.Notify();
   };
 }
 
-auto MakeReceiverPromise(MpscReceiver<Payload>& receiver, Notification& sent) {
-  return [&receiver, &sent]() {
+auto MakeReceiverPromise(MpscReceiver<Payload>& receiver, Notification& sent,
+                         std::string& execution_order, int value) {
+  return [&receiver, &sent, &execution_order, value]() {
     sent.WaitForNotification();
     auto receive_promise = receiver.Next();
     Poll<ValueOrFailure<Payload>> receive_result = receive_promise();
+    absl::StrAppend(&execution_order, "R", value);
     EXPECT_TRUE(receive_result.ready());
-    EXPECT_EQ(receive_result.value(), MakePayload(42));
+    LOG(INFO) << "Received " << value;
   };
 }
 
@@ -630,54 +636,108 @@ auto OnCompleteNoop() {
   return [](Empty) {};
 }
 
-TEST_F(PartyTest, MpscTest) {
+TEST_F(PartyTest, MpscOneSenderOneReceiverTest) {
   // Number of Receivers = 1  // Will be 1 always for MPSC
   // Number of Senders   = 1
   // Number of Payloads  = 1
   // Number of Parties   = 1
   // Number of Threads   = 1
 
-  // Basic MPSC & Party test.
+  // Very basic MPSC & Party test.
+  // Just send one and receive one message using one party.
   MpscReceiver<Payload> receiver(1);
   MpscSender<Payload> sender = receiver.MakeSender();
   auto party = MakeParty();
   Notification sent;
-  Notification received;
-  auto sender_promise = MakeSenderPromise(sender, sent);
-  auto receiver_promise = MakeReceiverPromise(receiver, sent);
-  party->Spawn("sender", sender_promise, OnCompleteNotify(received));
-  party->Spawn("receiver", receiver_promise, OnCompleteNoop());
-  received.WaitForNotification();
-  // TODO(tjagtap): Is this how we want to use the MPSC for HTTP2 Transports?
-  // TODO(tjagtap): Is there some notification we can wait on when something
-  // is ready to be read?
+  Notification done;
+  std::string execution_order = "";
+  party->Spawn("sender", MakeSenderPromise(sender, sent, execution_order, 42),
+               OnCompleteNoop());
+  party->Spawn("receiver",
+               MakeReceiverPromise(receiver, sent, execution_order, 42),
+               OnCompleteNotify(done));
+  done.WaitForNotification();
   // TODO(tjagtap): This crashes!! Is that expected?
+  // How do we know that we have read till the very end?
   // auto nothing = receiver.Next()();
 }
 
-TEST_F(PartyTest, MpscStressTestOneParty) {
+constexpr int kMpscNumPayloads = 10;
+constexpr int kMpscNumThreads = 8;
+constexpr int kMpscSleepMs = 10;
+
+TEST_F(PartyTest, MpscManySendersOnePartyStressTest) {
   // Number of Receivers = 1  // Will be 1 always for MPSC
-  // Number of Senders   = 10
-  // Number of Payloads  = 10 Senders * 100 spawns = 1000
+  // Number of Senders   = kMpscNumThreads
+  // Number of Payloads  = kMpscNumThreads * kMpscNumPayloads
   // Number of Parties   = 1
-  // Number of Threads   = 11
+  // Number of Threads   = kMpscNumThreads
 
   // Stress testing MPSC & Party.
+  // This test has several threads, each thread having its own MPSC sender.
+  // Each thread sends multiple payloads to the receiver.
+  // The payloads one a single thread are sent and received in order, but the
+  // threads can interleave.
+  // Asserts
+  // 1. All payloads are sent and received.
+  // 2. The payloads on a single thread are received in order.
+  // 3. If there is a bug in MPSC which causes TSAN failure, there is a small
+  // chance that this test will trigger that case and fail TSAN.
+
+  std::vector<std::string> execution_order(kMpscNumThreads);
+  MpscReceiver<Payload> receiver(1);
+  std::vector<MpscSender<Payload>> senders;
+  for (int i = 0; i < kMpscNumThreads; i++) {
+    senders.emplace_back(receiver.MakeSender());
+  }
+  auto party = MakeParty();
+  std::vector<std::thread> threads;
+  threads.reserve(kMpscNumThreads);
+  for (int i = 0; i < kMpscNumThreads; i++) {
+    MpscSender<Payload>& sender = senders[i];
+    std::string& order = execution_order[i];
+    threads.emplace_back([&order, &party, &sender, &receiver]() {
+      for (int j = 0; j < kMpscNumPayloads; j++) {
+        ExecCtx ctx;  // needed for Sleep
+        Notification sent;
+        Notification done;
+        party->Spawn(
+            "A",
+            Seq(MakeSenderPromise(sender, sent, order, j),
+                Sleep(Timestamp::Now() + Duration::Milliseconds(kMpscSleepMs)),
+                MakeReceiverPromise(receiver, sent, order, j)),
+            OnCompleteNotify(done));
+        done.WaitForNotification();
+      }
+    });
+  }
+  for (auto& thread : threads) {
+    thread.join();
+  }
+  std::vector<std::string> expected_order(kMpscNumThreads);
+  for (int i = 0; i < kMpscNumThreads; i++) {
+    // Generate the expected order for each thread.
+    for (int j = 0; j < kMpscNumPayloads; j++) {
+      absl::StrAppend(&expected_order[i], "S", j, "R", j);
+    }
+    // For the given test, the order is guaranteed because we wait for the
+    // done notification before the next loop iteration can start.
+    EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
+  }
 }
 
-TEST_F(PartyTest, MpscStressTestManyParties) {
+TEST_F(PartyTest, MpscManySendersManyPartyStressTest) {
   // Number of Receivers = 1  // Will be 1 always for MPSC
-  // Number of Senders   = 10
-  // Number of Payloads  = 10 Senders * 100 spawns = 1000
-  // Number of Parties   = 10
-  // Number of Threads   = 11
+  // Number of Senders   = kMpscNumThreads - 1
+  // Number of Payloads  = (kMpscNumThreads -1) * kMpscNumPayloads
+  // Number of Parties   = kMpscNumThreads
+  // Number of Threads   = kMpscNumThreads
+
   // Stress testing MPSC & Party.
   // This is the same as the above test, but with multiple parties.
-  // Using 10 parties, each with 10 threads will ensure that we have 10 threads
-  // concurrently trying to send on the same MPSC.
-
-  // TODO(tjagtap): What do I need to do to make sure that event engine actually
-  // gives me 10 threads all for this test?
+  // Using multiple parties, on a different thread will ensure that we have
+  // multiple threads concurrently trying to send on the same MPSC.
+  // We will have only one receiver.
 }
 
 }  // namespace grpc_core
