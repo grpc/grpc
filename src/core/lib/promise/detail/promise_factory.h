@@ -76,14 +76,14 @@ struct ResultOfT<F(Args...),
 };
 
 template <typename F, typename... Args>
-struct ResultOfT<F(Args...) &,
+struct ResultOfT<F(Args...)&,
                  absl::void_t<decltype(std::declval<RemoveCVRef<F>>()(
                      std::declval<Args>()...))>> {
   using T = decltype(std::declval<RemoveCVRef<F>>()(std::declval<Args>()...));
 };
 
 template <typename F, typename... Args>
-struct ResultOfT<const F(Args...) &,
+struct ResultOfT<const F(Args...)&,
                  absl::void_t<decltype(std::declval<RemoveCVRef<F>>()(
                      std::declval<Args>()...))>> {
   using T = decltype(std::declval<RemoveCVRef<F>>()(std::declval<Args>()...));
