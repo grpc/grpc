@@ -11993,6 +11993,26 @@ targets:
   - src/compiler/ruby_plugin.cc
   deps:
   - grpc_plugin_support
+- name: grpc_text_map_carrier_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_client_call_tracer.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  - test/core/promise/test_context.h
+  src:
+  - src/cpp/ext/otel/otel_client_call_tracer.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  - test/cpp/ext/otel/grpc_text_map_carrier_test.cc
+  deps:
+  - gtest
+  - grpc++
+  - opentelemetry-cpp::api
+  - grpc_test_util
 - name: grpc_tls_certificate_distributor_test
   gtest: true
   build: test
@@ -12194,6 +12214,26 @@ targets:
   platforms:
   - linux
   - posix
+- name: grpc_trace_bin_text_map_propagator_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_client_call_tracer.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  - test/core/promise/test_context.h
+  src:
+  - src/cpp/ext/otel/otel_client_call_tracer.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  - test/cpp/ext/otel/grpc_trace_bin_text_map_propagator_test.cc
+  deps:
+  - gtest
+  - grpc++
+  - opentelemetry-cpp::api
+  - grpc_test_util
 - name: grpclb_api_test
   gtest: true
   build: test
@@ -15207,6 +15247,7 @@ targets:
   - src/cpp/ext/otel/otel_client_call_tracer.h
   - src/cpp/ext/otel/otel_plugin.h
   - src/cpp/ext/otel/otel_server_call_tracer.h
+  - test/core/promise/test_context.h
   - test/core/test_util/fake_stats_plugin.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/ext/otel/otel_test_library.h
@@ -15226,6 +15267,40 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/ext/otel/otel_plugin_test.cc
   - test/cpp/ext/otel/otel_test_library.cc
+  deps:
+  - gtest
+  - opentelemetry-cpp::api
+  - opentelemetry-cpp::metrics
+  - grpc++_test_util
+- name: otel_tracing_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_client_call_tracer.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  - test/core/promise/test_context.h
+  - test/core/test_util/fake_stats_plugin.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/ext/otel/otel_test_library.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - src/cpp/ext/otel/otel_client_call_tracer.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  - test/core/test_util/fake_stats_plugin.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/ext/otel/otel_test_library.cc
+  - test/cpp/ext/otel/otel_tracing_test.cc
   deps:
   - gtest
   - opentelemetry-cpp::api
