@@ -675,13 +675,11 @@ TEST_F(PartyTest, MpscManySendersOnePartyStressTest) {
   // Stress testing MPSC & Party.
   // This test has several threads, each thread having its own MPSC sender.
   // Each thread sends multiple payloads to the receiver.
-  // The payloads one a single thread are sent and received in order, but the
+  // The payloads on a single thread are sent and received in order, but the
   // threads can interleave.
   // Asserts
   // 1. All payloads are sent and received.
   // 2. The payloads on a single thread are received in order.
-  // 3. If there is a bug in MPSC which causes TSAN failure, there is a small
-  // chance that this test will trigger that case and fail TSAN.
 
   std::vector<std::string> execution_order(kMpscNumThreads);
   MpscReceiver<Payload> receiver(1);
@@ -728,7 +726,7 @@ TEST_F(PartyTest, MpscManySendersOnePartyStressTest) {
 TEST_F(PartyTest, MpscManySendersManyPartyStressTest) {
   // Number of Receivers = 1  // Will be 1 always for MPSC
   // Number of Senders   = kMpscNumThreads - 1
-  // Number of Payloads  = (kMpscNumThreads -1) * kMpscNumPayloads
+  // Number of Payloads  = (kMpscNumThreads - 1) * kMpscNumPayloads
   // Number of Parties   = kMpscNumThreads
   // Number of Threads   = kMpscNumThreads
 
@@ -762,8 +760,6 @@ TEST_F(PartyTest, MpscManySendersManyPartyStressTest) {
     RefCountedPtr<Party>& party = parties[i];
     threads.emplace_back([&order, &party, &sender]() {
       for (int j = 0; j < kMpscNumPayloads; j++) {
-        ExecCtx ctx;  // needed for Sleep
-        Notification sent;
         party->Spawn(
             "send",
             [&sender, &order, value = j]() {
@@ -779,11 +775,11 @@ TEST_F(PartyTest, MpscManySendersManyPartyStressTest) {
   // Receive payloads on the last party and last thread.
   const int num_messages_sent = (kMpscNumThreads - 1) * kMpscNumPayloads;
   std::string& receive_order = execution_order[kMpscNumThreads - 1];
-  RefCountedPtr<Party>& party = parties[kMpscNumThreads - 1];
-  threads.emplace_back([&receive_order, &party, &receiver]() {
+  RefCountedPtr<Party>& receive_party = parties[kMpscNumThreads - 1];
+  threads.emplace_back([&receive_order, &receive_party, &receiver]() {
     for (int j = 0; j < num_messages_sent; j++) {
       ExecCtx ctx;  // needed for Sleep
-      party->Spawn(
+      receive_party->Spawn(
           "receive",
           [&receiver, &receive_order]() {
             auto receive_promise = receiver.Next();
