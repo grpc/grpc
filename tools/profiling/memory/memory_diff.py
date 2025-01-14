@@ -169,7 +169,7 @@ else:
     call_increase = 0
     channel_decrease = 0
     channel_increase = 0
-    call_significant = 64
+    call_significant = 100
     channel_significant = 1000
     for scenario in _SCENARIOS.keys():
         for key, value in sorted(_INTERESTING.items()):
