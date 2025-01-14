@@ -214,5 +214,6 @@ def label_significance_on_pr(name, change, labels=_CHANGE_LABELS):
     )
     print("Result of setting labels on PR:", resp.text)
 
+
 def label_increase_decrease_on_pr(name, change):
     label_significance_on_pr(name, change, _INCREASE_DECREASE)
