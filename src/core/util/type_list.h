@@ -25,7 +25,58 @@ struct Typelist {
 
   template <typename C>
   using PushFront = Typelist<C, A...>;
+
+  template <typename C>
+  using PushBack = Typelist<A..., C>;
 };
+
+namespace typelist_detail {
+template <typename T>
+struct ReverseTpl;
+
+template <typename A>
+struct ReverseTpl<Typelist<A>> {
+  using Result = Typelist<A>;
+};
+
+template <typename A, typename... Rest>
+struct ReverseTpl<Typelist<A, Rest...>> {
+  using Result = typename ReverseTpl<Typelist<Rest...>>::Result::template PushBack<A>;
+};
+}
+
+template <typename... A>
+using Reverse<Typelist<A...>> = typename typelist_detail::ReverseTpl<Typelist<A...>>::Result;
+
+// A compile time list of values
+template <auto... A>
+struct Valuelist {
+  template <template <auto...> class T>
+  using Instantiate = T<A...>;
+
+  template <auto C>
+  using PushFront = Valuelist<C, A...>;
+
+  template <auto C>
+  using PushBack = Valuelist<A..., C>;
+};
+
+namespace valuelist_detail {
+
+template <auto A>
+struct ReverseTpl<Valuelist<A>> {
+  using Result = Valuelist<A>;
+};
+
+template <auto A, auto... Rest>
+struct ReverseTpl<Valuelist<A, Rest...>> {
+  using Result = typename ReverseTpl<Valuelist<Rest...>>::Result::template PushBack<A>;
+};
+
+}
+
+template <auto... A>
+using ReverseValues<Valuelist<A...>> = typename valuelist_detail::ReverseTpl<Valuelist<A...>>::Result;
 
 }  // namespace grpc_core
 

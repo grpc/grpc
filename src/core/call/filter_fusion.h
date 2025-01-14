@@ -18,6 +18,8 @@
 #include <utility>
 
 #include "src/core/lib/transport/call_filters.h"
+#include "src/core/lib/transport/metadata.h"
+#include "src/core/util/type_list.h"
 
 namespace grpc_core {
 namespace filters_detail {
@@ -50,28 +52,82 @@ class AdaptMethod<T, void (Call::*)(T&), method> {
   Call* call_;
 };
 
+template <auto... filter_methods>
+struct FilterMethods {
+  using Filters = Valuelist<filter_methods...>;
+  using Idxs = std::index_sequence_for<decltype(filter_methods)...>;
+};
+
+template <auto... filter_methods>
+struct ReverseFilterMethods {
+  using Filters = ReverseValues<Valuelist<filter_methods...>>;
+};
+
 // Combine the result of a series of filter methods into a single method.
-template <typename Call, typename T, auto... filter_methods>
-class Executor;
-
-template <typename Call, typename T, auto filter_method_0,
-          auto... filter_methods>
-class Executor<Call, T, filter_method_0, filter_methods...> {
+template <typename Call, typename T, typename FilterMethods>
+class Executor {
  public:
-  auto ExecuteCombined(Call* call, Hdl<T> hdl) {
-    return ExecuteCombined(
-        call, std::move(hdl),
-        std::index_sequence_for<decltype(filter_methods)...>());
-  }
-
- private:
-  template <size_t... I>
-  auto ExecuteCombined(Call* call, Hdl<T> hdl, std::index_sequence<I...>) {
+  static auto ExecuteCombined(Call* call, Hdl<T> hdl) {
     return TrySeq(AdaptMethod<T, decltype(filter_method_0), filter_method_0>(
                       call->template fused_child<0>())(std::move(hdl)),
                   AdaptMethod<T, decltype(filter_methods), filter_methods>(
                       call->template fused_child<I + 1>())(std::move(hdl))...);
   }
+
+ private:
+};
+
+template <typename Derived, typename... Filters>
+class FuseOnClientInitialMetadata {
+ public:
+  auto OnClientInitialMetadata(ClientMetadataHandle md) {
+    return Executor<Derived, ClientMetadata, ValueList<&Filters::Call::OnClientInitialMetadata...>>::
+        ExecuteCombined(static_cast<Derived*>(this), std::move(md));
+  }
+};
+
+template <typename Derived, typename... Filters>
+class FuseOnServerToClientMetadata {
+ public:
+  auto OnServerToClientMetadata(ServerMetadataHandle md) {
+    return ReverseExecutor<Derived, ServerMetadata, &Filters::Call::OnServerToClientMetadata...>::
+        ExecuteCombined(static_cast<Derived*>(this), std::move(md));
+  }
+};
+
+template <typename Derived, typename... Filters>
+class FuseOnClientToServerMessage {
+ public:
+  auto OnClientToServerMessage(MessageHandle md) {
+    return Executor<Derived, ClientMetadata, &Filters::Call::OnClientInitialMetadata...>::
+        ExecuteCombined(static_cast<Derived*>(this), std::move(md));
+  }
+};
+
+template <typename Derived, typename... Filters>
+class FuseOnServerToClientMessage {
+ public:
+  auto OnServerToClientMessage(MessageHandle md) {
+    return ReverseExecutor<Derived, ClientMetadata, &Filters::Call::OnClientInitialMetadata...>::
+        ExecuteCombined(static_cast<Derived*>(this), std::move(md));
+  }
+};
+
+template <typename... Filters>
+class FusedFilter {
+ public:
+  class Call : public FuseOnClientInitialMetadata<Call, Filters...>,
+               public FuseOnClientToServerMessage<Call, Filters...>,
+               public FuseOnServerToClientMessage<Call, Filters...> {
+   public:
+    template <size_t I>
+    auto* fused_child() {
+      return std::get<I>(filters_);
+    }
+
+   private:
+    std::tuple<Filters::Call...> filters_;
+  };
 };
 
 }  // namespace filters_detail
