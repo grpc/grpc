@@ -8502,6 +8502,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "filter_fusion",
+    hdrs = [
+        "call/filter_fusion.h",
+    ],
+    deps = [
+        "call_filters",
+        "metadata",
+        "type_list",
+    ],
+)
+
+grpc_cc_library(
     name = "interception_chain",
     srcs = [
         "lib/transport/interception_chain.cc",
@@ -8564,6 +8576,7 @@ grpc_cc_library(
     deps = [
         "error_utils",
         "metadata_batch",
+        "try_seq",
         "//:gpr_platform",
     ],
 )

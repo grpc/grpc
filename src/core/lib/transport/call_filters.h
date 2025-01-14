@@ -1362,44 +1362,32 @@ class ClientInitialMetadataInterceptor {
 // Determine if an interceptor needs to access the channel via one of its
 // arguments.
 
-inline constexpr bool HasChannelAccess() { return false; }
-
-inline constexpr bool HasChannelAccess(const NoInterceptor*) { return false; }
-
-template <typename T, typename R, typename A>
-inline constexpr bool HasChannelAccess(R (T::*)(A)) {
-  return false;
-}
+template <typename T>
+constexpr bool MethodHasChannelAccess = false;
 
 template <typename T, typename R, typename A>
-inline constexpr bool HasChannelAccess(R (T::*)()) {
-  return false;
-}
+constexpr bool MethodHasChannelAccess<R (T::*)(A)> = false;
+
+template <typename T, typename R>
+constexpr bool MethodHasChannelAccess<R (T::*)()> = false;
 
 template <typename T, typename R, typename A, typename C>
-inline constexpr bool HasChannelAccess(R (T::*)(A, C)) {
-  return true;
-}
+constexpr bool MethodHasChannelAccess<R (T::*)(A, C)> = true;
 
-// For the list case we do two interceptors to avoid amiguities with the single
-// argument forms above.
-template <typename I1, typename I2, typename... Interceptors>
-inline constexpr bool HasChannelAccess(I1 i1, I2 i2,
-                                       Interceptors... interceptors) {
-  return HasChannelAccess(i1) || HasChannelAccess(i2) ||
-         HasChannelAccess(interceptors...);
-}
+template <auto... Ts>
+constexpr bool AnyMethodHasChannelAccess =
+    (MethodHasChannelAccess<decltype(Ts)> || ...);
 
 // Composite for a given channel type to determine if any of its interceptors
 // fall into this category: later code should use this.
 template <typename Derived>
 inline constexpr bool CallHasChannelAccess() {
-  return HasChannelAccess(&Derived::Call::OnClientInitialMetadata,
-                          &Derived::Call::OnClientToServerMessage,
-                          &Derived::Call::OnServerInitialMetadata,
-                          &Derived::Call::OnServerToClientMessage,
-                          &Derived::Call::OnServerTrailingMetadata,
-                          &Derived::Call::OnFinalize);
+  return AnyMethodHasChannelAccess<&Derived::Call::OnClientInitialMetadata,
+                                   &Derived::Call::OnClientToServerMessage,
+                                   &Derived::Call::OnServerInitialMetadata,
+                                   &Derived::Call::OnServerToClientMessage,
+                                   &Derived::Call::OnServerTrailingMetadata,
+                                   &Derived::Call::OnFinalize>;
 }
 }  // namespace filters_detail
 
@@ -1470,7 +1458,6 @@ struct TrySeqTraitsWithSfinae<filters_detail::NextMessage<on_progress>> {
     return run_next(std::move(prior));
   }
 };
-
 }  // namespace promise_detail
 
 using ServerToClientNextMessage =
