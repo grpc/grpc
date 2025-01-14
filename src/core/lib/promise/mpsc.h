@@ -155,13 +155,13 @@ class MpscSender {
   MpscSender& operator=(MpscSender&&) noexcept = default;
 
   // Input: Input is the object that you want to send. The promise that is
-  // returned by send Send will take ownership of the object.
+  // returned by Send will take ownership of the object.
   // Return: Returns a promise that will send one item.
   // This promise can either return
-  // Pending{} if the sending is still pending
-  // Resolves to true if sending is successful
-  // Resolves to false if the receiver was closed and the value
-  // will never be successfully sent.
+  // 1. Pending{} if the sending is still pending
+  // 2. Resolves to true if sending is successful
+  // 3. Resolves to false if the receiver was closed and the value
+  //    will never be successfully sent.
   // The promise returned is thread safe. Means, we can use multiple send calls
   // concurrently to generate multiple such promises and these promises can be
   // run concurrently in a thread safe way.
@@ -216,7 +216,7 @@ class MpscReceiver {
     if (center_ != nullptr) center_->ReceiverClosed(false);
   }
   // Marking the receiver closed will make sure it will not receive any
-  // messages. If a sender tries to send a message to a cloased receiver,
+  // messages. If a sender tries to Send a message to a closed receiver,
   // sending will fail.
   void MarkClosed() {
     if (center_ != nullptr) center_->ReceiverClosed(true);
