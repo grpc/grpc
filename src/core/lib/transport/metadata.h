@@ -31,6 +31,23 @@ using ServerMetadataHandle = Arena::PoolPtr<ServerMetadata>;
 using ClientMetadata = grpc_metadata_batch;
 using ClientMetadataHandle = Arena::PoolPtr<ClientMetadata>;
 
+template <typename T>
+class ServerMetadataOrHandle {
+ public:
+  static ServerMetadataOrHandle Ok(Arena::PoolPtr<T> value) {
+    return ServerMetadataOrHandle{nullptr, std::move(value)};
+  }
+  static ServerMetadataOrHandle Failure(ServerMetadataHandle server_metadata) {
+    return ServerMetadataOrHandle{std::move(server_metadata), nullptr};
+  }
+
+  bool ok() const { return server_metadata_ == nullptr; }
+
+ private:
+  ServerMetadataHandle server_metadata_;
+  Arena::PoolPtr<T> value_;
+};
+
 // TODO(ctiller): separate when we have different types for client/server
 // metadata.
 template <typename Sink>

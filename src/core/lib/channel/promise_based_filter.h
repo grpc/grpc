@@ -158,50 +158,6 @@ inline constexpr bool CallHasAsyncErrorInterceptor() {
                                   &Derived::Call::OnServerToClientMessage);
 }
 
-// Determine if an interceptor needs to access the channel via one of its
-// arguments. If so, we need to allocate a pointer to the channel for the
-// generated polyfill promise for the original promise stack.
-
-inline constexpr bool HasChannelAccess() { return false; }
-
-inline constexpr bool HasChannelAccess(const NoInterceptor*) { return false; }
-
-template <typename T, typename R, typename A>
-inline constexpr bool HasChannelAccess(R (T::*)(A)) {
-  return false;
-}
-
-template <typename T, typename R, typename A>
-inline constexpr bool HasChannelAccess(R (T::*)()) {
-  return false;
-}
-
-template <typename T, typename R, typename A, typename C>
-inline constexpr bool HasChannelAccess(R (T::*)(A, C)) {
-  return true;
-}
-
-// For the list case we do two interceptors to avoid amiguities with the single
-// argument forms above.
-template <typename I1, typename I2, typename... Interceptors>
-inline constexpr bool HasChannelAccess(I1 i1, I2 i2,
-                                       Interceptors... interceptors) {
-  return HasChannelAccess(i1) || HasChannelAccess(i2) ||
-         HasChannelAccess(interceptors...);
-}
-
-// Composite for a given channel type to determine if any of its interceptors
-// fall into this category: later code should use this.
-template <typename Derived>
-inline constexpr bool CallHasChannelAccess() {
-  return HasChannelAccess(&Derived::Call::OnClientInitialMetadata,
-                          &Derived::Call::OnClientToServerMessage,
-                          &Derived::Call::OnServerInitialMetadata,
-                          &Derived::Call::OnServerToClientMessage,
-                          &Derived::Call::OnServerTrailingMetadata,
-                          &Derived::Call::OnFinalize);
-}
-
 // Given a boolean X export a type:
 // either T if X is true
 // or an empty type if it is false
@@ -275,8 +231,8 @@ struct FilterCallData {
                         CallHasAsyncErrorInterceptor<Derived>()>::Type
       error_latch;
   GPR_NO_UNIQUE_ADDRESS
-  typename TypeIfNeeded<Derived*, CallHasChannelAccess<Derived>()>::Type
-      channel;
+  typename TypeIfNeeded<
+      Derived*, filters_detail::CallHasChannelAccess<Derived>()>::Type channel;
 };
 
 template <typename Promise>
