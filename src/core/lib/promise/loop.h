@@ -158,7 +158,8 @@ class Loop {
       if (auto* p = promise_result.value_if_ready()) {
         //  - then if it's Continue, destroy the promise and recreate a new one
         //  from our factory.
-        auto lc = promise_detail::LoopTraits<PromiseResult>::ToLoopCtl(std::move(*p));
+        auto lc =
+            promise_detail::LoopTraits<PromiseResult>::ToLoopCtl(std::move(*p));
         if (std::holds_alternative<Continue>(lc)) {
           GRPC_TRACE_LOG(promise_primitives, INFO)
               << "loop[" << this << "] iteration complete, continue";
