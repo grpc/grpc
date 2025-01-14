@@ -74,43 +74,6 @@ class WrappedFn<
   GPR_NO_UNIQUE_ADDRESS Fn fn_;
 };
 
-// Implementation of mapping combinator - use this via the free function below!
-// Promise is the type of promise to poll on, Fn is a function that takes the
-// result of Promise and maps it to some new type.
-template <typename Promise, typename Fn>
-class Map {
-  using PromiseType = PromiseLike<Promise>;
-
- public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Promise promise, Fn fn)
-      : promise_(std::move(promise)), fn_(std::move(fn)) {}
-
-  Map(const Map&) = delete;
-  Map& operator=(const Map&) = delete;
-  // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
-  Map(Map&& other) = default;
-  // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
-  Map& operator=(Map&& other) = default;
-
-  using PromiseResult = typename PromiseType::Result;
-  using Result = typename WrappedFn<Fn, PromiseResult>::Result;
-
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
-    Poll<PromiseResult> r = promise_();
-    if (auto* p = r.value_if_ready()) {
-      return fn_(std::move(*p));
-    }
-    return Pending();
-  }
-
- private:
-  template <typename SomeOtherPromise, typename SomeOtherFn>
-  friend class Map;
-
-  GPR_NO_UNIQUE_ADDRESS PromiseType promise_;
-  GPR_NO_UNIQUE_ADDRESS WrappedFn<Fn, PromiseResult> fn_;
-};
-
 template <typename PromiseResult, typename Fn0, typename Fn1>
 class FusedFns {
   using InnerResult =
@@ -136,11 +99,50 @@ class FusedFns {
   GPR_NO_UNIQUE_ADDRESS WrappedFn<Fn1, InnerResult> fn1_;
 };
 
+}  // namespace promise_detail
+
+// Mapping combinator.
+// Takes a promise, and a synchronous function to mutate its result, and
+// returns a promise.
+template <typename Promise, typename Fn>
+class Map {
+  using PromiseType = promise_detail::PromiseLike<Promise>;
+
+ public:
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Promise promise, Fn fn)
+      : promise_(std::move(promise)), fn_(std::move(fn)) {}
+
+  Map(const Map&) = delete;
+  Map& operator=(const Map&) = delete;
+  // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
+  Map(Map&& other) = default;
+  // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
+  Map& operator=(Map&& other) = default;
+
+  using PromiseResult = typename PromiseType::Result;
+  using Result = typename promise_detail::WrappedFn<Fn, PromiseResult>::Result;
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
+    Poll<PromiseResult> r = promise_();
+    if (auto* p = r.value_if_ready()) {
+      return fn_(std::move(*p));
+    }
+    return Pending();
+  }
+
+ private:
+  template <typename SomeOtherPromise, typename SomeOtherFn>
+  friend class Map;
+
+  GPR_NO_UNIQUE_ADDRESS PromiseType promise_;
+  GPR_NO_UNIQUE_ADDRESS promise_detail::WrappedFn<Fn, PromiseResult> fn_;
+};
+
 template <typename Promise, typename Fn0, typename Fn1>
 class Map<Map<Promise, Fn0>, Fn1> {
   using InnerMapFn = decltype(std::declval<Map<Promise, Fn0>>().fn_);
   using FusedFn =
-      FusedFns<typename Map<Promise, Fn0>::PromiseResult, InnerMapFn, Fn1>;
+      promise_detail::FusedFns<typename Map<Promise, Fn0>::PromiseResult, InnerMapFn, Fn1>;
   using PromiseType = typename Map<Promise, Fn0>::PromiseType;
 
  public:
@@ -174,16 +176,8 @@ class Map<Map<Promise, Fn0>, Fn1> {
   GPR_NO_UNIQUE_ADDRESS FusedFn fn_;
 };
 
-}  // namespace promise_detail
-
-// Mapping combinator.
-// Takes a promise, and a synchronous function to mutate its result, and
-// returns a promise.
 template <typename Promise, typename Fn>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Map<Promise, Fn>
-Map(Promise promise, Fn fn) {
-  return promise_detail::Map<Promise, Fn>(std::move(promise), std::move(fn));
-}
+Map(Promise, Fn) -> Map<Promise, Fn>;
 
 // Maps a promise to a new promise that returns a tuple of the original result
 // and a bool indicating whether there was ever a Pending{} value observed from
