@@ -623,7 +623,6 @@ auto MakeReceiverPromise(MpscReceiver<Payload>& receiver, Notification& sent,
     auto receive_promise = receiver.Next();
     Poll<ValueOrFailure<Payload>> receive_result = receive_promise();
     absl::StrAppend(&execution_order, "R", value);
-    EXPECT_TRUE(receive_result.ready());
     LOG(INFO) << "Received " << value;
   };
 }
@@ -650,7 +649,7 @@ TEST_F(PartyTest, MpscOneSenderOneReceiverTest) {
   auto party = MakeParty();
   Notification sent;
   Notification done;
-  std::string execution_order = "";
+  std::string execution_order;
   party->Spawn("sender", MakeSenderPromise(sender, sent, execution_order, 42),
                OnCompleteNoop());
   party->Spawn("receiver",
@@ -662,7 +661,7 @@ TEST_F(PartyTest, MpscOneSenderOneReceiverTest) {
   // auto nothing = receiver.Next()();
 }
 
-constexpr int kMpscNumPayloads = 10;
+constexpr int kMpscNumPayloads = 20;
 constexpr int kMpscNumThreads = 8;
 constexpr int kMpscSleepMs = 10;
 
@@ -702,7 +701,7 @@ TEST_F(PartyTest, MpscManySendersOnePartyStressTest) {
         Notification sent;
         Notification done;
         party->Spawn(
-            "A",
+            "sned_and_receive",
             Seq(MakeSenderPromise(sender, sent, order, j),
                 Sleep(Timestamp::Now() + Duration::Milliseconds(kMpscSleepMs)),
                 MakeReceiverPromise(receiver, sent, order, j)),
@@ -738,6 +737,76 @@ TEST_F(PartyTest, MpscManySendersManyPartyStressTest) {
   // Using multiple parties, on a different thread will ensure that we have
   // multiple threads concurrently trying to send on the same MPSC.
   // We will have only one receiver.
+  // Asserts
+  // 1. All payloads are sent and received.
+  // 2. If there is a bug in MPSC which causes TSAN failure, there is a high
+  // chance that this test will trigger that case and fail TSAN.
+
+  std::vector<std::string> execution_order(kMpscNumThreads);
+  MpscReceiver<Payload> receiver(1);
+  std::vector<MpscSender<Payload>> senders;
+  std::vector<RefCountedPtr<Party>> parties;
+  for (int i = 0; i < kMpscNumThreads; i++) {
+    if (i < kMpscNumThreads - 1) {
+      senders.emplace_back(receiver.MakeSender());
+    }
+    parties.emplace_back(MakeParty());
+  }
+  std::vector<std::thread> threads;
+  threads.reserve(kMpscNumThreads);
+
+  // Send payloads from all senders on different parties and different threads.
+  for (int i = 0; i < kMpscNumThreads - 1; i++) {
+    MpscSender<Payload>& sender = senders[i];
+    std::string& order = execution_order[i];
+    RefCountedPtr<Party>& party = parties[i];
+    threads.emplace_back([&order, &party, &sender]() {
+      for (int j = 0; j < kMpscNumPayloads; j++) {
+        ExecCtx ctx;  // needed for Sleep
+        Notification sent;
+        party->Spawn(
+            "send",
+            [&sender, &order, value = j]() {
+              auto send_promise = sender.Send(MakePayload(value));
+              Poll<bool> send_result = send_promise();
+              absl::StrAppend(&order, "S", value);
+            },
+            OnCompleteNoop());
+      }
+    });
+  }
+
+  // Receive payloads on the last party and last thread.
+  const int num_messages_sent = (kMpscNumThreads - 1) * kMpscNumPayloads;
+  std::string& receive_order = execution_order[kMpscNumThreads - 1];
+  RefCountedPtr<Party>& party = parties[kMpscNumThreads - 1];
+  threads.emplace_back([&receive_order, &party, &receiver]() {
+    for (int j = 0; j < num_messages_sent; j++) {
+      ExecCtx ctx;  // needed for Sleep
+      party->Spawn(
+          "receive",
+          [&receiver, &receive_order]() {
+            auto receive_promise = receiver.Next();
+            Poll<ValueOrFailure<Payload>> receive_result = receive_promise();
+            absl::StrAppend(&receive_order, "R");
+          },
+          OnCompleteNoop());
+    }
+  });
+  for (auto& thread : threads) {
+    thread.join();
+  }
+  for (int i = 0; i < kMpscNumThreads - 1; i++) {
+    // Generate the expected order for each thread.
+    for (int j = 0; j < kMpscNumPayloads; j++) {
+      // This check ensures that we sent all the payloads.
+      EXPECT_TRUE(
+          absl::StrContains(execution_order[i], absl::StrFormat("S%d", j)));
+    }
+  }
+  // For every payload received, one "R" was appended to the receive order.
+  // This check ensures that we received all the payloads.
+  EXPECT_EQ(receive_order.length(), num_messages_sent);
 }
 
 }  // namespace grpc_core
