@@ -28,7 +28,7 @@ cd -
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
 # OUTPUT_DIR - (optional) Directory under the git repo root that will be copied from inside docker container after finishing.
 # DOCKER_RUN_SCRIPT - (optional) Script to run under docker (relative to grpc repo root). If specified, the cmdline args
-#     passed on the commadline (a.k.a. $@) will be interpreted as extra args to pass to the "docker run" command.
+#     passed on the commandline (a.k.a. $@) will be interpreted as extra args to pass to the "docker run" command.
 #     If DOCKER_RUN_SCRIPT is not set, $@ will be interpreted as the command and args to run under the docker container.
 
 # The exact docker image to use and its version is determined by the corresponding .current_version file
