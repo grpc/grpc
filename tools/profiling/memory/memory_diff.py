@@ -192,7 +192,10 @@ else:
                             channel_increase += 1
 
     print("CALL: %d increases, %d decreases" % (call_increase, call_decrease))
-    print("CHANNEL: %d increases, %d decreases" % (channel_increase, channel_decrease))
+    print(
+        "CHANNEL: %d increases, %d decreases"
+        % (channel_increase, channel_decrease)
+    )
     # if anything increased ==> label it an increase
     # otherwise if anything decreased (and nothing increased) ==> label it a decrease
     # otherwise label it neutral
