@@ -142,7 +142,8 @@ template <typename Promise, typename Fn0, typename Fn1>
 class Map<Map<Promise, Fn0>, Fn1> {
   using InnerMapFn = decltype(std::declval<Map<Promise, Fn0>>().fn_);
   using FusedFn =
-      promise_detail::FusedFns<typename Map<Promise, Fn0>::PromiseResult, InnerMapFn, Fn1>;
+      promise_detail::FusedFns<typename Map<Promise, Fn0>::PromiseResult,
+                               InnerMapFn, Fn1>;
   using PromiseType = typename Map<Promise, Fn0>::PromiseType;
 
  public:
