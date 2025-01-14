@@ -39,7 +39,7 @@ template <typename Fn, typename Arg>
 class WrappedFn<
     Fn, Arg, std::enable_if_t<!std::is_void_v<std::invoke_result_t<Fn, Arg>>>> {
  public:
-  using Result = std::invoke_result_t<Fn, Arg>;
+  using Result = RemoveCVRef<std::invoke_result_t<Fn, Arg>>;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit WrappedFn(Fn&& fn)
       : fn_(std::move(fn)) {}
   WrappedFn(const WrappedFn&) = delete;
