@@ -724,7 +724,7 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
 
 void MaybeLogCluster(const XdsResourceType::DecodeContext& context,
                      const envoy_config_cluster_v3_Cluster* cluster) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_config_cluster_v3_Cluster_getmsgdef(context.symtab);
     char buf[10240];
@@ -754,13 +754,13 @@ XdsResourceType::DecodeResult XdsClusterResourceType::Decode(
       UpbStringToStdString(envoy_config_cluster_v3_Cluster_name(resource));
   auto cds_resource = CdsResourceParse(context, resource);
   if (!cds_resource.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(ERROR) << "[xds_client " << context.client << "] invalid Cluster "
                  << *result.name << ": " << cds_resource.status();
     }
     result.resource = cds_resource.status();
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(INFO) << "[xds_client " << context.client << "] parsed Cluster "
                 << *result.name << ": " << (*cds_resource)->ToString();
     }
