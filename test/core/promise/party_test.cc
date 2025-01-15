@@ -797,7 +797,8 @@ TEST_F(PartyTest, MpscManySendersManyPartyStressTest) {
   const int num_messages_sent = (kMpscNumThreads - 1) * kMpscNumPayloads;
   std::string& receive_order = execution_order[kMpscNumThreads - 1];
   RefCountedPtr<Party>& receive_party = parties[kMpscNumThreads - 1];
-  threads.emplace_back([&receive_order, &receive_party, &receiver]() {
+  threads.emplace_back([&receive_order, &receive_party, &receiver,
+                        &num_messages_sent]() {
     for (int j = 0; j < num_messages_sent; j++) {
       ExecCtx ctx;  // needed for Sleep
       receive_party->Spawn(
