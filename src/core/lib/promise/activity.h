@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -28,7 +29,6 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -608,7 +608,7 @@ class PromiseActivity final
   // The main body of a step: set the current activity, and any contexts, and
   // then run the main polling loop. Contained in a function by itself in
   // order to keep the scoping rules a little easier in Step().
-  absl::optional<ResultType> RunStep() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
+  std::optional<ResultType> RunStep() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     ScopedActivity scoped_activity(this);
     ScopedContext contexts(this);
     return StepLoop();
@@ -617,7 +617,7 @@ class PromiseActivity final
   // Similarly to RunStep, but additionally construct the promise from a
   // promise factory before entering the main loop. Called once from the
   // constructor.
-  absl::optional<ResultType> Start(Factory promise_factory)
+  std::optional<ResultType> Start(Factory promise_factory)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     ScopedActivity scoped_activity(this);
     ScopedContext contexts(this);
@@ -627,7 +627,7 @@ class PromiseActivity final
 
   // Until there are no wakeups from within and the promise is incomplete:
   // poll the promise.
-  absl::optional<ResultType> StepLoop() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
+  std::optional<ResultType> StepLoop() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     CHECK(is_current());
     while (true) {
       // Run the promise.

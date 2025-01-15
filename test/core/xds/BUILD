@@ -139,7 +139,6 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
         "absl/strings",
-        "absl/types:optional",
     ],
     language = "C++",
     deps = [

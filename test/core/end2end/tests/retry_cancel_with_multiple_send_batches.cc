@@ -21,10 +21,10 @@
 
 #include <memory>
 #include <new>
+#include <optional>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -77,7 +77,7 @@ void TestRetryCancelWithMultipleSendBatches(
   auto c = test.NewClientCall("/service/method")
                .Timeout(Duration::Seconds(3))
                .Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Start a batch containing send_initial_metadata.
   c.NewBatch(1).SendInitialMetadata({});
   // Start a batch containing send_message.

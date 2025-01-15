@@ -21,9 +21,9 @@
 
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
@@ -55,7 +55,7 @@ class MockHost : public TimerListHost {
 enum class CheckResult { kTimersFired, kCheckedAndEmpty, kNotChecked };
 
 CheckResult FinishCheck(
-    absl::optional<std::vector<experimental::EventEngine::Closure*>> result) {
+    std::optional<std::vector<experimental::EventEngine::Closure*>> result) {
   if (!result.has_value()) return CheckResult::kNotChecked;
   if (result->empty()) return CheckResult::kCheckedAndEmpty;
   for (auto closure : *result) {

@@ -28,13 +28,11 @@
 
 #include <list>
 #include <memory>
-#include <variant>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
 #include "src/core/util/orphanable.h"
@@ -118,7 +116,7 @@ class AresResolver : public RefCountedDNSResolverInterface {
   FdNodeList fd_node_list_ ABSL_GUARDED_BY(mutex_);
   int id_ ABSL_GUARDED_BY(mutex_) = 0;
   absl::flat_hash_map<int, CallbackType> callback_map_ ABSL_GUARDED_BY(mutex_);
-  absl::optional<EventEngine::TaskHandle> ares_backup_poll_alarm_handle_
+  std::optional<EventEngine::TaskHandle> ares_backup_poll_alarm_handle_
       ABSL_GUARDED_BY(mutex_);
   std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_;
   std::shared_ptr<EventEngine> event_engine_;

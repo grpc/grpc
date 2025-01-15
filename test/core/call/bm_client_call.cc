@@ -44,7 +44,7 @@ class TestCallDestination : public UnstartedCallDestination {
   void Orphaned() override { handler_.reset(); }
 
  private:
-  absl::optional<UnstartedCallHandler> handler_;
+  std::optional<UnstartedCallHandler> handler_;
 };
 
 class Helper {
@@ -62,7 +62,7 @@ class Helper {
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
         event_engine_.get());
     return std::unique_ptr<grpc_call, void (*)(grpc_call*)>(
-        MakeClientCall(nullptr, 0, cq_, path_.Copy(), absl::nullopt, true,
+        MakeClientCall(nullptr, 0, cq_, path_.Copy(), std::nullopt, true,
                        Timestamp::InfFuture(), compression_options_,
                        std::move(arena), destination_),
         grpc_call_unref);

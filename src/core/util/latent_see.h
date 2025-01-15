@@ -26,6 +26,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -35,7 +36,6 @@
 #include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/util/per_cpu.h"
 #include "src/core/util/sync.h"
 
@@ -144,7 +144,7 @@ class Log {
 
   void TryPullEventsAndFlush(
       absl::FunctionRef<void(absl::Span<const RecordedEvent>)> callback);
-  absl::optional<std::string> TryGenerateJson();
+  std::optional<std::string> TryGenerateJson();
 
   void OverrideStatsFlusher(
       absl::AnyInvocable<void(absl::string_view)> stats_exporter) {

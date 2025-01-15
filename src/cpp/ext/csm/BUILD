@@ -45,7 +45,6 @@ grpc_cc_library(
         "absl/log:log",
         "absl/status:statusor",
         "absl/strings",
-        "absl/types:optional",
         "google_cloud_cpp:opentelemetry",
         "otel/api",
         "otel/sdk/src/metrics",

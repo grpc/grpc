@@ -29,6 +29,7 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <regex>
 #include <string>
 #include <utility>
@@ -41,7 +42,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
@@ -320,7 +320,7 @@ class HttpProxyFilter : public CoreTestFixture {
   grpc_channel* MakeClient(const ChannelArgs& args,
                            grpc_completion_queue*) override {
     // If testing for proxy auth, add credentials to proxy uri
-    absl::optional<std::string> proxy_auth_str =
+    std::optional<std::string> proxy_auth_str =
         args.GetOwnedString(GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
     std::string proxy_uri;
     if (!proxy_auth_str.has_value()) {

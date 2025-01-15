@@ -22,7 +22,8 @@
 #include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
@@ -68,7 +69,7 @@ class ChannelCredsRegistryTest : public ::testing::Test {
   // credential_type is the resulting type of the actual channel creds object;
   // if nullopt, does not attempt to instantiate the credentials.
   void TestCreds(absl::string_view type,
-                 absl::optional<UniqueTypeName> credential_type,
+                 std::optional<UniqueTypeName> credential_type,
                  Json json = Json::FromObject({})) {
     EXPECT_TRUE(
         CoreConfiguration::Get().channel_creds_registry().IsSupported(type));
@@ -102,7 +103,7 @@ class ChannelCredsRegistryTest : public ::testing::Test {
 TEST_F(ChannelCredsRegistryTest, GoogleDefaultCreds) {
   // Don't actually instantiate the credentials, since that fails in
   // some environments.
-  TestCreds("google_default", absl::nullopt);
+  TestCreds("google_default", std::nullopt);
 }
 
 TEST_F(ChannelCredsRegistryTest, InsecureCreds) {

@@ -170,7 +170,7 @@ auto ChaoticGoodServerTransport::SendCallInitialMetadataAndBody(
       // Wait for initial metadata then send it out.
       call_initiator.PullServerInitialMetadata(),
       [stream_id, outgoing_frames, call_initiator,
-       this](absl::optional<ServerMetadataHandle> md) mutable {
+       this](std::optional<ServerMetadataHandle> md) mutable {
         GRPC_TRACE_LOG(chaotic_good, INFO)
             << "CHAOTIC_GOOD: SendCallInitialMetadataAndBody: md="
             << (md.has_value() ? (*md)->DebugString() : "null");
@@ -230,7 +230,7 @@ absl::Status ChaoticGoodServerTransport::NewStream(
   RefCountedPtr<Arena> arena(call_arena_allocator_->MakeArena());
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());
-  absl::optional<CallInitiator> call_initiator;
+  std::optional<CallInitiator> call_initiator;
   auto call = MakeCallPair(std::move(*md), std::move(arena));
   call_initiator.emplace(std::move(call.initiator));
   const auto stream_id = client_initial_metadata_frame->stream_id;

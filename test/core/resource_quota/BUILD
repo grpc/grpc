@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test", "grpc_proto_fuzzer")
 
 licenses(["notice"])
 
@@ -119,7 +119,6 @@ grpc_cc_test(
         "absl/base:core_headers",
         "absl/log:log",
         "absl/strings",
-        "absl/types:optional",
         "gtest",
     ],
     language = "c++",
@@ -148,7 +147,6 @@ grpc_proto_fuzzer(
     external_deps = [
         "absl/status",
         "absl/strings",
-        "absl/types:optional",
     ],
     language = "C++",
     proto = "memory_quota_fuzzer.proto",
@@ -170,5 +168,19 @@ grpc_proto_fuzzer(
         "//src/core:useful",
         "//test/core/test_util:fuzz_config_vars",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "arena_fuzztest",
+    srcs = ["arena_fuzztest.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:arena",
+        "//src/core:match",
     ],
 )

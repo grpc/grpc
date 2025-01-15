@@ -16,10 +16,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -32,11 +32,11 @@ class EndpointConfig {
  public:
   virtual ~EndpointConfig() = default;
   // If the key points to an integer config, an integer value gets returned.
-  // Otherwise it returns an absl::nullopt_t
-  virtual absl::optional<int> GetInt(absl::string_view key) const = 0;
+  // Otherwise it returns an std::nullopt_t
+  virtual std::optional<int> GetInt(absl::string_view key) const = 0;
   // If the key points to an string config, an string value gets returned.
-  // Otherwise it returns an absl::nullopt_t
-  virtual absl::optional<absl::string_view> GetString(
+  // Otherwise it returns an std::nullopt_t
+  virtual std::optional<absl::string_view> GetString(
       absl::string_view key) const = 0;
   // If the key points to an void* config, a void* pointer value gets returned.
   // Otherwise it returns nullptr

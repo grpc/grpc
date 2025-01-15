@@ -26,10 +26,10 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/event_engine/posix_engine/timer_heap.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
@@ -96,7 +96,7 @@ class TimerList {
   // *next is never guaranteed to be updated on any given execution; however,
   // with high probability at least one thread in the system will see an update
   // at any time slice.
-  absl::optional<std::vector<experimental::EventEngine::Closure*>> TimerCheck(
+  std::optional<std::vector<experimental::EventEngine::Closure*>> TimerCheck(
       grpc_core::Timestamp* next);
 
  private:

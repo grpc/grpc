@@ -41,7 +41,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/time",
-        "absl/types:optional",
         "google/api:monitored_resource_cc_proto",
         "googleapis_monitoring_grpc_service",
         "googleapis_trace_grpc_service",
@@ -78,7 +77,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/types:optional",
     ],
     language = "c++",
     visibility = [
@@ -119,7 +117,6 @@ grpc_cc_library(
         "absl/numeric:int128",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/types:optional",
         "google/api:monitored_resource_cc_proto",
         "googleapis_logging_cc_proto",
         "googleapis_logging_grpc_service",
@@ -161,7 +158,6 @@ grpc_cc_library(
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
-        "absl/types:optional",
     ],
     language = "c++",
     visibility = [
