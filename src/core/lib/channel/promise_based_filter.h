@@ -442,6 +442,26 @@ struct RunCallImpl<
   }
 };
 
+template <typename Derived, typename Promise>
+struct RunCallImpl<
+    Promise (Derived::Call::*)(ClientMetadataHandle md, Derived* channel),
+    Derived,
+    std::enable_if_t<std::is_same_v<absl::StatusOr<ClientMetadataHandle>,
+                                    PromiseResult<Promise>>>> {
+  static auto Run(CallArgs call_args, NextPromiseFactory next_promise_factory,
+                  FilterCallData<Derived>* call_data) {
+    ClientMetadataHandle md = std::move(call_args.client_initial_metadata);
+    return TrySeq(call_data->call.OnClientInitialMetadata(std::move(md),
+                                                          call_data->channel),
+                  [call_args = std::move(call_args),
+                   next_promise_factory = std::move(next_promise_factory)](
+                      ClientMetadataHandle md) mutable {
+                    call_args.client_initial_metadata = std::move(md);
+                    return next_promise_factory(std::move(call_args));
+                  });
+  }
+};
+
 template <typename Interceptor, typename Derived>
 auto RunCall(Interceptor interceptor, CallArgs call_args,
              NextPromiseFactory next_promise_factory,

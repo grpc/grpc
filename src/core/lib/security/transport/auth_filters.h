@@ -95,16 +95,19 @@ class ClientAuthFilter final : public ImplementChannelFilter<ClientAuthFilter> {
                                  ClientAuthFilter* filter) {
       filter->InstallContext();
       auto* host = md->get_pointer(HttpAuthorityMetadata());
-      return If(
-          host == nullptr, ImmediateOkStatus(),
-          [filter, host, md = std::move(md)]() mutable {
+      return WithResult<absl::StatusOr<ClientMetadataHandle>>(If(
+          host == nullptr,
+          [&md]() mutable -> absl::StatusOr<ClientMetadataHandle> {
+            return std::move(md);
+          },
+          [filter, host, &md]() mutable {
             return TrySeq(
                 filter->args_.security_connector->CheckCallHost(
                     host->as_string_view(), filter->args_.auth_context.get()),
                 [filter, md = std::move(md)]() mutable {
                   return filter->GetCallCredsMetadata(std::move(md));
                 });
-          });
+          }));
     }
     static const inline NoInterceptor OnServerInitialMetadata;
     static const inline NoInterceptor OnClientToServerMessage;
