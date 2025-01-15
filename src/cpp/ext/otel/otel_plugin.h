@@ -556,6 +556,12 @@ class GrpcTextMapCarrier
   grpc_metadata_batch* metadata_;
 };
 
+absl::string_view NoStdStringViewToAbslStringView(
+    opentelemetry::nostd::string_view string);
+
+opentelemetry::nostd::string_view AbslStringViewToNoStdStringView(
+    absl::string_view string);
+
 }  // namespace internal
 }  // namespace grpc
 

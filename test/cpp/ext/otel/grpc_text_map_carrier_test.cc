@@ -50,7 +50,7 @@ TEST(GrpcTextMapCarrierTest, GrpcTraceBinGet) {
   GrpcTextMapCarrier carrier(&md);
   auto arena = grpc_core::SimpleArenaAllocator()->MakeArena();
   grpc_core::TestContext<grpc_core::Arena> context(arena.get());
-  auto escaped_value = carrier.Get("grpc-trace-bin");
+  std::string_view escaped_value = carrier.Get("grpc-trace-bin");
   std::string value;
   ASSERT_TRUE(absl::Base64Unescape(escaped_value, &value));
   EXPECT_EQ(value, "value");
@@ -58,7 +58,7 @@ TEST(GrpcTextMapCarrierTest, GrpcTraceBinGet) {
 
 TEST(GrpcTextMapCarrierTest, OtherBinaryGet) {
   grpc_metadata_batch md;
-  md.Append("random-binadd", grpc_core::Slice::FromCopiedString("value"),
+  md.Append("random-bin", grpc_core::Slice::FromCopiedString("value"),
             [](absl::string_view, const grpc_core::Slice&) {
               FAIL() << "Failed to add tracing information in metadata.";
             });
@@ -81,7 +81,8 @@ TEST(GrpcTextMapCarrierTest, SimpleSet) {
 TEST(GrpcTextMapCarrierTest, GrpcTraceBinSet) {
   grpc_metadata_batch md;
   GrpcTextMapCarrier carrier(&md);
-  carrier.Set("grpc-trace-bin", absl::Base64Escape("value"));
+  carrier.Set("grpc-trace-bin",
+              AbslStringViewToNoStdStringView(absl::Base64Escape("value")));
   std::string scratch;
   auto* slice = md.get_pointer(grpc_core::GrpcTraceBinMetadata());
   EXPECT_EQ(slice->as_string_view(), "value");

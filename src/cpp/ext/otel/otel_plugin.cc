@@ -89,16 +89,6 @@ absl::flat_hash_set<std::string> BaseMetrics() {
   return base_metrics;
 }
 
-absl::string_view NoStdStringViewToAbslStringView(
-    opentelemetry::nostd::string_view string) {
-  return absl::string_view(string.data(), string.size());
-}
-
-opentelemetry::nostd::string_view AbslStringViewToNoStdStringView(
-    absl::string_view string) {
-  return opentelemetry::nostd::string_view(string.data(), string.size());
-}
-
 }  // namespace
 
 class OpenTelemetryPluginImpl::NPCMetricsKeyValueIterable
@@ -155,6 +145,16 @@ class OpenTelemetryPluginImpl::NPCMetricsKeyValueIterable
   absl::Span<const absl::string_view> optional_label_values_;
   const OptionalLabelsBitSet& optional_labels_bits_;
 };
+
+absl::string_view NoStdStringViewToAbslStringView(
+    opentelemetry::nostd::string_view string) {
+  return absl::string_view(string.data(), string.size());
+}
+
+opentelemetry::nostd::string_view AbslStringViewToNoStdStringView(
+    absl::string_view string) {
+  return opentelemetry::nostd::string_view(string.data(), string.size());
+}
 
 //
 // OpenTelemetryPluginBuilderImpl
@@ -1113,9 +1113,8 @@ class GrpcTraceBinTextMapPropagator : public TextMapPropagator {
     opentelemetry::nostd::string_view grpc_trace_bin_val =
         carrier.Get("grpc-trace-bin");
     std::string base64_unescaped_val;
-    absl::Base64Unescape(
-        absl::string_view(grpc_trace_bin_val.data(), grpc_trace_bin_val.size()),
-        &base64_unescaped_val);
+    absl::Base64Unescape(NoStdStringViewToAbslStringView(grpc_trace_bin_val),
+                         &base64_unescaped_val);
     return opentelemetry::trace::SetSpan(
         context,
         std::shared_ptr<opentelemetry::trace::Span>(

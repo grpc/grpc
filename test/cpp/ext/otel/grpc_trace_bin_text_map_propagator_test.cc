@@ -73,7 +73,9 @@ TEST(GrpcTraceBinTextMapPropagatorTest, Inject) {
                   opentelemetry::trace::TraceFlags(1), /*is_remote=*/true))));
   propagator->Inject(carrier, context);
   std::string unescaped_val;
-  absl::Base64Unescape(carrier.Get("grpc-trace-bin"), &unescaped_val);
+  absl::Base64Unescape(
+      internal::NoStdStringViewToAbslStringView(carrier.Get("grpc-trace-bin")),
+      &unescaped_val);
   EXPECT_EQ(unescaped_val[0], 0);
   EXPECT_EQ(unescaped_val[0], 0);
   EXPECT_EQ(absl::string_view(unescaped_val).substr(2, 16), trace_id);
