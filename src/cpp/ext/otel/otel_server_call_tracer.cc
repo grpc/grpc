@@ -240,7 +240,7 @@ void OpenTelemetryPluginImpl::ServerCallTracer::RecordOutgoingBytes(
 void OpenTelemetryPluginImpl::ServerCallTracer::RecordAnnotation(
     absl::string_view annotation) {
   if (span_ != nullptr) {
-    span_->AddEvent(annotation);
+    span_->AddEvent(AbslStringViewToNoStdStringView(annotation));
   }
 }
 

@@ -276,7 +276,7 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::RecordEnd(
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     RecordAnnotation(absl::string_view annotation) {
   if (span_ != nullptr) {
-    span_->AddEvent(annotation);
+    span_->AddEvent(AbslStringViewToNoStdStringView(annotation));
   }
 }
 
@@ -393,8 +393,10 @@ absl::string_view OpenTelemetryPluginImpl::ClientCallTracer::MethodForStats()
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::RecordAnnotation(
-    absl::string_view /*annotation*/) {
-  // Not implemented
+    absl::string_view annotation) {
+  if (span_ != nullptr) {
+    span_->AddEvent(AbslStringViewToNoStdStringView(annotation));
+  }
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::RecordAnnotation(
