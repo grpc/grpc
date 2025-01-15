@@ -113,7 +113,7 @@ TEST(BackendMetricsLbPolicyTest, TestOobMetricsReceipt) {
   SimpleResponse res;
   grpc_core::Mutex mu;
   grpc_core::CondVar cond;
-  absl::optional<Status> status;
+  std::optional<Status> status;
 
   stub.async()->UnaryCall(&ctx, &req, &res, [&](auto s) {
     grpc_core::MutexLock lock(&mu);

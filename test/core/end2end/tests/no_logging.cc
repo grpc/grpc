@@ -21,6 +21,7 @@
 
 #include <atomic>
 #include <map>
+#include <optional>
 #include <regex>
 #include <string>
 #include <utility>
@@ -33,7 +34,6 @@
 #include "absl/log/log_sink_registry.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/time.h"
@@ -133,7 +133,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
 
 void SimpleRequest(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
   c.NewBatch(1)
@@ -144,8 +144,8 @@ void SimpleRequest(CoreEnd2endTest& test) {
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})

@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -37,7 +38,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 #include "envoy/service/discovery/v3/discovery.upbdefs.h"
@@ -111,7 +111,7 @@ class XdsClient::XdsChannel::RetryableCall final
 
   // Retry state.
   BackOff backoff_;
-  absl::optional<EventEngine::TaskHandle> timer_handle_
+  std::optional<EventEngine::TaskHandle> timer_handle_
       ABSL_GUARDED_BY(&XdsClient::mu_);
 
   bool shutting_down_ = false;
@@ -257,7 +257,7 @@ class XdsClient::XdsChannel::AdsCall final
     // stream or (b) declared the resource to not exist due to the timer
     // firing.
     bool resource_seen_ ABSL_GUARDED_BY(&XdsClient::mu_) = false;
-    absl::optional<EventEngine::TaskHandle> timer_handle_
+    std::optional<EventEngine::TaskHandle> timer_handle_
         ABSL_GUARDED_BY(&XdsClient::mu_);
   };
 

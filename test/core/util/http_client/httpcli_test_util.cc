@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -31,7 +32,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/subprocess.h"
 #include "test/core/test_util/port.h"

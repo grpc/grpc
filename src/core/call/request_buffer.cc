@@ -15,9 +15,9 @@
 #include "src/core/call/request_buffer.h"
 
 #include <cstdint>
+#include <optional>
 
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "src/core/util/match.h"
 
 namespace grpc_core {
@@ -133,7 +133,7 @@ RequestBuffer::Reader::PollPullClientInitialMetadata() {
   return Failure{};
 }
 
-Poll<ValueOrFailure<absl::optional<MessageHandle>>>
+Poll<ValueOrFailure<std::optional<MessageHandle>>>
 RequestBuffer::Reader::PollPullMessage() {
   ReleasableMutexLock lock(&buffer_->mu_);
   if (buffer_->winner_ != nullptr && buffer_->winner_ != this) {
@@ -151,14 +151,14 @@ RequestBuffer::Reader::PollPullMessage() {
     return std::move(result);
   }
   if (auto* buffered = std::get_if<Buffered>(&buffer_->state_)) {
-    if (message_index_ == buffered->messages.size()) return absl::nullopt;
+    if (message_index_ == buffered->messages.size()) return std::nullopt;
     const auto idx = message_index_;
     ++message_index_;
     return ClaimObject(buffered->messages[idx]);
   }
   if (auto* streaming = std::get_if<Streaming>(&buffer_->state_)) {
     if (streaming->message == nullptr) {
-      if (streaming->end_of_stream) return absl::nullopt;
+      if (streaming->end_of_stream) return std::nullopt;
       return buffer_->PendingPull(this);
     }
     auto msg = std::move(streaming->message);

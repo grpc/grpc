@@ -25,13 +25,13 @@
 #include <chrono>
 #include <map>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -65,7 +65,7 @@ class PickFirstTest : public LoadBalancingPolicyTest {
   }
 
   static RefCountedPtr<LoadBalancingPolicy::Config> MakePickFirstConfig(
-      absl::optional<bool> shuffle_address_list = absl::nullopt) {
+      std::optional<bool> shuffle_address_list = std::nullopt) {
     return MakeConfig(Json::FromArray({Json::FromObject(
         {{"pick_first",
           shuffle_address_list.has_value()

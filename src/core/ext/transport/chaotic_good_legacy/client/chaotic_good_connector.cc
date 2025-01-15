@@ -222,7 +222,7 @@ auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
   SettingsFrame frame;
   // frame.header set connectiion_type: control
   frame.headers = SettingsMetadata{SettingsMetadata::ConnectionType::kControl,
-                                   absl::nullopt, absl::nullopt}
+                                   std::nullopt, std::nullopt}
                       .ToMetadataBatch();
   bool saw_encoding_errors = false;
   auto write_buffer =

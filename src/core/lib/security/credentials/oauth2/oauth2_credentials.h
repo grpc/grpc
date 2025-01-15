@@ -26,12 +26,12 @@
 #include <grpc/support/time.h>
 
 #include <atomic>
+#include <optional>
 #include <string>
 #include <utility>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -176,14 +176,14 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
 
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response_body(
-    absl::string_view body, absl::optional<grpc_core::Slice>* token_value,
+    absl::string_view body, std::optional<grpc_core::Slice>* token_value,
     grpc_core::Duration* token_lifetime);
 
 // Exposed for testing only.
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const struct grpc_http_response* response,
-    absl::optional<grpc_core::Slice>* token_value,
+    std::optional<grpc_core::Slice>* token_value,
     grpc_core::Duration* token_lifetime);
 
 namespace grpc_core {

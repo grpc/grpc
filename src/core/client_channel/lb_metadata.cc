@@ -54,9 +54,9 @@ class Encoder {
 
 }  // namespace
 
-absl::optional<absl::string_view> LbMetadata::Lookup(
-    absl::string_view key, std::string* buffer) const {
-  if (batch_ == nullptr) return absl::nullopt;
+std::optional<absl::string_view> LbMetadata::Lookup(absl::string_view key,
+                                                    std::string* buffer) const {
+  if (batch_ == nullptr) return std::nullopt;
   return batch_->GetStringValue(key, buffer);
 }
 

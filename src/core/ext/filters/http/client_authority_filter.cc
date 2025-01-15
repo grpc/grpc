@@ -23,10 +23,10 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/security/transport/auth_filters.h"
@@ -38,7 +38,7 @@ namespace grpc_core {
 
 absl::StatusOr<std::unique_ptr<ClientAuthorityFilter>>
 ClientAuthorityFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
-  absl::optional<absl::string_view> default_authority =
+  std::optional<absl::string_view> default_authority =
       args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
   if (!default_authority.has_value()) {
     return absl::InvalidArgumentError(

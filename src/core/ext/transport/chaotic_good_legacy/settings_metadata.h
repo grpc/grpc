@@ -17,7 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -30,9 +31,9 @@ struct SettingsMetadata {
     kControl,
     kData,
   };
-  absl::optional<ConnectionType> connection_type;
-  absl::optional<std::string> connection_id;
-  absl::optional<uint32_t> alignment;
+  std::optional<ConnectionType> connection_type;
+  std::optional<std::string> connection_id;
+  std::optional<uint32_t> alignment;
 
   Arena::PoolPtr<grpc_metadata_batch> ToMetadataBatch();
   static absl::StatusOr<SettingsMetadata> FromMetadataBatch(

@@ -209,7 +209,7 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
       WeakRefCountedPtr<SubchannelWrapper> subchannel_wrapper_;
       std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher_;
-      absl::optional<grpc_connectivity_state> last_seen_state_;
+      std::optional<grpc_connectivity_state> last_seen_state_;
       absl::Status last_seen_status_;
       bool ejected_;
     };
@@ -295,11 +295,11 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
       active_bucket_.store(current_bucket_.get());
     }
 
-    absl::optional<std::pair<double, uint64_t>> GetSuccessRateAndVolume() {
+    std::optional<std::pair<double, uint64_t>> GetSuccessRateAndVolume() {
       uint64_t total_request =
           backup_bucket_->successes + backup_bucket_->failures;
       if (total_request == 0) {
-        return absl::nullopt;
+        return std::nullopt;
       }
       double success_rate =
           backup_bucket_->successes * 100.0 /
@@ -312,7 +312,7 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
 
     void AddFailureCount() { active_bucket_.load()->failures.fetch_add(1); }
 
-    absl::optional<Timestamp> ejection_time() const { return ejection_time_; }
+    std::optional<Timestamp> ejection_time() const { return ejection_time_; }
 
     void Eject(const Timestamp& time) {
       ejection_time_ = time;
@@ -369,7 +369,7 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
     // Points to either current_bucket or active_bucket.
     std::atomic<Bucket*> active_bucket_{current_bucket_.get()};
     uint32_t multiplier_ = 0;
-    absl::optional<Timestamp> ejection_time_;
+    std::optional<Timestamp> ejection_time_;
   };
 
   // A picker that wraps the picker from the child to perform outlier detection.
@@ -413,7 +413,7 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
     void OnTimerLocked();
 
     RefCountedPtr<OutlierDetectionLb> parent_;
-    absl::optional<EventEngine::TaskHandle> timer_handle_;
+    std::optional<EventEngine::TaskHandle> timer_handle_;
     Timestamp start_time_;
     absl::BitGen bit_gen_;
   };
@@ -874,7 +874,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
     if (endpoint_state->ejection_time().has_value()) {
       ++ejected_host_count;
     }
-    absl::optional<std::pair<double, uint64_t>> host_success_rate_and_volume =
+    std::optional<std::pair<double, uint64_t>> host_success_rate_and_volume =
         endpoint_state->GetSuccessRateAndVolume();
     if (!host_success_rate_and_volume.has_value()) {
       continue;
