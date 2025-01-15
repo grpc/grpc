@@ -23,6 +23,7 @@
 #include "gtest/gtest.h"
 #include "opentelemetry/exporters/memory/in_memory_span_exporter_factory.h"
 #include "opentelemetry/sdk/trace/simple_processor_factory.h"
+#include "opentelemetry/sdk/trace/tracer.h"
 #include "opentelemetry/sdk/trace/tracer_provider.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/telemetry/call_tracer.h"

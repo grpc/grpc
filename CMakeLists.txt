@@ -1496,7 +1496,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx grpc_cli)
   add_dependencies(buildtests_cxx grpc_completion_queue_test)
   add_dependencies(buildtests_cxx grpc_ipv6_loopback_available_test)
-  add_dependencies(buildtests_cxx grpc_text_map_carrier_test)
   add_dependencies(buildtests_cxx grpc_tls_certificate_distributor_test)
   add_dependencies(buildtests_cxx grpc_tls_certificate_provider_test)
   add_dependencies(buildtests_cxx grpc_tls_certificate_verifier_test)
@@ -1506,7 +1505,6 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx grpc_tool_test)
   endif()
-  add_dependencies(buildtests_cxx grpc_trace_bin_text_map_propagator_test)
   add_dependencies(buildtests_cxx grpclb_api_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx grpclb_end2end_test)
@@ -1626,7 +1624,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx orca_service_test)
   add_dependencies(buildtests_cxx orphanable_test)
   add_dependencies(buildtests_cxx osa_distance_test)
-  add_dependencies(buildtests_cxx otel_tracing_test)
   add_dependencies(buildtests_cxx out_of_bounds_bad_client_test)
   add_dependencies(buildtests_cxx outlier_detection_lb_config_parser_test)
   add_dependencies(buildtests_cxx outlier_detection_test)
@@ -17751,7 +17748,7 @@ if(gRPC_INSTALL)
 endif()
 
 endif()
-if(gRPC_BUILD_TESTS)
+if(gRPC_BUILD_TESTS AND gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
 
 add_executable(grpc_text_map_carrier_test
   src/cpp/ext/otel/otel_client_call_tracer.cc
@@ -18194,7 +18191,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
 endif()
 endif()
-if(gRPC_BUILD_TESTS)
+if(gRPC_BUILD_TESTS AND gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
 
 add_executable(grpc_trace_bin_text_map_propagator_test
   src/cpp/ext/otel/otel_client_call_tracer.cc
@@ -23459,7 +23456,7 @@ target_link_libraries(otel_plugin_test
 
 
 endif()
-if(gRPC_BUILD_TESTS)
+if(gRPC_BUILD_TESTS AND gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
 
 add_executable(otel_tracing_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
@@ -23536,7 +23533,9 @@ target_link_libraries(otel_tracing_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   opentelemetry-cpp::api
+  opentelemetry-cpp::in_memory_span_exporter
   opentelemetry-cpp::metrics
+  opentelemetry-cpp::trace
   grpc++_test_util
 )
 

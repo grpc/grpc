@@ -11995,8 +11995,9 @@ targets:
   - grpc_plugin_support
 - name: grpc_text_map_carrier_test
   gtest: true
-  build: test
+  build: plugin_test
   language: c++
+  plugin_option: gRPC_BUILD_GRPCPP_OTEL_PLUGIN
   headers:
   - src/cpp/ext/otel/key_value_iterable.h
   - src/cpp/ext/otel/otel_client_call_tracer.h
@@ -12216,8 +12217,9 @@ targets:
   - posix
 - name: grpc_trace_bin_text_map_propagator_test
   gtest: true
-  build: test
+  build: plugin_test
   language: c++
+  plugin_option: gRPC_BUILD_GRPCPP_OTEL_PLUGIN
   headers:
   - src/cpp/ext/otel/key_value_iterable.h
   - src/cpp/ext/otel/otel_client_call_tracer.h
@@ -15274,8 +15276,9 @@ targets:
   - grpc++_test_util
 - name: otel_tracing_test
   gtest: true
-  build: test
+  build: plugin_test
   language: c++
+  plugin_option: gRPC_BUILD_GRPCPP_OTEL_PLUGIN
   headers:
   - src/cpp/ext/otel/key_value_iterable.h
   - src/cpp/ext/otel/otel_client_call_tracer.h
@@ -15304,7 +15307,9 @@ targets:
   deps:
   - gtest
   - opentelemetry-cpp::api
+  - opentelemetry-cpp::in_memory_span_exporter
   - opentelemetry-cpp::metrics
+  - opentelemetry-cpp::trace
   - grpc++_test_util
 - name: out_of_bounds_bad_client_test
   gtest: true
