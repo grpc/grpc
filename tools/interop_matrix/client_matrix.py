@@ -1002,7 +1002,6 @@ LANG_RELEASE_MATRIX = {
             ("v1.65.0", ReleaseInfo()),
             ("v1.66.0", ReleaseInfo()),
             ("v1.67.0", ReleaseInfo()),
-            ("v1.69.0", ReleaseInfo()),
         ]
     ),
     "csharp": OrderedDict(
