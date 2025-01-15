@@ -124,7 +124,6 @@ extern TraceFlag xds_cluster_manager_lb_trace;
 extern TraceFlag xds_override_host_lb_trace;
 extern TraceFlag xds_resolver_trace;
 extern TraceFlag xds_server_config_fetcher_trace;
-extern TraceFlag xds_unittest_trace;
 extern TraceFlag xds_wrr_locality_lb_trace;
 
 }  // namespace grpc_core
