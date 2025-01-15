@@ -86,7 +86,7 @@ IF_POSIX_SOCKET(
         return fd;
       }
       int flags;
-      int fdescriptor = *fd;
+      int fdescriptor = fd.fd();
       if (nonblock) {
         flags = fcntl(fdescriptor, F_GETFL, 0);
         if (flags < 0) goto close_and_error;
@@ -104,7 +104,7 @@ IF_POSIX_SOCKET(
       addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
       return fd;
     close_and_error:
-      Close(fd.fd);
+      Close(*fd);
       return FileDescriptorResult::Error();
     })
 
