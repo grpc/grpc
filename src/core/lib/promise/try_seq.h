@@ -141,7 +141,7 @@ struct TrySeqTraitsWithSfinae<
   }
   template <typename Next>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactoryThenPromise(
-      Next* next, T&& value) {
+      Next* next, T&&) {
     return MakeAndCall(*next);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(const T& status) {
