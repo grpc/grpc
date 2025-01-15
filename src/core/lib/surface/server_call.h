@@ -150,6 +150,8 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   std::string DebugTag() { return absl::StrFormat("SERVER_CALL[%p]: ", this); }
 
   CallHandler call_handler_;
+  Party::SpawnSerializer* const server_op_serializer_ =
+      call_handler_.party()->MakeSpawnSerializer();
   MessageReceiver message_receiver_;
   ClientMetadataHandle client_initial_metadata_stored_;
   grpc_completion_queue* const cq_;
