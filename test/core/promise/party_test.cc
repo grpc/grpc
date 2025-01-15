@@ -794,7 +794,7 @@ TEST_F(PartyTest, MpscManySendersManyPartyStressTest) {
   }
 
   // Receive payloads on the last party and last thread.
-  const int num_messages_sent = (kMpscNumThreads - 1) * kMpscNumPayloads;
+  int num_messages_sent = (kMpscNumThreads - 1) * kMpscNumPayloads;
   std::string& receive_order = execution_order[kMpscNumThreads - 1];
   RefCountedPtr<Party>& receive_party = parties[kMpscNumThreads - 1];
   threads.emplace_back([&receive_order, &receive_party, &receiver,
