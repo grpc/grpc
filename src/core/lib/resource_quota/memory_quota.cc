@@ -433,7 +433,7 @@ void BasicMemoryQuota::Start() {
   // basically, wait until we are in overcommit (free_bytes_ < 0), and then:
   // while (free_bytes_ < 0) reclaim_memory()
   // ... and repeat
-  auto reclamation_loop = Loop(Seq(
+  auto reclamation_loop = Loop([self]() { return Seq(
       [self]() -> Poll<int> {
         // If there's free memory we no longer need to reclaim memory!
         if (self->free_bytes_.load(std::memory_order_acquire) > 0) {
@@ -480,7 +480,7 @@ void BasicMemoryQuota::Start() {
       []() -> LoopCtl<absl::Status> {
         // Continue the loop!
         return Continue{};
-      }));
+      });});
 
   reclaimer_activity_ =
       MakeActivity(std::move(reclamation_loop), ExecCtxWakeupScheduler(),
