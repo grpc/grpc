@@ -36,6 +36,7 @@ DOCKERIMAGE_CURRENT_VERSIONS = {
     "tools/dockerfile/distribtest/csharp_dotnet5_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/csharp_dotnet5_x64@sha256:004e02902825b54c7f0d60eaed0819acf6f10c24853bf8f793001114e9969abd",
     "tools/dockerfile/distribtest/csharp_ubuntu2204_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/csharp_ubuntu2204_x64@sha256:a439f2ccbc666f231e511a8e58eb7f66a3de4820a4d5aded1e62275cf8ac49f0",
     "tools/dockerfile/distribtest/php8_debian12_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/php8_debian12_x64@sha256:42399d061f234ee0ef79b333555db0e11ca4f106bb1d49276abf99c459c104f0",
+    "tools/dockerfile/distribtest/php8_debian12_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_php7_kannanj-testing:latest",
     "tools/dockerfile/distribtest/python_alpine_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/python_alpine_x64@sha256:1bbc6fa5b4b650d3037d089e164d364e05a6daf1ed6dd1025ba07cc127f73d7d",
     "tools/dockerfile/distribtest/python_arch_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/python_arch_x64@sha256:2c1adadeb010e107132cf5137f32a2d18727796631245b110cc74f69c07502e1",
     "tools/dockerfile/distribtest/python_bullseye_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/python_bullseye_x64@sha256:80553398f0c59c1dc186052f4f2deaf18fea582f6d1d166eec6ea298639031fb",
