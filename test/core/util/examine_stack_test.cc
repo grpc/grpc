@@ -51,7 +51,7 @@ std::string AbseilCurrentStackTraceProvider() {
 TEST(ExamineStackTest, NullStackProvider) {
   grpc_core::SetCurrentStackTraceProvider(nullptr);
   EXPECT_EQ(grpc_core::GetCurrentStackTraceProvider(), nullptr);
-  EXPECT_EQ(grpc_core::GetCurrentStackTrace(), absl::nullopt);
+  EXPECT_EQ(grpc_core::GetCurrentStackTrace(), std::nullopt);
 }
 
 TEST(ExamineStackTest, SimpleStackProvider) {
@@ -63,9 +63,9 @@ TEST(ExamineStackTest, SimpleStackProvider) {
 TEST(ExamineStackTest, AbseilStackProvider) {
   grpc_core::SetCurrentStackTraceProvider(&AbseilCurrentStackTraceProvider);
   EXPECT_NE(grpc_core::GetCurrentStackTraceProvider(), nullptr);
-  const absl::optional<std::string> stack_trace =
+  const std::optional<std::string> stack_trace =
       grpc_core::GetCurrentStackTrace();
-  EXPECT_NE(stack_trace, absl::nullopt);
+  EXPECT_NE(stack_trace, std::nullopt);
   LOG(INFO) << "stack_trace=" << *stack_trace;
 #if !defined(NDEBUG) && !defined(GPR_MUSL_LIBC_COMPAT)
   // Expect to see some gtest signature on the stack (this used to be

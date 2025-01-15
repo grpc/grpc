@@ -32,9 +32,9 @@ namespace grpc_core {
 class MockEndpointConfig
     : public grpc_event_engine::experimental::EndpointConfig {
  public:
-  MOCK_METHOD(absl::optional<int>, GetInt, (absl::string_view key),
+  MOCK_METHOD(std::optional<int>, GetInt, (absl::string_view key),
               (const, override));
-  MOCK_METHOD(absl::optional<absl::string_view>, GetString,
+  MOCK_METHOD(std::optional<absl::string_view>, GetString,
               (absl::string_view key), (const, override));
   MOCK_METHOD(void*, GetVoidPointer, (absl::string_view key),
               (const, override));

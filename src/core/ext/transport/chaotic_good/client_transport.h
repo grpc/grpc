@@ -26,6 +26,7 @@
 #include <initializer_list>  // IWYU pragma: keep
 #include <map>
 #include <memory>
+#include <optional>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -35,7 +36,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"

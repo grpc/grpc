@@ -31,11 +31,11 @@
 #include <gtest/gtest.h>
 
 #include <memory>
+#include <optional>
 
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/time.h"
 #include "src/proto/grpc/testing/xds/v3/orca_service.grpc.pb.h"
@@ -97,7 +97,7 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
     const grpc_core::Duration requested_interval_;
     ClientContext context_;
     std::unique_ptr<grpc::ClientReaderInterface<OrcaLoadReport>> stream_;
-    absl::optional<grpc_core::Timestamp> last_response_time_;
+    std::optional<grpc_core::Timestamp> last_response_time_;
   };
 
   class GenericOrcaClientReactor

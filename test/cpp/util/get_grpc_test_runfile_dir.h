@@ -15,9 +15,8 @@
 #ifndef GRPC_TEST_CPP_UTIL_GET_GRPC_TEST_RUNFILE_DIR_H
 #define GRPC_TEST_CPP_UTIL_GET_GRPC_TEST_RUNFILE_DIR_H
 
+#include <optional>
 #include <string>
-
-#include "absl/types/optional.h"
 
 namespace grpc {
 
@@ -25,7 +24,7 @@ namespace grpc {
 // gRPC test. The path to the data files can be referred by joining the runfile
 // directory with the workspace-relative path (e.g.
 // "test/cpp/util/get_grpc_test_runfile_dir.h").
-absl::optional<std::string> GetGrpcTestRunFileDir();
+std::optional<std::string> GetGrpcTestRunFileDir();
 
 }  // namespace grpc
 

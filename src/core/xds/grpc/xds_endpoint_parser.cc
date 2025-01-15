@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <set>
 #include <vector>
 
@@ -32,7 +33,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
@@ -118,7 +118,7 @@ std::string GetHashKeyFromMetadata(const XdsMetadataMap& metadata_map) {
       .value_or("");
 }
 
-absl::optional<EndpointAddresses> EndpointAddressesParse(
+std::optional<EndpointAddresses> EndpointAddressesParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_endpoint_v3_LbEndpoint* lb_endpoint,
     absl::string_view locality_proxy_address, ValidationErrors* errors) {
@@ -126,7 +126,7 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
   const int32_t health_status =
       envoy_config_endpoint_v3_LbEndpoint_health_status(lb_endpoint);
   auto status = XdsHealthStatus::FromUpb(health_status);
-  if (!status.has_value()) return absl::nullopt;
+  if (!status.has_value()) return std::nullopt;
   // load_balancing_weight
   uint32_t weight;
   {
@@ -162,7 +162,7 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
         envoy_config_endpoint_v3_LbEndpoint_endpoint(lb_endpoint);
     if (endpoint == nullptr) {
       errors->AddError("field not present");
-      return absl::nullopt;
+      return std::nullopt;
     }
     {
       ValidationErrors::ScopedField field(errors, ".address");
@@ -188,7 +188,7 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
     hostname =
         UpbStringToAbsl(envoy_config_endpoint_v3_Endpoint_hostname(endpoint));
   }
-  if (addresses.empty()) return absl::nullopt;
+  if (addresses.empty()) return std::nullopt;
   // Convert to EndpointAddresses.
   auto args = ChannelArgs()
                   .Set(GRPC_ARG_ADDRESS_WEIGHT, weight)
@@ -222,7 +222,7 @@ struct ResolvedAddressLessThan {
 using ResolvedAddressSet =
     std::set<grpc_resolved_address, ResolvedAddressLessThan>;
 
-absl::optional<ParsedLocality> LocalityParse(
+std::optional<ParsedLocality> LocalityParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_endpoint_v3_LocalityLbEndpoints* locality_lb_endpoints,
     ResolvedAddressSet* address_set, ValidationErrors* errors) {
@@ -236,7 +236,7 @@ absl::optional<ParsedLocality> LocalityParse(
           envoy_config_endpoint_v3_LocalityLbEndpoints_load_balancing_weight(
               locality_lb_endpoints))
           .value_or(0);
-  if (parsed_locality.locality.lb_weight == 0) return absl::nullopt;
+  if (parsed_locality.locality.lb_weight == 0) return std::nullopt;
   // locality
   const envoy_config_core_v3_Locality* locality =
       envoy_config_endpoint_v3_LocalityLbEndpoints_locality(
@@ -244,7 +244,7 @@ absl::optional<ParsedLocality> LocalityParse(
   if (locality == nullptr) {
     ValidationErrors::ScopedField field(errors, ".locality");
     errors->AddError("field not present");
-    return absl::nullopt;
+    return std::nullopt;
   }
   // region
   std::string region =
@@ -294,7 +294,7 @@ absl::optional<ParsedLocality> LocalityParse(
       envoy_config_endpoint_v3_LocalityLbEndpoints_priority(
           locality_lb_endpoints);
   // Return result.
-  if (original_error_size != errors->size()) return absl::nullopt;
+  if (original_error_size != errors->size()) return std::nullopt;
   return parsed_locality;
 }
 
