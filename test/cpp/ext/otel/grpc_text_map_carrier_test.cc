@@ -50,7 +50,8 @@ TEST(GrpcTextMapCarrierTest, GrpcTraceBinGet) {
   GrpcTextMapCarrier carrier(&md);
   auto arena = grpc_core::SimpleArenaAllocator()->MakeArena();
   grpc_core::TestContext<grpc_core::Arena> context(arena.get());
-  std::string_view escaped_value = carrier.Get("grpc-trace-bin");
+  absl::string_view escaped_value =
+      NoStdStringViewToAbslStringView(carrier.Get("grpc-trace-bin"));
   std::string value;
   ASSERT_TRUE(absl::Base64Unescape(escaped_value, &value));
   EXPECT_EQ(value, "value");
