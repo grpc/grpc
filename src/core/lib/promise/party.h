@@ -279,11 +279,6 @@ class Party : public Activity, private Wakeable {
     Party* const party_;
   };
 
-  static RefCountedPtr<Party> Make(RefCountedPtr<Arena> arena) {
-    auto* arena_ptr = arena.get();
-    return RefCountedPtr<Party>(arena_ptr->New<Party>(std::move(arena)));
-  }
-
   // Spawn one promise into the party.
   // The party can poll the promise until it is resolved, or until the party is
   // shut down.
