@@ -24,22 +24,21 @@ pyx_library(
     deps = ["@com_google_absl//absl/debugging:failure_signal_handler"],
 )
 
-# Temporary disabled while new fork support is getting rolled out
-# py_test(
-#     name = "fork_test",
-#     srcs = glob(["*.py"]),
-#     # TODO(yijiem): remove this to test EventEngine fork support
-#     env = {"GRPC_EXPERIMENTS": "-event_engine_client"},
-#     imports = ["../.."],
-#     main = "_fork_interop_test.py",
-#     python_version = "PY3",
-#     deps = [
-#         ":native_debug",
-#         "//src/proto/grpc/testing:empty_py_pb2",
-#         "//src/proto/grpc/testing:py_messages_proto",
-#         "//src/proto/grpc/testing:test_py_pb2_grpc",
-#         "//src/python/grpcio/grpc:grpcio",
-#         "//src/python/grpcio_tests/tests/interop:service",
-#         "//src/python/grpcio_tests/tests/unit:test_common",
-#     ],
-# )
+py_test(
+    name = "fork_test",
+    srcs = glob(["*.py"]),
+    # TODO(yijiem): remove this to test EventEngine fork support
+    env = {"GRPC_EXPERIMENTS": "-event_engine_client"},
+    imports = ["../.."],
+    main = "_fork_interop_test.py",
+    python_version = "PY3",
+    deps = [
+        ":native_debug",
+        "//src/proto/grpc/testing:empty_py_pb2",
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/interop:service",
+        "//src/python/grpcio_tests/tests/unit:test_common",
+    ],
+)
