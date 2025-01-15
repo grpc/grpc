@@ -32,7 +32,6 @@
 #include "absl/flags/parse.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
-#include "absl/types/optional.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
@@ -119,7 +118,7 @@ class GreeterClient {
     // The actual RPC.
     std::mutex mu;
     std::condition_variable cv;
-    absl::optional<Status> status;
+    std::optional<Status> status;
     // Set the cookie header if we already got a cookie from the server
     if (cookie_from_server_.has_value()) {
       context.AddMetadata("cookie",
@@ -154,7 +153,7 @@ class GreeterClient {
  private:
   std::unique_ptr<Greeter::Stub> stub_;
   std::string cookie_name_;
-  absl::optional<Cookie> cookie_from_server_;
+  std::optional<Cookie> cookie_from_server_;
 };
 
 absl::StatusOr<grpc::CsmObservability> InitializeObservability() {

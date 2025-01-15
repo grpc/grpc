@@ -209,7 +209,7 @@ class GlobalInstrumentsRegistry {
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
   static const GlobalInstrumentDescriptor& GetInstrumentDescriptor(
       GlobalInstrumentHandle handle);
-  static absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+  static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
   FindInstrumentByName(absl::string_view name);
 
  private:

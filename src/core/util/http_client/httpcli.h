@@ -27,13 +27,13 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -162,7 +162,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
               grpc_http_response* response, Timestamp deadline,
               const grpc_channel_args* channel_args, grpc_closure* on_done,
               grpc_polling_entity* pollent, const char* name,
-              absl::optional<std::function<bool()>> test_only_generate_response,
+              std::optional<std::function<bool()>> test_only_generate_response,
               RefCountedPtr<grpc_channel_credentials> channel_creds);
 
   ~HttpRequest() override;
@@ -250,7 +250,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   ResourceQuotaRefPtr resource_quota_;
   grpc_polling_entity* pollent_;
   grpc_pollset_set* pollset_set_;
-  const absl::optional<std::function<bool()>> test_only_generate_response_;
+  const std::optional<std::function<bool()>> test_only_generate_response_;
   Mutex mu_;
   RefCountedPtr<HandshakeManager> handshake_mgr_ ABSL_GUARDED_BY(mu_);
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
@@ -267,7 +267,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   // experiment is fully enabled.
   bool use_event_engine_dns_resolver_;
   std::shared_ptr<DNSResolver> resolver_;
-  absl::optional<DNSResolver::TaskHandle> dns_request_handle_
+  std::optional<DNSResolver::TaskHandle> dns_request_handle_
       ABSL_GUARDED_BY(mu_) = DNSResolver::kNullHandle;
   absl::StatusOr<std::unique_ptr<
       grpc_event_engine::experimental::EventEngine::DNSResolver>>

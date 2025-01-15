@@ -26,17 +26,17 @@ ByteBufferUniquePtr ByteBufferFromSlice(Slice slice) {
       grpc_byte_buffer_destroy);
 }
 
-absl::optional<std::string> FindInMetadataArray(const grpc_metadata_array& md,
-                                                absl::string_view key) {
+std::optional<std::string> FindInMetadataArray(const grpc_metadata_array& md,
+                                               absl::string_view key) {
   for (size_t i = 0; i < md.count; i++) {
     if (key == StringViewFromSlice(md.metadata[i].key)) {
       return std::string(StringViewFromSlice(md.metadata[i].value));
     }
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
-absl::optional<std::string> IncomingMetadata::Get(absl::string_view key) const {
+std::optional<std::string> IncomingMetadata::Get(absl::string_view key) const {
   return FindInMetadataArray(*metadata_, key);
 }
 
@@ -90,7 +90,7 @@ grpc_op IncomingMessage::MakeOp() {
   return op;
 }
 
-absl::optional<std::string> IncomingStatusOnClient::GetTrailingMetadata(
+std::optional<std::string> IncomingStatusOnClient::GetTrailingMetadata(
     absl::string_view key) const {
   return FindInMetadataArray(data_->trailing_metadata, key);
 }
@@ -135,7 +135,7 @@ grpc_op IncomingCloseOnServer::MakeOp() {
 
 BatchBuilder& BatchBuilder::SendInitialMetadata(
     std::initializer_list<std::pair<absl::string_view, absl::string_view>> md,
-    uint32_t flags, absl::optional<grpc_compression_level> compression_level) {
+    uint32_t flags, std::optional<grpc_compression_level> compression_level) {
   auto& v = Make<std::vector<grpc_metadata>>();
   for (const auto& p : md) {
     grpc_metadata m;

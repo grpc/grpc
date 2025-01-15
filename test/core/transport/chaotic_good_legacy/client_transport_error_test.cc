@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -31,7 +32,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
@@ -200,7 +200,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
       "test-read", [&on_done, initiator = call.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+            [](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
             },
             initiator.PullServerTrailingMetadata(),
@@ -242,7 +242,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
       "test-read", [&on_done, initiator = call.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+            [](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
             },
             initiator.PullServerTrailingMetadata(),
@@ -300,7 +300,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
       "test-read-1", [&on_done1, initiator = call1.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+            [](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
             },
             initiator.PullServerTrailingMetadata(),
@@ -314,7 +314,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
       "test-read-2", [&on_done2, initiator = call2.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+            [](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
             },
             initiator.PullServerTrailingMetadata(),
@@ -364,7 +364,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
       "test-read", [&on_done1, initiator = call1.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+            [](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
             },
             initiator.PullServerTrailingMetadata(),
@@ -378,7 +378,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
       "test-read", [&on_done2, initiator = call2.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+            [](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
             },
             initiator.PullServerTrailingMetadata(),

@@ -694,7 +694,7 @@ class CsdsShortAdsTimeoutTest : public ClientStatusDiscoveryServiceTest {
  protected:
   void SetUp() override {
     // Shorten the ADS subscription timeout to speed up the test run.
-    InitClient(absl::nullopt, /*lb_expected_authority=*/"",
+    InitClient(std::nullopt, /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/2000);
   }
 };

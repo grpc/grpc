@@ -1131,6 +1131,27 @@ TEST_F(PartyTest, NestedWakeup) {
   EXPECT_STREQ(execution_order.c_str(), "123456789AB");
 }
 
+TEST_F(PartyTest, SpawnSerializerSerializes) {
+  auto party = MakeParty();
+  Notification notification;
+  int expect_next = 0;
+  std::thread thd([party, &notification, &expect_next]() {
+    Party::SpawnSerializer* serializer = party->MakeSpawnSerializer();
+    for (int i = 0; i < 1000000; i++) {
+      serializer->Spawn(
+          [i = std::make_unique<int>(i), &expect_next]() -> Poll<Empty> {
+            EXPECT_EQ(expect_next, *i);
+            ++expect_next;
+            return Empty{};
+          });
+    }
+    serializer->Spawn([&notification]() { notification.Notify(); });
+  });
+  notification.WaitForNotification();
+  EXPECT_EQ(expect_next, 1000000);
+  thd.join();
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
