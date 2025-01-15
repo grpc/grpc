@@ -100,5 +100,9 @@ grpc_sh_test(
         ":compiler_test_mock_golden",
         ":golden_file_test",
     ],
+    tags = [
+        # Windows doesn't have Bash.
+        "no_windows",
+    ],
     uses_polling = False,
 )
