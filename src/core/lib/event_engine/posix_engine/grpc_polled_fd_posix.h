@@ -112,8 +112,8 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
       ares_socket_t as) override {
     owned_fds_.insert(as);
     return std::make_unique<GrpcPolledFdPosix>(
-        as,
-        poller_->CreateHandle(as, "c-ares socket", poller_->CanTrackErrors()));
+        as, poller_->CreateHandle(poller_->GetFileDescriptors().Adopt(as),
+                                  "c-ares socket", poller_->CanTrackErrors()));
   }
 
   void ConfigureAresChannelLocked(ares_channel channel) override {
