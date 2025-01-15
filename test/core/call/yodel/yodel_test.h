@@ -408,7 +408,7 @@ class YodelTest : public ::testing::Test {
 
   template <typename T>
   T TickUntil(absl::FunctionRef<Poll<T>()> poll) {
-    absl::optional<T> result;
+    std::optional<T> result;
     TickUntilTrue([poll, &result]() {
       auto r = poll();
       if (auto* p = r.value_if_ready()) {
