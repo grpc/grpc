@@ -51,7 +51,7 @@ class RequestBuffer {
       return [this]() { return PollPullClientInitialMetadata(); };
     }
     // Pull a message. Returns a promise that resolves to a
-    // ValueOrFailure<absl::optional<MessageHandle>>.
+    // ValueOrFailure<std::optional<MessageHandle>>.
     GRPC_MUST_USE_RESULT auto PullMessage() {
       return [this]() { return PollPullMessage(); };
     }
@@ -62,7 +62,7 @@ class RequestBuffer {
     friend class RequestBuffer;
 
     Poll<ValueOrFailure<ClientMetadataHandle>> PollPullClientInitialMetadata();
-    Poll<ValueOrFailure<absl::optional<MessageHandle>>> PollPullMessage();
+    Poll<ValueOrFailure<std::optional<MessageHandle>>> PollPullMessage();
 
     template <typename T>
     T ClaimObject(T& object) ABSL_EXCLUSIVE_LOCKS_REQUIRED(buffer_->mu_) {

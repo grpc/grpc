@@ -24,6 +24,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -39,7 +40,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
@@ -181,7 +181,7 @@ XdsRouteConfigResource::ClusterSpecifierPluginMap ClusterSpecifierPluginParse(
   return cluster_specifier_plugin_map;
 }
 
-absl::optional<StringMatcher> RoutePathMatchParse(
+std::optional<StringMatcher> RoutePathMatchParse(
     const envoy_config_route_v3_RouteMatch* match, ValidationErrors* errors) {
   bool case_sensitive =
       ParseBoolValue(envoy_config_route_v3_RouteMatch_case_sensitive(match),
@@ -195,14 +195,14 @@ absl::optional<StringMatcher> RoutePathMatchParse(
     // ignore the route.
     if (!prefix.empty()) {
       // Does not start with a slash.
-      if (prefix[0] != '/') return absl::nullopt;
+      if (prefix[0] != '/') return std::nullopt;
       std::vector<absl::string_view> prefix_elements =
           absl::StrSplit(prefix.substr(1), absl::MaxSplits('/', 2));
       // More than 2 slashes.
-      if (prefix_elements.size() > 2) return absl::nullopt;
+      if (prefix_elements.size() > 2) return std::nullopt;
       // Two consecutive slashes.
       if (prefix_elements.size() == 2 && prefix_elements[0].empty()) {
-        return absl::nullopt;
+        return std::nullopt;
       }
     }
     type = StringMatcher::Type::kPrefix;
@@ -212,17 +212,17 @@ absl::optional<StringMatcher> RoutePathMatchParse(
         UpbStringToAbsl(envoy_config_route_v3_RouteMatch_path(match));
     // For any path not of the form "/service/method", ignore the route.
     // Empty path.
-    if (path.empty()) return absl::nullopt;
+    if (path.empty()) return std::nullopt;
     // Does not start with a slash.
-    if (path[0] != '/') return absl::nullopt;
+    if (path[0] != '/') return std::nullopt;
     std::vector<absl::string_view> path_elements =
         absl::StrSplit(path.substr(1), absl::MaxSplits('/', 2));
     // Number of slashes does not equal 2.
-    if (path_elements.size() != 2) return absl::nullopt;
+    if (path_elements.size() != 2) return std::nullopt;
     // Empty service name.
-    if (path_elements[0].empty()) return absl::nullopt;
+    if (path_elements[0].empty()) return std::nullopt;
     // Empty method name.
-    if (path_elements[1].empty()) return absl::nullopt;
+    if (path_elements[1].empty()) return std::nullopt;
     type = StringMatcher::Type::kExact;
     match_string = std::string(path);
   } else if (envoy_config_route_v3_RouteMatch_has_safe_regex(match)) {
@@ -234,14 +234,14 @@ absl::optional<StringMatcher> RoutePathMatchParse(
         envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
   } else {
     errors->AddError("invalid path specifier");
-    return absl::nullopt;
+    return std::nullopt;
   }
   absl::StatusOr<StringMatcher> string_matcher =
       StringMatcher::Create(type, match_string, case_sensitive);
   if (!string_matcher.ok()) {
     errors->AddError(absl::StrCat("error creating path matcher: ",
                                   string_matcher.status().message()));
-    return absl::nullopt;
+    return std::nullopt;
   }
   return std::move(*string_matcher);
 }
@@ -405,7 +405,7 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     auto extension = ExtractXdsExtension(context, any, errors);
     if (!extension.has_value()) continue;
     auto* extension_to_use = &*extension;
-    absl::optional<XdsExtension> nested_extension;
+    std::optional<XdsExtension> nested_extension;
     bool is_optional = false;
     if (extension->type == "envoy.config.route.v3.FilterConfig") {
       absl::string_view* serialized_config =
@@ -437,7 +437,7 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
       if (!is_optional) errors->AddError("unsupported filter type");
       continue;
     }
-    absl::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
+    std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
         filter_impl->GenerateFilterConfigOverride(
             key, context, std::move(*extension_to_use), errors);
     if (filter_config.has_value()) {
@@ -515,7 +515,7 @@ XdsRouteConfigResource::RetryPolicy RetryPolicyParse(
   return retry_policy;
 }
 
-absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
+std::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RouteAction* route_action_proto,
     const std::map<std::string /*cluster_specifier_plugin_name*/,
@@ -715,7 +715,7 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
             route_action_proto));
     if (plugin_name.empty()) {
       errors->AddError("must be non-empty");
-      return absl::nullopt;
+      return std::nullopt;
     }
     auto it = cluster_specifier_plugin_map.find(plugin_name);
     if (it == cluster_specifier_plugin_map.end()) {
@@ -724,22 +724,22 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
     } else {
       // If the cluster specifier config is empty, that means that the
       // plugin was unsupported but optional.  In that case, skip this route.
-      if (it->second.empty()) return absl::nullopt;
+      if (it->second.empty()) return std::nullopt;
     }
     route_action.action =
         XdsRouteConfigResource::Route::RouteAction::ClusterSpecifierPluginName{
             std::move(plugin_name)};
   } else {
     // Not a supported cluster specifier, so ignore this route.
-    return absl::nullopt;
+    return std::nullopt;
   }
   return route_action;
 }
 
-absl::optional<XdsRouteConfigResource::Route> ParseRoute(
+std::optional<XdsRouteConfigResource::Route> ParseRoute(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_Route* route_proto,
-    const absl::optional<XdsRouteConfigResource::RetryPolicy>&
+    const std::optional<XdsRouteConfigResource::RetryPolicy>&
         virtual_host_retry_policy,
     const XdsRouteConfigResource::ClusterSpecifierPluginMap&
         cluster_specifier_plugin_map,
@@ -752,16 +752,16 @@ absl::optional<XdsRouteConfigResource::Route> ParseRoute(
     const auto* match = envoy_config_route_v3_Route_match(route_proto);
     if (match == nullptr) {
       errors->AddError("field not present");
-      return absl::nullopt;
+      return std::nullopt;
     }
     // Skip routes with query_parameters set.
     size_t query_parameters_size;
     static_cast<void>(envoy_config_route_v3_RouteMatch_query_parameters(
         match, &query_parameters_size));
-    if (query_parameters_size > 0) return absl::nullopt;
+    if (query_parameters_size > 0) return std::nullopt;
     // Parse matchers.
     auto path_matcher = RoutePathMatchParse(match, errors);
-    if (!path_matcher.has_value()) return absl::nullopt;
+    if (!path_matcher.has_value()) return std::nullopt;
     route.matchers.path_matcher = std::move(*path_matcher);
     RouteHeaderMatchersParse(match, &route, errors);
     RouteRuntimeFractionParse(match, &route, errors);
@@ -773,7 +773,7 @@ absl::optional<XdsRouteConfigResource::Route> ParseRoute(
     ValidationErrors::ScopedField field(errors, ".route");
     auto route_action = RouteActionParse(context, route_action_proto,
                                          cluster_specifier_plugin_map, errors);
-    if (!route_action.has_value()) return absl::nullopt;
+    if (!route_action.has_value()) return std::nullopt;
     // If the route does not have a retry policy but the vhost does,
     // use the vhost retry policy for this route.
     if (!route_action->retry_policy.has_value()) {
@@ -868,7 +868,7 @@ std::shared_ptr<const XdsRouteConfigResource> XdsRouteConfigResourceParse(
           errors);
     }
     // Parse retry policy.
-    absl::optional<XdsRouteConfigResource::RetryPolicy>
+    std::optional<XdsRouteConfigResource::RetryPolicy>
         virtual_host_retry_policy;
     const envoy_config_route_v3_RetryPolicy* retry_policy =
         envoy_config_route_v3_VirtualHost_retry_policy(virtual_hosts[i]);

@@ -31,6 +31,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -42,7 +43,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/endpoint/v3/endpoint.pb.h"
 #include "envoy/config/listener/v3/listener.pb.h"
@@ -153,8 +153,8 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
             "No certificates available for cert_name \"", cert_name, "\""));
         distributor_->SetErrorForCert(cert_name, error, error);
       } else {
-        absl::optional<std::string> root_certificate;
-        absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
+        std::optional<std::string> root_certificate;
+        std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
         if (root_being_watched) {
           root_certificate = it->second.root_certificate;
         }
@@ -950,7 +950,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       const std::vector<std::string>& expected_server_identity,
       const std::vector<std::string>& expected_client_identity,
       bool test_expects_failure = false,
-      absl::optional<grpc::StatusCode> expected_status = absl::nullopt,
+      std::optional<grpc::StatusCode> expected_status = std::nullopt,
       absl::string_view expected_error_message_regex = "") {
     LOG(INFO) << "Sending RPC";
     int num_tries = 0;

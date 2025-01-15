@@ -38,7 +38,6 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/service/discovery/v3/discovery.pb.h"
 #include "envoy/service/status/v3/csds.pb.h"
@@ -171,12 +170,12 @@ class XdsClientTest : public ::testing::Test {
         };
       }
 
-      void set_server(absl::optional<FakeXdsServer> server) {
+      void set_server(std::optional<FakeXdsServer> server) {
         server_ = std::move(server);
       }
 
      private:
-      absl::optional<FakeXdsServer> server_;
+      std::optional<FakeXdsServer> server_;
     };
 
     class Builder {
@@ -205,7 +204,7 @@ class XdsClientTest : public ::testing::Test {
 
      private:
       std::vector<FakeXdsServer> servers_ = {FakeXdsServer()};
-      absl::optional<FakeNode> node_;
+      std::optional<FakeNode> node_;
       std::map<std::string, FakeAuthority> authorities_;
     };
 
@@ -231,7 +230,7 @@ class XdsClientTest : public ::testing::Test {
 
    private:
     std::vector<FakeXdsServer> servers_;
-    absl::optional<FakeNode> node_;
+    std::optional<FakeNode> node_;
     std::map<std::string, FakeAuthority> authorities_;
   };
 
@@ -282,14 +281,14 @@ class XdsClientTest : public ::testing::Test {
         std::shared_ptr<const ResourceStruct> resource;
         RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle;
       };
-      absl::optional<ResourceAndReadDelayHandle> WaitForNextResourceAndHandle(
+      std::optional<ResourceAndReadDelayHandle> WaitForNextResourceAndHandle(
           SourceLocation location = SourceLocation()) {
         auto event = WaitForNextOnResourceChangedEvent(location);
-        if (!event.has_value()) return absl::nullopt;
+        if (!event.has_value()) return std::nullopt;
         EXPECT_TRUE(event->resource.ok())
             << "got unexpected error: " << event->resource.status() << " at "
             << location.file() << ":" << location.line();
-        if (!event->resource.ok()) return absl::nullopt;
+        if (!event->resource.ok()) return std::nullopt;
         return ResourceAndReadDelayHandle{std::move(*event->resource),
                                           std::move(event->read_delay_handle)};
       }
@@ -301,14 +300,14 @@ class XdsClientTest : public ::testing::Test {
         return std::move(resource_and_handle->resource);
       }
 
-      absl::optional<absl::Status> WaitForNextError(
+      std::optional<absl::Status> WaitForNextError(
           SourceLocation location = SourceLocation()) {
         auto event = WaitForNextOnResourceChangedEvent(location);
-        if (!event.has_value()) return absl::nullopt;
+        if (!event.has_value()) return std::nullopt;
         EXPECT_FALSE(event->resource.ok())
             << "got unexpected resource: " << (*event->resource)->name << " at "
             << location.file() << ":" << location.line();
-        if (event->resource.ok()) return absl::nullopt;
+        if (event->resource.ok()) return std::nullopt;
         return event->resource.status();
       }
 
@@ -321,20 +320,20 @@ class XdsClientTest : public ::testing::Test {
         return status->code() == absl::StatusCode::kNotFound;
       }
 
-      absl::optional<absl::Status> WaitForNextAmbientError(
+      std::optional<absl::Status> WaitForNextAmbientError(
           SourceLocation location = SourceLocation()) {
         auto event = WaitForNextEvent();
-        if (!event.has_value()) return absl::nullopt;
+        if (!event.has_value()) return std::nullopt;
         return Match(
             event->payload,
             [&](const absl::StatusOr<std::shared_ptr<const ResourceStruct>>&
-                    resource) -> absl::optional<absl::Status> {
+                    resource) -> std::optional<absl::Status> {
               EXPECT_TRUE(false)
                   << "got unexpected resource: " << event->ToString() << " at "
                   << location.file() << ":" << location.line();
-              return absl::nullopt;
+              return std::nullopt;
             },
-            [&](const absl::Status& status) -> absl::optional<absl::Status> {
+            [&](const absl::Status& status) -> std::optional<absl::Status> {
               return status;
             });
       }
@@ -370,7 +369,7 @@ class XdsClientTest : public ::testing::Test {
         }
       };
 
-      absl::optional<Event> WaitForNextEvent() {
+      std::optional<Event> WaitForNextEvent() {
         while (true) {
           {
             MutexLock lock(&mu_);
@@ -379,7 +378,7 @@ class XdsClientTest : public ::testing::Test {
               queue_.pop_front();
               return event;
             }
-            if (event_engine_->IsIdle()) return absl::nullopt;
+            if (event_engine_->IsIdle()) return std::nullopt;
           }
           event_engine_->Tick();
         }
@@ -389,23 +388,22 @@ class XdsClientTest : public ::testing::Test {
         absl::StatusOr<std::shared_ptr<const ResourceStruct>> resource;
         RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle;
       };
-      absl::optional<OnResourceChangedEvent> WaitForNextOnResourceChangedEvent(
+      std::optional<OnResourceChangedEvent> WaitForNextOnResourceChangedEvent(
           SourceLocation location = SourceLocation()) {
         auto event = WaitForNextEvent();
-        if (!event.has_value()) return absl::nullopt;
+        if (!event.has_value()) return std::nullopt;
         return MatchMutable(
             &event->payload,
             [&](absl::StatusOr<std::shared_ptr<const ResourceStruct>>* resource)
-                -> absl::optional<OnResourceChangedEvent> {
+                -> std::optional<OnResourceChangedEvent> {
               return OnResourceChangedEvent{
                   std::move(*resource), std::move(event->read_delay_handle)};
             },
-            [&](absl::Status* status)
-                -> absl::optional<OnResourceChangedEvent> {
+            [&](absl::Status* status) -> std::optional<OnResourceChangedEvent> {
               EXPECT_TRUE(false)
                   << "got unexpected ambient error: " << status->ToString()
                   << " at " << location.file() << ":" << location.line();
-              return absl::nullopt;
+              return std::nullopt;
             });
       }
 
@@ -856,16 +854,16 @@ class XdsClientTest : public ::testing::Test {
   }
 
   // Gets the latest request sent to the fake xDS server.
-  absl::optional<DiscoveryRequest> WaitForRequest(
+  std::optional<DiscoveryRequest> WaitForRequest(
       FakeXdsTransportFactory::FakeStreamingCall* stream,
       SourceLocation location = SourceLocation()) {
     auto message = stream->WaitForMessageFromClient();
-    if (!message.has_value()) return absl::nullopt;
+    if (!message.has_value()) return std::nullopt;
     DiscoveryRequest request;
     bool success = request.ParseFromString(*message);
     EXPECT_TRUE(success) << "Failed to deserialize DiscoveryRequest at "
                          << location.file() << ":" << location.line();
-    if (!success) return absl::nullopt;
+    if (!success) return std::nullopt;
     return std::move(request);
   }
 
@@ -4834,11 +4832,11 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource1 = watcher1->WaitForNextResourceAndHandle();
-  ASSERT_NE(resource1, absl::nullopt);
+  ASSERT_NE(resource1, std::nullopt);
   EXPECT_EQ(resource1->resource->name, "foo1");
   EXPECT_EQ(resource1->resource->value, 6);
   auto resource2 = watcher2->WaitForNextResourceAndHandle();
-  ASSERT_NE(resource2, absl::nullopt);
+  ASSERT_NE(resource2, std::nullopt);
   EXPECT_EQ(resource2->resource->name, "foo2");
   EXPECT_EQ(resource2->resource->value, 10);
   // XdsClient should have sent an ACK message to the xDS server.
@@ -4854,10 +4852,10 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
   resource2->read_delay_handle.reset();
   EXPECT_TRUE(stream->WaitForReadsStarted(2));
   resource1 = watcher1->WaitForNextResourceAndHandle();
-  ASSERT_NE(resource1, absl::nullopt);
+  ASSERT_NE(resource1, std::nullopt);
   EXPECT_EQ(resource1->resource->name, "foo1");
   EXPECT_EQ(resource1->resource->value, 8);
-  EXPECT_EQ(watcher2->WaitForNextResourceAndHandle(), absl::nullopt);
+  EXPECT_EQ(watcher2->WaitForNextResourceAndHandle(), std::nullopt);
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());

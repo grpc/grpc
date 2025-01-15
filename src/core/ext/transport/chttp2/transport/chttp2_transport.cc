@@ -36,6 +36,7 @@
 #include <limits>
 #include <memory>
 #include <new>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -54,7 +55,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -3150,7 +3150,7 @@ static void post_benign_reclaimer(grpc_chttp2_transport* t) {
     t->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
         [t = t->Ref()](
-            absl::optional<grpc_core::ReclamationSweep> sweep) mutable {
+            std::optional<grpc_core::ReclamationSweep> sweep) mutable {
           if (sweep.has_value()) {
             auto* tp = t.get();
             tp->active_reclamation = std::move(*sweep);
@@ -3169,7 +3169,7 @@ static void post_destructive_reclaimer(grpc_chttp2_transport* t) {
     t->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kDestructive,
         [t = t->Ref()](
-            absl::optional<grpc_core::ReclamationSweep> sweep) mutable {
+            std::optional<grpc_core::ReclamationSweep> sweep) mutable {
           if (sweep.has_value()) {
             auto* tp = t.get();
             tp->active_reclamation = std::move(*sweep);

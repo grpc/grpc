@@ -75,7 +75,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   call_ = channel->CreateCall(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
       factory_->interested_parties(), Slice::FromStaticString(method),
-      /*authority=*/absl::nullopt, Timestamp::InfFuture(),
+      /*authority=*/std::nullopt, Timestamp::InfFuture(),
       /*registered_method=*/true);
   CHECK_NE(call_, nullptr);
   // Init data associated with the call.

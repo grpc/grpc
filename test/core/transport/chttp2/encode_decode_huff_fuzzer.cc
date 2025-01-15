@@ -19,20 +19,20 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 
 bool squelch = true;
 bool leak_check = true;
 
-std::string ToString(absl::optional<std::vector<uint8_t>> s) {
-  if (s == absl::nullopt) return "nullopt";
+std::string ToString(std::optional<std::vector<uint8_t>> s) {
+  if (s == std::nullopt) return "nullopt";
   return absl::StrCat("{", absl::StrJoin(*s, ","), "}");
 }
 

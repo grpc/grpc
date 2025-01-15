@@ -81,12 +81,12 @@ auto ChaoticGoodClientTransport::TransportWriteLoop(
   });
 }
 
-absl::optional<CallHandler> ChaoticGoodClientTransport::LookupStream(
+std::optional<CallHandler> ChaoticGoodClientTransport::LookupStream(
     uint32_t stream_id) {
   MutexLock lock(&mu_);
   auto it = stream_map_.find(stream_id);
   if (it == stream_map_.end()) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   return it->second;
 }
@@ -142,7 +142,7 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
             std::tuple<FrameHeader, BufferPair> frame_bytes) {
           const auto& frame_header = std::get<0>(frame_bytes);
           auto& buffers = std::get<1>(frame_bytes);
-          absl::optional<CallHandler> call_handler =
+          std::optional<CallHandler> call_handler =
               LookupStream(frame_header.stream_id);
           ServerFragmentFrame frame;
           absl::Status deserialize_status;

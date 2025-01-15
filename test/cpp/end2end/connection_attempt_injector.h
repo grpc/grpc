@@ -182,7 +182,7 @@ class ConnectionAttemptInjector final {
   static bool TcpConnectCancel(int64_t connection_handle);
 
   std::vector<Hold*> holds_ ABSL_GUARDED_BY(&mu_);
-  absl::optional<grpc_core::Duration> delay_ ABSL_GUARDED_BY(&mu_);
+  std::optional<grpc_core::Duration> delay_ ABSL_GUARDED_BY(&mu_);
 };
 
 }  // namespace testing
