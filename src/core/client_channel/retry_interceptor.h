@@ -34,7 +34,7 @@ class RetryState {
 
   // if nullopt --> commit & don't retry
   // if duration --> retry after duration
-  absl::optional<Duration> ShouldRetry(
+  std::optional<Duration> ShouldRetry(
       const ServerMetadata& md, bool committed,
       absl::FunctionRef<std::string()> lazy_attempt_debug_string);
   int num_attempts_completed() const { return num_attempts_completed_; }
@@ -90,7 +90,7 @@ class RetryInterceptor : public Interceptor {
     RetryInterceptor* interceptor() { return interceptor_.get(); }
     // if nullopt --> commit & don't retry
     // if duration --> retry after duration
-    absl::optional<Duration> ShouldRetry(
+    std::optional<Duration> ShouldRetry(
         const ServerMetadata& md,
         absl::FunctionRef<std::string()> lazy_attempt_debug_string) {
       return retry_state_.ShouldRetry(md, request_buffer_.committed(),

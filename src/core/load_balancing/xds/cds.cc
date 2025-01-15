@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <type_traits>
@@ -35,7 +36,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -492,7 +492,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
       GetUpdatePriorityList(endpoint_config.endpoints.get());
   for (size_t priority = 0; priority < priority_list.size(); ++priority) {
     const auto& localities = priority_list[priority].localities;
-    absl::optional<size_t> child_number;
+    std::optional<size_t> child_number;
     // If one of the localities in this priority already existed, reuse its
     // child number.
     for (const auto& [locality_name, _] : localities) {

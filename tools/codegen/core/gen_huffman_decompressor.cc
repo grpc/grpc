@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <openssl/sha.h>
+
 #include <atomic>
 #include <cstdint>
 #include <fstream>
@@ -20,13 +22,13 @@
 #include <memory>
 #include <mutex>
 #include <numeric>
+#include <optional>
 #include <queue>
 #include <set>
 #include <string>
 #include <thread>
+#include <variant>
 #include <vector>
-
-#include <openssl/sha.h>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/ascii.h"
@@ -34,9 +36,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
-#include "absl/types/optional.h"
-#include <variant>
-
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 #include "src/core/util/env.h"
 #include "src/core/util/match.h"
@@ -509,12 +508,12 @@ class BuildCtx {
   int NewId() { return next_id_++; }
   int MaxBitsForTop() const { return max_bits_for_depth_[0]; }
 
-  absl::optional<std::string> PreviousNameForArtifact(std::string proposed_name,
-                                                      Hash hash) {
+  std::optional<std::string> PreviousNameForArtifact(std::string proposed_name,
+                                                     Hash hash) {
     auto it = arrays_.find(hash);
     if (it == arrays_.end()) {
       arrays_.emplace(hash, proposed_name);
-      return absl::nullopt;
+      return std::nullopt;
     }
     return it->second;
   }
@@ -526,7 +525,7 @@ class BuildCtx {
  private:
   void AddDoneCase(size_t n, size_t n_bits, bool all_ones_so_far, SymSet syms,
                    std::vector<uint8_t> emit, TableBuilder* table_builder,
-                   std::map<absl::optional<int>, int>* cases);
+                   std::map<std::optional<int>, int>* cases);
 
   const std::vector<int> max_bits_for_depth_;
   std::map<Hash, std::string> arrays_;
@@ -1311,7 +1310,7 @@ void BuildCtx::AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
       continue;
     }
     TableBuilder table_builder(this);
-    std::map<absl::optional<int>, int> cases;
+    std::map<std::optional<int>, int> cases;
     for (size_t n = 0; n < (1 << i); n++) {
       AddDoneCase(n, i, all_ones_so_far, maybe, {}, &table_builder, &cases);
     }
@@ -1351,8 +1350,8 @@ void BuildCtx::AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
 void BuildCtx::AddDoneCase(size_t n, size_t n_bits, bool all_ones_so_far,
                            SymSet syms, std::vector<uint8_t> emit,
                            TableBuilder* table_builder,
-                           std::map<absl::optional<int>, int>* cases) {
-  auto add_case = [cases](absl::optional<int> which) {
+                           std::map<std::optional<int>, int>* cases) {
+  auto add_case = [cases](std::optional<int> which) {
     auto it = cases->find(which);
     if (it == cases->end()) {
       it = cases->emplace(which, cases->size()).first;
@@ -1381,7 +1380,7 @@ void BuildCtx::AddDoneCase(size_t n, size_t n_bits, bool all_ones_so_far,
       return;
     }
   }
-  table_builder->Add(add_case(absl::nullopt), {}, 0);
+  table_builder->Add(add_case(std::nullopt), {}, 0);
 }
 
 void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,

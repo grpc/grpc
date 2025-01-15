@@ -28,11 +28,11 @@ namespace {
 // We then convert this struct to channel args, and feed it into the config to
 // keep things as they would be in production code.
 struct FuzzerChannelArgs {
-  absl::optional<int> alignment;
-  absl::optional<int> max_recv_chunk_size;
-  absl::optional<int> max_send_chunk_size;
-  absl::optional<int> inlined_payload_size_threshold;
-  absl::optional<bool> tracing_enabled;
+  std::optional<int> alignment;
+  std::optional<int> max_recv_chunk_size;
+  std::optional<int> max_send_chunk_size;
+  std::optional<int> inlined_payload_size_threshold;
+  std::optional<bool> tracing_enabled;
 
   ChannelArgs MakeChannelArgs() {
     ChannelArgs out;

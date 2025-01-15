@@ -34,7 +34,7 @@ TEST_F(EvaluateArgsTest, EmptyMetadata) {
   EXPECT_THAT(args.GetPath(), ::testing::IsEmpty());
   EXPECT_THAT(args.GetMethod(), ::testing::IsEmpty());
   EXPECT_THAT(args.GetAuthority(), ::testing::IsEmpty());
-  EXPECT_EQ(args.GetHeaderValue("some_key", nullptr), absl::nullopt);
+  EXPECT_EQ(args.GetHeaderValue("some_key", nullptr), std::nullopt);
 }
 
 TEST_F(EvaluateArgsTest, GetPathSuccess) {
@@ -59,7 +59,7 @@ TEST_F(EvaluateArgsTest, GetHeaderValueSuccess) {
   util_.AddPairToMetadata("key123", "value123");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   std::string concatenated_value;
-  absl::optional<absl::string_view> value =
+  std::optional<absl::string_view> value =
       args.GetHeaderValue("key123", &concatenated_value);
   ASSERT_TRUE(value.has_value());
   EXPECT_EQ(value.value(), "value123");
@@ -69,7 +69,7 @@ TEST_F(EvaluateArgsTest, GetHeaderValueAliasesHost) {
   util_.AddPairToMetadata(":authority", "test.google.com");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   std::string concatenated_value;
-  absl::optional<absl::string_view> value =
+  std::optional<absl::string_view> value =
       args.GetHeaderValue("host", &concatenated_value);
   ASSERT_TRUE(value.has_value());
   EXPECT_EQ(value.value(), "test.google.com");

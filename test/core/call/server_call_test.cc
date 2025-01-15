@@ -84,7 +84,7 @@ class ServerCallTest : public YodelTest {
     return client_initial_metadata;
   }
 
-  absl::optional<std::string> GetClientInitialMetadata(absl::string_view key) {
+  std::optional<std::string> GetClientInitialMetadata(absl::string_view key) {
     CHECK_NE(call_.load(std::memory_order_acquire), nullptr);
     return FindInMetadataArray(publish_initial_metadata_, key);
   }

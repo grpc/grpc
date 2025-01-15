@@ -41,7 +41,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
 #include "src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame_header.h"
@@ -101,8 +100,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   using StreamMap = absl::flat_hash_map<uint32_t, CallInitiator>;
 
   absl::Status NewStream(uint32_t stream_id, CallInitiator call_initiator);
-  absl::optional<CallInitiator> LookupStream(uint32_t stream_id);
-  absl::optional<CallInitiator> ExtractStream(uint32_t stream_id);
+  std::optional<CallInitiator> LookupStream(uint32_t stream_id);
+  std::optional<CallInitiator> ExtractStream(uint32_t stream_id);
   auto SendCallInitialMetadataAndBody(uint32_t stream_id,
                                       MpscSender<ServerFrame> outgoing_frames,
                                       CallInitiator call_initiator);
@@ -130,7 +129,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto DeserializeAndPushFragmentToExistingCall(
       FrameHeader frame_header, BufferPair buffers,
       ChaoticGoodTransport& transport);
-  auto MaybePushFragmentIntoCall(absl::optional<CallInitiator> call_initiator,
+  auto MaybePushFragmentIntoCall(std::optional<CallInitiator> call_initiator,
                                  absl::Status error, ClientFragmentFrame frame);
   auto PushFragmentIntoCall(CallInitiator call_initiator,
                             ClientFragmentFrame frame);

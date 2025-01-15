@@ -92,7 +92,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
       // Following fields are protected by WorkSerializer.
       RefCountedPtr<HandshakeManager> handshake_mgr_;
       // State for enforcing handshake timeout on receiving HTTP/2 settings.
-      absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
           timer_handle_;
       grpc_closure on_receive_settings_;
     };

@@ -264,7 +264,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
           }
           continue;
         }
-        absl::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
+        std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
             filter_impl->GenerateFilterConfig(name, context,
                                               std::move(*extension), errors);
         if (filter_config.has_value()) {
@@ -461,7 +461,7 @@ XdsListenerResource::DownstreamTlsContext DownstreamTlsContextParse(
   return downstream_tls_context;
 }
 
-absl::optional<XdsListenerResource::FilterChainMap::CidrRange> CidrRangeParse(
+std::optional<XdsListenerResource::FilterChainMap::CidrRange> CidrRangeParse(
     const envoy_config_core_v3_CidrRange* cidr_range_proto,
     ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".address_prefix");
@@ -471,7 +471,7 @@ absl::optional<XdsListenerResource::FilterChainMap::CidrRange> CidrRangeParse(
   auto address = StringToSockaddr(address_prefix, /*port=*/0);
   if (!address.ok()) {
     errors->AddError(address.status().message());
-    return absl::nullopt;
+    return std::nullopt;
   }
   cidr_range.address = *address;
   cidr_range.prefix_len = 0;
@@ -490,7 +490,7 @@ absl::optional<XdsListenerResource::FilterChainMap::CidrRange> CidrRangeParse(
   return cidr_range;
 }
 
-absl::optional<FilterChain::FilterChainMatch> FilterChainMatchParse(
+std::optional<FilterChain::FilterChainMatch> FilterChainMatchParse(
     const envoy_config_listener_v3_FilterChainMatch* filter_chain_match_proto,
     ValidationErrors* errors) {
   FilterChain::FilterChainMatch filter_chain_match;
@@ -560,11 +560,11 @@ absl::optional<FilterChain::FilterChainMatch> FilterChainMatchParse(
         UpbStringToStdString(application_protocols[i]));
   }
   // Return result.
-  if (errors->size() != original_error_size) return absl::nullopt;
+  if (errors->size() != original_error_size) return std::nullopt;
   return filter_chain_match;
 }
 
-absl::optional<FilterChain> FilterChainParse(
+std::optional<FilterChain> FilterChainParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_listener_v3_FilterChain* filter_chain_proto,
     ValidationErrors* errors) {
@@ -617,23 +617,23 @@ absl::optional<FilterChain> FilterChainParse(
         DownstreamTlsContextParse(context, transport_socket, errors);
   }
   // Return result.
-  if (errors->size() != original_error_size) return absl::nullopt;
+  if (errors->size() != original_error_size) return std::nullopt;
   return filter_chain;
 }
 
-absl::optional<std::string> AddressParse(
+std::optional<std::string> AddressParse(
     const envoy_config_core_v3_Address* address_proto,
     ValidationErrors* errors) {
   if (address_proto == nullptr) {
     errors->AddError("field not present");
-    return absl::nullopt;
+    return std::nullopt;
   }
   ValidationErrors::ScopedField field(errors, ".socket_address");
   const auto* socket_address =
       envoy_config_core_v3_Address_socket_address(address_proto);
   if (socket_address == nullptr) {
     errors->AddError("field not present");
-    return absl::nullopt;
+    return std::nullopt;
   }
   {
     ValidationErrors::ScopedField field(errors, ".protocol");
@@ -646,7 +646,7 @@ absl::optional<std::string> AddressParse(
   uint32_t port = envoy_config_core_v3_SocketAddress_port_value(socket_address);
   if (port > 65535) {
     errors->AddError("invalid port");
-    return absl::nullopt;
+    return std::nullopt;
   }
   return JoinHostPort(
       UpbStringToAbsl(
@@ -662,7 +662,7 @@ struct InternalFilterChainMap {
       std::map<std::string, XdsListenerResource::FilterChainMap::SourceIp>;
   using ConnectionSourceTypesArray = std::array<SourceIpMap, 3>;
   struct DestinationIp {
-    absl::optional<XdsListenerResource::FilterChainMap::CidrRange> prefix_range;
+    std::optional<XdsListenerResource::FilterChainMap::CidrRange> prefix_range;
     bool transport_protocol_raw_buffer_provided = false;
     ConnectionSourceTypesArray source_types_array;
   };

@@ -23,6 +23,7 @@
 #include <stdint.h>
 
 #include <atomic>
+#include <optional>
 #include <string>
 
 #include "absl/strings/string_view.h"

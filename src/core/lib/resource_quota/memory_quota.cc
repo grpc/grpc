@@ -178,7 +178,7 @@ struct ReclaimerQueue::State {
 
 void ReclaimerQueue::Handle::Orphan() {
   if (auto* sweep = sweep_.exchange(nullptr, std::memory_order_acq_rel)) {
-    sweep->RunAndDelete(absl::nullopt);
+    sweep->RunAndDelete(std::nullopt);
   }
   Unref();
 }
@@ -304,7 +304,7 @@ size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
   }
 }
 
-absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
+std::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
     MemoryRequest request) {
   // How much memory should we request? (see the scaling below)
   size_t scaled_size_over_min = request.max() - request.min();

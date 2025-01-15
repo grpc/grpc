@@ -23,11 +23,11 @@
 #include <grpc/support/time.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"

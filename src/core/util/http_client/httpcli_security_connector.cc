@@ -25,13 +25,13 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -173,7 +173,7 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
       LOG(ERROR) << "Could not get default pem root certs.";
       return nullptr;
     }
-    absl::optional<std::string> target_string =
+    std::optional<std::string> target_string =
         args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)
             .value_or(target);
     return httpcli_ssl_channel_security_connector_create(

@@ -19,9 +19,9 @@
 
 #include <memory>
 #include <new>
+#include <optional>
 
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -149,7 +149,7 @@ CORE_END2END_TEST(RetryTest, RetryRecvTrailingMetadataError) {
       "}"));
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingMessage server_message;
   IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
@@ -161,8 +161,8 @@ CORE_END2END_TEST(RetryTest, RetryRecvTrailingMetadataError) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})

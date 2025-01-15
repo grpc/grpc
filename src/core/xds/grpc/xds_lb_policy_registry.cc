@@ -21,12 +21,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
 
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h"
 #include "envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.h"

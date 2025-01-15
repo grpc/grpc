@@ -120,7 +120,7 @@ grpc_error_handle grpc_error_set_int(grpc_error_handle src,
 
 bool grpc_error_get_int(grpc_error_handle error,
                         grpc_core::StatusIntProperty which, intptr_t* p) {
-  absl::optional<intptr_t> value = grpc_core::StatusGetInt(error, which);
+  std::optional<intptr_t> value = grpc_core::StatusGetInt(error, which);
   if (value.has_value()) {
     *p = *value;
     return true;
@@ -181,7 +181,7 @@ bool grpc_error_get_str(grpc_error_handle error,
       return true;
     }
   } else {
-    absl::optional<std::string> value = grpc_core::StatusGetStr(error, which);
+    std::optional<std::string> value = grpc_core::StatusGetStr(error, which);
     if (value.has_value()) {
       *s = std::move(*value);
       return true;

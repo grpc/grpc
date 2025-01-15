@@ -31,6 +31,7 @@
 #include <functional>
 #include <list>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -42,7 +43,6 @@
 #include "absl/random/random.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -228,7 +228,7 @@ class Server : public ServerInterface,
 
     // Adds a LogicalConnection to the listener and updates the channel args if
     // needed, and returns ChannelArgs if successful.
-    absl::optional<ChannelArgs> AddLogicalConnection(
+    std::optional<ChannelArgs> AddLogicalConnection(
         OrphanablePtr<ListenerInterface::LogicalConnection> connection,
         const ChannelArgs& args, grpc_endpoint* endpoint)
         ABSL_LOCKS_EXCLUDED(mu_);
@@ -449,7 +449,7 @@ class Server : public ServerInterface,
     // The index into Server::cqs_ of the CQ used as a starting point for
     // where to publish new incoming calls.
     size_t cq_idx_;
-    absl::optional<std::list<ChannelData*>::iterator> list_position_;
+    std::optional<std::list<ChannelData*>::iterator> list_position_;
     grpc_closure finish_destroy_channel_closure_;
     intptr_t channelz_socket_uuid_;
   };
@@ -513,8 +513,8 @@ class Server : public ServerInterface,
 
     std::atomic<CallState> state_{CallState::NOT_STARTED};
 
-    absl::optional<Slice> path_;
-    absl::optional<Slice> host_;
+    std::optional<Slice> path_;
+    std::optional<Slice> host_;
     Timestamp deadline_ = Timestamp::InfFuture();
 
     grpc_completion_queue* cq_new_ = nullptr;
