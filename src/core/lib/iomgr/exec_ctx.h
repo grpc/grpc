@@ -241,7 +241,7 @@ class GRPC_DLL ExecCtx : public latent_see::ParentScope {
   CombinerData combiner_data_ = {nullptr, nullptr};
   uintptr_t flags_;
 
-  absl::optional<ScopedTimeCache> time_cache_;
+  std::optional<ScopedTimeCache> time_cache_;
 
 #if !defined(_WIN32) || !defined(_DLL)
   static thread_local ExecCtx* exec_ctx_;

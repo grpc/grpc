@@ -97,7 +97,6 @@ grpc_fuzzer(
     srcs = ["decode_huff_fuzzer.cc"],
     corpus = "decode_huff_corpus",
     external_deps = [
-        "absl/types:optional",
         "absl/strings",
     ],
     language = "C++",
@@ -114,7 +113,6 @@ grpc_fuzzer(
     srcs = ["encode_decode_huff_fuzzer.cc"],
     corpus = "encode_decode_huff_corpus",
     external_deps = [
-        "absl/types:optional",
         "absl/strings",
     ],
     language = "C++",

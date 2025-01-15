@@ -27,7 +27,6 @@ grpc_cc_library(
     hdrs = ["memstats.h"],
     external_deps = [
         "absl/log:check",
-        "absl/types:optional",
     ],
     tags = [
         "bazel_only",

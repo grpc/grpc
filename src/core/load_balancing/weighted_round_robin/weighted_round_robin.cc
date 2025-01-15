@@ -24,6 +24,7 @@
 #include <atomic>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <type_traits>
@@ -41,7 +42,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -267,7 +267,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
           const ChannelArgs& args) override;
 
       // Called when the child policy reports a connectivity state update.
-      void OnStateUpdate(absl::optional<grpc_connectivity_state> old_state,
+      void OnStateUpdate(std::optional<grpc_connectivity_state> old_state,
                          grpc_connectivity_state new_state,
                          const absl::Status& status) override;
 
@@ -300,7 +300,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
     // Updates the counters of children in each state when a
     // child transitions from old_state to new_state.
     void UpdateStateCountersLocked(
-        absl::optional<grpc_connectivity_state> old_state,
+        std::optional<grpc_connectivity_state> old_state,
         grpc_connectivity_state new_state);
 
     // Ensures that the right child list is used and then updates
@@ -383,7 +383,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
         ABSL_GUARDED_BY(&scheduler_mu_);
 
     Mutex timer_mu_ ABSL_ACQUIRED_BEFORE(&scheduler_mu_);
-    absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+    std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
         timer_handle_ ABSL_GUARDED_BY(&timer_mu_);
 
     // Used when falling back to RR.
@@ -852,7 +852,7 @@ WeightedRoundRobin::WrrEndpointList::WrrEndpoint::CreateSubchannel(
 }
 
 void WeightedRoundRobin::WrrEndpointList::WrrEndpoint::OnStateUpdate(
-    absl::optional<grpc_connectivity_state> old_state,
+    std::optional<grpc_connectivity_state> old_state,
     grpc_connectivity_state new_state, const absl::Status& status) {
   auto* wrr_endpoint_list = endpoint_list<WrrEndpointList>();
   auto* wrr = policy<WeightedRoundRobin>();
@@ -899,7 +899,7 @@ void WeightedRoundRobin::WrrEndpointList::WrrEndpoint::OnStateUpdate(
 //
 
 void WeightedRoundRobin::WrrEndpointList::UpdateStateCountersLocked(
-    absl::optional<grpc_connectivity_state> old_state,
+    std::optional<grpc_connectivity_state> old_state,
     grpc_connectivity_state new_state) {
   // We treat IDLE the same as CONNECTING, since it will immediately
   // transition into that state anyway.

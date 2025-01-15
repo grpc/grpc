@@ -24,6 +24,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -31,7 +32,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -75,7 +75,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     using StreamingCall::Ref;  // Make it public.
 
     bool HaveMessageFromClient();
-    absl::optional<std::string> WaitForMessageFromClient();
+    std::optional<std::string> WaitForMessageFromClient();
 
     // If FakeXdsTransportFactory::SetAutoCompleteMessagesFromClient()
     // was called to set the value to false before the creation of the

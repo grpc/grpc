@@ -1686,20 +1686,20 @@ class CallFilters {
               [this]() {
                 return Map(
                     MetadataExecutor<
-                        absl::optional<ServerMetadataHandle>,
+                        std::optional<ServerMetadataHandle>,
                         ServerMetadataHandle,
                         &CallFilters::push_server_initial_metadata_,
                         &filters_detail::StackData::server_initial_metadata,
                         &CallState::FinishPullServerInitialMetadata,
                         StacksVector::const_reverse_iterator>(
                         this, stacks_.crbegin(), stacks_.crend()),
-                    [](ValueOrFailure<absl::optional<ServerMetadataHandle>> r) {
+                    [](ValueOrFailure<std::optional<ServerMetadataHandle>> r) {
                       if (r.ok()) return std::move(*r);
-                      return absl::optional<ServerMetadataHandle>{};
+                      return std::optional<ServerMetadataHandle>{};
                     });
               },
               []() {
-                return Immediate(absl::optional<ServerMetadataHandle>{});
+                return Immediate(std::optional<ServerMetadataHandle>{});
               });
         });
   }
