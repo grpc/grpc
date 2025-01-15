@@ -50,11 +50,6 @@
   expiry: 2025/02/01
   owner: roth@google.com
   test_tags: []
-- name: chaotic_good_legacy_protocol
-  description: If set, use the first version of the chaotic-good protocol when that protocol is enabled.
-  expiry: 2025/01/15
-  owner: ctiller@google.com
-  test_tags: [core_end2end_test]
 - name: disable_buffer_hint_on_high_memory_pressure
   description:
     Disable buffer hint flag parsing in the transport under high memory pressure.

@@ -19,7 +19,6 @@
 EXPERIMENT_ENABLES = {
     "backoff_cap_initial_at_max": "backoff_cap_initial_at_max",
     "call_tracer_in_transport": "call_tracer_in_transport",
-    "chaotic_good_legacy_protocol": "chaotic_good_legacy_protocol",
     "disable_buffer_hint_on_high_memory_pressure": "disable_buffer_hint_on_high_memory_pressure",
     "event_engine_application_callbacks": "event_engine_application_callbacks",
     "event_engine_callback_cq": "event_engine_application_callbacks,event_engine_callback_cq",
@@ -63,7 +62,6 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "chaotic_good_legacy_protocol",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
@@ -129,7 +127,6 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "chaotic_good_legacy_protocol",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
@@ -181,7 +178,6 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "chaotic_good_legacy_protocol",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
