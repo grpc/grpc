@@ -153,7 +153,7 @@ class FoldAccumulator(object):
             self.fold = [i]
 
     def _finish_fold(self):
-      #print(f"// fold={self.fold}", file=f)
+      print(f"// fold={self.fold}", file=f)
       if len(self.fold) == 1:
           if self.fold[0] != -1:
               self.type_args.append(f"F{self.fold[0]}")
@@ -178,7 +178,7 @@ class FoldAccumulator(object):
               )
 
     def finish(self):
-      #print(f"// final fold={self.fold}", file=f)
+      print(f"// final fold={self.fold}", file=f)
       if self.fold[0] != -1:
           self.type_args.append(f"F{self.fold[0]}")
           self.instantiate_args.append(f"std::forward<F{self.fold[0]}>(f{self.fold[0]})")
@@ -226,18 +226,27 @@ def gen_opt_seq_state(n, f):
     )
     text = []
     uses_types_alias = False
+    for i in range(n-1, 0, -1):
+      text.append(f"  {'else' if i != n-1 else ''} if constexpr ((kInstantBits & {bin((1<<i)-1)}) == {bin((1<<i)-1)}) {{")
+      if i == n-1:
+        left = "std::forward<P>(p)"
+      else:
+        left = f"FoldSeqStateImpl<Traits, (kInstantBits >> {i})>(std::forward<P>(p), {','.join(f'std::forward<F{j}>(f{j})' for j in range(0, n-1-i))}, whence)"
+      text.append(f"    return SeqMap<Traits>({left}, {','.join(f'std::forward<F{j}>(f{j})' for j in range(n-1-i, n-1))});")
+      text.append("  }")
     for i in range(0, 1 << (n - 1)):
+        if (i & 1) != 0: continue
         acc = FoldAccumulator(f)
         for j in range(n - 1):
-            acc.add(j, i & (1 << j))
+            acc.add(j, i & (1 << (n-2-j)))
         ret = acc.finish()
-        text.append(f"  if constexpr (kInstantBits == {bin(i)}) {{")
+        text.append(f"  else if constexpr (kInstantBits == {bin(i)}) {{")
         text.append(f"    return {ret};")
         text.append("  }")
         if acc.uses_types_alias:
             uses_types_alias = True
     if uses_types_alias:
-        print(f"  using Types = SeqStateTypes<Traits, P, {fs}>;", file=f)
+        text = [f"  using Types = SeqStateTypes<Traits, P, {fs}>;"] + text
     for line in text:
         print(line, file=f)
     print("}", file=f)
@@ -252,7 +261,7 @@ def gen_opt_seq_state(n, f):
     )
     print(f"  using Types = SeqStateTypes<Traits, P, {fs}>;", file=f)
     instant_bits = " | ".join(
-        f"(Types::NextFactory{i}::kInstantaneousPromise? {1<<i} : 0)"
+        f"(Types::NextFactory{i}::kInstantaneousPromise? {1<<(n-2-i)} : 0)"
         for i in range(0, n - 1)
     )
     print(f"  static constexpr uint32_t kInstantBits = {instant_bits};", file=f)
@@ -261,6 +270,43 @@ def gen_opt_seq_state(n, f):
         file=f,
     )
     print("}", file=f)
+
+
+def gen_opt_seq_state_v2(n, f):
+  typename_fs = ", ".join(f"typename F{i}" for i in range(n - 1))
+  args_fs = ", ".join(f"F{i}&& f{i}" for i in range(n - 1))
+  fs = ", ".join(f"F{i}" for i in range(n - 1))
+  fwd_fs = ", ".join(f"std::forward<F{i}>(f{i})" for i in range(n - 1))
+
+  print(
+      f"template <template <typename> class Traits, uint32_t kInstantBits, typename P, {typename_fs}>",
+      file=f,
+  )
+  print(
+      f"GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqStateImpl(P&& p, {args_fs}, DebugLocation whence) {{",
+      file=f,
+  )
+  print("}", file=f)
+
+  print(
+      f"template <template <typename> class Traits, typename P, {typename_fs}>",
+      file=f,
+  )
+  print(
+      f"GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, {args_fs}, DebugLocation whence) {{",
+      file=f,
+  )
+  print(f"  using Types = SeqStateTypes<Traits, P, {fs}>;", file=f)
+  instant_bits = " | ".join(
+      f"(Types::NextFactory{i}::kInstantaneousPromise? {1<<(n-2-i)} : 0)"
+      for i in range(0, n - 1)
+  )
+  print(f"  static constexpr uint32_t kInstantBits = {instant_bits};", file=f)
+  print(
+      f"  return FoldSeqStateImpl<Traits, kInstantBits>(std::forward<P>(p), {fwd_fs}, whence);",
+      file=f,
+  )
+  print("}", file=f)
 
 
 with open("src/core/lib/promise/detail/seq_state.h", "w") as f:
