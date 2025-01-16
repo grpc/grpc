@@ -29,6 +29,9 @@ const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_callv3_client_auth_filter =
+    "Use the CallV3 client auth filter.";
+const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "Disable buffer hint flag parsing in the transport under high memory "
     "pressure.";
@@ -62,6 +65,10 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_keep_alive_ping_timer_batch =
+    "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
+    "callback to re-schedule itself to the next ping interval.";
+const char* const additional_constraints_keep_alive_ping_timer_batch = "{}";
 const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
@@ -122,10 +129,6 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
-const char* const description_time_caching_in_party =
-    "Disable time caching in exec_ctx, and enable it only in a single party "
-    "execution.";
-const char* const additional_constraints_time_caching_in_party = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
@@ -152,6 +155,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
+    {"callv3_client_auth_filter", description_callv3_client_auth_filter,
+     additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"disable_buffer_hint_on_high_memory_pressure",
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
@@ -175,6 +180,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
+     additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
+     true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
@@ -214,8 +222,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
-    {"time_caching_in_party", description_time_caching_in_party,
-     additional_constraints_time_caching_in_party, nullptr, 0, true, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
@@ -239,6 +245,9 @@ const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_callv3_client_auth_filter =
+    "Use the CallV3 client auth filter.";
+const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "Disable buffer hint flag parsing in the transport under high memory "
     "pressure.";
@@ -272,6 +281,10 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_keep_alive_ping_timer_batch =
+    "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
+    "callback to re-schedule itself to the next ping interval.";
+const char* const additional_constraints_keep_alive_ping_timer_batch = "{}";
 const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
@@ -332,10 +345,6 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
-const char* const description_time_caching_in_party =
-    "Disable time caching in exec_ctx, and enable it only in a single party "
-    "execution.";
-const char* const additional_constraints_time_caching_in_party = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
@@ -362,6 +371,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
+    {"callv3_client_auth_filter", description_callv3_client_auth_filter,
+     additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"disable_buffer_hint_on_high_memory_pressure",
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
@@ -385,6 +396,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
+     additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
+     true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
@@ -424,8 +438,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
-    {"time_caching_in_party", description_time_caching_in_party,
-     additional_constraints_time_caching_in_party, nullptr, 0, true, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
@@ -449,6 +461,9 @@ const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_callv3_client_auth_filter =
+    "Use the CallV3 client auth filter.";
+const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "Disable buffer hint flag parsing in the transport under high memory "
     "pressure.";
@@ -482,6 +497,10 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_keep_alive_ping_timer_batch =
+    "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
+    "callback to re-schedule itself to the next ping interval.";
+const char* const additional_constraints_keep_alive_ping_timer_batch = "{}";
 const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
@@ -542,10 +561,6 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
-const char* const description_time_caching_in_party =
-    "Disable time caching in exec_ctx, and enable it only in a single party "
-    "execution.";
-const char* const additional_constraints_time_caching_in_party = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
@@ -572,6 +587,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
+    {"callv3_client_auth_filter", description_callv3_client_auth_filter,
+     additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"disable_buffer_hint_on_high_memory_pressure",
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
@@ -595,6 +612,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
+     additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
+     true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
@@ -634,8 +654,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
-    {"time_caching_in_party", description_time_caching_in_party,
-     additional_constraints_time_caching_in_party, nullptr, 0, true, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",

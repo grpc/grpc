@@ -19,6 +19,7 @@
 EXPERIMENT_ENABLES = {
     "backoff_cap_initial_at_max": "backoff_cap_initial_at_max",
     "call_tracer_in_transport": "call_tracer_in_transport",
+    "callv3_client_auth_filter": "callv3_client_auth_filter",
     "disable_buffer_hint_on_high_memory_pressure": "disable_buffer_hint_on_high_memory_pressure",
     "event_engine_application_callbacks": "event_engine_application_callbacks",
     "event_engine_callback_cq": "event_engine_application_callbacks,event_engine_callback_cq",
@@ -27,6 +28,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",
     "event_engine_listener": "event_engine_listener",
     "free_large_allocator": "free_large_allocator",
+    "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
@@ -42,7 +44,6 @@ EXPERIMENT_ENABLES = {
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
-    "time_caching_in_party": "time_caching_in_party",
     "trace_record_callops": "trace_record_callops",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "work_serializer_dispatch": "work_serializer_dispatch",
@@ -62,6 +63,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "callv3_client_auth_filter",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
@@ -127,6 +129,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "callv3_client_auth_filter",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",
@@ -178,6 +181,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "callv3_client_auth_filter",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "posix_ee_skip_grpc_init",

@@ -41,7 +41,6 @@ class XdsResourceType {
   struct DecodeContext {
     XdsClient* client;
     const XdsBootstrap::XdsServer& server;
-    TraceFlag* tracer;
     upb_DefPool* symtab;
     upb_Arena* arena;
   };
