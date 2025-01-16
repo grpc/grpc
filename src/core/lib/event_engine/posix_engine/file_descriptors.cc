@@ -47,7 +47,7 @@
 #define IF_EPOLL(signature, body) \
   signature { grpc_core::Crash("unimplemented"); }
 #endif  // GRPC_LINUX_EPOLL
-#else  // GRPC_POSIX_SOCKET
+#else   // GRPC_POSIX_SOCKET
 #include "src/core/util/crash.h"
 #define IF_POSIX_SOCKET(signature, body) \
   signature { grpc_core::Crash("unimplemented"); }
