@@ -64,7 +64,7 @@ std::unique_ptr<XdsMetadataValue> ParseGcpAuthnAudience(
     errors->AddError("could not parse audience metadata");
     return nullptr;
   }
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_extensions_filters_http_gcp_authn_v3_Audience_getmsgdef(
             context.symtab);
@@ -99,7 +99,7 @@ std::unique_ptr<XdsMetadataValue> ParseAddress(
     errors->AddError("could not parse address metadata");
     return nullptr;
   }
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_config_core_v3_Address_getmsgdef(context.symtab);
     char buf[10240];

@@ -1234,15 +1234,14 @@ void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   auto it = json.object().find("childPolicy");
   if (it == json.object().end()) {
     errors->AddError("field not present");
+  } else if (auto child_policy_config =
+                 CoreConfiguration::Get()
+                     .lb_policy_registry()
+                     .ParseLoadBalancingConfig(it->second);
+             !child_policy_config.ok()) {
+    errors->AddError(child_policy_config.status().message());
   } else {
-    auto child_policy_config =
-        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-            it->second);
-    if (!child_policy_config.ok()) {
-      errors->AddError(child_policy_config.status().message());
-    } else {
-      child_config_ = std::move(*child_policy_config);
-    }
+    child_config_ = std::move(*child_policy_config);
   }
 }
 
