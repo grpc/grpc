@@ -1233,6 +1233,7 @@ libs:
   - src/core/util/uri.h
   - src/core/util/uuid_v4.h
   - src/core/util/validation_errors.h
+  - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - src/core/util/xxhash_inline.h
   - src/core/xds/grpc/certificate_provider_store.h
@@ -2755,6 +2756,7 @@ libs:
   - src/core/util/uri.h
   - src/core/util/uuid_v4.h
   - src/core/util/validation_errors.h
+  - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -4790,6 +4792,7 @@ libs:
   - src/core/util/unique_type_name.h
   - src/core/util/uri.h
   - src/core/util/validation_errors.h
+  - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -7153,6 +7156,7 @@ targets:
   - src/core/util/unique_type_name.h
   - src/core/util/uri.h
   - src/core/util/validation_errors.h
+  - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -9438,6 +9442,7 @@ targets:
   - gtest
   - absl/status:statusor
   - gpr
+  uses_polling: false
 - name: completion_queue_threading_test
   gtest: true
   build: test
@@ -9865,12 +9870,14 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/mock_event_engine.h
   src:
   - test/core/event_engine/default_engine_methods_test.cc
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: default_host_test
   gtest: true
   build: test
@@ -10671,12 +10678,14 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/mock_event_engine.h
   - test/core/event_engine/util/aborting_event_engine.h
   src:
   - test/core/event_engine/factory_test.cc
   deps:
   - gtest
   - grpc_test_util_unsecure
+  uses_polling: false
 - name: fake_resolver_test
   gtest: true
   build: test
@@ -21699,16 +21708,6 @@ targets:
   - absl/status:statusor
   - gpr
   uses_polling: false
-- name: smoke_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/event_engine/smoke_test.cc
-  deps:
-  - gtest
-  - grpc_test_util_unsecure
 - name: sockaddr_resolver_test
   gtest: true
   build: test
@@ -22509,6 +22508,7 @@ targets:
   - absl/status:statusor
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: test_core_iomgr_timer_heap_test
   gtest: true
   build: test
@@ -22863,6 +22863,7 @@ targets:
   - gtest
   - grpc
   - grpc_test_util_unsecure
+  uses_polling: false
 - name: thread_quota_test
   gtest: true
   build: test
@@ -23564,6 +23565,21 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
+  - absl/status:statusor
+  - gpr
+  uses_polling: false
+- name: wait_for_single_owner_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/time.h
+  - src/core/util/wait_for_single_owner.h
+  src:
+  - src/core/util/time.cc
+  - test/core/util/wait_for_single_owner_test.cc
+  deps:
+  - gtest
   - absl/status:statusor
   - gpr
   uses_polling: false
