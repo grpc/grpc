@@ -884,15 +884,13 @@ void XdsClusterImplLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   auto it = json.object().find("childPolicy");
   if (it == json.object().end()) {
     errors->AddError("field not present");
+  } else if (auto lb_config = CoreConfiguration::Get()
+                                  .lb_policy_registry()
+                                  .ParseLoadBalancingConfig(it->second);
+             !lb_config.ok()) {
+    errors->AddError(lb_config.status().message());
   } else {
-    auto lb_config =
-        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-            it->second);
-    if (!lb_config.ok()) {
-      errors->AddError(lb_config.status().message());
-    } else {
-      child_policy_ = std::move(*lb_config);
-    }
+    child_policy_ = std::move(*lb_config);
   }
 }
 
