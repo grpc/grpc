@@ -68,7 +68,7 @@ class ClientAuthFilter final : public ImplementChannelFilter<ClientAuthFilter> {
 
   // Early in the declaration order as auto return type is needed by Call.
   auto GetCallCredsMetadata(ClientMetadataHandle md) {
-    auto creds = GetCallCreds(*md);
+    auto creds = GetCallCreds();
     return If(
         creds.ok(),
         [this, &creds, md = std::move(md)]() mutable {
@@ -119,8 +119,7 @@ class ClientAuthFilter final : public ImplementChannelFilter<ClientAuthFilter> {
 
  private:
   void InstallContext();
-  absl::StatusOr<RefCountedPtr<grpc_call_credentials>> GetCallCreds(
-      ClientMetadata& md);
+  absl::StatusOr<RefCountedPtr<grpc_call_credentials>> GetCallCreds();
 
   // Contains refs to security connector and auth context.
   grpc_call_credentials::GetRequestMetadataArgs args_;

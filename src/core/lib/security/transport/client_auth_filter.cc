@@ -108,7 +108,7 @@ ClientAuthFilter::ClientAuthFilter(
     : args_{std::move(security_connector), std::move(auth_context)} {}
 
 absl::StatusOr<RefCountedPtr<grpc_call_credentials>>
-ClientAuthFilter::GetCallCreds(ClientMetadata& md) {
+ClientAuthFilter::GetCallCreds() {
   auto* ctx = GetContext<grpc_client_security_context>();
   grpc_call_credentials* channel_call_creds =
       args_.security_connector->mutable_request_metadata_creds();
