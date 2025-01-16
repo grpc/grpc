@@ -23,12 +23,6 @@ echo "Current dir ${PWD}"
 
 cd "examples/cpp" || exit 1
 
-export TMPDIR=$(mktemp -d)
-trap "rm -rf ${TMPDIR}" EXIT
-
-export SERVER_PORT=50051
-export UNIX_ADDR=abstract-unix-socket
-
 SERVER_PID=
 
 clean () {
