@@ -149,13 +149,14 @@ IF_POSIX_SOCKET(PosixResult FileDescriptors::Shutdown(const FileDescriptor& fd,
                                                       int how),
                 { return PosixResult::Wrap(shutdown(fd.fd(), how)); })
 
-IF_POSIX_SOCKET(PosixResult FileDescriptors::GetSockOpt(
-                    const FileDescriptor& fd, int level, int optname,
-                    void* optval, uint32_t* optlen),
-                {
-                  return PosixResult::Wrap(
-                      getsockopt(fd.fd(), level, optname, optval, optlen));
-                })
+IF_POSIX_SOCKET(
+    PosixResult FileDescriptors::GetSockOpt(const FileDescriptor& fd, int level,
+                                            int optname, void* optval,
+                                            void* optlen),
+    {
+      return PosixResult::Wrap(getsockopt(fd.fd(), level, optname, optval,
+                                          static_cast<socklen_t*>(optlen)));
+    })
 
 //
 // Epoll

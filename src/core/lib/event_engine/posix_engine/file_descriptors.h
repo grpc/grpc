@@ -18,7 +18,6 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include <cerrno>
-#include <cstdint>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
@@ -183,7 +182,7 @@ class FileDescriptors {
   PosixResult Ioctl(const FileDescriptor& fd, int op, void* arg);
   PosixResult Shutdown(const FileDescriptor& fd, int how);
   PosixResult GetSockOpt(const FileDescriptor& fd, int level, int optname,
-                         void* optval, uint32_t* optlen);
+                         void* optval, void* optlen);
 
   // Epoll
   PosixResult EpollCtlAdd(int epfd, const FileDescriptor& fd, void* data);
