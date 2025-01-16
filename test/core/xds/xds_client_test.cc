@@ -440,19 +440,16 @@ class XdsClientTest : public ::testing::Test {
       XdsResourceType::DecodeResult result;
       if (!json.ok()) {
         result.resource = json.status();
-      } else {
-        absl::StatusOr<ResourceStruct> foo =
-            LoadFromJson<ResourceStruct>(*json);
-        if (!foo.ok()) {
-          auto it = json->object().find("name");
-          if (it != json->object().end()) {
-            result.name = it->second.string();
-          }
-          result.resource = foo.status();
-        } else {
-          result.name = foo->name;
-          result.resource = std::make_unique<ResourceStruct>(std::move(*foo));
+      } else if (auto resource = LoadFromJson<ResourceStruct>(*json);
+                 !resource.ok()) {
+        if (auto it = json->object().find("name"); it != json->object().end()) {
+          result.name = it->second.string();
         }
+        result.resource = resource.status();
+      } else {
+        result.name = resource->name;
+        result.resource =
+            std::make_unique<ResourceStruct>(std::move(*resource));
       }
       return result;
     }
