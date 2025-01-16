@@ -124,7 +124,8 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
-    RecordReceivedMessage(const grpc_core::SliceBuffer& recv_message) {
+    RecordReceivedMessage(const grpc_core::SliceBuffer& recv_message,
+                          bool /*compressed*/) {
   RecordAnnotation(
       absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
 }

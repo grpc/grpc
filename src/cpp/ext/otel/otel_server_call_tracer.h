@@ -79,8 +79,8 @@ class OpenTelemetryPluginImpl::ServerCallTracer
   void RecordReceivedInitialMetadata(
       grpc_metadata_batch* recv_initial_metadata) override;
 
-  void RecordReceivedMessage(
-      const grpc_core::SliceBuffer& recv_message) override {
+  void RecordReceivedMessage(const grpc_core::SliceBuffer& recv_message,
+                             bool /*compressed*/) override {
     RecordAnnotation(
         absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
   }

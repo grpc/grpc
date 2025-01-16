@@ -118,9 +118,10 @@ class DelegatingClientCallTracer : public ClientCallTracer {
         tracer->RecordReceivedInitialMetadata(recv_initial_metadata);
       }
     }
-    void RecordReceivedMessage(const SliceBuffer& recv_message) override {
+    void RecordReceivedMessage(const SliceBuffer& recv_message,
+                               bool compressed) override {
       for (auto* tracer : tracers_) {
-        tracer->RecordReceivedMessage(recv_message);
+        tracer->RecordReceivedMessage(recv_message, compressed);
       }
     }
     void RecordReceivedDecompressedMessage(
@@ -264,9 +265,10 @@ class DelegatingServerCallTracer : public ServerCallTracer {
       tracer->RecordReceivedInitialMetadata(recv_initial_metadata);
     }
   }
-  void RecordReceivedMessage(const SliceBuffer& recv_message) override {
+  void RecordReceivedMessage(const SliceBuffer& recv_message,
+                             bool compressed) override {
     for (auto* tracer : tracers_) {
-      tracer->RecordReceivedMessage(recv_message);
+      tracer->RecordReceivedMessage(recv_message, compressed);
     }
   }
   void RecordReceivedDecompressedMessage(

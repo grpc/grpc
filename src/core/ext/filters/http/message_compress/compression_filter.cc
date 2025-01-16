@@ -169,7 +169,8 @@ absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
       << " alg=" << args.algorithm;
   auto* call_tracer = MaybeGetContext<CallTracerInterface>();
   if (call_tracer != nullptr) {
-    call_tracer->RecordReceivedMessage(*message->payload());
+    call_tracer->RecordReceivedMessage(
+        *message->payload(), message->flags() & GRPC_WRITE_INTERNAL_COMPRESS);
   }
   // Check max message length.
   if (args.max_recv_message_length.has_value() &&

@@ -88,8 +88,8 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
         const grpc_core::SliceBuffer& send_compressed_message) override;
     void RecordReceivedInitialMetadata(
         grpc_metadata_batch* /*recv_initial_metadata*/) override {}
-    void RecordReceivedMessage(
-        const grpc_core::SliceBuffer& recv_message) override;
+    void RecordReceivedMessage(const grpc_core::SliceBuffer& recv_message,
+                               bool /*compressed*/) override;
     void RecordReceivedDecompressedMessage(
         const grpc_core::SliceBuffer& recv_decompressed_message) override;
     void RecordReceivedTrailingMetadata(

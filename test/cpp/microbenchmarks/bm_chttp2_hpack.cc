@@ -68,7 +68,8 @@ class FakeCallTracer final : public CallTracerInterface {
       const SliceBuffer& send_compressed_message) override {}
   void RecordReceivedInitialMetadata(
       grpc_metadata_batch* recv_initial_metadata) override {}
-  void RecordReceivedMessage(const SliceBuffer& recv_message) override {}
+  void RecordReceivedMessage(const SliceBuffer& recv_message,
+                             bool /*compressed*/) override {}
   void RecordReceivedDecompressedMessage(
       const SliceBuffer& recv_decompressed_message) override {}
   void RecordCancel(grpc_error_handle cancel_error) override {}

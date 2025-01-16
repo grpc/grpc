@@ -104,7 +104,8 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
   // successfully received, i.e., without any error.
   virtual void RecordReceivedInitialMetadata(
       grpc_metadata_batch* recv_initial_metadata) = 0;
-  virtual void RecordReceivedMessage(const SliceBuffer& recv_message) = 0;
+  virtual void RecordReceivedMessage(const SliceBuffer& recv_message,
+                                     bool compressed) = 0;
   // Only invoked if message was actually decompressed.
   virtual void RecordReceivedDecompressedMessage(
       const SliceBuffer& recv_decompressed_message) = 0;
