@@ -520,7 +520,7 @@ void SetDefaultEventEngine(std::shared_ptr<EventEngine> engine);
 std::shared_ptr<EventEngine> GetDefaultEventEngine();
 
 /// Resets gRPC to use one of the default internal EventEngines for all *new*
-/// \a GetDefaultEventEngine requests, and blocks until all refs on the active
+/// \a GetDefaultEventEngine requests and blocks until all refs on the active
 /// default engine have been released (destroying that engine).
 ///
 /// If you called \a SetDefaultEventEngine, you must call either
