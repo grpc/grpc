@@ -63,9 +63,13 @@ static bool g_backup_polling_disabled;
 
 void grpc_client_channel_global_init_backup_polling() {
   // Disable backup polling if EventEngine is used everywhere.
+#ifdef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
+  g_backup_polling_disabled = false;
+#else
   g_backup_polling_disabled = grpc_core::IsEventEngineClientEnabled() &&
                               grpc_core::IsEventEngineListenerEnabled() &&
                               grpc_core::IsEventEngineDnsEnabled();
+#endif
   if (g_backup_polling_disabled) {
     return;
   }
