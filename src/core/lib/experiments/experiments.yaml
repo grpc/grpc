@@ -50,6 +50,11 @@
   expiry: 2025/02/01
   owner: roth@google.com
   test_tags: []
+- name: callv3_client_auth_filter
+  description: Use the CallV3 client auth filter.
+  expiry: 2025/06/01
+  owner: ctiller@google.com
+  test_tags: [core_end2end_test]
 - name: chaotic_good_legacy_protocol
   description: If set, use the first version of the chaotic-good protocol when that protocol is enabled.
   expiry: 2025/01/15
