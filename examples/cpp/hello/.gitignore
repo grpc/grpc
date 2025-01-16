@@ -1,0 +1,5 @@
+*.o
+*.pb.cc
+*.pb.h
+greeter_callback_client
+greeter_callback_server

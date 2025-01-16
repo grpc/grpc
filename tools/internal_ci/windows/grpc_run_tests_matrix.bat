@@ -47,6 +47,18 @@ cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DCMAKE_CXX_STANDARD=17 -DCMAKE_I
 cmake --build . --config Release --target install -j 4
 popd
 
+echo "Testing Hello"
+
+cd /d examples\cpp\hello
+mkdir "cmake\build"
+pushd "cmake\build"
+cmake -DCMAKE_INSTALL_PREFIX=%MY_INSTALL_DIR% ..\..
+cmake --build . --config Release -j 4
+
+popd
+
+echo "Done"
+
 @rem TODO(https://github.com/grpc/grpc/issues/28011): Remove once Windows Kokoro workers'
 @rem   Python installs have been upgraded. Currently, removing this line will cause
 @rem   run_tests.py to fail to spawn test subprocesses.
