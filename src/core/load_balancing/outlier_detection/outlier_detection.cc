@@ -696,17 +696,18 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
     // Remove any entries we no longer need in the subchannel map.
     for (auto it = subchannel_state_map_.begin();
          it != subchannel_state_map_.end();) {
-      if (current_addresses.find(it->first) == current_addresses.end()) {
+      auto& [address, subchannel_state] = *it;
+      if (current_addresses.find(address) == current_addresses.end()) {
         if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
           std::string address_str =
-              grpc_sockaddr_to_string(&it->first, false).value_or("<unknown>");
+              grpc_sockaddr_to_string(&address, false).value_or("<unknown>");
           LOG(INFO) << "[outlier_detection_lb " << this
                     << "] removing subchannel map entry " << address_str;
         }
         // Don't hold a ref to the corresponding EndpointState object,
         // because there could be subchannel wrappers keeping this alive
         // for a while, and we don't need them to do any call tracking.
-        it->second->set_endpoint_state(nullptr);
+        subchannel_state->set_endpoint_state(nullptr);
         it = subchannel_state_map_.erase(it);
       } else {
         ++it;
@@ -715,10 +716,13 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
     // Remove any entries we no longer need in the endpoint map.
     for (auto it = endpoint_state_map_.begin();
          it != endpoint_state_map_.end();) {
-      if (current_endpoints.find(it->first) == current_endpoints.end()) {
+      auto& endpoint_addresses = it->first;
+      if (current_endpoints.find(endpoint_addresses) ==
+          current_endpoints.end()) {
         GRPC_TRACE_LOG(outlier_detection_lb, INFO)
             << "[outlier_detection_lb " << this
-            << "] removing endpoint map entry " << it->first.ToString();
+            << "] removing endpoint map entry "
+            << endpoint_addresses.ToString();
         it = endpoint_state_map_.erase(it);
       } else {
         ++it;
@@ -871,16 +875,11 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
     endpoint_state->RotateBucket();
     // Gather data to run success rate algorithm or failure percentage
     // algorithm.
-    if (endpoint_state->ejection_time().has_value()) {
-      ++ejected_host_count;
-    }
+    if (endpoint_state->ejection_time().has_value()) ++ejected_host_count;
     std::optional<std::pair<double, uint64_t>> host_success_rate_and_volume =
         endpoint_state->GetSuccessRateAndVolume();
-    if (!host_success_rate_and_volume.has_value()) {
-      continue;
-    }
-    double success_rate = host_success_rate_and_volume->first;
-    uint64_t request_volume = host_success_rate_and_volume->second;
+    if (!host_success_rate_and_volume.has_value()) continue;
+    auto [success_rate, request_volume] = *host_success_rate_and_volume;
     if (config.success_rate_ejection.has_value()) {
       if (request_volume >= config.success_rate_ejection->request_volume) {
         success_rate_ejection_candidates[endpoint_state.get()] = success_rate;

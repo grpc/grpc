@@ -1488,9 +1488,10 @@ void RlsLb::Cache::OnCleanupTimer() {
   if (!cleanup_timer_handle_.has_value()) return;
   if (lb_policy_->is_shutdown_) return;
   for (auto it = map_.begin(); it != map_.end();) {
-    if (GPR_UNLIKELY(it->second->ShouldRemove() && it->second->CanEvict())) {
-      size_ -= it->second->Size();
-      it->second->TakeChildPolicyWrappers(&child_policy_wrappers_to_delete);
+    auto& entry = it->second;
+    if (GPR_UNLIKELY(entry->ShouldRemove() && entry->CanEvict())) {
+      size_ -= entry->Size();
+      entry->TakeChildPolicyWrappers(&child_policy_wrappers_to_delete);
       it = map_.erase(it);
     } else {
       ++it;
@@ -1512,12 +1513,13 @@ void RlsLb::Cache::MaybeShrinkSize(
     if (GPR_UNLIKELY(lru_it == lru_list_.end())) break;
     auto map_it = map_.find(*lru_it);
     CHECK(map_it != map_.end());
-    if (!map_it->second->CanEvict()) break;
+    auto& entry = map_it->second;
+    if (!entry->CanEvict()) break;
     GRPC_TRACE_LOG(rls_lb, INFO)
         << "[rlslb " << lb_policy_ << "] LRU eviction: removing entry "
-        << map_it->second.get() << " " << lru_it->ToString();
-    size_ -= map_it->second->Size();
-    map_it->second->TakeChildPolicyWrappers(child_policy_wrappers_to_delete);
+        << entry.get() << " " << lru_it->ToString();
+    size_ -= entry->Size();
+    entry->TakeChildPolicyWrappers(child_policy_wrappers_to_delete);
     map_.erase(map_it);
   }
   GRPC_TRACE_LOG(rls_lb, INFO)
