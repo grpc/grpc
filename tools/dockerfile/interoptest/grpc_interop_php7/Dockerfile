@@ -90,7 +90,7 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 #=================
 # PHP7 dependencies
 
-RUN apt-get update && apt-get install -y php7.4 php-pear && apt-get clean
+RUN apt-get update && apt-get install -y php7.4-dev php-pear && apt-get clean
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php
