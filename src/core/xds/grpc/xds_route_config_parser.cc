@@ -448,7 +448,6 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
 }
 
 XdsRouteConfigResource::RetryPolicy RetryPolicyParse(
-    const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RetryPolicy* retry_policy_proto,
     ValidationErrors* errors) {
   XdsRouteConfigResource::RetryPolicy retry_policy;
@@ -467,7 +466,7 @@ XdsRouteConfigResource::RetryPolicy RetryPolicyParse(
     } else if (code == "unavailable") {
       retry_policy.retry_on.Add(GRPC_STATUS_UNAVAILABLE);
     } else {
-      if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
+      if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
         LOG(INFO) << "Unsupported retry_on policy " << code;
       }
     }
@@ -528,20 +527,19 @@ std::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
       envoy_config_route_v3_RouteAction_max_stream_duration(route_action_proto);
   if (max_stream_duration != nullptr) {
     ValidationErrors::ScopedField field(errors, ".max_stream_duration");
-    const google_protobuf_Duration* duration =
-        envoy_config_route_v3_RouteAction_MaxStreamDuration_grpc_timeout_header_max(
-            max_stream_duration);
-    if (duration != nullptr) {
+    if (const google_protobuf_Duration* duration =
+            envoy_config_route_v3_RouteAction_MaxStreamDuration_grpc_timeout_header_max(
+                max_stream_duration);
+        duration != nullptr) {
       ValidationErrors::ScopedField field(errors, ".grpc_timeout_header_max");
       route_action.max_stream_duration = ParseDuration(duration, errors);
-    } else {
-      duration =
-          envoy_config_route_v3_RouteAction_MaxStreamDuration_max_stream_duration(
-              max_stream_duration);
-      if (duration != nullptr) {
-        ValidationErrors::ScopedField field(errors, ".max_stream_duration");
-        route_action.max_stream_duration = ParseDuration(duration, errors);
-      }
+    } else if (
+        duration =
+            envoy_config_route_v3_RouteAction_MaxStreamDuration_max_stream_duration(
+                max_stream_duration);
+        duration != nullptr) {
+      ValidationErrors::ScopedField field(errors, ".max_stream_duration");
+      route_action.max_stream_duration = ParseDuration(duration, errors);
     }
   }
   // hash_policy
@@ -624,7 +622,7 @@ std::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
       envoy_config_route_v3_RouteAction_retry_policy(route_action_proto);
   if (retry_policy != nullptr) {
     ValidationErrors::ScopedField field(errors, ".retry_policy");
-    route_action.retry_policy = RetryPolicyParse(context, retry_policy, errors);
+    route_action.retry_policy = RetryPolicyParse(retry_policy, errors);
   }
   // Host rewrite field.
   if (XdsAuthorityRewriteEnabled() &&
@@ -874,8 +872,7 @@ std::shared_ptr<const XdsRouteConfigResource> XdsRouteConfigResourceParse(
         envoy_config_route_v3_VirtualHost_retry_policy(virtual_hosts[i]);
     if (retry_policy != nullptr) {
       ValidationErrors::ScopedField field(errors, ".retry_policy");
-      virtual_host_retry_policy =
-          RetryPolicyParse(context, retry_policy, errors);
+      virtual_host_retry_policy = RetryPolicyParse(retry_policy, errors);
     }
     // Parse routes.
     ValidationErrors::ScopedField field2(errors, ".routes");
@@ -907,7 +904,7 @@ namespace {
 void MaybeLogRouteConfiguration(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_config_route_v3_RouteConfiguration_getmsgdef(context.symtab);
     char buf[10240];
@@ -942,14 +939,14 @@ XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
     absl::Status status =
         errors.status(absl::StatusCode::kInvalidArgument,
                       "errors validating RouteConfiguration resource");
-    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(ERROR) << "[xds_client " << context.client
                  << "] invalid RouteConfiguration " << *result.name << ": "
                  << status;
     }
     result.resource = std::move(status);
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(INFO) << "[xds_client " << context.client
                 << "] parsed RouteConfiguration " << *result.name << ": "
                 << rds_update->ToString();
