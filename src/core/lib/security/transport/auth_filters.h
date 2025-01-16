@@ -53,6 +53,8 @@ class ClientAuthFilter final : public ImplementChannelFilter<ClientAuthFilter> {
       const ChannelArgs& args, ChannelFilter::Args);
 
  private:
+  // These methods are early in the declaration order as auto return type is
+  // needed by Call.
   auto GetMetadataFromCreds(RefCountedPtr<grpc_call_credentials> creds,
                             ClientMetadataHandle md) {
     return Map(creds->GetRequestMetadata(std::move(md), &args_),
@@ -66,7 +68,6 @@ class ClientAuthFilter final : public ImplementChannelFilter<ClientAuthFilter> {
                });
   }
 
-  // Early in the declaration order as auto return type is needed by Call.
   auto GetCallCredsMetadata(ClientMetadataHandle md) {
     auto creds = GetCallCreds();
     return If(
