@@ -29,6 +29,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",
     "event_engine_listener": "event_engine_listener",
     "free_large_allocator": "free_large_allocator",
+    "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
