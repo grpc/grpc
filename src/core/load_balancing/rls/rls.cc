@@ -851,23 +851,20 @@ std::optional<Json> InsertOrUpdateChildPolicyField(const std::string& field,
     ValidationErrors::ScopedField json_field(errors, absl::StrCat("[", i, "]"));
     if (child_json.type() != Json::Type::kObject) {
       errors->AddError("is not an object");
+    } else if (const Json::Object& child = child_json.object();
+               child.size() != 1) {
+      errors->AddError("child policy object contains more than one field");
     } else {
-      const Json::Object& child = child_json.object();
-      if (child.size() != 1) {
-        errors->AddError("child policy object contains more than one field");
+      const auto& [child_name, child_config_json] = *child.begin();
+      ValidationErrors::ScopedField json_field(
+          errors, absl::StrCat("[\"", child_name, "\"]"));
+      if (child_config_json.type() != Json::Type::kObject) {
+        errors->AddError("child policy config is not an object");
       } else {
-        const std::string& child_name = child.begin()->first;
-        ValidationErrors::ScopedField json_field(
-            errors, absl::StrCat("[\"", child_name, "\"]"));
-        const Json& child_config_json = child.begin()->second;
-        if (child_config_json.type() != Json::Type::kObject) {
-          errors->AddError("child policy config is not an object");
-        } else {
-          Json::Object child_config = child_config_json.object();
-          child_config[field] = Json::FromString(value);
-          array.emplace_back(Json::FromObject(
-              {{child_name, Json::FromObject(std::move(child_config))}}));
-        }
+        Json::Object child_config = child_config_json.object();
+        child_config[field] = Json::FromString(value);
+        array.emplace_back(Json::FromObject(
+            {{child_name, Json::FromObject(std::move(child_config))}}));
       }
     }
   }
@@ -2013,21 +2010,19 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
       GRPC_TRACE_LOG(rls_lb, INFO)
           << "[rlslb " << this << "] unsetting default target";
       default_child_policy_.reset();
+    } else if (auto it = child_policy_map_.find(config_->default_target());
+               it == child_policy_map_.end()) {
+      GRPC_TRACE_LOG(rls_lb, INFO)
+          << "[rlslb " << this << "] creating new default target";
+      default_child_policy_ = MakeRefCounted<ChildPolicyWrapper>(
+          RefAsSubclass<RlsLb>(DEBUG_LOCATION, "ChildPolicyWrapper"),
+          config_->default_target());
+      created_default_child = true;
     } else {
-      auto it = child_policy_map_.find(config_->default_target());
-      if (it == child_policy_map_.end()) {
-        GRPC_TRACE_LOG(rls_lb, INFO)
-            << "[rlslb " << this << "] creating new default target";
-        default_child_policy_ = MakeRefCounted<ChildPolicyWrapper>(
-            RefAsSubclass<RlsLb>(DEBUG_LOCATION, "ChildPolicyWrapper"),
-            config_->default_target());
-        created_default_child = true;
-      } else {
-        GRPC_TRACE_LOG(rls_lb, INFO)
-            << "[rlslb " << this << "] using existing child for default target";
-        default_child_policy_ =
-            it->second->Ref(DEBUG_LOCATION, "DefaultChildPolicy");
-      }
+      GRPC_TRACE_LOG(rls_lb, INFO)
+          << "[rlslb " << this << "] using existing child for default target";
+      default_child_policy_ =
+          it->second->Ref(DEBUG_LOCATION, "DefaultChildPolicy");
     }
   }
   // Now grab the lock to swap out the state it guards.
