@@ -1938,11 +1938,15 @@ static void perform_transport_op_locked(void* stream_op,
   }
 
   if (op->bind_pollset) {
-    grpc_endpoint_add_to_pollset(t->ep, op->bind_pollset);
+    if (t->ep != nullptr) {
+      grpc_endpoint_add_to_pollset(t->ep, op->bind_pollset);
+    }
   }
 
   if (op->bind_pollset_set) {
-    grpc_endpoint_add_to_pollset_set(t->ep, op->bind_pollset_set);
+    if (t->ep != nullptr) {
+      grpc_endpoint_add_to_pollset_set(t->ep, op->bind_pollset_set);
+    }
   }
 
   if (op->send_ping.on_initiate != nullptr || op->send_ping.on_ack != nullptr) {
