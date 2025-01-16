@@ -500,9 +500,10 @@ std::shared_ptr<EventEngine> CreateEventEngine();
 
 /// Set the default EventEngine instance, which will be used throughout gRPC
 ///
-/// gRPC will hold a ref to this engine. For your engine to be shut down, you
-/// must call \a ShutdownDefaultEventEngine at the end of your program, or
-/// \a SetDefaultEventEngine(nullptr).
+/// gRPC will hold a ref to this engine until either
+/// \a ShutdownDefaultEventEngine() is called or \a SetDefaultEventEngine() is
+/// called again with a different value. Passing a value of nullptr will cause
+/// gRPC to drop the ref it was holding without setting it to a new one.
 ///
 /// Earlier calls to \a GetDefaultEventEngine will still hold a ref to the
 /// previous default engine instance, if any.
@@ -519,9 +520,8 @@ void SetDefaultEventEngine(std::shared_ptr<EventEngine> engine);
 std::shared_ptr<EventEngine> GetDefaultEventEngine();
 
 /// Resets gRPC to use one of the default internal EventEngines for all *new*
-/// \a GetDefaultEventEngine and \a CreateEventEngine requests, and blocks until
-/// all refs on the active default engine have been released (destroying that
-/// engine).
+/// \a GetDefaultEventEngine requests, and blocks until all refs on the active
+/// default engine have been released (destroying that engine).
 ///
 /// If you called \a SetDefaultEventEngine, you must call either
 /// \a ShutdownDefaultEventEngine or \a SetDefaultEventEngine(nullptr) at the
