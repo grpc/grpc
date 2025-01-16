@@ -18,6 +18,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include <cerrno>
+#include <cstdint>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
@@ -31,6 +32,11 @@ class FileDescriptor {
   explicit FileDescriptor(int fd) : fd_(fd) {};
   int fd() const { return fd_; }
   bool ready() const { return fd_ > 0; }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, FileDescriptor fd) {
+    sink.Append(absl::StrFormat("FD(%d)", fd.fd()));
+  }
 
  private:
   int fd_ = 0;
@@ -47,11 +53,59 @@ enum class OperationResultKind {
 
 template <typename Sink>
 void AbslStringify(Sink& sink, OperationResultKind kind) {
-  absl::Format(sink, "%s",
-               kind == OperationResultKind::kSuccess ? "(Success)"
-               : kind == OperationResultKind::kError ? "(Success)"
-                                                     : "(Success)");
+  sink.Append(kind == OperationResultKind::kSuccess ? "(Success)"
+              : kind == OperationResultKind::kError ? "(Success)"
+                                                    : "(Success)");
 }
+
+// Result of the factory call. kWrongGeneration may happen in the call to
+// Accept*
+class PosixResult {
+ public:
+  static constexpr PosixResult Success() {
+    return PosixResult(OperationResultKind::kSuccess);
+  }
+
+  static PosixResult Error() {
+    return PosixResult(OperationResultKind::kError, errno);
+  }
+
+  static PosixResult Wrap(int result) {
+    return result == 0 ? Success() : Error();
+  }
+
+  PosixResult() = default;
+
+  absl::Status status() const {
+    switch (kind_) {
+      case OperationResultKind::kSuccess:
+        return absl::OkStatus();
+      case OperationResultKind::kError:
+        return absl::ErrnoToStatus(errno_value_, "");
+      case OperationResultKind::kWrongGeneration:
+        return absl::InternalError(
+            "File descriptor is from the wrong generation");
+    }
+  }
+
+  bool ok() const { return kind_ == OperationResultKind::kSuccess; }
+
+  bool IsPosixError(int err) const {
+    return kind_ == OperationResultKind::kError && errno_value_ == err;
+  }
+
+  OperationResultKind kind() const { return kind_; }
+  int errno_value() const { return errno_value_; }
+
+ private:
+  explicit constexpr PosixResult(OperationResultKind kind, int errno_value = 0)
+      : kind_(kind), errno_value_(errno_value) {}
+
+  OperationResultKind kind_ = OperationResultKind::kSuccess;
+  // errno value on call completion, in order to reduce the race conditions
+  // from relying on global variable.
+  int errno_value_ = 0;
+};
 
 // Result of the factory call. kWrongGeneration may happen in the call to
 // Accept*
@@ -116,14 +170,24 @@ class FileDescriptorResult {
 
 class FileDescriptors {
  public:
-  FileDescriptorResult Accept(int sockfd, struct sockaddr* addr,
-                              socklen_t* addrlen);
-  FileDescriptorResult Accept4(int sockfd, EventEngine::ResolvedAddress& addr,
-                               int nonblock, int cloexec);
-
+  FileDescriptorResult Accept(const FileDescriptor& sockfd,
+                              struct sockaddr* addr, socklen_t* addrlen);
+  FileDescriptorResult Accept4(const FileDescriptor& sockfd,
+                               EventEngine::ResolvedAddress& addr, int nonblock,
+                               int cloexec);
   FileDescriptor Adopt(int fd);
 
   void Close(const FileDescriptor& fd);
+
+  // Posix
+  PosixResult Ioctl(const FileDescriptor& fd, int op, void* arg);
+  PosixResult Shutdown(const FileDescriptor& fd, int how);
+  PosixResult GetSockOpt(const FileDescriptor& fd, int level, int optname,
+                         void* optval, uint32_t* optlen);
+
+  // Epoll
+  PosixResult EpollCtlAdd(int epfd, const FileDescriptor& fd, void* data);
+  PosixResult EpollCtlDel(int epfd, const FileDescriptor& fd);
 
  private:
   FileDescriptorResult RegisterPosixResult(int result);

@@ -35,17 +35,18 @@
 #include <unistd.h>
 #endif  //  GRPC_POSIX_SOCKET_UTILS_COMMON
 
-#ifdef GRPC_POSIX_SOCKET
-
-#define IF_POSIX_SOCKET(signature, body) signature body
-
-#else  // GRPC_POSIX_SOCKET
-
+#ifdef GRPC_LINUX_EPOLL
+#include <sys/epoll.h>
+#else
 #include "src/core/util/crash.h"
+#endif
 
+#ifdef GRPC_POSIX_SOCKET
+#define IF_POSIX_SOCKET(signature, body) signature body
+#else  // GRPC_POSIX_SOCKET
+#include "src/core/util/crash.h"
 #define IF_POSIX_SOCKET(signature, body) \
   signature { grpc_core::Crash("unimplemented"); }
-
 #endif  // GRPC_POSIX_SOCKET
 
 namespace grpc_event_engine::experimental {
@@ -66,15 +67,17 @@ IF_POSIX_SOCKET(void FileDescriptors::Close(const FileDescriptor& fd),
 //
 // Factories
 //
-IF_POSIX_SOCKET(FileDescriptorResult FileDescriptors::Accept(
-                    int sockfd, struct sockaddr* addr, socklen_t* addrlen),
-                { return RegisterPosixResult(accept(sockfd, addr, addrlen)); })
+IF_POSIX_SOCKET(
+    FileDescriptorResult FileDescriptors::Accept(const FileDescriptor& sockfd,
+                                                 struct sockaddr* addr,
+                                                 socklen_t* addrlen),
+    { return RegisterPosixResult(accept(sockfd.fd(), addr, addrlen)); })
 
 #ifdef GRPC_POSIX_SOCKETUTILS
 
 IF_POSIX_SOCKET(
     FileDescriptorResult FileDescriptors::Accept4(
-        int sockfd,
+        const FileDescriptor& sockfd,
         grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
         int nonblock, int cloexec),
     {
@@ -112,7 +115,7 @@ IF_POSIX_SOCKET(
 
 IF_POSIX_SOCKET(
     FileDescriptorResult FileDescriptors::Accept4(
-        int sockfd,
+        const FileDescriptor& sockfd,
         grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
         int nonblock, int cloexec),
     {
@@ -121,12 +124,60 @@ IF_POSIX_SOCKET(
       flags |= cloexec ? SOCK_CLOEXEC : 0;
       EventEngine::ResolvedAddress peer_addr;
       socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-      FileDescriptorResult ret = RegisterPosixResult(accept4(
-          sockfd, const_cast<sockaddr*>(peer_addr.address()), &len, flags));
-      addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
+      FileDescriptorResult ret = RegisterPosixResult(
+          accept4(sockfd.fd(), const_cast<sockaddr*>(peer_addr.address()), &len,
+                  flags));
+      if (ret.ok()) {
+        addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
+      }
       return ret;
     })
 
 #endif  // GRPC_POSIX_SOCKETUTILS
+
+IF_POSIX_SOCKET(PosixResult FileDescriptors::Ioctl(const FileDescriptor& fd,
+                                                   int op, void* arg),
+                { return PosixResult::Wrap(ioctl(fd.fd(), op, arg)); });
+
+IF_POSIX_SOCKET(PosixResult FileDescriptors::Shutdown(const FileDescriptor& fd,
+                                                      int how),
+                { return PosixResult::Wrap(shutdown(fd.fd(), how)); })
+
+IF_POSIX_SOCKET(PosixResult FileDescriptors::GetSockOpt(
+                    const FileDescriptor& fd, int level, int optname,
+                    void* optval, uint32_t* optlen),
+                {
+                  return PosixResult::Wrap(
+                      getsockopt(fd.fd(), level, optname, optval, optlen));
+                })
+
+//
+// Epoll
+//
+IF_POSIX_SOCKET(PosixResult FileDescriptors::EpollCtlDel(
+                    int epfd, const FileDescriptor& fd),
+                {
+#ifdef GRPC_LINUX_EPOLL
+                  epoll_event phony_event;
+                  return PosixResult::Wrap(
+                      epoll_ctl(epfd, EPOLL_CTL_DEL, fd.fd(), &phony_event));
+#else   // GRPC_LINUX_EPOLL
+                  grpc_core::Crash("Epoll not supported");
+#endif  // GRPC_LINUX_EPOLL
+                })
+
+IF_POSIX_SOCKET(
+    PosixResult FileDescriptors::EpollCtlAdd(int epfd, const FileDescriptor& fd,
+                                             void* data),
+    {
+#ifdef GRPC_LINUX_EPOLL
+      epoll_event event;
+      event.events = static_cast<uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
+      event.data.ptr = data;
+      return PosixResult::Wrap(epoll_ctl(epfd, EPOLL_CTL_ADD, fd.fd(), &event));
+#else   // GRPC_LINUX_EPOLL
+      grpc_core::Crash("Epoll not supported");
+#endif  // GRPC_LINUX_EPOLL
+    })
 
 }  // namespace grpc_event_engine::experimental

@@ -40,14 +40,15 @@ class PosixEventPoller;
 
 class EventHandle {
  public:
-  virtual int WrappedFd() = 0;
+  virtual FileDescriptor WrappedFd() = 0;
   // Delete the handle and optionally close the underlying file descriptor if
   // release_fd != nullptr. The on_done closure is scheduled to be invoked
   // after the operation is complete. After this operation, NotifyXXX and SetXXX
   // operations cannot be performed on the handle. In general, this method
   // should only be called after ShutdownHandle and after all existing NotifyXXX
   // closures have run and there is no waiting NotifyXXX closure.
-  virtual void OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
+  virtual void OrphanHandle(PosixEngineClosure* on_done,
+                            FileDescriptor* release_fd,
                             absl::string_view reason) = 0;
   // Shutdown a handle. If there is an attempt to call NotifyXXX operations
   // after Shutdown handle, those closures will be run immediately with the
