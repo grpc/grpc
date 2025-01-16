@@ -337,22 +337,20 @@ CommonTlsContext CommonTlsContextParse(
                 errors);
       }
     }
-  } else {
-    auto* validation_context =
-        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_validation_context(
-            common_tls_context_proto);
-    if (validation_context != nullptr) {
-      ValidationErrors::ScopedField field(errors, ".validation_context");
-      common_tls_context.certificate_validation_context =
-          CertificateValidationContextParse(context, validation_context,
-                                            errors);
-    } else if (
-        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_validation_context_sds_secret_config(
-            common_tls_context_proto)) {
-      ValidationErrors::ScopedField field(
-          errors, ".validation_context_sds_secret_config");
-      errors->AddError("feature unsupported");
-    }
+  } else if (
+      auto* validation_context =
+          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_validation_context(
+              common_tls_context_proto);
+      validation_context != nullptr) {
+    ValidationErrors::ScopedField field(errors, ".validation_context");
+    common_tls_context.certificate_validation_context =
+        CertificateValidationContextParse(context, validation_context, errors);
+  } else if (
+      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_validation_context_sds_secret_config(
+          common_tls_context_proto)) {
+    ValidationErrors::ScopedField field(
+        errors, ".validation_context_sds_secret_config");
+    errors->AddError("feature unsupported");
   }
   auto* tls_certificate_provider_instance =
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_provider_instance(
