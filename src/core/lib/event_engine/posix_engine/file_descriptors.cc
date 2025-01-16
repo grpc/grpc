@@ -35,17 +35,23 @@
 #include <unistd.h>
 #endif  //  GRPC_POSIX_SOCKET_UTILS_COMMON
 
-#ifdef GRPC_LINUX_EPOLL
-#include <sys/epoll.h>
-#else
-#include "src/core/util/crash.h"
-#endif
-
+// File needs to be compilable on all platforms. These macros will produce stubs
+// if specific feature is not available in specific environment
 #ifdef GRPC_POSIX_SOCKET
 #define IF_POSIX_SOCKET(signature, body) signature body
+#ifdef GRPC_LINUX_EPOLL
+#include <sys/epoll.h>
+#define IF_EPOLL(signature, body) signature body
+#else  // GRPC_LINUX_EPOLL
+#include "src/core/util/crash.h"
+#define IF_EPOLL(signature, body) \
+  signature { grpc_core::Crash("unimplemented"); }
+#endif  // GRPC_LINUX_EPOLL
 #else  // GRPC_POSIX_SOCKET
 #include "src/core/util/crash.h"
 #define IF_POSIX_SOCKET(signature, body) \
+  signature { grpc_core::Crash("unimplemented"); }
+#define IF_EPOLL(signature, body) \
   signature { grpc_core::Crash("unimplemented"); }
 #endif  // GRPC_POSIX_SOCKET
 
@@ -154,30 +160,23 @@ IF_POSIX_SOCKET(PosixResult FileDescriptors::GetSockOpt(
 //
 // Epoll
 //
-IF_POSIX_SOCKET(PosixResult FileDescriptors::EpollCtlDel(
-                    int epfd, const FileDescriptor& fd),
-                {
-#ifdef GRPC_LINUX_EPOLL
-                  epoll_event phony_event;
-                  return PosixResult::Wrap(
-                      epoll_ctl(epfd, EPOLL_CTL_DEL, fd.fd(), &phony_event));
-#else   // GRPC_LINUX_EPOLL
-                  grpc_core::Crash("Epoll not supported");
-#endif  // GRPC_LINUX_EPOLL
-                })
+IF_EPOLL(PosixResult FileDescriptors::EpollCtlDel(int epfd,
+                                                  const FileDescriptor& fd),
+         {
+           epoll_event phony_event;
+           return PosixResult::Wrap(
+               epoll_ctl(epfd, EPOLL_CTL_DEL, fd.fd(), &phony_event));
+         })
 
-IF_POSIX_SOCKET(
-    PosixResult FileDescriptors::EpollCtlAdd(int epfd, const FileDescriptor& fd,
-                                             void* data),
-    {
-#ifdef GRPC_LINUX_EPOLL
-      epoll_event event;
-      event.events = static_cast<uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
-      event.data.ptr = data;
-      return PosixResult::Wrap(epoll_ctl(epfd, EPOLL_CTL_ADD, fd.fd(), &event));
-#else   // GRPC_LINUX_EPOLL
-      grpc_core::Crash("Epoll not supported");
-#endif  // GRPC_LINUX_EPOLL
-    })
+IF_EPOLL(PosixResult FileDescriptors::EpollCtlAdd(int epfd,
+                                                  const FileDescriptor& fd,
+                                                  void* data),
+         {
+           epoll_event event;
+           event.events = static_cast<uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
+           event.data.ptr = data;
+           return PosixResult::Wrap(
+               epoll_ctl(epfd, EPOLL_CTL_ADD, fd.fd(), &event));
+         })
 
 }  // namespace grpc_event_engine::experimental
