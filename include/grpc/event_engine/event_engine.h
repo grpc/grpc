@@ -518,9 +518,10 @@ void SetDefaultEventEngine(std::shared_ptr<EventEngine> engine);
 /// EventEngine instance.
 std::shared_ptr<EventEngine> GetDefaultEventEngine();
 
-/// Resets the CreateEventEngine factory to create and return one of the default
-/// internal EventEngines, and blocks until all refs on the active default
-/// engine have been released (destroying that engine).
+/// Resets gRPC to use one of the default internal EventEngines for all *new*
+/// \a GetDefaultEventEngine and \a CreateEventEngine requests, and blocks until
+/// all refs on the active default engine have been released (destroying that
+/// engine).
 ///
 /// If you called \a SetDefaultEventEngine, you must call either
 /// \a ShutdownDefaultEventEngine or \a SetDefaultEventEngine(nullptr) at the
@@ -528,7 +529,7 @@ std::shared_ptr<EventEngine> GetDefaultEventEngine();
 ///
 /// If you want to reset the default engine to one of gRPC's internal versions
 /// without waiting for all references to be released on the current default
-/// engine, call \a SetDefaultEventEngine(nullptr).
+/// engine, call \a SetDefaultEventEngine(nullptr) instead.
 void ShutdownDefaultEventEngine();
 
 bool operator==(const EventEngine::TaskHandle& lhs,
