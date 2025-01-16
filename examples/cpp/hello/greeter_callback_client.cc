@@ -38,14 +38,14 @@ ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-using hello::CreateService;
+using hello::CreateServiceTest;
 using hello::HelloReply;
 using hello::HelloRequest;
 
-class CreateServiceClient {
+class CreateServiceTestClient {
  public:
-  CreateServiceClient(std::shared_ptr<Channel> channel)
-      : stub_(CreateService::NewStub(channel)) {}
+  CreateServiceTestClient(std::shared_ptr<Channel> channel)
+      : stub_(CreateServiceTest::NewStub(channel)) {}
 
   // Assembles the client's payload, sends it and presents the response back
   // from the server.
@@ -66,7 +66,7 @@ class CreateServiceClient {
     std::condition_variable cv;
     bool done = false;
     Status status;
-    stub_->async()->SayHello(&context, &request, &reply,
+    stub_->async()->CreateService(&context, &request, &reply,
                              [&mu, &cv, &done, &status](Status s) {
                                status = std::move(s);
                                std::lock_guard<std::mutex> lock(mu);
@@ -90,7 +90,7 @@ class CreateServiceClient {
   }
 
  private:
-  std::unique_ptr<CreateService::Stub> stub_;
+  std::unique_ptr<CreateServiceTest::Stub> stub_;
 };
 
 int main(int argc, char** argv) {
@@ -101,11 +101,11 @@ int main(int argc, char** argv) {
   std::string target_str = absl::GetFlag(FLAGS_target);
   // We indicate that the channel isn't authenticated (use of
   // InsecureChannelCredentials()).
-  CreateServiceClient greeter(
+  CreateServiceTestClient greeter(
       grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
   std::string user("world");
   std::string reply = greeter.SayHello(user);
-  std::cout << "CreateService received: " << reply << std::endl;
+  std::cout << "CreateServiceTest received: " << reply << std::endl;
 
   return 0;
 }

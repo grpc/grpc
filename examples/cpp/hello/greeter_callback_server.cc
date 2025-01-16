@@ -41,13 +41,13 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerUnaryReactor;
 using grpc::Status;
-using hello::CreateService;
+using hello::CreateServiceTest;
 using hello::HelloReply;
 using hello::HelloRequest;
 
 // Logic and data behind the server's behavior.
-class CreateServiceServiceImpl final : public CreateService::CallbackService {
-  ServerUnaryReactor* SayHello(CallbackServerContext* context,
+class CreateServiceTestServiceImpl final : public CreateServiceTest::CallbackService {
+  ServerUnaryReactor* CreateService(CallbackServerContext* context,
                                const HelloRequest* request,
                                HelloReply* reply) override {
     std::string prefix("Hello ");
@@ -61,7 +61,7 @@ class CreateServiceServiceImpl final : public CreateService::CallbackService {
 
 void RunServer(uint16_t port) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
-  CreateServiceServiceImpl service;
+  CreateServiceTestServiceImpl service;
 
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
