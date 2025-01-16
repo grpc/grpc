@@ -24,7 +24,7 @@
 
 namespace grpc_core {
 
-absl::optional<XdsHealthStatus> XdsHealthStatus::FromUpb(uint32_t status) {
+std::optional<XdsHealthStatus> XdsHealthStatus::FromUpb(uint32_t status) {
   switch (status) {
     case envoy_config_core_v3_UNKNOWN:
       return XdsHealthStatus(kUnknown);
@@ -33,16 +33,16 @@ absl::optional<XdsHealthStatus> XdsHealthStatus::FromUpb(uint32_t status) {
     case envoy_config_core_v3_DRAINING:
       return XdsHealthStatus(kDraining);
     default:
-      return absl::nullopt;
+      return std::nullopt;
   }
 }
 
-absl::optional<XdsHealthStatus> XdsHealthStatus::FromString(
+std::optional<XdsHealthStatus> XdsHealthStatus::FromString(
     absl::string_view status) {
   if (status == "UNKNOWN") return XdsHealthStatus(kUnknown);
   if (status == "HEALTHY") return XdsHealthStatus(kHealthy);
   if (status == "DRAINING") return XdsHealthStatus(kDraining);
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 const char* XdsHealthStatus::ToString() const {

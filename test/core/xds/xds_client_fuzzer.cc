@@ -18,6 +18,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -28,7 +29,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "envoy/service/discovery/v3/discovery.pb.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/orphanable.h"

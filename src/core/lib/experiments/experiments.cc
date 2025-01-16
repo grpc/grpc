@@ -29,6 +29,9 @@ const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_callv3_client_auth_filter =
+    "Use the CallV3 client auth filter.";
+const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_legacy_protocol =
     "If set, use the first version of the chaotic-good protocol when that "
     "protocol is enabled.";
@@ -126,10 +129,6 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
-const char* const description_time_caching_in_party =
-    "Disable time caching in exec_ctx, and enable it only in a single party "
-    "execution.";
-const char* const additional_constraints_time_caching_in_party = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
@@ -156,6 +155,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
+    {"callv3_client_auth_filter", description_callv3_client_auth_filter,
+     additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_legacy_protocol", description_chaotic_good_legacy_protocol,
      additional_constraints_chaotic_good_legacy_protocol, nullptr, 0, false,
      true},
@@ -221,8 +222,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
-    {"time_caching_in_party", description_time_caching_in_party,
-     additional_constraints_time_caching_in_party, nullptr, 0, true, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
@@ -246,6 +245,9 @@ const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_callv3_client_auth_filter =
+    "Use the CallV3 client auth filter.";
+const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_legacy_protocol =
     "If set, use the first version of the chaotic-good protocol when that "
     "protocol is enabled.";
@@ -343,10 +345,6 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
-const char* const description_time_caching_in_party =
-    "Disable time caching in exec_ctx, and enable it only in a single party "
-    "execution.";
-const char* const additional_constraints_time_caching_in_party = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
@@ -373,6 +371,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
+    {"callv3_client_auth_filter", description_callv3_client_auth_filter,
+     additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_legacy_protocol", description_chaotic_good_legacy_protocol,
      additional_constraints_chaotic_good_legacy_protocol, nullptr, 0, false,
      true},
@@ -438,8 +438,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
-    {"time_caching_in_party", description_time_caching_in_party,
-     additional_constraints_time_caching_in_party, nullptr, 0, true, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
@@ -463,6 +461,9 @@ const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_callv3_client_auth_filter =
+    "Use the CallV3 client auth filter.";
+const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_legacy_protocol =
     "If set, use the first version of the chaotic-good protocol when that "
     "protocol is enabled.";
@@ -560,10 +561,6 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
-const char* const description_time_caching_in_party =
-    "Disable time caching in exec_ctx, and enable it only in a single party "
-    "execution.";
-const char* const additional_constraints_time_caching_in_party = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
@@ -590,6 +587,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
+    {"callv3_client_auth_filter", description_callv3_client_auth_filter,
+     additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_legacy_protocol", description_chaotic_good_legacy_protocol,
      additional_constraints_chaotic_good_legacy_protocol, nullptr, 0, false,
      true},
@@ -655,8 +654,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
-    {"time_caching_in_party", description_time_caching_in_party,
-     additional_constraints_time_caching_in_party, nullptr, 0, true, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",

@@ -18,7 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKETUTILS
@@ -45,7 +46,7 @@ using ::grpc_core::PosixTcpOptions;
 namespace {
 
 int AdjustValue(int default_value, int min_value, int max_value,
-                absl::optional<int> actual_value) {
+                std::optional<int> actual_value) {
   if (!actual_value.has_value() || *actual_value < min_value ||
       *actual_value > max_value) {
     return default_value;

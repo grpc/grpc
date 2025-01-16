@@ -22,6 +22,7 @@
 #include <atomic>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
@@ -34,7 +35,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -884,15 +884,13 @@ void XdsClusterImplLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   auto it = json.object().find("childPolicy");
   if (it == json.object().end()) {
     errors->AddError("field not present");
+  } else if (auto lb_config = CoreConfiguration::Get()
+                                  .lb_policy_registry()
+                                  .ParseLoadBalancingConfig(it->second);
+             !lb_config.ok()) {
+    errors->AddError(lb_config.status().message());
   } else {
-    auto lb_config =
-        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-            it->second);
-    if (!lb_config.ok()) {
-      errors->AddError(lb_config.status().message());
-    } else {
-      child_policy_ = std::move(*lb_config);
-    }
+    child_policy_ = std::move(*lb_config);
   }
 }
 

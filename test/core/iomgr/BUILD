@@ -364,21 +364,3 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util_base",
     ],
 )
-
-grpc_cc_test(
-    name = "timer_list_test",
-    srcs = ["timer_list_test.cc"],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:grpc_test_util_base",
-    ],
-)

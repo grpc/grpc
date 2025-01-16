@@ -33,6 +33,7 @@
 #include <initializer_list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
@@ -44,7 +45,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -213,7 +213,7 @@ class CoreEnd2endTest : public ::testing::Test {
    public:
     ClientCallBuilder(CoreEnd2endTest& test, std::string method)
         : test_(test),
-          call_selector_(UnregisteredCall{std::move(method), absl::nullopt}) {}
+          call_selector_(UnregisteredCall{std::move(method), std::nullopt}) {}
     ClientCallBuilder(CoreEnd2endTest& test, RegisteredCall registered_call)
         : test_(test), call_selector_(registered_call.p) {}
 
@@ -239,7 +239,7 @@ class CoreEnd2endTest : public ::testing::Test {
     CoreEnd2endTest& test_;
     struct UnregisteredCall {
       std::string method;
-      absl::optional<std::string> host;
+      std::optional<std::string> host;
     };
     std::variant<void*, UnregisteredCall> call_selector_;
     grpc_call* parent_call_ = nullptr;
@@ -273,9 +273,9 @@ class CoreEnd2endTest : public ::testing::Test {
     }
     // Access the peer structure (returns a string that can be matched, etc) -
     // or nullopt if grpc_call_get_peer returns nullptr.
-    absl::optional<std::string> GetPeer() {
+    std::optional<std::string> GetPeer() {
       char* peer = grpc_call_get_peer(call_);
-      if (peer == nullptr) return absl::nullopt;
+      if (peer == nullptr) return std::nullopt;
       std::string result(peer);
       gpr_free(peer);
       return result;
@@ -329,10 +329,10 @@ class CoreEnd2endTest : public ::testing::Test {
     }
 
     // Return some initial metadata.
-    absl::optional<std::string> GetInitialMetadata(absl::string_view key) const;
+    std::optional<std::string> GetInitialMetadata(absl::string_view key) const;
 
     // Return the peer address.
-    absl::optional<std::string> GetPeer() { return impl_->call.GetPeer(); }
+    std::optional<std::string> GetPeer() { return impl_->call.GetPeer(); }
 
     // Return the auth context.
     std::unique_ptr<grpc_auth_context, void (*)(grpc_auth_context*)>
@@ -416,7 +416,7 @@ class CoreEnd2endTest : public ::testing::Test {
   // Step the system until expectations are met or until timeout is reached.
   // If there are no expectations logged, then step for 1 second and verify that
   // no events occur.
-  void Step(absl::optional<Duration> timeout = absl::nullopt,
+  void Step(std::optional<Duration> timeout = std::nullopt,
             SourceLocation whence = {}) {
     if (expectations_ == 0) {
       cq_verifier().VerifyEmpty(timeout.value_or(Duration::Seconds(1)), whence);

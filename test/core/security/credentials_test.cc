@@ -332,7 +332,7 @@ class CredentialsTest : public ::testing::Test {
 
 TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingOk) {
   ExecCtx exec_ctx;
-  absl::optional<Slice> token_value;
+  std::optional<Slice> token_value;
   Duration token_lifetime;
   grpc_http_response response = http_response(200, valid_oauth2_json_response);
   CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
@@ -345,7 +345,7 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingOk) {
 
 TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingBadHttpStatus) {
   ExecCtx exec_ctx;
-  absl::optional<Slice> token_value;
+  std::optional<Slice> token_value;
   Duration token_lifetime;
   grpc_http_response response = http_response(401, valid_oauth2_json_response);
   CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
@@ -356,7 +356,7 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingBadHttpStatus) {
 
 TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingEmptyHttpBody) {
   ExecCtx exec_ctx;
-  absl::optional<Slice> token_value;
+  std::optional<Slice> token_value;
   Duration token_lifetime;
   grpc_http_response response = http_response(200, "");
   CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
@@ -367,7 +367,7 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingEmptyHttpBody) {
 
 TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingInvalidJson) {
   ExecCtx exec_ctx;
-  absl::optional<Slice> token_value;
+  std::optional<Slice> token_value;
   Duration token_lifetime;
   grpc_http_response response =
       http_response(200,
@@ -382,7 +382,7 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingInvalidJson) {
 
 TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingToken) {
   ExecCtx exec_ctx;
-  absl::optional<Slice> token_value;
+  std::optional<Slice> token_value;
   Duration token_lifetime;
   grpc_http_response response = http_response(200,
                                               "{"
@@ -396,7 +396,7 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingToken) {
 
 TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingTokenType) {
   ExecCtx exec_ctx;
-  absl::optional<Slice> token_value;
+  std::optional<Slice> token_value;
   Duration token_lifetime;
   grpc_http_response response =
       http_response(200,
@@ -412,7 +412,7 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingTokenType) {
 TEST_F(CredentialsTest,
        TestOauth2TokenFetcherCredsParsingMissingTokenLifetime) {
   ExecCtx exec_ctx;
-  absl::optional<Slice> token_value;
+  std::optional<Slice> token_value;
   Duration token_lifetime;
   grpc_http_response response =
       http_response(200,
@@ -428,14 +428,14 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
  public:
   static RefCountedPtr<RequestMetadataState> NewInstance(
       grpc_error_handle expected_error, std::string expected,
-      absl::optional<bool> expect_delay = absl::nullopt) {
+      std::optional<bool> expect_delay = std::nullopt) {
     return MakeRefCounted<RequestMetadataState>(
         expected_error, std::move(expected), expect_delay,
         grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create()));
   }
 
   RequestMetadataState(grpc_error_handle expected_error, std::string expected,
-                       absl::optional<bool> expect_delay,
+                       std::optional<bool> expect_delay,
                        grpc_polling_entity pollent)
       : expected_error_(expected_error),
         expected_(std::move(expected)),
@@ -534,7 +534,7 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
 
   grpc_error_handle expected_error_;
   std::string expected_;
-  absl::optional<bool> expect_delay_;
+  std::optional<bool> expect_delay_;
   RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
   grpc_metadata_batch md_;
   grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args_;
@@ -2563,7 +2563,7 @@ TEST_F(TokenFetcherCredentialsTest, Expires30SecondsEarly) {
 
 TEST_F(TokenFetcherCredentialsTest, FetchFails) {
   const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
-  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
+  std::optional<FuzzingEventEngine::Duration> run_after_duration;
   event_engine_->SetRunAfterDurationCallback(
       [&](FuzzingEventEngine::Duration duration) {
         run_after_duration = duration;
@@ -2605,7 +2605,7 @@ TEST_F(TokenFetcherCredentialsTest, FetchFails) {
 
 TEST_F(TokenFetcherCredentialsTest, Backoff) {
   const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
-  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
+  std::optional<FuzzingEventEngine::Duration> run_after_duration;
   event_engine_->SetRunAfterDurationCallback(
       [&](FuzzingEventEngine::Duration duration) {
         run_after_duration = duration;
@@ -2674,7 +2674,7 @@ TEST_F(TokenFetcherCredentialsTest, Backoff) {
 
 TEST_F(TokenFetcherCredentialsTest, ShutdownWhileBackoffTimerPending) {
   const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
-  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
+  std::optional<FuzzingEventEngine::Duration> run_after_duration;
   event_engine_->SetRunAfterDurationCallback(
       [&](FuzzingEventEngine::Duration duration) {
         run_after_duration = duration;

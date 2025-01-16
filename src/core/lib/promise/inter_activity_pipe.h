@@ -19,10 +19,10 @@
 #include <stdint.h>
 
 #include <array>
+#include <optional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/ref_counted.h"
@@ -48,7 +48,7 @@ class InterActivityPipe {
     T& operator*() { return *value_; }
 
    private:
-    absl::optional<T> value_;
+    std::optional<T> value_;
   };
 
  private:
@@ -74,7 +74,7 @@ class InterActivityPipe {
     Poll<NextResult> Next() {
       ReleasableMutexLock lock(&mu_);
       if (count_ == 0) {
-        if (closed_) return absl::nullopt;
+        if (closed_) return std::nullopt;
         on_occupied_ = GetContext<Activity>()->MakeNonOwningWaker();
         return Pending{};
       }

@@ -309,7 +309,7 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
   const std::string expected_message2 = absl::StrFormat(
       kMessageFormat, backends_[1]->port(), backends_[0]->port());
   response_state = WaitForNack(
-      DEBUG_LOCATION, [&]() -> absl::optional<AdsServiceImpl::ResponseState> {
+      DEBUG_LOCATION, [&]() -> std::optional<AdsServiceImpl::ResponseState> {
         auto response = balancer_->ads_service()->lds_response_state();
         if (response.has_value() &&
             response->state == AdsServiceImpl::ResponseState::NACKED) {
@@ -320,7 +320,7 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
           LOG(INFO) << "non-matching NACK message: "
                     << response->error_message.c_str();
         }
-        return absl::nullopt;
+        return std::nullopt;
       });
   EXPECT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
 }
@@ -1124,7 +1124,7 @@ class XdsMetricsTest : public XdsEnd2endTest {
             .BuildAndRegister();
     ChannelArguments args;
     args.SetString("test_only.arg", "test_only.value");
-    InitClient(/*builder=*/absl::nullopt, /*lb_expected_authority=*/"",
+    InitClient(/*builder=*/std::nullopt, /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/0,
                /*balancer_authority_override=*/"", /*args=*/&args);
   }
@@ -1269,7 +1269,7 @@ TEST_P(XdsMetricsTest, MetricValues) {
               ::testing::Optional(1));
   EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(kMetricServerFailure,
                                                    {kTarget, kXdsServer}, {}),
-              absl::nullopt);
+              std::nullopt);
   for (absl::string_view type_url :
        {"envoy.config.listener.v3.Listener",
         "envoy.config.route.v3.RouteConfiguration",
@@ -1293,7 +1293,7 @@ TEST_P(XdsMetricsTest, MetricValues) {
               ::testing::Optional(1));
   EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(kMetricServerFailure,
                                                    {"#server", kXdsServer}, {}),
-              absl::nullopt);
+              std::nullopt);
   for (absl::string_view type_url :
        {"envoy.config.listener.v3.Listener",
         "envoy.config.route.v3.RouteConfiguration"}) {

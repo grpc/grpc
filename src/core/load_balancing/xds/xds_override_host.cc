@@ -25,6 +25,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
@@ -43,7 +44,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
@@ -372,7 +372,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
       grpc_closure closure_;
     };
 
-    absl::optional<LoadBalancingPolicy::PickResult> PickOverriddenHost(
+    std::optional<LoadBalancingPolicy::PickResult> PickOverriddenHost(
         XdsOverrideHostAttribute* override_host_attr) const;
 
     RefCountedPtr<XdsOverrideHostLb> policy_;
@@ -404,7 +404,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
     void OnTimerLocked();
 
     RefCountedPtr<XdsOverrideHostLb> policy_;
-    absl::optional<EventEngine::TaskHandle> timer_handle_;
+    std::optional<EventEngine::TaskHandle> timer_handle_;
   };
 
   ~XdsOverrideHostLb() override;
@@ -467,12 +467,12 @@ XdsOverrideHostLb::Picker::Picker(
       << "] constructed new picker " << this;
 }
 
-absl::optional<LoadBalancingPolicy::PickResult>
+std::optional<LoadBalancingPolicy::PickResult>
 XdsOverrideHostLb::Picker::PickOverriddenHost(
     XdsOverrideHostAttribute* override_host_attr) const {
   CHECK_NE(override_host_attr, nullptr);
   auto cookie_address_list = override_host_attr->cookie_address_list();
-  if (cookie_address_list.empty()) return absl::nullopt;
+  if (cookie_address_list.empty()) return std::nullopt;
   // The cookie has an address list, so look through the addresses in order.
   absl::string_view address_with_no_subchannel;
   RefCountedPtr<SubchannelWrapper> idle_subchannel;
@@ -482,30 +482,32 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
     for (absl::string_view address : absl::StrSplit(cookie_address_list, ',')) {
       auto it = policy_->subchannel_map_.find(address);
       if (it == policy_->subchannel_map_.end()) continue;
+      auto& subchannel_entry = it->second;
       if (!override_host_health_status_set_.Contains(
-              it->second->eds_health_status())) {
+              subchannel_entry->eds_health_status())) {
         GRPC_TRACE_LOG(xds_override_host_lb, INFO)
             << "Subchannel " << address << " health status is not overridden ("
-            << it->second->eds_health_status().ToString() << ")";
+            << subchannel_entry->eds_health_status().ToString() << ")";
         continue;
       }
-      auto subchannel = it->second->GetSubchannelRef();
+      auto subchannel = subchannel_entry->GetSubchannelRef();
       if (subchannel == nullptr) {
         GRPC_TRACE_LOG(xds_override_host_lb, INFO)
             << "No subchannel for " << address;
         if (address_with_no_subchannel.empty()) {
-          address_with_no_subchannel = it->first;
+          address_with_no_subchannel = address;
         }
         continue;
       }
-      auto connectivity_state = it->second->connectivity_state();
+      auto connectivity_state = subchannel_entry->connectivity_state();
       if (connectivity_state == GRPC_CHANNEL_READY) {
         // Found a READY subchannel.  Pass back the actual address list
         // and return the subchannel.
         GRPC_TRACE_LOG(xds_override_host_lb, INFO)
             << "Picker override found READY subchannel " << address;
-        it->second->set_last_used_time();
-        override_host_attr->set_actual_address_list(it->second->address_list());
+        subchannel_entry->set_last_used_time();
+        override_host_attr->set_actual_address_list(
+            subchannel_entry->address_list());
         return PickResult::Complete(subchannel->wrapped_subchannel());
       } else if (connectivity_state == GRPC_CHANNEL_IDLE) {
         if (idle_subchannel == nullptr) idle_subchannel = std::move(subchannel);
@@ -549,7 +551,7 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
     return PickResult::Queue();
   }
   // No entry found that was not in TRANSIENT_FAILURE.
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(PickArgs args) {
@@ -1234,15 +1236,14 @@ void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   auto it = json.object().find("childPolicy");
   if (it == json.object().end()) {
     errors->AddError("field not present");
+  } else if (auto child_policy_config =
+                 CoreConfiguration::Get()
+                     .lb_policy_registry()
+                     .ParseLoadBalancingConfig(it->second);
+             !child_policy_config.ok()) {
+    errors->AddError(child_policy_config.status().message());
   } else {
-    auto child_policy_config =
-        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-            it->second);
-    if (!child_policy_config.ok()) {
-      errors->AddError(child_policy_config.status().message());
-    } else {
-      child_config_ = std::move(*child_policy_config);
-    }
+    child_config_ = std::move(*child_policy_config);
   }
 }
 

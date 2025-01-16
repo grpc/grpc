@@ -58,6 +58,13 @@ struct Done<StatusFlag> {
   }
 };
 
+template <>
+struct Done<Success> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static StatusFlag Make(bool cancelled) {
+    return StatusFlag(!cancelled);
+  }
+};
+
 template <typename T, typename SfinaeVoid = void>
 struct NextValueTraits;
 
@@ -83,11 +90,11 @@ struct NextValueTraits<T, absl::void_t<typename T::value_type>> {
 };
 
 template <typename T>
-struct NextValueTraits<ValueOrFailure<absl::optional<T>>> {
+struct NextValueTraits<ValueOrFailure<std::optional<T>>> {
   using Value = T;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static NextValueType Type(
-      const ValueOrFailure<absl::optional<T>>& t) {
+      const ValueOrFailure<std::optional<T>>& t) {
     if (t.ok()) {
       if (t.value().has_value()) return NextValueType::kValue;
       return NextValueType::kEndOfStream;
@@ -96,7 +103,7 @@ struct NextValueTraits<ValueOrFailure<absl::optional<T>>> {
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Value&& TakeValue(
-      ValueOrFailure<absl::optional<T>>& t) {
+      ValueOrFailure<std::optional<T>>& t) {
     return std::move(**t);
   }
 };
@@ -111,10 +118,12 @@ class ForEach {
   using ActionFactory =
       promise_detail::RepeatedPromiseFactory<ReaderResultValue, Action>;
   using ActionPromise = typename ActionFactory::Promise;
+  using ActionResult =
+      typename PollTraits<decltype(std::declval<ActionPromise>()())>::Type;
 
  public:
-  using Result =
-      typename PollTraits<decltype(std::declval<ActionPromise>()())>::Type;
+  using Result = decltype(Done<ActionResult>::Make(false));
+
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ForEach(Reader reader, Action action,
                                                DebugLocation whence = {})
       : reader_(std::move(reader)),

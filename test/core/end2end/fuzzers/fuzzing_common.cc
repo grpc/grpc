@@ -29,11 +29,11 @@
 
 #include <memory>
 #include <new>
+#include <optional>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -143,9 +143,9 @@ class Call : public std::enable_shared_from_this<Call> {
                                static_cast<size_t>(metadata.size()), m};
   }
 
-  absl::optional<grpc_op> ReadOp(
-      const api_fuzzer::BatchOp& batch_op, bool* batch_is_ok,
-      uint8_t* batch_ops, std::vector<std::function<void()>>* unwinders) {
+  std::optional<grpc_op> ReadOp(const api_fuzzer::BatchOp& batch_op,
+                                bool* batch_is_ok, uint8_t* batch_ops,
+                                std::vector<std::function<void()>>* unwinders) {
     grpc_op op;
     memset(&op, 0, sizeof(op));
     switch (batch_op.op_case()) {

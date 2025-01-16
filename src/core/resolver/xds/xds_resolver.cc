@@ -25,6 +25,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -44,7 +45,6 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
 #include "re2/re2.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/config_selector.h"
@@ -337,20 +337,19 @@ class XdsResolver final : public Resolver {
   RefCountedPtr<ClusterRef> GetOrCreateClusterRef(
       absl::string_view cluster_key, absl::string_view cluster_name) {
     auto it = cluster_ref_map_.find(cluster_key);
-    if (it == cluster_ref_map_.end()) {
-      RefCountedPtr<XdsDependencyManager::ClusterSubscription> subscription;
-      if (!cluster_name.empty()) {
-        // The cluster ref will hold a subscription to ensure that the
-        // XdsDependencyManager stays subscribed to the CDS resource as
-        // long as the cluster ref exists.
-        subscription = dependency_mgr_->GetClusterSubscription(cluster_name);
-      }
-      auto cluster = MakeRefCounted<ClusterRef>(
-          RefAsSubclass<XdsResolver>(), std::move(subscription), cluster_key);
-      cluster_ref_map_.emplace(cluster->cluster_key(), cluster->WeakRef());
-      return cluster;
+    if (it != cluster_ref_map_.end()) return it->second->Ref();
+    // Not found, so create a new one.
+    RefCountedPtr<XdsDependencyManager::ClusterSubscription> subscription;
+    if (!cluster_name.empty()) {
+      // The cluster ref will hold a subscription to ensure that the
+      // XdsDependencyManager stays subscribed to the CDS resource as
+      // long as the cluster ref exists.
+      subscription = dependency_mgr_->GetClusterSubscription(cluster_name);
     }
-    return it->second->Ref();
+    auto cluster = MakeRefCounted<ClusterRef>(
+        RefAsSubclass<XdsResolver>(), std::move(subscription), cluster_key);
+    cluster_ref_map_.emplace(cluster->cluster_key(), cluster->WeakRef());
+    return cluster;
   }
 
   void OnUpdate(absl::StatusOr<RefCountedPtr<const XdsConfig>> config);
@@ -645,14 +644,14 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
       DEBUG_LOCATION);
 }
 
-absl::optional<uint64_t> HeaderHashHelper(
+std::optional<uint64_t> HeaderHashHelper(
     const XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header&
         header_policy,
     grpc_metadata_batch* initial_metadata) {
   std::string value_buffer;
-  absl::optional<absl::string_view> header_value = XdsRouting::GetHeaderValue(
+  std::optional<absl::string_view> header_value = XdsRouting::GetHeaderValue(
       initial_metadata, header_policy.header_name, &value_buffer);
-  if (!header_value.has_value()) return absl::nullopt;
+  if (!header_value.has_value()) return std::nullopt;
   if (header_policy.regex != nullptr) {
     // If GetHeaderValue() did not already store the value in
     // value_buffer, copy it there now, so we can modify it.
@@ -733,16 +732,16 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
   auto cluster = route_config_data_->FindClusterRef(cluster_name);
   CHECK(cluster != nullptr);
   // Generate a hash.
-  absl::optional<uint64_t> hash;
+  std::optional<uint64_t> hash;
   for (const auto& hash_policy : route_action->hash_policies) {
-    absl::optional<uint64_t> new_hash = Match(
+    std::optional<uint64_t> new_hash = Match(
         hash_policy.policy,
         [&](const XdsRouteConfigResource::Route::RouteAction::HashPolicy::
                 Header& header) {
           return HeaderHashHelper(header, args.initial_metadata);
         },
         [&](const XdsRouteConfigResource::Route::RouteAction::HashPolicy::
-                ChannelId&) -> absl::optional<uint64_t> {
+                ChannelId&) -> std::optional<uint64_t> {
           return resolver_->channel_id_;
         });
     if (new_hash.has_value()) {
@@ -1101,7 +1100,7 @@ class XdsResolverFactory final : public ResolverFactory {
  private:
   std::string GetDataPlaneAuthority(const ChannelArgs& args,
                                     const URI& uri) const {
-    absl::optional<absl::string_view> authority =
+    std::optional<absl::string_view> authority =
         args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
     if (authority.has_value()) return URI::PercentEncodeAuthority(*authority);
     return GetDefaultAuthority(uri);

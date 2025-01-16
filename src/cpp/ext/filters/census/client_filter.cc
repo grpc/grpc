@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -41,7 +42,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
@@ -185,7 +185,7 @@ namespace {
 
 void FilterTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
   if (OpenCensusStatsEnabled()) {
-    absl::optional<grpc_core::Slice> grpc_server_stats_bin =
+    std::optional<grpc_core::Slice> grpc_server_stats_bin =
         b->Take(grpc_core::GrpcServerStatsBinMetadata());
     if (grpc_server_stats_bin.has_value()) {
       ServerStatsDeserialize(

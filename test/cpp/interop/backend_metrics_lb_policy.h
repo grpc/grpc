@@ -30,7 +30,7 @@ namespace testing {
 class LoadReportTracker {
  public:
   // A load report, or nullopt if the call had no load report.
-  using LoadReportEntry = absl::optional<TestOrcaReport>;
+  using LoadReportEntry = std::optional<TestOrcaReport>;
 
   ChannelArguments GetChannelArguments();
   void ResetCollectedLoadReports();
@@ -38,7 +38,7 @@ class LoadReportTracker {
       const grpc_core::BackendMetricData* backend_metric_data);
   void RecordOobLoadReport(const grpc_core::BackendMetricData& oob_metric_data);
   // Returns the next per-RPC load report, or nullopt if the queue is empty.
-  absl::optional<LoadReportEntry> GetNextLoadReport();
+  std::optional<LoadReportEntry> GetNextLoadReport();
   LoadReportEntry WaitForOobLoadReport(
       const std::function<bool(const TestOrcaReport&)>& predicate,
       absl::Duration poll_timeout, size_t max_attempts);

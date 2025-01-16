@@ -627,13 +627,13 @@ absl::string_view OpenTelemetryPluginImpl::OptionalLabelKeyToString(
   }
 }
 
-absl::optional<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
+std::optional<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
 OpenTelemetryPluginImpl::OptionalLabelStringToKey(absl::string_view key) {
   if (key == kLocality) {
     return grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
         kLocality;
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>

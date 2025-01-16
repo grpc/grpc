@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -37,7 +38,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 #include "envoy/service/discovery/v3/discovery.upbdefs.h"
@@ -111,7 +111,7 @@ class XdsClient::XdsChannel::RetryableCall final
 
   // Retry state.
   BackOff backoff_;
-  absl::optional<EventEngine::TaskHandle> timer_handle_
+  std::optional<EventEngine::TaskHandle> timer_handle_
       ABSL_GUARDED_BY(&XdsClient::mu_);
 
   bool shutting_down_ = false;
@@ -257,7 +257,7 @@ class XdsClient::XdsChannel::AdsCall final
     // stream or (b) declared the resource to not exist due to the timer
     // firing.
     bool resource_seen_ ABSL_GUARDED_BY(&XdsClient::mu_) = false;
-    absl::optional<EventEngine::TaskHandle> timer_handle_
+    std::optional<EventEngine::TaskHandle> timer_handle_
         ABSL_GUARDED_BY(&XdsClient::mu_);
   };
 
@@ -925,8 +925,8 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
   }
   // Parse the resource.
   XdsResourceType::DecodeContext resource_type_context = {
-      xds_client(), xds_channel()->server_, &xds_client_trace,
-      xds_client()->def_pool_.ptr(), context->arena.ptr()};
+      xds_client(), xds_channel()->server_, xds_client()->def_pool_.ptr(),
+      context->arena.ptr()};
   XdsResourceType::DecodeResult decode_result =
       context->type->Decode(resource_type_context, serialized_resource);
   // If we didn't already have the resource name from the Resource
@@ -961,13 +961,14 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
     return;
   }
   // Cancel resource-does-not-exist timer, if needed.
-  auto timer_it = state_map_.find(context->type);
-  if (timer_it != state_map_.end()) {
-    auto it = timer_it->second.subscribed_resources.find(
+  if (auto it = state_map_.find(context->type); it != state_map_.end()) {
+    auto& resource_type_state = it->second;
+    auto authority_it = resource_type_state.subscribed_resources.find(
         parsed_resource_name->authority);
-    if (it != timer_it->second.subscribed_resources.end()) {
-      auto res_it = it->second.find(parsed_resource_name->key);
-      if (res_it != it->second.end()) {
+    if (authority_it != resource_type_state.subscribed_resources.end()) {
+      auto& resource_map = authority_it->second;
+      auto res_it = resource_map.find(parsed_resource_name->key);
+      if (res_it != resource_map.end()) {
         res_it->second->MarkSeen();
       }
     }
@@ -986,11 +987,11 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
   }
   auto& type_map = type_it->second;
   // Found type, so look up resource key.
-  auto it = type_map.find(parsed_resource_name->key);
-  if (it == type_map.end()) {
+  auto res_it = type_map.find(parsed_resource_name->key);
+  if (res_it == type_map.end()) {
     return;  // Skip resource -- we don't have a subscription for it.
   }
-  ResourceState& resource_state = it->second;
+  ResourceState& resource_state = res_it->second;
   // If needed, record that we've seen this resource.
   if (context->type->AllResourcesRequiredInSotW()) {
     context->resources_seen[parsed_resource_name->authority].insert(

@@ -33,13 +33,13 @@
 
 #include <deque>
 #include <map>
+#include <optional>
 #include <thread>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -1544,10 +1544,10 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
       stats_plugin_->GetUInt64CounterValue(
           kMetricTargetPicks,
           {target_uri_, rls_server_target_, rls_target1, "complete"}, {}),
-      absl::nullopt);
+      std::nullopt);
   EXPECT_EQ(stats_plugin_->GetUInt64CounterValue(
                 kMetricFailedPicks, {target_uri_, rls_server_target_}, {}),
-            absl::nullopt);
+            std::nullopt);
   stats_plugin_->TriggerCallbacks();
   EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(
                   kMetricCacheEntries,
@@ -1579,7 +1579,7 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
       ::testing::Optional(1));
   EXPECT_EQ(stats_plugin_->GetUInt64CounterValue(
                 kMetricFailedPicks, {target_uri_, rls_server_target_}, {}),
-            absl::nullopt);
+            std::nullopt);
   stats_plugin_->TriggerCallbacks();
   EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(
                   kMetricCacheEntries,
