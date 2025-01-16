@@ -57,8 +57,6 @@
   default: false
 - name: disable_buffer_hint_on_high_memory_pressure
   default: false
-- name: event_engine_application_callbacks
-  default: true
 - name: event_engine_callback_cq
   default: true
 - name: event_engine_client

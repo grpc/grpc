@@ -328,7 +328,6 @@ void Server::ListenerState::MaybeStartNewGraceTimerLocked() {
   drain_grace_timer_handle_ = event_engine()->RunAfter(
       connections_to_be_drained_list_.front().timestamp - Timestamp::Now(),
       [self = Ref()]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnDrainGraceTimer();
         // resetting within an active ExecCtx
@@ -2111,7 +2110,6 @@ void grpc_server_start(grpc_server* server) {
 
 void grpc_server_shutdown_and_notify(grpc_server* server,
                                      grpc_completion_queue* cq, void* tag) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_shutdown_and_notify(server=" << server << ", cq=" << cq
@@ -2120,7 +2118,6 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
 }
 
 void grpc_server_cancel_all_calls(grpc_server* server) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_cancel_all_calls(server=" << server << ")";
@@ -2128,7 +2125,6 @@ void grpc_server_cancel_all_calls(grpc_server* server) {
 }
 
 void grpc_server_destroy(grpc_server* server) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO) << "grpc_server_destroy(server=" << server << ")";
   grpc_core::Server::FromC(server)->Orphan();
@@ -2139,7 +2135,6 @@ grpc_call_error grpc_server_request_call(
     grpc_metadata_array* request_metadata,
     grpc_completion_queue* cq_bound_to_call,
     grpc_completion_queue* cq_for_notification, void* tag) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_request_call(" << "server=" << server << ", call=" << call
@@ -2157,7 +2152,6 @@ grpc_call_error grpc_server_request_registered_call(
     grpc_byte_buffer** optional_payload,
     grpc_completion_queue* cq_bound_to_call,
     grpc_completion_queue* cq_for_notification, void* tag_new) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   auto* rm =
       static_cast<grpc_core::Server::RegisteredMethod*>(registered_method);
@@ -2176,7 +2170,6 @@ grpc_call_error grpc_server_request_registered_call(
 
 void grpc_server_set_config_fetcher(
     grpc_server* server, grpc_server_config_fetcher* server_config_fetcher) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_set_config_fetcher(server=" << server
@@ -2188,7 +2181,6 @@ void grpc_server_set_config_fetcher(
 
 void grpc_server_config_fetcher_destroy(
     grpc_server_config_fetcher* server_config_fetcher) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_config_fetcher_destroy(config_fetcher="

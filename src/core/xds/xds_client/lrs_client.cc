@@ -506,7 +506,6 @@ void LrsClient::LrsChannel::RetryableCall<T>::StartRetryTimerLocked() {
   timer_handle_ = lrs_channel()->lrs_client()->engine()->RunAfter(
       delay,
       [self = this->Ref(DEBUG_LOCATION, "RetryableCall+retry_timer_start")]() {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnRetryTimer();
       });
@@ -544,13 +543,12 @@ void LrsClient::LrsChannel::LrsCall::Timer::ScheduleNextReportLocked() {
       << lrs_call_->lrs_channel()->server_->server_uri()
       << ": scheduling next load report in "
       << lrs_call_->load_reporting_interval_;
-  timer_handle_ = lrs_client()->engine()->RunAfter(
-      lrs_call_->load_reporting_interval_,
-      [self = Ref(DEBUG_LOCATION, "timer")]() {
-        ApplicationCallbackExecCtx callback_exec_ctx;
-        ExecCtx exec_ctx;
-        self->OnNextReportTimer();
-      });
+  timer_handle_ =
+      lrs_client()->engine()->RunAfter(lrs_call_->load_reporting_interval_,
+                                       [self = Ref(DEBUG_LOCATION, "timer")]() {
+                                         ExecCtx exec_ctx;
+                                         self->OnNextReportTimer();
+                                       });
 }
 
 void LrsClient::LrsChannel::LrsCall::Timer::OnNextReportTimer() {

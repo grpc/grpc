@@ -115,7 +115,6 @@ void grpc_plugin_credentials::PendingRequest::RequestMetadataReady(
     void* request, const grpc_metadata* md, size_t num_md,
     grpc_status_code status, const char* error_details) {
   // called from application code
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_FINISHED |
                               GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP);
   grpc_core::RefCountedPtr<grpc_plugin_credentials::PendingRequest> r(

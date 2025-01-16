@@ -157,7 +157,6 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     timer_handle_ = event_engine_->RunAfter(
         args_.deadline - Timestamp::Now(),
         [self = RefAsSubclass<Chttp2Connector>()]() mutable {
-          ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->OnTimeout();
           // Ensure the Chttp2Connector is deleted under an ExecCtx.

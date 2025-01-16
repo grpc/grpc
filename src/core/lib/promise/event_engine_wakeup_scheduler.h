@@ -47,7 +47,6 @@ class EventEngineWakeupScheduler {
     BoundScheduler& operator=(const BoundScheduler&) = delete;
     void ScheduleWakeup() { event_engine_->Run(this); }
     void Run() final {
-      ApplicationCallbackExecCtx app_exec_ctx;
       ExecCtx exec_ctx;
       static_cast<ActivityType*>(this)->RunScheduledWakeup();
     }

@@ -667,7 +667,6 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
       config_->weight_update_period(),
       [self = WeakRefAsSubclass<Picker>(),
        work_serializer = wrr_->work_serializer()]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         {
           MutexLock lock(&self->timer_mu_);

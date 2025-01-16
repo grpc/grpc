@@ -237,7 +237,6 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
   Thread thd(
       "RunParty",
       [party, prev_state]() {
-        ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
         party->RunPartyAndUnref(prev_state);
       },
@@ -297,7 +296,6 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
       CHECK(event_engine != nullptr) << "; " << GRPC_DUMP_ARGS(party, arena);
       event_engine->Run([wakeup]() {
         GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked offload");
-        ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
         RunState{wakeup}.Run();
       });
@@ -477,7 +475,6 @@ void Party::MaybeAsyncAddParticipant(Participant* participant) {
                           << this << " because it is full.";
   arena_->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
       [this, participant]() mutable {
-        ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
         MaybeAsyncAddParticipant(participant);
         Unref();
@@ -499,7 +496,6 @@ void Party::WakeupAsync(WakeupMask wakeup_mask) {
         arena_->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
             [this, prev_state]() {
               GRPC_LATENT_SEE_PARENT_SCOPE("Party::WakeupAsync");
-              ApplicationCallbackExecCtx app_exec_ctx;
               ExecCtx exec_ctx;
               RunLockedAndUnref(this, prev_state);
             });

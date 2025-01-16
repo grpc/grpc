@@ -154,7 +154,6 @@ RetryFilter::LegacyCallData::CallAttempt::CallAttempt(
     Ref(DEBUG_LOCATION, "OnPerAttemptRecvTimer").release();
     per_attempt_recv_timer_handle_ = calld_->chand_->event_engine()->RunAfter(
         per_attempt_recv_timeout, [this] {
-          ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           OnPerAttemptRecvTimer();
         });
@@ -1899,7 +1898,6 @@ void RetryFilter::LegacyCallData::StartRetryTimer(
   GRPC_CALL_STACK_REF(owning_call_, "OnRetryTimer");
   retry_timer_handle_ =
       chand_->event_engine()->RunAfter(next_attempt_timeout, [this] {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         OnRetryTimer();
       });

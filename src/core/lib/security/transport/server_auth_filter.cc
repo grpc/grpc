@@ -144,7 +144,6 @@ void ServerAuthFilter::RunApplicationCode::OnMdProcessingDone(
     void* user_data, const grpc_metadata* consumed_md, size_t num_consumed_md,
     const grpc_metadata* response_md, size_t num_response_md,
     grpc_status_code status, const char* error_details) {
-  ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
 
   auto* state = static_cast<State*>(user_data);

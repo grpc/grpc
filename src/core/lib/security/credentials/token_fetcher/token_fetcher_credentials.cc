@@ -67,7 +67,6 @@ TokenFetcherCredentials::FetchState::BackoffTimer::BackoffTimer(
       << ": starting backoff timer for " << delay;
   timer_handle_ = fetch_state_->creds_->event_engine().RunAfter(
       delay, [self = Ref()]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnTimer();
         self.reset();

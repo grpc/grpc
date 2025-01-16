@@ -110,7 +110,6 @@ void AwsExternalAccountCredentials::AwsFetchBody::AsyncFinish(
     absl::StatusOr<std::string> result) {
   creds_->event_engine().Run(
       [this, self = Ref(), result = std::move(result)]() mutable {
-        ApplicationCallbackExecCtx application_exec_ctx;
         ExecCtx exec_ctx;
         Finish(std::move(result));
         self.reset();

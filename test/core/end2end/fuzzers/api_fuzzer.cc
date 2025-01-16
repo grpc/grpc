@@ -114,12 +114,11 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
         std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
             on_done)
         : name_(std::string(name)), on_done_(std::move(on_done)) {
-      GetDefaultEventEngine()->RunAfter(
-          grpc_core::Duration::Seconds(1), [this] {
-            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-            grpc_core::ExecCtx exec_ctx;
-            FinishResolve();
-          });
+      GetDefaultEventEngine()->RunAfter(grpc_core::Duration::Seconds(1),
+                                        [this] {
+                                          grpc_core::ExecCtx exec_ctx;
+                                          FinishResolve();
+                                        });
     }
 
    private:
@@ -177,7 +176,6 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     engine_->Run([on_resolved] {
-      grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
       grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
           "The Fuzzing DNS resolver does not support looking up SRV records"));
@@ -192,7 +190,6 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       absl::string_view /* name_server */) override {
     // Not supported
     engine_->Run([on_resolved] {
-      grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
       grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
           "The Fuzing DNS resolver does not support looking up TXT records"));
@@ -219,7 +216,6 @@ grpc_ares_request* my_dns_lookup_hostname_ares(
   r.on_done = on_done;
   r.addresses = addresses;
   GetDefaultEventEngine()->RunAfter(grpc_core::Duration::Seconds(1), [r] {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     finish_resolve(r);
   });
@@ -236,7 +232,6 @@ grpc_ares_request* my_dns_lookup_srv_ares(
   r.on_done = on_done;
   r.addresses = balancer_addresses;
   GetDefaultEventEngine()->RunAfter(grpc_core::Duration::Seconds(1), [r] {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     finish_resolve(r);
   });

@@ -2415,7 +2415,6 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
           absl::StatusOr<RefCountedPtr<Token>> result) {
         event_engine.Run([on_done = std::move(on_done),
                           result = std::move(result)]() mutable {
-          ApplicationCallbackExecCtx application_exec_ctx;
           ExecCtx exec_ctx;
           std::exchange(on_done, nullptr)(std::move(result));
         });

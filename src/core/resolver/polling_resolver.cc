@@ -106,7 +106,6 @@ void PollingResolver::ScheduleNextResolutionTimer(Duration delay) {
   next_resolution_timer_handle_ =
       channel_args_.GetObject<EventEngine>()->RunAfter(
           delay, [self = RefAsSubclass<PollingResolver>()]() mutable {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto* self_ptr = self.get();
             self_ptr->work_serializer_->Run(

@@ -130,7 +130,6 @@ void HttpConnectHandshaker::OnWriteDoneScheduler(void* arg,
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   handshaker->args_->event_engine->Run(
       [handshaker, error = std::move(error)]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         handshaker->OnWriteDone(std::move(error));
       });
@@ -166,7 +165,6 @@ void HttpConnectHandshaker::OnReadDoneScheduler(void* arg,
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   handshaker->args_->event_engine->Run(
       [handshaker, error = std::move(error)]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         handshaker->OnReadDone(std::move(error));
       });

@@ -41,17 +41,9 @@ const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "pressure.";
 const char* const
     additional_constraints_disable_buffer_hint_on_high_memory_pressure = "{}";
-const char* const description_event_engine_application_callbacks =
-    "Run application callbacks in EventEngine threads, instead of on the "
-    "thread-local ApplicationCallbackExecCtx";
-const char* const additional_constraints_event_engine_application_callbacks =
-    "{}";
 const char* const description_event_engine_callback_cq =
     "Use EventEngine instead of the CallbackAlternativeCQ.";
 const char* const additional_constraints_event_engine_callback_cq = "{}";
-const uint8_t required_experiments_event_engine_callback_cq[] = {
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdEventEngineApplicationCallbacks)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -164,13 +156,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
      nullptr, 0, false, true},
-    {"event_engine_application_callbacks",
-     description_event_engine_application_callbacks,
-     additional_constraints_event_engine_application_callbacks, nullptr, 0,
-     true, true},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
-     additional_constraints_event_engine_callback_cq,
-     required_experiments_event_engine_callback_cq, 1, true, true},
+     additional_constraints_event_engine_callback_cq, nullptr, 0, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, false, true},
     {"event_engine_dns", description_event_engine_dns,
@@ -257,17 +244,9 @@ const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "pressure.";
 const char* const
     additional_constraints_disable_buffer_hint_on_high_memory_pressure = "{}";
-const char* const description_event_engine_application_callbacks =
-    "Run application callbacks in EventEngine threads, instead of on the "
-    "thread-local ApplicationCallbackExecCtx";
-const char* const additional_constraints_event_engine_application_callbacks =
-    "{}";
 const char* const description_event_engine_callback_cq =
     "Use EventEngine instead of the CallbackAlternativeCQ.";
 const char* const additional_constraints_event_engine_callback_cq = "{}";
-const uint8_t required_experiments_event_engine_callback_cq[] = {
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdEventEngineApplicationCallbacks)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -380,13 +359,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
      nullptr, 0, false, true},
-    {"event_engine_application_callbacks",
-     description_event_engine_application_callbacks,
-     additional_constraints_event_engine_application_callbacks, nullptr, 0,
-     true, true},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
-     additional_constraints_event_engine_callback_cq,
-     required_experiments_event_engine_callback_cq, 1, true, true},
+     additional_constraints_event_engine_callback_cq, nullptr, 0, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, true},
     {"event_engine_dns", description_event_engine_dns,
@@ -473,17 +447,9 @@ const char* const description_disable_buffer_hint_on_high_memory_pressure =
     "pressure.";
 const char* const
     additional_constraints_disable_buffer_hint_on_high_memory_pressure = "{}";
-const char* const description_event_engine_application_callbacks =
-    "Run application callbacks in EventEngine threads, instead of on the "
-    "thread-local ApplicationCallbackExecCtx";
-const char* const additional_constraints_event_engine_application_callbacks =
-    "{}";
 const char* const description_event_engine_callback_cq =
     "Use EventEngine instead of the CallbackAlternativeCQ.";
 const char* const additional_constraints_event_engine_callback_cq = "{}";
-const uint8_t required_experiments_event_engine_callback_cq[] = {
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdEventEngineApplicationCallbacks)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -596,13 +562,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_disable_buffer_hint_on_high_memory_pressure,
      additional_constraints_disable_buffer_hint_on_high_memory_pressure,
      nullptr, 0, false, true},
-    {"event_engine_application_callbacks",
-     description_event_engine_application_callbacks,
-     additional_constraints_event_engine_application_callbacks, nullptr, 0,
-     true, true},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
-     additional_constraints_event_engine_callback_cq,
-     required_experiments_event_engine_callback_cq, 1, true, true},
+     additional_constraints_event_engine_callback_cq, nullptr, 0, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, true},
     {"event_engine_dns", description_event_engine_dns,

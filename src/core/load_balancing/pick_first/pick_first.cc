@@ -957,7 +957,6 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
             p->connection_attempt_delay_,
             [subchannel_list =
                  subchannel_list_->Ref(DEBUG_LOCATION, "timer")]() mutable {
-              ApplicationCallbackExecCtx application_exec_ctx;
               ExecCtx exec_ctx;
               auto* sl = subchannel_list.get();
               sl->policy_->work_serializer()->Run(
@@ -1838,7 +1837,6 @@ void OldPickFirst::SubchannelList::SubchannelData::
             p->connection_attempt_delay_,
             [subchannel_list =
                  subchannel_list_->Ref(DEBUG_LOCATION, "timer")]() mutable {
-              ApplicationCallbackExecCtx application_exec_ctx;
               ExecCtx exec_ctx;
               auto* sl = subchannel_list.get();
               sl->policy_->work_serializer()->Run(

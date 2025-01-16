@@ -1021,7 +1021,6 @@ void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
   client_load_report_handle_ =
       grpclb_policy()->channel_control_helper()->GetEventEngine()->RunAfter(
           client_stats_report_interval_, [this] {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             grpclb_policy()->work_serializer()->Run(
                 [this] { MaybeSendClientLoadReportLocked(); }, DEBUG_LOCATION);
@@ -1560,7 +1559,6 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
             fallback_at_startup_timeout_,
             [self = RefAsSubclass<GrpcLb>(DEBUG_LOCATION,
                                           "on_fallback_timer")]() mutable {
-              ApplicationCallbackExecCtx callback_exec_ctx;
               ExecCtx exec_ctx;
               auto self_ptr = self.get();
               self_ptr->work_serializer()->Run(
@@ -1669,7 +1667,6 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
           delay,
           [self = RefAsSubclass<GrpcLb>(
                DEBUG_LOCATION, "on_balancer_call_retry_timer")]() mutable {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto self_ptr = self.get();
             self_ptr->work_serializer()->Run(
@@ -1831,7 +1828,6 @@ void GrpcLb::StartSubchannelCacheTimerLocked() {
           cached_subchannels_.begin()->first - Timestamp::Now(),
           [self = RefAsSubclass<GrpcLb>(DEBUG_LOCATION,
                                         "OnSubchannelCacheTimer")]() mutable {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto* self_ptr = self.get();
             self_ptr->work_serializer()->Run(

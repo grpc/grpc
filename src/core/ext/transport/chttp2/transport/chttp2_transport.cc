@@ -576,7 +576,6 @@ static void init_keepalive_pings_if_enabled_locked(
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
     t->keepalive_ping_timer_handle =
         t->event_engine->RunAfter(t->keepalive_time, [t = t->Ref()]() mutable {
-          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
           grpc_core::ExecCtx exec_ctx;
           init_keepalive_ping(std::move(t));
         });
@@ -2275,7 +2274,6 @@ void MaybeTarpit(grpc_chttp2_transport* t, bool tarpit, F fn) {
   const auto duration = TarpitDuration(t);
   t->event_engine->RunAfter(
       duration, [t = t->Ref(), fn = std::move(fn)]() mutable {
-        ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
         t->combiner->Run(
             NewClosure([t, fn = std::move(fn)](grpc_error_handle) mutable {
@@ -2944,7 +2942,6 @@ static void finish_bdp_ping_locked(
   CHECK(t->next_bdp_ping_timer_handle == TaskHandle::kInvalid);
   t->next_bdp_ping_timer_handle =
       t->event_engine->RunAfter(next_ping - grpc_core::Timestamp::Now(), [t] {
-        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
         grpc_core::ExecCtx exec_ctx;
         next_bdp_ping_timer_expired(t.get());
       });
@@ -3043,7 +3040,6 @@ static void init_keepalive_ping_locked(
     } else {
       t->keepalive_ping_timer_handle =
           t->event_engine->RunAfter(t->keepalive_time, [t] {
-            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
             grpc_core::ExecCtx exec_ctx;
             init_keepalive_ping(t);
           });
@@ -3075,7 +3071,6 @@ static void finish_keepalive_ping_locked(
       CHECK(t->keepalive_ping_timer_handle == TaskHandle::kInvalid);
       t->keepalive_ping_timer_handle =
           t->event_engine->RunAfter(t->keepalive_time, [t] {
-            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
             grpc_core::ExecCtx exec_ctx;
             init_keepalive_ping(t);
           });
@@ -3095,7 +3090,6 @@ static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t) {
     }
     t->keepalive_ping_timer_handle =
         t->event_engine->RunAfter(t->keepalive_time, [t = t->Ref()]() mutable {
-          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
           grpc_core::ExecCtx exec_ctx;
           init_keepalive_ping(std::move(t));
         });

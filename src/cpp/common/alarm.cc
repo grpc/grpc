@@ -104,7 +104,6 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
  private:
   void OnCQAlarm(grpc_error_handle error) {
     cq_armed_.store(false);
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     // Preserve the cq and reset the cq_ so that the alarm
     // can be reset when the alarm tag is delivered.
@@ -119,7 +118,6 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
 
   void OnCallbackAlarm(bool is_ok) {
     callback_armed_.store(false);
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     callback_(is_ok);
     Unref();

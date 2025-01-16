@@ -810,7 +810,6 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
         time_until_next_attempt,
         [self = WeakRef(DEBUG_LOCATION, "RetryTimer")]() mutable {
           {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             self->OnRetryTimer();
             // Subchannel deletion might require an active ExecCtx. So if
