@@ -62,7 +62,7 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
   std::string serialized_config = config.SerializeAsString();
   upb::Arena arena;
   upb::DefPool def_pool;
-  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(), nullptr,
+  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(),
                                             def_pool.ptr(), arena.ptr()};
   auto* upb_config =
       envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_parse(
