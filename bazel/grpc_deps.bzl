@@ -180,11 +180,11 @@ def grpc_deps():
     if "bazel_compdb" not in native.existing_rules():
         http_archive(
             name = "bazel_compdb",
-            sha256 = "bcecfd622c4ef272fd4ba42726a52e140b961c4eac23025f18b346c968a8cfb4",
-            strip_prefix = "bazel-compilation-database-0.4.5",
+            sha256 = "79502264d1a3a4b6309d4dae8c822e7349bcfe33e84f3c6d1affb2a40d11a31d",
+            strip_prefix = "bazel-compilation-database-d198303a4319092ab31895c4b98d64174ebe8872",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/grailbio/bazel-compilation-database/archive/0.4.5.tar.gz",
-                "https://github.com/grailbio/bazel-compilation-database/archive/0.4.5.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/grailbio/bazel-compilation-database/archive/d198303a4319092ab31895c4b98d64174ebe8872.tar.gz",
+                "https://github.com/grailbio/bazel-compilation-database/archive/d198303a4319092ab31895c4b98d64174ebe8872.tar.gz",
             ],
         )
 

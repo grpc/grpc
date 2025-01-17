@@ -29,6 +29,7 @@ Contains macros used throughout the repo.
 
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
+load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
@@ -256,7 +257,7 @@ def grpc_internal_proto_library(
     )
 
 def grpc_cc_proto_library(name, deps = [], visibility = None):
-    native.cc_proto_library(name = name, deps = deps, visibility = visibility)
+    cc_proto_library(name = name, deps = deps, visibility = visibility)
 
 # DO NOT USE -- callers should instead be changed to use separate
 # grpc_internal_proto_library(), grpc_cc_proto_library(), and
