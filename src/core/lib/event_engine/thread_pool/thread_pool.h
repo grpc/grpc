@@ -20,15 +20,14 @@
 #include <memory>
 
 #include "absl/functional/any_invocable.h"
-#include "src/core/lib/event_engine/forkable.h"
 
 namespace grpc_event_engine::experimental {
 
 // Interface for all EventEngine ThreadPool implementations
-class ThreadPool : public Forkable {
+class ThreadPool {
  public:
   // Asserts Quiesce was called.
-  ~ThreadPool() override = default;
+  virtual ~ThreadPool() = default;
   // Shut down the pool, and wait for all threads to exit.
   // This method is safe to call from within a ThreadPool thread.
   virtual void Quiesce() = 0;

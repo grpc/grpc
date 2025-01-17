@@ -1165,8 +1165,6 @@ let package = Package(
         "src/core/lib/event_engine/extensions/chaotic_good_extension.h",
         "src/core/lib/event_engine/extensions/supports_fd.h",
         "src/core/lib/event_engine/extensions/tcp_trace.h",
-        "src/core/lib/event_engine/forkable.cc",
-        "src/core/lib/event_engine/forkable.h",
         "src/core/lib/event_engine/grpc_polled_fd.h",
         "src/core/lib/event_engine/handle_containers.h",
         "src/core/lib/event_engine/memory_allocator_factory.h",
