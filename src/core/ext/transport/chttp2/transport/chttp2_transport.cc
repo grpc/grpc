@@ -224,6 +224,7 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
 
 namespace {
 
+using EventEngine = ::grpc_event_engine::experimental::EventEngine;
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
 grpc_core::CallTracerAnnotationInterface* CallTracerIfSampled(
@@ -691,6 +692,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   settings.mutable_local().SetAllowTrueBinaryMetadata(true);
 
   read_channel_args(this, channel_args, is_client);
+
+  next_adjusted_keepalive_timestamp = grpc_core::Timestamp::InfPast();
 
   // Initially allow *UP TO* MAX_CONCURRENT_STREAMS incoming before we start
   // blanket cancelling them.
@@ -3032,17 +3035,27 @@ static void init_keepalive_ping_locked(
   CHECK(t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING);
   CHECK(t->keepalive_ping_timer_handle != TaskHandle::kInvalid);
   t->keepalive_ping_timer_handle = TaskHandle::kInvalid;
+  grpc_core::Timestamp now = grpc_core::Timestamp::Now();
+  grpc_core::Timestamp adjusted_keepalive_timestamp = std::exchange(
+      t->next_adjusted_keepalive_timestamp, grpc_core::Timestamp::InfPast());
+  bool delay_callback = grpc_core::IsKeepAlivePingTimerBatchEnabled() &&
+                        adjusted_keepalive_timestamp > now;
   if (t->destroying || !t->closed_with_error.ok()) {
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
   } else {
-    if (t->keepalive_permit_without_calls || !t->stream_map.empty()) {
+    if (!delay_callback &&
+        (t->keepalive_permit_without_calls || !t->stream_map.empty())) {
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_PINGING;
       send_keepalive_ping_locked(t);
       grpc_chttp2_initiate_write(t.get(),
                                  GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING);
     } else {
+      grpc_core::Duration extend = grpc_core::Duration::Zero();
+      if (delay_callback) {
+        extend = adjusted_keepalive_timestamp - now;
+      }
       t->keepalive_ping_timer_handle =
-          t->event_engine->RunAfter(t->keepalive_time, [t] {
+          t->event_engine->RunAfter(t->keepalive_time + extend, [t] {
             grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
             grpc_core::ExecCtx exec_ctx;
             init_keepalive_ping(t);
@@ -3083,9 +3096,34 @@ static void finish_keepalive_ping_locked(
   }
 }
 
+// Returns true if the timer was successfully extended. The provided callback
+// is used only if the timer was not previously scheduled with slack.
+static bool ExtendScheduledTimer(grpc_chttp2_transport* t, TaskHandle& handle,
+                                 grpc_core::Duration duration,
+                                 absl::AnyInvocable<void()> cb) {
+  if (handle == TaskHandle::kInvalid) {
+    return false;
+  }
+  if (grpc_core::IsKeepAlivePingTimerBatchEnabled()) {
+    t->next_adjusted_keepalive_timestamp =
+        grpc_core::Timestamp::Now() + duration;
+    return true;
+  }
+  if (t->event_engine->Cancel(handle)) {
+    handle = t->event_engine->RunAfter(duration, std::move(cb));
+    return true;
+  }
+  return false;
+}
+
 static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t) {
-  if (t->keepalive_ping_timer_handle != TaskHandle::kInvalid &&
-      t->event_engine->Cancel(t->keepalive_ping_timer_handle)) {
+  if (ExtendScheduledTimer(
+          t, t->keepalive_ping_timer_handle, t->keepalive_time,
+          [t = t->Ref()]() mutable {
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
+            init_keepalive_ping(std::move(t));
+          })) {
     // Cancel succeeds, resets the keepalive ping timer. Note that we don't
     // need to Ref or Unref here since we still hold the Ref.
     if (GRPC_TRACE_FLAG_ENABLED(http) ||
@@ -3093,12 +3131,6 @@ static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t) {
       LOG(INFO) << t->peer_string.as_string_view()
                 << ": Keepalive ping cancelled. Resetting timer.";
     }
-    t->keepalive_ping_timer_handle =
-        t->event_engine->RunAfter(t->keepalive_time, [t = t->Ref()]() mutable {
-          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-          grpc_core::ExecCtx exec_ctx;
-          init_keepalive_ping(std::move(t));
-        });
   }
 }
 

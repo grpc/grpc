@@ -34,7 +34,6 @@
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
-#include "src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -480,9 +479,6 @@ void ChaoticGoodServerListener::Orphan() {
 
 int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
   using grpc_event_engine::experimental::EventEngine;
-  if (grpc_core::IsChaoticGoodLegacyProtocolEnabled()) {
-    return grpc_server_add_chaotic_good_legacy_port(server, addr);
-  }
   grpc_core::ExecCtx exec_ctx;
   auto* const core_server = grpc_core::Server::FromC(server);
   const std::string parsed_addr = grpc_core::URI::PercentDecode(addr);
