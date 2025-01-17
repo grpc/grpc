@@ -139,19 +139,14 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                          return Success{};
                        });
           });
-      call_handler_.SpawnInfallible(
-          "final-batch",
-          GRPC_LATENT_SEE_PROMISE(
-              "ServerCallBatch",
-              InfallibleBatch(std::move(primary_ops),
-                              std::move(recv_trailing_metadata),
-                              is_notify_tag_closure, notify_tag, cq_)));
+      server_op_serializer_->Spawn(InfallibleBatch(
+          std::move(primary_ops), std::move(recv_trailing_metadata),
+          is_notify_tag_closure, notify_tag, cq_));
     } else {
-      call_handler_.SpawnInfallible(
-          "batch", GRPC_LATENT_SEE_PROMISE(
-                       "ServerCallBatch",
-                       FallibleBatch(std::move(primary_ops),
-                                     is_notify_tag_closure, notify_tag, cq_)));
+      server_op_serializer_->Spawn(GRPC_LATENT_SEE_PROMISE(
+          "ServerCallBatch",
+          FallibleBatch(std::move(primary_ops), is_notify_tag_closure,
+                        notify_tag, cq_)));
     }
   };
 
