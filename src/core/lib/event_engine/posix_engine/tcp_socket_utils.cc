@@ -813,10 +813,6 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 
 #else  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
-absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int /*bytes*/) {
-  grpc_core::Crash("unimplemented");
-}
-
 absl::Status PosixSocketWrapper::SetSocketZeroCopy() {
   grpc_core::Crash("unimplemented");
 }

@@ -136,8 +136,9 @@ IF_POSIX_SOCKET(
       addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
       return fd;
     close_and_error:
+      FileDescriptorResult result(OperationResultKind::kError, errno);
       Close(*fd);
-      return FileDescriptorResult::Error();
+      return result;
     })
 
 #else  // GRPC_POSIX_SOCKETUTILS
