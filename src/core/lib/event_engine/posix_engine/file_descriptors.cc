@@ -73,6 +73,11 @@ PosixResult PosixResultWrap(int result) {
   return result == 0 ? PosixResultSuccess() : PosixResultError();
 }
 
+Int64Result Int64Wrap(int64_t result) {
+  return result < 0 ? Int64Result(OperationResultKind::kError, errno)
+                    : Int64Result(result);
+}
+
 }  // namespace
 
 FileDescriptor FileDescriptors::Adopt(int fd) { return FileDescriptor(fd); }
@@ -193,17 +198,15 @@ IF_POSIX_SOCKET(
       }
     })
 
+IF_POSIX_SOCKET(Int64Result FileDescriptors::RecvMsg(const FileDescriptor& fd,
+                                                     struct msghdr* message,
+                                                     int flags),
+                { return Int64Wrap(recvmsg(fd.fd(), message, flags)); })
+
 IF_POSIX_SOCKET(Int64Result FileDescriptors::SendMsg(
                     const FileDescriptor& fd, const struct msghdr* message,
                     int flags),
-                {
-                  ssize_t result = sendmsg(fd.fd(), message, flags);
-                  if (result >= 0) {
-                    return Int64Result(result);
-                  } else {
-                    return Int64Result(OperationResultKind::kError, result);
-                  }
-                })
+                { return Int64Wrap(sendmsg(fd.fd(), message, flags)); })
 
 //
 // Epoll

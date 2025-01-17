@@ -288,7 +288,6 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
-  ssize_t read_bytes;
   size_t total_read_bytes = 0;
   size_t iov_len = std::min<size_t>(MAX_READ_IOVEC, incoming_buffer_->Count());
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -330,12 +329,14 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     grpc_core::global_stats().IncrementTcpReadOffer(incoming_buffer_->Length());
     grpc_core::global_stats().IncrementTcpReadOfferIovSize(
         incoming_buffer_->Count());
+    Int64Result read_bytes;
+    FileDescriptors& fds = poller_->GetFileDescriptors();
     do {
       grpc_core::global_stats().IncrementSyscallRead();
-      read_bytes = recvmsg(fd_.fd(), &msg, 0);
-    } while (read_bytes < 0 && errno == EINTR);
+      read_bytes = fds.RecvMsg(fd_, &msg, 0);
+    } while (read_bytes.IsPosixError(EINTR));
 
-    if (read_bytes < 0 && errno == EAGAIN) {
+    if (read_bytes.IsPosixError(EAGAIN)) {
       // NB: After calling call_read_cb a parallel call of the read handler may
       // be running.
       if (total_read_bytes > 0) {
@@ -345,28 +346,29 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       inq_ = 0;
       return false;
     }
-
+    bool error_or_eof = !read_bytes.ok() || *read_bytes == 0;
     // We have read something in previous reads. We need to deliver those bytes
     // to the upper layer.
-    if (read_bytes <= 0 && total_read_bytes >= 1) {
+    if (error_or_eof && total_read_bytes >= 1) {
       break;
     }
 
-    if (read_bytes <= 0) {
+    if (error_or_eof) {
       // 0 read size ==> end of stream
       incoming_buffer_->Clear();
-      if (read_bytes == 0) {
+      if (*read_bytes == 0) {
         status = TcpAnnotateError(absl::InternalError("Socket closed"));
       } else {
-        status = TcpAnnotateError(absl::InternalError(
-            absl::StrCat("recvmsg:", grpc_core::StrError(errno))));
+        status = TcpAnnotateError(
+            absl::InternalError(absl::StrCat("recvmsg:", read_bytes.status())));
       }
       return true;
     }
 
-    grpc_core::global_stats().IncrementTcpReadSize(read_bytes);
-    AddToEstimate(static_cast<size_t>(read_bytes));
-    DCHECK((size_t)read_bytes <= incoming_buffer_->Length() - total_read_bytes);
+    grpc_core::global_stats().IncrementTcpReadSize(*read_bytes);
+    AddToEstimate(*read_bytes);
+    DCHECK((size_t)*read_bytes <=
+           incoming_buffer_->Length() - total_read_bytes);
 
 #ifdef GRPC_HAVE_TCP_INQ
     if (inq_capable_) {
@@ -382,14 +384,14 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     }
 #endif  // GRPC_HAVE_TCP_INQ
 
-    total_read_bytes += read_bytes;
+    total_read_bytes += *read_bytes;
     if (inq_ == 0 || total_read_bytes == incoming_buffer_->Length()) {
       break;
     }
 
     // We had a partial read, and still have space to read more data. So, adjust
     // IOVs and try to read more.
-    size_t remaining = read_bytes;
+    size_t remaining = *read_bytes;
     size_t j = 0;
     for (size_t i = 0; i < iov_len; i++) {
       if (remaining >= iov[i].iov_len) {
@@ -712,17 +714,17 @@ bool PosixEndpointImpl::ProcessErrors() {
     struct cmsghdr align;
   } aligned_buf;
   msg.msg_control = aligned_buf.rbuf;
-  int r, saved_errno;
+  Int64Result r;
+  FileDescriptors& fds = poller_->GetFileDescriptors();
   while (true) {
     msg.msg_controllen = sizeof(aligned_buf.rbuf);
     do {
-      r = recvmsg(fd_.fd(), &msg, MSG_ERRQUEUE);
-      saved_errno = errno;
-    } while (r < 0 && saved_errno == EINTR);
+      r = fds.RecvMsg(fd_, &msg, MSG_ERRQUEUE);
+    } while (r.IsPosixError(EINTR));
 
-    if (r < 0 && saved_errno == EAGAIN) {
+    if (r.IsPosixError(EAGAIN)) {
       return processed_err;  // No more errors to process
-    } else if (r < 0) {
+    } else if (!r.ok()) {
       return processed_err;
     }
     if (GPR_UNLIKELY((msg.msg_flags & MSG_CTRUNC) != 0)) {
@@ -877,8 +879,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
 
   // If there was an error on sendmsg the logic in tcp_flush will handle it.
   grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
-  ssize_t length = TcpSend(&poller_->GetFileDescriptors(), fd_, msg,
-                           saved_errno, additional_flags);
+  ssize_t length = TcpSend(&fds, fd_, msg, saved_errno, additional_flags);
   *sent_length = length;
   auto fd = fds.GetRawFileDescriptor(fd_);
   // Only save timestamps if all the bytes were taken by sendmsg.

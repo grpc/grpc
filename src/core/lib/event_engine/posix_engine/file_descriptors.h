@@ -163,6 +163,8 @@ class FileDescriptors {
                          void* optval, void* optlen);
   Int64Result SetSockOpt(const FileDescriptor& fd, int level, int optname,
                          uint32_t optval);
+  Int64Result RecvMsg(const FileDescriptor& fd, struct msghdr* message,
+                      int flags);
   Int64Result SendMsg(const FileDescriptor& fd, const struct msghdr* message,
                       int flags);
 
