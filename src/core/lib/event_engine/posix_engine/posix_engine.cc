@@ -21,7 +21,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -34,12 +33,10 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/forkable.h"
-#include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h"
@@ -262,8 +259,8 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
 
   std::string name = absl::StrCat("tcp-client:", addr_uri.value());
   PosixEventPoller* poller = poller_manager_->Poller();
-  EventHandle* handle =
-      poller->CreateHandle(fd, name, poller->CanTrackErrors());
+  EventHandle* handle = poller->CreateHandle(
+      poller->GetFileDescriptors().Adopt(fd), name, poller->CanTrackErrors());
 
   if (connect_errno == 0) {
     // Connection already succeeded. Return 0 to discourage any cancellation
@@ -673,7 +670,8 @@ PosixEventEngine::CreatePosixEndpointFromFd(int fd,
   PosixEventPoller* poller = poller_manager_->Poller();
   DCHECK_NE(poller, nullptr);
   EventHandle* handle =
-      poller->CreateHandle(fd, "tcp-client", poller->CanTrackErrors());
+      poller->CreateHandle(poller->GetFileDescriptors().Adopt(fd), "tcp-client",
+                           poller->CanTrackErrors());
   return CreatePosixEndpoint(handle, nullptr, shared_from_this(),
                              std::move(memory_allocator),
                              TcpOptionsFromEndpointConfig(config));

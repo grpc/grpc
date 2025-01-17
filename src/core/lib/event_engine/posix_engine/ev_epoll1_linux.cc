@@ -346,18 +346,19 @@ void Epoll1Poller::Close() {
 
 Epoll1Poller::~Epoll1Poller() { Close(); }
 
-EventHandle* Epoll1Poller::CreateHandle(int fd, absl::string_view /*name*/,
+EventHandle* Epoll1Poller::CreateHandle(FileDescriptor fd,
+                                        absl::string_view /*name*/,
                                         bool track_err) {
   Epoll1EventHandle* new_handle = nullptr;
   {
     grpc_core::MutexLock lock(&mu_);
     if (free_epoll1_handles_list_.empty()) {
-      new_handle = new Epoll1EventHandle(fd, this);
+      new_handle = new Epoll1EventHandle(fd.fd(), this);
     } else {
       new_handle = reinterpret_cast<Epoll1EventHandle*>(
           free_epoll1_handles_list_.front());
       free_epoll1_handles_list_.pop_front();
-      new_handle->ReInit(fd);
+      new_handle->ReInit(fd.fd());
     }
   }
   struct epoll_event ev;
@@ -369,7 +370,7 @@ EventHandle* Epoll1Poller::CreateHandle(int fd, absl::string_view /*name*/,
   // returned to the free list at that point.
   ev.data.ptr = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(new_handle) |
                                         (track_err ? 1 : 0));
-  if (epoll_ctl(g_epoll_set_.epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
+  if (epoll_ctl(g_epoll_set_.epfd, EPOLL_CTL_ADD, fd.fd(), &ev) != 0) {
     LOG(ERROR) << "epoll_ctl failed: " << grpc_core::StrError(errno);
   }
 
@@ -550,7 +551,8 @@ void Epoll1Poller::Shutdown() { grpc_core::Crash("unimplemented"); }
 
 Epoll1Poller::~Epoll1Poller() { grpc_core::Crash("unimplemented"); }
 
-EventHandle* Epoll1Poller::CreateHandle(int /*fd*/, absl::string_view /*name*/,
+EventHandle* Epoll1Poller::CreateHandle(FileDescriptor /*fd*/,
+                                        absl::string_view /*name*/,
                                         bool /*track_err*/) {
   grpc_core::Crash("unimplemented");
 }

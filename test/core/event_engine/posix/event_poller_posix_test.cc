@@ -209,7 +209,7 @@ void ListenShutdownCb(server* sv) {
 
 // Called when a new TCP connection request arrives in the listening port.
 void ListenCb(server* sv, absl::Status status) {
-  int fd;
+  FileDescriptorResult fd;
   int flags;
   session* se;
   struct sockaddr_storage ss;
@@ -222,25 +222,26 @@ void ListenCb(server* sv, absl::Status status) {
   }
 
   do {
-    fd = accept(listen_em_fd->WrappedFd(),
-                reinterpret_cast<struct sockaddr*>(&ss), &slen);
-  } while (fd < 0 && errno == EINTR);
-  if (fd < 0 && errno == EAGAIN) {
+    fd = g_event_poller->GetFileDescriptors().Accept(
+        listen_em_fd->WrappedFd(), reinterpret_cast<struct sockaddr*>(&ss),
+        &slen);
+  } while (fd.IsPosixError(EINTR));
+  if (fd.IsPosixError(EAGAIN)) {
     sv->listen_closure = PosixEngineClosure::TestOnlyToClosure(
         [sv](absl::Status status) { ListenCb(sv, status); });
     listen_em_fd->NotifyOnRead(sv->listen_closure);
     return;
-  } else if (fd < 0) {
+  } else if (!fd.ok()) {
     LOG(ERROR) << "Failed to accept a connection, returned error: "
-               << grpc_core::StrError(errno);
+               << fd.status();
   }
-  EXPECT_GE(fd, 0);
-  EXPECT_LT(fd, FD_SETSIZE);
-  flags = fcntl(fd, F_GETFL, 0);
-  fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+  ASSERT_TRUE(fd.ok()) << fd.status();
+  EXPECT_LT(fd.fd(), FD_SETSIZE);
+  flags = fcntl(fd.fd(), F_GETFL, 0);
+  fcntl(fd.fd(), F_SETFL, flags | O_NONBLOCK);
   se = static_cast<session*>(gpr_malloc(sizeof(*se)));
   se->sv = sv;
-  se->em_fd = g_event_poller->CreateHandle(fd, "listener", false);
+  se->em_fd = g_event_poller->CreateHandle(*fd, "listener", false);
   se->session_read_closure = PosixEngineClosure::TestOnlyToClosure(
       [se](absl::Status status) { SessionReadCb(se, status); });
   se->em_fd->NotifyOnRead(se->session_read_closure);
@@ -266,7 +267,8 @@ int ServerStart(server* sv) {
   port = ntohs(sin.sin6_port);
   EXPECT_EQ(listen(fd, MAX_NUM_FD), 0);
 
-  sv->em_fd = g_event_poller->CreateHandle(fd, "server", false);
+  sv->em_fd = g_event_poller->CreateHandle(
+      g_event_poller->GetFileDescriptors().Adopt(fd), "server", false);
   sv->listen_closure = PosixEngineClosure::TestOnlyToClosure(
       [sv](absl::Status status) { ListenCb(sv, status); });
   sv->em_fd->NotifyOnRead(sv->listen_closure);
@@ -354,7 +356,8 @@ void ClientStart(client* cl, int port) {
     }
   }
 
-  cl->em_fd = g_event_poller->CreateHandle(fd, "client", false);
+  cl->em_fd = g_event_poller->CreateHandle(
+      g_event_poller->GetFileDescriptors().Adopt(fd), "client", false);
   ClientSessionWrite(cl, absl::OkStatus());
 }
 
@@ -471,8 +474,9 @@ TEST_F(EventPollerTest, TestEventPollerHandleChange) {
   flags = fcntl(sv[1], F_GETFL, 0);
   EXPECT_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
 
-  em_fd =
-      g_event_poller->CreateHandle(sv[0], "TestEventPollerHandleChange", false);
+  em_fd = g_event_poller->CreateHandle(
+      g_event_poller->GetFileDescriptors().Adopt(sv[0]),
+      "TestEventPollerHandleChange", false);
   EXPECT_NE(em_fd, nullptr);
   // Register the first callback, then make its FD readable
   em_fd->NotifyOnRead(first_closure);
@@ -572,7 +576,9 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
     EXPECT_NE(scheduler_, nullptr);
     EXPECT_NE(poller_, nullptr);
     wakeup_fd_ = *PipeWakeupFd::CreatePipeWakeupFd();
-    handle_ = poller_->CreateHandle(wakeup_fd_->ReadFd(), "test", false);
+    handle_ = poller_->CreateHandle(
+        poller_->GetFileDescriptors().Adopt(wakeup_fd_->ReadFd()), "test",
+        false);
     EXPECT_NE(handle_, nullptr);
     handle_->NotifyOnRead(on_read_);
     //  Send a wakeup initially.
