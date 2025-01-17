@@ -90,8 +90,8 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   void RecordReceivedInitialMetadata(
       grpc_metadata_batch* recv_initial_metadata) override;
 
-  void RecordReceivedMessage(
-      const grpc_core::SliceBuffer& recv_message) override;
+  void RecordReceivedMessage(const grpc_core::SliceBuffer& recv_message,
+                             bool /*compressed*/) override;
 
   void RecordReceivedDecompressedMessage(
       const grpc_core::SliceBuffer& recv_decompressed_message) override;

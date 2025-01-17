@@ -206,7 +206,8 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
-    RecordReceivedMessage(const grpc_core::SliceBuffer& /*recv_message*/) {
+    RecordReceivedMessage(const grpc_core::SliceBuffer& /*recv_message*/,
+                          bool /*compressed*/) {
   ++recv_message_count_;
 }
 

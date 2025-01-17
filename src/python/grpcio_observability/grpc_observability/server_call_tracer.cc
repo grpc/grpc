@@ -154,7 +154,7 @@ void PythonOpenCensusServerCallTracer::RecordSendCompressedMessage(
 }
 
 void PythonOpenCensusServerCallTracer::RecordReceivedMessage(
-    const grpc_core::SliceBuffer& recv_message) {
+    const grpc_core::SliceBuffer& recv_message, bool /*compressed*/) {
   RecordAnnotation(
       absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
   ++recv_message_count_;
