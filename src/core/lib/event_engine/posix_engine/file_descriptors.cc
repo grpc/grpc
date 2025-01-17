@@ -16,6 +16,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
+#include <sys/types.h>
 
 #include <cerrno>
 #include <cstdint>
@@ -61,7 +62,7 @@ namespace grpc_event_engine::experimental {
 namespace {
 
 constexpr PosixResult PosixResultSuccess() {
-  return PosixResult(OperationResultKind::kSuccess);
+  return PosixResult(OperationResultKind::kSuccess, 0);
 }
 
 PosixResult PosixResultError() {
@@ -83,11 +84,9 @@ std::optional<int> FileDescriptors::GetRawFileDescriptor(
 
 FileDescriptorResult FileDescriptors::RegisterPosixResult(int result) {
   if (result > 0) {
-    return FileDescriptorResult(OperationResultKind::kSuccess, Adopt(result),
-                                0);
+    return FileDescriptorResult(Adopt(result));
   } else {
-    return FileDescriptorResult(OperationResultKind::kError, FileDescriptor(),
-                                errno);
+    return FileDescriptorResult(OperationResultKind::kError, errno);
   }
 }
 
@@ -182,11 +181,27 @@ IF_POSIX_SOCKET(
                                         static_cast<socklen_t*>(optlen)));
     })
 
-IF_POSIX_SOCKET(PosixResult FileDescriptors::SetSockOpt(
-                    const FileDescriptor& fd, int optname, uint32_t* optval),
+IF_POSIX_SOCKET(Int64Result FileDescriptors::SetSockOpt(
+                    const FileDescriptor& fd, int optname, uint32_t optval),
                 {
-                  return PosixResultWrap(setsockopt(
-                      fd.fd(), SOL_SOCKET, optname, optval, sizeof(*optval)));
+                  if (setsockopt(fd.fd(), SOL_SOCKET, optname, &optval,
+                                 sizeof(optval)) < 0) {
+                    return Int64Result(OperationResultKind::kError, errno);
+                  } else {
+                    return Int64Result(optval);
+                  }
+                })
+
+IF_POSIX_SOCKET(Int64Result FileDescriptors::SendMsg(
+                    const FileDescriptor& fd, const struct msghdr* message,
+                    int flags),
+                {
+                  ssize_t result = sendmsg(fd.fd(), message, flags);
+                  if (result >= 0) {
+                    return Int64Result(result);
+                  } else {
+                    return Int64Result(OperationResultKind::kError, result);
+                  }
                 })
 
 //

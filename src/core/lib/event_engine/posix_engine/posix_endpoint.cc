@@ -95,15 +95,16 @@ namespace {
 
 // A wrapper around sendmsg. It sends \a msg over \a fd and returns the number
 // of bytes sent.
-ssize_t TcpSend(const FileDescriptor& fd, const struct msghdr* msg,
-                int* saved_errno, int additional_flags = 0) {
+ssize_t TcpSend(FileDescriptors* fds, const FileDescriptor& fd,
+                const struct msghdr* msg, int* saved_errno,
+                int additional_flags = 0) {
   GRPC_LATENT_SEE_PARENT_SCOPE("TcpSend");
-  ssize_t sent_length;
+  Int64Result send_result;
   do {
     grpc_core::global_stats().IncrementSyscallWrite();
-    sent_length = sendmsg(fd.fd(), msg, SENDMSG_FLAGS | additional_flags);
-  } while (sent_length < 0 && (*saved_errno = errno) == EINTR);
-  return sent_length;
+    send_result = fds->SendMsg(fd, msg, SENDMSG_FLAGS | additional_flags);
+  } while (send_result.IsPosixError(EINTR));
+  return *send_result;
 }
 
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -513,9 +514,9 @@ void PosixEndpointImpl::UpdateRcvLowat() {
   // succeeds, it returns the number of bytes (wait threshold) that was actually
   // set.
   auto result =
-      poller_->GetFileDescriptors().SetSockOpt(fd_, SO_RCVLOWAT, &remaining);
+      poller_->GetFileDescriptors().SetSockOpt(fd_, SO_RCVLOWAT, remaining);
   if (result.ok()) {
-    set_rcvlowat_ = remaining;
+    set_rcvlowat_ = *result;
   } else {
     LOG(ERROR) << "ERROR in SO_RCVLOWAT: " << result.status();
   }
@@ -853,8 +854,8 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
                                             int additional_flags) {
   auto& fds = poller_->GetFileDescriptors();
   if (!socket_ts_enabled_) {
-    uint32_t value = kTimestampingSocketOptions;
-    if (!fds.SetSockOpt(fd_, SO_TIMESTAMPING, &value).ok()) {
+    if (!fds.SetSockOpt(fd_, SO_TIMESTAMPING, kTimestampingSocketOptions)
+             .ok()) {
       return false;
     }
     bytes_counter_ = -1;
@@ -875,7 +876,8 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
 
   // If there was an error on sendmsg the logic in tcp_flush will handle it.
   grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
-  ssize_t length = TcpSend(fd_, msg, saved_errno, additional_flags);
+  ssize_t length = TcpSend(&poller_->GetFileDescriptors(), fd_, msg,
+                           saved_errno, additional_flags);
   *sent_length = length;
   auto fd = fds.GetRawFileDescriptor(fd_);
   // Only save timestamps if all the bytes were taken by sendmsg.
@@ -976,7 +978,8 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
       msg.msg_controllen = 0;
       grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
       grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
-      sent_length = TcpSend(fd_, &msg, &saved_errno, MSG_ZEROCOPY);
+      sent_length = TcpSend(&poller_->GetFileDescriptors(), fd_, &msg,
+                            &saved_errno, MSG_ZEROCOPY);
     }
     if (tcp_zerocopy_send_ctx_->UpdateZeroCopyOptMemStateAfterSend(
             saved_errno == ENOBUFS, constrained) ||
@@ -1095,7 +1098,8 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
       msg.msg_controllen = 0;
       grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
       grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
-      sent_length = TcpSend(fd_, &msg, &saved_errno);
+      sent_length =
+          TcpSend(&poller_->GetFileDescriptors(), fd_, &msg, &saved_errno);
     }
 
     if (sent_length < 0) {

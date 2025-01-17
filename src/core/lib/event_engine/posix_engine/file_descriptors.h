@@ -63,7 +63,7 @@ void AbslStringify(Sink& sink, OperationResultKind kind) {
 class PosixResult {
  public:
   constexpr PosixResult() = default;
-  explicit constexpr PosixResult(OperationResultKind kind, int errno_value = 0)
+  explicit constexpr PosixResult(OperationResultKind kind, int errno_value)
       : kind_(kind), errno_value_(errno_value) {}
 
   absl::Status status() const {
@@ -99,9 +99,10 @@ class PosixResult {
 class FileDescriptorResult final : public PosixResult {
  public:
   FileDescriptorResult() = default;
-  FileDescriptorResult(OperationResultKind kind, const FileDescriptor& fd,
-                       int errno_value = 0)
-      : PosixResult(kind, errno_value), fd_(fd) {}
+  explicit FileDescriptorResult(const FileDescriptor& fd)
+      : PosixResult(OperationResultKind::kSuccess, 0), fd_(fd) {}
+  FileDescriptorResult(OperationResultKind kind, int errno_value)
+      : PosixResult(kind, errno_value) {}
 
   FileDescriptor operator*() const {
     CHECK_OK(status());
@@ -118,6 +119,22 @@ class FileDescriptorResult final : public PosixResult {
  private:
   // gRPC wrapped FileDescriptor, as described above
   FileDescriptor fd_;
+};
+
+// Result of the call that returns error or ssize_t. Smaller integer types
+// will also be packed here.
+class Int64Result final : public PosixResult {
+ public:
+  Int64Result() = default;
+  explicit Int64Result(int64_t result)
+      : PosixResult(OperationResultKind::kSuccess, 0), result_(result) {}
+  Int64Result(OperationResultKind kind, int errno_value)
+      : PosixResult(kind, errno_value) {}
+
+  int64_t operator*() const { return result_; }
+
+ private:
+  int64_t result_ = 0;
 };
 
 class FileDescriptors {
@@ -139,8 +156,10 @@ class FileDescriptors {
   PosixResult Shutdown(const FileDescriptor& fd, int how);
   PosixResult GetSockOpt(const FileDescriptor& fd, int level, int optname,
                          void* optval, void* optlen);
-  PosixResult SetSockOpt(const FileDescriptor& fd, int optname,
-                         uint32_t* optval);
+  Int64Result SetSockOpt(const FileDescriptor& fd, int optname,
+                         uint32_t optval);
+  Int64Result SendMsg(const FileDescriptor& fd, const struct msghdr* messsage,
+                      int flags);
 
   // Epoll
   PosixResult EpollCtlAdd(int epfd, const FileDescriptor& fd, void* data);
