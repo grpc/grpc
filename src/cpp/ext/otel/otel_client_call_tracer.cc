@@ -111,30 +111,31 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
-    RecordSendMessage(const grpc_core::SliceBuffer& send_message) {
-  RecordAnnotation(
-      absl::StrFormat("Send message: %ld bytes", send_message.Length()));
+    RecordSendMessage(const grpc_core::Message& send_message) {
+  RecordAnnotation(absl::StrFormat("Send message: %ld bytes",
+                                   send_message.payload()->Length()));
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     RecordSendCompressedMessage(
-        const grpc_core::SliceBuffer& send_compressed_message) {
-  RecordAnnotation(absl::StrFormat("Send compressed message: %ld bytes",
-                                   send_compressed_message.Length()));
+        const grpc_core::Message& send_compressed_message) {
+  RecordAnnotation(
+      absl::StrFormat("Send compressed message: %ld bytes",
+                      send_compressed_message.payload()->Length()));
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
-    RecordReceivedMessage(const grpc_core::SliceBuffer& recv_message,
-                          bool /*compressed*/) {
-  RecordAnnotation(
-      absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
+    RecordReceivedMessage(const grpc_core::Message& recv_message) {
+  RecordAnnotation(absl::StrFormat("Received message: %ld bytes",
+                                   recv_message.payload()->Length()));
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     RecordReceivedDecompressedMessage(
-        const grpc_core::SliceBuffer& recv_decompressed_message) {
-  RecordAnnotation(absl::StrFormat("Received decompressed message: %ld bytes",
-                                   recv_decompressed_message.Length()));
+        const grpc_core::Message& recv_decompressed_message) {
+  RecordAnnotation(
+      absl::StrFormat("Received decompressed message: %ld bytes",
+                      recv_decompressed_message.payload()->Length()));
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::

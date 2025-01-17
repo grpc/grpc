@@ -114,7 +114,7 @@ MessageHandle ChannelCompression::CompressMessage(
       << " alg=" << algorithm << " flags=" << message->flags();
   auto* call_tracer = MaybeGetContext<CallTracerInterface>();
   if (call_tracer != nullptr) {
-    call_tracer->RecordSendMessage(*message->payload());
+    call_tracer->RecordSendMessage(*message);
   }
   // Check if we're allowed to compress this message
   // (apps might want to disable compression for certain messages to avoid
@@ -147,7 +147,7 @@ MessageHandle ChannelCompression::CompressMessage(
     tmp.Swap(payload);
     flags |= GRPC_WRITE_INTERNAL_COMPRESS;
     if (call_tracer != nullptr) {
-      call_tracer->RecordSendCompressedMessage(*message->payload());
+      call_tracer->RecordSendCompressedMessage(*message);
     }
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(compression)) {
@@ -169,8 +169,7 @@ absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
       << " alg=" << args.algorithm;
   auto* call_tracer = MaybeGetContext<CallTracerInterface>();
   if (call_tracer != nullptr) {
-    call_tracer->RecordReceivedMessage(
-        *message->payload(), message->flags() & GRPC_WRITE_INTERNAL_COMPRESS);
+    call_tracer->RecordReceivedMessage(*message);
   }
   // Check max message length.
   if (args.max_recv_message_length.has_value() &&
@@ -200,7 +199,7 @@ absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
   message->mutable_flags() &= ~GRPC_WRITE_INTERNAL_COMPRESS;
   message->mutable_flags() |= GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED;
   if (call_tracer != nullptr) {
-    call_tracer->RecordReceivedDecompressedMessage(*message->payload());
+    call_tracer->RecordReceivedDecompressedMessage(*message);
   }
   return std::move(message);
 }
