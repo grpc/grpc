@@ -52,6 +52,7 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/match.h"
 #include "src/core/util/sync.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
@@ -440,19 +441,16 @@ class XdsClientTest : public ::testing::Test {
       XdsResourceType::DecodeResult result;
       if (!json.ok()) {
         result.resource = json.status();
-      } else {
-        absl::StatusOr<ResourceStruct> foo =
-            LoadFromJson<ResourceStruct>(*json);
-        if (!foo.ok()) {
-          auto it = json->object().find("name");
-          if (it != json->object().end()) {
-            result.name = it->second.string();
-          }
-          result.resource = foo.status();
-        } else {
-          result.name = foo->name;
-          result.resource = std::make_unique<ResourceStruct>(std::move(*foo));
+      } else if (auto resource = LoadFromJson<ResourceStruct>(*json);
+                 !resource.ok()) {
+        if (auto it = json->object().find("name"); it != json->object().end()) {
+          result.name = it->second.string();
         }
+        result.resource = resource.status();
+      } else {
+        result.name = resource->name;
+        result.resource =
+            std::make_unique<ResourceStruct>(std::move(*resource));
       }
       return result;
     }
@@ -776,8 +774,7 @@ class XdsClientTest : public ::testing::Test {
     event_engine_->FuzzingDone();
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
-    grpc_event_engine::experimental::WaitForSingleOwner(
-        std::move(event_engine_));
+    WaitForSingleOwner(std::move(event_engine_));
     grpc_shutdown_blocking();
   }
 
