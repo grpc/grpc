@@ -18,6 +18,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include <cerrno>
+#include <cstdint>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
@@ -61,19 +62,9 @@ void AbslStringify(Sink& sink, OperationResultKind kind) {
 // Accept*
 class PosixResult {
  public:
-  static constexpr PosixResult Success() {
-    return PosixResult(OperationResultKind::kSuccess);
-  }
-
-  static PosixResult Error() {
-    return PosixResult(OperationResultKind::kError, errno);
-  }
-
-  static PosixResult Wrap(int result) {
-    return result == 0 ? Success() : Error();
-  }
-
-  PosixResult() = default;
+  constexpr PosixResult() = default;
+  explicit constexpr PosixResult(OperationResultKind kind, int errno_value = 0)
+      : kind_(kind), errno_value_(errno_value) {}
 
   absl::Status status() const {
     switch (kind_) {
@@ -87,7 +78,7 @@ class PosixResult {
     }
   }
 
-  bool ok() const { return kind_ == OperationResultKind::kSuccess; }
+  virtual bool ok() const { return kind_ == OperationResultKind::kSuccess; }
 
   bool IsPosixError(int err) const {
     return kind_ == OperationResultKind::kError && errno_value_ == err;
@@ -97,9 +88,6 @@ class PosixResult {
   int errno_value() const { return errno_value_; }
 
  private:
-  explicit constexpr PosixResult(OperationResultKind kind, int errno_value = 0)
-      : kind_(kind), errno_value_(errno_value) {}
-
   OperationResultKind kind_ = OperationResultKind::kSuccess;
   // errno value on call completion, in order to reduce the race conditions
   // from relying on global variable.
@@ -108,18 +96,12 @@ class PosixResult {
 
 // Result of the factory call. kWrongGeneration may happen in the call to
 // Accept*
-class FileDescriptorResult {
+class FileDescriptorResult final : public PosixResult {
  public:
-  static FileDescriptorResult FD(const FileDescriptor& fd) {
-    return FileDescriptorResult(OperationResultKind::kSuccess, fd, 0);
-  }
-
-  static FileDescriptorResult Error() {
-    return FileDescriptorResult(OperationResultKind::kError, FileDescriptor(),
-                                errno);
-  }
-
   FileDescriptorResult() = default;
+  FileDescriptorResult(OperationResultKind kind, const FileDescriptor& fd,
+                       int errno_value = 0)
+      : PosixResult(kind, errno_value), fd_(fd) {}
 
   FileDescriptor operator*() const {
     CHECK_OK(status());
@@ -131,40 +113,11 @@ class FileDescriptorResult {
     return fd_.fd();
   }
 
-  absl::Status status() const {
-    switch (kind_) {
-      case OperationResultKind::kSuccess:
-        return absl::OkStatus();
-      case OperationResultKind::kError:
-        return absl::ErrnoToStatus(errno_value_, "");
-      case OperationResultKind::kWrongGeneration:
-        return absl::InternalError(
-            "File descriptor is from the wrong generation");
-    }
-  }
-
-  bool ok() const {
-    return kind_ == OperationResultKind::kSuccess && fd_.fd() > 0;
-  }
-
-  bool IsPosixError(int err) const {
-    return kind_ == OperationResultKind::kError && errno_value_ == err;
-  }
-
-  OperationResultKind kind() const { return kind_; }
-  int errno_value() const { return errno_value_; }
+  bool ok() const override { return PosixResult::ok() && fd_.fd() > 0; }
 
  private:
-  FileDescriptorResult(OperationResultKind kind, const FileDescriptor& fd,
-                       int errno_value = 0)
-      : kind_(kind), fd_(fd), errno_value_(errno_value) {}
-
-  OperationResultKind kind_;
   // gRPC wrapped FileDescriptor, as described above
   FileDescriptor fd_;
-  // errno value on call completion, in order to reduce the race conditions
-  // from relying on global variable.
-  int errno_value_;
 };
 
 class FileDescriptors {
@@ -178,11 +131,16 @@ class FileDescriptors {
 
   void Close(const FileDescriptor& fd);
 
+  // Returns nullopt if the file descriptor is not usable
+  std::optional<int> GetRawFileDescriptor(const FileDescriptor& fd);
+
   // Posix
   PosixResult Ioctl(const FileDescriptor& fd, int op, void* arg);
   PosixResult Shutdown(const FileDescriptor& fd, int how);
   PosixResult GetSockOpt(const FileDescriptor& fd, int level, int optname,
                          void* optval, void* optlen);
+  PosixResult SetSockOpt(const FileDescriptor& fd, int optname,
+                         uint32_t* optval);
 
   // Epoll
   PosixResult EpollCtlAdd(int epfd, const FileDescriptor& fd, void* data);

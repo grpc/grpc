@@ -18,6 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <cerrno>
+#include <cstdint>
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -47,7 +48,7 @@
 #define IF_EPOLL(signature, body) \
   signature { grpc_core::Crash("unimplemented"); }
 #endif  // GRPC_LINUX_EPOLL
-#else  // GRPC_POSIX_SOCKET
+#else   // GRPC_POSIX_SOCKET
 #include "src/core/util/crash.h"
 #define IF_POSIX_SOCKET(signature, body) \
   signature { grpc_core::Crash("unimplemented"); }
@@ -57,13 +58,36 @@
 
 namespace grpc_event_engine::experimental {
 
+namespace {
+
+constexpr PosixResult PosixResultSuccess() {
+  return PosixResult(OperationResultKind::kSuccess);
+}
+
+PosixResult PosixResultError() {
+  return PosixResult(OperationResultKind::kError, errno);
+}
+
+PosixResult PosixResultWrap(int result) {
+  return result == 0 ? PosixResultSuccess() : PosixResultError();
+}
+
+}  // namespace
+
 FileDescriptor FileDescriptors::Adopt(int fd) { return FileDescriptor(fd); }
+
+std::optional<int> FileDescriptors::GetRawFileDescriptor(
+    const FileDescriptor& fd) {
+  return fd.fd();
+}
 
 FileDescriptorResult FileDescriptors::RegisterPosixResult(int result) {
   if (result > 0) {
-    return FileDescriptorResult::FD(Adopt(result));
+    return FileDescriptorResult(OperationResultKind::kSuccess, Adopt(result),
+                                0);
   } else {
-    return FileDescriptorResult::Error();
+    return FileDescriptorResult(OperationResultKind::kError, FileDescriptor(),
+                                errno);
   }
 }
 
@@ -143,20 +167,27 @@ IF_POSIX_SOCKET(
 
 IF_POSIX_SOCKET(PosixResult FileDescriptors::Ioctl(const FileDescriptor& fd,
                                                    int op, void* arg),
-                { return PosixResult::Wrap(ioctl(fd.fd(), op, arg)); });
+                { return PosixResultWrap(ioctl(fd.fd(), op, arg)); });
 
 IF_POSIX_SOCKET(PosixResult FileDescriptors::Shutdown(const FileDescriptor& fd,
                                                       int how),
-                { return PosixResult::Wrap(shutdown(fd.fd(), how)); })
+                { return PosixResultWrap(shutdown(fd.fd(), how)); })
 
 IF_POSIX_SOCKET(
     PosixResult FileDescriptors::GetSockOpt(const FileDescriptor& fd, int level,
                                             int optname, void* optval,
                                             void* optlen),
     {
-      return PosixResult::Wrap(getsockopt(fd.fd(), level, optname, optval,
-                                          static_cast<socklen_t*>(optlen)));
+      return PosixResultWrap(getsockopt(fd.fd(), level, optname, optval,
+                                        static_cast<socklen_t*>(optlen)));
     })
+
+IF_POSIX_SOCKET(PosixResult FileDescriptors::SetSockOpt(
+                    const FileDescriptor& fd, int optname, uint32_t* optval),
+                {
+                  return PosixResultWrap(setsockopt(
+                      fd.fd(), SOL_SOCKET, optname, optval, sizeof(*optval)));
+                })
 
 //
 // Epoll
@@ -165,7 +196,7 @@ IF_EPOLL(PosixResult FileDescriptors::EpollCtlDel(int epfd,
                                                   const FileDescriptor& fd),
          {
            epoll_event phony_event;
-           return PosixResult::Wrap(
+           return PosixResultWrap(
                epoll_ctl(epfd, EPOLL_CTL_DEL, fd.fd(), &phony_event));
          })
 
@@ -176,7 +207,7 @@ IF_EPOLL(PosixResult FileDescriptors::EpollCtlAdd(int epfd,
            epoll_event event;
            event.events = static_cast<uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
            event.data.ptr = data;
-           return PosixResult::Wrap(
+           return PosixResultWrap(
                epoll_ctl(epfd, EPOLL_CTL_ADD, fd.fd(), &event));
          })
 

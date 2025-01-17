@@ -29,7 +29,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <type_traits>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
@@ -41,8 +40,6 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
-#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
-#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -54,7 +51,6 @@
 #include "src/core/util/status_helper.h"
 #include "src/core/util/strerror.h"
 #include "src/core/util/sync.h"
-#include "src/core/util/time.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -486,11 +482,12 @@ void PosixEndpointImpl::UpdateRcvLowat() {
   // TODO(ctiller): Check if supported by OS.
   // TODO(ctiller): Allow some adjustments instead of hardcoding things.
 
-  static constexpr int kRcvLowatMax = 16 * 1024 * 1024;
+  static constexpr uint32_t kRcvLowatMax = 16 * 1024 * 1024;
   static constexpr int kRcvLowatThreshold = 16 * 1024;
 
-  int remaining = std::min({static_cast<int>(incoming_buffer_->Length()),
-                            kRcvLowatMax, min_progress_size_});
+  uint32_t remaining =
+      std::min({static_cast<uint32_t>(incoming_buffer_->Length()), kRcvLowatMax,
+                min_progress_size_});
 
   // Setting SO_RCVLOWAT for small quantities does not save on CPU.
   if (remaining < kRcvLowatThreshold) {
@@ -511,11 +508,16 @@ void PosixEndpointImpl::UpdateRcvLowat() {
   if (set_rcvlowat_ == remaining) {
     return;
   }
-  auto result = sock_.SetSocketRcvLowat(remaining);
+  // Instruct the kernel to wait for specified number of bytes to be received on
+  // the socket before generating an interrupt for packet receive. If the call
+  // succeeds, it returns the number of bytes (wait threshold) that was actually
+  // set.
+  auto result =
+      poller_->GetFileDescriptors().SetSockOpt(fd_, SO_RCVLOWAT, &remaining);
   if (result.ok()) {
-    set_rcvlowat_ = *result;
+    set_rcvlowat_ = remaining;
   } else {
-    LOG(ERROR) << "ERROR in SO_RCVLOWAT: " << result.status().message();
+    LOG(ERROR) << "ERROR in SO_RCVLOWAT: " << result.status();
   }
 }
 
@@ -605,7 +607,8 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   incoming_buffer_->Clear();
   incoming_buffer_->Swap(last_read_buffer_);
   if (args != nullptr && grpc_core::IsTcpFrameSizeTuningEnabled()) {
-    min_progress_size_ = std::max(static_cast<int>(args->read_hint_bytes), 1);
+    min_progress_size_ = std::max(static_cast<uint32_t>(args->read_hint_bytes),
+                                  static_cast<uint32_t>(1));
   } else {
     min_progress_size_ = 1;
   }
@@ -848,10 +851,10 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
                                             ssize_t* sent_length,
                                             int* saved_errno,
                                             int additional_flags) {
+  auto& fds = poller_->GetFileDescriptors();
   if (!socket_ts_enabled_) {
-    uint32_t opt = kTimestampingSocketOptions;
-    if (setsockopt(fd_.fd(), SOL_SOCKET, SO_TIMESTAMPING,
-                   static_cast<void*>(&opt), sizeof(opt)) != 0) {
+    uint32_t value = kTimestampingSocketOptions;
+    if (!fds.SetSockOpt(fd_, SO_TIMESTAMPING, &value).ok()) {
       return false;
     }
     bytes_counter_ = -1;
@@ -874,10 +877,13 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
   grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
   ssize_t length = TcpSend(fd_, msg, saved_errno, additional_flags);
   *sent_length = length;
+  auto fd = fds.GetRawFileDescriptor(fd_);
   // Only save timestamps if all the bytes were taken by sendmsg.
-  if (sending_length == static_cast<size_t>(length)) {
+  if (!fd.has_value()) {
+    LOG(ERROR) << "File descriptor " << fd_ << " is not usable";
+  } else if (sending_length == static_cast<size_t>(length)) {
     traced_buffers_.AddNewEntry(static_cast<uint32_t>(bytes_counter_ + length),
-                                fd_.fd(), outgoing_buffer_arg_);
+                                *fd, outgoing_buffer_arg_);
     outgoing_buffer_arg_ = nullptr;
   }
   return true;
@@ -1268,8 +1274,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      std::shared_ptr<EventEngine> engine,
                                      MemoryAllocator&& /*allocator*/,
                                      const PosixTcpOptions& options)
-    : sock_(PosixSocketWrapper(handle->WrappedFd().fd())),
-      on_done_(on_done),
+    : on_done_(on_done),
       traced_buffers_(),
       handle_(handle),
       poller_(handle->Poller()),
