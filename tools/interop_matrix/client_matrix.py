@@ -457,8 +457,8 @@ LANG_RELEASE_MATRIX = {
             ("v1.65.1", ReleaseInfo()),
             ("v1.66.0", ReleaseInfo()),
             ("v1.67.1", ReleaseInfo()),
-            ("v1.68.2", ReleaseInfo()),
-            ("v1.69.0", ReleaseInfo()),
+            ("v1.68.3", ReleaseInfo()),
+            ("v1.69.1", ReleaseInfo()),
         ]
     ),
     "python": OrderedDict(
