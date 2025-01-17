@@ -118,6 +118,8 @@ struct LoopTraits<absl::StatusOr<LoopCtl<absl::Status>>> {
   }
 };
 
+}  // namespace promise_detail
+
 template <typename F>
 class Loop {
  private:
@@ -126,7 +128,7 @@ class Loop {
   using PromiseResult = typename PromiseType::Result;
 
  public:
-  using Result = typename LoopTraits<PromiseResult>::Result;
+  using Result = typename promise_detail::LoopTraits<PromiseResult>::Result;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Loop(F f)
       : factory_(std::move(f)) {}
@@ -156,7 +158,8 @@ class Loop {
       if (auto* p = promise_result.value_if_ready()) {
         //  - then if it's Continue, destroy the promise and recreate a new one
         //  from our factory.
-        auto lc = LoopTraits<PromiseResult>::ToLoopCtl(std::move(*p));
+        auto lc =
+            promise_detail::LoopTraits<PromiseResult>::ToLoopCtl(std::move(*p));
         if (std::holds_alternative<Continue>(lc)) {
           GRPC_TRACE_LOG(promise_primitives, INFO)
               << "loop[" << this << "] iteration complete, continue";
@@ -185,12 +188,8 @@ class Loop {
   bool started_ = false;
 };
 
-}  // namespace promise_detail
-
 template <typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Loop<F> Loop(F f) {
-  return promise_detail::Loop<F>(std::move(f));
-}
+Loop(F) -> Loop<F>;
 
 }  // namespace grpc_core
 
