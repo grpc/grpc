@@ -21,8 +21,6 @@
 
 namespace grpc_core {
 
-namespace promise_detail {
-
 template <typename A, typename B>
 class TwoPartyPrioritizedRace {
  public:
@@ -53,6 +51,9 @@ class TwoPartyPrioritizedRace {
   B b_;
 };
 
+/// Run all the promises until one is non-pending.
+/// Once there's a non-pending promise, repoll all the promises before that.
+/// Return the result from the lexically first non-pending promise.
 template <typename... Promises>
 class PrioritizedRace;
 
@@ -78,16 +79,8 @@ class PrioritizedRace<Promise> {
   Promise promise_;
 };
 
-}  // namespace promise_detail
-
-/// Run all the promises until one is non-pending.
-/// Once there's a non-pending promise, repoll all the promises before that.
-/// Return the result from the lexically first non-pending promise.
 template <typename... Promises>
-promise_detail::PrioritizedRace<Promises...> PrioritizedRace(
-    Promises... promises) {
-  return promise_detail::PrioritizedRace<Promises...>(std::move(promises)...);
-}
+PrioritizedRace(Promises...) -> PrioritizedRace<Promises...>;
 
 }  // namespace grpc_core
 
