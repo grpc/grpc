@@ -43,7 +43,6 @@ EXPERIMENT_ENABLES = {
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
-    "time_caching_in_party": "time_caching_in_party",
     "trace_record_callops": "trace_record_callops",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "work_serializer_dispatch": "work_serializer_dispatch",
