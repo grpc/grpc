@@ -97,9 +97,9 @@ Pod::Spec.new do |s|
   s.authors  = { 'The Protocol Buffers contributors' => 'protobuf@googlegroups.com' }
 
   repo = 'google/protobuf'
-  file = "protoc-#{v}-osx-x86_64.zip"
+  file = "protoc-#{v.delete_prefix("3.")}-osx-universal_binary.zip"
   s.source = {
-    :http => "https://github.com/#{repo}/releases/download/v#{v}/#{file}",
+    :http => "https://github.com/#{repo}/releases/download/v#{v.delete_prefix("3.")}/#{file}",
     # TODO(jcanizales): Add sha1 or sha256
     # :sha1 => '??',
   }
