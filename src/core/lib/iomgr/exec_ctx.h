@@ -115,11 +115,6 @@ class GRPC_DLL ExecCtx : public latent_see::ParentScope {
   ExecCtx()
       : latent_see::ParentScope(GRPC_LATENT_SEE_METADATA("ExecCtx")),
         flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
-#if !TARGET_OS_IPHONE
-    if (!IsTimeCachingInPartyEnabled()) {
-      time_cache_.emplace();
-    }
-#endif
     Fork::IncExecCtxCount();
     Set(this);
   }
@@ -130,11 +125,6 @@ class GRPC_DLL ExecCtx : public latent_see::ParentScope {
 
   explicit ExecCtx(uintptr_t fl, latent_see::Metadata* latent_see_metadata)
       : latent_see::ParentScope(latent_see_metadata), flags_(fl) {
-#if !TARGET_OS_IPHONE
-    if (!IsTimeCachingInPartyEnabled()) {
-      time_cache_.emplace();
-    }
-#endif
     if (!(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
       Fork::IncExecCtxCount();
     }
