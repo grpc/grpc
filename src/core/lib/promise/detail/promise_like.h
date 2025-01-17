@@ -97,6 +97,10 @@ class PromiseLike<
     return WrapInPoll(f_());
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto CallUnderlyingFn() { return f_(); }
+  PromiseLike(const PromiseLike&) = default;
+  PromiseLike& operator=(const PromiseLike&) = default;
+  PromiseLike(PromiseLike&&) = default;
+  PromiseLike& operator=(PromiseLike&&) = default;
   using Result = typename PollTraits<decltype(WrapInPoll(f_()))>::Type;
 };
 
@@ -119,6 +123,10 @@ class PromiseLike<
     f_();
     return Empty{};
   }
+  PromiseLike(const PromiseLike&) = default;
+  PromiseLike& operator=(const PromiseLike&) = default;
+  PromiseLike(PromiseLike&&) = default;
+  PromiseLike& operator=(PromiseLike&&) = default;
   using Result = Empty;
 };
 
