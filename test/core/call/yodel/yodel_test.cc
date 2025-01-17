@@ -21,6 +21,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/build.h"
 
@@ -176,8 +177,7 @@ void YodelTest::RunTest() {
   Shutdown();
   state_->event_engine->TickUntilIdle();
   state_->event_engine->UnsetGlobalHooks();
-  grpc_event_engine::experimental::WaitForSingleOwner(
-      std::move(state_->event_engine));
+  WaitForSingleOwner(std::move(state_->event_engine));
   grpc_shutdown_blocking();
   if (!grpc_wait_until_shutdown(10)) {
     LOG(FATAL) << "Timeout in waiting for gRPC shutdown";
