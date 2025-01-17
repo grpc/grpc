@@ -23,6 +23,7 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
 #include "src/core/lib/event_engine/cf_engine/dns_service_resolver.h"
