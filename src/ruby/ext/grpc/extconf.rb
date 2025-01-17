@@ -148,6 +148,13 @@ $CFLAGS << ' -g'
 
 def have_ruby_abi_version()
   return true if RUBY_ENGINE == 'truffleruby'
+  if RUBY_PATCHLEVEL >= 0
+    # ruby_abi_version is only available in development versions: https://github.com/ruby/ruby/pull/6231
+    # Note: this will also cause gems cross-compiled in rake-compiler-dock builds to NOT
+    # include rb_abi_version (assuming the "host" ruby version in those builds is not a dev version).
+    puts "RUBY_PATCHLEVEL: #{RUBY_PATCHLEVEL} is >= 0, assuming ruby_abi_version is NOT present"
+    return false
+  end
 
   m = /(\d+)\.(\d+)/.match(RUBY_VERSION)
   if m.nil?
