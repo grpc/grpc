@@ -62,7 +62,6 @@ inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
-inline bool IsChaoticGoodLegacyProtocolEnabled() { return false; }
 inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
 inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
@@ -105,7 +104,6 @@ inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
-inline bool IsChaoticGoodLegacyProtocolEnabled() { return false; }
 inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
 inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
@@ -151,7 +149,6 @@ inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
-inline bool IsChaoticGoodLegacyProtocolEnabled() { return false; }
 inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
 inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
@@ -197,7 +194,6 @@ enum ExperimentIds {
   kExperimentIdBackoffCapInitialAtMax,
   kExperimentIdCallTracerInTransport,
   kExperimentIdCallv3ClientAuthFilter,
-  kExperimentIdChaoticGoodLegacyProtocol,
   kExperimentIdDisableBufferHintOnHighMemoryPressure,
   kExperimentIdEventEngineApplicationCallbacks,
   kExperimentIdEventEngineCallbackCq,
@@ -239,10 +235,6 @@ inline bool IsCallTracerInTransportEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_CLIENT_AUTH_FILTER
 inline bool IsCallv3ClientAuthFilterEnabled() {
   return IsExperimentEnabled<kExperimentIdCallv3ClientAuthFilter>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_LEGACY_PROTOCOL
-inline bool IsChaoticGoodLegacyProtocolEnabled() {
-  return IsExperimentEnabled<kExperimentIdChaoticGoodLegacyProtocol>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_DISABLE_BUFFER_HINT_ON_HIGH_MEMORY_PRESSURE
 inline bool IsDisableBufferHintOnHighMemoryPressureEnabled() {
