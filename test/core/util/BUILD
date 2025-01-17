@@ -795,6 +795,18 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "wait_for_single_owner_test",
+    srcs = ["wait_for_single_owner_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:wait_for_single_owner",
+    ],
+)
+
 grpc_fuzz_test(
     name = "tdigest_fuzztest",
     srcs = ["tdigest_fuzztest.cc"],

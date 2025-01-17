@@ -31,6 +31,7 @@
 
 #include "absl/log/check.h"
 #include "absl/types/span.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
