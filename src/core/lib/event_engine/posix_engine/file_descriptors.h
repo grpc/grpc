@@ -66,6 +66,8 @@ class PosixResult {
   explicit constexpr PosixResult(OperationResultKind kind, int errno_value)
       : kind_(kind), errno_value_(errno_value) {}
 
+  virtual ~PosixResult() = default;
+
   absl::Status status() const {
     switch (kind_) {
       case OperationResultKind::kSuccess:
@@ -139,6 +141,9 @@ class Int64Result final : public PosixResult {
 
 class FileDescriptors {
  public:
+  FileDescriptors() = default;
+  FileDescriptors(const FileDescriptors&& other) = delete;
+
   FileDescriptorResult Accept(const FileDescriptor& sockfd,
                               struct sockaddr* addr, socklen_t* addrlen);
   FileDescriptorResult Accept4(const FileDescriptor& sockfd,
@@ -156,9 +161,9 @@ class FileDescriptors {
   PosixResult Shutdown(const FileDescriptor& fd, int how);
   PosixResult GetSockOpt(const FileDescriptor& fd, int level, int optname,
                          void* optval, void* optlen);
-  Int64Result SetSockOpt(const FileDescriptor& fd, int optname,
+  Int64Result SetSockOpt(const FileDescriptor& fd, int level, int optname,
                          uint32_t optval);
-  Int64Result SendMsg(const FileDescriptor& fd, const struct msghdr* messsage,
+  Int64Result SendMsg(const FileDescriptor& fd, const struct msghdr* message,
                       int flags);
 
   // Epoll

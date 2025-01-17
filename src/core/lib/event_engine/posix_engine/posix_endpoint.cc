@@ -513,8 +513,8 @@ void PosixEndpointImpl::UpdateRcvLowat() {
   // the socket before generating an interrupt for packet receive. If the call
   // succeeds, it returns the number of bytes (wait threshold) that was actually
   // set.
-  auto result =
-      poller_->GetFileDescriptors().SetSockOpt(fd_, SO_RCVLOWAT, remaining);
+  auto result = poller_->GetFileDescriptors().SetSockOpt(
+      fd_, SOL_SOCKET, SO_RCVLOWAT, remaining);
   if (result.ok()) {
     set_rcvlowat_ = *result;
   } else {
@@ -854,7 +854,8 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
                                             int additional_flags) {
   auto& fds = poller_->GetFileDescriptors();
   if (!socket_ts_enabled_) {
-    if (!fds.SetSockOpt(fd_, SO_TIMESTAMPING, kTimestampingSocketOptions)
+    if (!fds.SetSockOpt(fd_, SOL_SOCKET, SO_TIMESTAMPING,
+                        kTimestampingSocketOptions)
              .ok()) {
       return false;
     }
@@ -1304,6 +1305,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   max_read_chunk_size_ = options.tcp_max_read_chunk_size;
   bool zerocopy_enabled =
       options.tcp_tx_zero_copy_enabled && poller_->CanTrackErrors();
+  FileDescriptors& fds = poller_->GetFileDescriptors();
 #ifdef GRPC_LINUX_ERRQUEUE
   if (zerocopy_enabled) {
     if (GetRLimitMemLockMax() == 0) {
@@ -1317,9 +1319,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                  << "ulimit value is not set. Use ulimit -l <value> to set its "
                  << "value.";
     } else {
-      const int enable = 1;
-      if (setsockopt(fd_.fd(), SOL_SOCKET, SO_ZEROCOPY, &enable,
-                     sizeof(enable)) != 0) {
+      if (fds.SetSockOpt(fd_, SOL_SOCKET, SO_ZEROCOPY, 1).ok()) {
         zerocopy_enabled = false;
         LOG(ERROR) << "Failed to set zerocopy options on the socket.";
       }
@@ -1336,11 +1336,11 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       zerocopy_enabled, options.tcp_tx_zerocopy_max_simultaneous_sends,
       options.tcp_tx_zerocopy_send_bytes_threshold);
 #ifdef GRPC_HAVE_TCP_INQ
-  int one = 1;
-  if (setsockopt(fd_.fd(), SOL_TCP, TCP_INQ, &one, sizeof(one)) == 0) {
+  auto result = fds.SetSockOpt(fd_, SOL_TCP, TCP_INQ, 1);
+  if (result.ok()) {
     inq_capable_ = true;
   } else {
-    VLOG(2) << "cannot set inq fd=" << fd_ << " errno=" << errno;
+    VLOG(2) << "cannot set inq fd=" << fd_ << " error=" << result.status();
     inq_capable_ = false;
   }
 #else

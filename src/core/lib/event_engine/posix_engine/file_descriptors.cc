@@ -61,7 +61,7 @@ namespace grpc_event_engine::experimental {
 
 namespace {
 
-constexpr PosixResult PosixResultSuccess() {
+PosixResult PosixResultSuccess() {
   return PosixResult(OperationResultKind::kSuccess, 0);
 }
 
@@ -182,16 +182,16 @@ IF_POSIX_SOCKET(
                                         static_cast<socklen_t*>(optlen)));
     })
 
-IF_POSIX_SOCKET(Int64Result FileDescriptors::SetSockOpt(
-                    const FileDescriptor& fd, int optname, uint32_t optval),
-                {
-                  if (setsockopt(fd.fd(), SOL_SOCKET, optname, &optval,
-                                 sizeof(optval)) < 0) {
-                    return Int64Result(OperationResultKind::kError, errno);
-                  } else {
-                    return Int64Result(optval);
-                  }
-                })
+IF_POSIX_SOCKET(
+    Int64Result FileDescriptors::SetSockOpt(const FileDescriptor& fd, int level,
+                                            int optname, uint32_t optval),
+    {
+      if (setsockopt(fd.fd(), level, optname, &optval, sizeof(optval)) < 0) {
+        return Int64Result(OperationResultKind::kError, errno);
+      } else {
+        return Int64Result(optval);
+      }
+    })
 
 IF_POSIX_SOCKET(Int64Result FileDescriptors::SendMsg(
                     const FileDescriptor& fd, const struct msghdr* message,
