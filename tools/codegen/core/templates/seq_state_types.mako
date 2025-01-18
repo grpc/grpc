@@ -35,4 +35,5 @@ using Promise${n-1} = ${name};
 using PromiseResult${n-1} = typename Promise${n-1}::Result;
 using PromiseResultTraits${n-1} = Traits<PromiseResult${n-1}>;
 using Result = typename PromiseResultTraits${n-1}::WrappedType;
+using LastPromiseResult = typename PromiseResultTraits${n-1}::UnwrappedType;
 };

@@ -16,32 +16,22 @@ limitations under the License.
 
 template <template<typename> class Traits, typename P, ${",".join(f"typename F{i}" for i in range(0,n-1))}>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SeqMap(P&& p, ${",".join(f"F{i}&& f{i}" for i in range(0,n-1))}) {
-using Types = SeqStateTypes<Traits, P, ${",".join(f"F{i}" for i in range(0,n-1))}>;
-% for i in range(0,n-1):
-using PromiseResult${i} = typename Types::PromiseResult${i};
-% endfor
-% for i in range(0,n):
-using PromiseResultTraits${i} = typename Types::PromiseResultTraits${i};
-% endfor
-% for i in range(0,n-1):
-using NextFactory${i} = typename Types::NextFactory${i};
-% endfor
-using Result = typename PromiseResultTraits${n-1}::WrappedType;
+    using Types = SeqStateTypes<Traits, P, ${",".join(f"F{i}" for i in range(0,n-1))}>;
     return Map(
         std::forward<P>(p),
-        [${",".join(f"f{i} = NextFactory{i}(std::forward<F{i}>(f{i}))" for i in range(0,n-1))}]
-        (PromiseResult0 r0) mutable {
+        [${",".join(f"f{i} = typename Types::NextFactory{i}(std::forward<F{i}>(f{i}))" for i in range(0,n-1))}]
+        (typename Types::PromiseResult0 r0) mutable {
 % for i in range(0, n-2):
-            if (!PromiseResultTraits${i}::IsOk(r${i})) {
-                return PromiseResultTraits${i}::template ReturnValue<Result>(std::move(r${i}));
+            if (!Types::PromiseResultTraits${i}::IsOk(r${i})) {
+                return Types::PromiseResultTraits${i}::template ReturnValue<typename Types::Result>(std::move(r${i}));
             }
-            PromiseResult${i+1} r${i+1} =
-                PromiseResultTraits${i}::CallFactoryThenPromise(&f${i}, std::move(r${i}));
+            typename Types::PromiseResult${i+1} r${i+1} =
+                Types::PromiseResultTraits${i}::CallFactoryThenPromise(&f${i}, std::move(r${i}));
 % endfor
-            if (!PromiseResultTraits${n-2}::IsOk(r${n-2})) {
-                return PromiseResultTraits${n-2}::template ReturnValue<Result>(std::move(r${n-2}));
+            if (!Types::PromiseResultTraits${n-2}::IsOk(r${n-2})) {
+                return Types::PromiseResultTraits${n-2}::template ReturnValue<typename Types::Result>(std::move(r${n-2}));
             }
-            return Result(PromiseResultTraits${n-2}::CallFactoryThenPromise(&f${n-2}, std::move(r${n-2})));
+            return typename Types::Result(Types::PromiseResultTraits${n-2}::CallFactoryThenPromise(&f${n-2}, std::move(r${n-2})));
         }
     );
 }
