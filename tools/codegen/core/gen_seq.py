@@ -138,11 +138,11 @@ copyright = [line[2:].rstrip() for line in copyright]
 
 
 class FoldAccumulator(object):
-    def __init__(self, f):
+    def __init__(self, text):
         self.type_args = []
         self.instantiate_args = []
         self.fold = [-1]
-        self.f = f
+        self.text = text
         self.uses_types_alias = False
 
     def add(self, i, instantaneous):
@@ -153,7 +153,7 @@ class FoldAccumulator(object):
             self.fold = [i]
 
     def _finish_fold(self):
-      print(f"// fold={self.fold}", file=f)
+      #self.text.append(f"// fold={self.fold}")
       if len(self.fold) == 1:
           if self.fold[0] != -1:
               self.type_args.append(f"F{self.fold[0]}")
@@ -178,7 +178,7 @@ class FoldAccumulator(object):
               )
 
     def finish(self):
-      print(f"// final fold={self.fold}", file=f)
+      #self.text.append(f"// final fold={self.fold}")
       if self.fold[0] != -1:
           self.type_args.append(f"F{self.fold[0]}")
           self.instantiate_args.append(f"std::forward<F{self.fold[0]}>(f{self.fold[0]})")
@@ -200,7 +200,7 @@ def gen_opt_seq_state(n, f):
     args_fs = ", ".join(f"F{i}&& f{i}" for i in range(n - 1))
     fs = ", ".join(f"F{i}" for i in range(n - 1))
     fwd_fs = ", ".join(f"std::forward<F{i}>(f{i})" for i in range(n - 1))
-    if n > 7:
+    if n > 1000:
         print(
             f"template <template <typename> class Traits, typename P, {typename_fs}>",
             file=f,
@@ -235,17 +235,21 @@ def gen_opt_seq_state(n, f):
         left = f"FoldSeqStateImpl<Traits, (kInstantBits >> {i})>(std::forward<P>(p), {','.join(f'std::forward<F{j}>(f{j})' for j in range(0, n-1-i))}, whence)"
       text.append(f"    return SeqMap<Traits>({left}, {','.join(f'std::forward<F{j}>(f{j})' for j in range(n-1-i, n-1))});")
       text.append("  }")
-    for i in range(n-2, 1, -1):
+    for i in range(n-1, 1, -1):
       mask = ((1<<i)-1) << (n-1-i)
       not_mask = (1<<(n-1)) - 1 - mask
+      #text.append(f"// i={i} mask={bin(mask)} not_mask={bin(not_mask)}")
       text.append(f"  else if constexpr ((kInstantBits & {bin(mask)}) == {bin(mask)}) {{")
-      map = f"SeqMap<Traits>(std::forward<P>(p), {','.join(f'std::forward<F{j}>(f{j})' for j in range(n-1-i))})"
-      rest = f"{','.join(f'std::forward<F{j}>(f{j})' for j in range(n-1-i, n-1))}"
-      text.append(f"    return FoldSeqStateImpl<Traits, (kInstantBits & {bin(not_mask)})>({map}, {rest}); // {i}")
+      map = f"SeqMap<Traits>(std::forward<P>(p), {','.join(f'std::forward<F{j}>(f{j})' for j in range(n-i))})"
+      if i != 1:
+          rest = f"{','.join(f'std::forward<F{j}>(f{j})' for j in range(n-i, n-1))}"
+          text.append(f"    return FoldSeqStateImpl<Traits, (kInstantBits & {bin(not_mask)})>({map}, {rest}); // {i}")
+      else:
+          text.append(f"   return {map};")
       text.append("  }")
     for i in range(0, 1 << (n - 1)):
         if (i & 1) != 0: continue
-        if (i & (1<<(n-2))) and i != 0b10: continue
+        if (i & (1<<(n-1))): continue
         acc = FoldAccumulator(f)
         for j in range(n - 1):
             acc.add(j, i & (1 << (n-2-j)))
