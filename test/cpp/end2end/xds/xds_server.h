@@ -654,7 +654,6 @@ class LrsServiceImpl
 
       LocalityStats& operator+=(const LocalityStats& other) {
         total_successful_requests += other.total_successful_requests;
-        total_requests_in_progress += other.total_requests_in_progress;
         total_error_requests += other.total_error_requests;
         total_issued_requests += other.total_issued_requests;
         cpu_utilization += other.cpu_utilization;
@@ -663,6 +662,9 @@ class LrsServiceImpl
         for (const auto& [key, value] : other.load_metrics) {
           load_metrics[key] += value;
         }
+        // Copy total_requests_in_progress instead of adding, since it's
+        // a gauge, not a counter.
+        total_requests_in_progress = other.total_requests_in_progress;
         return *this;
       }
 
@@ -711,6 +713,12 @@ class LrsServiceImpl
     uint64_t total_dropped_requests() const { return total_dropped_requests_; }
 
     uint64_t dropped_requests(const std::string& category) const;
+
+    void Reset() {
+      locality_stats_.clear();
+      total_dropped_requests_ = 0;
+      dropped_requests_.clear();
+    }
 
     ClientStats& operator+=(const ClientStats& other);
 
