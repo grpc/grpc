@@ -40,7 +40,7 @@ platform(
         "@platforms//cpu:x86_64",
     ],
     exec_properties = {
-        "container-image": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_windows2019@sha256:5a97eb384a3089ac9180e6086ca89b1fdafa57735057624245b3d4a96b4744fe",
+        "container-image": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_windows2019@sha256:cfef0ae3681d4070f6a93a88afea44d616f5cbdfae36559b9394274e74873bc6",
         "OSFamily": "Windows",
     },
 )
