@@ -99,8 +99,6 @@ class FusedFns {
   GPR_NO_UNIQUE_ADDRESS WrappedFn<Fn1, InnerResult> fn1_;
 };
 
-}  // namespace promise_detail
-
 // Mapping combinator.
 // Takes a promise, and a synchronous function to mutate its result, and
 // returns a promise.
@@ -177,8 +175,19 @@ class Map<Map<Promise, Fn0>, Fn1> {
   GPR_NO_UNIQUE_ADDRESS FusedFn fn_;
 };
 
+}  // namespace promise_detail
+
 template <typename Promise, typename Fn>
-Map(Promise, Fn) -> Map<Promise, Fn>;
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Map(Promise promise, Fn fn) {
+  if constexpr (promise_detail::PromiseLike<Promise>::kInstantaneous) {
+    return [promise = promise_detail::PromiseLike<Promise>(std::move(promise)),
+            fn = std::move(fn)]() mutable {
+      return fn(promise.CallUnderlyingFn());
+    };
+  } else {
+    return promise_detail::Map<Promise, Fn>(std::move(promise), std::move(fn));
+  }
+}
 
 // Maps a promise to a new promise that returns a tuple of the original result
 // and a bool indicating whether there was ever a Pending{} value observed from
