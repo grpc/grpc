@@ -439,7 +439,8 @@ bool PrivateGenerator::PrintStub(
             std::string(method->ServerStreaming() ? "stream" : "unary");
         std::string multi_callable_return_type =
             std::string(method->ClientStreaming() ? "Stream" : "Unary") +
-            std::string(method->ServerStreaming() ? "Stream" : "Unary") + "MultiCallable";
+            std::string(method->ServerStreaming() ? "Stream" : "Unary") +
+            "MultiCallable";
         std::string request_module_and_class;
         if (!method->get_module_and_message_path_input(
                 &request_module_and_class, generator_file_name,
@@ -481,8 +482,8 @@ bool PrivateGenerator::PrintStub(
 
             out->Print(method_dict, "'/$PackageQualifiedService$/$Method$',\n");
             out->Print(method_dict,
-                      "request_serializer=$RequestModuleAndClass$."
-                      "SerializeToString,\n");
+                       "request_serializer=$RequestModuleAndClass$."
+                       "SerializeToString,\n");
             out->Print(
                 method_dict,
                 "response_deserializer=$ResponseModuleAndClass$.FromString,\n");
@@ -503,7 +504,8 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
   StringMap service_dict;
   service_dict["Service"] = service->name();
   service_dict["AsyncPostfix"] = render_async ? "Async" : "";
-  service_dict["ChannelClass"] = render_async ? "grpc.aio.Channel" : "grpc.Channel";
+  service_dict["ChannelClass"] =
+      render_async ? "grpc.aio.Channel" : "grpc.Channel";
   out->Print("\n\n");
   out->Print(service_dict, "class $Service$Servicer$AsyncPostfix$(object):\n");
   {
@@ -516,7 +518,8 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
     {
       IndentScope raii_method_indent(out);
       out->Print(service_dict,
-             "add_$Service$Servicer$AsyncPostfix$_to_server(servicer=self, server=server)\n");
+                 "add_$Service$Servicer$AsyncPostfix$_to_server(servicer=self, "
+                 "server=server)\n");
     }
 
     for (int i = 0; i < service->method_count(); ++i) {
@@ -530,21 +533,25 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
       // get request and response types
       std::string request_module_and_class;
       method->get_module_and_message_path_input(
-            &request_module_and_class, generator_file_name,
-            generate_in_pb2_grpc, config.import_prefix,
-            config.prefixes_to_filter);
-      
+          &request_module_and_class, generator_file_name, generate_in_pb2_grpc,
+          config.import_prefix, config.prefixes_to_filter);
+
       std::string response_module_and_class;
       method->get_module_and_message_path_output(
-              &response_module_and_class, generator_file_name,
-              generate_in_pb2_grpc, config.import_prefix,
-              config.prefixes_to_filter);
+          &response_module_and_class, generator_file_name, generate_in_pb2_grpc,
+          config.import_prefix, config.prefixes_to_filter);
 
       std::string server_request_type =
-          std::string(method->ClientStreaming() ? (render_async ? "AsyncIterator[" : "Iterator[") : "") + request_module_and_class +
+          std::string(method->ClientStreaming()
+                          ? (render_async ? "AsyncIterator[" : "Iterator[")
+                          : "") +
+          request_module_and_class +
           std::string(method->ClientStreaming() ? "]" : "");
       std::string server_response_type =
-          std::string(method->ServerStreaming() ? (render_async ? "AsyncIterator[" : "Iterator[") : "") + response_module_and_class +
+          std::string(method->ServerStreaming()
+                          ? (render_async ? "AsyncIterator[" : "Iterator[")
+                          : "") +
+          response_module_and_class +
           std::string(method->ServerStreaming() ? "]" : "");
 
       method_dict["RequestModuleAndClass"] = request_module_and_class;
@@ -554,9 +561,14 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
 
       out->Print("\n");
       if (render_async) {
-        out->Print(method_dict, "async def $Method$(self, $ArgName$: $InputTypeName$, context: grpc.aio.ServicerContext[$RequestModuleAndClass$, $ResponseModuleAndClass$]) -> $OutputTypeName$:\n");
+        out->Print(method_dict,
+                   "async def $Method$(self, $ArgName$: $InputTypeName$, "
+                   "context: grpc.aio.ServicerContext[$RequestModuleAndClass$, "
+                   "$ResponseModuleAndClass$]) -> $OutputTypeName$:\n");
       } else {
-        out->Print(method_dict, "def $Method$(self, $ArgName$: $InputTypeName$, context: grpc.ServicerContext) -> $OutputTypeName$:\n");
+        out->Print(method_dict,
+                   "def $Method$(self, $ArgName$: $InputTypeName$, context: "
+                   "grpc.ServicerContext) -> $OutputTypeName$:\n");
       }
       {
         IndentScope raii_method_indent(out);
@@ -581,10 +593,13 @@ bool PrivateGenerator::PrintAddServicerToServer(
   StringMap service_dict;
   service_dict["Service"] = service->name();
   service_dict["AsyncPostfix"] = render_async ? "Async" : "";
-  service_dict["ServerClass"] = render_async ? "grpc.aio.Server" : "grpc.Server";
+  service_dict["ServerClass"] =
+      render_async ? "grpc.aio.Server" : "grpc.Server";
   out->Print("\n\n");
-  out->Print(service_dict,
-             "def add_$Service$Servicer$AsyncPostfix$_to_server(servicer: $Service$Servicer$AsyncPostfix$, server: $ServerClass$) -> None:\n");
+  out->Print(
+      service_dict,
+      "def add_$Service$Servicer$AsyncPostfix$_to_server(servicer: "
+      "$Service$Servicer$AsyncPostfix$, server: $ServerClass$) -> None:\n");
   {
     IndentScope raii_class_indent(out);
     out->Print("rpc_method_handlers = {\n");
@@ -762,7 +777,9 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
   var["Package"] = config.grpc_package_root;
   out->Print(var, "import $Package$\n");
   out->Print(var, "import $Package$.aio\n");
-  out->Print(var, "from typing import Any, AsyncIterator, Iterator, Coroutine, cast\n");
+  out->Print(
+      var,
+      "from typing import Any, AsyncIterator, Iterator, Coroutine, cast\n");
   out->Print(var, "from collections.abc import Callable\n");
   if (config.grpc_tools_version.size() > 0) {
     out->Print(var, "import warnings\n");
@@ -867,7 +884,8 @@ bool PrivateGenerator::PrintGAServices(grpc_generator::Printer* out) {
   for (int i = 0; i < file->service_count(); ++i) {
     auto service = file->service(i);
     std::string package_qualified_service_name = package + service->name();
-    if (!(PrintStub(package_qualified_service_name, service.get(), out, false) && 
+    if (!(PrintStub(package_qualified_service_name, service.get(), out,
+                    false) &&
           PrintStub(package_qualified_service_name, service.get(), out, true) &&
           PrintServicer(service.get(), out, false) &&
           PrintServicer(service.get(), out, true) &&
