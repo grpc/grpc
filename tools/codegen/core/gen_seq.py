@@ -125,12 +125,12 @@ using SeqMapType = decltype(SeqMap<Traits>(std::declval<P>(), std::declval<F>().
 template <template<typename> class Traits, typename Arg, typename... F>
 using SeqFactoryMapType = decltype(SeqFactoryMap<Traits, Arg>(std::declval<F>()...));
 template <template <typename> class Traits, typename P, typename... Fs, size_t... Is>
-auto FoldMiddleImpl(P&& p, std::tuple<Fs&&...>&& resolved, std::index_sequence<Is...>, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddleImpl(P&& p, std::tuple<Fs&&...>&& resolved, std::index_sequence<Is...>, DebugLocation whence) {
     return SeqState<Traits, P, Fs...>(std::forward<P>(p), std::forward<Fs>(std::get<Is>(resolved))..., whence);
 }
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename... Fs>
-auto FoldMiddle(P&& p, std::tuple<Fs&&...>&& resolved, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(P&& p, std::tuple<Fs&&...>&& resolved, DebugLocation whence) {
     static_assert(kInstantBits == 0);
     return FoldMiddleImpl<Traits>(std::forward<P>(p), std::forward<std::tuple<Fs&&...>>(resolved), std::make_index_sequence<sizeof...(Fs)>(), whence);
 }
@@ -181,7 +181,7 @@ def gen_opt_seq_state(n, f):
         file=f,
     )
     print(
-        f"auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, {args_fs}, DebugLocation whence) {{",
+        f"GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, {args_fs}, DebugLocation whence) {{",
         file=f,
     )
     print(f"  static_assert((kInstantBits & {bin(1<<(n-2))}) == 0);", file=f)

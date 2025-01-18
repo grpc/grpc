@@ -6772,14 +6772,16 @@ using SeqFactoryMapType =
     decltype(SeqFactoryMap<Traits, Arg>(std::declval<F>()...));
 template <template <typename> class Traits, typename P, typename... Fs,
           size_t... Is>
-auto FoldMiddleImpl(P&& p, std::tuple<Fs&&...>&& resolved,
-                    std::index_sequence<Is...>, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddleImpl(
+    P&& p, std::tuple<Fs&&...>&& resolved, std::index_sequence<Is...>,
+    DebugLocation whence) {
   return SeqState<Traits, P, Fs...>(
       std::forward<P>(p), std::forward<Fs>(std::get<Is>(resolved))..., whence);
 }
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename... Fs>
-auto FoldMiddle(P&& p, std::tuple<Fs&&...>&& resolved, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
+    P&& p, std::tuple<Fs&&...>&& resolved, DebugLocation whence) {
   static_assert(kInstantBits == 0);
   return FoldMiddleImpl<Traits>(
       std::forward<P>(p), std::forward<std::tuple<Fs&&...>>(resolved),
@@ -6788,8 +6790,8 @@ auto FoldMiddle(P&& p, std::tuple<Fs&&...>&& resolved, DebugLocation whence) {
 
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename... Rs, typename F0>
-auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0,
-                DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
+    P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, DebugLocation whence) {
   static_assert((kInstantBits & 0b1) == 0);
   return FoldMiddle<Traits, 0>(
       std::forward<P>(p),
@@ -6824,8 +6826,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0,
 }
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename... Rs, typename F0, typename F1>
-auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
-                DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
+    P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
+    DebugLocation whence) {
   static_assert((kInstantBits & 0b10) == 0);
   // i=1 mask=0b1 not_mask=0b0
   if constexpr ((kInstantBits & 0b1) == 0b1) {
@@ -6848,7 +6851,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         whence);
@@ -6910,8 +6913,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0, F1&& f1,
 }
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename... Rs, typename F0, typename F1, typename F2>
-auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
-                F2&& f2, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
+    P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1, F2&& f2,
+    DebugLocation whence) {
   static_assert((kInstantBits & 0b100) == 0);
   // i=2 mask=0b11 not_mask=0b0
   if constexpr ((kInstantBits & 0b11) == 0b11) {
@@ -6937,7 +6941,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2)))&&>(
+                           std::forward<F2>(f2))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -6964,7 +6968,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), whence);
@@ -7051,8 +7055,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0, F1&& f1,
 }
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename... Rs, typename F0, typename F1, typename F2, typename F3>
-auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
-                F2&& f2, F3&& f3, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
+    P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
+    DebugLocation whence) {
   static_assert((kInstantBits & 0b1000) == 0);
   // i=3 mask=0b111 not_mask=0b0
   if constexpr ((kInstantBits & 0b111) == 0b111) {
@@ -7079,7 +7084,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -7109,7 +7114,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2)))&&>(
+                           std::forward<F2>(f2))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -7136,7 +7141,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), whence);
@@ -7248,8 +7253,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0, F1&& f1,
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename... Rs, typename F0, typename F1, typename F2, typename F3,
           typename F4>
-auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
-                F2&& f2, F3&& f3, F4&& f4, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
+    P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
+    F4&& f4, DebugLocation whence) {
   static_assert((kInstantBits & 0b10000) == 0);
   // i=4 mask=0b1111 not_mask=0b0
   if constexpr ((kInstantBits & 0b1111) == 0b1111) {
@@ -7278,7 +7284,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4)))&&>(
+                           std::forward<F4>(f4))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -7310,7 +7316,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -7340,7 +7346,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2)))&&>(
+                           std::forward<F2>(f2))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -7367,7 +7373,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -7509,8 +7515,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0, F1&& f1,
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename... Rs, typename F0, typename F1, typename F2, typename F3,
           typename F4, typename F5>
-auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
-                F2&& f2, F3&& f3, F4&& f4, F5&& f5, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
+    P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
+    F4&& f4, F5&& f5, DebugLocation whence) {
   static_assert((kInstantBits & 0b100000) == 0);
   // i=5 mask=0b11111 not_mask=0b0
   if constexpr ((kInstantBits & 0b11111) == 0b11111) {
@@ -7540,7 +7547,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4), std::forward<F5>(f5)))&&>(
+                           std::forward<F4>(f4), std::forward<F5>(f5))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -7574,7 +7581,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4)))&&>(
+                           std::forward<F4>(f4))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -7606,7 +7613,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -7636,7 +7643,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2)))&&>(
+                           std::forward<F2>(f2))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -7664,7 +7671,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -7837,9 +7844,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0, F1&& f1,
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename... Rs, typename F0, typename F1, typename F2, typename F3,
           typename F4, typename F5, typename F6>
-auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
-                F2&& f2, F3&& f3, F4&& f4, F5&& f5, F6&& f6,
-                DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
+    P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
+    F4&& f4, F5&& f5, F6&& f6, DebugLocation whence) {
   static_assert((kInstantBits & 0b1000000) == 0);
   // i=6 mask=0b111111 not_mask=0b0
   if constexpr ((kInstantBits & 0b111111) == 0b111111) {
@@ -7871,7 +7878,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6)))&&>(
+                           std::forward<F6>(f6))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -7907,7 +7914,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4), std::forward<F5>(f5)))&&>(
+                           std::forward<F4>(f4), std::forward<F5>(f5))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -7941,7 +7948,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4)))&&>(
+                           std::forward<F4>(f4))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -7973,7 +7980,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -8004,7 +8011,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2)))&&>(
+                           std::forward<F2>(f2))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -8032,7 +8039,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -8239,9 +8246,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0, F1&& f1,
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename... Rs, typename F0, typename F1, typename F2, typename F3,
           typename F4, typename F5, typename F6, typename F7>
-auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
-                F2&& f2, F3&& f3, F4&& f4, F5&& f5, F6&& f6, F7&& f7,
-                DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
+    P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
+    F4&& f4, F5&& f5, F6&& f6, F7&& f7, DebugLocation whence) {
   static_assert((kInstantBits & 0b10000000) == 0);
   // i=7 mask=0b1111111 not_mask=0b0
   if constexpr ((kInstantBits & 0b1111111) == 0b1111111) {
@@ -8274,7 +8281,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6), std::forward<F7>(f7)))&&>(
+                           std::forward<F6>(f6), std::forward<F7>(f7))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8312,7 +8319,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6)))&&>(
+                           std::forward<F6>(f6))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8348,7 +8355,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4), std::forward<F5>(f5)))&&>(
+                           std::forward<F4>(f4), std::forward<F5>(f5))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8382,7 +8389,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4)))&&>(
+                           std::forward<F4>(f4))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8415,7 +8422,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -8446,7 +8453,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2)))&&>(
+                           std::forward<F2>(f2))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -8474,7 +8481,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -8716,9 +8723,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldSeqState(P&& p, F0&& f0, F1&& f1,
 template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename... Rs, typename F0, typename F1, typename F2, typename F3,
           typename F4, typename F5, typename F6, typename F7, typename F8>
-auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
-                F2&& f2, F3&& f3, F4&& f4, F5&& f5, F6&& f6, F7&& f7, F8&& f8,
-                DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
+    P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
+    F4&& f4, F5&& f5, F6&& f6, F7&& f7, F8&& f8, DebugLocation whence) {
   static_assert((kInstantBits & 0b100000000) == 0);
   // i=8 mask=0b11111111 not_mask=0b0
   if constexpr ((kInstantBits & 0b11111111) == 0b11111111) {
@@ -8753,7 +8760,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
-                           std::forward<F8>(f8)))&&>(
+                           std::forward<F8>(f8))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8793,7 +8800,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6), std::forward<F7>(f7)))&&>(
+                           std::forward<F6>(f6), std::forward<F7>(f7))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8831,7 +8838,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6)))&&>(
+                           std::forward<F6>(f6))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8867,7 +8874,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4), std::forward<F5>(f5)))&&>(
+                           std::forward<F4>(f4), std::forward<F5>(f5))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8902,7 +8909,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4)))&&>(
+                           std::forward<F4>(f4))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8935,7 +8942,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -8966,7 +8973,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2)))&&>(
+                           std::forward<F2>(f2))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -8995,7 +9002,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -9273,9 +9280,10 @@ template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename... Rs, typename F0, typename F1, typename F2, typename F3,
           typename F4, typename F5, typename F6, typename F7, typename F8,
           typename F9>
-auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
-                F2&& f2, F3&& f3, F4&& f4, F5&& f5, F6&& f6, F7&& f7, F8&& f8,
-                F9&& f9, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
+    P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
+    F4&& f4, F5&& f5, F6&& f6, F7&& f7, F8&& f8, F9&& f9,
+    DebugLocation whence) {
   static_assert((kInstantBits & 0b1000000000) == 0);
   // i=9 mask=0b111111111 not_mask=0b0
   if constexpr ((kInstantBits & 0b111111111) == 0b111111111) {
@@ -9312,7 +9320,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
-                           std::forward<F8>(f8), std::forward<F9>(f9)))&&>(
+                           std::forward<F8>(f8), std::forward<F9>(f9))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -9354,7 +9362,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
-                           std::forward<F8>(f8)))&&>(
+                           std::forward<F8>(f8))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -9394,7 +9402,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6), std::forward<F7>(f7)))&&>(
+                           std::forward<F6>(f6), std::forward<F7>(f7))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -9432,7 +9440,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6)))&&>(
+                           std::forward<F6>(f6))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -9469,7 +9477,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4), std::forward<F5>(f5)))&&>(
+                           std::forward<F4>(f4), std::forward<F5>(f5))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -9504,7 +9512,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4)))&&>(
+                           std::forward<F4>(f4))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -9537,7 +9545,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -9569,7 +9577,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2)))&&>(
+                           std::forward<F2>(f2))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -9598,7 +9606,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -9915,9 +9923,10 @@ template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename... Rs, typename F0, typename F1, typename F2, typename F3,
           typename F4, typename F5, typename F6, typename F7, typename F8,
           typename F9, typename F10>
-auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
-                F2&& f2, F3&& f3, F4&& f4, F5&& f5, F6&& f6, F7&& f7, F8&& f8,
-                F9&& f9, F10&& f10, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
+    P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
+    F4&& f4, F5&& f5, F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10,
+    DebugLocation whence) {
   static_assert((kInstantBits & 0b10000000000) == 0);
   // i=10 mask=0b1111111111 not_mask=0b0
   if constexpr ((kInstantBits & 0b1111111111) == 0b1111111111) {
@@ -9956,7 +9965,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
                            std::forward<F8>(f8), std::forward<F9>(f9),
-                           std::forward<F10>(f10)))&&>(
+                           std::forward<F10>(f10))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10001,7 +10010,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
-                           std::forward<F8>(f8), std::forward<F9>(f9)))&&>(
+                           std::forward<F8>(f8), std::forward<F9>(f9))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10043,7 +10052,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
-                           std::forward<F8>(f8)))&&>(
+                           std::forward<F8>(f8))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10083,7 +10092,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6), std::forward<F7>(f7)))&&>(
+                           std::forward<F6>(f6), std::forward<F7>(f7))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10122,7 +10131,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6)))&&>(
+                           std::forward<F6>(f6))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10159,7 +10168,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4), std::forward<F5>(f5)))&&>(
+                           std::forward<F4>(f4), std::forward<F5>(f5))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10194,7 +10203,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4)))&&>(
+                           std::forward<F4>(f4))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10228,7 +10237,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -10260,7 +10269,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2)))&&>(
+                           std::forward<F2>(f2))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -10289,7 +10298,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -10649,9 +10658,10 @@ template <template <typename> class Traits, uint32_t kInstantBits, typename P,
           typename... Rs, typename F0, typename F1, typename F2, typename F3,
           typename F4, typename F5, typename F6, typename F7, typename F8,
           typename F9, typename F10, typename F11>
-auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
-                F2&& f2, F3&& f3, F4&& f4, F5&& f5, F6&& f6, F7&& f7, F8&& f8,
-                F9&& f9, F10&& f10, F11&& f11, DebugLocation whence) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
+    P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
+    F4&& f4, F5&& f5, F6&& f6, F7&& f7, F8&& f8, F9&& f9, F10&& f10, F11&& f11,
+    DebugLocation whence) {
   static_assert((kInstantBits & 0b100000000000) == 0);
   // i=11 mask=0b11111111111 not_mask=0b0
   if constexpr ((kInstantBits & 0b11111111111) == 0b11111111111) {
@@ -10693,7 +10703,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                 std::forward<F4>(f4), std::forward<F5>(f5),
                 std::forward<F6>(f6), std::forward<F7>(f7),
                 std::forward<F8>(f8), std::forward<F9>(f9),
-                std::forward<F10>(f10), std::forward<F11>(f11)))&&>(
+                std::forward<F10>(f10), std::forward<F11>(f11))) &&>(
                 SeqFactoryMap<Traits, Arg>(
                     std::forward<F0>(f0), std::forward<F1>(f1),
                     std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10740,7 +10750,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
                            std::forward<F8>(f8), std::forward<F9>(f9),
-                           std::forward<F10>(f10)))&&>(
+                           std::forward<F10>(f10))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10785,7 +10795,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
-                           std::forward<F8>(f8), std::forward<F9>(f9)))&&>(
+                           std::forward<F8>(f8), std::forward<F9>(f9))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10827,7 +10837,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
-                           std::forward<F8>(f8)))&&>(
+                           std::forward<F8>(f8))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10868,7 +10878,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6), std::forward<F7>(f7)))&&>(
+                           std::forward<F6>(f6), std::forward<F7>(f7))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10907,7 +10917,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6)))&&>(
+                           std::forward<F6>(f6))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10944,7 +10954,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4), std::forward<F5>(f5)))&&>(
+                           std::forward<F4>(f4), std::forward<F5>(f5))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10980,7 +10990,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4)))&&>(
+                           std::forward<F4>(f4))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -11014,7 +11024,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -11046,7 +11056,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2)))&&>(
+                           std::forward<F2>(f2))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -11076,7 +11086,7 @@ auto FoldMiddle(P&& p, std::tuple<Rs&&...>&& resolved, F0&& f0, F1&& f1,
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
