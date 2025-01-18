@@ -226,39 +226,46 @@ def gen_opt_seq_state(n, f):
     )
     text = []
     uses_types_alias = False
+    masks = []
     for i in range(n-1, 0, -1):
       mask = (1<<i)-1
+      masks.append(mask)
+      text.append(f"// i={i} mask={bin(mask)}")
       text.append(f"  {'else' if i != n-1 else ''} if constexpr ((kInstantBits & {bin(mask)}) == {bin(mask)}) {{")
       if i == n-1:
         left = "std::forward<P>(p)"
       else:
         left = f"FoldSeqStateImpl<Traits, (kInstantBits >> {i})>(std::forward<P>(p), {','.join(f'std::forward<F{j}>(f{j})' for j in range(0, n-1-i))}, whence)"
       text.append(f"    return SeqMap<Traits>({left}, {','.join(f'std::forward<F{j}>(f{j})' for j in range(n-1-i, n-1))});")
-      text.append("  }")
-    for i in range(n-1, 1, -1):
+      text.append("  }")    
+    for i in range(n-1, 0, -1):
       mask = ((1<<i)-1) << (n-1-i)
+      if mask in masks: continue
+      masks.append(mask)
       not_mask = (1<<(n-1)) - 1 - mask
-      #text.append(f"// i={i} mask={bin(mask)} not_mask={bin(not_mask)}")
+      text.append(f"// i={i} mask={bin(mask)} not_mask={bin(not_mask)}")
       text.append(f"  else if constexpr ((kInstantBits & {bin(mask)}) == {bin(mask)}) {{")
-      map = f"SeqMap<Traits>(std::forward<P>(p), {','.join(f'std::forward<F{j}>(f{j})' for j in range(n-i))})"
-      if i != 1:
-          rest = f"{','.join(f'std::forward<F{j}>(f{j})' for j in range(n-i, n-1))}"
-          text.append(f"    return FoldSeqStateImpl<Traits, (kInstantBits & {bin(not_mask)})>({map}, {rest}); // {i}")
+      map = f"SeqMap<Traits>(std::forward<P>(p), {','.join(f'std::forward<F{j}>(f{j})' for j in range(i))})"
+      if not_mask:
+          rest = f"{','.join(f'std::forward<F{j}>(f{j})' for j in range(i, n-1))}"
+          text.append(f"    return FoldSeqStateImpl<Traits, (kInstantBits & {bin(not_mask)})>({map}, {rest}, whence); // {i}")
       else:
           text.append(f"   return {map};")
       text.append("  }")
     for i in range(0, 1 << (n - 1)):
-        if (i & 1) != 0: continue
-        if (i & (1<<(n-1))): continue
-        acc = FoldAccumulator(f)
-        for j in range(n - 1):
-            acc.add(j, i & (1 << (n-2-j)))
-        ret = acc.finish()
-        text.append(f"  else if constexpr (kInstantBits == {bin(i)}) {{")
-        text.append(f"    return {ret};")
-        text.append("  }")
-        if acc.uses_types_alias:
-            uses_types_alias = True
+        for mask in masks:
+            if i & mask == mask:
+                break
+        else:
+            acc = FoldAccumulator(f)
+            for j in range(n - 1):
+                acc.add(j, i & (1 << (n-2-j)))
+            ret = acc.finish()
+            text.append(f"  else if constexpr (kInstantBits == {bin(i)}) {{")
+            text.append(f"    return {ret};")
+            text.append("  }")
+            if acc.uses_types_alias:
+                uses_types_alias = True
     if uses_types_alias:
         text = [f"  using Types = SeqStateTypes<Traits, P, {fs}>;"] + text
     for line in text:
