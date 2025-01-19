@@ -1403,10 +1403,17 @@ void PrintHeaderService(grpc_generator::Printer* printer,
                         std::map<std::string, std::string>* vars) {
   (*vars)["Service"] = service->name();
 
+
   printer->Print(service->GetLeadingComments("//").c_str());
-  printer->Print(*vars,
-                 "class $Service$ final {\n"
-                 " public:\n");
+  if (service->is_deprecated()) {
+    printer->Print(*vars,
+                  "class [[deprecated]] $Service$ final {\n"
+                  " public:\n");
+  } else {
+    printer->Print(*vars,
+                  "class $Service$ final {\n"
+                  " public:\n");
+  }
   printer->Indent();
 
   // Service metadata
