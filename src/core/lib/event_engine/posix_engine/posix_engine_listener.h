@@ -24,7 +24,6 @@
 #include <atomic>
 #include <list>
 #include <memory>
-#include <string>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -32,6 +31,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/event_engine/posix.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/sync.h"
 
@@ -85,7 +85,7 @@ class PosixEngineListenerImpl
           listener_(std::move(listener)),
           socket_(socket),
           handle_(listener_->poller_->CreateHandle(
-              socket_.sock.Fd(),
+              FileDescriptor(socket_.sock.Fd()),
               *grpc_event_engine::experimental::
                   ResolvedAddressToNormalizedString(socket_.addr),
               listener_->poller_->CanTrackErrors())),
