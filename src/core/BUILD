@@ -995,10 +995,10 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_like",
-        "//:promise",
         "//:debug_location",
         "//:gpr",
         "//:grpc_trace",
+        "//:promise",
     ],
 )
 
