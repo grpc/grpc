@@ -46,7 +46,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -59,7 +58,6 @@ grpc_cc_test(
     name = "timer_list_test",
     srcs = ["timer_list_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -74,7 +72,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -92,7 +89,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_windows",
     ],
@@ -130,7 +126,6 @@ grpc_cc_test(
     name = "wakeup_fd_posix_test",
     srcs = ["wakeup_fd_posix_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "no_windows",
     ],
@@ -150,7 +145,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_windows",
     ],
@@ -166,7 +160,6 @@ grpc_cc_test(
     name = "tcp_posix_socket_utils_test",
     srcs = ["tcp_posix_socket_utils_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "no_windows",
     ],
@@ -188,7 +181,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_windows",
     ],
@@ -217,7 +209,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_windows",
     ],
@@ -240,7 +231,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_mac",
         "no_windows",
@@ -267,7 +257,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_windows",
     ],

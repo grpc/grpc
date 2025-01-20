@@ -165,7 +165,6 @@ def grpc_cc_library(
         deps = [],
         select_deps = None,
         standalone = False,  # @unused
-        language = "C++",
         testonly = False,
         visibility = None,
         alwayslink = 0,
@@ -196,8 +195,6 @@ def grpc_cc_library(
     """
     visibility = _update_visibility(visibility)
     copts = []
-    if language.upper() == "C":
-        copts = copts + if_not_windows(["-std=c11"])
     linkopts = linkopts + if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"])
     if select_deps:
         for select_deps_entry in select_deps:
