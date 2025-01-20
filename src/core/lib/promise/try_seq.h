@@ -239,8 +239,8 @@ using TrySeqTraits = TrySeqTraitsWithSfinae<T>;
 template <typename P, typename... Fs>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TrySeq(P&& promise, Fs&&... factories,
                                                  DebugLocation whence) {
-  return FoldSeqState<TrySeqTraits>(std::forward<P>(promise),
-                                    std::forward<Fs>(factories)..., whence);
+  return Simplify<TrySeqTraits>(std::forward<P>(promise),
+                                std::forward<Fs>(factories)..., whence);
 }
 
 template <typename Iter, typename Factory, typename Argument>

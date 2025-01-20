@@ -63,8 +63,8 @@ struct SeqTraits {
 template <typename P, typename... Fs>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Seq(P&& promise, Fs&&... factories,
                                               DebugLocation whence) {
-  return FoldSeqState<SeqTraits>(std::forward<P>(promise),
-                                 std::forward<Fs>(factories)..., whence);
+  return Simplify<SeqTraits>(std::forward<P>(promise),
+                             std::forward<Fs>(factories)..., whence);
 }
 
 template <typename Iter, typename Factory, typename Argument>
