@@ -15,7 +15,6 @@
 
 #include "envoy/config/core/v3/base.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
-#include "validate/validate.upb_minitable.h"
 
 // Must be last.
 #include "upb/port/def.inc"

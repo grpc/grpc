@@ -87,15 +87,11 @@ class ServerCallTracerFilter
       call_tracer->RecordSendTrailingMetadata(&server_trailing_metadata);
     }
 
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
   };
 };
-
-const NoInterceptor ServerCallTracerFilter::Call::OnClientToServerMessage;
-const NoInterceptor ServerCallTracerFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ServerCallTracerFilter::Call::OnServerToClientMessage;
 
 const grpc_channel_filter ServerCallTracerFilter::kFilter =
     MakePromiseBasedFilter<ServerCallTracerFilter, FilterEndpoint::kServer,

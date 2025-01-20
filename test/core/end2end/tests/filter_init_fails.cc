@@ -19,10 +19,10 @@
 #include <grpc/status.h>
 
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"

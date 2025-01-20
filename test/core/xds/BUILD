@@ -139,7 +139,6 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
         "absl/strings",
-        "absl/types:optional",
     ],
     language = "C++",
     deps = [
@@ -182,6 +181,7 @@ grpc_cc_test(
         "//test/core/test_util:scoped_env_var",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/status/v3:pkg_cc_proto",
     ],
 )
 

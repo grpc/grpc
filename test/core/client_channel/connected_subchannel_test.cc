@@ -144,8 +144,8 @@ class ConnectedSubchannelTest : public YodelTest {
 
   void Shutdown() override {}
 
-  absl::optional<CallHandler> PopHandler() {
-    if (handlers_.empty()) return absl::nullopt;
+  std::optional<CallHandler> PopHandler() {
+    if (handlers_.empty()) return std::nullopt;
     auto handler = std::move(handlers_.front());
     handlers_.pop();
     return handler;
@@ -165,7 +165,6 @@ CONNECTED_SUBCHANNEL_CHANNEL_TEST(StartCall) {
   SpawnTestSeq(
       call.handler, "start-call", [channel, handler = call.handler]() mutable {
         channel->unstarted_call_destination()->StartCall(std::move(handler));
-        return Empty{};
       });
   auto handler = TickUntilCallStarted();
   WaitForAllPendingWork();

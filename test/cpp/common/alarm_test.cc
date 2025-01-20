@@ -390,6 +390,7 @@ TEST(AlarmTest, CallbackCancellationLocked) {
             });
   std::unique_lock<std::mutex> l(c->mu);
   alarm.Cancel();
+
   EXPECT_TRUE(c->cv.wait_until(
       l, std::chrono::system_clock::now() + std::chrono::seconds(1),
       [c] { return c->completed; }));
@@ -437,35 +438,28 @@ TEST(AlarmTest, UnsetDestruction) {
   Alarm alarm;
 }
 
-TEST(AlarmTest, CQAlarmReuse) {
-  constexpr int kIterations = 1000;
+TEST(AlarmTest, CallbackSetInCallback) {
+  Completion c;
+  std::mutex alarm_mu;
   Alarm alarm;
-  CompletionQueue cq;
-  std::thread polling_thread([&]() {
-    void* tag;
-    bool ok = false;
-    for (int i = 0; i < kIterations; ++i) {
-      ASSERT_TRUE(cq.Next(&tag, &ok));
-    }
-  });
-  for (int i = 0; i < kIterations; ++i) {
-    alarm.Set(&cq, gpr_timespec{0, 0, GPR_TIMESPAN}, /*tag=*/nullptr);
-    alarm.Cancel();
+  {
+    std::lock_guard<std::mutex> l(alarm_mu);
+    alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(1),
+              [&](bool ok) {
+                EXPECT_TRUE(ok);
+                std::lock_guard<std::mutex> l(alarm_mu);
+                alarm.Set(
+                    std::chrono::system_clock::now() + std::chrono::seconds(1),
+                    [&](bool ok) {
+                      EXPECT_TRUE(ok);
+                      std::lock_guard<std::mutex> l(c.mu);
+                      c.completed = true;
+                      c.cv.notify_one();
+                    });
+              });
   }
-  polling_thread.join();
-}
-
-TEST(AlarmTest, CallbackAlarmReuse) {
-  constexpr int kIterations = 1000;
-  std::atomic_int counter{0};
-  Alarm alarm;
-  for (int i = 0; i < kIterations; ++i) {
-    alarm.Set(gpr_timespec{0, 0, GPR_TIMESPAN}, [&](bool ok) { ++counter; });
-    alarm.Cancel();
-  }
-  // Noop Set to wait for the previous callback to run.
-  alarm.Set(gpr_timespec{0, 0, GPR_TIMESPAN}, [](bool) {});
-  EXPECT_EQ(counter, kIterations);
+  std::unique_lock<std::mutex> l(c.mu);
+  c.cv.wait(l, [&] { return c.completed; });
 }
 
 }  // namespace

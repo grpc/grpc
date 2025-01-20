@@ -852,13 +852,13 @@ TEST_F(LoggingTest, ServerCancelsRpc) {
   EchoRequest request;
   request.set_message("foo");
   auto* error = request.mutable_param()->mutable_expected_error();
-  error->set_code(25);
+  error->set_code(11);
   error->set_error_message("error message");
   error->set_binary_error_details("binary error details");
   EchoResponse response;
   grpc::ClientContext context;
   grpc::Status status = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(status.error_code(), 25);
+  EXPECT_EQ(status.error_code(), 11);
   EXPECT_EQ(status.error_message(), "error message");
   EXPECT_EQ(status.error_details(), "binary error details");
   ASSERT_TRUE(g_test_logging_sink->WaitForNumEntries(9, absl::Seconds(5)));
@@ -908,7 +908,7 @@ TEST_F(LoggingTest, ServerCancelsRpc) {
                 Field("payload", &LoggingSink::Entry::payload,
                       AllOf(Field("payload",
                                   &LoggingSink::Entry::Payload::status_code,
-                                  Eq(25)),
+                                  Eq(11)),
                             Field("payload",
                                   &LoggingSink::Entry::Payload::status_message,
                                   Eq("error message"))))),
@@ -965,7 +965,7 @@ TEST_F(LoggingTest, ServerCancelsRpc) {
                 Field("payload", &LoggingSink::Entry::payload,
                       AllOf(Field("payload",
                                   &LoggingSink::Entry::Payload::status_code,
-                                  Eq(25)),
+                                  Eq(11)),
                             Field("payload",
                                   &LoggingSink::Entry::Payload::status_message,
                                   Eq("error message")))))));

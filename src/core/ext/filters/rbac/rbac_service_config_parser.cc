@@ -22,12 +22,12 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/json/json_args.h"
@@ -152,7 +152,7 @@ struct RbacConfig {
           };
 
           struct Authenticated {
-            absl::optional<StringMatch> principal_name;
+            std::optional<StringMatch> principal_name;
 
             static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
           };
@@ -218,7 +218,7 @@ struct RbacConfig {
       void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
     };
 
-    absl::optional<Rules> rules;
+    std::optional<Rules> rules;
 
     Rbac TakeAsRbac();
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);

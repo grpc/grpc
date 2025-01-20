@@ -29,9 +29,11 @@
 #include <algorithm>
 #include <functional>
 #include <new>
+#include <optional>
 #include <set>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
@@ -43,14 +45,13 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/dynamic_filters.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
 #include "src/core/client_channel/local_subchannel_pool.h"
+#include "src/core/client_channel/retry_interceptor.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/config/core_configuration.h"
@@ -261,8 +262,7 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         << subchannel_wrapper_->subchannel_.get()
         << " watcher=" << watcher_.get()
         << " state=" << ConnectivityStateName(state) << " status=" << status;
-    absl::optional<absl::Cord> keepalive_throttling =
-        status.GetPayload(kKeepaliveThrottlingKey);
+    auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
     if (keepalive_throttling.has_value()) {
       int new_keepalive_time = -1;
       if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
@@ -556,7 +556,7 @@ absl::StatusOr<RefCountedPtr<Channel>> ClientChannel::Create(
   }
   // Get default service config.  If none is specified via the client API,
   // we use an empty config.
-  absl::optional<absl::string_view> service_config_json =
+  std::optional<absl::string_view> service_config_json =
       channel_args.GetString(GRPC_ARG_SERVICE_CONFIG);
   if (!service_config_json.has_value()) service_config_json = "{}";
   auto default_service_config =
@@ -591,7 +591,7 @@ absl::StatusOr<RefCountedPtr<Channel>> ClientChannel::Create(
 namespace {
 std::string GetDefaultAuthorityFromChannelArgs(const ChannelArgs& channel_args,
                                                absl::string_view target) {
-  absl::optional<std::string> default_authority =
+  std::optional<std::string> default_authority =
       channel_args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY);
   if (!default_authority.has_value()) {
     return CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
@@ -854,7 +854,7 @@ void ClientChannel::Ping(grpc_completion_queue*, void*) {
 grpc_call* ClientChannel::CreateCall(
     grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* /*pollset_set_alternative*/,
-    Slice path, absl::optional<Slice> authority, Timestamp deadline, bool) {
+    Slice path, std::optional<Slice> authority, Timestamp deadline, bool) {
   auto arena = call_arena_allocator()->MakeArena();
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine());
@@ -984,7 +984,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   }
   // Try the deprecated LB policy name from the service config.
   // If not, try the setting from channel args.
-  absl::optional<absl::string_view> policy_name;
+  std::optional<absl::string_view> policy_name;
   if (!parsed_service_config->parsed_deprecated_lb_policy().empty()) {
     policy_name = parsed_service_config->parsed_deprecated_lb_policy();
   } else {
@@ -1188,7 +1188,7 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
 
 absl::Status ClientChannel::CreateOrUpdateLbPolicyLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
-    const absl::optional<std::string>& health_check_service_name,
+    const std::optional<std::string>& health_check_service_name,
     Resolver::Result result) {
   // Construct update.
   LoadBalancingPolicy::UpdateArgs update_args;
@@ -1291,13 +1291,11 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
       GRPC_CLIENT_CHANNEL, builder);
   // Add filters returned by the config selector (e.g., xDS HTTP filters).
   config_selector->AddFilters(builder);
-  // TODO(roth, ctiller): When we implement the retry interceptor, that
-  // needs to be added *after* the filters added by the config selector.
   const bool enable_retries =
       !channel_args_.WantMinimalStack() &&
       channel_args_.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
   if (enable_retries) {
-    Crash("call v3 stack does not yet support retries");
+    builder.Add<RetryInterceptor>();
   }
   // Create call destination.
   auto top_of_stack_call_destination = builder.Build(call_destination_);

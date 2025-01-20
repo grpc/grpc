@@ -13,6 +13,7 @@
 # limitations under the License.
 """Generates and compiles C++ grpc stubs from proto_library rules."""
 
+load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:generate_cc.bzl", "generate_cc")
 load("//bazel:protobuf.bzl", "well_known_proto_libs")
@@ -24,7 +25,7 @@ def cc_grpc_library(
         proto_only = False,
         well_known_protos = False,
         generate_mocks = False,
-        use_external = False,
+        use_external = False,  # @unused
         grpc_only = False,
         **kwargs):
     """Generates C++ grpc classes for services defined in a proto file.
@@ -84,8 +85,7 @@ def cc_grpc_library(
             deps = proto_deps,
             **kwargs
         )
-
-        native.cc_proto_library(
+        cc_proto_library(
             name = cc_proto_target,
             deps = [":" + proto_target],
             **kwargs
@@ -102,7 +102,7 @@ def cc_grpc_library(
         generate_cc(
             name = codegen_grpc_target,
             srcs = proto_targets,
-            plugin = "@com_github_grpc_grpc//src/compiler:grpc_cpp_plugin",
+            plugin = Label("//src/compiler:grpc_cpp_plugin"),
             well_known_protos = well_known_protos,
             generate_mocks = generate_mocks,
             **kwargs
@@ -114,6 +114,6 @@ def cc_grpc_library(
             hdrs = [":" + codegen_grpc_target],
             deps = deps +
                    extra_deps +
-                   ["@com_github_grpc_grpc//:grpc++_codegen_proto"],
+                   [Label("//:grpc++_codegen_proto")],
             **kwargs
         )

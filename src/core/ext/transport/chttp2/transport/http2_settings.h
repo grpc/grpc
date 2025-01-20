@@ -21,10 +21,10 @@
 #include <stdint.h>
 
 #include <cstdint>
+#include <optional>
 
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/util/useful.h"
@@ -152,7 +152,7 @@ class Http2SettingsManager {
   Http2Settings& mutable_peer() { return peer_; }
   const Http2Settings& peer() const { return peer_; }
 
-  absl::optional<Http2SettingsFrame> MaybeSendUpdate();
+  std::optional<Http2SettingsFrame> MaybeSendUpdate();
   GRPC_MUST_USE_RESULT bool AckLastSend();
 
  private:

@@ -90,6 +90,8 @@ class HijackedCall final {
 
 class Interceptor : public UnstartedCallDestination {
  public:
+  using UnstartedCallDestination::UnstartedCallDestination;
+
   void StartCall(UnstartedCallHandler unstarted_call_handler) final {
     unstarted_call_handler.AddCallStack(filter_stack_);
     InterceptCall(std::move(unstarted_call_handler));
@@ -113,6 +115,13 @@ class Interceptor : public UnstartedCallDestination {
                                      std::move(call_handler));
                });
   }
+
+  // Hijack a call with custom initial metadata.
+  // TODO(ctiller): Evaluate whether this or hijack or some other in-between
+  // API is what we need here (I think we need 2 or 3 more fully worked through
+  // samples) and then reduce this surface to one API.
+  CallInitiator MakeChildCall(ClientMetadataHandle metadata,
+                              RefCountedPtr<Arena> arena);
 
   // Consume this call - it will not be passed on to any further filters.
   CallHandler Consume(UnstartedCallHandler unstarted_call_handler) {
@@ -150,9 +159,8 @@ class InterceptionChainBuilder final {
   // the future, and building is a builder responsibility.
   // Instead, we declare a relatively closed set of destinations here, and
   // hide the adaptors inside the builder at build time.
-  using FinalDestination =
-      absl::variant<RefCountedPtr<UnstartedCallDestination>,
-                    RefCountedPtr<CallDestination>>;
+  using FinalDestination = std::variant<RefCountedPtr<UnstartedCallDestination>,
+                                        RefCountedPtr<CallDestination>>;
 
   explicit InterceptionChainBuilder(ChannelArgs args,
                                     const Blackboard* old_blackboard = nullptr,
@@ -239,7 +247,7 @@ class InterceptionChainBuilder final {
   void AddInterceptor(absl::StatusOr<RefCountedPtr<Interceptor>> interceptor);
 
   ChannelArgs args_;
-  absl::optional<CallFilters::StackBuilder> stack_builder_;
+  std::optional<CallFilters::StackBuilder> stack_builder_;
   RefCountedPtr<Interceptor> top_interceptor_;
   absl::Status status_;
   std::map<size_t, size_t> filter_type_counts_;

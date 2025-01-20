@@ -30,11 +30,13 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
@@ -47,9 +49,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
-#include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -63,6 +63,7 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/backend_metric_data.h"
@@ -83,6 +84,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "src/core/util/work_serializer.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
@@ -93,6 +95,7 @@ namespace testing {
 
 class LoadBalancingPolicyTest : public ::testing::Test {
  protected:
+  using EventEngine = grpc_event_engine::experimental::EventEngine;
   using FuzzingEventEngine =
       grpc_event_engine::experimental::FuzzingEventEngine;
 
@@ -303,10 +306,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     // Sets the connectivity state for this subchannel.  The updated state
     // will be reported to all associated SubchannelInterface objects.
-    void SetConnectivityState(grpc_connectivity_state state,
-                              const absl::Status& status = absl::OkStatus(),
-                              bool validate_state_transition = true,
-                              SourceLocation location = SourceLocation()) {
+    void SetConnectivityState(
+        grpc_connectivity_state state,
+        const absl::Status& status = absl::OkStatus(),
+        bool validate_state_transition = true,
+        absl::AnyInvocable<void()> run_before_flush = nullptr,
+        SourceLocation location = SourceLocation()) {
       ExecCtx exec_ctx;
       if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         EXPECT_FALSE(status.ok())
@@ -334,6 +339,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             // SetState() enqueued the connectivity state notifications for
             // the subchannel, so we add another callback to the queue to be
             // executed after that state notifications has been delivered.
+            if (run_before_flush != nullptr) run_before_flush();
             LOG(INFO) << "Waiting for state notifications to be delivered";
             test_->work_serializer_->Run(
                 [&]() {
@@ -350,7 +356,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                 DEBUG_LOCATION);
           },
           DEBUG_LOCATION);
-      notification.WaitForNotification();
+      while (!notification.HasBeenNotified()) {
+        test_->fuzzing_ee_->Tick();
+      }
       LOG(INFO) << "Health notifications delivered";
     }
 
@@ -394,7 +402,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             notification.Notify();
           },
           DEBUG_LOCATION);
-      notification.WaitForNotification();
+      while (!notification.HasBeenNotified()) {
+        test_->fuzzing_ee_->Tick();
+      }
       return num_watchers;
     }
 
@@ -460,17 +470,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // If the queue is empty or the next event is not a state update,
     // fails the test and returns nullopt without removing anything from
     // the queue.
-    absl::optional<StateUpdate> GetNextStateUpdate(
+    std::optional<StateUpdate> GetNextStateUpdate(
         SourceLocation location = SourceLocation()) {
       MutexLock lock(&mu_);
       EXPECT_FALSE(queue_.empty()) << location.file() << ":" << location.line();
-      if (queue_.empty()) return absl::nullopt;
+      if (queue_.empty()) return std::nullopt;
       Event& event = queue_.front();
-      auto* update = absl::get_if<StateUpdate>(&event);
+      auto* update = std::get_if<StateUpdate>(&event);
       EXPECT_NE(update, nullptr)
           << "unexpected event " << EventString(event) << " at "
           << location.file() << ":" << location.line();
-      if (update == nullptr) return absl::nullopt;
+      if (update == nullptr) return std::nullopt;
       StateUpdate result = std::move(*update);
       LOG(INFO) << "dequeued next state update: " << result.ToString();
       queue_.pop_front();
@@ -481,17 +491,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // If the queue is empty or the next event is not a re-resolution,
     // fails the test and returns nullopt without removing anything
     // from the queue.
-    absl::optional<ReresolutionRequested> GetNextReresolution(
+    std::optional<ReresolutionRequested> GetNextReresolution(
         SourceLocation location = SourceLocation()) {
       MutexLock lock(&mu_);
       EXPECT_FALSE(queue_.empty()) << location.file() << ":" << location.line();
-      if (queue_.empty()) return absl::nullopt;
+      if (queue_.empty()) return std::nullopt;
       Event& event = queue_.front();
-      auto* reresolution = absl::get_if<ReresolutionRequested>(&event);
+      auto* reresolution = std::get_if<ReresolutionRequested>(&event);
       EXPECT_NE(reresolution, nullptr)
           << "unexpected event " << EventString(event) << " at "
           << location.file() << ":" << location.line();
-      if (reresolution == nullptr) return absl::nullopt;
+      if (reresolution == nullptr) return std::nullopt;
       ReresolutionRequested result = *reresolution;
       queue_.pop_front();
       return result;
@@ -519,7 +529,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               notification->Notify();
             },
             DEBUG_LOCATION);
-        notification.WaitForNotification();
+        while (!notification.HasBeenNotified()) {
+          test_->fuzzing_ee_->Tick();
+        }
       }
 
       LoadBalancingPolicy::PickResult Pick(
@@ -533,7 +545,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     };
 
     // Represents an event reported by the LB policy.
-    using Event = absl::variant<StateUpdate, ReresolutionRequested>;
+    using Event = std::variant<StateUpdate, ReresolutionRequested>;
 
     // Returns a human-readable representation of an event.
     static std::string EventString(const Event& event) {
@@ -603,9 +615,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return nullptr;
     }
 
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
-      return test_->fuzzing_ee_.get();
-    }
+    EventEngine* GetEventEngine() override { return test_->fuzzing_ee_.get(); }
 
     GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup()
         override {
@@ -627,10 +637,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         : metadata_(std::move(metadata)) {}
 
    private:
-    absl::optional<absl::string_view> Lookup(
+    std::optional<absl::string_view> Lookup(
         absl::string_view key, std::string* /*buffer*/) const override {
       auto it = metadata_.find(std::string(key));
-      if (it == metadata_.end()) return absl::nullopt;
+      if (it == metadata_.end()) return std::nullopt;
       return it->second;
     }
 
@@ -683,7 +693,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       : public LoadBalancingPolicy::BackendMetricAccessor {
    public:
     explicit FakeBackendMetricAccessor(
-        absl::optional<BackendMetricData> backend_metric_data)
+        std::optional<BackendMetricData> backend_metric_data)
         : backend_metric_data_(std::move(backend_metric_data)) {}
 
     const BackendMetricData* GetBackendMetricData() override {
@@ -692,7 +702,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
 
    private:
-    const absl::optional<BackendMetricData> backend_metric_data_;
+    const std::optional<BackendMetricData> backend_metric_data_;
   };
 
   explicit LoadBalancingPolicyTest(absl::string_view lb_policy_name,
@@ -702,12 +712,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   void SetUp() override {
     // Order is important here: Fuzzing EE needs to be created before
-    // grpc_init(), and the POSIX EE (which is used by the WorkSerializer)
-    // needs to be created after grpc_init().
-    fuzzing_ee_ = MakeFuzzingEventEngine();
+    // grpc_init().
+    fuzzing_ee_ = std::make_shared<FuzzingEventEngine>(
+        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
+    grpc_timer_manager_set_start_threaded(false);
     grpc_init();
-    event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
-    work_serializer_ = std::make_shared<WorkSerializer>(event_engine_);
+    work_serializer_ = std::make_shared<WorkSerializer>(fuzzing_ee_);
     auto helper = std::make_unique<FakeHelper>(this);
     helper_ = helper.get();
     LoadBalancingPolicy::Args args = {work_serializer_, std::move(helper),
@@ -737,17 +747,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       lb_policy_.reset();
     }
     fuzzing_ee_->TickUntilIdle();
-    grpc_event_engine::experimental::WaitForSingleOwner(
-        std::move(event_engine_));
-    event_engine_.reset();
+    WaitForSingleOwner(std::move(fuzzing_ee_));
     grpc_shutdown_blocking();
-    fuzzing_ee_.reset();
-  }
-
-  virtual std::shared_ptr<FuzzingEventEngine> MakeFuzzingEventEngine() {
-    return std::make_shared<FuzzingEventEngine>(
-        grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-        fuzzing_event_engine::Actions());
   }
 
   LoadBalancingPolicy* lb_policy() const {
@@ -858,7 +859,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               DEBUG_LOCATION);
         },
         DEBUG_LOCATION);
-    notification.WaitForNotification();
+    while (!notification.HasBeenNotified()) {
+      fuzzing_ee_->Tick();
+    }
     LOG(INFO) << "health notifications delivered";
     return status;
   }
@@ -877,7 +880,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                                 DEBUG_LOCATION);
         },
         DEBUG_LOCATION);
-    notification.WaitForNotification();
+    while (!notification.HasBeenNotified()) {
+      fuzzing_ee_->Tick();
+    }
   }
 
   void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
@@ -944,7 +949,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             EXPECT_TRUE(update.status.ok())
                 << update.status << " at " << location.file() << ":"
                 << location.line();
-            ExpectPickQueued(update.picker.get(), {}, location);
+            ExpectPickQueued(update.picker.get(), {}, {}, location);
             return true;  // Keep going.
           }
           EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
@@ -988,7 +993,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             EXPECT_TRUE(update.status.ok())
                 << update.status << " at " << location.file() << ":"
                 << location.line();
-            ExpectPickQueued(update.picker.get(), {}, location);
+            ExpectPickQueued(update.picker.get(), {}, {}, location);
             return true;  // Keep going.
           }
           EXPECT_EQ(update.state, GRPC_CHANNEL_TRANSIENT_FAILURE)
@@ -1055,7 +1060,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Status expected_status = absl::OkStatus(),
       SourceLocation location = SourceLocation()) {
     auto picker = ExpectState(expected_state, expected_status, location);
-    return ExpectPickQueued(picker.get(), {}, location);
+    return ExpectPickQueued(picker.get(), {}, {}, location);
   }
 
   // Convenient frontend to ExpectStateAndQueuingPicker() for CONNECTING.
@@ -1072,25 +1077,27 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Does a pick and returns the result.
   LoadBalancingPolicy::PickResult DoPick(
       LoadBalancingPolicy::SubchannelPicker* picker,
-      const CallAttributes& call_attributes = {}) {
+      const CallAttributes& call_attributes = {},
+      const std::map<std::string, std::string>& metadata = {}) {
     ExecCtx exec_ctx;
-    FakeMetadata metadata({});
+    FakeMetadata md(metadata);
     FakeCallState call_state(call_attributes);
-    return picker->Pick({"/service/method", &metadata, &call_state});
+    return picker->Pick({"/service/method", &md, &call_state});
   }
 
   // Requests a pick on picker and expects a Queue result.
   bool ExpectPickQueued(LoadBalancingPolicy::SubchannelPicker* picker,
                         const CallAttributes call_attributes = {},
+                        const std::map<std::string, std::string>& metadata = {},
                         SourceLocation location = SourceLocation()) {
     EXPECT_NE(picker, nullptr) << location.file() << ":" << location.line();
     if (picker == nullptr) return false;
-    auto pick_result = DoPick(picker, call_attributes);
-    EXPECT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
+    auto pick_result = DoPick(picker, call_attributes, metadata);
+    EXPECT_TRUE(std::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result))
         << PickResultString(pick_result) << "\nat " << location.file() << ":"
         << location.line();
-    return absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
+    return std::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result);
   }
 
@@ -1101,23 +1108,24 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // subchannel_call_tracker is non-null, it will be set to point to the
   // call tracker; otherwise, the call tracker will be invoked
   // automatically to represent a complete call with no backend metric data.
-  absl::optional<std::string> ExpectPickComplete(
+  std::optional<std::string> ExpectPickComplete(
       LoadBalancingPolicy::SubchannelPicker* picker,
       const CallAttributes& call_attributes = {},
+      const std::map<std::string, std::string>& metadata = {},
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>*
           subchannel_call_tracker = nullptr,
       SubchannelState::FakeSubchannel** picked_subchannel = nullptr,
       SourceLocation location = SourceLocation()) {
     EXPECT_NE(picker, nullptr);
     if (picker == nullptr) {
-      return absl::nullopt;
+      return std::nullopt;
     }
-    auto pick_result = DoPick(picker, call_attributes);
-    auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
+    auto pick_result = DoPick(picker, call_attributes, metadata);
+    auto* complete = std::get_if<LoadBalancingPolicy::PickResult::Complete>(
         &pick_result.result);
     EXPECT_NE(complete, nullptr) << PickResultString(pick_result) << " at "
                                  << location.file() << ":" << location.line();
-    if (complete == nullptr) return absl::nullopt;
+    if (complete == nullptr) return std::nullopt;
     auto* subchannel = static_cast<SubchannelState::FakeSubchannel*>(
         complete->subchannel.get());
     if (picked_subchannel != nullptr) *picked_subchannel = subchannel;
@@ -1147,7 +1155,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Gets num_picks complete picks from picker and returns the resulting
   // list of addresses, or nullopt if a non-complete pick was returned.
-  absl::optional<std::vector<std::string>> GetCompletePicks(
+  std::optional<std::vector<std::string>> GetCompletePicks(
       LoadBalancingPolicy::SubchannelPicker* picker, size_t num_picks,
       const CallAttributes& call_attributes = {},
       std::vector<
@@ -1156,18 +1164,19 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       SourceLocation location = SourceLocation()) {
     EXPECT_NE(picker, nullptr);
     if (picker == nullptr) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     std::vector<std::string> results;
     for (size_t i = 0; i < num_picks; ++i) {
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
           subchannel_call_tracker;
       auto address = ExpectPickComplete(picker, call_attributes,
+                                        /*metadata=*/{},
                                         subchannel_call_trackers == nullptr
                                             ? nullptr
                                             : &subchannel_call_tracker,
                                         nullptr, location);
-      if (!address.has_value()) return absl::nullopt;
+      if (!address.has_value()) return std::nullopt;
       results.emplace_back(std::move(*address));
       if (subchannel_call_trackers != nullptr) {
         subchannel_call_trackers->emplace_back(
@@ -1183,7 +1192,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // must then continue in round-robin fashion, with wrap-around.
   bool PicksAreRoundRobin(absl::Span<const absl::string_view> expected,
                           absl::Span<const std::string> actual) {
-    absl::optional<size_t> expected_index;
+    std::optional<size_t> expected_index;
     for (const auto& address : actual) {
       auto it = std::find(expected.begin(), expected.end(), address);
       if (it == expected.end()) return false;
@@ -1385,8 +1394,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                       std::function<void(const absl::Status&)> check_status,
                       SourceLocation location = SourceLocation()) {
     auto pick_result = DoPick(picker);
-    auto* fail = absl::get_if<LoadBalancingPolicy::PickResult::Fail>(
-        &pick_result.result);
+    auto* fail =
+        std::get_if<LoadBalancingPolicy::PickResult::Fail>(&pick_result.result);
     ASSERT_NE(fail, nullptr) << PickResultString(pick_result) << " at "
                              << location.file() << ":" << location.line();
     check_status(fail->status);
@@ -1445,27 +1454,27 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     LOG(INFO) << "waiting for WorkSerializer to flush...";
     absl::Notification notification;
     work_serializer_->Run([&]() { notification.Notify(); }, DEBUG_LOCATION);
-    notification.WaitForNotification();
+    while (!notification.HasBeenNotified()) {
+      fuzzing_ee_->Tick();
+    }
     LOG(INFO) << "WorkSerializer flush complete";
   }
 
-  void IncrementTimeBy(Duration duration) {
+  void IncrementTimeBy(Duration duration, bool flush_work_serializer = true) {
     ExecCtx exec_ctx;
     LOG(INFO) << "Incrementing time by " << duration;
     fuzzing_ee_->TickForDuration(duration);
     LOG(INFO) << "Done incrementing time";
     // Flush WorkSerializer, in case the timer callback enqueued anything.
-    WaitForWorkSerializerToFlush();
+    if (flush_work_serializer) WaitForWorkSerializerToFlush();
   }
 
-  void SetExpectedTimerDuration(
-      absl::optional<grpc_event_engine::experimental::EventEngine::Duration>
-          duration,
-      SourceLocation location = SourceLocation()) {
+  void SetExpectedTimerDuration(std::optional<EventEngine::Duration> duration,
+                                SourceLocation location = SourceLocation()) {
     if (duration.has_value()) {
       fuzzing_ee_->SetRunAfterDurationCallback(
-          [expected = *duration, location = location](
-              grpc_event_engine::experimental::EventEngine::Duration duration) {
+          [expected = *duration,
+           location = location](EventEngine::Duration duration) {
             EXPECT_EQ(duration, expected)
                 << "Expected: " << expected.count()
                 << "ns\n  Actual: " << duration.count() << "ns\n"
@@ -1477,15 +1486,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   std::shared_ptr<FuzzingEventEngine> fuzzing_ee_;
-  // TODO(ctiller): this is a normal event engine, yet it gets its time measure
-  // from fuzzing_ee_ -- results are likely to be a little funky, but seem to do
-  // well enough for the tests we have today.
-  // We should transition everything here to just use fuzzing_ee_, but that
-  // needs some thought on how to Tick() at appropriate times, as there are
-  // Notification objects buried everywhere in this code, and
-  // WaitForNotification is deeply incompatible with a single threaded event
-  // engine that doesn't run callbacks until its public Tick method is called.
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::shared_ptr<WorkSerializer> work_serializer_;
   FakeHelper* helper_ = nullptr;
   std::map<SubchannelKey, SubchannelState> subchannel_pool_;

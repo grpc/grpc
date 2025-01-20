@@ -59,8 +59,6 @@ _GRPC_DEP_NAMES = [
     "com_google_fuzztest",
     "io_opencensus_cpp",
     "io_opentelemetry_cpp",
-    # TODO(stanleycheung): remove when prometheus-cpp has new release
-    "com_github_jupp0r_prometheus_cpp",
     "envoy_api",
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
@@ -83,6 +81,7 @@ _GRPC_DEP_NAMES = [
     "com_google_libprotobuf_mutator",
     "com_github_cncf_xds",
     "google_cloud_cpp",
+    "rules_shell",
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -91,8 +90,6 @@ _GRPC_BAZEL_ONLY_DEPS = [
     "com_google_absl",
     "com_google_fuzztest",
     "io_opencensus_cpp",
-    # TODO(stanleycheung): remove when prometheus-cpp has new release
-    "com_github_jupp0r_prometheus_cpp",
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _BAZEL_COMPDB_DEP_NAME,
@@ -113,6 +110,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     "com_google_googleapis",
     "com_google_libprotobuf_mutator",
     "google_cloud_cpp",
+    "rules_shell",
 ]
 
 
@@ -191,6 +189,10 @@ names_without_bazel_only_deps = list(names_and_urls.keys())
 for dep_name in _GRPC_BAZEL_ONLY_DEPS:
     names_without_bazel_only_deps.remove(dep_name)
 archive_urls = [names_and_urls[name] for name in names_without_bazel_only_deps]
+for url in archive_urls:
+    if re.search(git_hash_pattern, url) is None:
+        print("Cannot find the hash value from url", url)
+        sys.exit(1)
 workspace_git_hashes = {
     re.search(git_hash_pattern, url).group() for url in archive_urls
 }

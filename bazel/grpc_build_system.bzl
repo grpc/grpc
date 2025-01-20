@@ -27,8 +27,10 @@
 Contains macros used throughout the repo.
 """
 
+load("@build_bazel_apple_support//rules:universal_binary.bzl", "universal_binary")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
+load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
@@ -162,7 +164,7 @@ def grpc_cc_library(
         defines = [],
         deps = [],
         select_deps = None,
-        standalone = False,
+        standalone = False,  # @unused
         language = "C++",
         testonly = False,
         visibility = None,
@@ -237,9 +239,23 @@ def grpc_cc_library(
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
     native.cc_binary(
-        name = name,
+        name = name + "_native",
         srcs = srcs,
         deps = deps,
+    )
+    universal_binary(
+        name = name + "_universal",
+        binary = name + "_native",
+    )
+    native.genrule(
+        name = name,
+        srcs = select({
+            "@platforms//os:macos": [name + "_universal"],
+            "//conditions:default": [name + "_native"],
+        }),
+        outs = [name],
+        cmd = "cp $< $@",
+        executable = True,
     )
 
 def grpc_internal_proto_library(
@@ -256,7 +272,7 @@ def grpc_internal_proto_library(
     )
 
 def grpc_cc_proto_library(name, deps = [], visibility = None):
-    native.cc_proto_library(name = name, deps = deps, visibility = visibility)
+    cc_proto_library(name = name, deps = deps, visibility = visibility)
 
 # DO NOT USE -- callers should instead be changed to use separate
 # grpc_internal_proto_library(), grpc_cc_proto_library(), and
@@ -624,6 +640,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         srcs = srcs,
         deps = core_deps,
         tags = tags,
+        alwayslink = 1,
     )
 
     for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
@@ -832,7 +849,7 @@ def grpc_objc_library(
         srcs = srcs,
         non_arc_srcs = non_arc_srcs,
         textual_hdrs = textual_hdrs,
-        copts = GRPC_DEFAULT_COPTS + ["-ObjC++", "-std=gnu++14"],
+        copts = GRPC_DEFAULT_COPTS + ["-ObjC++", "-std=gnu++17"],
         testonly = testonly,
         data = data,
         deps = deps,

@@ -14,7 +14,7 @@
 
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test", "grpc_fuzzer", "grpc_proto_fuzzer")
 
 licenses(["notice"])
 
@@ -97,7 +97,6 @@ grpc_fuzzer(
     srcs = ["decode_huff_fuzzer.cc"],
     corpus = "decode_huff_corpus",
     external_deps = [
-        "absl/types:optional",
         "absl/strings",
     ],
     language = "C++",
@@ -114,7 +113,6 @@ grpc_fuzzer(
     srcs = ["encode_decode_huff_fuzzer.cc"],
     corpus = "encode_decode_huff_corpus",
     external_deps = [
-        "absl/types:optional",
         "absl/strings",
     ],
     language = "C++",
@@ -497,7 +495,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_http2_client_transport",
+        "//src/core:http2_client_transport",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/transport/util:mock_promise_endpoint",
@@ -513,9 +511,62 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_http2_server_transport",
+        "//src/core:http2_server_transport",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/transport/util:mock_promise_endpoint",
+    ],
+)
+
+grpc_cc_test(
+    name = "chttp2_server_listener_test",
+    srcs = ["chttp2_server_listener_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "write_size_policy_fuzztest",
+    srcs = ["write_size_policy_fuzztest.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:write_size_policy"],
+)
+
+grpc_fuzz_test(
+    name = "hpack_encoder_timeout_test",
+    srcs = ["hpack_encoder_timeout_test.cc"],
+    external_deps = [
+        "absl/random",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//:grpc_base",
+        "//:hpack_encoder",
+        "//:hpack_parser",
+        "//:ref_counted_ptr",
+        "//src/core:arena",
+        "//src/core:memory_quota",
+        "//src/core:metadata_batch",
+        "//src/core:resource_quota",
+        "//src/core:slice_buffer",
+        "//src/core:time",
     ],
 )

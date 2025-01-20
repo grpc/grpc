@@ -18,8 +18,8 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
@@ -73,8 +73,8 @@ TEST(MakeSubchannelArgs, StripsOutNoSubchannelArgs) {
       ChannelArgs().Set(GRPC_ARG_NO_SUBCHANNEL_PREFIX "foo", 1),
       ChannelArgs().Set(GRPC_ARG_NO_SUBCHANNEL_PREFIX "bar", 1), nullptr,
       "foo.example.com");
-  EXPECT_EQ(args.GetString(GRPC_ARG_NO_SUBCHANNEL_PREFIX "foo"), absl::nullopt);
-  EXPECT_EQ(args.GetString(GRPC_ARG_NO_SUBCHANNEL_PREFIX "bar"), absl::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_NO_SUBCHANNEL_PREFIX "foo"), std::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_NO_SUBCHANNEL_PREFIX "bar"), std::nullopt);
 }
 
 }  // namespace

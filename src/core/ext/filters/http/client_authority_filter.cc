@@ -23,10 +23,10 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/security/transport/auth_filters.h"
@@ -36,16 +36,9 @@
 
 namespace grpc_core {
 
-const NoInterceptor ClientAuthorityFilter::Call::OnServerInitialMetadata;
-const NoInterceptor ClientAuthorityFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor ClientAuthorityFilter::Call::OnClientToServerMessage;
-const NoInterceptor ClientAuthorityFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ClientAuthorityFilter::Call::OnServerToClientMessage;
-const NoInterceptor ClientAuthorityFilter::Call::OnFinalize;
-
 absl::StatusOr<std::unique_ptr<ClientAuthorityFilter>>
 ClientAuthorityFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
-  absl::optional<absl::string_view> default_authority =
+  std::optional<absl::string_view> default_authority =
       args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
   if (!default_authority.has_value()) {
     return absl::InvalidArgumentError(
@@ -80,11 +73,13 @@ void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<ClientAuthorityFilter>(GRPC_CLIENT_SUBCHANNEL)
       .If(NeedsClientAuthorityFilter)
-      .Before<ClientAuthFilter>();
+      .Before<ClientAuthFilter>()
+      .Before<LegacyClientAuthFilter>();
   builder->channel_init()
       ->RegisterFilter<ClientAuthorityFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .If(NeedsClientAuthorityFilter)
-      .Before<ClientAuthFilter>();
+      .Before<ClientAuthFilter>()
+      .Before<LegacyClientAuthFilter>();
 }
 
 }  // namespace grpc_core

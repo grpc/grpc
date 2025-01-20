@@ -29,6 +29,7 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <regex>
 #include <string>
 #include <utility>
@@ -41,7 +42,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
@@ -320,7 +320,7 @@ class HttpProxyFilter : public CoreTestFixture {
   grpc_channel* MakeClient(const ChannelArgs& args,
                            grpc_completion_queue*) override {
     // If testing for proxy auth, add credentials to proxy uri
-    absl::optional<std::string> proxy_auth_str =
+    std::optional<std::string> proxy_auth_str =
         args.GetOwnedString(GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
     std::string proxy_uri;
     if (!proxy_auth_str.has_value()) {
@@ -518,10 +518,12 @@ class FixtureWithTracing final : public CoreTestFixture {
 
 class ChaoticGoodFixture : public CoreTestFixture {
  public:
-  explicit ChaoticGoodFixture(int data_connections = 1,
+  explicit ChaoticGoodFixture(int data_connections = 1, int chunk_size = 0,
                               std::string localaddr = JoinHostPort(
                                   "localhost", grpc_pick_unused_port_or_die()))
-      : data_connections_(data_connections), localaddr_(std::move(localaddr)) {}
+      : data_connections_(data_connections),
+        chunk_size_(chunk_size),
+        localaddr_(std::move(localaddr)) {}
 
  protected:
   const std::string& localaddr() const { return localaddr_; }
@@ -532,6 +534,8 @@ class ChaoticGoodFixture : public CoreTestFixture {
       absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     auto* server = grpc_server_create(
         args.Set(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS, data_connections_)
+            .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE, chunk_size_)
+            .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE, chunk_size_)
             .ToC()
             .get(),
         nullptr);
@@ -546,11 +550,16 @@ class ChaoticGoodFixture : public CoreTestFixture {
                            grpc_completion_queue*) override {
     auto* client = grpc_chaotic_good_channel_create(
         localaddr_.c_str(),
-        args.Set(GRPC_ARG_ENABLE_RETRIES, false).ToC().get());
+        args.Set(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE, chunk_size_)
+            .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE, chunk_size_)
+            .SetIfUnset(GRPC_ARG_ENABLE_RETRIES, IsRetryInCallv3Enabled())
+            .ToC()
+            .get());
     return client;
   }
 
   int data_connections_;
+  int chunk_size_;
   std::string localaddr_;
 };
 
@@ -562,6 +571,11 @@ class ChaoticGoodSingleConnectionFixture final : public ChaoticGoodFixture {
 class ChaoticGoodManyConnectionFixture final : public ChaoticGoodFixture {
  public:
   ChaoticGoodManyConnectionFixture() : ChaoticGoodFixture(16) {}
+};
+
+class ChaoticGoodOneByteChunkFixture final : public ChaoticGoodFixture {
+ public:
+  ChaoticGoodOneByteChunkFixture() : ChaoticGoodFixture(1, 1) {}
 };
 
 #ifdef GRPC_POSIX_WAKEUP_FD
@@ -1000,16 +1014,51 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
             return std::make_unique<InsecureFixtureWithPipeForWakeupFd>();
           }},
 #endif
+#ifndef GPR_WINDOWS
       CoreTestConfiguration{"ChaoticGoodFullStack",
                             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
                                 FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
                                 FEATURE_MASK_IS_CALL_V3,
                             nullptr,
                             [](const ChannelArgs& /*client_args*/,
                                const ChannelArgs& /*server_args*/) {
                               return std::make_unique<ChaoticGoodFixture>();
-                            }}};
+                            }},
+      CoreTestConfiguration{
+          "ChaoticGoodManyConnections",
+          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+              FEATURE_MASK_IS_CALL_V3,
+          nullptr,
+          [](const ChannelArgs& /*client_args*/,
+             const ChannelArgs& /*server_args*/) {
+            return std::make_unique<ChaoticGoodManyConnectionFixture>();
+          }},
+      CoreTestConfiguration{
+          "ChaoticGoodSingleConnection",
+          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+              FEATURE_MASK_IS_CALL_V3,
+          nullptr,
+          [](const ChannelArgs& /*client_args*/,
+             const ChannelArgs& /*server_args*/) {
+            return std::make_unique<ChaoticGoodSingleConnectionFixture>();
+          }},
+      CoreTestConfiguration{
+          "ChaoticGoodOneByteChunk",
+          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_1BYTE_AT_A_TIME |
+              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+              FEATURE_MASK_IS_CALL_V3,
+          nullptr,
+          [](const ChannelArgs& /*client_args*/,
+             const ChannelArgs& /*server_args*/) {
+            return std::make_unique<ChaoticGoodOneByteChunkFixture>();
+          }},
+#endif  // GPR_WINDOWS
+  };
 }
 
 std::vector<CoreTestConfiguration> AllConfigs() {

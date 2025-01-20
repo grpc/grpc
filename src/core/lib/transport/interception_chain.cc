@@ -18,6 +18,7 @@
 
 #include <cstddef>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/call_spine.h"
@@ -41,6 +42,13 @@ CallInitiator HijackedCall::MakeCallWithMetadata(
     ClientMetadataHandle metadata) {
   auto call = MakeCallPair(std::move(metadata), call_handler_.arena()->Ref());
   destination_->StartCall(std::move(call.handler));
+  return std::move(call.initiator);
+}
+
+CallInitiator Interceptor::MakeChildCall(ClientMetadataHandle metadata,
+                                         RefCountedPtr<Arena> arena) {
+  auto call = MakeCallPair(std::move(metadata), arena);
+  wrapped_destination_->StartCall(std::move(call.handler));
   return std::move(call.initiator);
 }
 
