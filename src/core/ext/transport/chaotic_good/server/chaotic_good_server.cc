@@ -374,7 +374,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
         auto config =
             std::move(absl::get<ControlConnection>(self->data_).config);
         auto frame_transport = MakeRefCounted<TcpFrameTransport>(
-            config.MakeTransportOptions(),
+            config.MakeTcpFrameTransportOptions(),
             std::move(self->connection_->endpoint_),
             config.TakePendingDataEndpoints(),
             self->connection_->args().GetObjectRef<EventEngine>());

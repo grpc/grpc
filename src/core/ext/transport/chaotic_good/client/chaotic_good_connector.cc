@@ -251,7 +251,7 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
                 return parse_status;
               }
               auto frame_transport = MakeRefCounted<TcpFrameTransport>(
-                  result_notifier_ptr->config.MakeTransportOptions(),
+                  result_notifier_ptr->config.MakeTcpFrameTransportOptions(),
                   std::move(result.connect_result.endpoint),
                   result_notifier_ptr->config.TakePendingDataEndpoints(),
                   result_notifier_ptr->args.channel_args

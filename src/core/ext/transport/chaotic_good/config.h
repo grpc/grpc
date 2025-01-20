@@ -143,7 +143,7 @@ class Config {
   }
 
   // Factory: make transport options from the settings derived here-in.
-  TcpFrameTransport::Options MakeTransportOptions() const {
+  TcpFrameTransport::Options MakeTcpFrameTransportOptions() const {
     TcpFrameTransport::Options options;
     options.encode_alignment = encode_alignment_;
     options.decode_alignment = decode_alignment_;
