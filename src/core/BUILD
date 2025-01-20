@@ -7578,6 +7578,42 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "http2_client_transport",
+    srcs = [
+        "ext/transport/chttp2/transport/http2_client_transport.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/http2_client_transport.h",
+    ],
+    external_deps = [],
+    language = "c++",
+    deps = [
+        "//:grpc_base",
+        "//:hpack_encoder",
+        "//:hpack_parser",
+        "//src/core:grpc_promise_endpoint",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_server_transport",
+    srcs = [
+        "ext/transport/chttp2/transport/http2_server_transport.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/http2_server_transport.h",
+    ],
+    external_deps = [],
+    language = "c++",
+    deps = [
+        "//:grpc_base",
+        "//:hpack_encoder",
+        "//:hpack_parser",
+        "//src/core:grpc_promise_endpoint",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2_alpn",
     srcs = [
         "ext/transport/chttp2/alpn/alpn.cc",
