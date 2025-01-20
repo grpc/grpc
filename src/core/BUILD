@@ -8680,7 +8680,6 @@ grpc_cc_library(
         "chaotic_good_frame",
         "chaotic_good_frame_cc_proto",
         "chaotic_good_frame_header",
-        "chaotic_good_legacy_connector",
         "chaotic_good_tcp_frame_transport",
         "closure",
         "context",

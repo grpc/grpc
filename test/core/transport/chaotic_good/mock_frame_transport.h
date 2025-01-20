@@ -40,7 +40,7 @@ class MockFrameTransport final : public FrameTransport {
   }
   void Read(Frame frame);
   void Close() {
-    reader_ = ReadFramePipe::Sender();
+    if (reader_.has_value()) reader_->CloseWithError();
     on_read_done_(absl::UnavailableError("closed"));
     closed_.store(true);
   }
@@ -53,7 +53,7 @@ class MockFrameTransport final : public FrameTransport {
     SourceLocation whence;
   };
   std::queue<ExpectedWrite> expected_writes_;
-  ReadFramePipe::Sender reader_;
+  absl::optional<ReadFramePipe::Sender> reader_;
   std::atomic<bool> closed_{false};
   absl::AnyInvocable<void(absl::Status)> on_read_done_;
 };

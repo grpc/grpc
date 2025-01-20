@@ -80,7 +80,7 @@ void MockFrameTransport::Read(Frame frame) {
   LOG(INFO) << "Read " << frame_interface.ToString();
   auto header = frame_interface.MakeHeader();
   frame_interface.SerializePayload(buffer);
-  EXPECT_THAT(reader_.Push(IncomingFrame(header, std::move(buffer)))(),
+  EXPECT_THAT(reader_->Push(IncomingFrame(header, std::move(buffer)))(),
               IsReady());
 }
 

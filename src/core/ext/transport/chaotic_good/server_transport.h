@@ -41,7 +41,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -125,8 +124,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, ClientEndOfStream frame);
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, BeginMessageFrame frame);
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, MessageChunkFrame frame);
-  auto ProcessNextFrame();
-  auto TransportReadLoop();
+  auto TransportReadLoop(
+      typename FrameTransport::ReadFramePipe::Receiver incoming_frames);
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
@@ -134,7 +133,6 @@ class ChaoticGoodServerTransport final : public ServerTransport {
       event_engine_;
   InterActivityLatch<void> got_acceptor_;
   MpscSender<Frame> outgoing_frames_;
-  MpscReceiver<IncomingFrame> incoming_frames_{8};
   Mutex mu_;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);

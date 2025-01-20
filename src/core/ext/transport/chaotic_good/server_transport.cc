@@ -196,72 +196,62 @@ absl::Status ChaoticGoodServerTransport::NewStream(
   return absl::OkStatus();
 }
 
-auto ChaoticGoodServerTransport::ProcessNextFrame() {
-  return GRPC_LATENT_SEE_PROMISE(
-      "ReadOneFrame",
-      TrySeq(
-          incoming_frames_.Next(),
-          [this](IncomingFrame incoming_frame) mutable {
-            LOG(INFO) << "ProcessNextFrame: "
-                      << incoming_frame.header().ToString();
-            return Switch(
-                incoming_frame.header().type,
-                Case<FrameType::kClientInitialMetadata>([&, this]() {
-                  return TrySeq(
-                      incoming_frame.Payload(),
-                      [this,
-                       header = incoming_frame.header()](Frame frame) mutable {
-                        return NewStream(
-                            header.stream_id,
-                            std::move(
-                                absl::get<ClientInitialMetadataFrame>(frame)));
-                      });
-                }),
-                Case<FrameType::kMessage>([&, this]() mutable {
-                  return DispatchFrame<MessageFrame>(std::move(incoming_frame));
-                }),
-                Case<FrameType::kBeginMessage>([&, this]() mutable {
-                  return DispatchFrame<BeginMessageFrame>(
-                      std::move(incoming_frame));
-                }),
-                Case<FrameType::kMessageChunk>([&, this]() mutable {
-                  return DispatchFrame<MessageChunkFrame>(
-                      std::move(incoming_frame));
-                }),
-                Case<FrameType::kClientEndOfStream>([&, this]() mutable {
-                  return DispatchFrame<ClientEndOfStream>(
-                      std::move(incoming_frame));
-                }),
-                Case<FrameType::kCancel>([&, this]() {
-                  auto stream =
-                      ExtractStream(incoming_frame.header().stream_id);
-                  GRPC_TRACE_LOG(chaotic_good, INFO)
-                      << "Cancel stream " << incoming_frame.header().stream_id
-                      << (stream != nullptr ? " (active)" : " (not found)");
-                  return If(
-                      stream != nullptr,
-                      [&stream]() {
-                        auto c = std::move(stream->call);
-                        return c.SpawnWaitable("cancel", [c]() mutable {
-                          c.Cancel();
-                          return absl::OkStatus();
-                        });
-                      },
-                      []() -> absl::Status { return absl::OkStatus(); });
-                }),
-                Default([&]() {
-                  LOG_EVERY_N_SEC(INFO, 10)
-                      << "Bad frame type: "
-                      << incoming_frame.header().ToString();
-                  return ImmediateOkStatus();
-                }));
-          },
-          []() -> LoopCtl<absl::Status> { return Continue{}; }));
-}
-
-auto ChaoticGoodServerTransport::TransportReadLoop() {
-  return Seq(got_acceptor_.Wait(),
-             Loop([this]() mutable { return ProcessNextFrame(); }));
+auto ChaoticGoodServerTransport::TransportReadLoop(
+    typename FrameTransport::ReadFramePipe::Receiver incoming_frames) {
+  return Seq(
+      got_acceptor_.Wait(),
+      ForEach(std::move(incoming_frames), [this](IncomingFrame incoming_frame) {
+        LOG(INFO) << "ProcessNextFrame: " << incoming_frame.header().ToString();
+        return Switch(
+            incoming_frame.header().type,
+            Case<FrameType::kClientInitialMetadata>([&, this]() {
+              return TrySeq(
+                  incoming_frame.Payload(),
+                  [this,
+                   header = incoming_frame.header()](Frame frame) mutable {
+                    return NewStream(
+                        header.stream_id,
+                        std::move(
+                            absl::get<ClientInitialMetadataFrame>(frame)));
+                  });
+            }),
+            Case<FrameType::kMessage>([&, this]() mutable {
+              return DispatchFrame<MessageFrame>(std::move(incoming_frame));
+            }),
+            Case<FrameType::kBeginMessage>([&, this]() mutable {
+              return DispatchFrame<BeginMessageFrame>(
+                  std::move(incoming_frame));
+            }),
+            Case<FrameType::kMessageChunk>([&, this]() mutable {
+              return DispatchFrame<MessageChunkFrame>(
+                  std::move(incoming_frame));
+            }),
+            Case<FrameType::kClientEndOfStream>([&, this]() mutable {
+              return DispatchFrame<ClientEndOfStream>(
+                  std::move(incoming_frame));
+            }),
+            Case<FrameType::kCancel>([&, this]() {
+              auto stream = ExtractStream(incoming_frame.header().stream_id);
+              GRPC_TRACE_LOG(chaotic_good, INFO)
+                  << "Cancel stream " << incoming_frame.header().stream_id
+                  << (stream != nullptr ? " (active)" : " (not found)");
+              return If(
+                  stream != nullptr,
+                  [&stream]() {
+                    auto c = std::move(stream->call);
+                    return c.SpawnWaitable("cancel", [c]() mutable {
+                      c.Cancel();
+                      return absl::OkStatus();
+                    });
+                  },
+                  []() -> absl::Status { return absl::OkStatus(); });
+            }),
+            Default([&]() {
+              LOG_EVERY_N_SEC(INFO, 10)
+                  << "Bad frame type: " << incoming_frame.header().ToString();
+              return ImmediateOkStatus();
+            }));
+      }));
 }
 
 auto ChaoticGoodServerTransport::OnTransportActivityDone(
@@ -297,14 +287,16 @@ event_engine_, config.MakeTransportOptions(), false);
   party_ = Party::Make(std::move(party_arena));
   MpscReceiver<Frame> outgoing_pipe(8);
   outgoing_frames_ = outgoing_pipe.MakeSender();
-  frame_transport.StartReading(party_.get(), incoming_frames_.MakeSender(),
+  typename FrameTransport::ReadFramePipe incoming_frames;
+  frame_transport.StartReading(party_.get(), std::move(incoming_frames.sender),
                                OnTransportActivityDone("frame_reader"));
   frame_transport.StartWriting(party_.get(), std::move(outgoing_pipe),
                                OnTransportActivityDone("frame_writer"));
-  party_->Spawn(
-      "server-chaotic-reader",
-      GRPC_LATENT_SEE_PROMISE("ServerTransportReadLoop", TransportReadLoop()),
-      OnTransportActivityDone("reader"));
+  party_->Spawn("server-chaotic-reader",
+                GRPC_LATENT_SEE_PROMISE(
+                    "ServerTransportReadLoop",
+                    TransportReadLoop(std::move(incoming_frames.receiver))),
+                OnTransportActivityDone("reader"));
 }
 
 void ChaoticGoodServerTransport::SetCallDestination(
@@ -329,7 +321,6 @@ void ChaoticGoodServerTransport::Orphan() {
 void ChaoticGoodServerTransport::AbortWithError() {
   // Mark transport as unavailable when the endpoint write/read failed.
   // Close all the available pipes.
-  incoming_frames_.MarkClosed();
   ReleasableMutexLock lock(&mu_);
   aborted_with_error_ = true;
   StreamMap stream_map = std::move(stream_map_);
@@ -407,12 +398,6 @@ absl::Status ChaoticGoodServerTransport::NewStream(
 
 void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
   RefCountedPtr<Party> cancelled_party;
-  bool close_incoming_frames = false;
-  auto cleanup = absl::MakeCleanup([&close_incoming_frames, this]() {
-    if (close_incoming_frames) {
-      incoming_frames_.MarkClosed();
-    }
-  });
   MutexLock lock(&mu_);
   bool did_stuff = false;
   if (op->start_connectivity_watch != nullptr) {
@@ -434,7 +419,6 @@ void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
   }
   if (!op->goaway_error.ok() || !op->disconnect_with_error.ok()) {
     cancelled_party = std::move(party_);
-    close_incoming_frames = true;
     state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
                             absl::UnavailableError("transport closed"),
                             "transport closed");

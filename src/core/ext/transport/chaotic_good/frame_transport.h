@@ -16,11 +16,11 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_TRANSPORT_H
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
-#include "src/core/lib/promise/inter_activity_pipe.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/match_promise.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/promise.h"
 
 namespace grpc_core {
@@ -66,7 +66,7 @@ class IncomingFrame {
 
 class FrameTransport : public RefCounted<FrameTransport> {
  public:
-  using ReadFramePipe = InterActivityPipe<IncomingFrame, 8>;
+  using ReadFramePipe = Pipe<IncomingFrame>;
 
   // Spawn a read loop onto party - read frames from the wire, push them onto
   // frames.
