@@ -656,7 +656,6 @@ TEST_F(PartyTest, ThreadStressTest) {
     // order they were spawned.
     // For the given test, the order is guaranteed because we wait for the
     // promise_complete notification before the next loop iteration can start.
-
     EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
   StressTestAsserts(start_times, end_times, 2 * kStressTestSleepMs);
