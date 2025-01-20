@@ -31,7 +31,6 @@ RUN New-Item -Path "C:/" -Name "TEMP" -ItemType "directory"; \
         -OutFile C:/TEMP/vc_redist.x64.exe -UseBasicParsing; \
     Start-Process -filepath C:/TEMP/vc_redist.x64.exe -ArgumentList '/install', '/passive', '/norestart' -Wait; \
     Remove-Item C:/TEMP/vc_redist.x64.exe
-
 # Install Visual Studio 2022 Build Tools.
 RUN Invoke-WebRequest "https://aka.ms/vs/17/release/vs_buildtools.exe" \
         -OutFile C:/TEMP/vs_buildtools.exe -UseBasicParsing; \
@@ -53,7 +52,8 @@ RUN [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tl
     msys 'pacman --noconfirm -Syy zstd'; \
     msys 'pacman --noconfirm -Syy git curl zip unzip'; \
     $old_path = [Environment]::GetEnvironmentVariable(\"PATH\", \"Machine\"); \
-    [Environment]::SetEnvironmentVariable(\"PATH\", $old_path + \";C:\msys64;C:\msys64\usr\bin\", \"Machine\");
+    [Environment]::SetEnvironmentVariable(\"PATH\", $old_path + \";C:\msys64;C:\msys64\usr\bin\", \"Machine\"); \
+    [Environment]::SetEnvironmentVariable(\"BAZEL_SH\", \"C:\msys64\usr\bin\bash.exe\", \"Machine\")
 # Install Python 3.
 RUN Invoke-WebRequest "https://www.python.org/ftp/python/3.10.4/python-3.10.4-amd64.exe" \
                 -OutFile C:/TEMP/python_install.exe -UseBasicParsing; \
