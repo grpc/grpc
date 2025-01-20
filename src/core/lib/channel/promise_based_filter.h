@@ -513,6 +513,17 @@ inline auto InterceptClientToServerMessageHandler(
 
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
+    void (Derived::Call::*fn)(const Message&, Derived*),
+    FilterCallData<Derived>* call_data, const CallArgs&) {
+  DCHECK(fn == &Derived::Call::OnClientToServerMessage);
+  return [call_data](MessageHandle msg) -> std::optional<MessageHandle> {
+    call_data->call.OnClientToServerMessage(*msg, call_data->channel);
+    return std::move(msg);
+  };
+}
+
+template <typename Derived>
+inline auto InterceptClientToServerMessageHandler(
     MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
@@ -652,6 +663,18 @@ inline void InterceptServerToClientMessage(
         if (call_data->error_latch.is_set()) return std::nullopt;
         call_data->error_latch.Set(std::move(return_md));
         return std::nullopt;
+      });
+}
+
+template <typename Derived>
+inline void InterceptServerToClientMessage(
+    void (Derived::Call::*fn)(const Message&, Derived*),
+    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+  DCHECK(fn == &Derived::Call::OnServerToClientMessage);
+  call_args.server_to_client_messages->InterceptAndMap(
+      [call_data](MessageHandle msg) -> std::optional<MessageHandle> {
+        call_data->call.OnServerToClientMessage(*msg, call_data->channel);
+        return std::move(msg);
       });
 }
 

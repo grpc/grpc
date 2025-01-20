@@ -92,6 +92,10 @@ class PromiseLike<
       -> decltype(WrapInPoll(f_())) {
     return WrapInPoll(f_());
   }
+  PromiseLike(const PromiseLike&) = default;
+  PromiseLike& operator=(const PromiseLike&) = default;
+  PromiseLike(PromiseLike&&) = default;
+  PromiseLike& operator=(PromiseLike&&) = default;
   using Result = typename PollTraits<decltype(WrapInPoll(f_()))>::Type;
 };
 
@@ -109,6 +113,10 @@ class PromiseLike<
     f_();
     return Empty{};
   }
+  PromiseLike(const PromiseLike&) = default;
+  PromiseLike& operator=(const PromiseLike&) = default;
+  PromiseLike(PromiseLike&&) = default;
+  PromiseLike& operator=(PromiseLike&&) = default;
   using Result = Empty;
 };
 

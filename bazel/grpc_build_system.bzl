@@ -27,6 +27,7 @@
 Contains macros used throughout the repo.
 """
 
+load("@build_bazel_apple_support//rules:universal_binary.bzl", "universal_binary")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
 load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
@@ -238,9 +239,23 @@ def grpc_cc_library(
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
     native.cc_binary(
-        name = name,
+        name = name + "_native",
         srcs = srcs,
         deps = deps,
+    )
+    universal_binary(
+        name = name + "_universal",
+        binary = name + "_native",
+    )
+    native.genrule(
+        name = name,
+        srcs = select({
+            "@platforms//os:macos": [name + "_universal"],
+            "//conditions:default": [name + "_native"],
+        }),
+        outs = [name],
+        cmd = "cp $< $@",
+        executable = True,
     )
 
 def grpc_internal_proto_library(
