@@ -17,27 +17,17 @@ Generate one transport test & associated fuzzer
 """
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
-def grpc_yodel_test(name, deps):
-    grpc_cc_test(
-        name = name + "_test",
-        srcs = [],
-        tags = ["no_windows", "no_mac"],
-        deps = [
-            "//test/core/call/yodel:test_main",
-        ] + deps,
-        uses_polling = False,
-    )
-
-    grpc_proto_fuzzer(
-        name = name + "_fuzzer",
-        srcs = ["//test/core/call/yodel:fuzzer_main.cc"],
+def grpc_yodel_test(name, srcs, deps = [], external_deps = []):
+    grpc_fuzz_test(
+        name = name,
+        srcs = srcs,
         tags = ["no_windows", "no_mac"],
         external_deps = [
             "absl/log:check",
             "gtest",
-        ],
+        ] + external_deps,
         deps = [
             "//test/core/call/yodel:yodel_test",
             "//test/core/call/yodel:fuzzer_cc_proto",
@@ -54,15 +44,4 @@ def grpc_yodel_test(name, deps):
             "//test/core/test_util:fuzz_config_vars",
             "//test/core/test_util:proto_bit_gen",
         ] + deps,
-        corpus = "corpus/%s" % name,
-        proto = None,
     )
-
-def grpc_yodel_simple_test(name, **kwargs):
-    grpc_cc_library(
-        name = "%s_test_lib" % name,
-        testonly = True,
-        alwayslink = 1,
-        **kwargs
-    )
-    grpc_yodel_test(name, deps = ["%s_test_lib" % name])

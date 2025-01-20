@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
+load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_test")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
@@ -36,8 +36,8 @@ grpc_cc_test(
     ],
 )
 
-grpc_yodel_simple_test(
-    name = "client_channel",
+grpc_yodel_test(
+    name = "client_channel_test",
     srcs = ["client_channel_test.cc"],
     external_deps = ["gtest"],
     deps = [
@@ -46,8 +46,8 @@ grpc_yodel_simple_test(
     ],
 )
 
-grpc_yodel_simple_test(
-    name = "connected_subchannel",
+grpc_yodel_test(
+    name = "connected_subchannel_test",
     srcs = ["connected_subchannel_test.cc"],
     external_deps = ["gtest"],
     deps = [
@@ -56,8 +56,8 @@ grpc_yodel_simple_test(
     ],
 )
 
-grpc_yodel_simple_test(
-    name = "load_balanced_call_destination",
+grpc_yodel_test(
+    name = "load_balanced_call_destination_test",
     srcs = ["load_balanced_call_destination_test.cc"],
     external_deps = [
         "absl/log:log",
@@ -69,8 +69,8 @@ grpc_yodel_simple_test(
     ],
 )
 
-grpc_yodel_simple_test(
-    name = "retry_interceptor",
+grpc_yodel_test(
+    name = "retry_interceptor_test",
     srcs = ["retry_interceptor_test.cc"],
     external_deps = [
         "absl/log:log",

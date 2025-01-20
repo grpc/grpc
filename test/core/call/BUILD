@@ -13,13 +13,13 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
+load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/call")
 
-grpc_yodel_simple_test(
-    name = "client_call",
+grpc_yodel_test(
+    name = "client_call_test",
     srcs = [
         "client_call_test.cc",
     ],
@@ -32,8 +32,8 @@ grpc_yodel_simple_test(
     ],
 )
 
-grpc_yodel_simple_test(
-    name = "server_call",
+grpc_yodel_test(
+    name = "server_call_test",
     srcs = [
         "server_call_test.cc",
     ],

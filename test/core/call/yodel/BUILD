@@ -22,11 +22,6 @@ load(
 
 grpc_package(name = "test/core/call/yodel")
 
-exports_files(
-    ["fuzzer_main.cc"],
-    visibility = ["//test:__subpackages__"],
-)
-
 grpc_cc_library(
     name = "yodel_test",
     testonly = 1,
