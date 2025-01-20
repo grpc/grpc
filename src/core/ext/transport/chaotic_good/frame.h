@@ -85,7 +85,7 @@ struct ProtoTransportFrame final : public FrameInterface {
     return ReadTransportProto(header, std::move(payload), body);
   }
   FrameHeader MakeHeader() const override {
-    return FrameHeader{frame_type, 0, 0, ProtoPayloadSize(body)};
+    return FrameHeader{frame_type, 0, ProtoPayloadSize(body)};
   }
   void SerializePayload(SliceBuffer& payload) const override {
     WriteProto(body, payload);
@@ -93,6 +93,9 @@ struct ProtoTransportFrame final : public FrameInterface {
   std::string ToString() const override {
     return absl::StrCat(FrameTypeString(frame_type), "{",
                         body.ShortDebugString(), "}");
+  }
+  bool operator==(const ProtoTransportFrame& other) const {
+    return body.ShortDebugString() == other.body.ShortDebugString();
   }
 
   Body body;
@@ -108,7 +111,7 @@ struct ProtoStreamFrame final : public FrameInterface {
     return ReadStreamProto(header, std::move(payload), body, stream_id);
   }
   FrameHeader MakeHeader() const override {
-    return FrameHeader{frame_type, 0, stream_id, ProtoPayloadSize(body)};
+    return FrameHeader{frame_type, stream_id, ProtoPayloadSize(body)};
   }
   void SerializePayload(SliceBuffer& payload) const override {
     DCHECK_NE(stream_id, 0u);
@@ -117,6 +120,10 @@ struct ProtoStreamFrame final : public FrameInterface {
   std::string ToString() const override {
     return absl::StrCat(FrameTypeString(frame_type), "{@", stream_id, "; ",
                         body.ShortDebugString(), "}");
+  }
+  bool operator==(const ProtoStreamFrame& other) const {
+    return body.ShortDebugString() == other.body.ShortDebugString() &&
+           stream_id == other.stream_id;
   }
 
   Body body;
@@ -133,10 +140,13 @@ struct EmptyStreamFrame final : public FrameInterface {
     return ReadEmptyFrame(header, stream_id);
   }
   FrameHeader MakeHeader() const override {
-    return FrameHeader{frame_type, 0, stream_id, 0};
+    return FrameHeader{frame_type, stream_id, 0};
   }
   void SerializePayload(SliceBuffer&) const override {}
   std::string ToString() const override { return FrameTypeString(frame_type); }
+  bool operator==(const EmptyStreamFrame& other) const {
+    return stream_id == other.stream_id;
+  }
 
   uint32_t stream_id;
 };
@@ -163,6 +173,11 @@ struct MessageFrame final : public FrameInterface {
   FrameHeader MakeHeader() const override;
   void SerializePayload(SliceBuffer& payload) const override;
   std::string ToString() const override;
+  bool operator==(const MessageFrame& other) const {
+    return stream_id == other.stream_id &&
+           message->payload()->JoinIntoString() ==
+               other.message->payload()->JoinIntoString();
+  }
 
   uint32_t stream_id;
   MessageHandle message;
@@ -174,17 +189,27 @@ struct MessageChunkFrame final : public FrameInterface {
   FrameHeader MakeHeader() const override;
   void SerializePayload(SliceBuffer& payload) const override;
   std::string ToString() const override;
+  bool operator==(const MessageChunkFrame& other) const {
+    return stream_id == other.stream_id &&
+           payload.JoinIntoString() == other.payload.JoinIntoString();
+  }
 
   uint32_t stream_id;
   SliceBuffer payload;
 };
 
-using ClientFrame =
-    std::variant<ClientInitialMetadataFrame, MessageFrame, BeginMessageFrame,
-                 MessageChunkFrame, ClientEndOfStream, CancelFrame>;
-using ServerFrame =
-    std::variant<ServerInitialMetadataFrame, MessageFrame, BeginMessageFrame,
-                 MessageChunkFrame, ServerTrailingMetadataFrame>;
+using Frame =
+    std::variant<SettingsFrame, ClientInitialMetadataFrame,
+                 ServerInitialMetadataFrame, ServerTrailingMetadataFrame,
+                 MessageFrame, BeginMessageFrame, MessageChunkFrame,
+                 ClientEndOfStream, CancelFrame>;
+
+inline std::ostream& operator<<(std::ostream& out, const Frame& frame) {
+  return out << absl::ConvertVariantTo<FrameInterface&>(frame).ToString();
+}
+
+absl::StatusOr<Frame> ParseFrame(const FrameHeader& header,
+                                 SliceBuffer payload);
 
 }  // namespace chaotic_good
 }  // namespace grpc_core
