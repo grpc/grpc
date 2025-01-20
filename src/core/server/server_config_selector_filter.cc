@@ -18,13 +18,13 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -103,7 +103,7 @@ class ServerConfigSelectorFilter final
 
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
   Mutex mu_;
-  absl::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+  std::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
       config_selector_ ABSL_GUARDED_BY(mu_);
 };
 

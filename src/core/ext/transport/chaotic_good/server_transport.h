@@ -33,6 +33,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
@@ -40,8 +41,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"

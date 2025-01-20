@@ -61,9 +61,7 @@ def generateCompilationDatabase(args):
     for compdb_file in Path(execroot).glob("**/*.compile_commands.json"):
         compdb.extend(
             json.loads(
-                "["
-                + compdb_file.read_text().replace("__EXEC_ROOT__", execroot)
-                + "]"
+                compdb_file.read_text().replace("__EXEC_ROOT__", execroot)
             )
         )
 

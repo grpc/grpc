@@ -100,13 +100,103 @@ bool grpc_check_security_level(grpc_security_level channel_level,
 
 namespace grpc_core {
 
+// ClientAuthFilter
+
 ClientAuthFilter::ClientAuthFilter(
     RefCountedPtr<grpc_channel_security_connector> security_connector,
     RefCountedPtr<grpc_auth_context> auth_context)
     : args_{std::move(security_connector), std::move(auth_context)} {}
 
-ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
-    CallArgs call_args) {
+absl::StatusOr<RefCountedPtr<grpc_call_credentials>>
+ClientAuthFilter::GetCallCreds() {
+  auto* ctx = GetContext<grpc_client_security_context>();
+  grpc_call_credentials* channel_call_creds =
+      args_.security_connector->mutable_request_metadata_creds();
+  const bool call_creds_has_md = (ctx != nullptr) && (ctx->creds != nullptr);
+
+  if (channel_call_creds == nullptr && !call_creds_has_md) {
+    // Skip sending metadata altogether.
+    return nullptr;
+  }
+
+  RefCountedPtr<grpc_call_credentials> creds;
+  if (channel_call_creds != nullptr && call_creds_has_md) {
+    creds = RefCountedPtr<grpc_call_credentials>(
+        grpc_composite_call_credentials_create(channel_call_creds,
+                                               ctx->creds.get(), nullptr));
+    if (creds == nullptr) {
+      return absl::UnauthenticatedError(
+          "Incompatible credentials set on channel and call.");
+    }
+  } else if (call_creds_has_md) {
+    creds = ctx->creds->Ref();
+  } else {
+    creds = channel_call_creds->Ref();
+  }
+
+  // Check security level of call credential and channel, and do not send
+  // metadata if the check fails.
+  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+      args_.auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  if (prop == nullptr) {
+    return absl::UnauthenticatedError(
+        "Established channel does not have an auth "
+        "property representing a security level.");
+  }
+  const grpc_security_level call_cred_security_level =
+      creds->min_security_level();
+  const bool is_security_level_ok = grpc_check_security_level(
+      convert_security_level_string_to_enum(prop->value),
+      call_cred_security_level);
+  if (!is_security_level_ok) {
+    return absl::UnauthenticatedError(
+        "Established channel does not have a sufficient security level to "
+        "transfer call credential.");
+  }
+
+  return std::move(creds);
+}
+
+void ClientAuthFilter::InstallContext() {
+  auto* sec_ctx = MaybeGetContext<grpc_client_security_context>();
+  if (sec_ctx == nullptr) {
+    sec_ctx = grpc_client_security_context_create(GetContext<Arena>(),
+                                                  /*creds=*/nullptr);
+    SetContext<SecurityContext>(sec_ctx);
+  }
+  sec_ctx->auth_context = args_.auth_context;
+}
+
+absl::StatusOr<std::unique_ptr<ClientAuthFilter>> ClientAuthFilter::Create(
+    const ChannelArgs& args, ChannelFilter::Args) {
+  auto* sc = args.GetObject<grpc_security_connector>();
+  if (sc == nullptr) {
+    return absl::InvalidArgumentError(
+        "Security connector missing from client auth filter args");
+  }
+  auto* auth_context = args.GetObject<grpc_auth_context>();
+  if (auth_context == nullptr) {
+    return absl::InvalidArgumentError(
+        "Auth context missing from client auth filter args");
+  }
+  return std::make_unique<ClientAuthFilter>(
+      sc->RefAsSubclass<grpc_channel_security_connector>(),
+      auth_context->Ref());
+}
+
+const grpc_channel_filter ClientAuthFilter::kFilter =
+    MakePromiseBasedFilter<ClientAuthFilter, FilterEndpoint::kClient>();
+
+// LegacyClientAuthFilter
+
+LegacyClientAuthFilter::LegacyClientAuthFilter(
+    RefCountedPtr<grpc_channel_security_connector> security_connector,
+    RefCountedPtr<grpc_auth_context> auth_context)
+    : args_{std::move(security_connector), std::move(auth_context)} {}
+
+ArenaPromise<absl::StatusOr<CallArgs>>
+LegacyClientAuthFilter::GetCallCredsMetadata(CallArgs call_args) {
   auto* ctx = GetContext<grpc_client_security_context>();
   grpc_call_credentials* channel_call_creds =
       args_.security_connector->mutable_request_metadata_creds();
@@ -172,7 +262,7 @@ ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
       });
 }
 
-ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
+ArenaPromise<ServerMetadataHandle> LegacyClientAuthFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   auto* sec_ctx = MaybeGetContext<grpc_client_security_context>();
   if (sec_ctx == nullptr) {
@@ -196,8 +286,8 @@ ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
       next_promise_factory);
 }
 
-absl::StatusOr<std::unique_ptr<ClientAuthFilter>> ClientAuthFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args) {
+absl::StatusOr<std::unique_ptr<ClientAuthFilter>>
+LegacyClientAuthFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
   auto* sc = args.GetObject<grpc_security_connector>();
   if (sc == nullptr) {
     return absl::InvalidArgumentError(
@@ -213,7 +303,7 @@ absl::StatusOr<std::unique_ptr<ClientAuthFilter>> ClientAuthFilter::Create(
       auth_context->Ref());
 }
 
-const grpc_channel_filter ClientAuthFilter::kFilter =
+const grpc_channel_filter LegacyClientAuthFilter::kFilter =
     MakePromiseBasedFilter<ClientAuthFilter, FilterEndpoint::kClient>();
 
 }  // namespace grpc_core

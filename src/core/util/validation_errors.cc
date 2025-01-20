@@ -58,13 +58,13 @@ absl::Status ValidationErrors::status(absl::StatusCode code,
 std::string ValidationErrors::message(absl::string_view prefix) const {
   if (field_errors_.empty()) return "";
   std::vector<std::string> errors;
-  for (const auto& p : field_errors_) {
-    if (p.second.size() > 1) {
-      errors.emplace_back(absl::StrCat("field:", p.first, " errors:[",
-                                       absl::StrJoin(p.second, "; "), "]"));
+  for (const auto& [field, field_errors] : field_errors_) {
+    if (field_errors.size() > 1) {
+      errors.emplace_back(absl::StrCat("field:", field, " errors:[",
+                                       absl::StrJoin(field_errors, "; "), "]"));
     } else {
       errors.emplace_back(
-          absl::StrCat("field:", p.first, " error:", p.second[0]));
+          absl::StrCat("field:", field, " error:", field_errors[0]));
     }
   }
   return absl::StrCat(prefix, ": [", absl::StrJoin(errors, "; "), "]");

@@ -119,7 +119,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
       void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
       const RefCountedPtr<ActiveConnection> connection_;
       const RefCountedPtr<HandshakeManager> handshake_mgr_;
-      absl::variant<absl::monostate, DataConnection, ControlConnection> data_;
+      std::variant<std::monostate, DataConnection, ControlConnection> data_;
     };
 
    private:

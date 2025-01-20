@@ -27,6 +27,7 @@
 #include <cmath>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -40,7 +41,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -249,9 +249,9 @@ class RingHash final : public LoadBalancingPolicy {
           endpoints_(ring_hash_->endpoints_.size()),
           resolution_note_(ring_hash_->resolution_note_),
           request_hash_header_(ring_hash_->request_hash_header_) {
-      for (const auto& p : ring_hash_->endpoint_map_) {
-        endpoints_[p.second->index()] = p.second->GetInfoForPicker();
-        if (endpoints_[p.second->index()].state == GRPC_CHANNEL_CONNECTING) {
+      for (const auto& [_, endpoint] : ring_hash_->endpoint_map_) {
+        endpoints_[endpoint->index()] = endpoint->GetInfoForPicker();
+        if (endpoints_[endpoint->index()].state == GRPC_CHANNEL_CONNECTING) {
           has_endpoint_in_connecting_state_ = true;
         }
       }
@@ -400,7 +400,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
           new EndpointConnectionAttempter(
               ring_hash_.Ref(DEBUG_LOCATION, "EndpointConnectionAttempter"),
               endpoint_info.endpoint);
-          ABSL_FALLTHROUGH_INTENDED;
+          [[fallthrough]];
         case GRPC_CHANNEL_CONNECTING:
           return PickResult::Queue();
         default:
@@ -694,8 +694,8 @@ void RingHash::ShutdownLocked() {
 }
 
 void RingHash::ResetBackoffLocked() {
-  for (const auto& p : endpoint_map_) {
-    p.second->ResetBackoffLocked();
+  for (const auto& [_, endpoint] : endpoint_map_) {
+    endpoint->ResetBackoffLocked();
   }
 }
 
@@ -708,10 +708,10 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
     std::map<EndpointAddressSet, size_t> endpoint_indices;
     (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
       const EndpointAddressSet key(endpoint.addresses());
-      auto p = endpoint_indices.emplace(key, endpoints_.size());
-      if (!p.second) {
+      auto [it, inserted] = endpoint_indices.emplace(key, endpoints_.size());
+      if (!inserted) {
         // Duplicate endpoint.  Combine weights and skip the dup.
-        EndpointAddresses& prev_endpoint = endpoints_[p.first->second];
+        EndpointAddresses& prev_endpoint = endpoints_[it->second];
         int weight_arg =
             endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
         int prev_weight_arg =
@@ -794,8 +794,8 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
   size_t num_connecting = 0;
   size_t num_ready = 0;
   size_t num_transient_failure = 0;
-  for (const auto& p : endpoint_map_) {
-    switch (p.second->connectivity_state()) {
+  for (const auto& [_, endpoint] : endpoint_map_) {
+    switch (endpoint->connectivity_state()) {
       case GRPC_CHANNEL_READY:
         ++num_ready;
         break;
@@ -904,12 +904,13 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
       auto it =
           endpoint_map_.find(EndpointAddressSet(endpoints_[i].addresses()));
       CHECK(it != endpoint_map_.end());
-      if (it->second->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
+      auto& endpoint = it->second;
+      if (endpoint->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
         first_idle_index = endpoints_.size();
         break;
       }
       if (first_idle_index == endpoints_.size() &&
-          it->second->connectivity_state() == GRPC_CHANNEL_IDLE) {
+          endpoint->connectivity_state() == GRPC_CHANNEL_IDLE) {
         first_idle_index = i;
       }
     }
@@ -917,13 +918,14 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
       auto it = endpoint_map_.find(
           EndpointAddressSet(endpoints_[first_idle_index].addresses()));
       CHECK(it != endpoint_map_.end());
+      auto& endpoint = it->second;
       GRPC_TRACE_LOG(ring_hash_lb, INFO)
           << "[RH " << this
           << "] triggering internal connection attempt for endpoint "
-          << it->second.get() << " (" << endpoints_[first_idle_index].ToString()
+          << endpoint.get() << " (" << endpoints_[first_idle_index].ToString()
           << ") (index " << first_idle_index << " of " << endpoints_.size()
           << ")";
-      it->second->RequestConnectionLocked();
+      endpoint->RequestConnectionLocked();
     }
   }
 }

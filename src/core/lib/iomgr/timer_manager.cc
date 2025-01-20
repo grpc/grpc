@@ -241,7 +241,7 @@ static void timer_main_loop() {
         GRPC_TRACE_LOG(timer_check, INFO)
             << "timers not checked: expect another thread to";
         next = grpc_core::Timestamp::InfFuture();
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         if (!wait_until(next)) {
           return;

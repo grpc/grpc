@@ -21,8 +21,8 @@
 #include <grpc/status.h>
 
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -34,7 +34,7 @@ namespace {
 
 bool SimpleRequestBody(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
   c.NewBatch(1)
@@ -64,8 +64,8 @@ bool SimpleRequestBody(CoreEnd2endTest& test) {
   }
   EXPECT_FALSE(finished_client);
   EXPECT_TRUE(saw_request_at_server);
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})

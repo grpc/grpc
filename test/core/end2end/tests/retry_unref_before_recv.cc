@@ -18,8 +18,8 @@
 #include <grpc/status.h>
 
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
@@ -50,7 +50,7 @@ CORE_END2END_TEST(RetryTest, UnrefBeforeRecv) {
       "    }\n"
       "  } ]\n"
       "}"));
-  absl::optional<Call> c{
+  std::optional<Call> c{
       NewClientCall("/service/method").Timeout(Duration::Seconds(60)).Create()};
 
   // Client starts send ops.

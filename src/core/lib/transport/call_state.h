@@ -17,7 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
@@ -488,7 +489,7 @@ CallState::PollPullClientToServerMessageAvailable() {
     case ClientToServerPullState::kIdle:
       client_to_server_pull_state_ = ClientToServerPullState::kReading;
       client_to_server_pull_waiter_.Wake();
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case ClientToServerPullState::kReading:
       break;
     case ClientToServerPullState::kProcessingClientToServerMessage:
@@ -877,7 +878,7 @@ CallState::PollPullServerToClientMessageAvailable() {
       return server_to_client_pull_waiter_.pending();
     case ServerToClientPullState::kStarted:
       server_to_client_pull_state_ = ServerToClientPullState::kStartedReading;
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case ServerToClientPullState::kStartedReading:
       if (server_to_client_push_state_ ==
           ServerToClientPushState::kTrailersOnly) {
@@ -887,7 +888,7 @@ CallState::PollPullServerToClientMessageAvailable() {
     case ServerToClientPullState::kIdle:
       server_to_client_pull_state_ = ServerToClientPullState::kReading;
       server_to_client_pull_waiter_.Wake();
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case ServerToClientPullState::kReading:
       break;
     case ServerToClientPullState::kProcessingServerToClientMessage:
@@ -1036,7 +1037,7 @@ CallState::PollServerTrailingMetadataAvailable() {
               ServerTrailingMetadataState::kNotPushed) {
             break;  // Ready for processing
           }
-          ABSL_FALLTHROUGH_INTENDED;
+          [[fallthrough]];
         case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:
         case ServerToClientPushState::kPushedServerInitialMetadata:
         case ServerToClientPushState::

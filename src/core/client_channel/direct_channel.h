@@ -61,7 +61,7 @@ class DirectChannel final : public Channel {
   grpc_call* CreateCall(grpc_call* parent_call, uint32_t propagation_mask,
                         grpc_completion_queue* cq,
                         grpc_pollset_set* pollset_set_alternative, Slice path,
-                        absl::optional<Slice> authority, Timestamp deadline,
+                        std::optional<Slice> authority, Timestamp deadline,
                         bool registered_method) override;
   grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return event_engine_.get();

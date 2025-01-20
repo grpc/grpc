@@ -209,7 +209,7 @@ class GlobalInstrumentsRegistry {
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
   static const GlobalInstrumentDescriptor& GetInstrumentDescriptor(
       GlobalInstrumentHandle handle);
-  static absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+  static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
   FindInstrumentByName(absl::string_view name);
 
  private:
@@ -479,7 +479,6 @@ class GlobalStatsPluginRegistry {
       std::shared_ptr<StatsPlugin> plugin;
     };
 
-    // C++17 has fold expression that may simplify this.
     template <GlobalInstrumentsRegistry::ValueType V,
               GlobalInstrumentsRegistry::InstrumentType I, size_t M, size_t N>
     static constexpr void AssertIsCallbackGaugeHandle(
@@ -490,11 +489,6 @@ class GlobalStatsPluginRegistry {
       static_assert(
           I == GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge,
           "InstrumentType must be kCallbackGauge");
-    }
-    template <typename T, typename... Args>
-    static constexpr void AssertIsCallbackGaugeHandle(T t, Args&&... args) {
-      AssertIsCallbackGaugeHandle(t);
-      AssertIsCallbackGaugeHandle(args...);
     }
 
     std::vector<PluginState> plugins_state_;
@@ -557,7 +551,7 @@ inline std::unique_ptr<RegisteredMetricCallback>
 GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
     absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
     Duration min_interval, Args... args) {
-  AssertIsCallbackGaugeHandle(args...);
+  (AssertIsCallbackGaugeHandle(args), ...);
   return std::make_unique<RegisteredMetricCallback>(
       *this, std::move(callback),
       std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle>{args...},

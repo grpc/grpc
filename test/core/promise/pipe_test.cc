@@ -363,7 +363,7 @@ TEST(PipeTest, CanCancelSendWithInterceptor) {
   MakeActivity(
       [] {
         auto* pipe = GetContext<Arena>()->ManagedNew<Pipe<int>>();
-        pipe->sender.InterceptAndMap([](int) { return absl::nullopt; });
+        pipe->sender.InterceptAndMap([](int) { return std::nullopt; });
         return Seq(
             // Concurrently:
             // - wait for a received value (will stall forever since we push

@@ -125,7 +125,7 @@ class Latch {
 
   // The value stored (if has_value_ is true), otherwise some random value, we
   // don't care.
-  // Why not absl::optional<>? Writing things this way lets us compress
+  // Why not std::optional<>? Writing things this way lets us compress
   // has_value_ with waiter_ and leads to some significant memory savings for
   // some scenarios.
   GPR_NO_UNIQUE_ADDRESS T value_;
