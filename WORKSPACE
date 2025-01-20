@@ -1,5 +1,41 @@
 workspace(name = "com_github_grpc_grpc")
 
+# Define a local repository for OpenSSL
+new_local_repository(
+    name = "openssl",
+    path = "/usr/lib/ssl",  # Adjust this to your OpenSSL installation path
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "openssl",
+    includes = ["."],
+    linkopts = ["-L/usr/lib", "-lssl", "-lcrypto"],
+    )
+cc_library(
+name = "crypto",
+includes = ["."],
+linkopts = [
+        "-L/usr/lib",
+        "-lcrypto",  # Link against the Crypto library
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "ssl",
+    includes = ["."],
+    linkopts = [
+        "-L/usr/lib",
+        "-lssl",  # Link against the SSL library
+    ],
+        deps = [":crypto"],  # SSL depends on Crypto
+    visibility = ["//visibility:public"],
+)
+    """,
+    
+)
+
 load("//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
 
 grpc_deps()

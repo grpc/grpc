@@ -1,0 +1,63 @@
+#This patch is only required for testing grpc with openssl and bazel.
+diff --git bazel/curl.BUILD bazel/curl.BUILD
+index f100543..22d1e5f 100644
+--- bazel/curl.BUILD
++++ bazel/curl.BUILD
+@@ -166,6 +166,22 @@ cc_library(
+     name = "curl",
+     srcs = [
+         "include/curl_config.h",
++        "include/curl/options.h",
++        "lib/dynbuf.h",
++        "lib/dynbuf.c",
++        "lib/mqtt.h",
++        "lib/mqtt.c",
++        "lib/c-hyper.h",
++        "lib/vtls/rustls.h",
++        "lib/vtls/keylog.h",
++        "lib/vtls/keylog.c",
++        "lib/version_win32.h",
++        "lib/bufref.h",
++        "lib/bufref.c",
++        "lib/hsts.h",
++        "lib/hsts.c",
++        "lib/http_aws_sigv4.h",
++        "lib/http_aws_sigv4.c",
+         "lib/altsvc.c",
+         "lib/altsvc.h",
+         "lib/amigaos.h",
+@@ -212,7 +228,6 @@ cc_library(
+         "lib/curl_rtmp.h",
+         "lib/curl_sasl.c",
+         "lib/curl_sasl.h",
+-        "lib/curl_sec.h",
+         "lib/curl_setup.h",
+         "lib/curl_setup_once.h",
+         "lib/curl_sha256.h",
+@@ -306,7 +321,6 @@ cc_library(
+         "lib/rename.h",
+         "lib/rtsp.c",
+         "lib/rtsp.h",
+-        "lib/security.c",
+         "lib/select.c",
+         "lib/select.h",
+         "lib/sendf.c",
+diff --git bazel/workspace0.bzl bazel/workspace0.bzl
+index e48854d..38eecb8 100644
+--- bazel/workspace0.bzl
++++ bazel/workspace0.bzl
+@@ -195,10 +195,10 @@ def gl_cpp_workspace0(name = None):
+         http_archive,
+         name = "com_github_curl_curl",
+         urls = [
+-            "https://curl.haxx.se/download/curl-7.69.1.tar.gz",
++            "https://curl.haxx.se/download/curl-7.81.0.tar.gz",
+         ],
+-        sha256 = "01ae0c123dee45b01bbaef94c0bc00ed2aec89cb2ee0fd598e0d302a6b5e0a98",
+-        strip_prefix = "curl-7.69.1",
++        sha256 = "ac8e1087711084548d788ef18b9b732c8de887457b81f616fc681d1044b32f98",
++        strip_prefix = "curl-7.81.0",
+         build_file = Label("//bazel:curl.BUILD"),
+     )
+
+
