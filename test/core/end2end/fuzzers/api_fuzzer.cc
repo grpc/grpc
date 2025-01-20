@@ -514,11 +514,11 @@ void ApiFuzzer::DestroyChannel() {
 }
 
 void RunApiFuzzer(const api_fuzzer::Msg& msg) {
-  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
+  if (squelch && !GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     grpc_disable_all_absl_logs();
   }
-  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
-  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
+  ApplyFuzzConfigVars(msg.config_vars());
+  TestOnlyReloadExperimentsFromConfigVariables();
   ApiFuzzer(msg.event_engine_actions()).Run(msg.actions());
 }
 FUZZ_TEST(MyTestSuite, RunApiFuzzer);
