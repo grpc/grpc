@@ -495,7 +495,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_http2_client_transport",
+        "//src/core:http2_client_transport",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/transport/util:mock_promise_endpoint",
@@ -511,7 +511,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_http2_server_transport",
+        "//src/core:http2_server_transport",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/transport/util:mock_promise_endpoint",
