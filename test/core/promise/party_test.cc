@@ -653,8 +653,10 @@ TEST_F(PartyTest, ThreadStressTest) {
     }
 
     // Warning : We do not guarantee that the promises will be executed in the
-    // order they were spawned. However, in this test, the promises never return
-    // Pending, so they will be executed in the order they were spawned.
+    // order they were spawned.
+    // For the given test, the order is guaranteed because we wait for the
+    // promise_complete notification before the next loop iteration can start.
+
     EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
   StressTestAsserts(start_times, end_times, 2 * kStressTestSleepMs);
