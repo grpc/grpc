@@ -1615,6 +1615,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:context",
         "//src/core:error",
+        "//src/core:message",
         "//src/core:metadata_batch",
         "//src/core:ref_counted_string",
         "//src/core:slice_buffer",
@@ -4666,42 +4667,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:tcp_tracer"],
     deps = ["gpr"],
-)
-
-grpc_cc_library(
-    name = "grpc_http2_client_transport",
-    srcs = [
-        "//src/core:ext/transport/chttp2/transport/http2_client_transport.cc",
-    ],
-    hdrs = [
-        "//src/core:ext/transport/chttp2/transport/http2_client_transport.h",
-    ],
-    external_deps = [],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "hpack_encoder",
-        "hpack_parser",
-        "//src/core:grpc_promise_endpoint",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_http2_server_transport",
-    srcs = [
-        "//src/core:ext/transport/chttp2/transport/http2_server_transport.cc",
-    ],
-    hdrs = [
-        "//src/core:ext/transport/chttp2/transport/http2_server_transport.h",
-    ],
-    external_deps = [],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "hpack_encoder",
-        "hpack_parser",
-        "//src/core:grpc_promise_endpoint",
-    ],
 )
 
 grpc_cc_library(
