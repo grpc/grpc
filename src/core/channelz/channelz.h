@@ -28,13 +28,13 @@
 #include <atomic>
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/per_cpu.h"
@@ -327,8 +327,8 @@ class SocketNode final : public BaseNode {
     };
     enum class ModelType { kUnset = 0, kTls = 1, kOther = 2 };
     ModelType type = ModelType::kUnset;
-    absl::optional<Tls> tls;
-    absl::optional<Json> other;
+    std::optional<Tls> tls;
+    std::optional<Json> other;
 
     Json RenderJson();
 

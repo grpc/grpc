@@ -71,7 +71,7 @@ OrphanablePtr<HttpRequest> HttpRequest::Get(
     grpc_polling_entity* pollent, const grpc_http_request* request,
     Timestamp deadline, grpc_closure* on_done, grpc_http_response* response,
     RefCountedPtr<grpc_channel_credentials> channel_creds) {
-  absl::optional<std::function<bool()>> test_only_generate_response;
+  std::optional<std::function<bool()>> test_only_generate_response;
   if (g_get_override != nullptr) {
     test_only_generate_response = [request, uri, deadline, on_done,
                                    response]() {
@@ -97,7 +97,7 @@ OrphanablePtr<HttpRequest> HttpRequest::Post(
     grpc_polling_entity* pollent, const grpc_http_request* request,
     Timestamp deadline, grpc_closure* on_done, grpc_http_response* response,
     RefCountedPtr<grpc_channel_credentials> channel_creds) {
-  absl::optional<std::function<bool()>> test_only_generate_response;
+  std::optional<std::function<bool()>> test_only_generate_response;
   if (g_post_override != nullptr) {
     test_only_generate_response = [request, uri, deadline, on_done,
                                    response]() {
@@ -122,7 +122,7 @@ OrphanablePtr<HttpRequest> HttpRequest::Put(
     grpc_polling_entity* pollent, const grpc_http_request* request,
     Timestamp deadline, grpc_closure* on_done, grpc_http_response* response,
     RefCountedPtr<grpc_channel_credentials> channel_creds) {
-  absl::optional<std::function<bool()>> test_only_generate_response;
+  std::optional<std::function<bool()>> test_only_generate_response;
   if (g_put_override != nullptr) {
     test_only_generate_response = [request, uri, deadline, on_done,
                                    response]() {
@@ -159,7 +159,7 @@ HttpRequest::HttpRequest(
     URI uri, const grpc_slice& request_text, grpc_http_response* response,
     Timestamp deadline, const grpc_channel_args* channel_args,
     grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
-    absl::optional<std::function<bool()>> test_only_generate_response,
+    std::optional<std::function<bool()>> test_only_generate_response,
     RefCountedPtr<grpc_channel_credentials> channel_creds)
     : uri_(std::move(uri)),
       request_text_(request_text),

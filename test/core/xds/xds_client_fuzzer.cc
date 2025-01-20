@@ -18,6 +18,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -28,11 +29,11 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "envoy/service/discovery/v3/discovery.pb.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_cluster_parser.h"
@@ -84,8 +85,7 @@ class Fuzzer {
     event_engine_->FuzzingDone();
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
-    grpc_event_engine::experimental::WaitForSingleOwner(
-        std::move(event_engine_));
+    WaitForSingleOwner(std::move(event_engine_));
     grpc_shutdown_blocking();
   }
 

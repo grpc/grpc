@@ -17,9 +17,9 @@
 #include <grpc/support/log.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/promise/activity.h"

@@ -22,12 +22,12 @@
 #include <stdlib.h>
 
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -84,7 +84,7 @@ class MyEndpointList : public EndpointList {
 
    private:
     void OnStateUpdate(
-        absl::optional<grpc_connectivity_state> old_state,
+        std::optional<grpc_connectivity_state> old_state,
         grpc_connectivity_state new_state,
         const absl::Status& status) override {
       // ...handle connectivity state change...
@@ -111,7 +111,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
     void ResetBackoffLocked();
     void ExitIdleLocked();
 
-    absl::optional<grpc_connectivity_state> connectivity_state() const {
+    std::optional<grpc_connectivity_state> connectivity_state() const {
       return connectivity_state_;
     }
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker() const {
@@ -151,9 +151,9 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
     class Helper;
 
     // Called when the child policy reports a connectivity state update.
-    virtual void OnStateUpdate(
-        absl::optional<grpc_connectivity_state> old_state,
-        grpc_connectivity_state new_state, const absl::Status& status) = 0;
+    virtual void OnStateUpdate(std::optional<grpc_connectivity_state> old_state,
+                               grpc_connectivity_state new_state,
+                               const absl::Status& status) = 0;
 
     // Called to create a subchannel.  Subclasses may override.
     virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
@@ -163,7 +163,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
     RefCountedPtr<EndpointList> endpoint_list_;
 
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
-    absl::optional<grpc_connectivity_state> connectivity_state_;
+    std::optional<grpc_connectivity_state> connectivity_state_;
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_;
   };
 

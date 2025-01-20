@@ -36,6 +36,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/log/check.h"
@@ -43,7 +44,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/util/env.h"

@@ -26,8 +26,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace slice_detail {
 
@@ -97,5 +96,4 @@ Slice Slice::FromRefcountAndBytes(grpc_slice_refcount* r, const uint8_t* begin,
   return Slice(out);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

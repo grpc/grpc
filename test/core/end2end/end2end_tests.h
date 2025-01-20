@@ -33,8 +33,10 @@
 #include <initializer_list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
@@ -43,8 +45,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -55,6 +55,7 @@
 #include "src/core/util/bitset.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/time.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
@@ -212,13 +213,13 @@ class CoreEnd2endTest : public ::testing::Test {
    public:
     ClientCallBuilder(CoreEnd2endTest& test, std::string method)
         : test_(test),
-          call_selector_(UnregisteredCall{std::move(method), absl::nullopt}) {}
+          call_selector_(UnregisteredCall{std::move(method), std::nullopt}) {}
     ClientCallBuilder(CoreEnd2endTest& test, RegisteredCall registered_call)
         : test_(test), call_selector_(registered_call.p) {}
 
     // Specify the host (otherwise nullptr is passed)
     ClientCallBuilder& Host(std::string host) {
-      absl::get<UnregisteredCall>(call_selector_).host = std::move(host);
+      std::get<UnregisteredCall>(call_selector_).host = std::move(host);
       return *this;
     }
     // Specify the timeout (otherwise gpr_inf_future is passed) - this time is
@@ -238,9 +239,9 @@ class CoreEnd2endTest : public ::testing::Test {
     CoreEnd2endTest& test_;
     struct UnregisteredCall {
       std::string method;
-      absl::optional<std::string> host;
+      std::optional<std::string> host;
     };
-    absl::variant<void*, UnregisteredCall> call_selector_;
+    std::variant<void*, UnregisteredCall> call_selector_;
     grpc_call* parent_call_ = nullptr;
     uint32_t propagation_mask_ = GRPC_PROPAGATE_DEFAULTS;
     gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_REALTIME);
@@ -272,9 +273,9 @@ class CoreEnd2endTest : public ::testing::Test {
     }
     // Access the peer structure (returns a string that can be matched, etc) -
     // or nullopt if grpc_call_get_peer returns nullptr.
-    absl::optional<std::string> GetPeer() {
+    std::optional<std::string> GetPeer() {
       char* peer = grpc_call_get_peer(call_);
-      if (peer == nullptr) return absl::nullopt;
+      if (peer == nullptr) return std::nullopt;
       std::string result(peer);
       gpr_free(peer);
       return result;
@@ -328,10 +329,10 @@ class CoreEnd2endTest : public ::testing::Test {
     }
 
     // Return some initial metadata.
-    absl::optional<std::string> GetInitialMetadata(absl::string_view key) const;
+    std::optional<std::string> GetInitialMetadata(absl::string_view key) const;
 
     // Return the peer address.
-    absl::optional<std::string> GetPeer() { return impl_->call.GetPeer(); }
+    std::optional<std::string> GetPeer() { return impl_->call.GetPeer(); }
 
     // Return the auth context.
     std::unique_ptr<grpc_auth_context, void (*)(grpc_auth_context*)>
@@ -415,7 +416,7 @@ class CoreEnd2endTest : public ::testing::Test {
   // Step the system until expectations are met or until timeout is reached.
   // If there are no expectations logged, then step for 1 second and verify that
   // no events occur.
-  void Step(absl::optional<Duration> timeout = absl::nullopt,
+  void Step(std::optional<Duration> timeout = std::nullopt,
             SourceLocation whence = {}) {
     if (expectations_ == 0) {
       cq_verifier().VerifyEmpty(timeout.value_or(Duration::Seconds(1)), whence);
@@ -575,9 +576,9 @@ class CoreEnd2endTest : public ::testing::Test {
       grpc_event_engine::experimental::EventEngine::Duration) const>
       step_fn_ = nullptr;
   absl::AnyInvocable<void(
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>&&)>
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>)>
       quiesce_event_engine_ =
-          grpc_event_engine::experimental::WaitForSingleOwner;
+          WaitForSingleOwner<grpc_event_engine::experimental::EventEngine>;
 };
 
 // Define names for additional test suites.

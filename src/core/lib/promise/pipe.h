@@ -20,14 +20,14 @@
 #include <stdlib.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
@@ -189,7 +189,7 @@ class Center : public InterceptorList<T> {
   // Return Pending if there is no value.
   // Return the value if one was retrieved.
   // Return nullopt if the send end is closed and no value had been pushed.
-  Poll<absl::optional<T>> Next() {
+  Poll<std::optional<T>> Next() {
     GRPC_TRACE_LOG(promise_primitives, INFO) << DebugOpString("Next");
     DCHECK_NE(refs_, 0);
     switch (value_state_) {
@@ -206,9 +206,9 @@ class Center : public InterceptorList<T> {
         return std::move(value_);
       case ValueState::kClosed:
       case ValueState::kCancelled:
-        return absl::nullopt;
+        return std::nullopt;
     }
-    GPR_UNREACHABLE_CODE(return absl::nullopt);
+    GPR_UNREACHABLE_CODE(return std::nullopt);
   }
 
   // Check if the pipe is closed for sending (if there is a value still queued
@@ -517,8 +517,8 @@ class Next {
   Next(Next&& other) noexcept = default;
   Next& operator=(Next&& other) noexcept = default;
 
-  Poll<absl::optional<T>> operator()() {
-    return center_ == nullptr ? absl::nullopt : center_->Next();
+  Poll<std::optional<T>> operator()() {
+    return center_ == nullptr ? std::nullopt : center_->Next();
   }
 
  private:
@@ -552,7 +552,7 @@ class PipeReceiver {
   // available.
   auto Next() {
     return Seq(pipe_detail::Next<T>(center_), [center = center_](
-                                                  absl::optional<T> value) {
+                                                  std::optional<T> value) {
       bool open = value.has_value();
       bool cancelled = center == nullptr ? true : center->cancelled();
       return If(
@@ -560,7 +560,7 @@ class PipeReceiver {
           [center = std::move(center), value = std::move(value)]() mutable {
             auto run = center->Run(std::move(value));
             return Map(std::move(run), [center = std::move(center)](
-                                           absl::optional<T> value) mutable {
+                                           std::optional<T> value) mutable {
               if (value.has_value()) {
                 center->value() = std::move(*value);
                 return NextResult<T>(std::move(center));
@@ -638,7 +638,7 @@ class Push {
           << " Pipe push has a null center";
       return false;
     }
-    if (auto* p = absl::get_if<T>(&state_)) {
+    if (auto* p = std::get_if<T>(&state_)) {
       auto r = center_->Push(p);
       if (auto* ok = r.value_if_ready()) {
         state_.template emplace<AwaitingAck>();
@@ -647,7 +647,7 @@ class Push {
         return Pending{};
       }
     }
-    DCHECK(absl::holds_alternative<AwaitingAck>(state_));
+    DCHECK(std::holds_alternative<AwaitingAck>(state_));
     return center_->PollAck();
   }
 
@@ -659,7 +659,7 @@ class Push {
       : center_(std::move(center)), state_(std::move(push)) {}
 
   RefCountedPtr<Center<T>> center_;
-  absl::variant<T, AwaitingAck> state_;
+  std::variant<T, AwaitingAck> state_;
 };
 
 }  // namespace pipe_detail

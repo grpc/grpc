@@ -19,10 +19,10 @@
 
 #include <cstdint>
 #include <string>
+#include <variant>
 
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
-#include "absl/types/variant.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -199,10 +199,10 @@ struct MessageChunkFrame final : public FrameInterface {
 };
 
 using Frame =
-    absl::variant<SettingsFrame, ClientInitialMetadataFrame,
-                  ServerInitialMetadataFrame, ServerTrailingMetadataFrame,
-                  MessageFrame, BeginMessageFrame, MessageChunkFrame,
-                  ClientEndOfStream, CancelFrame>;
+    std::variant<SettingsFrame, ClientInitialMetadataFrame,
+                 ServerInitialMetadataFrame, ServerTrailingMetadataFrame,
+                 MessageFrame, BeginMessageFrame, MessageChunkFrame,
+                 ClientEndOfStream, CancelFrame>;
 
 inline std::ostream& operator<<(std::ostream& out, const Frame& frame) {
   return out << absl::ConvertVariantTo<FrameInterface&>(frame).ToString();

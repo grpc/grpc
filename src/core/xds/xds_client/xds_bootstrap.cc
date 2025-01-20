@@ -18,7 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/types/optional.h"
+#include <optional>
+
 #include "src/core/util/env.h"
 #include "src/core/util/string.h"
 

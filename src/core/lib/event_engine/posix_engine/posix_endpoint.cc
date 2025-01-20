@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 
@@ -36,7 +37,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
@@ -92,8 +92,7 @@
 
 #define MAX_READ_IOVEC 64
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 
@@ -472,7 +471,7 @@ void PosixEndpointImpl::MaybePostReclaimer() {
     memory_owner_.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
         [self = Ref(DEBUG_LOCATION, "Posix Reclaimer")](
-            absl::optional<grpc_core::ReclamationSweep> sweep) {
+            std::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
             self->PerformReclamation();
           }
@@ -1361,13 +1360,11 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
                                          std::move(allocator), options);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* /*handle*/, PosixEngineClosure* /*on_shutdown*/,
@@ -1376,7 +1373,6 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
   grpc_core::Crash("Cannot create PosixEndpoint on this platform");
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_POSIX_SOCKET_TCP

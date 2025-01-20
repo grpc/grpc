@@ -28,46 +28,44 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                      on_server_trailing_metadata_from_initiator) {
   call_handler.AddChildCall(call_initiator);
   // Read messages from handler into initiator.
-  call_handler.SpawnInfallible("read_messages", [call_handler,
-                                                 call_initiator]() mutable {
-    return Seq(ForEach(MessagesFrom(call_handler),
-                       [call_initiator](MessageHandle msg) mutable {
-                         // Need to spawn a job into the initiator's activity to
-                         // push the message in.
-                         return call_initiator.SpawnPushMessage(std::move(msg));
-                       }),
-               [call_initiator](StatusFlag result) mutable {
-                 if (result.ok()) {
-                   call_initiator.SpawnFinishSends();
-                 }
-               });
-  });
+  call_handler.SpawnInfallible(
+      "read_messages", [call_handler, call_initiator]() mutable {
+        return Seq(
+            ForEach(MessagesFrom(call_handler),
+                    [call_initiator](MessageHandle msg) mutable {
+                      // Need to spawn a job into the initiator's activity to
+                      // push the message in.
+                      call_initiator.SpawnPushMessage(std::move(msg));
+                      return Success{};
+                    }),
+            [call_initiator]() mutable { call_initiator.SpawnFinishSends(); });
+      });
   call_initiator.SpawnInfallible(
       "read_the_things",
       [call_initiator, call_handler,
        on_server_trailing_metadata_from_initiator =
            std::move(on_server_trailing_metadata_from_initiator)]() mutable {
         return Seq(
-            call_initiator.CancelIfFails(
-                TrySeq(call_initiator.PullServerInitialMetadata(),
-                       [call_handler, call_initiator](
-                           absl::optional<ServerMetadataHandle> md) mutable {
-                         const bool has_md = md.has_value();
-                         return If(
-                             has_md,
-                             [&call_handler, &call_initiator,
-                              md = std::move(md)]() mutable {
-                               call_handler.SpawnPushServerInitialMetadata(
-                                   std::move(*md));
-                               return ForEach(
-                                   MessagesFrom(call_initiator),
-                                   [call_handler](MessageHandle msg) mutable {
-                                     return call_handler.SpawnPushMessage(
-                                         std::move(msg));
-                                   });
-                             },
-                             []() -> StatusFlag { return Success{}; });
-                       })),
+            call_initiator.CancelIfFails(TrySeq(
+                call_initiator.PullServerInitialMetadata(),
+                [call_handler, call_initiator](
+                    std::optional<ServerMetadataHandle> md) mutable {
+                  const bool has_md = md.has_value();
+                  return If(
+                      has_md,
+                      [&call_handler, &call_initiator,
+                       md = std::move(md)]() mutable {
+                        call_handler.SpawnPushServerInitialMetadata(
+                            std::move(*md));
+                        return ForEach(
+                            MessagesFrom(call_initiator),
+                            [call_handler](MessageHandle msg) mutable {
+                              call_handler.SpawnPushMessage(std::move(msg));
+                              return Success{};
+                            });
+                      },
+                      []() -> StatusFlag { return Success{}; });
+                })),
             call_initiator.PullServerTrailingMetadata(),
             [call_handler,
              on_server_trailing_metadata_from_initiator =

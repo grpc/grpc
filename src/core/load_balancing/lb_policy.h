@@ -26,16 +26,16 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -115,7 +115,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
    public:
     virtual ~MetadataInterface() = default;
 
-    virtual absl::optional<absl::string_view> Lookup(
+    virtual std::optional<absl::string_view> Lookup(
         absl::string_view key, std::string* buffer) const = 0;
   };
 
@@ -253,7 +253,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     // A pick result must be one of these types.
     // Default to Queue, just to allow default construction.
-    absl::variant<Complete, Queue, Fail, Drop> result = Queue();
+    std::variant<Complete, Queue, Fail, Drop> result = Queue();
 
     PickResult() = default;
     // NOLINTNEXTLINE(google-explicit-constructor)

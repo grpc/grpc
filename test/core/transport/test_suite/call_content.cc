@@ -81,7 +81,7 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
         initiator.FinishSends();
         return initiator.PullServerInitialMetadata();
       },
-      [&](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+      [&](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
         EXPECT_TRUE(md.ok());
         EXPECT_TRUE(md.value().has_value());
         EXPECT_THAT(LowerMetadata(***md),

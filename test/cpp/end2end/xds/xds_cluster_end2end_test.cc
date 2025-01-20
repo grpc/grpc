@@ -1744,15 +1744,14 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   size_t num_failed_rpcs = 0;
   std::map<std::string, ClientStats::LocalityStats::LoadMetric>
       named_metrics_total;
-  for (const auto& p : client_stats.locality_stats()) {
-    EXPECT_EQ(p.second.total_requests_in_progress, 0U);
-    EXPECT_EQ(
-        p.second.total_issued_requests,
-        p.second.total_successful_requests + p.second.total_error_requests);
-    num_successful_rpcs += p.second.total_successful_requests;
-    num_failed_rpcs += p.second.total_error_requests;
-    for (const auto& s : p.second.load_metrics) {
-      named_metrics_total[s.first] += s.second;
+  for (const auto& [_, stats] : client_stats.locality_stats()) {
+    EXPECT_EQ(stats.total_requests_in_progress, 0U);
+    EXPECT_EQ(stats.total_issued_requests,
+              stats.total_successful_requests + stats.total_error_requests);
+    num_successful_rpcs += stats.total_successful_requests;
+    num_failed_rpcs += stats.total_error_requests;
+    for (const auto& [name, value] : stats.load_metrics) {
+      named_metrics_total[name] += value;
     }
   }
   EXPECT_EQ(num_successful_rpcs, total_successful_rpcs_sent);
@@ -1858,18 +1857,17 @@ TEST_P(ClientLoadReportingTest, OrcaPropagation) {
   ClientStats::LocalityStats::LoadMetric application_utilization;
   std::map<std::string, ClientStats::LocalityStats::LoadMetric>
       named_metrics_total;
-  for (const auto& p : client_stats.locality_stats()) {
-    EXPECT_EQ(p.second.total_requests_in_progress, 0U);
-    EXPECT_EQ(
-        p.second.total_issued_requests,
-        p.second.total_successful_requests + p.second.total_error_requests);
-    num_successful_rpcs += p.second.total_successful_requests;
-    num_failed_rpcs += p.second.total_error_requests;
-    cpu_utilization += p.second.cpu_utilization;
-    mem_utilization += p.second.mem_utilization;
-    application_utilization += p.second.application_utilization;
-    for (const auto& s : p.second.load_metrics) {
-      named_metrics_total[s.first] += s.second;
+  for (const auto& [_, stats] : client_stats.locality_stats()) {
+    EXPECT_EQ(stats.total_requests_in_progress, 0U);
+    EXPECT_EQ(stats.total_issued_requests,
+              stats.total_successful_requests + stats.total_error_requests);
+    num_successful_rpcs += stats.total_successful_requests;
+    num_failed_rpcs += stats.total_error_requests;
+    cpu_utilization += stats.cpu_utilization;
+    mem_utilization += stats.mem_utilization;
+    application_utilization += stats.application_utilization;
+    for (const auto& [name, value] : stats.load_metrics) {
+      named_metrics_total[name] += value;
     }
   }
   EXPECT_EQ(num_successful_rpcs, total_successful_rpcs_sent);
@@ -1976,15 +1974,14 @@ TEST_P(ClientLoadReportingTest, OrcaPropagationNamedMetricsAll) {
   size_t num_failed_rpcs = 0;
   std::map<std::string, ClientStats::LocalityStats::LoadMetric>
       named_metrics_total;
-  for (const auto& p : client_stats.locality_stats()) {
-    EXPECT_EQ(p.second.total_requests_in_progress, 0U);
-    EXPECT_EQ(
-        p.second.total_issued_requests,
-        p.second.total_successful_requests + p.second.total_error_requests);
-    num_successful_rpcs += p.second.total_successful_requests;
-    num_failed_rpcs += p.second.total_error_requests;
-    for (const auto& s : p.second.load_metrics) {
-      named_metrics_total[s.first] += s.second;
+  for (const auto& [_, stats] : client_stats.locality_stats()) {
+    EXPECT_EQ(stats.total_requests_in_progress, 0U);
+    EXPECT_EQ(stats.total_issued_requests,
+              stats.total_successful_requests + stats.total_error_requests);
+    num_successful_rpcs += stats.total_successful_requests;
+    num_failed_rpcs += stats.total_error_requests;
+    for (const auto& [name, value] : stats.load_metrics) {
+      named_metrics_total[name] += value;
     }
   }
   EXPECT_EQ(num_successful_rpcs, total_successful_rpcs_sent);
@@ -2079,15 +2076,14 @@ TEST_P(ClientLoadReportingTest, OrcaPropagationNotConfigured) {
   size_t num_failed_rpcs = 0;
   std::map<std::string, ClientStats::LocalityStats::LoadMetric>
       named_metrics_total;
-  for (const auto& p : client_stats.locality_stats()) {
-    EXPECT_EQ(p.second.total_requests_in_progress, 0U);
-    EXPECT_EQ(
-        p.second.total_issued_requests,
-        p.second.total_successful_requests + p.second.total_error_requests);
-    num_successful_rpcs += p.second.total_successful_requests;
-    num_failed_rpcs += p.second.total_error_requests;
-    for (const auto& s : p.second.load_metrics) {
-      named_metrics_total[s.first] += s.second;
+  for (const auto& [_, stats] : client_stats.locality_stats()) {
+    EXPECT_EQ(stats.total_requests_in_progress, 0U);
+    EXPECT_EQ(stats.total_issued_requests,
+              stats.total_successful_requests + stats.total_error_requests);
+    num_successful_rpcs += stats.total_successful_requests;
+    num_failed_rpcs += stats.total_error_requests;
+    for (const auto& [name, value] : stats.load_metrics) {
+      named_metrics_total[name] += value;
     }
   }
   EXPECT_EQ(num_successful_rpcs, total_successful_rpcs_sent);

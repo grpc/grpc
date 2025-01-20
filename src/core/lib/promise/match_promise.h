@@ -15,7 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_MATCH_PROMISE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_MATCH_PROMISE_H
 
-#include "absl/types/variant.h"
+#include <variant>
+
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/promise_variant.h"
@@ -24,6 +25,30 @@
 namespace grpc_core {
 
 namespace promise_detail {
+
+// Match Promise Combinator
+//
+// Input:
+// The first input is an std::variant<...> object.
+// The remaining inputs are either
+// 1. Promises which take one of the variant types as input parameter and return
+//    Poll<T>
+// 2. Functors that take one of the variant types as input parameter and return
+//    a Promise with return type Poll<T>
+// 3. There MUST be one input promise/functor corresponding to each type in the
+//    std::variant<...> input
+// 4. The return type of all promises must be the same.
+//
+// Returns:
+// Match promise combinator returns Poll<T>
+//
+// Polling the Match combinator works in the following way :
+// The Match combinator selects which of the input promises to execute based on
+// the value of the std::variant. Only 1 of the input promises will be executed
+// on polling the Match combinator. Like all other promises, the Match
+// combinator can be polled till it resolves.
+//
+// Example : Refer to match_promise_test.cc
 
 // This types job is to visit a supplied variant, and apply a mapping
 // Constructor from input types to promises, returning a variant full of
@@ -51,7 +76,7 @@ struct ConstructPromiseVariantVisitor {
   // the result into a variant type that covers ALL of the possible return types
   // given the input types listed in Ts...
   template <typename T>
-  auto operator()(T x) -> absl::variant<promise_detail::PromiseLike<
+  auto operator()(T x) -> std::variant<promise_detail::PromiseLike<
       decltype(CallConstructorThenFactory(std::declval<Ts>()))>...> {
     return CallConstructorThenFactory(std::move(x));
   }
@@ -59,16 +84,11 @@ struct ConstructPromiseVariantVisitor {
 
 }  // namespace promise_detail
 
-// Match for promises
-// Like the Match function takes a variant of some set of types,
-// and a set of functions - one per variant type.
-// We use these functions as Promise Factories, and return a Promise that can be
-// polled selected by the type that was in the variant.
 template <typename... Fs, typename... Ts>
-auto MatchPromise(absl::variant<Ts...> value, Fs... fs) {
+auto MatchPromise(std::variant<Ts...> value, Fs... fs) {
   // Construct a variant of promises using the factory functions fs, selected by
   // the type held by value.
-  auto body = absl::visit(
+  auto body = std::visit(
       promise_detail::ConstructPromiseVariantVisitor<OverloadType<Fs...>,
                                                      Ts...>{
           OverloadType<Fs...>(std::move(fs)...)},

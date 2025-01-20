@@ -22,11 +22,11 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/sync.h"
 

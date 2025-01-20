@@ -26,6 +26,7 @@
 #include <cstdlib>
 #include <initializer_list>
 #include <memory>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -33,7 +34,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
@@ -117,7 +117,7 @@ TEST_F(TransportTest, AddOneStream) {
       "test-read", [&on_done, initiator = call.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+            [](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
               EXPECT_TRUE(md.value().has_value());
               EXPECT_EQ(md.value()
@@ -177,7 +177,7 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       "test-read", [&on_done, initiator = call.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+            [](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
               EXPECT_TRUE(md.ok());
               EXPECT_TRUE(md.value().has_value());
             },

@@ -30,9 +30,11 @@
 #include <algorithm>
 #include <functional>
 #include <new>
+#include <optional>
 #include <set>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
@@ -45,8 +47,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -139,14 +139,14 @@ class ClientChannelFilter::CallData {
   // Checks whether a resolver result is available.  The following
   // outcomes are possible:
   // - No resolver result is available yet.  The call will be queued and
-  //   absl::nullopt will be returned.  Later, when a resolver result
+  //   std::nullopt will be returned.  Later, when a resolver result
   //   becomes available, RetryCheckResolutionLocked() will be called.
   // - The resolver has returned a transient failure.  If the call is
   //   not wait_for_ready, a non-OK status will be returned.  (If the
   //   call *is* wait_for_ready, it will be queued instead.)
   // - There is a valid resolver result.  The service config will be
   //   stored in the call context and an OK status will be returned.
-  absl::optional<absl::Status> CheckResolution(bool was_queued);
+  std::optional<absl::Status> CheckResolution(bool was_queued);
 
  private:
   // Accessors for data stored in the subclass.
@@ -685,8 +685,7 @@ class ClientChannelFilter::SubchannelWrapper final
           << parent_.get() << " subchannel " << parent_->subchannel_.get()
           << " watcher=" << watcher_.get()
           << " state=" << ConnectivityStateName(state) << " status=" << status;
-      absl::optional<absl::Cord> keepalive_throttling =
-          status.GetPayload(kKeepaliveThrottlingKey);
+      auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
       if (keepalive_throttling.has_value()) {
         int new_keepalive_time = -1;
         if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
@@ -1102,7 +1101,7 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
   }
   // Get default service config.  If none is specified via the client API,
   // we use an empty config.
-  absl::optional<absl::string_view> service_config_json =
+  std::optional<absl::string_view> service_config_json =
       channel_args_.GetString(GRPC_ARG_SERVICE_CONFIG);
   if (!service_config_json.has_value()) service_config_json = "{}";
   *error = absl::OkStatus();
@@ -1114,7 +1113,7 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
   }
   default_service_config_ = std::move(*service_config);
   // Get URI to resolve, using proxy mapper if needed.
-  absl::optional<std::string> target_uri =
+  std::optional<std::string> target_uri =
       channel_args_.GetOwnedString(GRPC_ARG_SERVER_URI);
   if (!target_uri.has_value()) {
     *error = GRPC_ERROR_CREATE(
@@ -1146,7 +1145,7 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
     keepalive_time_ = -1;  // unset
   }
   // Set default authority.
-  absl::optional<std::string> default_authority =
+  std::optional<std::string> default_authority =
       channel_args_.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY);
   if (!default_authority.has_value()) {
     default_authority_ =
@@ -1199,7 +1198,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   }
   // Try the deprecated LB policy name from the service config.
   // If not, try the setting from channel args.
-  absl::optional<absl::string_view> policy_name;
+  std::optional<absl::string_view> policy_name;
   if (!parsed_service_config->parsed_deprecated_lb_policy().empty()) {
     policy_name = parsed_service_config->parsed_deprecated_lb_policy();
   } else {
@@ -1406,7 +1405,7 @@ void ClientChannelFilter::OnResolverErrorLocked(absl::Status status) {
 
 absl::Status ClientChannelFilter::CreateOrUpdateLbPolicyLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
-    const absl::optional<std::string>& health_check_service_name,
+    const std::optional<std::string>& health_check_service_name,
     Resolver::Result result) {
   // Construct update.
   LoadBalancingPolicy::UpdateArgs update_args;
@@ -1631,22 +1630,22 @@ T HandlePickResult(
     std::function<T(LoadBalancingPolicy::PickResult::Fail*)> fail_func,
     std::function<T(LoadBalancingPolicy::PickResult::Drop*)> drop_func) {
   auto* complete_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Complete>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Complete>(&result->result);
   if (complete_pick != nullptr) {
     return complete_func(complete_pick);
   }
   auto* queue_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Queue>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Queue>(&result->result);
   if (queue_pick != nullptr) {
     return queue_func(queue_pick);
   }
   auto* fail_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Fail>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Fail>(&result->result);
   if (fail_pick != nullptr) {
     return fail_func(fail_pick);
   }
   auto* drop_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
   CHECK_NE(drop_pick, nullptr);
   return drop_func(drop_pick);
 }
@@ -1898,7 +1897,7 @@ grpc_error_handle ClientChannelFilter::CallData::ApplyServiceConfigToCallLocked(
   return absl::OkStatus();
 }
 
-absl::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
+std::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
     bool was_queued) {
   // Check if we have a resolver result to use.
   absl::StatusOr<RefCountedPtr<ConfigSelector>> config_selector;
@@ -1908,7 +1907,7 @@ absl::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
     // If no result is available, queue the call.
     if (!result_ready) {
       AddCallToResolverQueuedCallsLocked();
-      return absl::nullopt;
+      return std::nullopt;
     }
   }
   // We have a result.  Apply service config to call.
@@ -2514,7 +2513,7 @@ void ClientChannelFilter::LoadBalancedCall::AddCallToLbQueuedCallsLocked() {
   OnAddToQueueLocked();
 }
 
-absl::optional<absl::Status>
+std::optional<absl::Status>
 ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
   // We may accumulate multiple pickers here, because if a picker says
   // to queue the call, we check again to see if the picker has been
@@ -2587,7 +2586,7 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
       }
       // Otherwise queue the pick to try again later when we get a new picker.
       AddCallToLbQueuedCallsLocked();
-      return absl::nullopt;
+      return std::nullopt;
     }
     // Pick is complete.
     // If it was queued, add a trace annotation.

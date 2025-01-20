@@ -26,10 +26,10 @@
 #include <gtest/gtest.h>
 
 #include <memory>
+#include <optional>
 
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
@@ -58,7 +58,7 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
   void SetUp() override {}  // No-op -- individual tests do this themselves.
 
   void DoSetUp(
-      const absl::optional<XdsBootstrapBuilder>& builder = absl::nullopt) {
+      const std::optional<XdsBootstrapBuilder>& builder = std::nullopt) {
     // We use insecure creds here as a convenience to be able to easily
     // create new channels in some of the tests below.  None of the
     // tests here actually depend on the channel creds anyway.

@@ -46,8 +46,7 @@
 #include <unistd.h>      // IWYU pragma: keep
 #endif
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
@@ -390,5 +389,4 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
 
 #endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

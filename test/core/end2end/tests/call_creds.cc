@@ -22,9 +22,9 @@
 #include <grpc/status.h>
 
 #include <memory>
+#include <optional>
 
 #include "absl/log/log.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -232,10 +232,10 @@ void TestRequestResponseWithPayloadAndDeletedCallCreds(
   EXPECT_EQ(client_message.payload(), "hello world");
   EXPECT_EQ(server_message.payload(), "hello you");
   EXPECT_EQ(s.GetInitialMetadata(GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(s.GetInitialMetadata(GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY),
-            absl::nullopt);
-  EXPECT_EQ(s.GetInitialMetadata(fake_md_key), absl::nullopt);
+            std::nullopt);
+  EXPECT_EQ(s.GetInitialMetadata(fake_md_key), std::nullopt);
 }
 
 CORE_END2END_TEST(PerCallCredsOnInsecureTest,
