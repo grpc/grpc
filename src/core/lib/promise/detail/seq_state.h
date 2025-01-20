@@ -6851,7 +6851,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         whence);
@@ -6941,7 +6941,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2))) &&>(
+                           std::forward<F2>(f2)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -6968,7 +6968,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), whence);
@@ -7084,7 +7084,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -7114,7 +7114,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2))) &&>(
+                           std::forward<F2>(f2)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -7141,7 +7141,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), whence);
@@ -7284,7 +7284,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4))) &&>(
+                           std::forward<F4>(f4)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -7316,7 +7316,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -7346,7 +7346,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2))) &&>(
+                           std::forward<F2>(f2)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -7373,7 +7373,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -7547,7 +7547,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4), std::forward<F5>(f5))) &&>(
+                           std::forward<F4>(f4), std::forward<F5>(f5)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -7581,7 +7581,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4))) &&>(
+                           std::forward<F4>(f4)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -7613,7 +7613,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -7643,7 +7643,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2))) &&>(
+                           std::forward<F2>(f2)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -7671,7 +7671,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -7878,7 +7878,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6))) &&>(
+                           std::forward<F6>(f6)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -7914,7 +7914,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4), std::forward<F5>(f5))) &&>(
+                           std::forward<F4>(f4), std::forward<F5>(f5)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -7948,7 +7948,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4))) &&>(
+                           std::forward<F4>(f4)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -7980,7 +7980,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -8011,7 +8011,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2))) &&>(
+                           std::forward<F2>(f2)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -8039,7 +8039,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -8281,7 +8281,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6), std::forward<F7>(f7))) &&>(
+                           std::forward<F6>(f6), std::forward<F7>(f7)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8319,7 +8319,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6))) &&>(
+                           std::forward<F6>(f6)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8355,7 +8355,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4), std::forward<F5>(f5))) &&>(
+                           std::forward<F4>(f4), std::forward<F5>(f5)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8389,7 +8389,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4))) &&>(
+                           std::forward<F4>(f4)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8422,7 +8422,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -8453,7 +8453,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2))) &&>(
+                           std::forward<F2>(f2)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -8481,7 +8481,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -8760,7 +8760,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
-                           std::forward<F8>(f8))) &&>(
+                           std::forward<F8>(f8)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8800,7 +8800,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6), std::forward<F7>(f7))) &&>(
+                           std::forward<F6>(f6), std::forward<F7>(f7)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8838,7 +8838,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6))) &&>(
+                           std::forward<F6>(f6)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8874,7 +8874,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4), std::forward<F5>(f5))) &&>(
+                           std::forward<F4>(f4), std::forward<F5>(f5)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8909,7 +8909,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4))) &&>(
+                           std::forward<F4>(f4)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -8942,7 +8942,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -8973,7 +8973,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2))) &&>(
+                           std::forward<F2>(f2)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -9002,7 +9002,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -9320,7 +9320,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
-                           std::forward<F8>(f8), std::forward<F9>(f9))) &&>(
+                           std::forward<F8>(f8), std::forward<F9>(f9)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -9362,7 +9362,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
-                           std::forward<F8>(f8))) &&>(
+                           std::forward<F8>(f8)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -9402,7 +9402,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6), std::forward<F7>(f7))) &&>(
+                           std::forward<F6>(f6), std::forward<F7>(f7)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -9440,7 +9440,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6))) &&>(
+                           std::forward<F6>(f6)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -9477,7 +9477,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4), std::forward<F5>(f5))) &&>(
+                           std::forward<F4>(f4), std::forward<F5>(f5)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -9512,7 +9512,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4))) &&>(
+                           std::forward<F4>(f4)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -9545,7 +9545,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -9577,7 +9577,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2))) &&>(
+                           std::forward<F2>(f2)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -9606,7 +9606,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -9965,7 +9965,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
                            std::forward<F8>(f8), std::forward<F9>(f9),
-                           std::forward<F10>(f10))) &&>(
+                           std::forward<F10>(f10)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10010,7 +10010,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
-                           std::forward<F8>(f8), std::forward<F9>(f9))) &&>(
+                           std::forward<F8>(f8), std::forward<F9>(f9)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10052,7 +10052,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
-                           std::forward<F8>(f8))) &&>(
+                           std::forward<F8>(f8)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10092,7 +10092,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6), std::forward<F7>(f7))) &&>(
+                           std::forward<F6>(f6), std::forward<F7>(f7)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10131,7 +10131,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6))) &&>(
+                           std::forward<F6>(f6)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10168,7 +10168,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4), std::forward<F5>(f5))) &&>(
+                           std::forward<F4>(f4), std::forward<F5>(f5)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10203,7 +10203,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4))) &&>(
+                           std::forward<F4>(f4)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10237,7 +10237,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -10269,7 +10269,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2))) &&>(
+                           std::forward<F2>(f2)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -10298,7 +10298,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
@@ -10703,7 +10703,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                 std::forward<F4>(f4), std::forward<F5>(f5),
                 std::forward<F6>(f6), std::forward<F7>(f7),
                 std::forward<F8>(f8), std::forward<F9>(f9),
-                std::forward<F10>(f10), std::forward<F11>(f11))) &&>(
+                std::forward<F10>(f10), std::forward<F11>(f11)))&&>(
                 SeqFactoryMap<Traits, Arg>(
                     std::forward<F0>(f0), std::forward<F1>(f1),
                     std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10750,7 +10750,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
                            std::forward<F8>(f8), std::forward<F9>(f9),
-                           std::forward<F10>(f10))) &&>(
+                           std::forward<F10>(f10)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10795,7 +10795,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
-                           std::forward<F8>(f8), std::forward<F9>(f9))) &&>(
+                           std::forward<F8>(f8), std::forward<F9>(f9)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10837,7 +10837,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
                            std::forward<F6>(f6), std::forward<F7>(f7),
-                           std::forward<F8>(f8))) &&>(
+                           std::forward<F8>(f8)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10878,7 +10878,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6), std::forward<F7>(f7))) &&>(
+                           std::forward<F6>(f6), std::forward<F7>(f7)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10917,7 +10917,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
                            std::forward<F4>(f4), std::forward<F5>(f5),
-                           std::forward<F6>(f6))) &&>(
+                           std::forward<F6>(f6)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10954,7 +10954,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4), std::forward<F5>(f5))) &&>(
+                           std::forward<F4>(f4), std::forward<F5>(f5)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -10990,7 +10990,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
                            std::forward<F2>(f2), std::forward<F3>(f3),
-                           std::forward<F4>(f4))) &&>(
+                           std::forward<F4>(f4)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3),
@@ -11024,7 +11024,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2), std::forward<F3>(f3))) &&>(
+                           std::forward<F2>(f2), std::forward<F3>(f3)))&&>(
                            SeqFactoryMap<Traits, Arg>(
                                std::forward<F0>(f0), std::forward<F1>(f1),
                                std::forward<F2>(f2), std::forward<F3>(f3)))),
@@ -11056,7 +11056,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
                            std::forward<F0>(f0), std::forward<F1>(f1),
-                           std::forward<F2>(f2))) &&>(
+                           std::forward<F2>(f2)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1),
                                                       std::forward<F2>(f2)))),
@@ -11086,7 +11086,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto FoldMiddle(
         std::forward<P>(p),
         std::tuple_cat(std::forward<std::tuple<Rs&&...>>(resolved),
                        std::tuple<decltype(SeqFactoryMap<Traits, Arg>(
-                           std::forward<F0>(f0), std::forward<F1>(f1))) &&>(
+                           std::forward<F0>(f0), std::forward<F1>(f1)))&&>(
                            SeqFactoryMap<Traits, Arg>(std::forward<F0>(f0),
                                                       std::forward<F1>(f1)))),
         std::forward<F2>(f2), std::forward<F3>(f3), std::forward<F4>(f4),
