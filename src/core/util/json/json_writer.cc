@@ -35,7 +35,7 @@ namespace {
 // The idea of the writer is basically symmetrical of the reader. While the
 // reader emits various calls to your code, the writer takes basically the
 // same calls and emit json out of it. It doesn't try to make any check on
-// the order of the calls you do on it. Meaning you can theorically force
+// the order of the calls you do on it. Meaning you can theoretically force
 // it to generate invalid json.
 //
 // Also, unlike the reader, the writer expects UTF-8 encoded input strings.
@@ -278,9 +278,9 @@ void JsonWriter::ValueString(const std::string& string) {
 
 void JsonWriter::DumpObject(const Json::Object& object) {
   ContainerBegins(Json::Type::kObject);
-  for (const auto& p : object) {
-    ObjectKey(p.first);
-    DumpValue(p.second);
+  for (const auto& [key, value] : object) {
+    ObjectKey(key);
+    DumpValue(value);
   }
   ContainerEnds(Json::Type::kObject);
 }

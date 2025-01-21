@@ -33,8 +33,7 @@
 #include <linux/netlink.h>
 #include <sys/socket.h>  // IWYU pragma: keep
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 // Fills gpr_timespec gts based on values from timespec ts.
@@ -45,7 +44,7 @@ void FillGprFromTimestamp(gpr_timespec* gts, const struct timespec* ts) {
 }
 
 void DefaultTimestampsCallback(void* /*arg*/, Timestamps* /*ts*/,
-                               absl::Status /*shudown_err*/) {
+                               absl::Status /*shutdown_err*/) {
   VLOG(2) << "Timestamps callback has not been registered";
 }
 
@@ -310,22 +309,19 @@ void TcpSetWriteTimestampsCallback(
   g_timestamps_callback = std::move(fn);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #else  // GRPC_LINUX_ERRQUEUE
 
 #include "src/core/util/crash.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 void TcpSetWriteTimestampsCallback(
     absl::AnyInvocable<void(void*, Timestamps*, absl::Status)> /*fn*/) {
   grpc_core::Crash("Timestamps callback is not enabled for this platform");
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_LINUX_ERRQUEUE

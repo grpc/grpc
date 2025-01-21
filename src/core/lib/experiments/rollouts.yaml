@@ -40,6 +40,8 @@
 #
 # Supported platforms: ios, windows, posix
 
+- name: backoff_cap_initial_at_max
+  default: true
 - name: call_tracer_in_transport
   default: true
 - name: call_v3
@@ -53,7 +55,11 @@
     windows: broken
 - name: client_privacy
   default: false
+- name: disable_buffer_hint_on_high_memory_pressure
+  default: false
 - name: event_engine_application_callbacks
+  default: true
+- name: event_engine_callback_cq
   default: true
 - name: event_engine_client
   default:
@@ -75,24 +81,36 @@
     windows: true
 - name: free_large_allocator
   default: false
+- name: keep_alive_ping_timer_batch
+  default: false
 - name: local_connector_secure
   default: false
 - name: max_pings_wo_data_throttle
-  default: false
+  default: true
 - name: monitoring_experiment
   default: true
 - name: pending_queue_cap
   default: true
 - name: pick_first_new
   default: true
+- name: posix_ee_skip_grpc_init
+  default: false
+- name: prioritize_finished_requests
+  default: false
 - name: promise_based_client_call
   default:
     ios: broken
     windows: broken
     posix: false
+- name: promise_based_http2_client_transport
+  default: false
+- name: promise_based_http2_server_transport
+  default: false
 - name: rstpit
   default: false
 - name: schedule_cancellation_over_write
+  default: false
+- name: server_listener
   default: false
 - name: server_privacy
   default: false
@@ -109,9 +127,4 @@
 - name: work_serializer_clears_time_cache
   default: true
 - name: work_serializer_dispatch
-  default:
-    # TODO(ysseung): Not fully tested.
-    ios: broken
-    posix: true
-    # TODO(ysseung): Test flakes not fully resolved.
-    windows: broken
+  default: true

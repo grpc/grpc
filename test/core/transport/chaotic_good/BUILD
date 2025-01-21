@@ -13,25 +13,14 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
+load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test", "grpc_fuzzer", "grpc_proto_fuzzer")
 
 licenses(["notice"])
 
 grpc_package(
     name = "test/core/transport/chaotic_good",
     visibility = "tests",
-)
-
-grpc_cc_library(
-    name = "mock_promise_endpoint",
-    testonly = 1,
-    srcs = ["mock_promise_endpoint.cc"],
-    hdrs = ["mock_promise_endpoint.h"],
-    external_deps = ["gtest"],
-    deps = [
-        "//:grpc",
-        "//src/core:grpc_promise_endpoint",
-    ],
 )
 
 grpc_cc_library(
@@ -46,7 +35,7 @@ grpc_cc_library(
         "//src/core:memory_quota",
         "//src/core:resource_quota",
         "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
     ],
 )
 
@@ -64,7 +53,10 @@ grpc_fuzzer(
     name = "frame_header_fuzzer",
     srcs = ["frame_header_fuzzer.cc"],
     corpus = "frame_header_fuzzer_corpus",
-    external_deps = ["absl/status:statusor"],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -129,14 +121,12 @@ grpc_cc_test(
         "absl/functional:any_invocable",
         "absl/status:statusor",
         "absl/strings:str_format",
-        "absl/types:optional",
         "gtest",
     ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "mock_promise_endpoint",
         "transport_test",
         "//:grpc",
         "//:grpc_public_hdrs",
@@ -146,6 +136,7 @@ grpc_cc_test(
         "//src/core:loop",
         "//src/core:seq",
         "//src/core:slice_buffer",
+        "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
 
@@ -157,7 +148,6 @@ grpc_cc_test(
         "absl/status",
         "absl/status:statusor",
         "absl/strings:str_format",
-        "absl/types:optional",
         "gtest",
     ],
     language = "C++",
@@ -183,7 +173,7 @@ grpc_cc_test(
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
     ],
 )
 
@@ -195,14 +185,12 @@ grpc_cc_test(
         "absl/status",
         "absl/status:statusor",
         "absl/strings:str_format",
-        "absl/types:optional",
         "gtest",
     ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "mock_promise_endpoint",
         "transport_test",
         "//:grpc",
         "//:grpc_public_hdrs",
@@ -216,7 +204,8 @@ grpc_cc_test(
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
 
@@ -250,5 +239,65 @@ grpc_cc_test(
         "//src/core:time",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_yodel_simple_test(
+    name = "control_endpoint",
+    srcs = ["control_endpoint_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    deps = [
+        "//src/core:chaotic_good_control_endpoint",
+        "//test/core/call/yodel:yodel_test",
+        "//test/core/transport/util:mock_promise_endpoint",
+    ],
+)
+
+grpc_yodel_simple_test(
+    name = "data_endpoints",
+    srcs = ["data_endpoints_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    deps = [
+        "//src/core:chaotic_good_data_endpoints",
+        "//test/core/call/yodel:yodel_test",
+        "//test/core/transport/util:mock_promise_endpoint",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "config_test",
+    srcs = ["config_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:chaotic_good_config",
+        "//src/core:chaotic_good_frame_cc_proto",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "message_chunker_test",
+    srcs = ["message_chunker_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:chaotic_good_frame_cc_proto",
+        "//src/core:chaotic_good_message_chunker",
+        "//src/core:status_flag",
+        "//test/core/promise:poll_matcher",
     ],
 )

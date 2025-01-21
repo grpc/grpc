@@ -26,9 +26,9 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -44,17 +44,6 @@
 #include "src/core/util/latent_see.h"
 
 namespace grpc_core {
-
-const NoInterceptor ClientMessageSizeFilter::Call::OnClientInitialMetadata;
-const NoInterceptor ClientMessageSizeFilter::Call::OnServerInitialMetadata;
-const NoInterceptor ClientMessageSizeFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor ClientMessageSizeFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ClientMessageSizeFilter::Call::OnFinalize;
-const NoInterceptor ServerMessageSizeFilter::Call::OnClientInitialMetadata;
-const NoInterceptor ServerMessageSizeFilter::Call::OnServerInitialMetadata;
-const NoInterceptor ServerMessageSizeFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor ServerMessageSizeFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ServerMessageSizeFilter::Call::OnFinalize;
 
 //
 // MessageSizeParsedConfig
@@ -76,21 +65,19 @@ MessageSizeParsedConfig MessageSizeParsedConfig::GetFromChannelArgs(
   return limits;
 }
 
-absl::optional<uint32_t> GetMaxRecvSizeFromChannelArgs(
-    const ChannelArgs& args) {
-  if (args.WantMinimalStack()) return absl::nullopt;
+std::optional<uint32_t> GetMaxRecvSizeFromChannelArgs(const ChannelArgs& args) {
+  if (args.WantMinimalStack()) return std::nullopt;
   int size = args.GetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH)
                  .value_or(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH);
-  if (size < 0) return absl::nullopt;
+  if (size < 0) return std::nullopt;
   return static_cast<uint32_t>(size);
 }
 
-absl::optional<uint32_t> GetMaxSendSizeFromChannelArgs(
-    const ChannelArgs& args) {
-  if (args.WantMinimalStack()) return absl::nullopt;
+std::optional<uint32_t> GetMaxSendSizeFromChannelArgs(const ChannelArgs& args) {
+  if (args.WantMinimalStack()) return std::nullopt;
   int size = args.GetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH)
                  .value_or(GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH);
-  if (size < 0) return absl::nullopt;
+  if (size < 0) return std::nullopt;
   return static_cast<uint32_t>(size);
 }
 
@@ -154,7 +141,7 @@ ServerMessageSizeFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
 
 namespace {
 ServerMetadataHandle CheckPayload(const Message& msg,
-                                  absl::optional<uint32_t> max_length,
+                                  std::optional<uint32_t> max_length,
                                   bool is_client, bool is_send) {
   if (!max_length.has_value()) return nullptr;
   GRPC_TRACE_LOG(call, INFO)
@@ -181,8 +168,8 @@ ClientMessageSizeFilter::Call::Call(ClientMessageSizeFilter* filter)
       MessageSizeParsedConfig::GetFromCallContext(
           GetContext<Arena>(), filter->service_config_parser_index_);
   if (config_from_call_context != nullptr) {
-    absl::optional<uint32_t> max_send_size = limits_.max_send_size();
-    absl::optional<uint32_t> max_recv_size = limits_.max_recv_size();
+    std::optional<uint32_t> max_send_size = limits_.max_send_size();
+    std::optional<uint32_t> max_recv_size = limits_.max_recv_size();
     if (config_from_call_context->max_send_size().has_value() &&
         (!max_send_size.has_value() ||
          *config_from_call_context->max_send_size() < *max_send_size)) {

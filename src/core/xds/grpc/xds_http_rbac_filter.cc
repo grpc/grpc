@@ -24,11 +24,11 @@
 #include <algorithm>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "envoy/config/route/v3/route_components.upb.h"
@@ -81,6 +81,39 @@ Json ParseInt64RangeToJson(const envoy_type_v3_Int64Range* range) {
        {"end", Json::FromNumber(envoy_type_v3_Int64Range_end(range))}});
 }
 
+Json ParseStringMatcherToJson(
+    const envoy_type_matcher_v3_StringMatcher* matcher,
+    ValidationErrors* errors) {
+  Json::Object json;
+  if (envoy_type_matcher_v3_StringMatcher_has_exact(matcher)) {
+    json.emplace("exact",
+                 Json::FromString(UpbStringToStdString(
+                     envoy_type_matcher_v3_StringMatcher_exact(matcher))));
+  } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(matcher)) {
+    json.emplace("prefix",
+                 Json::FromString(UpbStringToStdString(
+                     envoy_type_matcher_v3_StringMatcher_prefix(matcher))));
+  } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(matcher)) {
+    json.emplace("suffix",
+                 Json::FromString(UpbStringToStdString(
+                     envoy_type_matcher_v3_StringMatcher_suffix(matcher))));
+  } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(matcher)) {
+    json.emplace("safeRegex",
+                 ParseRegexMatcherToJson(
+                     envoy_type_matcher_v3_StringMatcher_safe_regex(matcher)));
+  } else if (envoy_type_matcher_v3_StringMatcher_has_contains(matcher)) {
+    json.emplace("contains",
+                 Json::FromString(UpbStringToStdString(
+                     envoy_type_matcher_v3_StringMatcher_contains(matcher))));
+  } else {
+    errors->AddError("invalid match pattern");
+  }
+  json.emplace(
+      "ignoreCase",
+      Json::FromBool(envoy_type_matcher_v3_StringMatcher_ignore_case(matcher)));
+  return Json::FromObject(std::move(json));
+}
+
 Json ParseHeaderMatcherToJson(const envoy_config_route_v3_HeaderMatcher* header,
                               ValidationErrors* errors) {
   Json::Object header_json;
@@ -130,6 +163,11 @@ Json ParseHeaderMatcherToJson(const envoy_config_route_v3_HeaderMatcher* header,
         "containsMatch",
         Json::FromString(UpbStringToStdString(
             envoy_config_route_v3_HeaderMatcher_contains_match(header))));
+  } else if (envoy_config_route_v3_HeaderMatcher_has_string_match(header)) {
+    header_json.emplace(
+        "stringMatch",
+        ParseStringMatcherToJson(
+            envoy_config_route_v3_HeaderMatcher_string_match(header), errors));
   } else {
     errors->AddError("invalid route header matcher specified");
   }
@@ -137,39 +175,6 @@ Json ParseHeaderMatcherToJson(const envoy_config_route_v3_HeaderMatcher* header,
       "invertMatch",
       Json::FromBool(envoy_config_route_v3_HeaderMatcher_invert_match(header)));
   return Json::FromObject(std::move(header_json));
-}
-
-Json ParseStringMatcherToJson(
-    const envoy_type_matcher_v3_StringMatcher* matcher,
-    ValidationErrors* errors) {
-  Json::Object json;
-  if (envoy_type_matcher_v3_StringMatcher_has_exact(matcher)) {
-    json.emplace("exact",
-                 Json::FromString(UpbStringToStdString(
-                     envoy_type_matcher_v3_StringMatcher_exact(matcher))));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(matcher)) {
-    json.emplace("prefix",
-                 Json::FromString(UpbStringToStdString(
-                     envoy_type_matcher_v3_StringMatcher_prefix(matcher))));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(matcher)) {
-    json.emplace("suffix",
-                 Json::FromString(UpbStringToStdString(
-                     envoy_type_matcher_v3_StringMatcher_suffix(matcher))));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(matcher)) {
-    json.emplace("safeRegex",
-                 ParseRegexMatcherToJson(
-                     envoy_type_matcher_v3_StringMatcher_safe_regex(matcher)));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_contains(matcher)) {
-    json.emplace("contains",
-                 Json::FromString(UpbStringToStdString(
-                     envoy_type_matcher_v3_StringMatcher_contains(matcher))));
-  } else {
-    errors->AddError("invalid match pattern");
-  }
-  json.emplace(
-      "ignoreCase",
-      Json::FromBool(envoy_type_matcher_v3_StringMatcher_ignore_case(matcher)));
-  return Json::FromObject(std::move(json));
 }
 
 Json ParsePathMatcherToJson(const envoy_type_matcher_v3_PathMatcher* matcher,
@@ -511,38 +516,38 @@ void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_rbac_v3_RBAC_getmsgdef(symtab);
 }
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse HTTP RBAC filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   auto* rbac = envoy_extensions_filters_http_rbac_v3_RBAC_parse(
       serialized_filter_config->data(), serialized_filter_config->size(),
       context.arena);
   if (rbac == nullptr) {
     errors->AddError("could not parse HTTP RBAC filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   return FilterConfig{ConfigProtoName(),
                       ParseHttpRbacToJson(context, rbac, errors)};
 }
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse RBACPerRoute");
-    return absl::nullopt;
+    return std::nullopt;
   }
   auto* rbac_per_route =
       envoy_extensions_filters_http_rbac_v3_RBACPerRoute_parse(
@@ -550,7 +555,7 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
           context.arena);
   if (rbac_per_route == nullptr) {
     errors->AddError("could not parse RBACPerRoute");
-    return absl::nullopt;
+    return std::nullopt;
   }
   Json rbac_json;
   const auto* rbac =

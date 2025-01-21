@@ -81,30 +81,28 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
         initiator.FinishSends();
         return initiator.PullServerInitialMetadata();
       },
-      [&](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
+      [&](ValueOrFailure<std::optional<ServerMetadataHandle>> md) {
         EXPECT_TRUE(md.ok());
         EXPECT_TRUE(md.value().has_value());
         EXPECT_THAT(LowerMetadata(***md),
                     UnorderedElementsAreArray(server_initial_metadata));
         return initiator.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ServerToClientNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                  server_payload);
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(), server_payload);
         return initiator.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ServerToClientNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_value());
+        EXPECT_FALSE(msg.has_value());
         return initiator.PullServerTrailingMetadata();
       },
       [&](ValueOrFailure<ServerMetadataHandle> md) {
         EXPECT_TRUE(md.ok());
         EXPECT_THAT(LowerMetadata(**md),
                     UnorderedElementsAreArray(server_trailing_metadata));
-        return Empty{};
       });
   auto handler = TickUntilServerCall();
   SpawnTestSeq(
@@ -115,16 +113,15 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
                     UnorderedElementsAreArray(client_initial_metadata));
         return handler.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ClientToServerNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                  client_payload);
+        EXPECT_TRUE(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(), client_payload);
         return handler.PullMessage();
       },
-      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+      [&](ClientToServerNextMessage msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_value());
+        EXPECT_FALSE(msg.has_value());
         auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         FillMetadata(server_initial_metadata, *md);
         return handler.PushServerInitialMetadata(std::move(md));
@@ -139,7 +136,6 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
         auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         FillMetadata(server_trailing_metadata, *md);
         handler.PushServerTrailingMetadata(std::move(md));
-        return Empty{};
       });
   WaitForAllPendingWork();
 }

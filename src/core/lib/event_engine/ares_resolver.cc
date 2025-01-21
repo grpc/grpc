@@ -48,6 +48,7 @@
 #include <algorithm>
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -59,10 +60,9 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/time_util.h"
@@ -76,8 +76,7 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #endif
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 
@@ -667,9 +666,9 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
     auto nh =
         ares_resolver->callback_map_.extract(hostname_qa->callback_map_id);
     CHECK(!nh.empty());
-    CHECK(absl::holds_alternative<
+    CHECK(std::holds_alternative<
           EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
-    auto callback = absl::get<EventEngine::DNSResolver::LookupHostnameCallback>(
+    auto callback = std::get<EventEngine::DNSResolver::LookupHostnameCallback>(
         std::move(nh.mapped()));
     if (!hostname_qa->result.empty() || hostname_qa->error_status.ok()) {
       ares_resolver->event_engine_->Run(
@@ -694,9 +693,9 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
   CHECK(!nh.empty());
-  CHECK(absl::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
+  CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
       nh.mapped()));
-  auto callback = absl::get<EventEngine::DNSResolver::LookupSRVCallback>(
+  auto callback = std::get<EventEngine::DNSResolver::LookupSRVCallback>(
       std::move(nh.mapped()));
   auto fail = [&](absl::string_view prefix) {
     std::string error_message = absl::StrFormat(
@@ -755,9 +754,9 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
   CHECK(!nh.empty());
-  CHECK(absl::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
+  CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
       nh.mapped()));
-  auto callback = absl::get<EventEngine::DNSResolver::LookupTXTCallback>(
+  auto callback = std::get<EventEngine::DNSResolver::LookupTXTCallback>(
       std::move(nh.mapped()));
   auto fail = [&](absl::string_view prefix) {
     std::string error_message = absl::StrFormat(
@@ -810,8 +809,7 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
       });
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 void noop_inject_channel_config(ares_channel* /*channel*/) {}
 
@@ -834,7 +832,6 @@ bool ShouldUseAresDnsResolver() {
 
 absl::Status AresInit() {
   if (ShouldUseAresDnsResolver()) {
-    address_sorting_init();
     // ares_library_init and ares_library_cleanup are currently no-op except
     // under Windows. Calling them may cause race conditions when other parts of
     // the binary calls these functions concurrently.
@@ -850,7 +847,6 @@ absl::Status AresInit() {
 }
 void AresShutdown() {
   if (ShouldUseAresDnsResolver()) {
-    address_sorting_shutdown();
     // ares_library_init and ares_library_cleanup are currently no-op except
     // under Windows. Calling them may cause race conditions when other parts of
     // the binary calls these functions concurrently.

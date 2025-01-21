@@ -80,7 +80,7 @@ class CallCombiner {
   ///
   /// The closure will be scheduled in the following cases:
   /// - If Cancel() was called prior to registering the closure, it will be
-  ///   scheduled immediately with the cancelation error.
+  ///   scheduled immediately with the cancellation error.
   /// - If Cancel() is called after registering the closure, the closure will
   ///   be scheduled with the cancellation error.
   /// - If SetNotifyOnCancel() is called again to register a new cancellation

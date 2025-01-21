@@ -22,8 +22,9 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
+
 #include "absl/log/check.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"

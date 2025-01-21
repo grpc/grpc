@@ -26,16 +26,16 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -84,7 +84,7 @@ namespace grpc_core {
 ///   - A SubchannelPicker, which handles the data plane work of
 ///     determining which subchannel a given call should be sent on.
 
-/// LoadBalacingPolicy API.
+/// LoadBalancingPolicy API.
 ///
 /// Note: All methods with a "Locked" suffix must be called from the
 /// work_serializer passed to the constructor.
@@ -115,7 +115,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
    public:
     virtual ~MetadataInterface() = default;
 
-    virtual absl::optional<absl::string_view> Lookup(
+    virtual std::optional<absl::string_view> Lookup(
         absl::string_view key, std::string* buffer) const = 0;
   };
 
@@ -152,14 +152,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// The LB policy may use the existing metadata to influence its routing
     /// decision, and it may add new metadata elements to be sent with the
     /// call to the chosen backend.
-    // TODO(roth): Before making the LB policy API public, consider
-    // whether this is the right way to expose metadata to the picker.
-    // This approach means that if a pick modifies metadata but then we
-    // discard the pick because the subchannel is not connected, the
-    // metadata change will still have been made.  Maybe we actually
-    // want to somehow provide metadata changes in PickResult::Complete
-    // instead?  Or maybe we use a CallTracer that can add metadata when
-    // the call actually starts on the subchannel?
     MetadataInterface* initial_metadata;
     /// An interface for accessing call state.  Can be used to allocate
     /// memory associated with the call in an efficient way.
@@ -261,7 +253,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     // A pick result must be one of these types.
     // Default to Queue, just to allow default construction.
-    absl::variant<Complete, Queue, Fail, Drop> result = Queue();
+    std::variant<Complete, Queue, Fail, Drop> result = Queue();
 
     PickResult() = default;
     // NOLINTNEXTLINE(google-explicit-constructor)

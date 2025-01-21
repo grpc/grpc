@@ -55,7 +55,6 @@ namespace {
 using event_engine_client_channel_resolver::ExecutionStep;
 using event_engine_client_channel_resolver::TXTRecordType;
 using grpc_core::EventEngineClientChannelDNSResolverFactory;
-using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::FuzzingEventEngine;
 using grpc_event_engine::experimental::URIToResolvedAddress;
 
@@ -64,7 +63,7 @@ constexpr char g_grpc_config_prefix[] = "grpc_config=";
 absl::Status ErrorToAbslStatus(
     const event_engine_client_channel_resolver::Error& error) {
   // clamp error.code() in (0, 16]
-  return absl::Status(static_cast<absl::StatusCode>(error.code() % 16 + 1),
+  return absl::Status(static_cast<absl::StatusCode>((error.code() % 16) + 1),
                       error.message());
 }
 
@@ -261,12 +260,9 @@ DEFINE_PROTO_FUZZER(const event_engine_client_channel_resolver::Msg& msg) {
   bool done_resolving = false;
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
-  grpc_event_engine::experimental::SetEventEngineFactory([msg,
-                                                          &done_resolving]() {
-    return std::make_unique<FuzzingResolverEventEngine>(msg, &done_resolving);
-  });
-  auto engine = std::static_pointer_cast<FuzzingResolverEventEngine>(
-      grpc_event_engine::experimental::GetDefaultEventEngine());
+  auto engine =
+      std::make_shared<FuzzingResolverEventEngine>(msg, &done_resolving);
+  grpc_event_engine::experimental::SetDefaultEventEngine(engine);
   {
     // scoped to ensure the resolver is orphaned when done resolving.
     auto work_serializer = std::make_shared<grpc_core::WorkSerializer>(engine);
@@ -286,6 +282,7 @@ DEFINE_PROTO_FUZZER(const event_engine_client_channel_resolver::Msg& msg) {
       engine->Tick();
     }
   }
+  grpc_event_engine::experimental::SetDefaultEventEngine(nullptr);
   // If orphaned early, callbacks may still need to run, which may keep the
   // resolver alive.
   while (engine.use_count() > 1) engine->Tick();

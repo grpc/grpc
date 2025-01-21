@@ -19,15 +19,15 @@
 #include <string>
 #include <vector>
 
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.pb.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/util/http_client/httpcli.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/gcp_authn.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -234,16 +234,10 @@ TEST_P(XdsGcpAuthnEnd2endTest, CacheRetainedAcrossXdsUpdates) {
       balancer_.get(), BuildListenerWithGcpAuthnFilter(), route_config);
   // Send RPCs with the header "foo" and wait for them to start failing.
   // When they do, we know that the client has seen the update.
-  SendRpcsUntil(
-      DEBUG_LOCATION,
-      [&](const RpcResult& result) {
-        if (result.status.ok()) return true;
-        EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-        EXPECT_EQ("Matching route has inappropriate action",
-                  result.status.error_message());
-        return false;
-      },
-      /*timeout_ms=*/15000, RpcOptions().set_metadata({{"foo", "bar"}}));
+  SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                       "Matching route has inappropriate action",
+                       /*timeout_ms=*/15000,
+                       RpcOptions().set_metadata({{"foo", "bar"}}));
   // Now send an RPC without the header, which will go through the new
   // instance of the GCP auth filter.
   CheckRpcSendOk(DEBUG_LOCATION);

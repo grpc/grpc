@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_H_
-#define XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_H_
+#ifndef XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_H__UPB_H_
+#define XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -162,4 +162,4 @@ UPB_INLINE bool xds_service_orca_v3_OrcaLoadReportRequest_add_request_cost_names
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_H_ */
+#endif  /* XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_H__UPB_H_ */

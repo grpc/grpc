@@ -20,10 +20,11 @@
 
 #include <grpc/impl/channel_arg_names.h>
 
+#include <optional>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/handshaker/http_connect/http_connect_handshaker.h"
@@ -72,8 +73,8 @@ TEST(NoProxyTest, Basic) {
   ScopedEnvVar no_proxy(kNoProxyVarName, "google.com");
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
-            absl::nullopt);
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
+            std::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), std::nullopt);
 }
 
 // Test empty entries in 'no_proxy' list.
@@ -81,8 +82,8 @@ TEST(NoProxyTest, EmptyEntries) {
   ScopedEnvVar no_proxy(kNoProxyVarName, "foo.com,,google.com,,");
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
-            absl::nullopt);
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
+            std::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), std::nullopt);
 }
 
 // Test entries with CIDR blocks (Class A) in 'no_proxy' list.
@@ -91,8 +92,8 @@ TEST(NoProxyTest, CIDRClassAEntries) {
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   // address matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///192.0.1.1:443", &args),
-            absl::nullopt);
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
+            std::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), std::nullopt);
   // address not matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///193.0.1.1:443", &args),
             "proxy.google.com");
@@ -105,8 +106,8 @@ TEST(NoProxyTest, CIDRClassBEntries) {
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   // address matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///192.168.1.5:443", &args),
-            absl::nullopt);
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
+            std::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), std::nullopt);
   // address not matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///192.169.1.1:443", &args),
             "proxy.google.com");
@@ -119,8 +120,8 @@ TEST(NoProxyTest, CIDRClassCEntries) {
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   // address matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///192.168.0.5:443", &args),
-            absl::nullopt);
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
+            std::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), std::nullopt);
   // address not matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///192.168.1.1:443", &args),
             "proxy.google.com");
@@ -133,8 +134,8 @@ TEST(NoProxyTest, CIDREntriesExactMatch) {
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   // address matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///192.168.0.4:443", &args),
-            absl::nullopt);
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
+            std::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), std::nullopt);
   // address not matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///192.168.0.5:443", &args),
             "proxy.google.com");
@@ -148,8 +149,8 @@ TEST(NoProxyTest, CIDREntriesIPv6ExactMatch) {
   // address matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName(
                 "dns:///[2002:0db8:000a:0000:0000:0000:0000:0001]:443", &args),
-            absl::nullopt);
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
+            std::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), std::nullopt);
   // address not matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName(
                 "dns:///[2003:0db8:000a:0000:0000:0000:0000:0000]:443", &args),
@@ -164,8 +165,8 @@ TEST(NoProxyTest, WhitespacedEntries) {
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   // address matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///192.168.0.5:443", &args),
-            absl::nullopt);
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
+            std::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), std::nullopt);
   // address not matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///192.168.1.0:443", &args),
             "proxy.google.com");
@@ -205,22 +206,22 @@ TEST(ProxyForAddressTest, AddressesNotIncluded) {
   auto address = StringToSockaddr("192.168.2.1:3333");
   ASSERT_TRUE(address.ok()) << address.status();
   ChannelArgs args;
-  EXPECT_EQ(HttpProxyMapper().MapAddress(*address, &args), absl::nullopt);
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
+  EXPECT_EQ(HttpProxyMapper().MapAddress(*address, &args), std::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), std::nullopt);
   // v6 address
   address = StringToSockaddr("[2001:db8:2::1]:3000");
   ASSERT_TRUE(address.ok()) << address.status();
   args = ChannelArgs();
-  EXPECT_EQ(HttpProxyMapper().MapAddress(*address, &args), absl::nullopt);
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
+  EXPECT_EQ(HttpProxyMapper().MapAddress(*address, &args), std::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), std::nullopt);
 }
 
 TEST(ProxyForAddressTest, BadProxy) {
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "192.168.0.0.100:2020");
   auto address = StringToSockaddr("192.168.0.1:3333");
   ASSERT_TRUE(address.ok()) << address.status();
-  EXPECT_EQ(HttpProxyMapper().MapAddress(*address, &args), absl::nullopt);
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
+  EXPECT_EQ(HttpProxyMapper().MapAddress(*address, &args), std::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), std::nullopt);
 }
 
 class IncludedAddressesTest

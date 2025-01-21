@@ -95,6 +95,10 @@ class PublishToAppEncoder {
     Append(LbTokenMetadata::key(), slice);
   }
 
+  void Encode(W3CTraceParentMetadata, const Slice& slice) {
+    Append(W3CTraceParentMetadata::key(), slice);
+  }
+
  private:
   void Append(absl::string_view key, int64_t value) {
     Append(StaticSlice::FromStaticString(key).c_slice(),
@@ -200,7 +204,7 @@ class OpHandlerImpl {
         Construct(&promise_, std::move(promise));
         state_ = State::kPromise;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kPromise: {
         GRPC_TRACE_LOG(call, INFO)
             << Activity::current()->DebugTag() << "BeginPoll " << OpName();
@@ -269,6 +273,8 @@ class BatchOpIndex {
     return idxs_[op_type] == 255 ? nullptr : &ops_[idxs_[op_type]];
   }
 
+  bool has_op(grpc_op_type op_type) const { return idxs_[op_type] != 255; }
+
  private:
   const grpc_op* const ops_;
   std::array<uint8_t, 8> idxs_{255, 255, 255, 255, 255, 255, 255, 255};
@@ -288,11 +294,11 @@ class WaitForCqEndOp {
   WaitForCqEndOp(const WaitForCqEndOp&) = delete;
   WaitForCqEndOp& operator=(const WaitForCqEndOp&) = delete;
   WaitForCqEndOp(WaitForCqEndOp&& other) noexcept
-      : state_(std::move(absl::get<NotStarted>(other.state_))) {
+      : state_(std::move(std::get<NotStarted>(other.state_))) {
     other.state_.emplace<Invalid>();
   }
   WaitForCqEndOp& operator=(WaitForCqEndOp&& other) noexcept {
-    state_ = std::move(absl::get<NotStarted>(other.state_));
+    state_ = std::move(std::get<NotStarted>(other.state_));
     other.state_.emplace<Invalid>();
     return *this;
   }
@@ -311,7 +317,7 @@ class WaitForCqEndOp {
     std::atomic<bool> done{false};
   };
   struct Invalid {};
-  using State = absl::variant<NotStarted, Started, Invalid>;
+  using State = std::variant<NotStarted, Started, Invalid>;
 
   static std::string StateString(const State& state);
 
@@ -422,15 +428,51 @@ class MessageReceiver {
     recv_message_ = op.data.recv_message.recv_message;
     return [this, puller]() mutable {
       return Map(puller->PullMessage(),
-                 [this](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+                 [this](typename Puller::NextMessage msg) {
                    return FinishRecvMessage(std::move(msg));
                  });
     };
   }
 
  private:
-  StatusFlag FinishRecvMessage(
-      ValueOrFailure<absl::optional<MessageHandle>> result);
+  template <typename NextMessage>
+  StatusFlag FinishRecvMessage(NextMessage result) {
+    if (!result.ok()) {
+      GRPC_TRACE_LOG(call, INFO)
+          << Activity::current()->DebugTag()
+          << "[call] RecvMessage: outstanding_recv "
+             "finishes: received end-of-stream with error";
+      *recv_message_ = nullptr;
+      recv_message_ = nullptr;
+      return Failure{};
+    }
+    if (!result.has_value()) {
+      GRPC_TRACE_LOG(call, INFO) << Activity::current()->DebugTag()
+                                 << "[call] RecvMessage: outstanding_recv "
+                                    "finishes: received end-of-stream";
+      *recv_message_ = nullptr;
+      recv_message_ = nullptr;
+      return Success{};
+    }
+    MessageHandle message = result.TakeValue();
+    test_only_last_message_flags_ = message->flags();
+    if ((message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
+        (incoming_compression_algorithm_ != GRPC_COMPRESS_NONE)) {
+      *recv_message_ = grpc_raw_compressed_byte_buffer_create(
+          nullptr, 0, incoming_compression_algorithm_);
+    } else {
+      *recv_message_ = grpc_raw_byte_buffer_create(nullptr, 0);
+    }
+    grpc_slice_buffer_move_into(message->payload()->c_slice_buffer(),
+                                &(*recv_message_)->data.raw.slice_buffer);
+    GRPC_TRACE_LOG(call, INFO)
+        << Activity::current()->DebugTag()
+        << "[call] RecvMessage: outstanding_recv "
+           "finishes: received "
+        << (*recv_message_)->data.raw.slice_buffer.length << " byte message";
+    recv_message_ = nullptr;
+    return Success{};
+  }
 
   grpc_byte_buffer** recv_message_ = nullptr;
   uint32_t test_only_last_message_flags_ = 0;

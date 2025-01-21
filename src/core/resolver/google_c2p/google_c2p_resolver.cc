@@ -19,6 +19,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <random>
 #include <string>
 #include <type_traits>
@@ -30,9 +31,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
@@ -81,10 +81,10 @@ class GoogleCloud2ProdResolver final : public Resolver {
   bool shutdown_ = false;
 
   OrphanablePtr<GcpMetadataQuery> zone_query_;
-  absl::optional<std::string> zone_;
+  std::optional<std::string> zone_;
 
   OrphanablePtr<GcpMetadataQuery> ipv6_query_;
-  absl::optional<bool> supports_ipv6_;
+  std::optional<bool> supports_ipv6_;
 };
 
 //
@@ -126,7 +126,7 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
     return;
   }
   // Maybe override metadata server name for testing
-  absl::optional<std::string> test_only_metadata_server_override =
+  std::optional<std::string> test_only_metadata_server_override =
       args.args.GetOwnedString(
           "grpc.testing.google_c2p_resolver_metadata_server_override");
   if (test_only_metadata_server_override.has_value() &&

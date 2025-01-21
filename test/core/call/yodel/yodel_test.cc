@@ -17,10 +17,11 @@
 #include <memory>
 
 #include "absl/random/random.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/build.h"
 
@@ -55,9 +56,9 @@ absl::string_view ActionState::StateString(State state) {
 }
 
 void ActionState::Set(State state, SourceLocation whence) {
-  LOG(INFO) << StateString(state) << " " << name() << " [" << step() << "] "
-            << file() << ":" << line() << " @ " << whence.file() << ":"
-            << whence.line();
+  LOG(INFO) << StateString(state) << " " << name() << " [" << step()
+            << "] t=" << Timestamp::Now() << " " << file() << ":" << line()
+            << " @ " << whence.file() << ":" << whence.line();
   state_ = state;
 }
 
@@ -176,8 +177,7 @@ void YodelTest::RunTest() {
   Shutdown();
   state_->event_engine->TickUntilIdle();
   state_->event_engine->UnsetGlobalHooks();
-  grpc_event_engine::experimental::WaitForSingleOwner(
-      std::move(state_->event_engine));
+  WaitForSingleOwner(std::move(state_->event_engine));
   grpc_shutdown_blocking();
   if (!grpc_wait_until_shutdown(10)) {
     LOG(FATAL) << "Timeout in waiting for gRPC shutdown";
@@ -207,7 +207,8 @@ void YodelTest::WaitForAllPendingWork() {
 
 void YodelTest::Timeout() {
   std::vector<std::string> lines;
-  lines.emplace_back("Timeout waiting for pending actions to complete");
+  lines.emplace_back(absl::StrCat(
+      "Timeout waiting for pending actions to complete ", Timestamp::Now()));
   while (!pending_actions_.empty()) {
     auto action = std::move(pending_actions_.front());
     pending_actions_.pop();
@@ -339,7 +340,7 @@ std::string YodelTest::RandomMessage() {
     }
     return out;
   }()};
-  return RandomString(0, 1024 * 1024, *kChars);
+  return RandomString(0, max_random_message_size_, *kChars);
 }
 
 }  // namespace grpc_core

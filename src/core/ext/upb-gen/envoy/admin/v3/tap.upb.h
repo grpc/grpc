@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_ADMIN_V3_TAP_PROTO_UPB_H_
-#define ENVOY_ADMIN_V3_TAP_PROTO_UPB_H_
+#ifndef ENVOY_ADMIN_V3_TAP_PROTO_UPB_H__UPB_H_
+#define ENVOY_ADMIN_V3_TAP_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -120,4 +120,4 @@ UPB_INLINE struct envoy_config_tap_v3_TapConfig* envoy_admin_v3_TapRequest_mutab
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_ADMIN_V3_TAP_PROTO_UPB_H_ */
+#endif  /* ENVOY_ADMIN_V3_TAP_PROTO_UPB_H__UPB_H_ */

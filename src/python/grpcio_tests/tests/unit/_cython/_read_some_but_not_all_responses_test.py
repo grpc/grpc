@@ -251,7 +251,7 @@ class ReadSomeButNotAllResponsesTest(unittest.TestCase):
         )
         server_call_driver.events()
 
-        client_recieve_initial_metadata_event = (
+        client_receive_initial_metadata_event = (
             client_receive_initial_metadata_event_future.result()
         )
 

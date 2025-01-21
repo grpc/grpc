@@ -28,6 +28,7 @@
 #include "absl/status/statusor.h"
 
 // TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
+// TODO(hork): remove all references to the factory methods.
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -194,9 +195,12 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     /// on_read callback is not executed. Otherwise it returns false and the \a
     /// on_read callback executes asynchronously when the read completes. The
     /// caller must ensure that the callback has access to the buffer when it
-    /// executes. Ownership of the buffer is not transferred. Valid slices *may*
-    /// be placed into the buffer even if the callback is invoked with a non-OK
-    /// Status.
+    /// executes. Ownership of the buffer is not transferred. Either an error is
+    /// passed to the callback (like socket closed), or valid data is available
+    /// in the buffer, but never both at the same time. Implementations that
+    /// receive valid data must not throw that data away - that is, if valid
+    /// data is received on the underlying endpoint, a callback will be made
+    /// with that data available and an ok status.
     ///
     /// There can be at most one outstanding read per Endpoint at any given
     /// time. An outstanding read is one in which the \a on_read callback has
@@ -468,7 +472,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   virtual bool Cancel(TaskHandle handle) = 0;
 };
 
-/// Replace gRPC's default EventEngine factory.
+/// [DEPRECATED] Replace gRPC's default EventEngine factory.
 ///
 /// Applications may call \a SetEventEngineFactory at any time to replace the
 /// default factory used within gRPC. EventEngines will be created when
@@ -477,18 +481,56 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
 /// To be certain that none of the gRPC-provided built-in EventEngines are
 /// created, applications must set a custom EventEngine factory method *before*
 /// grpc is initialized.
+// TODO(hork): delete once all known users have migrated away
 void SetEventEngineFactory(
-    absl::AnyInvocable<std::unique_ptr<EventEngine>()> factory);
+    absl::AnyInvocable<std::shared_ptr<EventEngine>()> factory);
 
-/// Reset gRPC's EventEngine factory to the built-in default.
+/// [DEPRECATED] Reset gRPC's EventEngine factory to the built-in default.
 ///
 /// Applications that have called \a SetEventEngineFactory can remove their
 /// custom factory using this method. The built-in EventEngine factories will be
 /// used going forward. This has no affect on any EventEngines that were created
 /// using the previous factories.
+//
+// TODO(hork): delete once all known users have migrated away
 void EventEngineFactoryReset();
-/// Create an EventEngine using the default factory.
-std::unique_ptr<EventEngine> CreateEventEngine();
+
+/// Create a new EventEngine instance.
+std::shared_ptr<EventEngine> CreateEventEngine();
+
+/// Set the default EventEngine instance, which will be used throughout gRPC
+///
+/// gRPC will hold a ref to this engine until either
+/// \a ShutdownDefaultEventEngine() is called or \a SetDefaultEventEngine() is
+/// called again with a different value. Passing a value of nullptr will cause
+/// gRPC to drop the ref it was holding without setting it to a new one.
+///
+/// Earlier calls to \a GetDefaultEventEngine will still hold a ref to the
+/// previous default engine instance, if any.
+void SetDefaultEventEngine(std::shared_ptr<EventEngine> engine);
+
+/// Returns the default EventEngine instance.
+///
+/// Note that if SetDefaultEventEngine() has not been called, then the default
+/// EventEngine may be created and destroyed as needed, meaning that multiple
+/// calls to GetDefaultEventEngine() over a process's lifetime may return
+/// different instances. Callers are expected to call GetDefaultEventEngine()
+/// once and hold the returned reference for as long as they need the
+/// EventEngine instance.
+std::shared_ptr<EventEngine> GetDefaultEventEngine();
+
+/// Resets gRPC to use one of the default internal EventEngines for all *new*
+/// \a GetDefaultEventEngine requests and blocks until all refs on the active
+/// default engine have been released (destroying that engine).
+///
+/// If you called \a SetDefaultEventEngine, you must call either
+/// \a ShutdownDefaultEventEngine or \a SetDefaultEventEngine(nullptr) at the
+/// end of your program. If you don't, the engine will never be destroyed.
+///
+/// If you want to reset the default engine to one of gRPC's internal versions
+/// without waiting for all references to be released on the current default
+/// engine, call \a SetDefaultEventEngine(nullptr) instead.
+void ShutdownDefaultEventEngine();
 
 bool operator==(const EventEngine::TaskHandle& lhs,
                 const EventEngine::TaskHandle& rhs);

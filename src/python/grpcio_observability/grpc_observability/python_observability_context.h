@@ -208,11 +208,11 @@ class Span final {
   uint64_t child_span_count_ = 0;
 };
 
-// PythonCensusContext is associated with each clientCallTrcer,
+// PythonCensusContext is associated with each clientCallTracer,
 // clientCallAttemptTracer and ServerCallTracer to help manage the span,
-// spanContext and labels for each tracer. Craete a new PythonCensusContext will
-// always reasult in creating a new span (and a new SpanContext for that span).
-// It's created during callTraceer initialization and will be destroyed after
+// spanContext and labels for each tracer. Create a new PythonCensusContext will
+// always result in creating a new span (and a new SpanContext for that span).
+// It's created during callTracer initialization and will be destroyed after
 // the destruction of each callTracer.
 class PythonCensusContext {
  public:

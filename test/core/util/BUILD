@@ -16,9 +16,11 @@ load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 load(
     "//test/core/test_util:grpc_fuzzer.bzl",
+    "grpc_fuzz_test",
     "grpc_fuzzer",
     "grpc_proto_fuzzer",
 )
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
@@ -42,6 +44,34 @@ grpc_cc_test(
     deps = [
         "//src/core:directory_reader",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "tdigest_test",
+    srcs = ["tdigest_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/random",
+        "absl/container:flat_hash_map",
+        "benchmark",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:tdigest",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_tdigest",
+    srcs = ["bm_tdigest.cc"],
+    external_deps = [
+    ],
+    monitoring = HISTORY,
+    deps = [
+        "//src/core:tdigest",
     ],
 )
 
@@ -171,7 +201,6 @@ grpc_cc_test(
     srcs = ["table_test.cc"],
     external_deps = [
         "gtest",
-        "absl/types:optional",
     ],
     language = "C++",
     uses_event_engine = False,
@@ -764,4 +793,38 @@ grpc_cc_test(
     deps = [
         "//src/core:lru_cache",
     ],
+)
+
+grpc_cc_test(
+    name = "wait_for_single_owner_test",
+    srcs = ["wait_for_single_owner_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:wait_for_single_owner",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "tdigest_fuzztest",
+    srcs = ["tdigest_fuzztest.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:tdigest"],
+)
+
+grpc_fuzz_test(
+    name = "useful_fuzztest",
+    srcs = ["useful_fuzztest.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:useful"],
 )

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
 load("grpc_core_end2end_test.bzl", "grpc_core_end2end_test")
 
 licenses(["notice"])
@@ -31,7 +31,6 @@ grpc_cc_library(
         "absl/log:log",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/types:variant",
         "gtest",
     ],
     language = "C++",
@@ -131,8 +130,6 @@ grpc_cc_library(
         "absl/meta:type_traits",
         "absl/random",
         "absl/strings",
-        "absl/types:optional",
-        "absl/types:variant",
         "gtest",
     ],
     deps = [
@@ -215,7 +212,6 @@ grpc_cc_library(
         "absl/random",
         "absl/status",
         "absl/strings:str_format",
-        "absl/types:optional",
         "gtest",
     ],
     deps = [
@@ -251,7 +247,6 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
         "absl/strings",
-        "absl/types:optional",
         "gtest",
     ],
     tags = ["nofixdeps"],
@@ -277,12 +272,11 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/log:check",
         "absl/strings",
-        "absl/types:optional",
         "gtest",
     ],
     tags = ["nofixdeps"],
     deps = [
-        "end2end_test_fuzzer_proto",
+        "end2end_test_fuzzer_cc_proto",
         "end2end_test_lib",
         "end2end_test_suites",
         "fixture_support",
@@ -678,8 +672,6 @@ grpc_cc_test(
         "absl/memory",
         "absl/meta:type_traits",
         "absl/strings",
-        "absl/types:optional",
-        "absl/types:variant",
         "gtest",
     ],
     language = "C++",
@@ -717,7 +709,6 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
-        "absl/types:optional",
         "gtest",
     ],
     language = "C++",
@@ -748,7 +739,6 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
-        "absl/types:optional",
         "gtest",
     ],
     language = "C++",
@@ -767,12 +757,16 @@ grpc_cc_test(
     ],
 )
 
-grpc_proto_library(
+grpc_internal_proto_library(
     name = "end2end_test_fuzzer_proto",
     srcs = ["end2end_test_fuzzer.proto"],
-    has_services = False,
     deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
         "//test/core/test_util:fuzz_config_vars_proto",
     ],
+)
+
+grpc_cc_proto_library(
+    name = "end2end_test_fuzzer_cc_proto",
+    deps = ["end2end_test_fuzzer_proto"],
 )

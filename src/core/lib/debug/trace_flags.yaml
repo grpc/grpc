@@ -225,6 +225,10 @@ pending_tags:
   debug_only: true
   default: false
   description: Still-in-progress tags on completion queues. The `api` tracer must be enabled for this flag to have any effect.
+ph2:
+  debug_only: true
+  default: false
+  description: Promise Based HTTP2 transport.
 pick_first:
   default: false
   description: Pick first load balancing policy.
@@ -345,10 +349,6 @@ xds_resolver:
 xds_server_config_fetcher:
   default: false
   description: XDS Server config fetcher.
-xds_unittest:
-  default: true
-  description: xDS unit tests.
-  internal: true
 xds_wrr_locality_lb:
   default: false
   description: XDS WRR locality LB policy.

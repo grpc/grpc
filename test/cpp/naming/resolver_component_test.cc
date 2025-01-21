@@ -38,10 +38,10 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -279,7 +279,7 @@ void CheckServiceConfigResultLocked(const char* service_config_json,
 
 void CheckLBPolicyResultLocked(const grpc_core::ChannelArgs channel_args,
                                ArgsStruct* args) {
-  absl::optional<absl::string_view> lb_policy_arg =
+  std::optional<absl::string_view> lb_policy_arg =
       channel_args.GetString(GRPC_ARG_LB_POLICY_NAME);
   if (!args->expected_lb_policy.empty()) {
     EXPECT_TRUE(lb_policy_arg.has_value());

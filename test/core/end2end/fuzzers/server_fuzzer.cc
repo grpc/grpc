@@ -16,11 +16,11 @@
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/log/check.h"
-#include "absl/types/optional.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/env.h"

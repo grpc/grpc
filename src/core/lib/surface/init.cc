@@ -18,6 +18,7 @@
 
 #include "src/core/lib/surface/init.h"
 
+#include <address_sorting/address_sorting.h>
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -31,7 +32,7 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/experiments/config.h"
@@ -71,12 +72,21 @@ static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 
 namespace grpc_core {
 void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
-  builder->channel_init()
-      ->RegisterV2Filter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
-      .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
-  builder->channel_init()
-      ->RegisterV2Filter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
-      .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
+  if (IsCallv3ClientAuthFilterEnabled()) {
+    builder->channel_init()
+        ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
+        .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
+    builder->channel_init()
+        ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
+        .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
+  } else {
+    builder->channel_init()
+        ->RegisterV2Filter<LegacyClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
+        .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
+    builder->channel_init()
+        ->RegisterV2Filter<LegacyClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
+        .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
+  }
   builder->channel_init()
       ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
       .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
@@ -115,6 +125,7 @@ void grpc_init(void) {
     }
     grpc_iomgr_init();
     if (grpc_core::IsEventEngineDnsEnabled()) {
+      address_sorting_init();
       auto status = AresInit();
       if (!status.ok()) {
         VLOG(2) << "AresInit failed: " << status.message();
@@ -138,6 +149,7 @@ void grpc_shutdown_internal_locked(void)
     grpc_iomgr_shutdown_background_closure();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
     if (grpc_core::IsEventEngineDnsEnabled()) {
+      address_sorting_shutdown();
       AresShutdown();
     } else {
       grpc_resolver_dns_ares_shutdown();

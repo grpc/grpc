@@ -40,12 +40,8 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
    public:
     virtual ~Watcher() = default;
 
-    virtual void OnUpdate(RefCountedPtr<const XdsConfig> config) = 0;
-
-    // These methods are invoked when there is an error or
-    // does-not-exist on LDS or RDS only.
-    virtual void OnError(absl::string_view context, absl::Status status) = 0;
-    virtual void OnResourceDoesNotExist(std::string context) = 0;
+    virtual void OnUpdate(
+        absl::StatusOr<RefCountedPtr<const XdsConfig>> config) = 0;
   };
 
   class ClusterSubscription final : public DualRefCounted<ClusterSubscription> {
@@ -106,6 +102,8 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
     ClusterWatcher* watcher = nullptr;
     // Most recent update obtained from this watcher.
     absl::StatusOr<std::shared_ptr<const XdsClusterResource>> update = nullptr;
+    // Ambient error.
+    std::string resolution_note;
   };
 
   struct EndpointConfig {
@@ -130,26 +128,33 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
   };
 
   // Event handlers.
-  void OnListenerUpdate(std::shared_ptr<const XdsListenerResource> listener);
+  void OnListenerUpdate(
+      absl::StatusOr<std::shared_ptr<const XdsListenerResource>> listener);
+  void OnListenerAmbientError(absl::Status status);
+
   void OnRouteConfigUpdate(
       const std::string& name,
-      std::shared_ptr<const XdsRouteConfigResource> route_config);
-  void OnError(std::string context, absl::Status status);
-  void OnResourceDoesNotExist(std::string context);
+      absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
+          route_config);
+  void OnRouteConfigAmbientError(std::string name, absl::Status status);
 
-  void OnClusterUpdate(const std::string& name,
-                       std::shared_ptr<const XdsClusterResource> cluster);
-  void OnClusterError(const std::string& name, absl::Status status);
-  void OnClusterDoesNotExist(const std::string& name);
+  void OnClusterUpdate(
+      const std::string& name,
+      absl::StatusOr<std::shared_ptr<const XdsClusterResource>> cluster);
+  void OnClusterAmbientError(const std::string& name, absl::Status status);
 
-  void OnEndpointUpdate(const std::string& name,
-                        std::shared_ptr<const XdsEndpointResource> endpoint);
-  void OnEndpointError(const std::string& name, absl::Status status);
-  void OnEndpointDoesNotExist(const std::string& name);
+  void OnEndpointUpdate(
+      const std::string& name,
+      absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> endpoint);
+  void OnEndpointAmbientError(const std::string& name, absl::Status status);
 
   void OnDnsResult(const std::string& dns_name, Resolver::Result result);
   void PopulateDnsUpdate(const std::string& dns_name, Resolver::Result result,
                          DnsState* dns_state);
+
+  std::string GenerateResolutionNoteForCluster(
+      absl::string_view cluster_resolution_note,
+      absl::string_view endpoint_resolution_note) const;
 
   // Starts CDS and EDS/DNS watches for the specified cluster if needed.
   // Adds an entry to cluster_config_map, which will contain the cluster
@@ -177,6 +182,9 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
   // so reports an update to the watcher.
   void MaybeReportUpdate();
 
+  void ReportError(absl::string_view resource_type,
+                   absl::string_view resource_name, absl::string_view error);
+
   // Parameters passed into ctor.
   RefCountedPtr<GrpcXdsClient> xds_client_;
   std::shared_ptr<WorkSerializer> work_serializer_;
@@ -190,12 +198,14 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
   ListenerWatcher* listener_watcher_ = nullptr;
   std::shared_ptr<const XdsListenerResource> current_listener_;
   std::string route_config_name_;
+  std::string lds_resolution_note_;
 
   // RouteConfig state.
   RouteConfigWatcher* route_config_watcher_ = nullptr;
   std::shared_ptr<const XdsRouteConfigResource> current_route_config_;
   const XdsRouteConfigResource::VirtualHost* current_virtual_host_ = nullptr;
   absl::flat_hash_set<absl::string_view> clusters_from_route_config_;
+  std::string rds_resolution_note_;
 
   // Cluster state.
   absl::flat_hash_map<std::string, ClusterWatcherState> cluster_watchers_;

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:18-bookworm
+FROM silkeh/clang:19-bookworm
 
 #=================
 # Basic C core dependencies
@@ -108,7 +108,7 @@ RUN apt-get update && apt-get install -y jq git && apt-get clean
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 7.3.1
+ENV BAZEL_VERSION 7.4.1
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

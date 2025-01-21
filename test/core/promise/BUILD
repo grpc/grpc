@@ -25,7 +25,9 @@ grpc_cc_library(
     testonly = True,
     hdrs = ["poll_matcher.h"],
     external_deps = ["gtest"],
-    visibility = ["//test/core:__subpackages__"],
+    visibility = [
+        "//test/core:__subpackages__",
+    ],
     deps = ["//src/core:poll"],
 )
 
@@ -153,6 +155,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "match_promise_test",
+    srcs = ["match_promise_test.cc"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "poll_matcher",
+        "//:promise",
+        "//src/core:match_promise",
+    ],
+)
+
+grpc_cc_test(
     name = "race_test",
     srcs = ["race_test.cc"],
     external_deps = ["gtest"],
@@ -200,7 +220,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "if_test",
     srcs = ["if_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -216,13 +239,20 @@ grpc_cc_test(
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:switch"],
+    deps = [
+        "//src/core:poll",
+        "//src/core:switch",
+    ],
 )
 
 grpc_cc_test(
     name = "loop_test",
     srcs = ["loop_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/strings",
+    ],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -245,6 +275,7 @@ grpc_cc_test(
         "poll_matcher",
         "//src/core:join",
         "//src/core:poll",
+        "//src/core:status_flag",
     ],
 )
 
@@ -295,7 +326,10 @@ grpc_cc_test(
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:try_seq"],
+    deps = [
+        "poll_matcher",
+        "//src/core:try_seq",
+    ],
 )
 
 grpc_cc_test(
@@ -481,7 +515,6 @@ grpc_cc_test(
     name = "mpsc_test",
     srcs = ["mpsc_test.cc"],
     external_deps = [
-        "absl/types:optional",
         "gtest",
     ],
     language = "c++",
@@ -525,7 +558,6 @@ grpc_proto_fuzzer(
         "absl/functional:any_invocable",
         "absl/log:check",
         "absl/status",
-        "absl/types:optional",
     ],
     language = "C++",
     proto = "promise_fuzzer.proto",

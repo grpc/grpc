@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/log/check.h"
@@ -37,7 +38,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -106,7 +106,7 @@ struct metadata_server_detector {
 
 namespace {
 
-bool IsXdsNonCfeCluster(absl::optional<absl::string_view> xds_cluster) {
+bool IsXdsNonCfeCluster(std::optional<absl::string_view> xds_cluster) {
   if (!xds_cluster.has_value()) return false;
   if (absl::StartsWith(*xds_cluster, "google_cfe_")) return false;
   if (!absl::StartsWith(*xds_cluster, "xdstp:")) return true;
@@ -143,7 +143,7 @@ grpc_google_default_channel_credentials::create_security_connector(
           ? alts_creds_->create_security_connector(call_creds, target, args)
           : ssl_creds_->create_security_connector(call_creds, target, args);
   // grpclb-specific channel args are removed from the channel args set
-  // to ensure backends and fallback adresses will have the same set of channel
+  // to ensure backends and fallback addresses will have the same set of channel
   // args. By doing that, it guarantees the connections to backends will not be
   // torn down and re-connected when switching in and out of fallback mode.
   //

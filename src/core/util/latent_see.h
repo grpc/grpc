@@ -26,16 +26,17 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "src/core/util/per_cpu.h"
-#include "src/core/util/ring_buffer.h"
 #include "src/core/util/sync.h"
 
 #define TAGGED_POINTER_SIZE_BITS 48
@@ -71,8 +72,13 @@ struct Bin {
 
 class Log {
  public:
-  static constexpr int kMaxEventsPerCpu = 50000;
   static constexpr uintptr_t kTagMask = (1ULL << TAGGED_POINTER_SIZE_BITS) - 1;
+
+  struct RecordedEvent {
+    uint64_t thread_id;
+    uint64_t batch_id;
+    Bin::Event event;
+  };
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static uintptr_t IncrementTag(
       uintptr_t input) {
@@ -115,14 +121,20 @@ class Log {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Log& Get() {
     static Log* log = []() {
       atexit([] {
+        auto json = log->TryGenerateJson();
+        if (!json.has_value()) {
+          LOG(INFO) << "Failed to generate latent_see.json (contention with "
+                       "another writer)";
+          return;
+        }
         if (log->stats_flusher_ != nullptr) {
-          log->stats_flusher_(log->GenerateJson());
+          log->stats_flusher_(*json);
           return;
         }
         LOG(INFO) << "Writing latent_see.json in " << get_current_dir_name();
         FILE* f = fopen("latent_see.json", "w");
         if (f == nullptr) return;
-        fprintf(f, "%s", log->GenerateJson().c_str());
+        fprintf(f, "%s", json->c_str());
         fclose(f);
       });
       return new Log();
@@ -130,7 +142,9 @@ class Log {
     return *log;
   }
 
-  std::string GenerateJson();
+  void TryPullEventsAndFlush(
+      absl::FunctionRef<void(absl::Span<const RecordedEvent>)> callback);
+  std::optional<std::string> TryGenerateJson();
 
   void OverrideStatsFlusher(
       absl::AnyInvocable<void(absl::string_view)> stats_exporter) {
@@ -142,11 +156,6 @@ class Log {
 
   static void FlushBin(Bin* bin);
 
-  struct RecordedEvent {
-    uint64_t thread_id;
-    uint64_t batch_id;
-    Bin::Event event;
-  };
   std::atomic<uint64_t> next_thread_id_{1};
   std::atomic<uint64_t> next_batch_id_{1};
   static thread_local uint64_t thread_id_;
@@ -154,13 +163,11 @@ class Log {
   static thread_local void* bin_owner_;
   static std::atomic<uintptr_t> free_bins_;
   absl::AnyInvocable<void(absl::string_view)> stats_flusher_ = nullptr;
+  Mutex mu_flushing_;
   struct Fragment {
-    Fragment() : active(&primary) {};
-    Mutex mu;
-    RingBuffer<RecordedEvent, Log::kMaxEventsPerCpu>* active
-        ABSL_GUARDED_BY(mu);
-    RingBuffer<RecordedEvent, Log::kMaxEventsPerCpu> primary;
-    RingBuffer<RecordedEvent, Log::kMaxEventsPerCpu> secondary;
+    Mutex mu_active ABSL_ACQUIRED_AFTER(mu_flushing_);
+    std::vector<RecordedEvent> active ABSL_GUARDED_BY(mu_active);
+    std::vector<RecordedEvent> flushing ABSL_GUARDED_BY(&Log::mu_flushing_);
   };
   PerCpu<Fragment> fragments_{PerCpuOptions()};
 };

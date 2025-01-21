@@ -38,6 +38,7 @@
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/env.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -218,7 +219,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     // Ensure all pending callbacks are handled before finishing the test
     // to ensure hygiene between test cases.
     // (requires any grpc-object-holding values be cleared out first).
-    grpc_event_engine::experimental::WaitForSingleOwner(
+    grpc_core::WaitForSingleOwner(
         grpc_event_engine::experimental::GetDefaultEventEngine());
   }
 

@@ -19,11 +19,12 @@
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
+
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -325,7 +326,7 @@ class TcpZerocopySendCtx {
   size_t threshold_bytes() const { return threshold_bytes_; }
 
   // Expected to be called by handler reading messages from the err queue.
-  // It is used to indicate that some OMem meory is now available. It returns
+  // It is used to indicate that some OMem memory is now available. It returns
   // true to tell the caller to mark the file descriptor as immediately
   // writable.
   //
@@ -815,7 +816,7 @@ static void maybe_post_reclaimer(grpc_tcp* tcp)
     TCP_REF(tcp, "posted_reclaimer");
     tcp->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
-        [tcp](absl::optional<grpc_core::ReclamationSweep> sweep) {
+        [tcp](std::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
             perform_reclamation(tcp);
           }

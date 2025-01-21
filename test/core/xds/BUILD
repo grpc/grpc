@@ -139,7 +139,6 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
         "absl/strings",
-        "absl/types:optional",
     ],
     language = "C++",
     deps = [
@@ -182,11 +181,10 @@ grpc_cc_test(
         "//test/core/test_util:scoped_env_var",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/status/v3:pkg_cc_proto",
     ],
 )
 
-# TODO(roth): Convert this to use the real xDS protos instead of our
-# local copies.
 grpc_proto_fuzzer(
     name = "xds_client_fuzzer",
     srcs = ["xds_client_fuzzer.cc"],
@@ -195,8 +193,8 @@ grpc_proto_fuzzer(
     language = "C++",
     proto = "xds_client_fuzzer.proto",
     proto_deps = [
-        "//src/proto/grpc/testing/xds/v3:discovery_proto",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "@envoy_api//envoy/service/discovery/v3:pkg",
     ],
     tags = ["no_windows"],
     uses_event_engine = True,
@@ -206,17 +204,17 @@ grpc_proto_fuzzer(
         ":xds_transport_fake",
         "//src/core:grpc_xds_client",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine:event_engine_test_utils",
         # These proto deps are needed to ensure that we can read these
         # resource types out of the google.protobuf.Any fields in the
         # textproto files in the corpora.
-        "//src/proto/grpc/testing/xds/v3:listener_proto",
-        "//src/proto/grpc/testing/xds/v3:route_proto",
-        "//src/proto/grpc/testing/xds/v3:cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
-        "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
-        "//src/proto/grpc/testing/xds/v3:router_proto",
-        "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/event_engine:event_engine_test_utils",
+        "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/listener/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
     ],
 )
 
@@ -326,7 +324,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++_codegen_proto",
         "//src/core:grpc_xds_client",
-        "//src/proto/grpc/lookup/v1:rls_config_proto",
+        "//src/proto/grpc/lookup/v1:rls_config_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",

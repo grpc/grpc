@@ -155,19 +155,6 @@ void DestructIfNotNull(T* p) {
   if (p) p->~T();
 }
 
-// Helper function... just ignore the initializer list passed into it.
-// Allows doing 'statements' via parameter pack expansion in C++11 - given
-// template <typename... Ts>:
-//  do_these_things({(foo<Ts>(), 1)});
-// will execute foo<T>() for each T in Ts.
-// In this example we also leverage the comma operator to make the resultant
-// type of each statement be a consistant int so that C++ type deduction works
-// as we'd like (note that in the expression (a, 1) in C++, the 'result' of the
-// expression is the value after the right-most ',' -- in this case 1, with a
-// executed as a side effect.
-template <typename T>
-void do_these_things(std::initializer_list<T>) {}
-
 }  // namespace table_detail
 
 // A Table<Ts> is much like a tuple<optional<Ts>...> - a set of values that are
@@ -438,41 +425,39 @@ class Table {
   // destructor.
   template <size_t... I>
   void Destruct(absl::index_sequence<I...>) {
-    table_detail::do_these_things<int>(
-        {(table_detail::DestructIfNotNull(get<I>()), 1)...});
+    (table_detail::DestructIfNotNull(get<I>()), ...);
   }
 
   // For each field (element I=0, 1, ...) copy that field into this table -
   // or_clear as per CopyIf().
   template <bool or_clear, size_t... I>
   void Copy(absl::index_sequence<I...>, const Table& rhs) {
-    table_detail::do_these_things<int>({(CopyIf<or_clear, I>(rhs), 1)...});
+    (CopyIf<or_clear, I>(rhs), ...);
   }
 
   // For each field (element I=0, 1, ...) move that field into this table -
   // or_clear as per MoveIf().
   template <bool or_clear, size_t... I>
   void Move(absl::index_sequence<I...>, Table&& rhs) {
-    table_detail::do_these_things<int>(
-        {(MoveIf<or_clear, I>(std::forward<Table>(rhs)), 1)...});
+    (MoveIf<or_clear, I>(std::forward<Table>(rhs)), ...);
   }
 
   // For each field (element I=0, 1, ...) if that field is present, call f.
   template <typename F, size_t... I>
   void ForEachImpl(F f, absl::index_sequence<I...>) const {
-    table_detail::do_these_things<int>({(CallIf<I>(&f), 1)...});
+    (CallIf<I>(&f), ...);
   }
 
   // For each field (element I=0, 1, ...) if that field is present, call f. If
   // f returns false, remove the field from the table.
   template <typename F, size_t... I>
   void FilterInImpl(F f, absl::index_sequence<I...>) {
-    table_detail::do_these_things<int>({(FilterIf<I>(&f), 1)...});
+    (FilterIf<I>(&f), ...);
   }
 
   template <size_t... I>
   void ClearAllImpl(absl::index_sequence<I...>) {
-    table_detail::do_these_things<int>({(clear<I>(), 1)...});
+    (clear<I>(), ...);
   }
 
   // Bit field indicating which elements are set.

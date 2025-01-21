@@ -27,8 +27,8 @@
 
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/orphanable.h"
@@ -62,7 +62,7 @@ class FakeResolver final : public Resolver {
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
   // The next resolution result to be returned, if any.  Present when we
   // get a result before the resolver is started.
-  absl::optional<Result> next_result_;
+  std::optional<Result> next_result_;
   // True after the call to StartLocked().
   bool started_ = false;
   // True after the call to ShutdownLocked().

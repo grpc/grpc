@@ -42,6 +42,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <random>
 #include <set>
 #include <string>
@@ -61,11 +62,10 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -288,17 +288,16 @@ class RlsLb final : public LoadBalancingPolicy {
     template <typename H>
     friend H AbslHashValue(H h, const RequestKey& key) {
       std::hash<std::string> string_hasher;
-      for (auto& kv : key.key_map) {
-        h = H::combine(std::move(h), string_hasher(kv.first),
-                       string_hasher(kv.second));
+      for (auto& [key, value] : key.key_map) {
+        h = H::combine(std::move(h), string_hasher(key), string_hasher(value));
       }
       return h;
     }
 
     size_t Size() const {
       size_t size = sizeof(RequestKey);
-      for (auto& kv : key_map) {
-        size += kv.first.length() + kv.second.length();
+      for (auto& [key, value] : key_map) {
+        size += key.length() + value.length();
       }
       return size;
     }
@@ -535,7 +534,7 @@ class RlsLb final : public LoadBalancingPolicy {
         void OnBackoffTimerLocked();
 
         RefCountedPtr<Entry> entry_;
-        absl::optional<EventEngine::TaskHandle> backoff_timer_task_handle_
+        std::optional<EventEngine::TaskHandle> backoff_timer_task_handle_
             ABSL_GUARDED_BY(&RlsLb::mu_);
       };
 
@@ -624,7 +623,7 @@ class RlsLb final : public LoadBalancingPolicy {
     std::list<RequestKey> lru_list_ ABSL_GUARDED_BY(&RlsLb::mu_);
     std::unordered_map<RequestKey, OrphanablePtr<Entry>, absl::Hash<RequestKey>>
         map_ ABSL_GUARDED_BY(&RlsLb::mu_);
-    absl::optional<EventEngine::TaskHandle> cleanup_timer_handle_;
+    std::optional<EventEngine::TaskHandle> cleanup_timer_handle_;
   };
 
   // Channel for communicating with the RLS server.
@@ -837,13 +836,13 @@ void RlsLb::ChildPolicyWrapper::Orphaned() {
   picker_.reset();
 }
 
-absl::optional<Json> InsertOrUpdateChildPolicyField(const std::string& field,
-                                                    const std::string& value,
-                                                    const Json& config,
-                                                    ValidationErrors* errors) {
+std::optional<Json> InsertOrUpdateChildPolicyField(const std::string& field,
+                                                   const std::string& value,
+                                                   const Json& config,
+                                                   ValidationErrors* errors) {
   if (config.type() != Json::Type::kArray) {
     errors->AddError("is not an array");
-    return absl::nullopt;
+    return std::nullopt;
   }
   const size_t original_num_errors = errors->size();
   Json::Array array;
@@ -852,27 +851,24 @@ absl::optional<Json> InsertOrUpdateChildPolicyField(const std::string& field,
     ValidationErrors::ScopedField json_field(errors, absl::StrCat("[", i, "]"));
     if (child_json.type() != Json::Type::kObject) {
       errors->AddError("is not an object");
+    } else if (const Json::Object& child = child_json.object();
+               child.size() != 1) {
+      errors->AddError("child policy object contains more than one field");
     } else {
-      const Json::Object& child = child_json.object();
-      if (child.size() != 1) {
-        errors->AddError("child policy object contains more than one field");
+      const auto& [child_name, child_config_json] = *child.begin();
+      ValidationErrors::ScopedField json_field(
+          errors, absl::StrCat("[\"", child_name, "\"]"));
+      if (child_config_json.type() != Json::Type::kObject) {
+        errors->AddError("child policy config is not an object");
       } else {
-        const std::string& child_name = child.begin()->first;
-        ValidationErrors::ScopedField json_field(
-            errors, absl::StrCat("[\"", child_name, "\"]"));
-        const Json& child_config_json = child.begin()->second;
-        if (child_config_json.type() != Json::Type::kObject) {
-          errors->AddError("child policy config is not an object");
-        } else {
-          Json::Object child_config = child_config_json.object();
-          child_config[field] = Json::FromString(value);
-          array.emplace_back(Json::FromObject(
-              {{child_name, Json::FromObject(std::move(child_config))}}));
-        }
+        Json::Object child_config = child_config_json.object();
+        child_config[field] = Json::FromString(value);
+        array.emplace_back(Json::FromObject(
+            {{child_name, Json::FromObject(std::move(child_config))}}));
       }
     }
   }
-  if (errors->size() != original_num_errors) return absl::nullopt;
+  if (errors->size() != original_num_errors) return std::nullopt;
   return Json::FromArray(std::move(array));
 }
 
@@ -993,12 +989,10 @@ std::map<std::string, std::string> BuildKeyMap(
   // Construct key map using key builder.
   std::map<std::string, std::string> key_map;
   // Add header keys.
-  for (const auto& p : key_builder->header_keys) {
-    const std::string& key = p.first;
-    const std::vector<std::string>& header_names = p.second;
+  for (const auto& [key, header_names] : key_builder->header_keys) {
     for (const std::string& header_name : header_names) {
       std::string buffer;
-      absl::optional<absl::string_view> value =
+      std::optional<absl::string_view> value =
           initial_metadata->Lookup(header_name, &buffer);
       if (value.has_value()) {
         key_map[key] = std::string(*value);
@@ -1263,7 +1257,7 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
   // Add header data.
   if (!header_data_.empty()) {
     auto* complete_pick =
-        absl::get_if<PickResult::Complete>(&pick_result.result);
+        std::get_if<PickResult::Complete>(&pick_result.result);
     if (complete_pick != nullptr) {
       complete_pick->metadata_mutations.Set(kRlsHeaderKey, header_data_.Ref());
     }
@@ -1431,8 +1425,8 @@ void RlsLb::Cache::Resize(size_t bytes,
 }
 
 void RlsLb::Cache::ResetAllBackoff() {
-  for (auto& p : map_) {
-    p.second->ResetBackoff();
+  for (auto& [_, entry] : map_) {
+    entry->ResetBackoff();
   }
   lb_policy_->UpdatePickerAsync();
 }
@@ -1440,8 +1434,8 @@ void RlsLb::Cache::ResetAllBackoff() {
 std::vector<RefCountedPtr<RlsLb::ChildPolicyWrapper>> RlsLb::Cache::Shutdown() {
   std::vector<RefCountedPtr<ChildPolicyWrapper>>
       child_policy_wrappers_to_delete;
-  for (auto& entry : map_) {
-    entry.second->TakeChildPolicyWrappers(&child_policy_wrappers_to_delete);
+  for (auto& [_, entry] : map_) {
+    entry->TakeChildPolicyWrappers(&child_policy_wrappers_to_delete);
   }
   map_.clear();
   lru_list_.clear();
@@ -1494,9 +1488,10 @@ void RlsLb::Cache::OnCleanupTimer() {
   if (!cleanup_timer_handle_.has_value()) return;
   if (lb_policy_->is_shutdown_) return;
   for (auto it = map_.begin(); it != map_.end();) {
-    if (GPR_UNLIKELY(it->second->ShouldRemove() && it->second->CanEvict())) {
-      size_ -= it->second->Size();
-      it->second->TakeChildPolicyWrappers(&child_policy_wrappers_to_delete);
+    auto& entry = it->second;
+    if (GPR_UNLIKELY(entry->ShouldRemove() && entry->CanEvict())) {
+      size_ -= entry->Size();
+      entry->TakeChildPolicyWrappers(&child_policy_wrappers_to_delete);
       it = map_.erase(it);
     } else {
       ++it;
@@ -1518,12 +1513,13 @@ void RlsLb::Cache::MaybeShrinkSize(
     if (GPR_UNLIKELY(lru_it == lru_list_.end())) break;
     auto map_it = map_.find(*lru_it);
     CHECK(map_it != map_.end());
-    if (!map_it->second->CanEvict()) break;
+    auto& entry = map_it->second;
+    if (!entry->CanEvict()) break;
     GRPC_TRACE_LOG(rls_lb, INFO)
         << "[rlslb " << lb_policy_ << "] LRU eviction: removing entry "
-        << map_it->second.get() << " " << lru_it->ToString();
-    size_ -= map_it->second->Size();
-    map_it->second->TakeChildPolicyWrappers(child_policy_wrappers_to_delete);
+        << entry.get() << " " << lru_it->ToString();
+    size_ -= entry->Size();
+    entry->TakeChildPolicyWrappers(child_policy_wrappers_to_delete);
     map_.erase(map_it);
   }
   GRPC_TRACE_LOG(rls_lb, INFO)
@@ -1617,7 +1613,7 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
   // (This is ugly, but it seems better than propagating all channel args
   // from the parent channel by default and then having a giant
   // exclude list of args to strip out, like we do in grpclb.)
-  absl::optional<absl::string_view> fake_security_expected_targets =
+  std::optional<absl::string_view> fake_security_expected_targets =
       lb_policy_->channel_args_.GetString(
           GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
   if (fake_security_expected_targets.has_value()) {
@@ -1767,7 +1763,7 @@ void RlsLb::RlsRequest::StartCallLocked() {
   call_ = rls_channel_->channel()->CreateCall(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
       lb_policy_->interested_parties(),
-      Slice::FromStaticString(kRlsRequestPath), /*authority=*/absl::nullopt,
+      Slice::FromStaticString(kRlsRequestPath), /*authority=*/std::nullopt,
       deadline_, /*registered_method=*/true);
   grpc_op ops[6];
   memset(ops, 0, sizeof(ops));
@@ -1880,10 +1876,10 @@ grpc_byte_buffer* RlsLb::RlsRequest::MakeRequestProto() {
       grpc_lookup_v1_RouteLookupRequest_new(arena.ptr());
   grpc_lookup_v1_RouteLookupRequest_set_target_type(
       req, upb_StringView_FromDataAndSize(kGrpc, sizeof(kGrpc) - 1));
-  for (const auto& kv : key_.key_map) {
+  for (const auto& [key, value] : key_.key_map) {
     grpc_lookup_v1_RouteLookupRequest_key_map_set(
-        req, upb_StringView_FromDataAndSize(kv.first.data(), kv.first.size()),
-        upb_StringView_FromDataAndSize(kv.second.data(), kv.second.size()),
+        req, upb_StringView_FromDataAndSize(key.data(), key.size()),
+        upb_StringView_FromDataAndSize(value.data(), value.size()),
         arena.ptr());
   }
   grpc_lookup_v1_RouteLookupRequest_set_reason(req, reason_);
@@ -2016,21 +2012,19 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
       GRPC_TRACE_LOG(rls_lb, INFO)
           << "[rlslb " << this << "] unsetting default target";
       default_child_policy_.reset();
+    } else if (auto it = child_policy_map_.find(config_->default_target());
+               it == child_policy_map_.end()) {
+      GRPC_TRACE_LOG(rls_lb, INFO)
+          << "[rlslb " << this << "] creating new default target";
+      default_child_policy_ = MakeRefCounted<ChildPolicyWrapper>(
+          RefAsSubclass<RlsLb>(DEBUG_LOCATION, "ChildPolicyWrapper"),
+          config_->default_target());
+      created_default_child = true;
     } else {
-      auto it = child_policy_map_.find(config_->default_target());
-      if (it == child_policy_map_.end()) {
-        GRPC_TRACE_LOG(rls_lb, INFO)
-            << "[rlslb " << this << "] creating new default target";
-        default_child_policy_ = MakeRefCounted<ChildPolicyWrapper>(
-            RefAsSubclass<RlsLb>(DEBUG_LOCATION, "ChildPolicyWrapper"),
-            config_->default_target());
-        created_default_child = true;
-      } else {
-        GRPC_TRACE_LOG(rls_lb, INFO)
-            << "[rlslb " << this << "] using existing child for default target";
-        default_child_policy_ =
-            it->second->Ref(DEBUG_LOCATION, "DefaultChildPolicy");
-      }
+      GRPC_TRACE_LOG(rls_lb, INFO)
+          << "[rlslb " << this << "] using existing child for default target";
+      default_child_policy_ =
+          it->second->Ref(DEBUG_LOCATION, "DefaultChildPolicy");
     }
   }
   // Now grab the lock to swap out the state it guards.
@@ -2055,8 +2049,8 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
     if (update_child_policies) {
       GRPC_TRACE_LOG(rls_lb, INFO)
           << "[rlslb " << this << "] starting child policy updates";
-      for (auto& p : child_policy_map_) {
-        p.second->StartUpdate(&child_policy_to_delete);
+      for (auto& [_, child] : child_policy_map_) {
+        child->StartUpdate(&child_policy_to_delete);
       }
     } else if (created_default_child) {
       GRPC_TRACE_LOG(rls_lb, INFO)
@@ -2069,11 +2063,11 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   if (update_child_policies) {
     GRPC_TRACE_LOG(rls_lb, INFO)
         << "[rlslb " << this << "] finishing child policy updates";
-    for (auto& p : child_policy_map_) {
-      absl::Status status = p.second->MaybeFinishUpdate();
+    for (auto& [name, child] : child_policy_map_) {
+      absl::Status status = child->MaybeFinishUpdate();
       if (!status.ok()) {
         errors.emplace_back(
-            absl::StrCat("target ", p.first, ": ", status.ToString()));
+            absl::StrCat("target ", name, ": ", status.ToString()));
       }
     }
   } else if (created_default_child) {
@@ -2117,8 +2111,8 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
 
 void RlsLb::ExitIdleLocked() {
   MutexLock lock(&mu_);
-  for (auto& child_entry : child_policy_map_) {
-    child_entry.second->ExitIdleLocked();
+  for (auto& [_, child] : child_policy_map_) {
+    child->ExitIdleLocked();
   }
 }
 
@@ -2128,8 +2122,8 @@ void RlsLb::ResetBackoffLocked() {
     rls_channel_->ResetBackoff();
     cache_.ResetAllBackoff();
   }
-  for (auto& child : child_policy_map_) {
-    child.second->ResetBackoffLocked();
+  for (auto& [_, child] : child_policy_map_) {
+    child->ResetBackoffLocked();
   }
 }
 
@@ -2191,10 +2185,10 @@ void RlsLb::UpdatePickerLocked() {
     {
       MutexLock lock(&mu_);
       if (is_shutdown_) return;
-      for (auto& p : child_policy_map_) {
-        grpc_connectivity_state child_state = p.second->connectivity_state();
+      for (auto& [_, child] : child_policy_map_) {
+        grpc_connectivity_state child_state = child->connectivity_state();
         GRPC_TRACE_LOG(rls_lb, INFO)
-            << "[rlslb " << this << "] target " << p.second->target()
+            << "[rlslb " << this << "] target " << child->target()
             << " in state " << ConnectivityStateName(child_state);
         if (child_state == GRPC_CHANNEL_READY) {
           state = GRPC_CHANNEL_READY;
@@ -2266,7 +2260,7 @@ struct GrpcKeyBuilder {
   struct NameMatcher {
     std::string key;
     std::vector<std::string> names;
-    absl::optional<bool> required_match;
+    std::optional<bool> required_match;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
@@ -2312,9 +2306,9 @@ struct GrpcKeyBuilder {
   };
 
   struct ExtraKeys {
-    absl::optional<std::string> host_key;
-    absl::optional<std::string> service_key;
-    absl::optional<std::string> method_key;
+    std::optional<std::string> host_key;
+    std::optional<std::string> service_key;
+    std::optional<std::string> method_key;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
@@ -2328,7 +2322,7 @@ struct GrpcKeyBuilder {
 
     void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors) {
       auto check_field = [&](const std::string& field_name,
-                             absl::optional<std::string>* struct_field) {
+                             std::optional<std::string>* struct_field) {
         ValidationErrors::ScopedField field(errors,
                                             absl::StrCat(".", field_name));
         if (struct_field->has_value() && (*struct_field)->empty()) {
@@ -2389,9 +2383,9 @@ struct GrpcKeyBuilder {
       duplicate_key_check_func(header.key,
                                absl::StrCat(".headers[", i, "].key"));
     }
-    for (const auto& p : constant_keys) {
-      duplicate_key_check_func(
-          p.first, absl::StrCat(".constantKeys[\"", p.first, "\"]"));
+    for (const auto& [key, value] : constant_keys) {
+      duplicate_key_check_func(key,
+                               absl::StrCat(".constantKeys[\"", key, "\"]"));
     }
     if (extra_keys.host_key.has_value()) {
       duplicate_key_check_func(*extra_keys.host_key, ".extraKeys.host");

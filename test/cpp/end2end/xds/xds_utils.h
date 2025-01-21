@@ -20,11 +20,11 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
-#include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h"
-#include "src/proto/grpc/testing/xds/v3/listener.pb.h"
-#include "src/proto/grpc/testing/xds/v3/route.pb.h"
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/config/endpoint/v3/endpoint.pb.h"
+#include "envoy/config/listener/v3/listener.pb.h"
+#include "envoy/config/route/v3/route.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 
 namespace grpc {
@@ -36,6 +36,10 @@ class XdsBootstrapBuilder {
   XdsBootstrapBuilder() {}
   XdsBootstrapBuilder& SetIgnoreResourceDeletion() {
     ignore_resource_deletion_ = true;
+    return *this;
+  }
+  XdsBootstrapBuilder& SetFailOnDataErrors() {
+    fail_on_data_errors_ = true;
     return *this;
   }
   XdsBootstrapBuilder& SetTrustedXdsServer() {
@@ -103,6 +107,7 @@ class XdsBootstrapBuilder {
   std::string MakeAuthorityText();
 
   bool ignore_resource_deletion_ = false;
+  bool fail_on_data_errors_ = false;
   bool trusted_xds_server_ = false;
   std::vector<std::string> servers_;
   std::string xds_channel_creds_type_ = "fake";
@@ -214,23 +219,26 @@ class XdsResourceUtils {
   struct EdsResourceArgs {
     // An individual endpoint for a backend running on a specified port.
     struct Endpoint {
-      explicit Endpoint(int port,
-                        ::envoy::config::core::v3::HealthStatus health_status =
-                            ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                        int lb_weight = 1,
-                        std::vector<int> additional_ports = {},
-                        absl::string_view hostname = "")
+      explicit Endpoint(
+          int port,
+          ::envoy::config::core::v3::HealthStatus health_status =
+              ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+          int lb_weight = 1, std::vector<int> additional_ports = {},
+          absl::string_view hostname = "",
+          const std::map<std::string, std::string /*JSON*/>& metadata = {})
           : port(port),
             health_status(health_status),
             lb_weight(lb_weight),
             additional_ports(std::move(additional_ports)),
-            hostname(hostname) {}
+            hostname(hostname),
+            metadata(metadata) {}
 
       int port;
       ::envoy::config::core::v3::HealthStatus health_status;
       int lb_weight;
       std::vector<int> additional_ports;
       std::string hostname;
+      std::map<std::string, std::string /*JSON*/> metadata;
     };
 
     // A locality.

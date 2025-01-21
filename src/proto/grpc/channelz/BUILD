@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 
 licenses(["notice"])
@@ -22,22 +21,14 @@ grpc_package(
     visibility = "public",
 )
 
+# TODO(roth): Migrate this to use separate
+# grpc_internal_proto_library/grpc_cc_proto_library/grpc_cc_grpc_library
+# rules when internal build system limitations are resolved.
 grpc_proto_library(
     name = "channelz_proto",
     srcs = ["channelz.proto"],
     has_services = True,
     well_known_protos = True,
-)
-
-proto_library(
-    name = "channelz_proto_descriptors",
-    srcs = ["channelz.proto"],
-    deps = [
-        "@com_google_protobuf//:any_proto",
-        "@com_google_protobuf//:duration_proto",
-        "@com_google_protobuf//:timestamp_proto",
-        "@com_google_protobuf//:wrappers_proto",
-    ],
 )
 
 filegroup(

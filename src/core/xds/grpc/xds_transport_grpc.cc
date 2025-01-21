@@ -35,10 +35,10 @@
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -75,7 +75,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   call_ = channel->CreateCall(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
       factory_->interested_parties(), Slice::FromStaticString(method),
-      /*authority=*/absl::nullopt, Timestamp::InfFuture(),
+      /*authority=*/std::nullopt, Timestamp::InfFuture(),
       /*registered_method=*/true);
   CHECK_NE(call_, nullptr);
   // Init data associated with the call.

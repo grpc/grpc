@@ -130,7 +130,17 @@ class SliceRefCount : public grpc_slice_refcount {
   size_t size_;
 };
 
+std::atomic<double> container_memory_pressure{0.0};
+
 }  // namespace
+
+void SetContainerMemoryPressure(double pressure) {
+  container_memory_pressure.store(pressure, std::memory_order_relaxed);
+}
+
+double ContainerMemoryPressure() {
+  return container_memory_pressure.load(std::memory_order_relaxed);
+}
 
 //
 // Reclaimer
@@ -168,7 +178,7 @@ struct ReclaimerQueue::State {
 
 void ReclaimerQueue::Handle::Orphan() {
   if (auto* sweep = sweep_.exchange(nullptr, std::memory_order_acq_rel)) {
-    sweep->RunAndDelete(absl::nullopt);
+    sweep->RunAndDelete(std::nullopt);
   }
   Unref();
 }
@@ -294,7 +304,7 @@ size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
   }
 }
 
-absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
+std::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
     MemoryRequest request) {
   // How much memory should we request? (see the scaling below)
   size_t scaled_size_over_min = request.max() - request.min();
@@ -346,7 +356,7 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
     size_t ret = 0;
     if (!IsUnconstrainedMaxQuotaBufferSizeEnabled() &&
         free > kMaxQuotaBufferSize / 2) {
-      ret = std::max(ret, free - kMaxQuotaBufferSize / 2);
+      ret = std::max(ret, free - (kMaxQuotaBufferSize / 2));
     }
     ret = std::max(ret, free > 8192 ? free / 2 : free);
     const size_t new_free = free - ret;
@@ -646,7 +656,8 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   double size = quota_size;
   if (size < 1) return PressureInfo{1, 1, 1};
   PressureInfo pressure_info;
-  pressure_info.instantaneous_pressure = std::max(0.0, (size - free) / size);
+  pressure_info.instantaneous_pressure =
+      std::max({0.0, (size - free) / size, ContainerMemoryPressure()});
   pressure_info.pressure_control_value =
       pressure_tracker_.AddSampleAndGetControlValue(
           pressure_info.instantaneous_pressure);
@@ -708,7 +719,7 @@ double PressureController::Update(double error) {
     // The first switchover will have last_control_ being 0, and max_ being 2,
     // so we'll immediately choose 1.0 which will tend to really slow down
     // progress.
-    // If we end up targetting too low, we'll eventually move it back towards
+    // If we end up targeting too low, we'll eventually move it back towards
     // 1.0 after max_ticks_same_ ticks.
     ticks_same_ = 0;
     max_ = (last_control_ + max_) / 2.0;
@@ -719,8 +730,8 @@ double PressureController::Update(double error) {
   // (If we want a control value that's higher than the last one we snap
   // immediately because it's likely that memory pressure is growing unchecked).
   if (new_control < last_control_) {
-    new_control =
-        std::max(new_control, last_control_ - max_reduction_per_tick_ / 1000.0);
+    new_control = std::max(new_control,
+                           last_control_ - (max_reduction_per_tick_ / 1000.0));
   }
   last_control_ = new_control;
   return new_control;

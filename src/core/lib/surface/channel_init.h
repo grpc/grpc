@@ -230,7 +230,7 @@ class ChannelInit {
     // Exactly one terminal filter will be added at the end of each filter
     // stack.
     // If multiple are defined they are tried in registration order, and the
-    // first terminal filter whos predicates succeed is selected.
+    // first terminal filter whose predicates succeed is selected.
     FilterRegistration& Terminal() {
       terminal_ = true;
       return *this;

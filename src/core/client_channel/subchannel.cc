@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <memory>
 #include <new>
+#include <optional>
 #include <utility>
 
 #include "absl/log/check.h"
@@ -34,17 +35,16 @@
 #include "absl/strings/cord.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -444,7 +444,7 @@ class Subchannel::ConnectedSubchannelStateWatcher final
 
 void Subchannel::ConnectivityStateWatcherList::AddWatcherLocked(
     RefCountedPtr<ConnectivityStateWatcherInterface> watcher) {
-  watchers_.insert(std::make_pair(watcher.get(), std::move(watcher)));
+  watchers_.insert(std::move(watcher));
 }
 
 void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
@@ -454,9 +454,9 @@ void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
 
 void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     grpc_connectivity_state state, const absl::Status& status) {
-  for (const auto& p : watchers_) {
+  for (const auto& watcher : watchers_) {
     subchannel_->work_serializer_.Schedule(
-        [watcher = p.second->Ref(), state, status]() mutable {
+        [watcher = watcher->Ref(), state, status]() mutable {
           auto* watcher_ptr = watcher.get();
           watcher_ptr->OnConnectivityStateChange(std::move(watcher), state,
                                                  status);
@@ -473,7 +473,7 @@ namespace {
 
 BackOff::Options ParseArgsForBackoffValues(const ChannelArgs& args,
                                            Duration* min_connect_timeout) {
-  const absl::optional<Duration> fixed_reconnect_backoff =
+  const std::optional<Duration> fixed_reconnect_backoff =
       args.GetDurationFromIntMillis("grpc.testing.fixed_reconnect_backoff_ms");
   if (fixed_reconnect_backoff.has_value()) {
     const Duration backoff =

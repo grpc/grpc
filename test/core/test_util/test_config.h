@@ -51,6 +51,9 @@ bool grpc_wait_until_shutdown(int64_t time_s);
 // Sets absl verbosity via SetMinLogLevel and SetVLogLevel
 void grpc_set_absl_verbosity_debug(void);
 
+// Hacks to reduce the effect of OS on test results.
+void grpc_prewarm_os_for_tests(void);
+
 namespace grpc {
 namespace testing {
 

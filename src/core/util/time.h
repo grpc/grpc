@@ -21,10 +21,10 @@
 #include <stdint.h>
 
 #include <limits>
+#include <optional>
 #include <ostream>
 #include <string>
 
-#include "absl/types/optional.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
 
@@ -171,13 +171,13 @@ class ScopedTimeCache final : public Timestamp::ScopedSource {
   Timestamp Now() override;
 
   void InvalidateCache() override {
-    cached_time_ = absl::nullopt;
+    cached_time_ = std::nullopt;
     Timestamp::ScopedSource::InvalidateCache();
   }
   void TestOnlySetNow(Timestamp now) { cached_time_ = now; }
 
  private:
-  absl::optional<Timestamp> cached_time_;
+  std::optional<Timestamp> cached_time_;
 };
 
 // Duration represents a span of time.
@@ -227,11 +227,11 @@ class Duration {
   }
 
   static constexpr Duration MicrosecondsRoundUp(int64_t micros) {
-    return Duration(micros / GPR_US_PER_MS + (micros % GPR_US_PER_MS != 0));
+    return Duration((micros / GPR_US_PER_MS) + (micros % GPR_US_PER_MS != 0));
   }
 
   static constexpr Duration NanosecondsRoundUp(int64_t nanos) {
-    return Duration(nanos / GPR_NS_PER_MS + (nanos % GPR_NS_PER_MS != 0));
+    return Duration((nanos / GPR_NS_PER_MS) + (nanos % GPR_NS_PER_MS != 0));
   }
 
   constexpr bool operator==(Duration other) const {

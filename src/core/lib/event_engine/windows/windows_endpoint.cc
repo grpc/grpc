@@ -31,8 +31,7 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/status_helper.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 constexpr size_t kDefaultTargetReadSize = 8192;
@@ -42,7 +41,8 @@ void DumpSliceBuffer(SliceBuffer* buffer, absl::string_view context_string) {
   for (size_t i = 0; i < buffer->Count(); i++) {
     auto str = buffer->MutableSliceAt(i).as_string_view();
     GRPC_TRACE_LOG(event_engine_endpoint, INFO)
-        << context_string << ": " << str;
+        << context_string << " [" << i + 1 << "/" << buffer->Count()
+        << "]: " << str;
   }
 }
 
@@ -78,7 +78,7 @@ WindowsEndpoint::~WindowsEndpoint() {
 
 void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
-      << "WindowsEndpoint::" << endpoint << " reading";
+      << "WindowsEndpoint::" << endpoint << " attempting a read";
   if (socket->IsShutdown()) {
     socket->read_info()->SetErrorStatus(
         absl::InternalError("Socket is shutting down."));
@@ -120,7 +120,7 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
     // The async read attempt returned an error immediately.
     socket->UnregisterReadCallback();
     socket->read_info()->SetResult(
-        wsa_error, 0, absl::StrFormat("WindowsEndpont::%p Read failed", this));
+        wsa_error, 0, absl::StrFormat("WindowsEndpoint::%p Read failed", this));
     thread_pool->Run(&handle_read_event);
   }
 }
@@ -294,15 +294,23 @@ void WindowsEndpoint::HandleReadClosure::Run() {
     return ResetAndReturnCallback()(status);
   }
   if (result.bytes_transferred == 0) {
+    DCHECK_GT(io_state.use_count(), 0);
     // Either the endpoint is shut down or we've seen the end of the stream
     if (GRPC_TRACE_FLAG_ENABLED(event_engine_endpoint_data)) {
-      DumpSliceBuffer(buffer_, absl::StrFormat("WindowsEndpoint::%p READ",
-                                               io_state->endpoint));
+      LOG(INFO) << "WindowsEndpoint::" << this << " read 0 bytes.";
+      DumpSliceBuffer(
+          &last_read_buffer_,
+          absl::StrFormat("WindowsEndpoint::%p READ last_read_buffer_: ",
+                          io_state->endpoint));
     }
-    status = absl::InternalError("End of TCP stream");
-    grpc_core::StatusSetInt(&status, grpc_core::StatusIntProperty::kRpcStatus,
-                            GRPC_STATUS_UNAVAILABLE);
     buffer_->Swap(last_read_buffer_);
+    if (buffer_->Length() == 0) {
+      // Only send an error if there is no more data to consume. If the endpoint
+      // or socket is shut down, the next read will discover that.
+      status = absl::InternalError("End of TCP stream");
+      grpc_core::StatusSetInt(&status, grpc_core::StatusIntProperty::kRpcStatus,
+                              GRPC_STATUS_UNAVAILABLE);
+    }
     return ResetAndReturnCallback()(status);
   }
   DCHECK_GT(result.bytes_transferred, 0);
@@ -320,8 +328,13 @@ void WindowsEndpoint::HandleReadClosure::Run() {
 
 bool WindowsEndpoint::HandleReadClosure::MaybeFinishIfDataHasAlreadyBeenRead() {
   if (last_read_buffer_.Length() > 0) {
+    GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+        << "WindowsEndpoint::" << io_state_->endpoint
+        << " finishing a synchronous read";
     buffer_->Swap(last_read_buffer_);
-    // Captures io_state_ to ensure it remains alive until the callback is run.
+    if (GRPC_TRACE_FLAG_ENABLED(event_engine_endpoint_data)) {
+      DumpSliceBuffer(buffer_, "finishing synchronous read");
+    }
     io_state_->thread_pool->Run(
         [cb = ResetAndReturnCallback()]() mutable { cb(absl::OkStatus()); });
     return true;
@@ -372,7 +385,6 @@ WindowsEndpoint::AsyncIOState::~AsyncIOState() {
   socket->Shutdown(DEBUG_LOCATION, "~AsyncIOState");
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GPR_WINDOWS

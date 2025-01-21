@@ -306,7 +306,7 @@ class CLanguage(object):
 
             self._cmake_configure_extra_args = list(
                 self.args.cmake_configure_extra_args
-            )
+            ) + ["-DCMAKE_CXX_STANDARD=17"]
             self._cmake_generator_windows = cmake_generator
             # required to pass as cmake "-A" configuration for VS builds (but not for Ninja)
             self._cmake_architecture_windows = (
@@ -560,22 +560,17 @@ class CLanguage(object):
             _check_compiler(compiler, ["default", "cmake"])
 
         if compiler == "default" or compiler == "cmake":
-            # This is to address Apple clang defaults C++98.
-            cmake_args = (
-                ["-DCMAKE_CXX_STANDARD=14"]
-                if platform_string() == "mac"
-                else []
-            )
-            return ("debian11", cmake_args)
+            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc8":
-            return ("gcc_8", [])
+            return ("gcc_8", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2":
-            return ("debian11", [])
+            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2_openssl102":
             return (
                 "debian11_openssl102",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
         elif compiler == "gcc10.2_openssl111":
@@ -583,23 +578,37 @@ class CLanguage(object):
                 "debian11_openssl111",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
-        elif compiler == "gcc12":
-            return ("gcc_12", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc12_openssl309":
             return (
                 "debian12_openssl309",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
+        elif compiler == "gcc14":
+            return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
-            return ("alpine", [])
+            return ("alpine", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "clang7":
-            return ("clang_7", self._clang_cmake_configure_extra_args())
-        elif compiler == "clang18":
-            return ("clang_18", self._clang_cmake_configure_extra_args())
+            return (
+                "clang_7",
+                self._clang_cmake_configure_extra_args()
+                + [
+                    "-DCMAKE_CXX_STANDARD=17",
+                ],
+            )
+        elif compiler == "clang19":
+            return (
+                "clang_19",
+                self._clang_cmake_configure_extra_args()
+                + [
+                    "-DCMAKE_CXX_STANDARD=17",
+                ],
+            )
         else:
             raise Exception("Compiler %s not supported." % compiler)
 
@@ -867,7 +876,7 @@ class PythonLanguage(object):
                 # Default set tested on master. Test oldest and newest.
                 return (
                     python38_config,
-                    python312_config,
+                    python313_config,
                 )
         elif args.compiler == "python3.8":
             return (python38_config,)
@@ -886,7 +895,7 @@ class PythonLanguage(object):
         elif args.compiler == "pypy3":
             return (pypy32_config,)
         elif args.compiler == "python_alpine":
-            return (python310_config,)
+            return (python311_config,)
         elif args.compiler == "all_the_cpythons":
             return (
                 python38_config,
@@ -910,13 +919,46 @@ class RubyLanguage(object):
         _check_compiler(self.args.compiler, ["default"])
 
     def test_specs(self):
-        tests = [
-            self.config.job_spec(
-                ["tools/run_tests/helper_scripts/run_ruby.sh"],
-                timeout_seconds=10 * 60,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+        tests = []
+        for test in [
+            "src/ruby/spec/google_rpc_status_utils_spec.rb",
+            "src/ruby/spec/client_server_spec.rb",
+            "src/ruby/spec/errors_spec.rb",
+            "src/ruby/spec/pb/codegen/package_option_spec.rb",
+            "src/ruby/spec/pb/health/checker_spec.rb",
+            "src/ruby/spec/pb/duplicate/codegen_spec.rb",
+            "src/ruby/spec/server_spec.rb",
+            "src/ruby/spec/error_sanity_spec.rb",
+            "src/ruby/spec/channel_spec.rb",
+            "src/ruby/spec/user_agent_spec.rb",
+            "src/ruby/spec/call_credentials_spec.rb",
+            "src/ruby/spec/channel_credentials_spec.rb",
+            "src/ruby/spec/channel_connection_spec.rb",
+            "src/ruby/spec/compression_options_spec.rb",
+            "src/ruby/spec/time_consts_spec.rb",
+            "src/ruby/spec/server_credentials_spec.rb",
+            "src/ruby/spec/generic/server_interceptors_spec.rb",
+            "src/ruby/spec/generic/rpc_server_pool_spec.rb",
+            "src/ruby/spec/generic/client_stub_spec.rb",
+            "src/ruby/spec/generic/active_call_spec.rb",
+            "src/ruby/spec/generic/rpc_server_spec.rb",
+            "src/ruby/spec/generic/service_spec.rb",
+            "src/ruby/spec/generic/client_interceptors_spec.rb",
+            "src/ruby/spec/generic/rpc_desc_spec.rb",
+            "src/ruby/spec/generic/interceptor_registry_spec.rb",
+            "src/ruby/spec/debug_message_spec.rb",
+            "src/ruby/spec/logconfig_spec.rb",
+            "src/ruby/spec/call_spec.rb",
+            "src/ruby/spec/client_auth_spec.rb",
+        ]:
+            tests.append(
+                self.config.job_spec(
+                    ["rspec", test],
+                    shortname=test,
+                    timeout_seconds=20 * 60,
+                    environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+                )
             )
-        ]
         # TODO(apolcyn): re-enable the following tests after
         # https://bugs.ruby-lang.org/issues/15499 is fixed:
         # They previously worked on ruby 2.5 but needed to be disabled
@@ -1672,11 +1714,11 @@ argp.add_argument(
         "gcc10.2",
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
-        "gcc12",
         "gcc12_openssl309",
+        "gcc14",
         "gcc_musl",
         "clang7",
-        "clang18",
+        "clang19",
         # TODO: Automatically populate from supported version
         "python3.7",
         "python3.8",

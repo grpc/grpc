@@ -27,7 +27,13 @@
 #include "absl/strings/str_join.h"
 
 static void addhdr(grpc_event* ev, std::vector<std::string>* buf) {
-  buf->push_back(absl::StrFormat("tag:%p", ev->tag));
+  if (reinterpret_cast<intptr_t>(ev->tag) < 1024 &&
+      reinterpret_cast<intptr_t>(ev->tag) > -1024) {
+    buf->push_back(
+        absl::StrFormat("tag:%d", reinterpret_cast<int64_t>(ev->tag)));
+  } else {
+    buf->push_back(absl::StrFormat("tag:%p", ev->tag));
+  }
 }
 
 static const char* errstr(int success) { return success ? "OK" : "ERROR"; }

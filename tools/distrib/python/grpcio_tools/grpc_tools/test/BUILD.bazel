@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//bazel:python_rules.bzl", "py_proto_library")
 
 package(default_testonly = 1)

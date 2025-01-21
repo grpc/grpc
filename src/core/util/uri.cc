@@ -261,9 +261,9 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
     for (absl::string_view query_param : absl::StrSplit(tmp_query, '&')) {
       const std::pair<absl::string_view, absl::string_view> possible_kv =
           absl::StrSplit(query_param, absl::MaxSplits('=', 1));
-      if (possible_kv.first.empty()) continue;
-      query_param_pairs.push_back({PercentDecode(possible_kv.first),
-                                   PercentDecode(possible_kv.second)});
+      auto& [key, value] = possible_kv;
+      if (key.empty()) continue;
+      query_param_pairs.push_back({PercentDecode(key), PercentDecode(value)});
     }
     if (offset == remaining.npos) {
       remaining = "";
@@ -352,6 +352,16 @@ std::string URI::ToString() const {
     parts.emplace_back("//");
     parts.emplace_back(PercentEncode(authority_, IsAuthorityChar));
   }
+  parts.emplace_back(EncodedPathAndQueryParams());
+  if (!fragment_.empty()) {
+    parts.push_back("#");
+    parts.push_back(PercentEncode(fragment_, IsQueryOrFragmentChar));
+  }
+  return absl::StrJoin(parts, "");
+}
+
+std::string URI::EncodedPathAndQueryParams() const {
+  std::vector<std::string> parts;
   if (!path_.empty()) {
     parts.emplace_back(PercentEncode(path_, IsPathChar));
   }
@@ -359,10 +369,6 @@ std::string URI::ToString() const {
     parts.push_back("?");
     parts.push_back(
         absl::StrJoin(query_parameter_pairs_, "&", QueryParameterFormatter()));
-  }
-  if (!fragment_.empty()) {
-    parts.push_back("#");
-    parts.push_back(PercentEncode(fragment_, IsQueryOrFragmentChar));
   }
   return absl::StrJoin(parts, "");
 }

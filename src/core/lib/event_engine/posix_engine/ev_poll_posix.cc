@@ -62,8 +62,7 @@ static const intptr_t kClosureReady = 1;
 static const int kPollinCheck = POLLIN | POLLHUP | POLLERR;
 static const int kPolloutCheck = POLLOUT | POLLHUP | POLLERR;
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 using Events = absl::InlinedVector<PollEventHandle*, 5>;
 
@@ -223,40 +222,7 @@ namespace {
 // Only used when GRPC_ENABLE_FORK_SUPPORT=1
 std::list<PollPoller*> fork_poller_list;
 
-// Only used when GRPC_ENABLE_FORK_SUPPORT=1
-PollEventHandle* fork_fd_list_head = nullptr;
 gpr_mu fork_fd_list_mu;
-
-void ForkFdListAddHandle(PollEventHandle* handle) {
-  if (grpc_core::Fork::Enabled()) {
-    gpr_mu_lock(&fork_fd_list_mu);
-    handle->ForkFdListPos().next = fork_fd_list_head;
-    handle->ForkFdListPos().prev = nullptr;
-    if (fork_fd_list_head != nullptr) {
-      fork_fd_list_head->ForkFdListPos().prev = handle;
-    }
-    fork_fd_list_head = handle;
-    gpr_mu_unlock(&fork_fd_list_mu);
-  }
-}
-
-void ForkFdListRemoveHandle(PollEventHandle* handle) {
-  if (grpc_core::Fork::Enabled()) {
-    gpr_mu_lock(&fork_fd_list_mu);
-    if (fork_fd_list_head == handle) {
-      fork_fd_list_head = handle->ForkFdListPos().next;
-    }
-    if (handle->ForkFdListPos().prev != nullptr) {
-      handle->ForkFdListPos().prev->ForkFdListPos().next =
-          handle->ForkFdListPos().next;
-    }
-    if (handle->ForkFdListPos().next != nullptr) {
-      handle->ForkFdListPos().next->ForkFdListPos().prev =
-          handle->ForkFdListPos().prev;
-    }
-    gpr_mu_unlock(&fork_fd_list_mu);
-  }
-}
 
 void ForkPollerListAddPoller(PollPoller* poller) {
   if (grpc_core::Fork::Enabled()) {
@@ -296,15 +262,7 @@ bool InitPollPollerPosix();
 // in the child process without interfering with connections or RPCs ongoing
 // in the parent.
 void ResetEventManagerOnFork() {
-  // Delete all pending Epoll1EventHandles.
   gpr_mu_lock(&fork_fd_list_mu);
-  while (fork_fd_list_head != nullptr) {
-    close(fork_fd_list_head->WrappedFd());
-    PollEventHandle* next = fork_fd_list_head->ForkFdListPos().next;
-    fork_fd_list_head->ForceRemoveHandleFromPoller();
-    delete fork_fd_list_head;
-    fork_fd_list_head = next;
-  }
   // Delete all registered pollers.
   while (!fork_poller_list.empty()) {
     PollPoller* poller = fork_poller_list.front();
@@ -338,7 +296,6 @@ EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
   (void)track_err;
   DCHECK(track_err == false);
   PollEventHandle* handle = new PollEventHandle(fd, shared_from_this());
-  ForkFdListAddHandle(handle);
   // We need to send a kick to the thread executing Work(..) so that it can
   // add this new Fd into the list of Fds to poll.
   KickExternal(false);
@@ -347,7 +304,6 @@ EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
 
 void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
                                    absl::string_view /*reason*/) {
-  ForkFdListRemoveHandle(this);
   ForceRemoveHandleFromPoller();
   {
     grpc_core::ReleasableMutexLock lock(&mu_);
@@ -376,7 +332,7 @@ void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
     if (!IsWatched()) {
       CloseFd();
     } else {
-      // It is watched i.e we cannot take action wihout breaking from the
+      // It is watched i.e we cannot take action without breaking from the
       // blocking poll. Mark it as Unwatched and kick the thread executing
       // Work(...). That thread should proceed with the cleanup.
       SetWatched(-1);
@@ -447,7 +403,7 @@ void PollEventHandle::ShutdownHandle(absl::Status why) {
       SetReadyLocked(&write_closure_);
     }
   }
-  // For the Ref() taken at the begining of this function.
+  // For the Ref() taken at the beginning of this function.
   Unref();
 }
 
@@ -469,7 +425,7 @@ void PollEventHandle::NotifyOnRead(PosixEngineClosure* on_read) {
       poller_->KickExternal(false);
     }
   }
-  // For the Ref() taken at the begining of this function.
+  // For the Ref() taken at the beginning of this function.
   Unref();
 }
 
@@ -491,7 +447,7 @@ void PollEventHandle::NotifyOnWrite(PosixEngineClosure* on_write) {
       poller_->KickExternal(false);
     }
   }
-  // For the Ref() taken at the begining of this function.
+  // For the Ref() taken at the beginning of this function.
   Unref();
 }
 
@@ -844,15 +800,13 @@ std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
   return nullptr;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #else  // GRPC_POSIX_SOCKET_EV_POLL
 
 #include "src/core/util/crash.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 PollPoller::PollPoller(Scheduler* /* engine */) {
   grpc_core::Crash("unimplemented");
@@ -900,7 +854,6 @@ void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* /*handle*/) {
   grpc_core::Crash("unimplemented");
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_POSIX_SOCKET_EV_POLL

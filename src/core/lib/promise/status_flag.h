@@ -17,13 +17,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <ostream>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/promise/detail/status.h"
 
 namespace grpc_core {
@@ -50,6 +50,13 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool IsStatusOk(Success) {
 
 template <>
 struct StatusCastImpl<absl::Status, Success> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Cast(Success) {
+    return absl::OkStatus();
+  }
+};
+
+template <>
+struct StatusCastImpl<absl::Status, Success&> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Cast(Success) {
     return absl::OkStatus();
   }
@@ -176,6 +183,16 @@ struct StatusCastImpl<StatusFlag, Success> {
   static StatusFlag Cast(Success) { return StatusFlag(true); }
 };
 
+template <>
+struct StatusCastImpl<StatusFlag, Failure> {
+  static StatusFlag Cast(Failure) { return StatusFlag(false); }
+};
+
+template <>
+struct FailureStatusCastImpl<StatusFlag, Failure> {
+  static StatusFlag Cast(Failure) { return StatusFlag(false); }
+};
+
 template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::StatusOr<T> Cast(
@@ -215,7 +232,7 @@ class ValueOrFailure {
   ValueOrFailure(StatusFlag status) { CHECK(!status.ok()); }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure FromOptional(
-      absl::optional<T> value) {
+      std::optional<T> value) {
     return ValueOrFailure{std::move(value)};
   }
 
@@ -269,7 +286,7 @@ class ValueOrFailure {
   }
 
  private:
-  absl::optional<T> value_;
+  std::optional<T> value_;
 };
 
 template <typename T>

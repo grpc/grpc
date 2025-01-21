@@ -19,12 +19,12 @@
 
 #include <cstdint>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "absl/types/variant.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
@@ -151,6 +151,15 @@ struct Http2WindowUpdateFrame {
   }
 };
 
+// Security-related frame
+struct Http2SecurityFrame {
+  SliceBuffer payload;
+
+  bool operator==(const Http2SecurityFrame& other) const {
+    return payload.JoinIntoString() == other.payload.JoinIntoString();
+  }
+};
+
 // Type of frame was unknown (and should be ignored)
 struct Http2UnknownFrame {
   bool operator==(const Http2UnknownFrame&) const { return true; }
@@ -162,9 +171,10 @@ struct Http2UnknownFrame {
 // A union of all the frame types above, so that we may pass around an
 // arbitrary frame between layers as appropriate.
 using Http2Frame =
-    absl::variant<Http2DataFrame, Http2HeaderFrame, Http2ContinuationFrame,
-                  Http2RstStreamFrame, Http2SettingsFrame, Http2PingFrame,
-                  Http2GoawayFrame, Http2WindowUpdateFrame, Http2UnknownFrame>;
+    std::variant<Http2DataFrame, Http2HeaderFrame, Http2ContinuationFrame,
+                 Http2RstStreamFrame, Http2SettingsFrame, Http2PingFrame,
+                 Http2GoawayFrame, Http2WindowUpdateFrame, Http2SecurityFrame,
+                 Http2UnknownFrame>;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Frame header

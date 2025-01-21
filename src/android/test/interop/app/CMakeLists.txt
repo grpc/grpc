@@ -63,9 +63,7 @@ set(PROTO_BASE_DIR ${GRPC_SRC_DIR}/examples/protos)
 
 android_protobuf_grpc_generate_cpp(
   MESSAGES_PROTO_SRCS MESSAGES_PROTO_HDRS
-  ${GRPC_SRC_DIR}
-  ${GRPC_SRC_DIR}/src/proto/grpc/testing/messages.proto
-  ${GRPC_SRC_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.proto)
+  ${GRPC_SRC_DIR} ${GRPC_SRC_DIR}/src/proto/grpc/testing/messages.proto)
 
 add_library(messages_proto_lib
   SHARED ${MESSAGES_PROTO_SRCS} ${MESSAGES_PROTO_HDRS})

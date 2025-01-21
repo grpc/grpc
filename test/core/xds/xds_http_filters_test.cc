@@ -24,13 +24,13 @@
 
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
-#include "absl/types/variant.h"
 #include "envoy/config/core/v3/address.pb.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/core/v3/extension.pb.h"
@@ -97,8 +97,8 @@ class XdsHttpFilterTest : public ::testing::Test {
  protected:
   XdsHttpFilterTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(), xds_server_, nullptr,
-                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+        decode_context_{xds_client_.get(), xds_server_, upb_def_pool_.ptr(),
+                        upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error;
@@ -338,7 +338,7 @@ class XdsFaultInjectionFilterConfigTest
     : public XdsFaultInjectionFilterTest,
       public ::testing::WithParamInterface<bool> {
  protected:
-  absl::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(
+  std::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(
       XdsExtension extension) {
     if (GetParam()) {
       return filter_->GenerateFilterConfigOverride(
@@ -627,7 +627,7 @@ TEST_F(XdsRbacFilterTest, GenerateServiceConfig) {
 class XdsRbacFilterConfigTest : public XdsRbacFilterTest,
                                 public ::testing::WithParamInterface<bool> {
  protected:
-  absl::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(RBAC rbac) {
+  std::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(RBAC rbac) {
     if (GetParam()) {
       RBACPerRoute rbac_per_route;
       *rbac_per_route.mutable_rbac() = rbac;
@@ -1277,7 +1277,7 @@ class XdsStatefulSessionFilterConfigTest
     : public XdsStatefulSessionFilterTest,
       public ::testing::WithParamInterface<bool> {
  protected:
-  absl::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(
+  std::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(
       StatefulSession stateful_session) {
     if (GetParam()) {
       StatefulSessionPerRoute stateful_session_per_route;
@@ -1574,25 +1574,7 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeZero) {
             "field:http_filter.value["
             "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig]"
             ".cache_config.cache_size "
-            "error:must be in the range (0, INT64_MAX)]")
-      << status;
-}
-
-TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeTooBig) {
-  GcpAuthnFilterConfig proto;
-  proto.mutable_cache_config()->mutable_cache_size()->set_value(INT64_MAX);
-  XdsExtension extension = MakeXdsExtension(proto);
-  auto config = filter_->GenerateFilterConfig("langley", decode_context_,
-                                              std::move(extension), &errors_);
-  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
-                                       "errors validating filter config");
-  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(status.message(),
-            "errors validating filter config: ["
-            "field:http_filter.value["
-            "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig]"
-            ".cache_config.cache_size "
-            "error:must be in the range (0, INT64_MAX)]")
+            "error:must be greater than 0]")
       << status;
 }
 

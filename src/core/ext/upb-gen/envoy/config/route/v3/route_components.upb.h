@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPB_H_
-#define ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -26,7 +26,6 @@
 #include "google/protobuf/any.upb_minitable.h"
 #include "google/protobuf/duration.upb_minitable.h"
 #include "google/protobuf/wrappers.upb_minitable.h"
-#include "xds/annotations/v3/status.upb_minitable.h"
 #include "xds/type/matcher/v3/matcher.upb_minitable.h"
 #include "envoy/annotations/deprecation.upb_minitable.h"
 #include "udpa/annotations/migrate.upb_minitable.h"
@@ -95,6 +94,7 @@ typedef struct envoy_config_route_v3_RateLimit_Action_MetaData { upb_Message UPB
 typedef struct envoy_config_route_v3_RateLimit_Action_QueryParameterValueMatch { upb_Message UPB_PRIVATE(base); } envoy_config_route_v3_RateLimit_Action_QueryParameterValueMatch;
 typedef struct envoy_config_route_v3_RateLimit_Override { upb_Message UPB_PRIVATE(base); } envoy_config_route_v3_RateLimit_Override;
 typedef struct envoy_config_route_v3_RateLimit_Override_DynamicMetadata { upb_Message UPB_PRIVATE(base); } envoy_config_route_v3_RateLimit_Override_DynamicMetadata;
+typedef struct envoy_config_route_v3_RateLimit_HitsAddend { upb_Message UPB_PRIVATE(base); } envoy_config_route_v3_RateLimit_HitsAddend;
 typedef struct envoy_config_route_v3_HeaderMatcher { upb_Message UPB_PRIVATE(base); } envoy_config_route_v3_HeaderMatcher;
 typedef struct envoy_config_route_v3_QueryParameterMatcher { upb_Message UPB_PRIVATE(base); } envoy_config_route_v3_QueryParameterMatcher;
 typedef struct envoy_config_route_v3_InternalRedirectPolicy { upb_Message UPB_PRIVATE(base); } envoy_config_route_v3_InternalRedirectPolicy;
@@ -117,6 +117,7 @@ struct google_protobuf_Any;
 struct google_protobuf_BoolValue;
 struct google_protobuf_Duration;
 struct google_protobuf_UInt32Value;
+struct google_protobuf_UInt64Value;
 struct xds_type_matcher_v3_Matcher;
 
 typedef enum {
@@ -8112,13 +8113,13 @@ UPB_INLINE bool envoy_config_route_v3_RateLimit_has_stage(const envoy_config_rou
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_config_route_v3_RateLimit_clear_disable_key(envoy_config_route_v3_RateLimit* msg) {
-  const upb_MiniTableField field = {2, 24, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(32, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_StringView envoy_config_route_v3_RateLimit_disable_key(const envoy_config_route_v3_RateLimit* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {2, 24, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(32, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -8175,6 +8176,35 @@ UPB_INLINE bool envoy_config_route_v3_RateLimit_has_limit(const envoy_config_rou
   const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 65, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_route_v3_RateLimit_clear_hits_addend(envoy_config_route_v3_RateLimit* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 66, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const envoy_config_route_v3_RateLimit_HitsAddend* envoy_config_route_v3_RateLimit_hits_addend(const envoy_config_route_v3_RateLimit* msg) {
+  const envoy_config_route_v3_RateLimit_HitsAddend* default_val = NULL;
+  const envoy_config_route_v3_RateLimit_HitsAddend* ret;
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 66, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__route__v3__RateLimit__HitsAddend_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_config_route_v3_RateLimit_has_hits_addend(const envoy_config_route_v3_RateLimit* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 66, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_config_route_v3_RateLimit_clear_apply_on_stream_done(envoy_config_route_v3_RateLimit* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(28, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE bool envoy_config_route_v3_RateLimit_apply_on_stream_done(const envoy_config_route_v3_RateLimit* msg) {
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {6, UPB_SIZE(28, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE void envoy_config_route_v3_RateLimit_set_stage(envoy_config_route_v3_RateLimit *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -8190,7 +8220,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_route_v3_RateLimit_m
   return sub;
 }
 UPB_INLINE void envoy_config_route_v3_RateLimit_set_disable_key(envoy_config_route_v3_RateLimit *msg, upb_StringView value) {
-  const upb_MiniTableField field = {2, 24, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(32, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE envoy_config_route_v3_RateLimit_Action** envoy_config_route_v3_RateLimit_mutable_actions(envoy_config_route_v3_RateLimit* msg, size_t* size) {
@@ -8237,6 +8267,23 @@ UPB_INLINE struct envoy_config_route_v3_RateLimit_Override* envoy_config_route_v
     if (sub) envoy_config_route_v3_RateLimit_set_limit(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void envoy_config_route_v3_RateLimit_set_hits_addend(envoy_config_route_v3_RateLimit *msg, envoy_config_route_v3_RateLimit_HitsAddend* value) {
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 66, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__route__v3__RateLimit__HitsAddend_msg_init);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE struct envoy_config_route_v3_RateLimit_HitsAddend* envoy_config_route_v3_RateLimit_mutable_hits_addend(envoy_config_route_v3_RateLimit* msg, upb_Arena* arena) {
+  struct envoy_config_route_v3_RateLimit_HitsAddend* sub = (struct envoy_config_route_v3_RateLimit_HitsAddend*)envoy_config_route_v3_RateLimit_hits_addend(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_route_v3_RateLimit_HitsAddend*)_upb_Message_New(&envoy__config__route__v3__RateLimit__HitsAddend_msg_init, arena);
+    if (sub) envoy_config_route_v3_RateLimit_set_hits_addend(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_route_v3_RateLimit_set_apply_on_stream_done(envoy_config_route_v3_RateLimit *msg, bool value) {
+  const upb_MiniTableField field = {6, UPB_SIZE(28, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.config.route.v3.RateLimit.Action */
@@ -9705,6 +9752,90 @@ UPB_INLINE struct envoy_type_metadata_v3_MetadataKey* envoy_config_route_v3_Rate
   return sub;
 }
 
+/* envoy.config.route.v3.RateLimit.HitsAddend */
+
+UPB_INLINE envoy_config_route_v3_RateLimit_HitsAddend* envoy_config_route_v3_RateLimit_HitsAddend_new(upb_Arena* arena) {
+  return (envoy_config_route_v3_RateLimit_HitsAddend*)_upb_Message_New(&envoy__config__route__v3__RateLimit__HitsAddend_msg_init, arena);
+}
+UPB_INLINE envoy_config_route_v3_RateLimit_HitsAddend* envoy_config_route_v3_RateLimit_HitsAddend_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_route_v3_RateLimit_HitsAddend* ret = envoy_config_route_v3_RateLimit_HitsAddend_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__route__v3__RateLimit__HitsAddend_msg_init, NULL, 0, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_config_route_v3_RateLimit_HitsAddend* envoy_config_route_v3_RateLimit_HitsAddend_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_route_v3_RateLimit_HitsAddend* ret = envoy_config_route_v3_RateLimit_HitsAddend_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__route__v3__RateLimit__HitsAddend_msg_init, extreg, options,
+                 arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_config_route_v3_RateLimit_HitsAddend_serialize(const envoy_config_route_v3_RateLimit_HitsAddend* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__RateLimit__HitsAddend_msg_init, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_config_route_v3_RateLimit_HitsAddend_serialize_ex(const envoy_config_route_v3_RateLimit_HitsAddend* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__route__v3__RateLimit__HitsAddend_msg_init, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_config_route_v3_RateLimit_HitsAddend_clear_number(envoy_config_route_v3_RateLimit_HitsAddend* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const struct google_protobuf_UInt64Value* envoy_config_route_v3_RateLimit_HitsAddend_number(const envoy_config_route_v3_RateLimit_HitsAddend* msg) {
+  const struct google_protobuf_UInt64Value* default_val = NULL;
+  const struct google_protobuf_UInt64Value* ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt64Value_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_config_route_v3_RateLimit_HitsAddend_has_number(const envoy_config_route_v3_RateLimit_HitsAddend* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_config_route_v3_RateLimit_HitsAddend_clear_format(envoy_config_route_v3_RateLimit_HitsAddend* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE upb_StringView envoy_config_route_v3_RateLimit_HitsAddend_format(const envoy_config_route_v3_RateLimit_HitsAddend* msg) {
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+
+UPB_INLINE void envoy_config_route_v3_RateLimit_HitsAddend_set_number(envoy_config_route_v3_RateLimit_HitsAddend *msg, struct google_protobuf_UInt64Value* value) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt64Value_msg_init);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE struct google_protobuf_UInt64Value* envoy_config_route_v3_RateLimit_HitsAddend_mutable_number(envoy_config_route_v3_RateLimit_HitsAddend* msg, upb_Arena* arena) {
+  struct google_protobuf_UInt64Value* sub = (struct google_protobuf_UInt64Value*)envoy_config_route_v3_RateLimit_HitsAddend_number(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_UInt64Value*)_upb_Message_New(&google__protobuf__UInt64Value_msg_init, arena);
+    if (sub) envoy_config_route_v3_RateLimit_HitsAddend_set_number(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_route_v3_RateLimit_HitsAddend_set_format(envoy_config_route_v3_RateLimit_HitsAddend *msg, upb_StringView value) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+
 /* envoy.config.route.v3.HeaderMatcher */
 
 UPB_INLINE envoy_config_route_v3_HeaderMatcher* envoy_config_route_v3_HeaderMatcher_new(upb_Arena* arena) {
@@ -10488,4 +10619,4 @@ UPB_INLINE void envoy_config_route_v3_FilterConfig_set_disabled(envoy_config_rou
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_ROUTE_V3_ROUTE_COMPONENTS_PROTO_UPB_H__UPB_H_ */

@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_HTTP_11_PROXY_V3_UPSTREAM_HTTP_11_CONNECT_PROTO_UPB_H_
-#define ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_HTTP_11_PROXY_V3_UPSTREAM_HTTP_11_CONNECT_PROTO_UPB_H_
+#ifndef ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_HTTP_11_PROXY_V3_UPSTREAM_HTTP_11_CONNECT_PROTO_UPB_H__UPB_H_
+#define ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_HTTP_11_PROXY_V3_UPSTREAM_HTTP_11_CONNECT_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -15,7 +15,6 @@
 
 #include "envoy/config/core/v3/base.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
-#include "validate/validate.upb_minitable.h"
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -103,4 +102,4 @@ UPB_INLINE struct envoy_config_core_v3_TransportSocket* envoy_extensions_transpo
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_HTTP_11_PROXY_V3_UPSTREAM_HTTP_11_CONNECT_PROTO_UPB_H_ */
+#endif  /* ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_HTTP_11_PROXY_V3_UPSTREAM_HTTP_11_CONNECT_PROTO_UPB_H__UPB_H_ */

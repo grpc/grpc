@@ -11,12 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-load("@rules_proto//proto:defs.bzl", "proto_library")
+
+load("//bazel:grpc_build_system.bzl", "grpc_internal_proto_library")
 load("//bazel:python_rules.bzl", "py_proto_library")
 
 package(default_visibility = ["//visibility:public"])
 
-proto_library(
+grpc_internal_proto_library(
     name = "empty2_proto_descriptor",
     srcs = ["empty2.proto"],
 )
@@ -26,7 +27,7 @@ py_proto_library(
     deps = [":empty2_proto_descriptor"],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "empty2_extensions_proto_descriptor",
     srcs = ["empty2_extensions.proto"],
     deps = [
