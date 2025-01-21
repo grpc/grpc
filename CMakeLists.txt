@@ -32076,7 +32076,6 @@ target_include_directories(subchannel_args_test
 target_link_libraries(subchannel_args_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::int128
   grpc_test_util
 )
 

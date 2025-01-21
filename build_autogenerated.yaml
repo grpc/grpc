@@ -20557,7 +20557,6 @@ targets:
   - test/core/client_channel/subchannel_args_test.cc
   deps:
   - gtest
-  - absl/numeric:int128
   - grpc_test_util
   uses_polling: false
 - name: switch_test
