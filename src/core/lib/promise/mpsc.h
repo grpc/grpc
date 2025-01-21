@@ -35,15 +35,15 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 
-// Multi Producer Single Consumer (MPSC) inter-activity communications.
-// MPSC is used to communicate in between two or more activities or promise
-// parties in a thread safe way.
-// The communication consists of one or more MpscSender objects and one
-// MpscReceiver.
-
 namespace grpc_core {
 
 namespace mpscpipe_detail {
+
+// Multi Producer Single Consumer (MPSC) inter-activity communications.
+// MPSC is used to communicate in between two or more Activities or Promise
+// Parties in a thread safe way.
+// The communication consists of one or more MpscSender objects and one
+// MpscReceiver.
 
 // "Center" of the communication pipe.
 // Contains sent but not received messages, and open/close state.
@@ -162,9 +162,9 @@ class MpscSender {
   // 2. Resolves to true if sending is successful
   // 3. Resolves to false if the receiver was closed and the value
   //    will never be successfully sent.
-  // The promise returned is thread safe. Means, we can use multiple send calls
-  // concurrently to generate multiple such promises and these promises can be
-  // run concurrently in a thread safe way.
+  // The promise returned is thread safe. We can use multiple send calls
+  // in parallel to generate multiple such send promises and these promises can
+  // be run in parallel in a thread safe way.
   auto Send(T t) { return SendGeneric<false>(std::move(t)); }
 
   // Similar to send, but the promise returned by SendAcked will not resolve
@@ -243,7 +243,6 @@ class MpscReceiver {
   // If receiving is closed, the promise will resolve to failure.
   // Otherwise, the promise resolves to the next item and removes
   // said item from the queue.
-  // The promise returned by the Next method is not thread safe.
   auto Next() {
     return [this]() -> Poll<ValueOrFailure<T>> {
       if (buffer_it_ != buffer_.end()) {
