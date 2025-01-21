@@ -72,14 +72,14 @@ class PartyTest : public ::testing::Test {
 TEST_F(PartyTest, Noop) { auto party = MakeParty(); }
 
 TEST_F(PartyTest, SpawnAndRunOneParty) {
-  // Simple test to run on promise on one party.
+  // Simple test to run on Promise on one party.
   // This test asserts the following:
-  // 1. A promise can be spawned and run on a party.
-  // 2. When a promise returns Pending and we ForceImmediateRepoll, the promise
+  // 1. A Promise can be spawned and run on a party.
+  // 2. When a Promise returns Pending and we ForceImmediateRepoll, the Promise
   //    is polled over and over till it resolves.
   // 3. The on_done callback is called with the correct data.
-  // 4. on_done it is called only after the promise is resolved.
-  // 5. The promises are executed in the order we expect.
+  // 4. on_done it is called only after the Promise is resolved.
+  // 5. The Promises are executed in the order we expect.
   std::string execution_order;
   auto party = MakeParty();
   Notification n;
@@ -124,12 +124,12 @@ auto MakeOnDone(std::string& execution_order) {
 }
 
 TEST_F(PartyTest, TestLargeNumberOfSpawnedPromises) {
-  // This test spawns a large number of promises
+  // This test spawns a large number of Promises
   // This test asserts the following:
-  // 1. All the promises that are spawned get executed.
-  // 2. on_done is called after the promise is resolved for each promise.
-  // 3. The data moves correctly from the promise to the on_done callback.
-  // 4. A party is able to spawn a large number of promises, as long as they
+  // 1. All the Promises that are spawned get executed.
+  // 2. on_done is called after the Promise is resolved for each Promise.
+  // 3. The data moves correctly from the Promise to the on_done callback.
+  // 4. A party is able to spawn a large number of Promises, as long as they
   //    are not all Pending.
   const int kNumPromises = 256;
   std::string execution_order;
@@ -155,14 +155,14 @@ auto MakePendingPromise(std::string& execution_order, int num) {
 }
 
 TEST_F(PartyTest, Test16SpawnedPendingPromises) {
-  // This test spawns exactly 16 promises
+  // This test spawns exactly 16 Promises
   // This test asserts the following:
-  // 1. All the promises that are spawned get executed.
-  // 2. A party is able to spawn the Nth promise even if (N-1) are Pending for
+  // 1. All the Promises that are spawned get executed.
+  // 2. A party is able to spawn the Nth Promise even if (N-1) are Pending for
   //    N<=16 (but not for N>16).
-  // 3. on_done callback is never called for a promise that is not resolved.
-  // Note : If we try to spawn more than 16 promises, the code hangs because
-  // it is waiting for the promises to resolve (these promises will never
+  // 3. on_done callback is never called for a Promise that is not resolved.
+  // Note : If we try to spawn more than 16 Promises, the code hangs because
+  // it is waiting for the Promises to resolve (these Promises will never
   // resolve).
   const int kNumPromises = 16;
   std::string execution_order;
@@ -175,18 +175,18 @@ TEST_F(PartyTest, Test16SpawnedPendingPromises) {
     std::string current = absl::StrFormat("P%d", i);
     EXPECT_TRUE(absl::StrContains(execution_order, current));
   }
-  // The on_done callback should never be called for pending promises.
+  // The on_done callback should never be called for pending Promises.
   EXPECT_TRUE(!absl::StrContains(execution_order, 'D'));
   VLOG(2) << "Execution order : " << execution_order;
 }
 
 TEST_F(PartyTest, SpawnWaitableAndRunTwoParties) {
-  // Test to run two promises on two parties.
-  // The promise spawned on party1 will in turn spawn a promise on party2.
+  // Test to run two Promises on two parties.
+  // The Promise spawned on party1 will in turn spawn a Promise on party2.
   // This test asserts the following:
   // 1. Testing the working of latches between two parties.
-  // 2. The promises are executed in the order we expect.
-  // 3. SpawnWaitable causes the spawned promise to be executed immediately,
+  // 2. The Promises are executed in the order we expect.
+  // 3. SpawnWaitable causes the spawned Promise to be executed immediately,
   std::string execution_order;
   auto party1 = MakeParty();
   auto party2 = MakeParty();
@@ -216,7 +216,7 @@ TEST_F(PartyTest, SpawnWaitableAndRunTwoParties) {
   test_done.WaitForNotification();
   absl::StrAppend(&execution_order, "3");
   // WARNING : 4 and 5 are not guaranteed to be executed in that order.
-  // As of now, the Spawned promise and its on_done are executed on the same
+  // As of now, the Spawned Promise and its on_done are executed on the same
   // thread and executed immediately. This is why 4 is executed before 5.
   // before 5. But this might change in the future. If it changes, append "4"
   // in both places to fix the test.
@@ -224,13 +224,13 @@ TEST_F(PartyTest, SpawnWaitableAndRunTwoParties) {
 }
 
 TEST_F(PartyTest, CanSpawnFromSpawn) {
-  // Test to spawn a promise from inside another promise on the same party.
-  // The promise spawned on a party will in turn spawn another promise on the
+  // Test to spawn a Promise from inside another Promise on the same party.
+  // The Promise spawned on a party will in turn spawn another Promise on the
   // same party. This test asserts the following:
-  // 1. Spawning of one promise from inside another spawned promise onto the
+  // 1. Spawning of one Promise from inside another spawned Promise onto the
   //    same party.
-  // 2. The promises are executed in the order we expect. We expect that the
-  //    current promise is executed before the newly spawned promise.
+  // 2. The Promises are executed in the order we expect. We expect that the
+  //    current Promise is executed before the newly spawned Promise.
   std::string execution_order;
   auto party = MakeParty();
   Notification n1;
@@ -273,13 +273,13 @@ TEST_F(PartyTest, CanSpawnFromSpawn) {
 
 TEST_F(PartyTest, CanWakeupWithOwningWaker) {
   // Testing the Owning Waker.
-  // Here, the party is woken up and the promise is executed (polled) by a loop
+  // Here, the party is woken up and the Promise is executed (polled) by a loop
   // which is outside the party. Asserting
-  // 1. The waker wakes up the party as expected and the promise is executed.
+  // 1. The waker wakes up the party as expected and the Promise is executed.
   // 2. The notifications are received in the order we expect.
-  // 3. Waking the promise is a no-op after the promise is resolved. A resolved
-  //    promise is not repolled.
-  // 4. The on_done callback is called when the promise is resolved.
+  // 3. Waking the Promise is a no-op after the Promise is resolved. A resolved
+  //    Promise is not repolled.
+  // 4. The on_done callback is called when the Promise is resolved.
   // 5. The same waker can be used to wake up the party multiple times.
   // 6. Once the party worken by the waker and the party gets resolved, the
   //    waker is unwakeable.
@@ -391,10 +391,10 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWakerAfterOrphaning) {
 }
 
 TEST_F(PartyTest, CanDropNonOwningWakeAfterOrphaning) {
-  // Our party has a promise which is pending. In this test, we cancel the party
-  // before the promise is resolved.
+  // Our party has a Promise which is pending. In this test, we cancel the party
+  // before the Promise is resolved.
   // The test asserts the following:
-  // 1. The promise is not resolved.
+  // 1. The Promise is not resolved.
   // 2. The waker is still valid after the party is cancelled.
   // 3. The waker can be dropped (destroyed) after the party is cancelled.
   // . Running with asan will ensure that there are no memory related issues
@@ -423,10 +423,10 @@ TEST_F(PartyTest, CanDropNonOwningWakeAfterOrphaning) {
 }
 
 TEST_F(PartyTest, CanWakeupNonOwningOrphanedWakerWithNoEffect) {
-  // Our party has a promise which is pending. In this test, we cancel the party
-  // before the promise is resolved.
+  // Our party has a Promise which is pending. In this test, we cancel the party
+  // before the Promise is resolved.
   // The test asserts the following:
-  // 1. The promise is not resolved.
+  // 1. The Promise is not resolved.
   // 2. The waker is still valid after the party is cancelled.
   // 3. The waker can be woken up after the party is cancelled but it is a noop.
   auto party = MakeParty();
@@ -455,13 +455,13 @@ TEST_F(PartyTest, CanWakeupNonOwningOrphanedWakerWithNoEffect) {
 }
 
 TEST_F(PartyTest, CanBulkSpawn) {
-  // Test for bulk spawning of promises.
+  // Test for bulk spawning of Promises.
   // One way to do bulk spawning is to use the Party::WakeupHold class.
   // When a WakeupHold is in scope, the party will not be polled until the
   // WakeupHold goes out of scope.
   // This test asserts the following:
-  // 1. Spawning multiple promises in a WakeupHold works as expected. The
-  // promises should not be polled until the WakeupHold goes out of scope.
+  // 1. Spawning multiple Promises in a WakeupHold works as expected. The
+  // Promises should not be polled until the WakeupHold goes out of scope.
   auto party = MakeParty();
   Notification n1;
   Notification n2;
@@ -486,7 +486,7 @@ TEST_F(PartyTest, CanNestWakeupHold) {
   //    WakeupHold objects should not cause any change in the behavior.
   // 2. This test was added after we found a rare intermittent crash which was
   //    caused by a nested hold. This test makes sure that wont happen again.
-  // 3. The promises and their on_done callbacks are executed in order.
+  // 3. The Promises and their on_done callbacks are executed in order.
   auto party = MakeParty();
   Notification n1;
   Notification n2;
@@ -584,21 +584,21 @@ void StressTestAsserts(std::vector<Timestamp>& start_times,
 }
 
 TEST_F(PartyTest, ThreadStressTest) {
-  // Most other tests are testing promises and parties with only 1 or 2 threads.
+  // Most other tests are testing Promises and parties with only 1 or 2 threads.
   // This test will test the party code for multiple threads.
-  // We will spawn multiple threads, and then spawn many promise sequences (Seq)
+  // We will spawn multiple threads, and then spawn many Promise sequences (Seq)
   // on each thread using just one party object. This should work as expected.
   // Asserts:
-  // 1. Assert that one party can be used to spawn promises on multiple threads,
+  // 1. Assert that one party can be used to spawn Promises on multiple threads,
   //    and this works as expected.
-  // 2. The promise Seq in this case Sleep, wake up and resolve correctly as
+  // 2. The Promise Seq in this case Sleep, wake up and resolve correctly as
   //    expected.
   // 3. Notifications work as expected in such state
-  // 4. The promises are executed in the order that we expect.
+  // 4. The Promises are executed in the order that we expect.
   // 5. The threads run in parallel. Spawn does not acquire locks that it should
   //    not. And it does not introduce major delays of any sort.
   // 6. Stress testing with multiple threads and multiple spawns.
-  // Note : Even though the test runs multiple threads, the spawned promises are
+  // Note : Even though the test runs multiple threads, the spawned Promises are
   // never executed in parallel.
   auto party = MakeParty();
   std::vector<std::string> execution_order(kNumThreads);
@@ -652,7 +652,7 @@ TEST_F(PartyTest, ThreadStressTest) {
                       absl::StrFormat("%d(P%d,D%d).", i, j, j));
     }
 
-    // Warning : We do not guarantee that the promises will be executed in the
+    // Warning : We do not guarantee that the Promises will be executed in the
     // order they were spawned.
     // For the given test, the order is guaranteed because we wait for the
     // promise_complete notification before the next loop iteration can start.
@@ -662,14 +662,14 @@ TEST_F(PartyTest, ThreadStressTest) {
 }
 
 TEST_F(PartyTest, ThreadStressTestQuickSpawn) {
-  // This is similar to ThreadStressTest, but we will spawn the promises
+  // This is similar to ThreadStressTest, but we will spawn the Promises
   // immediately without waiting for the notification and without sleeping.
   // This increases the
-  // probability of the promises being executed concurrently in case of a bug.
-  // There is no assert to check that the promises spawned on the same party,
+  // probability of the Promises being executed concurrently in case of a bug.
+  // There is no assert to check that the Promises spawned on the same party,
   // but via different threads, are executed in exclusively. However calling
   // absl::StrAppend called inside the spawned will cause a TSAN failure if the
-  // party accidentally executes the spawned promises concurrently instead of
+  // party accidentally executes the spawned Promises concurrently instead of
   // exclusively.
   auto party = MakeParty();
   std::vector<std::string> execution_order(kNumThreads);
@@ -717,7 +717,7 @@ TEST_F(PartyTest, ThreadStressTestQuickSpawn) {
   for (int i = 0; i < kNumThreads; i++) {
     for (int j = 0; j < kNumSpawns; j++) {
       std::string current = absl::StrFormat("(P%d,D%d)", j, j);
-      // Check that the current promise is executed by the thread.
+      // Check that the current Promise is executed by the thread.
       EXPECT_TRUE(absl::StrContains(execution_order[i], current));
     }
   }
@@ -1053,7 +1053,7 @@ TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
 }
 
 TEST_F(PartyTest, NestedWakeup) {
-  // We have 3 parties - party1 , party2 and party3. party1 spawns promises onto
+  // We have 3 parties - party1 , party2 and party3. party1 spawns Promises onto
   // party2 and party3. When party1 finishes, party3 and party2 are run. Then
   // party2 and party3 go to sleep and are woken up alternately because they
   // depend on one another for notifications. This test asserts the following
