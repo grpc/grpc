@@ -13,8 +13,8 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/call")
 
@@ -23,7 +23,11 @@ grpc_fuzz_test(
     srcs = [
         "client_call_test.cc",
     ],
-    external_deps = ["fuzztest", "fuzztest_main", "gtest"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
     deps = [
         "batch_builder",
         "//:grpc_base",
@@ -36,7 +40,11 @@ grpc_fuzz_test(
     srcs = [
         "server_call_test.cc",
     ],
-    external_deps = ["fuzztest", "fuzztest_main", "gtest"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
     deps = [
         "batch_builder",
         "//:grpc_base",

@@ -244,7 +244,11 @@ grpc_cc_test(
 grpc_fuzz_test(
     name = "control_endpoint_test",
     srcs = ["control_endpoint_test.cc"],
-    external_deps = ["fuzztest", "fuzztest_main", "gtest"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
     tags = [
         "no_windows",
     ],
@@ -258,7 +262,11 @@ grpc_fuzz_test(
 grpc_fuzz_test(
     name = "data_endpoints_test",
     srcs = ["data_endpoints_test.cc"],
-    external_deps = ["fuzztest", "fuzztest_main", "gtest"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
     tags = [
         "no_windows",
     ],

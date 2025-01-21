@@ -147,7 +147,10 @@ grpc_cc_library(
 
 grpc_fuzz_test(
     name = "inproc_test",
-    external_deps = ["fuzztest", "fuzztest_main"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+    ],
     deps = [
         ":call_content",
         ":call_shapes",
@@ -159,7 +162,10 @@ grpc_fuzz_test(
 
 grpc_fuzz_test(
     name = "chaotic_good_test",
-    external_deps = ["fuzztest", "fuzztest_main"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+    ],
     deps = [
         ":call_content",
         ":call_shapes",
@@ -171,7 +177,10 @@ grpc_fuzz_test(
 
 grpc_fuzz_test(
     name = "chaotic_good_single_connection_test",
-    external_deps = ["fuzztest", "fuzztest_main"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+    ],
     deps = [
         ":call_content",
         ":call_shapes",
@@ -183,7 +192,10 @@ grpc_fuzz_test(
 
 grpc_fuzz_test(
     name = "chaotic_good_one_byte_chunk_test",
-    external_deps = ["fuzztest", "fuzztest_main"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+    ],
     deps = [
         ":call_content",
         ":call_shapes",

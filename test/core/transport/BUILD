@@ -215,7 +215,9 @@ grpc_fuzz_test(
     name = "call_spine",
     srcs = ["call_spine_test.cc"],
     external_deps = [
-     "fuzztest", "fuzztest_main",    "gtest",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
     ],
     deps = [
         "//src/core:call_spine",
