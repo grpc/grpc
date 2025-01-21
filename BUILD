@@ -1029,6 +1029,7 @@ grpc_cc_library(
         "include/grpcpp/security/authorization_policy_provider.h",
     ],
     tags = ["nofixdeps"],
+    visibility = ["@grpc:public"],
     deps = [
         "gpr",
         "grpc++",
