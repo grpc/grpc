@@ -23,7 +23,7 @@ licenses(["notice"])
 grpc_cc_test(
     name = "subchannel_args_test",
     srcs = ["subchannel_args_test.cc"],
-    external_deps = ["fuzztest", "fuzztest_main", "gtest"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
