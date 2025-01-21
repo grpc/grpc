@@ -25,6 +25,7 @@ grpc_cc_library(
     name = "inproc_fixture",
     testonly = 1,
     srcs = ["inproc_fixture.cc"],
+    external_deps = ["fuzztest"],
     deps = [
         "test",
         "//src/core:grpc_transport_inproc",
@@ -40,6 +41,7 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
         "gtest",
+        "fuzztest",
     ],
     deps = [
         "test",
@@ -59,6 +61,7 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
         "gtest",
+        "fuzztest",
     ],
     deps = [
         "chaotic_good_fixture_helpers",
@@ -73,6 +76,7 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
         "gtest",
+        "fuzztest",
     ],
     deps = [
         "chaotic_good_fixture_helpers",
@@ -87,6 +91,7 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
         "gtest",
+        "fuzztest",
     ],
     deps = [
         "chaotic_good_fixture_helpers",
@@ -104,6 +109,7 @@ grpc_cc_library(
         "absl/random",
         "absl/random:bit_gen_ref",
         "gtest",
+        "fuzztest",
     ],
     deps = [
         "//src/core:chaotic_good_config",
@@ -115,7 +121,10 @@ grpc_cc_library(
     name = "call_content",
     testonly = 1,
     srcs = ["call_content.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "fuzztest",
+    ],
     deps = ["test"],
     alwayslink = 1,
 )
@@ -124,6 +133,7 @@ grpc_cc_library(
     name = "call_shapes",
     testonly = 1,
     srcs = ["call_shapes.cc"],
+    external_deps = ["fuzztest"],
     deps = ["test"],
     alwayslink = 1,
 )
@@ -132,6 +142,7 @@ grpc_cc_library(
     name = "no_op",
     testonly = 1,
     srcs = ["no_op.cc"],
+    external_deps = ["fuzztest"],
     deps = ["test"],
     alwayslink = 1,
 )
@@ -140,7 +151,10 @@ grpc_cc_library(
     name = "stress",
     testonly = 1,
     srcs = ["stress.cc"],
-    external_deps = ["absl/random"],
+    external_deps = [
+        "absl/random",
+        "fuzztest",
+    ],
     deps = ["test"],
     alwayslink = 1,
 )

@@ -203,6 +203,8 @@ def grpc_cc_library(
         for select_deps_entry in select_deps:
             deps += select(select_deps_entry)
     include_prefix = _include_prefix()
+    if "fuzztest" in external_deps and "grpc-fuzztest" not in tags:
+        tags = tags + ["grpc-fuzztest"]
     native.cc_library(
         name = name,
         srcs = srcs,
