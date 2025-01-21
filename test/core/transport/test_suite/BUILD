@@ -17,7 +17,7 @@ load(
     "grpc_cc_library",
     "grpc_package",
 )
-load("grpc_transport_test.bzl", "grpc_transport_test")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 grpc_package(name = "test/core/transport/test_suite")
 
@@ -145,8 +145,9 @@ grpc_cc_library(
     alwayslink = 1,
 )
 
-grpc_transport_test(
-    name = "inproc",
+grpc_fuzz_test(
+    name = "inproc_test",
+    external_deps = ["fuzztest", "fuzztest_main"],
     deps = [
         ":call_content",
         ":call_shapes",
@@ -156,8 +157,9 @@ grpc_transport_test(
     ],
 )
 
-grpc_transport_test(
-    name = "chaotic_good",
+grpc_fuzz_test(
+    name = "chaotic_good_test",
+    external_deps = ["fuzztest", "fuzztest_main"],
     deps = [
         ":call_content",
         ":call_shapes",
@@ -167,8 +169,9 @@ grpc_transport_test(
     ],
 )
 
-grpc_transport_test(
-    name = "chaotic_good_single_connection",
+grpc_fuzz_test(
+    name = "chaotic_good_single_connection_test",
+    external_deps = ["fuzztest", "fuzztest_main"],
     deps = [
         ":call_content",
         ":call_shapes",
@@ -178,8 +181,9 @@ grpc_transport_test(
     ],
 )
 
-grpc_transport_test(
-    name = "chaotic_good_one_byte_chunk",
+grpc_fuzz_test(
+    name = "chaotic_good_one_byte_chunk_test",
+    external_deps = ["fuzztest", "fuzztest_main"],
     deps = [
         ":call_content",
         ":call_shapes",

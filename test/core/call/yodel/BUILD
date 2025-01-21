@@ -28,6 +28,7 @@ grpc_cc_library(
     srcs = ["yodel_test.cc"],
     hdrs = ["yodel_test.h"],
     external_deps = [
+    "fuzztest",
         "absl/functional:any_invocable",
         "absl/log",
         "absl/random",
@@ -52,19 +53,9 @@ grpc_cc_library(
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_library(
-    name = "test_main",
-    testonly = 1,
-    srcs = ["test_main.cc"],
-    external_deps = ["absl/random"],
-    visibility = ["//test:__subpackages__"],
-    deps = [
-        "yodel_test",
-        "//:grpc_trace",
-        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:proto_bit_gen",
+        "//test/core/test_util:fuzz_config_vars",
+        ":fuzzer_cc_proto",
     ],
 )
 
