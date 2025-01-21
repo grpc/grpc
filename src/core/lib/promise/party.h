@@ -42,14 +42,29 @@
 
 namespace grpc_core {
 
-// A Party is an Activity with multiple participant promises.
+// Terms Used:
+// Concurrent promises: Promises that may be in progress at a given instant
+// of time, but they may or may not execute simultaneously.
+// Parallel promises: Two or more Promises that are getting executed
+// simultaneously at the same instant of time.
+//
+// Promise Party
+// A Promise Party forms the execution environment for Promises. It runs up
+// to sixteen concurrent promises and ensures none run in parallel with each
+// other.
 //
 // Using a Party
 // A party should be used when
-// 1. You need many promises to be run serially.
+// 1. You need many promises to be run in a way that is concurrent but not
+// parallel.
 // 2. These promises have their own complex sleep and wake mechanisms.
-// 3. You need a way to run these promises to completion by repolling them as
-// needed.
+// 3. You need a way to run the pending promises to completion by repolling them
+// as needed.
+//
+// Party Participant
+// One Promise Party has 16 Participant slots. Each Participant slot can either
+// hold a Promise, Promise Factory or any type of Participant object, such as
+// SpawnSerializer.
 //
 // Creating a new Party
 // A Party must only be created using Party::Make function.
@@ -62,10 +77,10 @@ namespace grpc_core {
 //
 // Execution of Spawned Promises
 // A promise spawned on a party will get executed by that party.
-// Whenever the party wakes up, it will executed all unresolved promises Spawned
-// on it at least once.
+// Whenever the party wakes up, it will executed all unresolved Party
+// Participants atleast once.
 //
-// When these promises are executed (polled), they can either
+// When these Party Participants are executed (polled), they can either
 // 1. Resolve by returning a value
 // 2. Return Pending{}
 // 3. Wait for a certain event to happen using either a Notification or a Latch.
@@ -104,14 +119,15 @@ namespace grpc_core {
 // 7. You can re-use the same party to spawn new promises as long as the older
 // promises have been resolved.
 // 8. A party participant is a promise which was spawned on a party and is not
-// yet resolved. We gurantee safe working of upto 16 un-resolved participatns on
-// a party at a time.
+// yet resolved. We gurantee safe working of up to 16 un-resolved participatns
+// on a party at a time.
 //
 // Non-Gurantees of a Party
 // 1. Promises spawned on one party are not guranteed to execute in the same
 // order. They can execute in any order. If you need the promises to be executed
-// in a specific order, either consider the use of a promise combinator, or
-// order the execution of promises using Notifications or Latches.
+// in a specific order, use a SpawnSerializer. If that is not feasible for some
+// reason, then either consider the use of a promise combinator, or order the
+// execution of promises using Notifications or Latches.
 // 2. A party cannot gurantee which thread a spawned promise will execute on. It
 // could either execute on the current thread, or an event engine thread or any
 // other thread.
