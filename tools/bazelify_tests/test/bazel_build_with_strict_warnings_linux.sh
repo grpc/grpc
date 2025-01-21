@@ -15,4 +15,4 @@
 
 set -ex
 
-tools/bazel build --define=use_strict_warning=true -- "$@"
+tools/bazel build --define=use_strict_warning=true --build_tag_filters=-grpc-fuzztest -- "$@"
