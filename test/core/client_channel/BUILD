@@ -38,7 +38,11 @@ grpc_cc_test(
 grpc_fuzz_test(
     name = "client_channel_test",
     srcs = ["client_channel_test.cc"],
-    external_deps = ["fuzztest", "fuzztest_main", "gtest"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
     deps = [
         "//:grpc_client_channel",
         "//test/core/call/yodel:yodel_test",
@@ -48,7 +52,11 @@ grpc_fuzz_test(
 grpc_fuzz_test(
     name = "connected_subchannel_test",
     srcs = ["connected_subchannel_test.cc"],
-    external_deps = ["fuzztest", "fuzztest_main", "gtest"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
     deps = [
         "//:grpc_client_channel",
         "//test/core/call/yodel:yodel_test",
@@ -59,7 +67,9 @@ grpc_fuzz_test(
     name = "load_balanced_call_destination_test",
     srcs = ["load_balanced_call_destination_test.cc"],
     external_deps = [
-        "fuzztest", "fuzztest_main", "absl/log:log",
+        "fuzztest",
+        "fuzztest_main",
+        "absl/log:log",
         "gtest",
     ],
     deps = [
@@ -72,7 +82,9 @@ grpc_fuzz_test(
     name = "retry_interceptor_test",
     srcs = ["retry_interceptor_test.cc"],
     external_deps = [
-      "fuzztest", "fuzztest_main",   "absl/log:log",
+        "fuzztest",
+        "fuzztest_main",
+        "absl/log:log",
         "gtest",
     ],
     deps = [
