@@ -91,7 +91,8 @@ class URI {
 
   bool operator==(const URI& other) const {
     return scheme_ == other.scheme_ && authority_ == other.authority_ &&
-           path_ == other.path_ && query_parameter_pairs_ == other.query_parameter_pairs_ &&
+           path_ == other.path_ &&
+           query_parameter_pairs_ == other.query_parameter_pairs_ &&
            fragment_ == other.fragment_;
   }
 
