@@ -78,8 +78,7 @@
 
 using namespace std::chrono_literals;
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 
@@ -742,5 +741,4 @@ PosixEventEngine::CreatePosixListener(
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

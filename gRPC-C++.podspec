@@ -267,7 +267,6 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
     ss.dependency 'abseil/types/span', abseil_version
-    ss.dependency 'abseil/types/variant', abseil_version
     ss.dependency 'abseil/utility/utility', abseil_version
 
     ss.source_files = 'src/core/call/request_buffer.h',
@@ -1309,6 +1308,7 @@ Pod::Spec.new do |s|
                       'src/core/util/useful.h',
                       'src/core/util/uuid_v4.h',
                       'src/core/util/validation_errors.h',
+                      'src/core/util/wait_for_single_owner.h',
                       'src/core/util/work_serializer.h',
                       'src/core/util/xxhash_inline.h',
                       'src/core/xds/grpc/certificate_provider_store.h',
@@ -2605,6 +2605,7 @@ Pod::Spec.new do |s|
                               'src/core/util/useful.h',
                               'src/core/util/uuid_v4.h',
                               'src/core/util/validation_errors.h',
+                              'src/core/util/wait_for_single_owner.h',
                               'src/core/util/work_serializer.h',
                               'src/core/util/xxhash_inline.h',
                               'src/core/xds/grpc/certificate_provider_store.h',

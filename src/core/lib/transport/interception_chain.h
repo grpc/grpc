@@ -159,9 +159,8 @@ class InterceptionChainBuilder final {
   // the future, and building is a builder responsibility.
   // Instead, we declare a relatively closed set of destinations here, and
   // hide the adaptors inside the builder at build time.
-  using FinalDestination =
-      absl::variant<RefCountedPtr<UnstartedCallDestination>,
-                    RefCountedPtr<CallDestination>>;
+  using FinalDestination = std::variant<RefCountedPtr<UnstartedCallDestination>,
+                                        RefCountedPtr<CallDestination>>;
 
   explicit InterceptionChainBuilder(ChannelArgs args,
                                     const Blackboard* old_blackboard = nullptr,
@@ -248,7 +247,7 @@ class InterceptionChainBuilder final {
   void AddInterceptor(absl::StatusOr<RefCountedPtr<Interceptor>> interceptor);
 
   ChannelArgs args_;
-  absl::optional<CallFilters::StackBuilder> stack_builder_;
+  std::optional<CallFilters::StackBuilder> stack_builder_;
   RefCountedPtr<Interceptor> top_interceptor_;
   absl::Status status_;
   std::map<size_t, size_t> filter_type_counts_;

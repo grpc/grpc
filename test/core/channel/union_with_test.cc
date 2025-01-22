@@ -16,25 +16,25 @@
 
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
-#include "absl/types/variant.h"
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 
 namespace grpc_core {
 
-using IntOrString = absl::variant<int, std::string>;
+using IntOrString = std::variant<int, std::string>;
 using VectorOfArgs = std::vector<std::pair<std::string, IntOrString>>;
 
 ChannelArgs ChannelArgsFromVector(VectorOfArgs va) {
   ChannelArgs result;
   for (auto& [key, value] : va) {
-    if (absl::holds_alternative<int>(value)) {
-      result = result.Set(key, absl::get<int>(value));
+    if (std::holds_alternative<int>(value)) {
+      result = result.Set(key, std::get<int>(value));
     } else {
-      result = result.Set(key, absl::get<std::string>(value));
+      result = result.Set(key, std::get<std::string>(value));
     }
   }
   return result;

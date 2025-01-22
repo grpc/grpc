@@ -540,6 +540,31 @@ struct AddOpImpl<
   }
 };
 
+// void $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
+template <typename FilterType, typename T,
+          void (FilterType::Call::*impl)(const typename T::element_type&,
+                                         FilterType*)>
+struct AddOpImpl<FilterType, T,
+                 void (FilterType::Call::*)(const typename T::element_type&,
+                                            FilterType*),
+                 impl> {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
+    to.Add(0, 0,
+           Operator<T>{
+               channel_data,
+               call_offset,
+               [](void*, void* call_data, void* channel_data,
+                  T value) -> Poll<ResultOr<T>> {
+                 (static_cast<typename FilterType::Call*>(call_data)->*impl)(
+                     *value, static_cast<FilterType*>(channel_data));
+                 return ResultOr<T>{std::move(value), nullptr};
+               },
+               nullptr,
+               nullptr,
+           });
+  }
+};
+
 // $VALUE_HANDLE $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T,
           T (FilterType::Call::*impl)(T, FilterType*)>
@@ -1686,20 +1711,20 @@ class CallFilters {
               [this]() {
                 return Map(
                     MetadataExecutor<
-                        absl::optional<ServerMetadataHandle>,
+                        std::optional<ServerMetadataHandle>,
                         ServerMetadataHandle,
                         &CallFilters::push_server_initial_metadata_,
                         &filters_detail::StackData::server_initial_metadata,
                         &CallState::FinishPullServerInitialMetadata,
                         StacksVector::const_reverse_iterator>(
                         this, stacks_.crbegin(), stacks_.crend()),
-                    [](ValueOrFailure<absl::optional<ServerMetadataHandle>> r) {
+                    [](ValueOrFailure<std::optional<ServerMetadataHandle>> r) {
                       if (r.ok()) return std::move(*r);
-                      return absl::optional<ServerMetadataHandle>{};
+                      return std::optional<ServerMetadataHandle>{};
                     });
               },
               []() {
-                return Immediate(absl::optional<ServerMetadataHandle>{});
+                return Immediate(std::optional<ServerMetadataHandle>{});
               });
         });
   }

@@ -51,7 +51,7 @@ class RequestBuffer {
       return [this]() { return PollPullClientInitialMetadata(); };
     }
     // Pull a message. Returns a promise that resolves to a
-    // ValueOrFailure<absl::optional<MessageHandle>>.
+    // ValueOrFailure<std::optional<MessageHandle>>.
     GRPC_MUST_USE_RESULT auto PullMessage() {
       return [this]() { return PollPullMessage(); };
     }
@@ -62,7 +62,7 @@ class RequestBuffer {
     friend class RequestBuffer;
 
     Poll<ValueOrFailure<ClientMetadataHandle>> PollPullClientInitialMetadata();
-    Poll<ValueOrFailure<absl::optional<MessageHandle>>> PollPullMessage();
+    Poll<ValueOrFailure<std::optional<MessageHandle>>> PollPullMessage();
 
     template <typename T>
     T ClaimObject(T& object) ABSL_EXCLUSIVE_LOCKS_REQUIRED(buffer_->mu_) {
@@ -143,7 +143,7 @@ class RequestBuffer {
     explicit Cancelled(absl::Status error) : error(std::move(error)) {}
     absl::Status error;
   };
-  using State = absl::variant<Buffering, Buffered, Streaming, Cancelled>;
+  using State = std::variant<Buffering, Buffered, Streaming, Cancelled>;
 
   Poll<ValueOrFailure<size_t>> PollPushMessage(MessageHandle& message);
   Pending PendingPull(Reader* reader) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
@@ -155,7 +155,7 @@ class RequestBuffer {
     return Pending{};
   }
   void MaybeSwitchToStreaming() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    auto& buffering = absl::get<Buffering>(state_);
+    auto& buffering = std::get<Buffering>(state_);
     if (winner_ == nullptr) return;
     if (winner_->message_index_ < buffering.messages.size()) return;
     state_.emplace<Streaming>();

@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,7 +32,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -57,7 +57,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
   static RefCountedPtr<const XdsConfig> MakeXdsConfig(
       absl::Span<const absl::string_view> override_host_statuses = {"UNKNOWN",
                                                                     "HEALTHY"},
-      absl::optional<Duration> connection_idle_timeout = absl::nullopt,
+      std::optional<Duration> connection_idle_timeout = std::nullopt,
       std::string cluster_name = "cluster_name") {
     auto cluster_resource = std::make_shared<XdsClusterResource>();
     for (const absl::string_view host_status : override_host_statuses) {
@@ -77,7 +77,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       absl::Span<const EndpointAddresses> endpoints,
       absl::Span<const absl::string_view> override_host_statuses = {"UNKNOWN",
                                                                     "HEALTHY"},
-      absl::optional<Duration> connection_idle_timeout = absl::nullopt,
+      std::optional<Duration> connection_idle_timeout = std::nullopt,
       std::string cluster_name = "cluster_name",
       std::string child_policy = "round_robin") {
     auto config = MakeConfig(Json::FromArray({Json::FromObject(
@@ -99,7 +99,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       absl::Span<const absl::string_view> addresses,
       absl::Span<const absl::string_view> override_host_statuses = {"UNKNOWN",
                                                                     "HEALTHY"},
-      absl::optional<Duration> connection_idle_timeout = absl::nullopt,
+      std::optional<Duration> connection_idle_timeout = std::nullopt,
       std::string cluster_name = "cluster_name",
       std::string child_policy = "round_robin") {
     return UpdateXdsOverrideHostPolicy(
@@ -129,7 +129,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
           addresses_and_statuses,
       absl::Span<const absl::string_view> override_host_status = {"UNKNOWN",
                                                                   "HEALTHY"},
-      absl::optional<Duration> connection_idle_timeout = absl::nullopt) {
+      std::optional<Duration> connection_idle_timeout = std::nullopt) {
     EndpointAddressesList endpoints;
     for (auto address_and_status : addresses_and_statuses) {
       endpoints.push_back(MakeAddressWithHealthStatus(

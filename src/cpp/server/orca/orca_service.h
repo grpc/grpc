@@ -26,10 +26,10 @@
 
 #include <atomic>
 #include <memory>
+#include <optional>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/util/ref_counted.h"
 
 namespace grpc {
@@ -63,7 +63,7 @@ class OrcaService::Reactor
   OrcaService* service_;
 
   grpc::internal::Mutex timer_mu_;
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+  std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       timer_handle_ ABSL_GUARDED_BY(&timer_mu_);
   bool cancelled_ ABSL_GUARDED_BY(&timer_mu_) = false;
 

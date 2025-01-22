@@ -256,7 +256,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
           "security connector already present in channel args.");
     }
     // Find the authority to use in the security connector.
-    absl::optional<std::string> authority =
+    std::optional<std::string> authority =
         args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY);
     if (!authority.has_value()) {
       return absl::InternalError("authority not present in channel args");

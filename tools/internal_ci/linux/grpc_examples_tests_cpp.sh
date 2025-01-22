@@ -1,4 +1,5 @@
-# Copyright 2018 The gRPC Authors
+#!/usr/bin/env bash
+# Copyright 2025 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,16 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.17
+set -ex
 
-RUN apk add --update build-base linux-headers python3 python3-dev py3-pip
 
-RUN python3 -m pip install --upgrade pip==19.3.1
+# change to grpc repo root
+cd $(dirname $0)/../../..
 
-RUN python3 -m pip install virtualenv
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-# bash is required for our test script invocation
-# ideally, we want to fix the invocation mechanism
-# so we can remove this, but it has to be here for
-# now:
-RUN apk add --update bash
+export DOCKERFILE_DIR=tools/dockerfile/test/bazel
+export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_examples_tests_cpp_in_docker.sh
+exec tools/run_tests/dockerize/build_and_run_docker.sh

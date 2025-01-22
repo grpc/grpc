@@ -220,7 +220,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "if_test",
     srcs = ["if_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -509,7 +512,6 @@ grpc_cc_test(
     name = "mpsc_test",
     srcs = ["mpsc_test.cc"],
     external_deps = [
-        "absl/types:optional",
         "gtest",
     ],
     language = "c++",
@@ -553,7 +555,6 @@ grpc_proto_fuzzer(
         "absl/functional:any_invocable",
         "absl/log:check",
         "absl/status",
-        "absl/types:optional",
     ],
     language = "C++",
     proto = "promise_fuzzer.proto",

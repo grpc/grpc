@@ -20,8 +20,9 @@
 
 #include <grpc/support/alloc.h>
 
+#include <optional>
+
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"

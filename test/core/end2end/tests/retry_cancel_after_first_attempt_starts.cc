@@ -17,8 +17,8 @@
 #include <grpc/impl/channel_arg_names.h>
 
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
@@ -51,7 +51,7 @@ CORE_END2END_TEST(RetryTest, RetryCancelAfterFirstAttemptStarts) {
       "    }\n"
       "  } ]\n"
       "}"));
-  absl::optional<Call> c =
+  std::optional<Call> c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(6)).Create();
   // Client starts send ops.
   c->NewBatch(1)

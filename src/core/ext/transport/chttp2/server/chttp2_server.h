@@ -92,7 +92,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
       // Following fields are protected by WorkSerializer.
       RefCountedPtr<HandshakeManager> handshake_mgr_;
       // State for enforcing handshake timeout on receiving HTTP/2 settings.
-      absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
           timer_handle_;
       grpc_closure on_receive_settings_;
     };
@@ -127,8 +127,8 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     // Following fields are protected by WorkSerializer.
     // Set by HandshakingState before the handshaking begins and set to a valid
     // transport when handshaking is done successfully.
-    absl::variant<OrphanablePtr<HandshakingState>,
-                  RefCountedPtr<grpc_chttp2_transport>>
+    std::variant<OrphanablePtr<HandshakingState>,
+                 RefCountedPtr<grpc_chttp2_transport>>
         state_;
     grpc_closure on_close_;
     bool shutdown_ = false;
@@ -212,7 +212,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
   grpc_closure tcp_server_shutdown_complete_ ABSL_GUARDED_BY(mu_);
   grpc_closure* on_destroy_done_ ABSL_GUARDED_BY(mu_) = nullptr;
   RefCountedPtr<channelz::ListenSocketNode> channelz_listen_socket_;
-  // TODO(yashykt): consider using absl::variant<> to minimize memory usage for
+  // TODO(yashykt): consider using std::variant<> to minimize memory usage for
   // disjoint cases where different fields are used.
   std::shared_ptr<experimental::PassiveListenerImpl> passive_listener_;
 };
@@ -247,7 +247,7 @@ class PassiveListenerImpl final : public PassiveListener {
   Mutex mu_;
   // Data members will be populated when initialized.
   RefCountedPtr<Server> server_;
-  absl::variant<Chttp2ServerListener*, NewChttp2ServerListener*> listener_;
+  std::variant<Chttp2ServerListener*, NewChttp2ServerListener*> listener_;
 };
 
 }  // namespace experimental

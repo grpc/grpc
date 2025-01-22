@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-# Copyright 2025 gRPC authors.
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,11 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+FROM alpine:3.18
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../../..
+RUN apk add --update build-base linux-headers python3 python3-dev py3-pip
 
-#source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+RUN python3 -m pip install --upgrade pip==19.3.1
 
-echo "Will be performing sanity checks for examples"
+RUN python3 -m pip install virtualenv
+
+# bash is required for our test script invocation
+# ideally, we want to fix the invocation mechanism
+# so we can remove this, but it has to be here for
+# now:
+RUN apk add --update bash

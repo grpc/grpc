@@ -276,33 +276,33 @@ void XdsDependencyManager::Orphan() {
         xds_client_.get(), route_config_name_, route_config_watcher_,
         /*delay_unsubscription=*/false);
   }
-  for (const auto& p : cluster_watchers_) {
-    XdsClusterResourceType::CancelWatch(xds_client_.get(), p.first,
-                                        p.second.watcher,
+  for (const auto& [name, cluster_state] : cluster_watchers_) {
+    XdsClusterResourceType::CancelWatch(xds_client_.get(), name,
+                                        cluster_state.watcher,
                                         /*delay_unsubscription=*/false);
   }
-  for (const auto& p : endpoint_watchers_) {
-    XdsEndpointResourceType::CancelWatch(xds_client_.get(), p.first,
-                                         p.second.watcher,
+  for (const auto& [name, endpoint_state] : endpoint_watchers_) {
+    XdsEndpointResourceType::CancelWatch(xds_client_.get(), name,
+                                         endpoint_state.watcher,
                                          /*delay_unsubscription=*/false);
   }
   cluster_subscriptions_.clear();
   xds_client_.reset();
-  for (auto& p : dns_resolvers_) {
-    p.second.resolver.reset();
+  for (auto& [_, dns_state] : dns_resolvers_) {
+    dns_state.resolver.reset();
   }
   Unref();
 }
 
 void XdsDependencyManager::RequestReresolution() {
-  for (const auto& p : dns_resolvers_) {
-    p.second.resolver->RequestReresolutionLocked();
+  for (const auto& [_, dns_state] : dns_resolvers_) {
+    dns_state.resolver->RequestReresolutionLocked();
   }
 }
 
 void XdsDependencyManager::ResetBackoff() {
-  for (const auto& p : dns_resolvers_) {
-    p.second.resolver->ResetBackoffLocked();
+  for (const auto& [_, dns_state] : dns_resolvers_) {
+    dns_state.resolver->ResetBackoffLocked();
   }
 }
 
@@ -316,7 +316,7 @@ void XdsDependencyManager::OnListenerUpdate(
     return ReportError("LDS", listener_resource_name_,
                        listener.status().message());
   }
-  const auto* hcm = absl::get_if<XdsListenerResource::HttpConnectionManager>(
+  const auto* hcm = std::get_if<XdsListenerResource::HttpConnectionManager>(
       &(*listener)->listener);
   if (hcm == nullptr) {
     current_listener_.reset();
@@ -415,7 +415,7 @@ absl::flat_hash_set<absl::string_view> GetClustersFromVirtualHost(
   absl::flat_hash_set<absl::string_view> clusters;
   for (auto& route : virtual_host.routes) {
     auto* route_action =
-        absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+        std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
     if (route_action == nullptr) continue;
     Match(
         route_action->action,
@@ -527,10 +527,11 @@ void XdsDependencyManager::OnClusterAmbientError(const std::string& name,
   if (xds_client_ == nullptr) return;
   auto it = cluster_watchers_.find(name);
   if (it == cluster_watchers_.end()) return;
+  auto& cluster_watcher = it->second;
   if (status.ok()) {
-    it->second.resolution_note.clear();
+    cluster_watcher.resolution_note.clear();
   } else {
-    it->second.resolution_note =
+    cluster_watcher.resolution_note =
         absl::StrCat("CDS resource ", name, ": ", status.message());
   }
   MaybeReportUpdate();
@@ -544,33 +545,34 @@ void XdsDependencyManager::OnEndpointUpdate(
   if (xds_client_ == nullptr) return;
   auto it = endpoint_watchers_.find(name);
   if (it == endpoint_watchers_.end()) return;
+  auto& endpoint_watcher = it->second;
   if (!endpoint.ok()) {
-    it->second.update.endpoints.reset();
-    it->second.update.resolution_note =
+    endpoint_watcher.update.endpoints.reset();
+    endpoint_watcher.update.resolution_note =
         absl::StrCat("EDS resource ", name, ": ", endpoint.status().message());
   } else {
     if ((*endpoint)->priorities.empty()) {
-      it->second.update.resolution_note =
+      endpoint_watcher.update.resolution_note =
           absl::StrCat("EDS resource ", name, ": contains no localities");
     } else {
       std::set<absl::string_view> empty_localities;
       for (const auto& priority : (*endpoint)->priorities) {
-        for (const auto& p : priority.localities) {
-          if (p.second.endpoints.empty()) {
+        for (const auto& [name, locality] : priority.localities) {
+          if (locality.endpoints.empty()) {
             empty_localities.insert(
-                p.first->human_readable_string().as_string_view());
+                name->human_readable_string().as_string_view());
           }
         }
       }
       if (!empty_localities.empty()) {
-        it->second.update.resolution_note = absl::StrCat(
+        endpoint_watcher.update.resolution_note = absl::StrCat(
             "EDS resource ", name, ": contains empty localities: [",
             absl::StrJoin(empty_localities, "; "), "]");
       } else {
-        it->second.update.resolution_note.clear();
+        endpoint_watcher.update.resolution_note.clear();
       }
     }
-    it->second.update.endpoints = std::move(*endpoint);
+    endpoint_watcher.update.endpoints = std::move(*endpoint);
   }
   MaybeReportUpdate();
 }
@@ -583,10 +585,11 @@ void XdsDependencyManager::OnEndpointAmbientError(const std::string& name,
   if (xds_client_ == nullptr) return;
   auto it = endpoint_watchers_.find(name);
   if (it == endpoint_watchers_.end()) return;
+  auto& endpoint_watcher = it->second;
   if (status.ok()) {
-    it->second.update.resolution_note.clear();
+    endpoint_watcher.update.resolution_note.clear();
   } else {
-    it->second.update.resolution_note =
+    endpoint_watcher.update.resolution_note =
         absl::StrCat("EDS resource ", name, ": ", status.message());
   }
   MaybeReportUpdate();
@@ -669,10 +672,10 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
   // status here, since we need an entry in the map to avoid incorrectly
   // stopping the CDS watch, but we'll overwrite this below if we actually
   // have the data for the cluster.
-  auto p = cluster_config_map->emplace(
+  auto [it, inserted] = cluster_config_map->emplace(
       name, absl::InternalError("cluster data not yet available"));
-  if (!p.second) return true;
-  auto& cluster_config = p.first->second;
+  if (!inserted) return true;
+  auto& cluster_config = it->second;
   auto& state = cluster_watchers_[name];
   // Create a new watcher if needed.
   if (state.watcher == nullptr) {
@@ -879,8 +882,8 @@ void XdsDependencyManager::MaybeReportUpdate() {
   for (const absl::string_view& cluster : clusters_from_route_config_) {
     clusters_to_watch.insert(cluster);
   }
-  for (const auto& p : cluster_subscriptions_) {
-    clusters_to_watch.insert(p.first);
+  for (const auto& [name, _] : cluster_subscriptions_) {
+    clusters_to_watch.insert(name);
   }
   // Populate Cluster map.
   // We traverse the entire graph even if we don't yet have all of the
@@ -895,7 +898,7 @@ void XdsDependencyManager::MaybeReportUpdate() {
   // Remove entries in cluster_watchers_ for any clusters not in
   // config->clusters.
   for (auto it = cluster_watchers_.begin(); it != cluster_watchers_.end();) {
-    const std::string& cluster_name = it->first;
+    auto& [cluster_name, cluster_watcher] = *it;
     if (config->clusters.contains(cluster_name)) {
       ++it;
       continue;
@@ -904,14 +907,14 @@ void XdsDependencyManager::MaybeReportUpdate() {
         << "[XdsDependencyManager " << this << "] cancelling watch for cluster "
         << cluster_name;
     XdsClusterResourceType::CancelWatch(xds_client_.get(), cluster_name,
-                                        it->second.watcher,
+                                        cluster_watcher.watcher,
                                         /*delay_unsubscription=*/false);
     cluster_watchers_.erase(it++);
   }
   // Remove entries in endpoint_watchers_ for any EDS resources not in
   // eds_resources_seen.
   for (auto it = endpoint_watchers_.begin(); it != endpoint_watchers_.end();) {
-    const std::string& eds_resource_name = it->first;
+    auto& [eds_resource_name, endpoint_watcher] = *it;
     if (eds_resources_seen.find(eds_resource_name) !=
         eds_resources_seen.end()) {
       ++it;
@@ -921,7 +924,7 @@ void XdsDependencyManager::MaybeReportUpdate() {
         << "[XdsDependencyManager " << this
         << "] cancelling watch for EDS resource " << eds_resource_name;
     XdsEndpointResourceType::CancelWatch(xds_client_.get(), eds_resource_name,
-                                         it->second.watcher,
+                                         endpoint_watcher.watcher,
                                          /*delay_unsubscription=*/false);
     endpoint_watchers_.erase(it++);
   }
