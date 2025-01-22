@@ -22,7 +22,6 @@ grpc_cc_test(
     name = "alts_counter_test",
     srcs = ["alts_counter_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -38,7 +37,6 @@ grpc_cc_test(
         "gtest",
         "absl/types:span",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -51,7 +49,6 @@ grpc_cc_test(
     name = "alts_frame_protector_test",
     srcs = ["alts_frame_protector_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -65,7 +62,6 @@ grpc_cc_test(
     name = "frame_handler_test",
     srcs = ["frame_handler_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

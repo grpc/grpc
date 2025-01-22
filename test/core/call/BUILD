@@ -58,7 +58,6 @@ grpc_cc_test(
         "call_utils_test.cc",
     ],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:grpc_base",
     ],
@@ -101,7 +100,6 @@ grpc_cc_test(
         "request_buffer_test.cc",
     ],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//src/core:request_buffer",
         "//test/core/promise:poll_matcher",
