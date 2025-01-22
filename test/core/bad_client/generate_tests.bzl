@@ -42,7 +42,6 @@ def grpc_bad_client_tests():
         name = "bad_client_test",
         srcs = ["bad_client.cc"],
         hdrs = ["bad_client.h"],
-        language = "C++",
         testonly = 1,
         external_deps = [
             "absl/log:check",
