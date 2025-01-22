@@ -54,7 +54,11 @@ grpc_cc_test(
 grpc_fuzz_test(
     name = "sockaddr_utils_fuzzer_test",
     srcs = ["sockaddr_utils_fuzzer_test.cc"],
-    external_deps = ["absl/log:check", "fuzztest", "fuzztest_main"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = ["no_windows"],
     deps = [
         "//:grpc",
