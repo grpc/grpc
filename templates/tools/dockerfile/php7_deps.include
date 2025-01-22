@@ -1,4 +1,4 @@
 #=================
 # PHP7 dependencies
 
-RUN apt-get update && apt-get install -y php7.4 php-pear && apt-get clean
+RUN apt-get update && apt-get install -y php7.4-dev php-pear && apt-get clean

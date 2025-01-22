@@ -57,7 +57,6 @@ grpc_fuzzer(
         "absl/status:statusor",
         "absl/strings",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:grpc",
@@ -91,7 +90,6 @@ grpc_proto_fuzzer(
         "absl/random:bit_gen_ref",
         "absl/status:statusor",
     ],
-    language = "C++",
     proto = "frame_fuzzer.proto",
     tags = ["no_windows"],
     uses_event_engine = False,
@@ -123,7 +121,6 @@ grpc_cc_test(
         "absl/strings:str_format",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -150,7 +147,6 @@ grpc_cc_test(
         "absl/strings:str_format",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -187,7 +183,6 @@ grpc_cc_test(
         "absl/strings:str_format",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -219,7 +214,6 @@ grpc_cc_test(
         "absl/time",
         "gtest",
     ],
-    language = "C++",
     tags = [
         "no_windows",
     ],
@@ -246,7 +240,6 @@ grpc_yodel_simple_test(
     name = "control_endpoint",
     srcs = ["control_endpoint_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "no_windows",
     ],
@@ -261,7 +254,6 @@ grpc_yodel_simple_test(
     name = "data_endpoints",
     srcs = ["data_endpoints_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = [
         "no_windows",
     ],

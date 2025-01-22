@@ -193,6 +193,7 @@ def _extract_rules_from_bazel_xml(xml_tree):
                 "upb_proto_reflection_library",
                 "alias",
                 "bind",
+                "genrule",
             ]:
                 if rule_name in result:
                     raise Exception("Rule %s already present" % rule_name)

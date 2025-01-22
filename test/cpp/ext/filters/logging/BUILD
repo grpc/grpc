@@ -28,7 +28,6 @@ grpc_cc_library(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:grpc++",
         "//src/core:logging_filter",
@@ -49,7 +48,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "logging_test",
         "no_mac",  # TODO(yashykt): The default stack-sizes are not enough to run this test on MacOS
@@ -76,7 +74,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = [
         "logging_test",
         "no_mac",  # TODO(yashykt): The default stack-sizes are not enough to run this test on MacOS

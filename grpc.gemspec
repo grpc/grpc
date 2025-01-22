@@ -39,7 +39,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '~> 1.2.1'
-  s.add_development_dependency 'rake-compiler-dock', '~> 1.8'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.4'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 1.41.0'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -1979,6 +1979,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/uuid_v4.h )
   s.files += %w( src/core/util/validation_errors.cc )
   s.files += %w( src/core/util/validation_errors.h )
+  s.files += %w( src/core/util/wait_for_single_owner.h )
   s.files += %w( src/core/util/windows/cpu.cc )
   s.files += %w( src/core/util/windows/directory_reader.cc )
   s.files += %w( src/core/util/windows/env.cc )
