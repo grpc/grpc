@@ -48,7 +48,6 @@
 #pragma pop_macro("max")
 #pragma pop_macro("NEAR")
 #pragma pop_macro("NO_DATA")
-#pragma pop_macro("NO_ERROR")
 #pragma pop_macro("REASON_UNKNOWN")
 #pragma pop_macro("SERVICE_DISABLED")
 #pragma pop_macro("SERVICE_STOP")
