@@ -22,7 +22,11 @@ licenses(["notice"])
 grpc_fuzz_test(
     name = "percent_encode_fuzzer",
     srcs = ["percent_encode_fuzzer.cc"],
-    external_deps = ["absl/log:check", "fuzztest", "fuzztest_main"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
