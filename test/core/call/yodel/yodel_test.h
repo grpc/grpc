@@ -315,6 +315,8 @@ class YodelTest {
     return std::move(*result);
   }
 
+  void TickUntilTrue(absl::FunctionRef<bool()> poll);
+
   const std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>&
   event_engine() {
     return state_->event_engine;
@@ -335,7 +337,6 @@ class YodelTest {
   virtual void TestImpl() = 0;
 
   void Timeout();
-  void TickUntilTrue(absl::FunctionRef<bool()> poll);
 
   // Called before the test runs, after core configuration has been reset
   // and before the event engine is started.
