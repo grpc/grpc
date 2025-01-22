@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.66.0</span>
+   &#160;<span id="projectnumber">1.69.0</span>
    </div>
   </td>
  </tr>
@@ -198,9 +198,13 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_context_allocator.html">ContextAllocator</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> allows users to use the contents of the <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> or <a class="el" href="classgrpc_1_1_generic_callback_server_context.html">GenericCallbackServerContext</a> structure for the callback API.  <a href="classgrpc_1_1_context_allocator.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_default_global_callback_hook.html">DefaultGlobalCallbackHook</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_generic_callback_server_context.html">GenericCallbackServerContext</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_generic_server_context.html">GenericServerContext</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_global_callback_hook.html">GlobalCallbackHook</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_health_check_service_interface.html">HealthCheckServiceInterface</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The gRPC server uses this interface to expose the health checking service without depending on protobuf.  <a href="classgrpc_1_1_health_check_service_interface.html#details">More...</a><br /></td></tr>
@@ -232,6 +236,8 @@ Data Structures</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Defines how to serialize and deserialize some type.  <a href="classgrpc_1_1_serialization_traits.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_serialization_traits_3_01_byte_buffer_00_01void_01_4.html">SerializationTraits&lt; ByteBuffer, void &gt;</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_serialization_traits_3_01_t_00_01typename_01std_1_1enable__if_3_01std_1_1is__base_b37dbfcdf48c548179e7ce71324c558d.html">SerializationTraits&lt; T, typename std::enable_if&lt; std::is_base_of&lt; grpc::protobuf::MessageLite, T &gt;::value &gt;::type &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html">Server</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents a gRPC server.  <a href="classgrpc_1_1_server.html#details">More...</a><br /></td></tr>
@@ -500,6 +506,10 @@ Functions</h2></td></tr>
 <tr class="separator:a58c19329766a61e325450888aacef0ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa8c26768567516f22852d7ccc09c7940"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#aa8c26768567516f22852d7ccc09c7940">InsecureServerCredentials</a> ()</td></tr>
 <tr class="separator:aa8c26768567516f22852d7ccc09c7940"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc5e6feb4faad8810853590f39be6e84"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_global_callback_hook.html">GlobalCallbackHook</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#adc5e6feb4faad8810853590f39be6e84">GetGlobalCallbackHook</a> ()</td></tr>
+<tr class="separator:adc5e6feb4faad8810853590f39be6e84"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4d764b9d80dc40e3f6212b2b41a017d0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a4d764b9d80dc40e3f6212b2b41a017d0">SetGlobalCallbackHook</a> (<a class="el" href="classgrpc_1_1_global_callback_hook.html">GlobalCallbackHook</a> *hook)</td></tr>
+<tr class="separator:a4d764b9d80dc40e3f6212b2b41a017d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1e21a88e0fbe61d11824bc0109aa1378"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a1e21a88e0fbe61d11824bc0109aa1378">StringRefFromSlice</a> (const <a class="el" href="structgrpc__slice.html">grpc_slice</a> *slice)</td></tr>
 <tr class="separator:a1e21a88e0fbe61d11824bc0109aa1378"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8bb64dd8c0b75221b3b12e6250701b9e"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a8bb64dd8c0b75221b3b12e6250701b9e">StringFromCopiedSlice</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> slice)</td></tr>
@@ -1146,6 +1156,23 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 
 </div>
 </div>
+<a id="adc5e6feb4faad8810853590f39be6e84"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adc5e6feb4faad8810853590f39be6e84">&#9670;&nbsp;</a></span>GetGlobalCallbackHook()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_global_callback_hook.html">GlobalCallbackHook</a>&gt; grpc::GetGlobalCallbackHook </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="ad9eda8fa85bd833730a40697278e9fe6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad9eda8fa85bd833730a40697278e9fe6">&#9670;&nbsp;</a></span>GoogleComputeEngineCredentials()</h2>
 
@@ -1662,6 +1689,24 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 
 </div>
 </div>
+<a id="a4d764b9d80dc40e3f6212b2b41a017d0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4d764b9d80dc40e3f6212b2b41a017d0">&#9670;&nbsp;</a></span>SetGlobalCallbackHook()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::SetGlobalCallbackHook </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_global_callback_hook.html">GlobalCallbackHook</a> *&#160;</td>
+          <td class="paramname"><em>hook</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a0307c92f3128c6cb1574393cb17d2526"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0307c92f3128c6cb1574393cb17d2526">&#9670;&nbsp;</a></span>SliceFromCopiedString()</h2>
 
@@ -1995,7 +2040,7 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 22 2024 20:29:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jan 22 2025 17:46:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

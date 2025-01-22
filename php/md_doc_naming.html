@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.66.0</span>
+   &#160;<span id="projectnumber">1.69.0</span>
    </div>
   </td>
  </tr>
@@ -84,9 +84,9 @@ Name Syntax</h2>
 <li><code>authority</code> indicates the DNS server to use, although this is only supported by some implementations. (In C-core, the default DNS resolver does not support this, but the c-ares based resolver supports specifying this in the form "IP:port".)</li>
 </ul>
 </li>
-<li><code>unix:path</code>, <code>unix://absolute_path</code> &ndash; Unix domain sockets (Unix systems only)<ul>
+<li><code>unix:path</code>, <code>unix:///absolute_path</code> &ndash; Unix domain sockets (Unix systems only)<ul>
 <li><code>path</code> indicates the location of the desired socket.</li>
-<li>In the first form, the path may be relative or absolute; in the second form, the path must be absolute (i.e., there will actually be three slashes, two prior to the path and another to begin the absolute path).</li>
+<li>In the first form, the path may be relative or absolute; in the second form, the path must be absolute (i.e., the last of the three slashes is actually part of the path, so the path part of the URI is <code>/absolute_path</code>).</li>
 </ul>
 </li>
 <li><code>unix-abstract:abstract_path</code> &ndash; Unix domain socket in abstract namespace (Unix systems only)<ul>
@@ -135,7 +135,7 @@ Resolver Plugins</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 22 2024 20:30:32 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jan 22 2025 17:46:52 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

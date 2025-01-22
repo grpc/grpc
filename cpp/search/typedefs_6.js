@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['inputmetadata_4287',['InputMetadata',['../classgrpc_1_1_auth_metadata_processor.html#a0c5846f57c862880f0f6db29577bb9e5',1,'grpc::AuthMetadataProcessor']]],
-  ['iterator_5fcategory_4288',['iterator_category',['../classgrpc_1_1_auth_property_iterator.html#aaf1d1192c1bf6b80e7211c67a4cd079d',1,'grpc::AuthPropertyIterator']]]
+  ['hoststring_4271',['HostString',['../classgrpc_1_1_server_builder.html#a859a36e42d7acbe4b56decf57e84b54d',1,'grpc::ServerBuilder']]]
 ];

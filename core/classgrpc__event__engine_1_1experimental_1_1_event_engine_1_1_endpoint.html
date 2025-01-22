@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">43.0.0</span>
+   &#160;<span id="projectnumber">44.2.0</span>
    </div>
   </td>
  </tr>
@@ -242,7 +242,7 @@ Additional Inherited Members</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Reads data from the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a>. </p>
-<p>When data is available on the connection, that data is moved into the <em>buffer</em>. If the read succeeds immediately, it returns true and the <em>on_read</em> callback is not executed. Otherwise it returns false and the <em>on_read</em> callback executes asynchronously when the read completes. The caller must ensure that the callback has access to the buffer when it executes. Ownership of the buffer is not transferred. Valid slices <em>may</em> be placed into the buffer even if the callback is invoked with a non-OK Status.</p>
+<p>When data is available on the connection, that data is moved into the <em>buffer</em>. If the read succeeds immediately, it returns true and the <em>on_read</em> callback is not executed. Otherwise it returns false and the <em>on_read</em> callback executes asynchronously when the read completes. The caller must ensure that the callback has access to the buffer when it executes. Ownership of the buffer is not transferred. Either an error is passed to the callback (like socket closed), or valid data is available in the buffer, but never both at the same time. Implementations that receive valid data must not throw that data away - that is, if valid data is received on the underlying endpoint, a callback will be made with that data available and an ok status.</p>
 <p>There can be at most one outstanding read per <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> at any given time. An outstanding read is one in which the <em>on_read</em> callback has not yet been executed for some previous call to <em>Read</em>. If an attempt is made to call <em>Read</em> while a previous read is still outstanding, the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a></em> must abort.</p>
 <p>For failed read operations, implementations should pass the appropriate statuses to <em>on_read</em>. For example, callbacks might expect to receive CANCELLED on endpoint shutdown. </p>
 
@@ -301,7 +301,7 @@ Additional Inherited Members</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 22 2024 20:29:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jan 22 2025 17:46:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

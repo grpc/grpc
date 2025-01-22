@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.66.0</span>
+   &#160;<span id="projectnumber">1.69.0</span>
    </div>
   </td>
  </tr>
@@ -259,7 +259,7 @@ template&lt;class Request , class Response &gt; </div>
 <p>Notifies the application that a StartRead operation completed. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was it successful? If false, no new read/write operation will succeed, and any further Start* should not be called. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was it successful? If false, no new read/write operation will succeed. </td></tr>
   </table>
   </dd>
 </dl>
@@ -296,7 +296,7 @@ template&lt;class Request , class Response &gt; </div>
 <p>If the application chooses not to implement this method, it can assume that the initial metadata has been read before the first call of OnReadDone or OnDone.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was the initial metadata read successfully? If false, no new read/write operation will succeed, and any further Start* operations should not be called. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was the initial metadata read successfully? If false, no new read/write operation will succeed. </td></tr>
   </table>
   </dd>
 </dl>
@@ -332,7 +332,7 @@ template&lt;class Request , class Response &gt; </div>
 <p>Notifies the application that a StartWrite or StartWriteLast operation completed. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was it successful? If false, no new read/write operation will succeed, and any further Start* should not be called. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was it successful? If false, no new read/write operation will succeed. </td></tr>
   </table>
   </dd>
 </dl>
@@ -661,7 +661,7 @@ template&lt;class Request , class Response &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 22 2024 20:29:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jan 22 2025 17:46:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

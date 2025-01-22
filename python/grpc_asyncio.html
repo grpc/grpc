@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC AsyncIO API &#8212; gRPC Python 1.66.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
+    <title>gRPC AsyncIO API &#8212; gRPC Python 1.69.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=6625fa76" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=e6dd0d7c"></script>
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=50cea2f8"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -30,7 +30,7 @@
 
 
 
-<p class="blurb">1.66.0</p>
+<p class="blurb">1.69.0</p>
 
 
 
@@ -368,7 +368,7 @@ any call executed with this channel.</p></li>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">Channel</span></span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#Channel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Enables asynchronous RPC invocation as a client.</p>
 <p>Channel objects implement the Asynchronous Context Manager (aka. async
-with) type, although they are not supportted to be entered and exited
+with) type, although they are not supported to be entered and exited
 multiple times.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc.aio.Channel.__aenter__">
@@ -508,7 +508,7 @@ whether the method is registered.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A UnarySteramMultiCallable value for the named unary-stream method.</p>
+<dd class="field-even"><p>A UnaryStreamMultiCallable value for the named unary-stream method.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.UnaryStreamMultiCallable" title="grpc.aio._base_channel.UnaryStreamMultiCallable"><em>UnaryStreamMultiCallable</em></a></p>
@@ -1168,7 +1168,7 @@ failure.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc.aio.UnaryUnaryCall">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">UnaryUnaryCall</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#UnaryUnaryCall"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.UnaryUnaryCall" title="Permalink to this definition">¶</a></dt>
-<dd><p>The abstract base class of an unary-unary RPC on the client-side.</p>
+<dd><p>The abstract base class of a unary-unary RPC on the client-side.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc.aio.UnaryUnaryCall.__await__">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__await__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#UnaryUnaryCall.__await__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.UnaryUnaryCall.__await__" title="Permalink to this definition">¶</a></dt>
@@ -1357,7 +1357,7 @@ a single RPC.</p>
 <dt class="sig sig-object py" id="grpc.aio.ServicerContext.abort">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">abort</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">details</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trailing_metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#ServicerContext.abort"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServicerContext.abort" title="Permalink to this definition">¶</a></dt>
 <dd><p>Raises an exception to terminate the RPC with a non-OK status.</p>
-<p>The code and details passed as arguments will supercede any existing
+<p>The code and details passed as arguments will supersede any existing
 ones.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>

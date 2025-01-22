@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.66.0</span>
+   &#160;<span id="projectnumber">1.69.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,6 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#define-members">Macros</a> &#124;
 <a href="#typedef-members">Typedefs</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
@@ -76,18 +75,12 @@ $(function() {
 <div class="title">log.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;stdarg.h&gt;</code><br />
+<div class="textblock"><code>#include &lt;<a class="el" href="support_2port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br />
+<code>#include &lt;stdarg.h&gt;</code><br />
 <code>#include &lt;stdlib.h&gt;</code><br />
-<code>#include &lt;<a class="el" href="support_2port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br />
 </div>
 <p><a href="support_2log_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
-Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__log__func__args.html">gpr_log_func_args</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Log overrides: applications can use this API to intercept logging calls and use their own implementations.  <a href="structgpr__log__func__args.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:a3e793245091f13bb7318a18b1166a773"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2log_8h.html#a3e793245091f13bb7318a18b1166a773">GPR_DEBUG</a>&#160;&#160;&#160;__FILE__, __LINE__, <a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48af7d2a0ad91b0787398220ddcd91f06d6">GPR_LOG_SEVERITY_DEBUG</a></td></tr>
@@ -101,12 +94,8 @@ Macros</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
 <tr class="memitem:a3a2a87a76a9906f50b33472e2e68381d"><td class="memItemLeft" align="right" valign="top">typedef enum <a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2log_8h.html#a3a2a87a76a9906f50b33472e2e68381d">gpr_log_severity</a></td></tr>
-<tr class="memdesc:a3a2a87a76a9906f50b33472e2e68381d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Logging functions in this file are deprecated.  <a href="support_2log_8h.html#a3a2a87a76a9906f50b33472e2e68381d">More...</a><br /></td></tr>
+<tr class="memdesc:a3a2a87a76a9906f50b33472e2e68381d"><td class="mdescLeft">&#160;</td><td class="mdescRight">The severity of a log message - use the #defines below when calling into grpc_absl_log to additionally supply file and line data.  <a href="support_2log_8h.html#a3a2a87a76a9906f50b33472e2e68381d">More...</a><br /></td></tr>
 <tr class="separator:a3a2a87a76a9906f50b33472e2e68381d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adce8dc81f07a98265e917de7d7f3cde5"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgpr__log__func__args.html">gpr_log_func_args</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2log_8h.html#adce8dc81f07a98265e917de7d7f3cde5">gpr_log_func_args</a></td></tr>
-<tr class="separator:adce8dc81f07a98265e917de7d7f3cde5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3bba35ee3180d11d8ff5a71cc2ee2a05"><td class="memItemLeft" align="right" valign="top">typedef void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2log_8h.html#a3bba35ee3180d11d8ff5a71cc2ee2a05">gpr_log_func</a>) (<a class="el" href="structgpr__log__func__args.html">gpr_log_func_args</a> *args)</td></tr>
-<tr class="separator:a3bba35ee3180d11d8ff5a71cc2ee2a05"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
@@ -114,25 +103,22 @@ Enumerations</h2></td></tr>
 <a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48af6c13c67f06821c1629b7e019af4aaf1">GPR_LOG_SEVERITY_INFO</a>, 
 <a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48a52b957eb23ac2207b5e1dcf15c2b3dd4">GPR_LOG_SEVERITY_ERROR</a>
  }</td></tr>
-<tr class="memdesc:af10334b4085ac6985a2af9c08478ad48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Logging functions in this file are deprecated.  <a href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">More...</a><br /></td></tr>
+<tr class="memdesc:af10334b4085ac6985a2af9c08478ad48"><td class="mdescLeft">&#160;</td><td class="mdescRight">The severity of a log message - use the #defines below when calling into grpc_absl_log to additionally supply file and line data.  <a href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">More...</a><br /></td></tr>
 <tr class="separator:af10334b4085ac6985a2af9c08478ad48"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a938a283d9a10c3ddfe46dfc22e21077f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2log_8h.html#a938a283d9a10c3ddfe46dfc22e21077f">gpr_log</a> (const char *file, int line, <a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity, const char *format,...) <a class="el" href="support_2port__platform_8h.html#a3364659cddcdfeae3897c3300de03d05">GPR_PRINT_FORMAT_CHECK</a>(4</td></tr>
-<tr class="memdesc:a938a283d9a10c3ddfe46dfc22e21077f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Log a message.  <a href="support_2log_8h.html#a938a283d9a10c3ddfe46dfc22e21077f">More...</a><br /></td></tr>
-<tr class="separator:a938a283d9a10c3ddfe46dfc22e21077f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7fb54337c9f6a34074ab181eb98ace47"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void <a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2log_8h.html#a7fb54337c9f6a34074ab181eb98ace47">gpr_should_log</a> (<a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity)</td></tr>
-<tr class="separator:a7fb54337c9f6a34074ab181eb98ace47"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a182dc49f7d429e28b35cb78133e542d8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2log_8h.html#a182dc49f7d429e28b35cb78133e542d8">gpr_log_message</a> (const char *file, int line, <a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity, const char *message)</td></tr>
-<tr class="separator:a182dc49f7d429e28b35cb78133e542d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac328dcacd5bdbdf50ccd6f5ec3b73730"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2log_8h.html#ac328dcacd5bdbdf50ccd6f5ec3b73730">gpr_set_log_verbosity</a> (<a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> deprecated_setting)</td></tr>
-<tr class="memdesc:ac328dcacd5bdbdf50ccd6f5ec3b73730"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set global log verbosity.  <a href="support_2log_8h.html#ac328dcacd5bdbdf50ccd6f5ec3b73730">More...</a><br /></td></tr>
-<tr class="separator:ac328dcacd5bdbdf50ccd6f5ec3b73730"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2225dcd9f7fb75d971c72b1faae12760"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2log_8h.html#a2225dcd9f7fb75d971c72b1faae12760">grpc_absl_log</a> (const char *file, int line, <a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity, const char *message_str)</td></tr>
+<tr class="memdesc:a2225dcd9f7fb75d971c72b1faae12760"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL.  <a href="support_2log_8h.html#a2225dcd9f7fb75d971c72b1faae12760">More...</a><br /></td></tr>
+<tr class="separator:a2225dcd9f7fb75d971c72b1faae12760"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa856f00b576bee53bb3b8a78396225e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2log_8h.html#aaa856f00b576bee53bb3b8a78396225e">grpc_absl_log_int</a> (const char *file, int line, <a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity, const char *message_str, intptr_t num)</td></tr>
+<tr class="memdesc:aaa856f00b576bee53bb3b8a78396225e"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL.  <a href="support_2log_8h.html#aaa856f00b576bee53bb3b8a78396225e">More...</a><br /></td></tr>
+<tr class="separator:aaa856f00b576bee53bb3b8a78396225e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc679db2b616ded963c7eb07284f19ba"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2log_8h.html#adc679db2b616ded963c7eb07284f19ba">grpc_absl_log_str</a> (const char *file, int line, <a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity, const char *message_str1, const char *message_str2)</td></tr>
+<tr class="memdesc:adc679db2b616ded963c7eb07284f19ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL.  <a href="support_2log_8h.html#adc679db2b616ded963c7eb07284f19ba">More...</a><br /></td></tr>
+<tr class="separator:adc679db2b616ded963c7eb07284f19ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a920f1611251015a9806177ed78931aa5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2log_8h.html#a920f1611251015a9806177ed78931aa5">gpr_log_verbosity_init</a> (void)</td></tr>
 <tr class="separator:a920f1611251015a9806177ed78931aa5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac3b9ceccb877f4240d56db6206968324"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2log_8h.html#ac3b9ceccb877f4240d56db6206968324">gpr_set_log_function</a> (<a class="el" href="support_2log_8h.html#a3bba35ee3180d11d8ff5a71cc2ee2a05">gpr_log_func</a> deprecated_setting)</td></tr>
-<tr class="separator:ac3b9ceccb877f4240d56db6206968324"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a3e793245091f13bb7318a18b1166a773"></a>
@@ -180,34 +166,6 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Typedef Documentation</h2>
-<a id="a3bba35ee3180d11d8ff5a71cc2ee2a05"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3bba35ee3180d11d8ff5a71cc2ee2a05">&#9670;&nbsp;</a></span>gpr_log_func</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef void(* gpr_log_func) (<a class="el" href="structgpr__log__func__args.html">gpr_log_func_args</a> *args)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="adce8dc81f07a98265e917de7d7f3cde5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adce8dc81f07a98265e917de7d7f3cde5">&#9670;&nbsp;</a></span>gpr_log_func_args</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef struct <a class="el" href="structgpr__log__func__args.html">gpr_log_func_args</a> <a class="el" href="structgpr__log__func__args.html">gpr_log_func_args</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="a3a2a87a76a9906f50b33472e2e68381d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3a2a87a76a9906f50b33472e2e68381d">&#9670;&nbsp;</a></span>gpr_log_severity</h2>
 
@@ -220,8 +178,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Logging functions in this file are deprecated. </p>
-<p>Please use absl ABSL_LOG instead. The severity of a log message - use the #defines below when calling into gpr_log to additionally supply file and line data </p>
+<p>The severity of a log message - use the #defines below when calling into grpc_absl_log to additionally supply file and line data. </p>
 
 </div>
 </div>
@@ -238,8 +195,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Logging functions in this file are deprecated. </p>
-<p>Please use absl ABSL_LOG instead. The severity of a log message - use the #defines below when calling into gpr_log to additionally supply file and line data </p>
+<p>The severity of a log message - use the #defines below when calling into grpc_absl_log to additionally supply file and line data. </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="af10334b4085ac6985a2af9c08478ad48af7d2a0ad91b0787398220ddcd91f06d6"></a>GPR_LOG_SEVERITY_DEBUG&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="af10334b4085ac6985a2af9c08478ad48af6c13c67f06821c1629b7e019af4aaf1"></a>GPR_LOG_SEVERITY_INFO&#160;</td><td class="fielddoc"></td></tr>
@@ -249,95 +205,6 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a id="a938a283d9a10c3ddfe46dfc22e21077f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a938a283d9a10c3ddfe46dfc22e21077f">&#9670;&nbsp;</a></span>gpr_log()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_log </td>
-          <td>(</td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>file</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>line</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
-          <td class="paramname"><em>severity</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>format</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">&#160;</td>
-          <td class="paramname"><em>...</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Log a message. </p>
-<p>It's advised to use GPR_xxx above to generate the context for each message </p>
-
-</div>
-</div>
-<a id="a182dc49f7d429e28b35cb78133e542d8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a182dc49f7d429e28b35cb78133e542d8">&#9670;&nbsp;</a></span>gpr_log_message()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_log_message </td>
-          <td>(</td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>file</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>line</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
-          <td class="paramname"><em>severity</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>message</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="a920f1611251015a9806177ed78931aa5"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a920f1611251015a9806177ed78931aa5">&#9670;&nbsp;</a></span>gpr_log_verbosity_init()</h2>
 
@@ -356,66 +223,151 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="ac3b9ceccb877f4240d56db6206968324"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac3b9ceccb877f4240d56db6206968324">&#9670;&nbsp;</a></span>gpr_set_log_function()</h2>
+<a id="a2225dcd9f7fb75d971c72b1faae12760"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2225dcd9f7fb75d971c72b1faae12760">&#9670;&nbsp;</a></span>grpc_absl_log()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_set_log_function </td>
+          <td class="memname"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void grpc_absl_log </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="support_2log_8h.html#a3bba35ee3180d11d8ff5a71cc2ee2a05">gpr_log_func</a>&#160;</td>
-          <td class="paramname"><em>deprecated_setting</em></td><td>)</td>
-          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>file</em>, </td>
         </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ac328dcacd5bdbdf50ccd6f5ec3b73730"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac328dcacd5bdbdf50ccd6f5ec3b73730">&#9670;&nbsp;</a></span>gpr_set_log_verbosity()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_set_log_verbosity </td>
-          <td>(</td>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>line</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype"><a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
-          <td class="paramname"><em>deprecated_setting</em></td><td>)</td>
+          <td class="paramname"><em>severity</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>message_str</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Set global log verbosity. </p>
+<p>EXPERIMENTAL. </p>
+<p>API stability not guaranteed. Should only be used from gRPC PHP and RUBY. This will be removed once Ruby and PHP can start using C++ APIs. We would replace this with calls to absl LOG functions. grpc_absl_log is equivalent to ABSL_LOG(severity) &lt;&lt; message_str; </p>
 
 </div>
 </div>
-<a id="a7fb54337c9f6a34074ab181eb98ace47"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7fb54337c9f6a34074ab181eb98ace47">&#9670;&nbsp;</a></span>gpr_should_log()</h2>
+<a id="aaa856f00b576bee53bb3b8a78396225e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaa856f00b576bee53bb3b8a78396225e">&#9670;&nbsp;</a></span>grpc_absl_log_int()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void <a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int gpr_should_log </td>
+          <td class="memname"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void grpc_absl_log_int </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
-          <td class="paramname"><em>severity</em></td><td>)</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>file</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>line</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
+          <td class="paramname"><em>severity</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>message_str</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">intptr_t&#160;</td>
+          <td class="paramname"><em>num</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>EXPERIMENTAL. </p>
+<p>API stability not guaranteed. Should only be used from gRPC PHP and RUBY. This will be removed once Ruby and PHP can start using C++ APIs. We would replace this with calls to absl LOG functions. grpc_absl_log_int is equivalent to ABSL_LOG(severity) &lt;&lt; message_str &lt;&lt; num; </p>
+
+</div>
+</div>
+<a id="adc679db2b616ded963c7eb07284f19ba"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adc679db2b616ded963c7eb07284f19ba">&#9670;&nbsp;</a></span>grpc_absl_log_str()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void grpc_absl_log_str </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>file</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>line</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
+          <td class="paramname"><em>severity</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>message_str1</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>message_str2</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL. </p>
+<p>API stability not guaranteed. Should only be used from gRPC PHP and RUBY. This will be removed once Ruby and PHP can start using C++ APIs. We would replace this with calls to absl LOG functions. grpc_absl_log_str is equivalent to ABSL_LOG(severity) &lt;&lt; message_str1 &lt;&lt; message_str2; </p>
 
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 22 2024 20:29:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jan 22 2025 17:46:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

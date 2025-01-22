@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_observability._open_telemetry_plugin &#8212; gRPC Python 1.66.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=4f649999" />
+    <title>grpc_observability._open_telemetry_plugin &#8212; gRPC Python 1.69.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=6625fa76" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=e6dd0d7c"></script>
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=50cea2f8"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.66.0</p>
+<p class="blurb">1.69.0</p>
 
 
 
@@ -100,12 +100,12 @@
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">AnyStr</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnyStr</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="c1"># pytype: disable=pyi-error</span>
-<span class="kn">from</span> <span class="nn">grpc_observability</span> <span class="kn">import</span> <span class="n">_open_telemetry_observability</span>
-<span class="kn">from</span> <span class="nn">grpc_observability._observability</span> <span class="kn">import</span> <span class="n">OptionalLabelType</span>
-<span class="kn">from</span> <span class="nn">opentelemetry.metrics</span> <span class="kn">import</span> <span class="n">MeterProvider</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">grpc_observability</span><span class="w"> </span><span class="kn">import</span> <span class="n">_open_telemetry_observability</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">grpc_observability._observability</span><span class="w"> </span><span class="kn">import</span> <span class="n">OptionalLabelType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">opentelemetry.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">MeterProvider</span>
 
 <span class="n">GRPC_METHOD_LABEL</span> <span class="o">=</span> <span class="s2">&quot;grpc.method&quot;</span>
 <span class="n">GRPC_TARGET_LABEL</span> <span class="o">=</span> <span class="s2">&quot;grpc.target&quot;</span>
@@ -113,12 +113,12 @@
 <span class="n">GRPC_OTHER_LABEL_VALUE</span> <span class="o">=</span> <span class="s2">&quot;other&quot;</span>
 
 
-<span class="k">class</span> <span class="nc">OpenTelemetryLabelInjector</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OpenTelemetryLabelInjector</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    An interface that allows you to add additional labels on the calls traced.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">get_labels_for_exchange</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AnyStr</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_labels_for_exchange</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AnyStr</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get labels used for metadata exchange.</span>
 
@@ -128,7 +128,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">get_additional_labels</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_additional_labels</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">include_exchange_labels</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -145,7 +145,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="c1"># pylint: disable=no-self-use</span>
-    <span class="k">def</span> <span class="nf">deserialize_labels</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">deserialize_labels</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AnyStr</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AnyStr</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -169,14 +169,14 @@
         <span class="k">return</span> <span class="n">labels</span>
 
 
-<span class="k">class</span> <span class="nc">OpenTelemetryPluginOption</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OpenTelemetryPluginOption</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    An interface that allows you to add additional function to OpenTelemetryPlugin.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 
 <span class="c1"># pylint: disable=no-self-use</span>
-<div class="viewcode-block" id="OpenTelemetryPlugin"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin">[docs]</a><span class="k">class</span> <span class="nc">OpenTelemetryPlugin</span><span class="p">:</span>
+<div class="viewcode-block" id="OpenTelemetryPlugin"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">OpenTelemetryPlugin</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Describes a Plugin for OpenTelemetry observability.&quot;&quot;&quot;</span>
 
     <span class="n">plugin_options</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OpenTelemetryPluginOption</span><span class="p">]</span>
@@ -185,7 +185,7 @@
     <span class="n">generic_method_attribute_filter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span>
     <span class="n">_plugins</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">_open_telemetry_observability</span><span class="o">.</span><span class="n">_OpenTelemetryPlugin</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
         <span class="n">plugin_options</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OpenTelemetryPluginOption</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
@@ -227,7 +227,7 @@
             <span class="n">_open_telemetry_observability</span><span class="o">.</span><span class="n">_OpenTelemetryPlugin</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="p">]</span>
 
-<div class="viewcode-block" id="OpenTelemetryPlugin.register_global"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin.register_global">[docs]</a>    <span class="k">def</span> <span class="nf">register_global</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="OpenTelemetryPlugin.register_global"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin.register_global">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">register_global</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Registers a global plugin that acts on all channels and servers running on the process.</span>
 
@@ -238,7 +238,7 @@
             <span class="n">plugins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_plugins</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="OpenTelemetryPlugin.deregister_global"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin.deregister_global">[docs]</a>    <span class="k">def</span> <span class="nf">deregister_global</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="OpenTelemetryPlugin.deregister_global"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin.deregister_global">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">deregister_global</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        De-register the global plugin that acts on all channels and servers running on the process.</span>
 
@@ -247,15 +247,15 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">_open_telemetry_observability</span><span class="o">.</span><span class="n">end_open_telemetry_observability</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_open_telemetry_observability</span><span class="o">.</span><span class="n">start_open_telemetry_observability</span><span class="p">(</span>
             <span class="n">plugins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_plugins</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_open_telemetry_observability</span><span class="o">.</span><span class="n">end_open_telemetry_observability</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_get_enabled_optional_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">OptionalLabelType</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_enabled_optional_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">OptionalLabelType</span><span class="p">]:</span>
         <span class="k">return</span> <span class="p">[]</span></div>
 </pre></div>
 

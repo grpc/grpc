@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.66.0</span>
+   &#160;<span id="projectnumber">1.69.0</span>
    </div>
   </td>
  </tr>
@@ -91,9 +91,9 @@ $(function() {
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPCPP_IMPL_DELEGATING_CHANNEL_H</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#define GRPCPP_IMPL_DELEGATING_CHANNEL_H</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2impl_2channel__interface_8h.html">grpcpp/impl/channel_interface.h</a>&gt;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2impl_2channel__interface_8h.html">grpcpp/impl/channel_interface.h</a>&gt;</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacegrpc.html">grpc</a> {</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keyword">namespace </span>experimental {</div>
@@ -168,18 +168,18 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a></div><div class="ttdoc">Straightforward wrapping of the C call object.</div><div class="ttdef"><b>Definition:</b> call.h:36</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_delegating_channel_html_a887468dba1e736ef2ef48bf8f7bcd696"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_delegating_channel.html#a887468dba1e736ef2ef48bf8f7bcd696">grpc::experimental::DelegatingChannel::~DelegatingChannel</a></div><div class="ttdeci">~DelegatingChannel() override</div><div class="ttdef"><b>Definition:</b> delegating_channel.h:31</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_delegating_channel_html_a66254707af03b6705d046ab0d9d759ed"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_delegating_channel.html#a66254707af03b6705d046ab0d9d759ed">grpc::experimental::DelegatingChannel::DelegatingChannel</a></div><div class="ttdeci">DelegatingChannel(std::shared_ptr&lt; grpc::ChannelInterface &gt; delegate_channel)</div><div class="ttdef"><b>Definition:</b> delegating_channel.h:33</div></div>
-<div class="ttc" id="aclassgrpc_1_1_client_context_html"><div class="ttname"><a href="classgrpc_1_1_client_context.html">grpc::ClientContext</a></div><div class="ttdoc">A ClientContext allows the person implementing a service client to:</div><div class="ttdef"><b>Definition:</b> client_context.h:195</div></div>
+<div class="ttc" id="aclassgrpc_1_1_client_context_html"><div class="ttname"><a href="classgrpc_1_1_client_context.html">grpc::ClientContext</a></div><div class="ttdoc">A ClientContext allows the person implementing a service client to:</div><div class="ttdef"><b>Definition:</b> client_context.h:194</div></div>
 <div class="ttc" id="aconnectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a></div><div class="ttdeci">grpc_connectivity_state</div><div class="ttdoc">Connectivity state of a channel.</div><div class="ttdef"><b>Definition:</b> connectivity_state.h:30</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_set_interface_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set_interface.html">grpc::internal::CallOpSetInterface</a></div><div class="ttdoc">An abstract collection of call ops, used to generate the grpc_call_op structure to pass down to the l...</div><div class="ttdef"><b>Definition:</b> call_op_set_interface.h:36</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_delegating_channel_html"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_delegating_channel.html">grpc::experimental::DelegatingChannel</a></div><div class="ttdef"><b>Definition:</b> delegating_channel.h:29</div></div>
 <div class="ttc" id="agrpcpp_2impl_2channel__interface_8h_html"><div class="ttname"><a href="grpcpp_2impl_2channel__interface_8h.html">channel_interface.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_channel_interface_html"><div class="ttname"><a href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a></div><div class="ttdoc">Codegen interface for grpc::Channel.</div><div class="ttdef"><b>Definition:</b> channel_interface.h:71</div></div>
-<div class="ttc" id="aclassgrpc_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a></div><div class="ttdoc">A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue....</div><div class="ttdef"><b>Definition:</b> completion_queue.h:105</div></div>
+<div class="ttc" id="aclassgrpc_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a></div><div class="ttdoc">A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue....</div><div class="ttdef"><b>Definition:</b> completion_queue.h:104</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_method_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a></div><div class="ttdoc">Descriptor of an RPC method.</div><div class="ttdef"><b>Definition:</b> rpc_method.h:29</div></div>
-<div class="ttc" id="astructgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdoc">Analogous to struct timespec.</div><div class="ttdef"><b>Definition:</b> time.h:48</div></div>
+<div class="ttc" id="astructgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdoc">Analogous to struct timespec.</div><div class="ttdef"><b>Definition:</b> time.h:47</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 22 2024 20:29:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jan 22 2025 17:46:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

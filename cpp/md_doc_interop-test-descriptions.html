@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.66.0</span>
+   &#160;<span id="projectnumber">1.69.0</span>
    </div>
   </td>
  </tr>
@@ -614,20 +614,23 @@ timeout_on_sleeping_server</h2>
 </ul>
 <h2><a class="anchor" id="autotoc_md151"></a>
 rpc_soak</h2>
-<p>The client performs many large_unary RPCs in sequence over the same channel. The client records the latency and status of each RPC in some data structure. If the test ever consumes <code>soak_overall_timeout_seconds</code> seconds and still hasn't completed <code>soak_iterations</code> RPCs, then the test should discontinue sending RPCs as soon as possible. After performing all RPCs, the test should examine previously recorded RPC latency and status results in a second pass and fail if either:</p>
-<p>a) not all <code>soak_iterations</code> RPCs were completed</p>
+<p>The client performs many large_unary RPCs in sequence over the same channel. The total number of RPCs to execute is controlled by the <code>soak_iterations</code> parameter, which defaults to 10. The number of threads used to execute RPCs is controlled by <code>soak_num_threads</code>. By default, <code>soak_num_threads</code> is set to 1.</p>
+<p>The client records the latency and status of each RPC in thread-specific data structure, which are later aggregated to form the overall results. If the test ever consumes <code>soak_overall_timeout_seconds</code> seconds and still hasn't completed <code>soak_iterations</code> RPCs, then the test should discontinue sending RPCs as soon as possible. Each thread should independently track its progress and stop once the overall timeout is reached.</p>
+<p>After performing all RPCs, the test should examine the previously aggregated RPC latency and status results from all threads in a second pass and fail if either:</p>
+<p>a) not all <code>soak_iterations</code> RPCs were completed across all threads</p>
 <p>b) the sum of RPCs that either completed with a non-OK status or exceeded <code>max_acceptable_per_rpc_latency_ms</code> exceeds <code>soak_max_failures</code></p>
 <p>Implementations should use a timer with sub-millisecond precision to measure latency. Also, implementations should avoid setting RPC deadlines and should instead wait for each RPC to complete. Doing so provides more data for debugging in case of failure. For example, if RPC deadlines are set to <code>soak_per_iteration_max_acceptable_latency_ms</code> and one of the RPCs hits that deadline, it's not clear if the RPC was late by a millisecond or a minute.</p>
 <p>In order to make it easy to analyze results, implementations should log the results of each iteration (i.e. RPC) in a format the matches the following regexes:</p>
 <ul>
 <li>Upon success:<ul>
-<li><code>soak iteration: \d+ elapsed_ms: \d+ peer: \S+ succeeded</code></li>
+<li><code>thread_id: \d+ soak iteration: \d+ elapsed_ms: \d+ peer: \S+ server_uri: \S+ succeeded</code></li>
 </ul>
 </li>
 <li>Upon failure:<ul>
-<li><code>soak iteration: \d+ elapsed_ms: \d+ peer: \S+ failed:</code></li>
+<li><code>thread_id: \d+ soak iteration: \d+ elapsed_ms: \d+ peer: \S+ server_uri: \S+ failed</code></li>
 </ul>
 </li>
+<li>Thread-specific logs will include the thread_id, helping to track performance across threads.</li>
 </ul>
 <p>This test must be configurable via a few different command line flags:</p>
 <ul>
@@ -636,7 +639,9 @@ rpc_soak</h2>
 <li><code>soak_per_iteration_max_acceptable_latency_ms</code>: An upper limit on the latency of a single RPC in order for that RPC to be considered successful. This should default to 1000.</li>
 <li><code>soak_overall_timeout_seconds</code>: The overall number of seconds after which the test should stop and fail if <code>soak_iterations</code> have not yet been completed. This should default to <code>soak_per_iteration_max_acceptable_latency_ms</code> * <code>soak_iterations</code>.</li>
 <li><code>soak_min_time_ms_between_rpcs</code>: The minimum time in milliseconds between consecutive RPCs. Useful for limiting QPS.</li>
+<li><code>soak_num_threads</code>: Specifies the number of threads to use for concurrently executing the soak test. Each thread performs <code>soak_iterations / soak_num_threads</code> RPCs.</li>
 </ul>
+<p>This value defaults to 1 (i.e., no concurrency) but can be increased for concurrent execution. The total soak_iterations must be divisible by soak_num_threads.</p>
 <p>The following is optional but encouraged to improve debuggability:</p>
 <ul>
 <li>Implementations should log the number of milliseconds that each RPC takes. Additionally, implementations should use a histogram of RPC latencies to log interesting latency percentiles at the end of the test (e.g. median, 90th, and max latency percentiles).</li>
@@ -803,7 +808,7 @@ Backend metrics report</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 22 2024 20:29:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jan 22 2025 17:46:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

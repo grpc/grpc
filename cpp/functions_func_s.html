@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.66.0</span>
+   &#160;<span id="projectnumber">1.69.0</span>
    </div>
   </td>
  </tr>
@@ -92,6 +92,7 @@ $(function() {
 </li>
 <li>Serialize()
 : <a class="el" href="classgrpc_1_1_serialization_traits_3_01_byte_buffer_00_01void_01_4.html#a5a4c3007da4742be050c0d58de8c0590">grpc::SerializationTraits&lt; ByteBuffer, void &gt;</a>
+, <a class="el" href="classgrpc_1_1_serialization_traits_3_01_t_00_01typename_01std_1_1enable__if_3_01std_1_1is__base_b37dbfcdf48c548179e7ce71324c558d.html#a1e1dda167ad461aa25c4b1bd5e3164ca">grpc::SerializationTraits&lt; T, typename std::enable_if&lt; std::is_base_of&lt; grpc::protobuf::MessageLite, T &gt;::value &gt;::type &gt;</a>
 </li>
 <li>server()
 : <a class="el" href="classgrpc_1_1_server.html#a01bdfb4554d12a10bdc9cf875ffa74dd">grpc::Server</a>
@@ -528,13 +529,13 @@ $(function() {
 </li>
 <li>Slice()
 : <a class="el" href="classgrpc_1_1_slice.html#ac7fd05a7ad8edb55c163b544e7878bf9">grpc::Slice</a>
-, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html#a98ac64e5f279f9d4803e816c9b0936d9">grpc_event_engine::experimental::Slice</a>
+, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html#a278d471f8eb65d850d80b118c25b1425">grpc_event_engine::experimental::Slice</a>
 </li>
 <li>slice_buffer()
 : <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">grpc::ProtoBufferWriter</a>
 </li>
 <li>SliceBuffer()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#ade0e4e5abe166c1827e58450d9fb5afb">grpc_event_engine::experimental::SliceBuffer</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a43c5d22b87a18752251ec8615a03614f">grpc_event_engine::experimental::SliceBuffer</a>
 </li>
 <li>Split()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html#a9c9bd6e139ce9c81cea21b9dff7920c9">grpc_event_engine::experimental::Slice</a>
@@ -543,7 +544,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_split_server_streaming_handler.html#aae1ae9f8d89807beb6dfd0faf9c1e811">grpc::internal::SplitServerStreamingHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>SslServerCredentialsOptions()
-: <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#a00650afd8a132f271b068d17da446679">grpc::SslServerCredentialsOptions</a>
+: <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#ae85661f17b0dd9f4fc27275203e5f105">grpc::SslServerCredentialsOptions</a>
 </li>
 <li>Start()
 : <a class="el" href="classgrpc_1_1_server.html#affff5d179b3a71617cbb02062f49eea4">grpc::Server</a>
@@ -587,10 +588,10 @@ $(function() {
 , <a class="el" href="classgrpc_1_1_server_write_reactor.html#a0140acfa74b29204685c0b1419def12c">grpc::ServerWriteReactor&lt; Response &gt;</a>
 </li>
 <li>StartWrite()
-: <a class="el" href="classgrpc_1_1_client_bidi_reactor.html#a177a3b5ce82b12a775b88f2a97b18a57">grpc::ClientBidiReactor&lt; Request, Response &gt;</a>
+: <a class="el" href="classgrpc_1_1_client_bidi_reactor.html#a3c14129661af38610185a006bbb7eca9">grpc::ClientBidiReactor&lt; Request, Response &gt;</a>
 , <a class="el" href="classgrpc_1_1_client_write_reactor.html#a5d1b16d5de5ac0c97213767ec64a95b3">grpc::ClientWriteReactor&lt; Request &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_bidi_reactor.html#aceedcb52f4d8ffc1224af41262e0aeee">grpc::ServerBidiReactor&lt; Request, Response &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_write_reactor.html#aaccd5a5151a39c82758f25f253a82d33">grpc::ServerWriteReactor&lt; Response &gt;</a>
+, <a class="el" href="classgrpc_1_1_server_bidi_reactor.html#a7b457aceeb312472835007c289c711e8">grpc::ServerBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1_server_write_reactor.html#a5b6e9e57ea86029528a96bc34a87b4ec">grpc::ServerWriteReactor&lt; Response &gt;</a>
 </li>
 <li>StartWriteAndFinish()
 : <a class="el" href="classgrpc_1_1_server_bidi_reactor.html#a783f5c223d3835b9e0c8e4d2acf2eea5">grpc::ServerBidiReactor&lt; Request, Response &gt;</a>
@@ -632,10 +633,10 @@ $(function() {
 : <a class="el" href="classgrpc__core_1_1experimental_1_1_json.html#a411f280e030186228c9ea18dce58219a">grpc_core::experimental::Json</a>
 </li>
 <li>string_ref()
-: <a class="el" href="classgrpc_1_1string__ref.html#af77d94ce992f8355a411a231b995664d">grpc::string_ref</a>
+: <a class="el" href="classgrpc_1_1string__ref.html#ab929e0c1cff6f7ab4f4d9e4b5734b18c">grpc::string_ref</a>
 </li>
 <li>StubOptions()
-: <a class="el" href="classgrpc_1_1_stub_options.html#a7af8c4b4f608a7cf6c7b12b9ed8817d7">grpc::StubOptions</a>
+: <a class="el" href="classgrpc_1_1_stub_options.html#aefbc4ac4c7a050a6317c1beb5f3bacfd">grpc::StubOptions</a>
 </li>
 <li>sub()
 : <a class="el" href="classgrpc_1_1_slice.html#a48b3aee091958392cdfe5a8cff7f850a">grpc::Slice</a>
@@ -658,7 +659,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 22 2024 20:29:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jan 22 2025 17:46:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

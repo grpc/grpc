@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.66.0</span>
+   &#160;<span id="projectnumber">1.69.0</span>
    </div>
   </td>
  </tr>
@@ -101,36 +101,34 @@ $(function() {
 <div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="structgpr__event.html#a9eb43867719fcdf48f33df11cd138be9">   29</a></span>&#160;  <a class="code" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> <a class="code" href="structgpr__event.html#a9eb43867719fcdf48f33df11cd138be9">state</a>;</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;} <a class="code" href="structgpr__event.html">gpr_event</a>;</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno"><a class="line" href="support_2sync__generic_8h.html#a6f38fe7692eaa6663c1f79ff5847c050">   32</a></span>&#160;<span class="preprocessor">#define GPR_EVENT_INIT \</span></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="preprocessor">  { 0 }</span></div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="comment">/* gpr_refcount */</span></div>
-<div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="structgpr__refcount.html">   36</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span>{</div>
-<div class="line"><a name="l00037"></a><span class="lineno"><a class="line" href="structgpr__refcount.html#ae1e2d58344b59ff6c0db0dc4f2953470">   37</a></span>&#160;  <a class="code" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> <a class="code" href="structgpr__refcount.html#ae1e2d58344b59ff6c0db0dc4f2953470">count</a>;</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;} <a class="code" href="structgpr__refcount.html">gpr_refcount</a>;</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="comment">/* gpr_stats_counter */</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="structgpr__stats__counter.html">   41</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span>{</div>
-<div class="line"><a name="l00042"></a><span class="lineno"><a class="line" href="structgpr__stats__counter.html#ab9338ff7b5fd9f0c0830a8a788aab04a">   42</a></span>&#160;  <a class="code" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> <a class="code" href="structgpr__stats__counter.html#ab9338ff7b5fd9f0c0830a8a788aab04a">value</a>;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;} <a class="code" href="structgpr__stats__counter.html">gpr_stats_counter</a>;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="support_2sync__generic_8h.html#ada230498c8e2aca51e9349709e70e1ef">   45</a></span>&#160;<span class="preprocessor">#define GPR_STATS_INIT \</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="preprocessor">  { 0 }</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_SYNC_GENERIC_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00032"></a><span class="lineno"><a class="line" href="support_2sync__generic_8h.html#a6f38fe7692eaa6663c1f79ff5847c050">   32</a></span>&#160;<span class="preprocessor">#define GPR_EVENT_INIT {0}</span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="comment">/* gpr_refcount */</span></div>
+<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="structgpr__refcount.html">   35</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span>{</div>
+<div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="structgpr__refcount.html#ae1e2d58344b59ff6c0db0dc4f2953470">   36</a></span>&#160;  <a class="code" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> <a class="code" href="structgpr__refcount.html#ae1e2d58344b59ff6c0db0dc4f2953470">count</a>;</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;} <a class="code" href="structgpr__refcount.html">gpr_refcount</a>;</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="comment">/* gpr_stats_counter */</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno"><a class="line" href="structgpr__stats__counter.html">   40</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span>{</div>
+<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="structgpr__stats__counter.html#ab9338ff7b5fd9f0c0830a8a788aab04a">   41</a></span>&#160;  <a class="code" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> <a class="code" href="structgpr__stats__counter.html#ab9338ff7b5fd9f0c0830a8a788aab04a">value</a>;</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;} <a class="code" href="structgpr__stats__counter.html">gpr_stats_counter</a>;</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
+<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="support_2sync__generic_8h.html#ada230498c8e2aca51e9349709e70e1ef">   44</a></span>&#160;<span class="preprocessor">#define GPR_STATS_INIT {0}</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_SYNC_GENERIC_H */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="astructgpr__stats__counter_html_ab9338ff7b5fd9f0c0830a8a788aab04a"><div class="ttname"><a href="structgpr__stats__counter.html#ab9338ff7b5fd9f0c0830a8a788aab04a">gpr_stats_counter::value</a></div><div class="ttdeci">gpr_atm value</div><div class="ttdef"><b>Definition:</b> sync_generic.h:42</div></div>
+<div class="ttc" id="astructgpr__stats__counter_html_ab9338ff7b5fd9f0c0830a8a788aab04a"><div class="ttname"><a href="structgpr__stats__counter.html#ab9338ff7b5fd9f0c0830a8a788aab04a">gpr_stats_counter::value</a></div><div class="ttdeci">gpr_atm value</div><div class="ttdef"><b>Definition:</b> sync_generic.h:41</div></div>
 <div class="ttc" id="astructgpr__event_html_a9eb43867719fcdf48f33df11cd138be9"><div class="ttname"><a href="structgpr__event.html#a9eb43867719fcdf48f33df11cd138be9">gpr_event::state</a></div><div class="ttdeci">gpr_atm state</div><div class="ttdef"><b>Definition:</b> sync_generic.h:29</div></div>
 <div class="ttc" id="asupport_2atm__gcc__atomic_8h_html_a0a6314f31fcae0666a93961bed98af51"><div class="ttname"><a href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a></div><div class="ttdeci">intptr_t gpr_atm</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:32</div></div>
-<div class="ttc" id="astructgpr__refcount_html_ae1e2d58344b59ff6c0db0dc4f2953470"><div class="ttname"><a href="structgpr__refcount.html#ae1e2d58344b59ff6c0db0dc4f2953470">gpr_refcount::count</a></div><div class="ttdeci">gpr_atm count</div><div class="ttdef"><b>Definition:</b> sync_generic.h:37</div></div>
-<div class="ttc" id="astructgpr__refcount_html"><div class="ttname"><a href="structgpr__refcount.html">gpr_refcount</a></div><div class="ttdef"><b>Definition:</b> sync_generic.h:36</div></div>
-<div class="ttc" id="astructgpr__stats__counter_html"><div class="ttname"><a href="structgpr__stats__counter.html">gpr_stats_counter</a></div><div class="ttdef"><b>Definition:</b> sync_generic.h:41</div></div>
+<div class="ttc" id="astructgpr__refcount_html_ae1e2d58344b59ff6c0db0dc4f2953470"><div class="ttname"><a href="structgpr__refcount.html#ae1e2d58344b59ff6c0db0dc4f2953470">gpr_refcount::count</a></div><div class="ttdeci">gpr_atm count</div><div class="ttdef"><b>Definition:</b> sync_generic.h:36</div></div>
+<div class="ttc" id="astructgpr__refcount_html"><div class="ttname"><a href="structgpr__refcount.html">gpr_refcount</a></div><div class="ttdef"><b>Definition:</b> sync_generic.h:35</div></div>
+<div class="ttc" id="astructgpr__stats__counter_html"><div class="ttname"><a href="structgpr__stats__counter.html">gpr_stats_counter</a></div><div class="ttdef"><b>Definition:</b> sync_generic.h:40</div></div>
 <div class="ttc" id="astructgpr__event_html"><div class="ttname"><a href="structgpr__event.html">gpr_event</a></div><div class="ttdef"><b>Definition:</b> sync_generic.h:28</div></div>
 <div class="ttc" id="asupport_2atm_8h_html"><div class="ttname"><a href="support_2atm_8h.html">atm.h</a></div></div>
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 22 2024 20:29:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jan 22 2025 17:46:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

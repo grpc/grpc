@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.66.0</span>
+   &#160;<span id="projectnumber">1.69.0</span>
    </div>
   </td>
  </tr>
@@ -91,19 +91,19 @@ $(function() {
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPCPP_IMPL_RPC_SERVICE_METHOD_H</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#define GRPCPP_IMPL_RPC_SERVICE_METHOD_H</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;climits&gt;</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;functional&gt;</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;map&gt;</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &lt;vector&gt;</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#include &quot;absl/log/absl_check.h&quot;</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#include &quot;absl/log/absl_log.h&quot;</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2impl_2rpc__method_8h.html">grpcpp/impl/rpc_method.h</a>&gt;</span></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2support_2byte__buffer_8h.html">grpcpp/support/byte_buffer.h</a>&gt;</span></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2support_2config_8h.html">grpcpp/support/config.h</a>&gt;</span></div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2support_2status_8h.html">grpcpp/support/status.h</a>&gt;</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2impl_2rpc__method_8h.html">grpcpp/impl/rpc_method.h</a>&gt;</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2support_2byte__buffer_8h.html">grpcpp/support/byte_buffer.h</a>&gt;</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2support_2config_8h.html">grpcpp/support/config.h</a>&gt;</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2support_2status_8h.html">grpcpp/support/status.h</a>&gt;</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &lt;climits&gt;</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#include &lt;functional&gt;</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#include &lt;map&gt;</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">#include &lt;vector&gt;</span></div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="preprocessor">#include &quot;absl/log/absl_check.h&quot;</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#include &quot;absl/log/absl_log.h&quot;</span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacegrpc.html">grpc</a> {</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keyword">class </span>ServerContextBase;</div>
@@ -223,7 +223,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_server_context_base_html"><div class="ttname"><a href="classgrpc_1_1_server_context_base.html">grpc::ServerContextBase</a></div><div class="ttdoc">Base class of ServerContext.</div><div class="ttdef"><b>Definition:</b> server_context.h:124</div></div>
 <div class="ttc" id="agrpcpp_2support_2status_8h_html"><div class="ttname"><a href="grpcpp_2support_2status_8h.html">status.h</a></div></div>
 <div class="ttc" id="agrpcpp_2impl_2rpc__method_8h_html"><div class="ttname"><a href="grpcpp_2impl_2rpc__method_8h.html">rpc_method.h</a></div></div>
-<div class="ttc" id="asupport_2port__platform_8h_html_ab75d366740f8322e795ab0d44ed9d958"><div class="ttname"><a href="support_2port__platform_8h.html#ab75d366740f8322e795ab0d44ed9d958">GPR_UNREACHABLE_CODE</a></div><div class="ttdeci">#define GPR_UNREACHABLE_CODE(STATEMENT)</div><div class="ttdef"><b>Definition:</b> port_platform.h:713</div></div>
+<div class="ttc" id="asupport_2port__platform_8h_html_ab75d366740f8322e795ab0d44ed9d958"><div class="ttname"><a href="support_2port__platform_8h.html#ab75d366740f8322e795ab0d44ed9d958">GPR_UNREACHABLE_CODE</a></div><div class="ttdeci">#define GPR_UNREACHABLE_CODE(STATEMENT)</div><div class="ttdef"><b>Definition:</b> port_platform.h:718</div></div>
 <div class="ttc" id="astructgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter_html_abc809331252bb9462f420b76365b9698"><div class="ttname"><a href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#abc809331252bb9462f420b76365b9698">grpc::internal::MethodHandler::HandlerParameter::call</a></div><div class="ttdeci">Call *const call</div><div class="ttdef"><b>Definition:</b> rpc_service_method.h:64</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_method_handler_html_ab2e06e37ecfe5f4dbdb200f8323995bd"><div class="ttname"><a href="classgrpc_1_1internal_1_1_method_handler.html#ab2e06e37ecfe5f4dbdb200f8323995bd">grpc::internal::MethodHandler::Deserialize</a></div><div class="ttdeci">virtual void * Deserialize(grpc_call *, grpc_byte_buffer *req, Status *, void **)</div><div class="ttdef"><b>Definition:</b> rpc_service_method.h:78</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_service_method_html_addf88f4f66e8deebf663bc9f93a45383"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_service_method.html#addf88f4f66e8deebf663bc9f93a45383">grpc::internal::RpcServiceMethod::handler</a></div><div class="ttdeci">MethodHandler * handler() const</div><div class="ttdoc">if MethodHandler is nullptr, then this is an async method</div><div class="ttdef"><b>Definition:</b> rpc_service_method.h:107</div></div>
@@ -234,8 +234,8 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdoc">Did it work? If it didn't, why?</div><div class="ttdef"><b>Definition:</b> status.h:34</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_service_method_html_a449d1968bd3f432680b35f66f3586ea1"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_service_method.html#a449d1968bd3f432680b35f66f3586ea1">grpc::internal::RpcServiceMethod::api_type</a></div><div class="ttdeci">ApiType api_type() const</div><div class="ttdef"><b>Definition:</b> rpc_service_method.h:108</div></div>
 <div class="ttc" id="astructgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter_html_a455c0525b872fe921620c353285f7c45"><div class="ttname"><a href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a455c0525b872fe921620c353285f7c45">grpc::internal::MethodHandler::HandlerParameter::~HandlerParameter</a></div><div class="ttdeci">~HandlerParameter()</div><div class="ttdef"><b>Definition:</b> rpc_service_method.h:63</div></div>
-<div class="ttc" id="agrpc__types_8h_html_a122f8f4f0a585396d993d9b55848f222"><div class="ttname"><a href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a></div><div class="ttdeci">struct grpc_call grpc_call</div><div class="ttdoc">A Call represents an RPC.</div><div class="ttdef"><b>Definition:</b> grpc_types.h:69</div></div>
-<div class="ttc" id="astructgrpc__byte__buffer_html"><div class="ttname"><a href="structgrpc__byte__buffer.html">grpc_byte_buffer</a></div><div class="ttdef"><b>Definition:</b> grpc_types.h:42</div></div>
+<div class="ttc" id="agrpc__types_8h_html_a122f8f4f0a585396d993d9b55848f222"><div class="ttname"><a href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a></div><div class="ttdeci">struct grpc_call grpc_call</div><div class="ttdoc">A Call represents an RPC.</div><div class="ttdef"><b>Definition:</b> grpc_types.h:68</div></div>
+<div class="ttc" id="astructgrpc__byte__buffer_html"><div class="ttname"><a href="structgrpc__byte__buffer.html">grpc_byte_buffer</a></div><div class="ttdef"><b>Definition:</b> grpc_types.h:41</div></div>
 <div class="ttc" id="astructgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter_html_a9f1e20235db25851a195f1644c0b0020"><div class="ttname"><a href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a9f1e20235db25851a195f1644c0b0020">grpc::internal::MethodHandler::HandlerParameter::HandlerParameter</a></div><div class="ttdeci">HandlerParameter(Call *c, grpc::ServerContextBase *context, void *req, Status req_status, void *handler_data, std::function&lt; void()&gt; requester)</div><div class="ttdoc">Constructor for HandlerParameter.</div><div class="ttdef"><b>Definition:</b> rpc_service_method.h:54</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_service_method_html_ac9413594c874a86ea22f775b46f5032ea274ccef15a21e829d03293a6fd1974f3"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_service_method.html#ac9413594c874a86ea22f775b46f5032ea274ccef15a21e829d03293a6fd1974f3">grpc::internal::RpcServiceMethod::ApiType::SYNC</a></div><div class="ttdeci">@ SYNC</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_service_method_html_a0f3a941703c2ac64318b37c4bfdfdf4e"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_service_method.html#a0f3a941703c2ac64318b37c4bfdfdf4e">grpc::internal::RpcServiceMethod::server_tag</a></div><div class="ttdeci">void * server_tag() const</div><div class="ttdef"><b>Definition:</b> rpc_service_method.h:105</div></div>
@@ -245,7 +245,7 @@ $(function() {
 <div class="ttc" id="astructgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter_html_a7968552e08cdd8297c164ac44e58afb4"><div class="ttname"><a href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a7968552e08cdd8297c164ac44e58afb4">grpc::internal::MethodHandler::HandlerParameter::server_context</a></div><div class="ttdeci">grpc::ServerContextBase *const server_context</div><div class="ttdef"><b>Definition:</b> rpc_service_method.h:65</div></div>
 <div class="ttc" id="agrpcpp_2support_2config_8h_html"><div class="ttname"><a href="grpcpp_2support_2config_8h.html">config.h</a></div></div>
 <div class="ttc" id="agrpcpp_2support_2byte__buffer_8h_html"><div class="ttname"><a href="grpcpp_2support_2byte__buffer_8h.html">byte_buffer.h</a></div></div>
-<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> async_unary_call.h:407</div></div>
+<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> async_unary_call.h:406</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_service_method_html_ac9413594c874a86ea22f775b46f5032ea5394e19ee09d859842ef4dfff5813a52"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_service_method.html#ac9413594c874a86ea22f775b46f5032ea5394e19ee09d859842ef4dfff5813a52">grpc::internal::RpcServiceMethod::ApiType::CALL_BACK</a></div><div class="ttdeci">@ CALL_BACK</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_service_method_html_ac9413594c874a86ea22f775b46f5032ea7592a4bd7d3267bd8a9c9d580bf94ce7"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_service_method.html#ac9413594c874a86ea22f775b46f5032ea7592a4bd7d3267bd8a9c9d580bf94ce7">grpc::internal::RpcServiceMethod::ApiType::RAW_CALL_BACK</a></div><div class="ttdeci">@ RAW_CALL_BACK</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_service_method_html_a03f390063130e2ffcabb2ab341efda66"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_service_method.html#a03f390063130e2ffcabb2ab341efda66">grpc::internal::RpcServiceMethod::set_server_tag</a></div><div class="ttdeci">void set_server_tag(void *tag)</div><div class="ttdef"><b>Definition:</b> rpc_service_method.h:104</div></div>
@@ -256,7 +256,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_method_handler_html_a6c9896af1ffd8b22d0bc197fbd946a33"><div class="ttname"><a href="classgrpc_1_1internal_1_1_method_handler.html#a6c9896af1ffd8b22d0bc197fbd946a33">grpc::internal::MethodHandler::~MethodHandler</a></div><div class="ttdeci">virtual ~MethodHandler()</div><div class="ttdef"><b>Definition:</b> rpc_service_method.h:42</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 22 2024 20:29:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jan 22 2025 17:46:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
