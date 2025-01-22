@@ -348,7 +348,9 @@ struct QueryParameterFormatter {
 
 std::string URI::ToString() const {
   std::vector<std::string> parts = {PercentEncode(scheme_, IsSchemeChar), ":"};
-  if (!authority_.empty()) {
+  // If path starts with '/' we need to encode the authority to ensure that
+  // we can round-trip the URI through a parse/encode/parse loop.
+  if (!authority_.empty() || absl::StartsWith(path_, "/")) {
     parts.emplace_back("//");
     parts.emplace_back(PercentEncode(authority_, IsAuthorityChar));
   }

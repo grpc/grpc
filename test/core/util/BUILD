@@ -513,10 +513,10 @@ grpc_cc_test(
     ],
 )
 
-grpc_fuzzer(
+grpc_fuzz_test(
     name = "uri_fuzzer_test",
     srcs = ["uri_fuzzer_test.cc"],
-    corpus = "uri_corpus",
+    external_deps = ["fuzztest", "fuzztest_main"],
     tags = [
         "no_windows",
         # Without "nofixdeps", "//:grpc" gets substituted with "//:event_engine_base_hdrs"
