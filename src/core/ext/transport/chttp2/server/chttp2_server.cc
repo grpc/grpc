@@ -972,7 +972,11 @@ NewChttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
     RefCountedPtr<ActiveConnection> connection_ref, grpc_tcp_server* tcp_server,
     grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
     const ChannelArgs& args, OrphanablePtr<grpc_endpoint> endpoint)
-    : connection_(std::move(connection_ref)),
+    : InternallyRefCounted(
+          GRPC_TRACE_FLAG_ENABLED(chttp2_server_refcount)
+              ? "NewChttp2ServerListener::ActiveConnection::HandshakingState"
+              : nullptr),
+      connection_(std::move(connection_ref)),
       tcp_server_(tcp_server),
       accepting_pollset_(accepting_pollset),
       acceptor_(std::move(acceptor)),
@@ -1128,7 +1132,10 @@ NewChttp2ServerListener::ActiveConnection::ActiveConnection(
     grpc_tcp_server* tcp_server, grpc_pollset* accepting_pollset,
     AcceptorPtr acceptor, const ChannelArgs& args, MemoryOwner memory_owner,
     OrphanablePtr<grpc_endpoint> endpoint)
-    : listener_state_(std::move(listener_state)),
+    : LogicalConnection(GRPC_TRACE_FLAG_ENABLED(chttp2_server_refcount)
+                            ? "NewChttp2ServerListener::ActiveConnection"
+                            : nullptr),
+      listener_state_(std::move(listener_state)),
       work_serializer_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       state_(memory_owner.MakeOrphanable<HandshakingState>(
@@ -1317,7 +1324,11 @@ NewChttp2ServerListener* NewChttp2ServerListener::CreateForPassiveListener(
 NewChttp2ServerListener::NewChttp2ServerListener(
     const ChannelArgs& args,
     std::shared_ptr<experimental::PassiveListenerImpl> passive_listener)
-    : args_(args), passive_listener_(std::move(passive_listener)) {
+    : ListenerInterface(GRPC_TRACE_FLAG_ENABLED(chttp2_server_refcount)
+                            ? "NewChttp2ServerListener"
+                            : nullptr),
+      args_(args),
+      passive_listener_(std::move(passive_listener)) {
   GRPC_CLOSURE_INIT(&tcp_server_shutdown_complete_, TcpServerShutdownComplete,
                     this, grpc_schedule_on_exec_ctx);
 }
