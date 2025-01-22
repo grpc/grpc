@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.10-alpine3.14
+# this an aarch64 image
+FROM arm64v8/python:3.13-alpine
 
 # Our test infrastructure demands bash
 RUN apk update && apk add bash
