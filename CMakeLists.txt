@@ -489,7 +489,7 @@ if(WIN32)
   set(_gRPC_ALLTARGETS_LIBRARIES ${_gRPC_ALLTARGETS_LIBRARIES} ws2_32 crypt32)
   set(_gRPC_STATIC_WIN32 STATIC)
 endif()
-
+  
 if(BUILD_SHARED_LIBS AND WIN32)
 
 # Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
@@ -5584,6 +5584,8 @@ foreach(_hdr
   include/grpcpp/impl/status.h
   include/grpcpp/impl/sync.h
   include/grpcpp/passive_listener.h
+  include/grpcpp/ports_def.inc
+  include/grpcpp/ports_undef.inc
   include/grpcpp/resource_quota.h
   include/grpcpp/security/audit_logging.h
   include/grpcpp/security/auth_context.h
