@@ -203,6 +203,9 @@ def grpc_cc_library(
         for select_deps_entry in select_deps:
             deps += select(select_deps_entry)
     include_prefix = _include_prefix()
+    # TODO(ctiller): remove when fuzztest is completely C++17 
+    # (it leverages some C++20 extensions at the time of writing).
+    # See b/391433873.
     if "fuzztest" in external_deps and "grpc-fuzztest" not in tags:
         tags = tags + ["grpc-fuzztest"]
     native.cc_library(
