@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_csds &#8212; gRPC Python 1.66.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <title>grpc_csds &#8212; gRPC Python 1.69.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=6625fa76" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=e6dd0d7c"></script>
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=50cea2f8"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.66.0</p>
+<p class="blurb">1.69.0</p>
 
 
 
@@ -101,32 +101,32 @@
 <span class="c1"># limitations under the License.</span>
 <span class="sd">&quot;&quot;&quot;Channelz debug service implementation in gRPC Python.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">envoy.service.status.v3</span> <span class="kn">import</span> <span class="n">csds_pb2</span>
-<span class="kn">from</span> <span class="nn">envoy.service.status.v3</span> <span class="kn">import</span> <span class="n">csds_pb2_grpc</span>
-<span class="kn">from</span> <span class="nn">google.protobuf</span> <span class="kn">import</span> <span class="n">json_format</span>
-<span class="kn">from</span> <span class="nn">grpc._cython</span> <span class="kn">import</span> <span class="n">cygrpc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">envoy.service.status.v3</span><span class="w"> </span><span class="kn">import</span> <span class="n">csds_pb2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">envoy.service.status.v3</span><span class="w"> </span><span class="kn">import</span> <span class="n">csds_pb2_grpc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">google.protobuf</span><span class="w"> </span><span class="kn">import</span> <span class="n">json_format</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">grpc._cython</span><span class="w"> </span><span class="kn">import</span> <span class="n">cygrpc</span>
 
 
-<div class="viewcode-block" id="ClientStatusDiscoveryServiceServicer"><a class="viewcode-back" href="../grpc_csds.html#grpc_csds.ClientStatusDiscoveryServiceServicer">[docs]</a><span class="k">class</span> <span class="nc">ClientStatusDiscoveryServiceServicer</span><span class="p">(</span>
+<div class="viewcode-block" id="ClientStatusDiscoveryServiceServicer"><a class="viewcode-back" href="../grpc_csds.html#grpc_csds.ClientStatusDiscoveryServiceServicer">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ClientStatusDiscoveryServiceServicer</span><span class="p">(</span>
     <span class="n">csds_pb2_grpc</span><span class="o">.</span><span class="n">ClientStatusDiscoveryServiceServicer</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;CSDS Servicer works for both the sync API and asyncio API.&quot;&quot;&quot;</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">FetchClientStatus</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">unused_context</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">FetchClientStatus</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">unused_context</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">csds_pb2</span><span class="o">.</span><span class="n">ClientStatusResponse</span><span class="o">.</span><span class="n">FromString</span><span class="p">(</span>
             <span class="n">cygrpc</span><span class="o">.</span><span class="n">dump_xds_configs</span><span class="p">()</span>
         <span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">StreamClientStatus</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">StreamClientStatus</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">request</span> <span class="ow">in</span> <span class="n">request_iterator</span><span class="p">:</span>
             <span class="k">yield</span> <span class="n">ClientStatusDiscoveryServiceServicer</span><span class="o">.</span><span class="n">FetchClientStatus</span><span class="p">(</span>
                 <span class="n">request</span><span class="p">,</span> <span class="n">context</span>
             <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="add_csds_servicer"><a class="viewcode-back" href="../grpc_csds.html#grpc_csds.add_csds_servicer">[docs]</a><span class="k">def</span> <span class="nf">add_csds_servicer</span><span class="p">(</span><span class="n">server</span><span class="p">):</span>
+<div class="viewcode-block" id="add_csds_servicer"><a class="viewcode-back" href="../grpc_csds.html#grpc_csds.add_csds_servicer">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">add_csds_servicer</span><span class="p">(</span><span class="n">server</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Register CSDS servicer to a server.</span>
 
 <span class="sd">    CSDS is part of xDS protocol used to expose in-effective traffic</span>

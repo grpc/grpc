@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC &#8212; gRPC Python 1.66.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
+    <title>gRPC &#8212; gRPC Python 1.69.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=6625fa76" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=e6dd0d7c"></script>
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=50cea2f8"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -30,7 +30,7 @@
 
 
 
-<p class="blurb">1.66.0</p>
+<p class="blurb">1.69.0</p>
 
 
 
@@ -1782,7 +1782,7 @@ Future interface, though it may not.</p>
 <dt class="sig sig-object py" id="grpc.ServicerContext.abort">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">abort</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">details</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.abort"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.ServicerContext.abort" title="Permalink to this definition">¶</a></dt>
 <dd><p>Raises an exception to terminate the RPC with a non-OK status.</p>
-<p>The code and details passed as arguments will supercede any existing
+<p>The code and details passed as arguments will supersede any existing
 ones.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1804,7 +1804,7 @@ termination of the RPC.</p></li>
 <dt class="sig sig-object py" id="grpc.ServicerContext.abort_with_status">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">abort_with_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">status</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.abort_with_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.ServicerContext.abort_with_status" title="Permalink to this definition">¶</a></dt>
 <dd><p>Raises an exception to terminate the RPC with a non-OK status.</p>
-<p>The status passed as argument will supercede any existing status code,
+<p>The status passed as argument will supersede any existing status code,
 status message and trailing metadata.</p>
 <p>This is an EXPERIMENTAL API.</p>
 <dl class="field-list simple">
@@ -2678,14 +2678,14 @@ For example:</p>
 <span class="pre">`</span></code></p>
 <p>The returned module object corresponds to the _pb2.py file generated
 by protoc. The path is expected to be relative to an entry on sys.path
-and all transitive dependencies of the file should also be resolveable
+and all transitive dependencies of the file should also be resolvable
 from an entry on sys.path.</p>
 <p>To completely disable the machinery behind this function, set the
 GRPC_PYTHON_DISABLE_DYNAMIC_STUBS environment variable to “true”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>protobuf_path</strong> – The path to the .proto file on the filesystem. This path
-must be resolveable from an entry on sys.path and so must all of its
+must be resolvable from an entry on sys.path and so must all of its
 transitive dependencies.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2711,14 +2711,14 @@ For example:</p>
 <span class="pre">`</span></code></p>
 <p>The returned module object corresponds to the _pb2_grpc.py file generated
 by protoc. The path is expected to be relative to an entry on sys.path
-and all transitive dependencies of the file should also be resolveable
+and all transitive dependencies of the file should also be resolvable
 from an entry on sys.path.</p>
 <p>To completely disable the machinery behind this function, set the
 GRPC_PYTHON_DISABLE_DYNAMIC_STUBS environment variable to “true”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>protobuf_path</strong> – The path to the .proto file on the filesystem. This path
-must be resolveable from an entry on sys.path and so must all of its
+must be resolvable from an entry on sys.path and so must all of its
 transitive dependencies.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2740,7 +2740,7 @@ GRPC_PYTHON_DISABLE_DYNAMIC_STUBS environment variable to “true”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>protobuf_path</strong> – The path to the .proto file on the filesystem. This path
-must be resolveable from an entry on sys.path and so must all of its
+must be resolvable from an entry on sys.path and so must all of its
 transitive dependencies.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.66.0</span>
+   &#160;<span id="projectnumber">1.69.0</span>
    </div>
   </td>
  </tr>
@@ -91,56 +91,55 @@ $(function() {
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPC_COMPRESSION_H</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#define GRPC_COMPRESSION_H</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;stdlib.h&gt;</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="compression__types_8h.html">grpc/impl/compression_types.h</a>&gt;</span>  <span class="comment">// IWYU pragma: export</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_2slice_8h.html">grpc/slice.h</a>&gt;</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2port__platform_8h.html">grpc/support/port_platform.h</a>&gt;</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">int</span> <a class="code" href="compression_8h.html#af41160f827a3ff132755fb25658435c4">grpc_compression_algorithm_is_message</a>(</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">int</span> <a class="code" href="compression_8h.html#a053257ed8bdeba196b380f326897e25d">grpc_compression_algorithm_is_stream</a>(</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">int</span> <a class="code" href="compression_8h.html#a181bd18d294ab2bf93b10b8add9f88e2">grpc_compression_algorithm_parse</a>(</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <a class="code" href="structgrpc__slice.html">grpc_slice</a> name, <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a>* algorithm);</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">int</span> <a class="code" href="compression_8h.html#a177f6d6330355d5ecaffb042ab1c2c8f">grpc_compression_algorithm_name</a>(</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm, <span class="keyword">const</span> <span class="keywordtype">char</span>** name);</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> <a class="code" href="compression_8h.html#adc2d1d89d880f67aacc4ce84cd72f8f3">grpc_compression_algorithm_for_level</a>(</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    <a class="code" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> level, uint32_t accepted_encodings);</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">void</span> <a class="code" href="compression_8h.html#a2eccdbe5a4d811a7c965d6d67e5cc7d8">grpc_compression_options_init</a>(<a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a>* opts);</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">void</span> <a class="code" href="compression_8h.html#a79e61d1ac1d226b3b54b73837f28f0ff">grpc_compression_options_enable_algorithm</a>(</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a>* opts, <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">void</span> <a class="code" href="compression_8h.html#a1b58d314775a3651ee2f5f2d3ab4f6d9">grpc_compression_options_disable_algorithm</a>(</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a>* opts, <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">int</span> <a class="code" href="compression_8h.html#aba0dfe631311c3f49d1045694bc9b0df">grpc_compression_options_is_algorithm_enabled</a>(</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keyword">const</span> <a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a>* opts, <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;}</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_COMPRESSION_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="compression__types_8h.html">grpc/impl/compression_types.h</a>&gt;</span>  <span class="comment">// IWYU pragma: export</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_2slice_8h.html">grpc/slice.h</a>&gt;</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2port__platform_8h.html">grpc/support/port_platform.h</a>&gt;</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;stdlib.h&gt;</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">int</span> <a class="code" href="compression_8h.html#af41160f827a3ff132755fb25658435c4">grpc_compression_algorithm_is_message</a>(</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">int</span> <a class="code" href="compression_8h.html#a053257ed8bdeba196b380f326897e25d">grpc_compression_algorithm_is_stream</a>(</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">int</span> <a class="code" href="compression_8h.html#a181bd18d294ab2bf93b10b8add9f88e2">grpc_compression_algorithm_parse</a>(</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <a class="code" href="structgrpc__slice.html">grpc_slice</a> name, <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a>* algorithm);</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">int</span> <a class="code" href="compression_8h.html#a177f6d6330355d5ecaffb042ab1c2c8f">grpc_compression_algorithm_name</a>(</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm, <span class="keyword">const</span> <span class="keywordtype">char</span>** name);</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> <a class="code" href="compression_8h.html#adc2d1d89d880f67aacc4ce84cd72f8f3">grpc_compression_algorithm_for_level</a>(</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <a class="code" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> level, uint32_t accepted_encodings);</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">void</span> <a class="code" href="compression_8h.html#a2eccdbe5a4d811a7c965d6d67e5cc7d8">grpc_compression_options_init</a>(<a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a>* opts);</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">void</span> <a class="code" href="compression_8h.html#a79e61d1ac1d226b3b54b73837f28f0ff">grpc_compression_options_enable_algorithm</a>(</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a>* opts, <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">void</span> <a class="code" href="compression_8h.html#a1b58d314775a3651ee2f5f2d3ab4f6d9">grpc_compression_options_disable_algorithm</a>(</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a>* opts, <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">int</span> <a class="code" href="compression_8h.html#aba0dfe631311c3f49d1045694bc9b0df">grpc_compression_options_is_algorithm_enabled</a>(</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keyword">const</span> <a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a>* opts, <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;}</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_COMPRESSION_H */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="acompression_8h_html_a053257ed8bdeba196b380f326897e25d"><div class="ttname"><a href="compression_8h.html#a053257ed8bdeba196b380f326897e25d">grpc_compression_algorithm_is_stream</a></div><div class="ttdeci">GRPCAPI int grpc_compression_algorithm_is_stream(grpc_compression_algorithm algorithm)</div><div class="ttdoc">Return if an algorithm is stream compression algorithm.</div></div>
-<div class="ttc" id="asupport_2port__platform_8h_html_a2865c3b28ea7db75be4c725adb1edc7d"><div class="ttname"><a href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a></div><div class="ttdeci">#define GRPCAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:725</div></div>
+<div class="ttc" id="asupport_2port__platform_8h_html_a2865c3b28ea7db75be4c725adb1edc7d"><div class="ttname"><a href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a></div><div class="ttdeci">#define GRPCAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:730</div></div>
 <div class="ttc" id="acompression__types_8h_html_ab9de0f68bfb1ef8ed09bd00643db14c9"><div class="ttname"><a href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a></div><div class="ttdeci">grpc_compression_algorithm</div><div class="ttdoc">The various compression algorithms supported by gRPC (not sorted by compression level)</div><div class="ttdef"><b>Definition:</b> compression_types.h:60</div></div>
 <div class="ttc" id="astructgrpc__compression__options_html"><div class="ttname"><a href="structgrpc__compression__options.html">grpc_compression_options</a></div><div class="ttdef"><b>Definition:</b> compression_types.h:80</div></div>
 <div class="ttc" id="acompression_8h_html_a79e61d1ac1d226b3b54b73837f28f0ff"><div class="ttname"><a href="compression_8h.html#a79e61d1ac1d226b3b54b73837f28f0ff">grpc_compression_options_enable_algorithm</a></div><div class="ttdeci">GRPCAPI void grpc_compression_options_enable_algorithm(grpc_compression_options *opts, grpc_compression_algorithm algorithm)</div><div class="ttdoc">Mark algorithm as enabled in opts.</div></div>
 <div class="ttc" id="acompression_8h_html_af41160f827a3ff132755fb25658435c4"><div class="ttname"><a href="compression_8h.html#af41160f827a3ff132755fb25658435c4">grpc_compression_algorithm_is_message</a></div><div class="ttdeci">GRPCAPI int grpc_compression_algorithm_is_message(grpc_compression_algorithm algorithm)</div><div class="ttdoc">Return if an algorithm is message compression algorithm.</div></div>
 <div class="ttc" id="acompression_8h_html_a177f6d6330355d5ecaffb042ab1c2c8f"><div class="ttname"><a href="compression_8h.html#a177f6d6330355d5ecaffb042ab1c2c8f">grpc_compression_algorithm_name</a></div><div class="ttdeci">GRPCAPI int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm, const char **name)</div><div class="ttdoc">Updates name with the encoding name corresponding to a valid algorithm.</div></div>
-<div class="ttc" id="astructgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdoc">A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1].</div><div class="ttdef"><b>Definition:</b> slice_type.h:63</div></div>
+<div class="ttc" id="astructgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdoc">A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1].</div><div class="ttdef"><b>Definition:</b> slice_type.h:62</div></div>
 <div class="ttc" id="acompression_8h_html_a181bd18d294ab2bf93b10b8add9f88e2"><div class="ttname"><a href="compression_8h.html#a181bd18d294ab2bf93b10b8add9f88e2">grpc_compression_algorithm_parse</a></div><div class="ttdeci">GRPCAPI int grpc_compression_algorithm_parse(grpc_slice name, grpc_compression_algorithm *algorithm)</div><div class="ttdoc">Parses the slice as a grpc_compression_algorithm instance and updating algorithm.</div></div>
 <div class="ttc" id="acompression_8h_html_a1b58d314775a3651ee2f5f2d3ab4f6d9"><div class="ttname"><a href="compression_8h.html#a1b58d314775a3651ee2f5f2d3ab4f6d9">grpc_compression_options_disable_algorithm</a></div><div class="ttdeci">GRPCAPI void grpc_compression_options_disable_algorithm(grpc_compression_options *opts, grpc_compression_algorithm algorithm)</div><div class="ttdoc">Mark algorithm as disabled in opts.</div></div>
 <div class="ttc" id="acompression__types_8h_html"><div class="ttname"><a href="compression__types_8h.html">compression_types.h</a></div></div>
@@ -152,7 +151,7 @@ $(function() {
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 22 2024 20:29:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jan 22 2025 17:46:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

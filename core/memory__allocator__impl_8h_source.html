@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">43.0.0</span>
+   &#160;<span id="projectnumber">44.2.0</span>
    </div>
   </td>
  </tr>
@@ -86,14 +86,14 @@ $(function() {
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#ifndef GRPC_EVENT_ENGINE_INTERNAL_MEMORY_ALLOCATOR_IMPL_H</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#define GRPC_EVENT_ENGINE_INTERNAL_MEMORY_ALLOCATOR_IMPL_H</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;algorithm&gt;</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &lt;type_traits&gt;</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#include &lt;vector&gt;</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="memory__request_8h.html">grpc/event_engine/memory_request.h</a>&gt;</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="slice_8h.html">grpc/slice.h</a>&gt;</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2port__platform_8h.html">grpc/support/port_platform.h</a>&gt;</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="memory__request_8h.html">grpc/event_engine/memory_request.h</a>&gt;</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="slice_8h.html">grpc/slice.h</a>&gt;</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2port__platform_8h.html">grpc/support/port_platform.h</a>&gt;</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &lt;algorithm&gt;</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;type_traits&gt;</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;vector&gt;</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacegrpc__event__engine.html">grpc_event_engine</a> {</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keyword">namespace </span>experimental {</div>
@@ -129,9 +129,9 @@ $(function() {
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl_html_abeee43fc002c4f3cc8cdb976424ec9c6"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#abeee43fc002c4f3cc8cdb976424ec9c6">grpc_event_engine::experimental::internal::MemoryAllocatorImpl::Shutdown</a></div><div class="ttdeci">virtual void Shutdown()=0</div><div class="ttdoc">Shutdown this allocator.</div></div>
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl_html_aba1813501d54cb8140c8c50024e8bb91"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#aba1813501d54cb8140c8c50024e8bb91">grpc_event_engine::experimental::internal::MemoryAllocatorImpl::MakeSlice</a></div><div class="ttdeci">virtual grpc_slice MakeSlice(MemoryRequest request)=0</div><div class="ttdoc">Allocate a slice, using MemoryRequest to size the number of returned bytes.</div></div>
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl_html"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html">grpc_event_engine::experimental::internal::MemoryAllocatorImpl</a></div><div class="ttdoc">Underlying memory allocation interface.</div><div class="ttdef"><b>Definition:</b> memory_allocator_impl.h:34</div></div>
-<div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_memory_request_html"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">grpc_event_engine::experimental::MemoryRequest</a></div><div class="ttdoc">Reservation request - how much memory do we want to allocate?</div><div class="ttdef"><b>Definition:</b> memory_request.h:27</div></div>
+<div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_memory_request_html"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">grpc_event_engine::experimental::MemoryRequest</a></div><div class="ttdoc">Reservation request - how much memory do we want to allocate?</div><div class="ttdef"><b>Definition:</b> memory_request.h:26</div></div>
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl_html_a7174ccff32e753e55b68e609b82f8617"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#a7174ccff32e753e55b68e609b82f8617">grpc_event_engine::experimental::internal::MemoryAllocatorImpl::Release</a></div><div class="ttdeci">virtual void Release(size_t n)=0</div><div class="ttdoc">Release some bytes that were previously reserved.</div></div>
-<div class="ttc" id="astructgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdoc">A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1].</div><div class="ttdef"><b>Definition:</b> slice_type.h:63</div></div>
+<div class="ttc" id="astructgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdoc">A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1].</div><div class="ttdef"><b>Definition:</b> slice_type.h:62</div></div>
 <div class="ttc" id="amemory__request_8h_html"><div class="ttname"><a href="memory__request_8h.html">memory_request.h</a></div></div>
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl_html_a89a118fa4c2c8863f7339841a3d5bbf1"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#a89a118fa4c2c8863f7339841a3d5bbf1">grpc_event_engine::experimental::internal::MemoryAllocatorImpl::operator=</a></div><div class="ttdeci">MemoryAllocatorImpl &amp; operator=(const MemoryAllocatorImpl &amp;)=delete</div></div>
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl_html_a9e6a8e994d3e67e054d308142dd6dc8c"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#a9e6a8e994d3e67e054d308142dd6dc8c">grpc_event_engine::experimental::internal::MemoryAllocatorImpl::MemoryAllocatorImpl</a></div><div class="ttdeci">MemoryAllocatorImpl()</div><div class="ttdef"><b>Definition:</b> memory_allocator_impl.h:37</div></div>
@@ -141,7 +141,7 @@ $(function() {
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 22 2024 20:29:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jan 22 2025 17:46:06 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

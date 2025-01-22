@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.66.0</span>
+   &#160;<span id="projectnumber">1.69.0</span>
    </div>
   </td>
  </tr>
@@ -91,45 +91,44 @@ $(function() {
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPC_SUPPORT_SYNC_POSIX_H</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#define GRPC_SUPPORT_SYNC_POSIX_H</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;pthread.h&gt;</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2port__platform_8h.html">grpc/support/port_platform.h</a>&gt;</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2sync__generic_8h.html">grpc/support/sync_generic.h</a>&gt;</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#ifdef GRPC_ASAN_ENABLED</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="comment">/* The member |leak_checker| is used to check whether there is a memory leak</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="comment"> * caused by upper layer logic that&#39;s missing the |gpr_xx_destroy| call</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="comment"> * to the object before freeing it.</span></div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="comment"> * This issue was reported at https://github.com/grpc/grpc/issues/17563</span></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="comment"> * and discussed at https://github.com/grpc/grpc/pull/17586</span></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="comment"> */</span></div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span>{</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  pthread_mutex_t mutex;</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="keywordtype">int</span>* leak_checker;</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;} <a class="code" href="support_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a>;</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span>{</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  pthread_cond_t cond_var;</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <span class="keywordtype">int</span>* leak_checker;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;} <a class="code" href="support_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a>;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="support_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">   44</a></span>&#160;<span class="keyword">typedef</span> pthread_mutex_t <a class="code" href="support_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a>;</div>
-<div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="support_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">   45</a></span>&#160;<span class="keyword">typedef</span> pthread_cond_t <a class="code" href="support_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a>;</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="support_2sync__posix_8h.html#a28731dc17a4158343f58f453a4d5e37f">   47</a></span>&#160;<span class="keyword">typedef</span> pthread_once_t <a class="code" href="support_2sync__posix_8h.html#a28731dc17a4158343f58f453a4d5e37f">gpr_once</a>;</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
-<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="support_2sync__posix_8h.html#a8edd7eb4f6860a4f79defbad49c35666">   49</a></span>&#160;<span class="preprocessor">#define GPR_ONCE_INIT PTHREAD_ONCE_INIT</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_SYNC_POSIX_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2port__platform_8h.html">grpc/support/port_platform.h</a>&gt;</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2sync__generic_8h.html">grpc/support/sync_generic.h</a>&gt;</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;pthread.h&gt;</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#ifdef GRPC_ASAN_ENABLED</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment">/* The member |leak_checker| is used to check whether there is a memory leak</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="comment"> * caused by upper layer logic that&#39;s missing the |gpr_xx_destroy| call</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="comment"> * to the object before freeing it.</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="comment"> * This issue was reported at https://github.com/grpc/grpc/issues/17563</span></div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="comment"> * and discussed at https://github.com/grpc/grpc/pull/17586</span></div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="comment"> */</span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span>{</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  pthread_mutex_t mutex;</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <span class="keywordtype">int</span>* leak_checker;</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;} <a class="code" href="support_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a>;</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span>{</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  pthread_cond_t cond_var;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  <span class="keywordtype">int</span>* leak_checker;</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;} <a class="code" href="support_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a>;</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno"><a class="line" href="support_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">   43</a></span>&#160;<span class="keyword">typedef</span> pthread_mutex_t <a class="code" href="support_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a>;</div>
+<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="support_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">   44</a></span>&#160;<span class="keyword">typedef</span> pthread_cond_t <a class="code" href="support_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a>;</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="support_2sync__posix_8h.html#a28731dc17a4158343f58f453a4d5e37f">   46</a></span>&#160;<span class="keyword">typedef</span> pthread_once_t <a class="code" href="support_2sync__posix_8h.html#a28731dc17a4158343f58f453a4d5e37f">gpr_once</a>;</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
+<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="support_2sync__posix_8h.html#a8edd7eb4f6860a4f79defbad49c35666">   48</a></span>&#160;<span class="preprocessor">#define GPR_ONCE_INIT PTHREAD_ONCE_INIT</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_SYNC_POSIX_H */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="asupport_2sync__posix_8h_html_aa66fb6a11304ef6759d76f84a34ee28f"><div class="ttname"><a href="support_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a></div><div class="ttdeci">pthread_mutex_t gpr_mu</div><div class="ttdef"><b>Definition:</b> sync_posix.h:44</div></div>
-<div class="ttc" id="asupport_2sync__posix_8h_html_a28731dc17a4158343f58f453a4d5e37f"><div class="ttname"><a href="support_2sync__posix_8h.html#a28731dc17a4158343f58f453a4d5e37f">gpr_once</a></div><div class="ttdeci">pthread_once_t gpr_once</div><div class="ttdef"><b>Definition:</b> sync_posix.h:47</div></div>
+<div class="ttc" id="asupport_2sync__posix_8h_html_aa66fb6a11304ef6759d76f84a34ee28f"><div class="ttname"><a href="support_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a></div><div class="ttdeci">pthread_mutex_t gpr_mu</div><div class="ttdef"><b>Definition:</b> sync_posix.h:43</div></div>
+<div class="ttc" id="asupport_2sync__posix_8h_html_a28731dc17a4158343f58f453a4d5e37f"><div class="ttname"><a href="support_2sync__posix_8h.html#a28731dc17a4158343f58f453a4d5e37f">gpr_once</a></div><div class="ttdeci">pthread_once_t gpr_once</div><div class="ttdef"><b>Definition:</b> sync_posix.h:46</div></div>
 <div class="ttc" id="asupport_2sync__generic_8h_html"><div class="ttname"><a href="support_2sync__generic_8h.html">sync_generic.h</a></div></div>
-<div class="ttc" id="asupport_2sync__posix_8h_html_a1ad613e07180c0459cda9f3f6d881885"><div class="ttname"><a href="support_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a></div><div class="ttdeci">pthread_cond_t gpr_cv</div><div class="ttdef"><b>Definition:</b> sync_posix.h:45</div></div>
+<div class="ttc" id="asupport_2sync__posix_8h_html_a1ad613e07180c0459cda9f3f6d881885"><div class="ttname"><a href="support_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a></div><div class="ttdeci">pthread_cond_t gpr_cv</div><div class="ttdef"><b>Definition:</b> sync_posix.h:44</div></div>
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 22 2024 20:29:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jan 22 2025 17:46:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

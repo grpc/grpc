@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_health.v1.health &#8212; gRPC Python 1.66.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=4f649999" />
+    <title>grpc_health.v1.health &#8212; gRPC Python 1.69.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=6625fa76" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=e6dd0d7c"></script>
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=50cea2f8"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
     <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.66.0</p>
+<p class="blurb">1.69.0</p>
 
 
 
@@ -101,17 +101,17 @@
 <span class="c1"># limitations under the License.</span>
 <span class="sd">&quot;&quot;&quot;Reference implementation for health checking in gRPC Python.&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">collections</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
 
-<span class="kn">import</span> <span class="nn">grpc</span>
-<span class="kn">from</span> <span class="nn">grpc_health.v1</span> <span class="kn">import</span> <span class="n">health_pb2</span> <span class="k">as</span> <span class="n">_health_pb2</span>
-<span class="kn">from</span> <span class="nn">grpc_health.v1</span> <span class="kn">import</span> <span class="n">health_pb2_grpc</span> <span class="k">as</span> <span class="n">_health_pb2_grpc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">grpc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">grpc_health.v1</span><span class="w"> </span><span class="kn">import</span> <span class="n">health_pb2</span> <span class="k">as</span> <span class="n">_health_pb2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">grpc_health.v1</span><span class="w"> </span><span class="kn">import</span> <span class="n">health_pb2_grpc</span> <span class="k">as</span> <span class="n">_health_pb2_grpc</span>
 
 <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">6</span><span class="p">:</span>
     <span class="c1"># Exposes AsyncHealthServicer as public API.</span>
-    <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_async</span> <span class="k">as</span> <span class="n">aio</span>  <span class="c1"># pylint: disable=unused-import</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">_async</span> <span class="k">as</span> <span class="n">aio</span>  <span class="c1"># pylint: disable=unused-import</span>
 
 <span class="c1"># The service name of the health checking servicer.</span>
 <span class="n">SERVICE_NAME</span> <span class="o">=</span> <span class="n">_health_pb2</span><span class="o">.</span><span class="n">DESCRIPTOR</span><span class="o">.</span><span class="n">services_by_name</span><span class="p">[</span><span class="s2">&quot;Health&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">full_name</span>
@@ -119,16 +119,16 @@
 <span class="n">OVERALL_HEALTH</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
 
 
-<span class="k">class</span> <span class="nc">_Watcher</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_Watcher</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Condition</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_responses</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">deque</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_open</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span> <span class="nf">_next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
             <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_responses</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_open</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
@@ -137,25 +137,25 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_responses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">notify</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_open</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">notify</span><span class="p">()</span>
 
 
-<span class="k">def</span> <span class="nf">_watcher_to_send_response_callback_adapter</span><span class="p">(</span><span class="n">watcher</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">send_response_callback</span><span class="p">(</span><span class="n">response</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_watcher_to_send_response_callback_adapter</span><span class="p">(</span><span class="n">watcher</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_response_callback</span><span class="p">(</span><span class="n">response</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">response</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">watcher</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
@@ -164,10 +164,10 @@
     <span class="k">return</span> <span class="n">send_response_callback</span>
 
 
-<div class="viewcode-block" id="HealthServicer"><a class="viewcode-back" href="../../../grpc_health_checking.html#grpc_health.v1.health.HealthServicer">[docs]</a><span class="k">class</span> <span class="nc">HealthServicer</span><span class="p">(</span><span class="n">_health_pb2_grpc</span><span class="o">.</span><span class="n">HealthServicer</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthServicer"><a class="viewcode-back" href="../../../grpc_health_checking.html#grpc_health.v1.health.HealthServicer">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">HealthServicer</span><span class="p">(</span><span class="n">_health_pb2_grpc</span><span class="o">.</span><span class="n">HealthServicer</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Servicer handling RPCs for service statuses.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">experimental_non_blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">experimental_thread_pool</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span><span class="p">()</span>
@@ -179,8 +179,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Watch</span><span class="o">.</span><span class="vm">__func__</span><span class="o">.</span><span class="n">experimental_thread_pool</span> <span class="o">=</span> <span class="n">experimental_thread_pool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_gracefully_shutting_down</span> <span class="o">=</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="nf">_on_close_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">send_response_callback</span><span class="p">,</span> <span class="n">service</span><span class="p">):</span>
-        <span class="k">def</span> <span class="nf">callback</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_on_close_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">send_response_callback</span><span class="p">,</span> <span class="n">service</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">callback</span><span class="p">():</span>
             <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_send_response_callbacks</span><span class="p">[</span><span class="n">service</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span>
                     <span class="n">send_response_callback</span>
@@ -189,7 +189,7 @@
 
         <span class="k">return</span> <span class="n">callback</span>
 
-<div class="viewcode-block" id="HealthServicer.Check"><a class="viewcode-back" href="../../../grpc_health_checking.html#grpc_health.v1.health.HealthServicer.Check">[docs]</a>    <span class="k">def</span> <span class="nf">Check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthServicer.Check"><a class="viewcode-back" href="../../../grpc_health_checking.html#grpc_health.v1.health.HealthServicer.Check">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">Check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
             <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_server_status</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">service</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -199,7 +199,7 @@
                 <span class="k">return</span> <span class="n">_health_pb2</span><span class="o">.</span><span class="n">HealthCheckResponse</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">)</span></div>
 
     <span class="c1"># pylint: disable=arguments-differ</span>
-<div class="viewcode-block" id="HealthServicer.Watch"><a class="viewcode-back" href="../../../grpc_health_checking.html#grpc_health.v1.health.HealthServicer.Watch">[docs]</a>    <span class="k">def</span> <span class="nf">Watch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">send_response_callback</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthServicer.Watch"><a class="viewcode-back" href="../../../grpc_health_checking.html#grpc_health.v1.health.HealthServicer.Watch">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">Watch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">send_response_callback</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">blocking_watcher</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">send_response_callback</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># The server does not support the experimental_non_blocking</span>
@@ -227,7 +227,7 @@
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">blocking_watcher</span></div>
 
-<div class="viewcode-block" id="HealthServicer.set"><a class="viewcode-back" href="../../../grpc_health_checking.html#grpc_health.v1.health.HealthServicer.set">[docs]</a>    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthServicer.set"><a class="viewcode-back" href="../../../grpc_health_checking.html#grpc_health.v1.health.HealthServicer.set">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the status of a service.</span>
 
 <span class="sd">        Args:</span>
@@ -248,7 +248,7 @@
                             <span class="n">_health_pb2</span><span class="o">.</span><span class="n">HealthCheckResponse</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">)</span>
                         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthServicer.enter_graceful_shutdown"><a class="viewcode-back" href="../../../grpc_health_checking.html#grpc_health.v1.health.HealthServicer.enter_graceful_shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">enter_graceful_shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthServicer.enter_graceful_shutdown"><a class="viewcode-back" href="../../../grpc_health_checking.html#grpc_health.v1.health.HealthServicer.enter_graceful_shutdown">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">enter_graceful_shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Permanently sets the status of all services to NOT_SERVING.</span>
 
 <span class="sd">        This should be invoked when the server is entering a graceful shutdown</span>

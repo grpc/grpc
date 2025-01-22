@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.66.0</span>
+   &#160;<span id="projectnumber">1.69.0</span>
    </div>
   </td>
  </tr>
@@ -237,6 +237,7 @@ Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Start the call that was set up by the constructor, but only if the constructor was invoked through the "Prepare" API which doesn't actually start the call. </p>
+<p>It is illegal to start a write-type operation (eg. Write(), WriteLast(), WritesDone()) while the <code><a class="el" href="classgrpc_1_1internal_1_1_client_async_streaming_interface.html#a2bd65338b34000980fa048911c577637" title="Start the call that was set up by the constructor, but only if the constructor was invoked through th...">StartCall()</a></code> operation has not finished (determined by the returning of <em>tag</em>). </p>
 
 </div>
 </div>
@@ -246,7 +247,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 22 2024 20:29:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jan 22 2025 17:46:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

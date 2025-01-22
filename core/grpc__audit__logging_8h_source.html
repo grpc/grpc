@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">43.0.0</span>
+   &#160;<span id="projectnumber">44.2.0</span>
    </div>
   </td>
  </tr>
@@ -91,14 +91,14 @@ $(function() {
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPC_GRPC_AUDIT_LOGGING_H</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#define GRPC_GRPC_AUDIT_LOGGING_H</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="json_8h.html">grpc/support/json.h</a>&gt;</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2port__platform_8h.html">grpc/support/port_platform.h</a>&gt;</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &quot;absl/status/statusor.h&quot;</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &quot;absl/strings/string_view.h&quot;</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="json_8h.html">grpc/support/json.h</a>&gt;</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2port__platform_8h.html">grpc/support/port_platform.h</a>&gt;</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#include &quot;absl/status/statusor.h&quot;</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#include &quot;absl/strings/string_view.h&quot;</span></div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="namespacegrpc__core.html">   31</a></span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacegrpc__core.html">grpc_core</a> {</div>
 <div class="line"><a name="l00032"></a><span class="lineno"><a class="line" href="namespacegrpc__core_1_1experimental.html">   32</a></span>&#160;<span class="keyword">namespace </span>experimental {</div>
@@ -175,7 +175,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_audit_logger_factory_html_a9296d6f0052871944f88e6de49ceaab6"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_audit_logger_factory.html#a9296d6f0052871944f88e6de49ceaab6">grpc_core::experimental::AuditLoggerFactory::name</a></div><div class="ttdeci">virtual absl::string_view name() const =0</div></div>
 <div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_audit_logger_html_ac17c0a1a01da6a822dca3d01950da9d7"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_audit_logger.html#ac17c0a1a01da6a822dca3d01950da9d7">grpc_core::experimental::AuditLogger::Log</a></div><div class="ttdeci">virtual void Log(const AuditContext &amp;audit_context)=0</div></div>
 <div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_audit_logger_factory_1_1_config_html_a37ca5576f73662f7f0ce871676c43a27"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_audit_logger_factory_1_1_config.html#a37ca5576f73662f7f0ce871676c43a27">grpc_core::experimental::AuditLoggerFactory::Config::name</a></div><div class="ttdeci">virtual absl::string_view name() const =0</div></div>
-<div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_json_html"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_json.html">grpc_core::experimental::Json</a></div><div class="ttdef"><b>Definition:</b> json.h:37</div></div>
+<div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_json_html"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_json.html">grpc_core::experimental::Json</a></div><div class="ttdef"><b>Definition:</b> json.h:36</div></div>
 <div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_audit_logger_factory_html_aebae714b07439254e51db5c1a5b92891"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_audit_logger_factory.html#aebae714b07439254e51db5c1a5b92891">grpc_core::experimental::AuditLoggerFactory::ParseAuditLoggerConfig</a></div><div class="ttdeci">virtual absl::StatusOr&lt; std::unique_ptr&lt; Config &gt; &gt; ParseAuditLoggerConfig(const Json &amp;json)=0</div></div>
 <div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_audit_context_html_a7e7078f2370dc6a745362e5cab565333"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_audit_context.html#a7e7078f2370dc6a745362e5cab565333">grpc_core::experimental::AuditContext::authorized</a></div><div class="ttdeci">bool authorized() const</div><div class="ttdef"><b>Definition:</b> grpc_audit_logging.h:50</div></div>
 <div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_audit_logger_html"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_audit_logger.html">grpc_core::experimental::AuditLogger</a></div><div class="ttdef"><b>Definition:</b> grpc_audit_logging.h:61</div></div>
@@ -193,7 +193,7 @@ $(function() {
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Aug 22 2024 20:29:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jan 22 2025 17:46:06 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
