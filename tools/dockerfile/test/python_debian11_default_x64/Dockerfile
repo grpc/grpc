@@ -201,7 +201,7 @@ RUN python3.13 -m ensurepip && \
 RUN apt-get update && apt-get install -y libsqlite3-dev
 
 # 3.9 is the default python3 version on debian11
-RUN apt-get update && apt-get install -y python3.9 python3.9-dev python3-pip
+RUN apt-get update && apt-get install -y python3.9 python3.9-dev python3-pip python3-yaml python3-mako
 
 # for Python test coverage reporting
 RUN python3.9 -m pip install coverage
@@ -233,4 +233,7 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && make -j4 && make install \
     && cd ../.. \
     && rm -rf ccache-4.7.5 ccache.tar.gz
+
+
+RUN if [ -f ./generate_artifacts.sh ]; then ./generate_artifacts.sh; fi
 
