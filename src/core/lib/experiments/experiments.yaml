@@ -134,11 +134,6 @@
   expiry: 2025/03/03
   owner: ctiller@google.com
   test_tags: [flow_control_test]
-- name: pick_first_new
-  description: New pick_first impl with memory reduction.
-  expiry: 2025/03/01
-  owner: roth@google.com
-  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
 - name: posix_ee_skip_grpc_init
   description:
     Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on
