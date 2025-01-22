@@ -152,6 +152,9 @@ class Poll {
   };
 };
 
+template <typename T>
+class Poll<T&&>;
+
 template <>
 class Poll<Empty> {
  public:

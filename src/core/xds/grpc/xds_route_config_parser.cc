@@ -527,20 +527,19 @@ std::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
       envoy_config_route_v3_RouteAction_max_stream_duration(route_action_proto);
   if (max_stream_duration != nullptr) {
     ValidationErrors::ScopedField field(errors, ".max_stream_duration");
-    const google_protobuf_Duration* duration =
-        envoy_config_route_v3_RouteAction_MaxStreamDuration_grpc_timeout_header_max(
-            max_stream_duration);
-    if (duration != nullptr) {
+    if (const google_protobuf_Duration* duration =
+            envoy_config_route_v3_RouteAction_MaxStreamDuration_grpc_timeout_header_max(
+                max_stream_duration);
+        duration != nullptr) {
       ValidationErrors::ScopedField field(errors, ".grpc_timeout_header_max");
       route_action.max_stream_duration = ParseDuration(duration, errors);
-    } else {
-      duration =
-          envoy_config_route_v3_RouteAction_MaxStreamDuration_max_stream_duration(
-              max_stream_duration);
-      if (duration != nullptr) {
-        ValidationErrors::ScopedField field(errors, ".max_stream_duration");
-        route_action.max_stream_duration = ParseDuration(duration, errors);
-      }
+    } else if (
+        duration =
+            envoy_config_route_v3_RouteAction_MaxStreamDuration_max_stream_duration(
+                max_stream_duration);
+        duration != nullptr) {
+      ValidationErrors::ScopedField field(errors, ".max_stream_duration");
+      route_action.max_stream_duration = ParseDuration(duration, errors);
     }
   }
   // hash_policy

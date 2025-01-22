@@ -33,7 +33,6 @@ grpc_cc_library(
         "absl/strings:str_format",
         "gtest",
     ],
-    language = "C++",
     visibility = ["//:__subpackages__"],
     deps = [
         "//:debug_location",
@@ -54,7 +53,6 @@ grpc_cc_library(
         "data/test_root_cert.cc",
     ],
     hdrs = ["data/ssl_test_data.h"],
-    language = "C++",
     visibility = ["//:__subpackages__"],
 )
 
@@ -69,7 +67,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
     ],
-    language = "C++",
     visibility = ["//test/cpp/end2end/xds:__subpackages__"],
     deps = [
         "//:config",
@@ -102,7 +99,6 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
     ],
-    language = "C++",
     deps = [
         "//:channel_arg_names",
         "//:gpr",
@@ -174,7 +170,6 @@ grpc_cc_library(
         "absl/strings",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "end2end_test_lib",
         "//:channel_arg_names",
@@ -508,7 +503,6 @@ grpc_cc_test(
         "absl/log:check",
         "absl/log:log",
     ],
-    language = "C++",
     deps = [
         "cq_verifier",
         "//:exec_ctx",
@@ -534,7 +528,6 @@ grpc_cc_test(
         "absl/log:check",
         "absl/log:log",
     ],
-    language = "C++",
     deps = [
         "cq_verifier",
         "//:channel_arg_names",
@@ -556,7 +549,6 @@ grpc_cc_test(
         "absl/strings",
         "absl/strings:str_format",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "cq_verifier",
@@ -581,7 +573,6 @@ grpc_cc_test(
         "absl/status:statusor",
         "absl/strings",
     ],
-    language = "C++",
     deps = [
         "cq_verifier",
         "//:channel_arg_names",
@@ -612,7 +603,6 @@ grpc_cc_test(
         "absl/log:check",
         "absl/log:log",
     ],
-    language = "C++",
     deps = [
         "cq_verifier",
         "//:gpr",
@@ -625,7 +615,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "multiple_server_queues_test",
     srcs = ["multiple_server_queues_test.cc"],
-    language = "C++",
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -643,7 +632,6 @@ grpc_cc_test(
         "absl/status:statusor",
         "absl/time",
     ],
-    language = "C++",
     deps = [
         "cq_verifier",
         "//:endpoint_addresses",
@@ -674,7 +662,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "C++",
     shard_count = 10,
     deps = [
         "cq_verifier",
@@ -711,7 +698,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "cq_verifier",
         "//:channel_arg_names",
@@ -741,7 +727,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "cq_verifier",
         "//:channel_arg_names",

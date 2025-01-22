@@ -14,6 +14,8 @@
 
 #include "test/core/end2end/fuzzers/connector_fuzzer.h"
 
+#include <memory>
+
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -32,9 +34,7 @@ bool leak_check = true;
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using ::grpc_event_engine::experimental::MockEndpointController;
-using ::grpc_event_engine::experimental::SetEventEngineFactory;
 using ::grpc_event_engine::experimental::URIToResolvedAddress;
 
 namespace grpc_core {
@@ -48,17 +48,12 @@ class ConnectorFuzzer {
           make_security_connector,
       absl::FunctionRef<OrphanablePtr<SubchannelConnector>()> make_connector)
       : make_security_connector_(make_security_connector),
-        engine_([actions = msg.event_engine_actions()]() {
-          SetEventEngineFactory([actions]() -> std::unique_ptr<EventEngine> {
-            return std::make_unique<FuzzingEventEngine>(
-                FuzzingEventEngine::Options(), actions);
-          });
-          return std::dynamic_pointer_cast<FuzzingEventEngine>(
-              GetDefaultEventEngine());
-        }()),
+        engine_(std::make_shared<FuzzingEventEngine>(
+            FuzzingEventEngine::Options(), msg.event_engine_actions())),
         mock_endpoint_controller_(MockEndpointController::Create(engine_)),
         connector_(make_connector()) {
     CHECK(engine_);
+    grpc_event_engine::experimental::SetDefaultEventEngine(engine_);
     for (const auto& input : msg.network_input()) {
       network_inputs_.push(input);
     }
@@ -121,6 +116,9 @@ class ConnectorFuzzer {
     engine_->TickUntilIdle();
     grpc_shutdown_blocking();
     engine_->UnsetGlobalHooks();
+    // The engine ref must be released for ShutdownDefaultEventEngine to finish.
+    engine_.reset();
+    grpc_event_engine::experimental::ShutdownDefaultEventEngine();
   }
 
   void Run() {

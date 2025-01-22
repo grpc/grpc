@@ -23,7 +23,6 @@ grpc_fuzzer(
     name = "response_fuzzer",
     srcs = ["response_fuzzer.cc"],
     corpus = "response_corpus",
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -36,7 +35,6 @@ grpc_fuzzer(
     name = "request_fuzzer",
     srcs = ["request_fuzzer.cc"],
     corpus = "request_corpus",
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -93,7 +91,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         ":httpcli_test_util",
@@ -123,7 +120,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         ":httpcli_test_util",
@@ -142,7 +138,6 @@ grpc_cc_test(
     name = "parser_test",
     srcs = ["parser_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -158,7 +153,6 @@ grpc_cc_test(
     name = "format_request_test",
     srcs = ["format_request_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

@@ -41,8 +41,8 @@
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/test_config.h"
 
+using ::grpc_event_engine::experimental::DefaultEventEngineScope;
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 bool squelch = true;
 
@@ -97,16 +97,12 @@ void RunEnd2endFuzzer(const core_end2end_test_fuzzer::Msg& msg) {
   overrides.default_ssl_roots_file_path = CA_CERT_PATH;
   ConfigVars::SetOverrides(overrides);
   TestOnlyReloadExperimentsFromConfigVariables();
-  grpc_event_engine::experimental::SetEventEngineFactory(
-      [actions = msg.event_engine_actions()]() {
-        FuzzingEventEngine::Options options;
-        options.max_delay_run_after = std::chrono::milliseconds(500);
-        options.max_delay_write = std::chrono::microseconds(5);
-        return std::make_unique<FuzzingEventEngine>(options, actions);
-      });
+  FuzzingEventEngine::Options options;
+  options.max_delay_run_after = std::chrono::milliseconds(500);
+  options.max_delay_write = std::chrono::microseconds(5);
   auto engine =
-      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
-
+      std::make_shared<FuzzingEventEngine>(options, msg.event_engine_actions());
+  DefaultEventEngineScope engine_scope(engine);
   if (!squelch) {
     fprintf(stderr, "RUN TEST: %s\n", tests[test_id].name.c_str());
   }
