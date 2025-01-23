@@ -1937,7 +1937,7 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     GRPC_TRACE_LOG(http, INFO) << "transport:" << t_.get() << " "
                                << (t_->is_client ? "CLIENT" : "SERVER")
                                << " peer:" << t_->peer_string.as_string_view()
-                               << " Graceful shutdown: Sending intial GOAWAY.";
+                               << " Graceful shutdown: Sending initial GOAWAY.";
     t->sent_goaway_state = GRPC_CHTTP2_GRACEFUL_GOAWAY;
     // Graceful GOAWAYs require a NO_ERROR error code
     grpc_chttp2_goaway_append(
