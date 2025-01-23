@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/slice.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -23,11 +25,37 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "fuzztest/fuzztest.h"
+#include "gtest/gtest.h"
+#include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
+#include "src/core/util/dump_args.h"
 
-bool squelch = true;
-bool leak_check = true;
+namespace grpc_core {
+namespace {
+
+std::string ToString(std::optional<std::vector<uint8_t>> s) {
+  if (s == std::nullopt) return "nullopt";
+  return absl::StrCat("{", absl::StrJoin(*s, ","), "}");
+}
+
+void EncodeDecodeRoundTrips(std::vector<uint8_t> buffer) {
+  grpc_slice uncompressed = grpc_slice_from_copied_buffer(
+      reinterpret_cast<const char*>(buffer.data()), buffer.size());
+  grpc_slice compressed = grpc_chttp2_huffman_compress(uncompressed);
+  std::vector<uint8_t> uncompressed_again;
+  auto add = [&uncompressed_again](uint8_t c) {
+    uncompressed_again.push_back(c);
+  };
+  EXPECT_TRUE(HuffDecoder<decltype(add)>(add, GRPC_SLICE_START_PTR(compressed),
+                                         GRPC_SLICE_END_PTR(compressed))
+                  .Run());
+  EXPECT_EQ(buffer, uncompressed_again);
+  grpc_slice_unref(uncompressed);
+  grpc_slice_unref(compressed);
+}
+FUZZ_TEST(HuffTest, EncodeDecodeRoundTrips);
 
 std::optional<std::vector<uint8_t>> DecodeHuffSlow(const uint8_t* begin,
                                                    const uint8_t* end) {
@@ -71,11 +99,6 @@ std::optional<std::vector<uint8_t>> DecodeHuffSlow(const uint8_t* begin,
   return out;
 }
 
-std::string ToString(std::optional<std::vector<uint8_t>> s) {
-  if (s == std::nullopt) return "nullopt";
-  return absl::StrCat("{", absl::StrJoin(*s, ","), "}");
-}
-
 std::optional<std::vector<uint8_t>> DecodeHuffFast(const uint8_t* begin,
                                                    const uint8_t* end) {
   std::vector<uint8_t> v;
@@ -86,14 +109,13 @@ std::optional<std::vector<uint8_t>> DecodeHuffFast(const uint8_t* begin,
   return v;
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  auto slow = DecodeHuffSlow(data, data + size);
-  auto fast = DecodeHuffFast(data, data + size);
-  if (slow != fast) {
-    fprintf(stderr, "MISMATCH:\ninpt: %s\nslow: %s\nfast: %s\n",
-            ToString(std::vector<uint8_t>(data, data + size)).c_str(),
-            ToString(slow).c_str(), ToString(fast).c_str());
-    abort();
-  }
-  return 0;
+void DifferentialOptimizedTest(std::vector<uint8_t> buffer) {
+  auto slow = DecodeHuffSlow(buffer.data(), buffer.data() + buffer.size());
+  auto fast = DecodeHuffFast(buffer.data(), buffer.data() + buffer.size());
+  EXPECT_EQ(fast, slow) << GRPC_DUMP_ARGS(ToString(buffer), ToString(slow),
+                                          ToString(fast));
 }
+FUZZ_TEST(HuffTest, DifferentialOptimizedTest);
+
+}  // namespace
+}  // namespace grpc_core
