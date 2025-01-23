@@ -3672,7 +3672,6 @@ libs:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -3693,7 +3692,6 @@ libs:
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -4066,7 +4064,6 @@ libs:
   - test/core/end2end/data/ssl_test_data.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -4088,7 +4085,6 @@ libs:
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -5164,7 +5160,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -5175,7 +5170,6 @@ targets:
   src:
   - test/core/iomgr/fd_conservation_posix_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -5286,7 +5280,6 @@ targets:
   - src/core/util/subprocess.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -5302,7 +5295,6 @@ targets:
   - src/core/util/subprocess_posix.cc
   - src/core/util/subprocess_windows.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -5473,7 +5465,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -5483,7 +5474,6 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -5668,7 +5658,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -5679,7 +5668,6 @@ targets:
   src:
   - test/core/security/alts_security_connector_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -5787,7 +5775,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -5798,7 +5785,6 @@ targets:
   src:
   - test/core/security/auth_context_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -5828,7 +5814,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -5839,7 +5824,6 @@ targets:
   src:
   - test/core/security/authorization_matchers_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -5888,7 +5872,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -5899,7 +5882,6 @@ targets:
   src:
   - test/core/security/aws_request_signer_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -6036,7 +6018,6 @@ targets:
   - test/core/end2end/cq_verifier.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -6050,7 +6031,6 @@ targets:
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -6074,7 +6054,6 @@ targets:
   - test/core/end2end/cq_verifier.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -6088,7 +6067,6 @@ targets:
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -6323,7 +6301,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -6334,7 +6311,6 @@ targets:
   src:
   - test/core/iomgr/buffer_list_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -8195,7 +8171,6 @@ targets:
   - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -8296,7 +8271,6 @@ targets:
   - src/core/lib/security/authorization/cel_authorization_engine.cc
   - test/core/security/cel_authorization_engine_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -8417,7 +8391,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -8428,7 +8401,6 @@ targets:
   src:
   - test/core/security/channel_creds_registry_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -8644,7 +8616,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -8655,7 +8626,6 @@ targets:
   src:
   - test/core/security/check_gcp_environment_linux_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -8673,7 +8643,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -8684,7 +8653,6 @@ targets:
   src:
   - test/core/security/check_gcp_environment_windows_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -8703,7 +8671,6 @@ targets:
   - test/core/end2end/cq_verifier.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -8714,7 +8681,6 @@ targets:
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -9168,7 +9134,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -9179,7 +9144,6 @@ targets:
   src:
   - test/core/test_util/cmdline.cc
   - test/core/test_util/cmdline_test.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -9223,7 +9187,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -9234,7 +9197,6 @@ targets:
   src:
   - test/core/iomgr/combiner_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -9399,7 +9361,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -9410,7 +9371,6 @@ targets:
   src:
   - test/core/surface/connection_context_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -9455,7 +9415,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -9465,7 +9424,6 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -10097,7 +10055,6 @@ targets:
   - test/core/iomgr/endpoint_tests.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -10109,7 +10066,6 @@ targets:
   - test/core/iomgr/endpoint_pair_test.cc
   - test/core/iomgr/endpoint_tests.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -10156,7 +10112,6 @@ targets:
   - test/core/iomgr/endpoint_tests.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -10168,7 +10123,6 @@ targets:
   - test/core/iomgr/endpoint_tests.cc
   - test/core/iomgr/error_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -10187,7 +10141,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -10197,7 +10150,6 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -10216,7 +10168,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -10227,7 +10178,6 @@ targets:
   src:
   - test/core/security/evaluate_args_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -10460,7 +10410,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -10471,7 +10420,6 @@ targets:
   src:
   - test/core/iomgr/fd_posix_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -11031,7 +10979,6 @@ targets:
   - test/core/end2end/data/ssl_test_data.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -11045,7 +10992,6 @@ targets:
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -11320,7 +11266,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -11331,7 +11276,6 @@ targets:
   src:
   - test/core/security/grpc_alts_credentials_options_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -11360,7 +11304,6 @@ targets:
   - test/core/test_util/audit_logging_utils.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -11372,7 +11315,6 @@ targets:
   - test/core/security/grpc_authorization_engine_test.cc
   - test/core/test_util/audit_logging_utils.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -11390,7 +11332,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -11401,7 +11342,6 @@ targets:
   src:
   - test/core/security/grpc_authorization_policy_provider_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -11581,7 +11521,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -11592,7 +11531,6 @@ targets:
   src:
   - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -11650,7 +11588,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -11661,7 +11598,6 @@ targets:
   src:
   - test/core/security/grpc_tls_certificate_distributor_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -11679,7 +11615,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -11690,7 +11625,6 @@ targets:
   src:
   - test/core/security/grpc_tls_certificate_provider_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -11708,7 +11642,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -11719,7 +11652,6 @@ targets:
   src:
   - test/core/security/grpc_tls_certificate_verifier_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -11737,7 +11669,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -11748,7 +11679,6 @@ targets:
   src:
   - test/core/security/grpc_tls_credentials_options_comparator_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -11766,7 +11696,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -11777,7 +11706,6 @@ targets:
   src:
   - test/core/security/grpc_tls_credentials_options_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -12102,7 +12030,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -12112,7 +12039,6 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/histogram_test.cc
@@ -12143,7 +12069,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -12153,7 +12078,6 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -12173,7 +12097,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -12183,7 +12106,6 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -12203,7 +12125,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -12213,7 +12134,6 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -12324,7 +12244,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -12337,7 +12256,6 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -12360,7 +12278,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -12373,7 +12290,6 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -12661,7 +12577,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -12672,7 +12587,6 @@ targets:
   src:
   - test/core/security/insecure_security_connector_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -13080,7 +12994,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -13091,7 +13004,6 @@ targets:
   src:
   - test/core/security/json_token_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -13110,7 +13022,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -13121,7 +13032,6 @@ targets:
   src:
   - test/core/security/jwt_verifier_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -13439,7 +13349,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -13450,7 +13359,6 @@ targets:
   src:
   - test/core/security/local_security_connector_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -13671,7 +13579,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -13681,7 +13588,6 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -14046,7 +13952,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -14057,7 +13962,6 @@ targets:
   src:
   - test/core/compression/message_compress_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -14086,7 +13990,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -14096,7 +13999,6 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -14786,7 +14688,6 @@ targets:
   - test/core/end2end/data/ssl_test_data.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -14800,7 +14701,6 @@ targets:
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -15010,7 +14910,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -15020,7 +14919,6 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -15052,7 +14950,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -15062,7 +14959,6 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -15157,7 +15053,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -15167,7 +15062,6 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -15986,7 +15880,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -15997,7 +15890,6 @@ targets:
   src:
   - test/core/security/rbac_translator_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -16444,7 +16336,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -16455,7 +16346,6 @@ targets:
   src:
   - test/core/iomgr/resolve_address_posix_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -16480,7 +16370,6 @@ targets:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/fake_udp_and_tcp_server.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -16492,7 +16381,6 @@ targets:
   - test/core/iomgr/resolve_address_test.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -16511,7 +16399,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -16522,7 +16409,6 @@ targets:
   src:
   - test/core/iomgr/resolve_address_posix_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -16547,7 +16433,6 @@ targets:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/fake_udp_and_tcp_server.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -16559,7 +16444,6 @@ targets:
   - test/core/iomgr/resolve_address_test.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -19391,7 +19275,6 @@ targets:
   - test/core/iomgr/endpoint_tests.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -19403,7 +19286,6 @@ targets:
   - test/core/iomgr/endpoint_tests.cc
   - test/core/security/secure_endpoint_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -19421,7 +19303,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -19432,7 +19313,6 @@ targets:
   src:
   - test/core/security/security_connector_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -19509,7 +19389,6 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -19528,7 +19407,6 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -19552,7 +19430,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -19570,7 +19447,6 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -19792,7 +19668,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -19810,7 +19685,6 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -19966,7 +19840,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -19976,7 +19849,6 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -20475,7 +20347,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -20486,7 +20357,6 @@ targets:
   src:
   - test/core/iomgr/socket_utils_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -20614,7 +20484,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -20624,7 +20493,6 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -20789,7 +20657,6 @@ targets:
   - test/core/end2end/cq_verifier.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -20800,7 +20667,6 @@ targets:
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -20883,7 +20749,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -20894,7 +20759,6 @@ targets:
   src:
   - test/core/security/system_roots_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -20929,7 +20793,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -20940,7 +20803,6 @@ targets:
   src:
   - test/core/iomgr/tcp_client_posix_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -20978,7 +20840,6 @@ targets:
   - test/core/iomgr/endpoint_tests.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -20990,7 +20851,6 @@ targets:
   - test/core/iomgr/endpoint_tests.cc
   - test/core/iomgr/tcp_posix_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -21011,7 +20871,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -21022,7 +20881,6 @@ targets:
   src:
   - test/core/iomgr/tcp_server_posix_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -21226,7 +21084,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -21237,7 +21094,6 @@ targets:
   src:
   - test/core/iomgr/timer_heap_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -21258,7 +21114,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -21272,7 +21127,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/security/credentials_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -21291,7 +21145,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -21302,7 +21155,6 @@ targets:
   src:
   - test/core/security/ssl_credentials_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -21736,7 +21588,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -21746,7 +21597,6 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -21860,7 +21710,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -21871,7 +21720,6 @@ targets:
   src:
   - test/core/security/tls_security_connector_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -22535,7 +22383,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -22556,7 +22403,6 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
@@ -23572,7 +23418,6 @@ targets:
   headers:
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
   - test/core/test_util/mock_endpoint.h
@@ -23583,7 +23428,6 @@ targets:
   src:
   - test/core/security/xds_credentials_test.cc
   - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
   - test/core/test_util/histogram.cc
   - test/core/test_util/mock_endpoint.cc
