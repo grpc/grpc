@@ -41,6 +41,7 @@
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
@@ -489,7 +490,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
     return local_address_;
   }
 
-  int GetWrappedFd() { return fd_; }
+  FileDescriptor GetWrappedFd() { return fd_; }
 
   bool CanTrackErrors() const { return poller_->CanTrackErrors(); }
 
@@ -532,7 +533,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
 #endif  // GRPC_LINUX_ERRQUEUE
   grpc_core::Mutex read_mu_;
   PosixSocketWrapper sock_;
-  int fd_;
+  FileDescriptor fd_;
   bool is_first_read_ = true;
   bool has_posted_reclaimer_ ABSL_GUARDED_BY(read_mu_) = false;
   double target_length_;
@@ -635,7 +636,7 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
     return impl_->GetLocalAddress();
   }
 
-  int GetWrappedFd() override { return impl_->GetWrappedFd(); }
+  int GetWrappedFd() override { return impl_->GetWrappedFd().fd(); }
 
   bool CanTrackErrors() override { return impl_->CanTrackErrors(); }
 

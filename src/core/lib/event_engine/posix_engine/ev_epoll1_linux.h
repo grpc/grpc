@@ -46,7 +46,7 @@ class Epoll1EventHandle;
 class Epoll1Poller : public PosixEventPoller {
  public:
   explicit Epoll1Poller(Scheduler* scheduler);
-  EventHandle* CreateHandle(int fd, absl::string_view name,
+  EventHandle* CreateHandle(FileDescriptor fd, absl::string_view name,
                             bool track_err) override;
   Poller::WorkResult Work(
       grpc_event_engine::experimental::EventEngine::Duration timeout,

@@ -39,6 +39,7 @@
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -98,13 +99,13 @@ namespace {
 
 // A wrapper around sendmsg. It sends \a msg over \a fd and returns the number
 // of bytes sent.
-ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
-                int additional_flags = 0) {
+ssize_t TcpSend(const FileDescriptor& fd, const struct msghdr* msg,
+                int* saved_errno, int additional_flags = 0) {
   GRPC_LATENT_SEE_PARENT_SCOPE("TcpSend");
   ssize_t sent_length;
   do {
     grpc_core::global_stats().IncrementSyscallWrite();
-    sent_length = sendmsg(fd, msg, SENDMSG_FLAGS | additional_flags);
+    sent_length = sendmsg(fd.fd(), msg, SENDMSG_FLAGS | additional_flags);
   } while (sent_length < 0 && (*saved_errno = errno) == EINTR);
   return sent_length;
 }
@@ -278,7 +279,7 @@ void PosixEndpointImpl::FinishEstimate() {
 
 absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) const {
   grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kFd,
-                          handle_->WrappedFd());
+                          handle_->WrappedFd().fd());
   grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kRpcStatus,
                           GRPC_STATUS_UNAVAILABLE);
   return src_error;
@@ -334,7 +335,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
         incoming_buffer_->Count());
     do {
       grpc_core::global_stats().IncrementSyscallRead();
-      read_bytes = recvmsg(fd_, &msg, 0);
+      read_bytes = recvmsg(fd_.fd(), &msg, 0);
     } while (read_bytes < 0 && errno == EINTR);
 
     if (read_bytes < 0 && errno == EAGAIN) {
@@ -711,7 +712,7 @@ bool PosixEndpointImpl::ProcessErrors() {
   while (true) {
     msg.msg_controllen = sizeof(aligned_buf.rbuf);
     do {
-      r = recvmsg(fd_, &msg, MSG_ERRQUEUE);
+      r = recvmsg(fd_.fd(), &msg, MSG_ERRQUEUE);
       saved_errno = errno;
     } while (r < 0 && saved_errno == EINTR);
 
@@ -849,8 +850,8 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
                                             int additional_flags) {
   if (!socket_ts_enabled_) {
     uint32_t opt = kTimestampingSocketOptions;
-    if (setsockopt(fd_, SOL_SOCKET, SO_TIMESTAMPING, static_cast<void*>(&opt),
-                   sizeof(opt)) != 0) {
+    if (setsockopt(fd_.fd(), SOL_SOCKET, SO_TIMESTAMPING,
+                   static_cast<void*>(&opt), sizeof(opt)) != 0) {
       return false;
     }
     bytes_counter_ = -1;
@@ -876,7 +877,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
   // Only save timestamps if all the bytes were taken by sendmsg.
   if (sending_length == static_cast<size_t>(length)) {
     traced_buffers_.AddNewEntry(static_cast<uint32_t>(bytes_counter_ + length),
-                                fd_, outgoing_buffer_arg_);
+                                fd_.fd(), outgoing_buffer_arg_);
     outgoing_buffer_arg_ = nullptr;
   }
   return true;
@@ -1250,12 +1251,12 @@ void PosixEndpointImpl::MaybeShutdown(
 }
 
 PosixEndpointImpl ::~PosixEndpointImpl() {
-  int release_fd = -1;
+  FileDescriptor release_fd;
   handle_->OrphanHandle(on_done_,
                         on_release_fd_ == nullptr ? nullptr : &release_fd, "");
   if (on_release_fd_ != nullptr) {
     engine_->Run([on_release_fd = std::move(on_release_fd_),
-                  release_fd]() mutable { on_release_fd(release_fd); });
+                  release_fd]() mutable { on_release_fd(release_fd.fd()); });
   }
   delete on_read_;
   delete on_write_;
@@ -1267,13 +1268,13 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      std::shared_ptr<EventEngine> engine,
                                      MemoryAllocator&& /*allocator*/,
                                      const PosixTcpOptions& options)
-    : sock_(PosixSocketWrapper(handle->WrappedFd())),
+    : sock_(PosixSocketWrapper(handle->WrappedFd().fd())),
       on_done_(on_done),
       traced_buffers_(),
       handle_(handle),
       poller_(handle->Poller()),
       engine_(engine) {
-  PosixSocketWrapper sock(handle->WrappedFd());
+  PosixSocketWrapper sock(handle->WrappedFd().fd());
   fd_ = handle_->WrappedFd();
   CHECK(options.resource_quota != nullptr);
   auto peer_addr_string = sock.PeerAddressString();
@@ -1308,8 +1309,8 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                  << "value.";
     } else {
       const int enable = 1;
-      if (setsockopt(fd_, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable)) !=
-          0) {
+      if (setsockopt(fd_.fd(), SOL_SOCKET, SO_ZEROCOPY, &enable,
+                     sizeof(enable)) != 0) {
         zerocopy_enabled = false;
         LOG(ERROR) << "Failed to set zerocopy options on the socket.";
       }
@@ -1327,7 +1328,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       options.tcp_tx_zerocopy_send_bytes_threshold);
 #ifdef GRPC_HAVE_TCP_INQ
   int one = 1;
-  if (setsockopt(fd_, SOL_TCP, TCP_INQ, &one, sizeof(one)) == 0) {
+  if (setsockopt(fd_.fd(), SOL_TCP, TCP_INQ, &one, sizeof(one)) == 0) {
     inq_capable_ = true;
   } else {
     VLOG(2) << "cannot set inq fd=" << fd_ << " errno=" << errno;

@@ -13,20 +13,29 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_package(name = "test/core/slice")
 
 licenses(["notice"])
 
-grpc_fuzz_test(
+grpc_fuzzer(
     name = "percent_encode_fuzzer",
     srcs = ["percent_encode_fuzzer.cc"],
-    external_deps = [
-        "absl/log:check",
-        "fuzztest",
-        "fuzztest_main",
+    corpus = "percent_encode_corpus",
+    external_deps = ["absl/log:check"],
+    tags = ["no_windows"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/test_util:grpc_test_util",
     ],
+)
+
+grpc_fuzzer(
+    name = "percent_decode_fuzzer",
+    srcs = ["percent_decode_fuzzer.cc"],
+    corpus = "percent_decode_corpus",
     tags = ["no_windows"],
     deps = [
         "//:gpr",

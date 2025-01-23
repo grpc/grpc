@@ -26,8 +26,6 @@ DebugOnlyTraceFlag auth_context_refcount_trace(false, "auth_context_refcount");
 DebugOnlyTraceFlag call_combiner_trace(false, "call_combiner");
 DebugOnlyTraceFlag call_refcount_trace(false, "call_refcount");
 DebugOnlyTraceFlag call_state_trace(false, "call_state");
-DebugOnlyTraceFlag chttp2_server_refcount_trace(false,
-                                                "chttp2_server_refcount");
 DebugOnlyTraceFlag closure_trace(false, "closure");
 DebugOnlyTraceFlag combiner_trace(false, "combiner");
 DebugOnlyTraceFlag cq_refcount_trace(false, "cq_refcount");
@@ -217,7 +215,6 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"call_combiner", &call_combiner_trace},
           {"call_refcount", &call_refcount_trace},
           {"call_state", &call_state_trace},
-          {"chttp2_server_refcount", &chttp2_server_refcount_trace},
           {"closure", &closure_trace},
           {"combiner", &combiner_trace},
           {"cq_refcount", &cq_refcount_trace},

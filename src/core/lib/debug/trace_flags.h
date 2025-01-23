@@ -27,7 +27,6 @@ extern DebugOnlyTraceFlag auth_context_refcount_trace;
 extern DebugOnlyTraceFlag call_combiner_trace;
 extern DebugOnlyTraceFlag call_refcount_trace;
 extern DebugOnlyTraceFlag call_state_trace;
-extern DebugOnlyTraceFlag chttp2_server_refcount_trace;
 extern DebugOnlyTraceFlag closure_trace;
 extern DebugOnlyTraceFlag combiner_trace;
 extern DebugOnlyTraceFlag cq_refcount_trace;
