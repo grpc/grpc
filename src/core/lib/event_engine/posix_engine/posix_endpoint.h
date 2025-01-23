@@ -27,18 +27,15 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
-#include <new>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/hash/hash.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
@@ -532,14 +529,13 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   struct cmsghdr* ProcessTimestamp(msghdr* msg, struct cmsghdr* cmsg);
 #endif  // GRPC_LINUX_ERRQUEUE
   grpc_core::Mutex read_mu_;
-  PosixSocketWrapper sock_;
   FileDescriptor fd_;
   bool is_first_read_ = true;
   bool has_posted_reclaimer_ ABSL_GUARDED_BY(read_mu_) = false;
   double target_length_;
   int min_read_chunk_size_;
   int max_read_chunk_size_;
-  int set_rcvlowat_ = 0;
+  uint64_t set_rcvlowat_ = 0;
   double bytes_read_this_round_ = 0;
   std::atomic<int> ref_count_{1};
 
@@ -593,7 +589,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   TcpZerocopySendRecord* current_zerocopy_send_ = nullptr;
   // A hint from upper layers specifying the minimum number of bytes that need
   // to be read to make meaningful progress.
-  int min_progress_size_ = 1;
+  uint32_t min_progress_size_ = 1;
   TracedBufferList traced_buffers_;
   // The handle is owned by the PosixEndpointImpl object.
   EventHandle* handle_;

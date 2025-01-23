@@ -16,10 +16,15 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
+#include <sys/types.h>
 
 #include <cerrno>
+#include <cstdint>
 
+#include "absl/strings/str_cat.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/strerror.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #include <arpa/inet.h>  // IWYU pragma: keep
@@ -57,13 +62,39 @@
 
 namespace grpc_event_engine::experimental {
 
+namespace {
+
+PosixResult PosixResultSuccess() {
+  return PosixResult(OperationResultKind::kSuccess, 0);
+}
+
+PosixResult PosixResultError() {
+  return PosixResult(OperationResultKind::kError, errno);
+}
+
+PosixResult PosixResultWrap(int result) {
+  return result == 0 ? PosixResultSuccess() : PosixResultError();
+}
+
+Int64Result Int64Wrap(int64_t result) {
+  return result < 0 ? Int64Result(OperationResultKind::kError, errno, result)
+                    : Int64Result(result);
+}
+
+}  // namespace
+
 FileDescriptor FileDescriptors::Adopt(int fd) { return FileDescriptor(fd); }
+
+std::optional<int> FileDescriptors::GetRawFileDescriptor(
+    const FileDescriptor& fd) {
+  return fd.fd();
+}
 
 FileDescriptorResult FileDescriptors::RegisterPosixResult(int result) {
   if (result > 0) {
-    return FileDescriptorResult::FD(Adopt(result));
+    return FileDescriptorResult(Adopt(result));
   } else {
-    return FileDescriptorResult::Error();
+    return FileDescriptorResult(OperationResultKind::kError, errno);
   }
 }
 
@@ -113,8 +144,9 @@ IF_POSIX_SOCKET(
       addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
       return fd;
     close_and_error:
+      FileDescriptorResult result(OperationResultKind::kError, errno);
       Close(*fd);
-      return FileDescriptorResult::Error();
+      return result;
     })
 
 #else  // GRPC_POSIX_SOCKETUTILS
@@ -143,20 +175,41 @@ IF_POSIX_SOCKET(
 
 IF_POSIX_SOCKET(PosixResult FileDescriptors::Ioctl(const FileDescriptor& fd,
                                                    int op, void* arg),
-                { return PosixResult::Wrap(ioctl(fd.fd(), op, arg)); });
+                { return PosixResultWrap(ioctl(fd.fd(), op, arg)); });
 
 IF_POSIX_SOCKET(PosixResult FileDescriptors::Shutdown(const FileDescriptor& fd,
                                                       int how),
-                { return PosixResult::Wrap(shutdown(fd.fd(), how)); })
+                { return PosixResultWrap(shutdown(fd.fd(), how)); })
 
 IF_POSIX_SOCKET(
     PosixResult FileDescriptors::GetSockOpt(const FileDescriptor& fd, int level,
                                             int optname, void* optval,
                                             void* optlen),
     {
-      return PosixResult::Wrap(getsockopt(fd.fd(), level, optname, optval,
-                                          static_cast<socklen_t*>(optlen)));
+      return PosixResultWrap(getsockopt(fd.fd(), level, optname, optval,
+                                        static_cast<socklen_t*>(optlen)));
     })
+
+IF_POSIX_SOCKET(
+    Int64Result FileDescriptors::SetSockOpt(const FileDescriptor& fd, int level,
+                                            int optname, uint32_t optval),
+    {
+      if (setsockopt(fd.fd(), level, optname, &optval, sizeof(optval)) < 0) {
+        return Int64Result(OperationResultKind::kError, errno, optval);
+      } else {
+        return Int64Result(optval);
+      }
+    })
+
+IF_POSIX_SOCKET(Int64Result FileDescriptors::RecvMsg(const FileDescriptor& fd,
+                                                     struct msghdr* message,
+                                                     int flags),
+                { return Int64Wrap(recvmsg(fd.fd(), message, flags)); })
+
+IF_POSIX_SOCKET(Int64Result FileDescriptors::SendMsg(
+                    const FileDescriptor& fd, const struct msghdr* message,
+                    int flags),
+                { return Int64Wrap(sendmsg(fd.fd(), message, flags)); })
 
 //
 // Epoll
@@ -165,7 +218,7 @@ IF_EPOLL(PosixResult FileDescriptors::EpollCtlDel(int epfd,
                                                   const FileDescriptor& fd),
          {
            epoll_event phony_event;
-           return PosixResult::Wrap(
+           return PosixResultWrap(
                epoll_ctl(epfd, EPOLL_CTL_DEL, fd.fd(), &phony_event));
          })
 
@@ -176,8 +229,48 @@ IF_EPOLL(PosixResult FileDescriptors::EpollCtlAdd(int epfd,
            epoll_event event;
            event.events = static_cast<uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
            event.data.ptr = data;
-           return PosixResult::Wrap(
+           return PosixResultWrap(
                epoll_ctl(epfd, EPOLL_CTL_ADD, fd.fd(), &event));
          })
+
+absl::StatusOr<EventEngine::ResolvedAddress> FileDescriptors::LocalAddress(
+    const FileDescriptor& fd) {
+  EventEngine::ResolvedAddress addr;
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+  if (getsockname(fd.fd(), const_cast<sockaddr*>(addr.address()), &len) < 0) {
+    return absl::InternalError(
+        absl::StrCat("getsockname:", grpc_core::StrError(errno)));
+  }
+  return EventEngine::ResolvedAddress(addr.address(), len);
+}
+
+absl::StatusOr<std::string> FileDescriptors::LocalAddressString(
+    const FileDescriptor& fd) {
+  auto status = LocalAddress(fd);
+  if (!status.ok()) {
+    return status.status();
+  }
+  return ResolvedAddressToNormalizedString((*status));
+}
+
+absl::StatusOr<EventEngine::ResolvedAddress> FileDescriptors::PeerAddress(
+    const FileDescriptor& fd) {
+  EventEngine::ResolvedAddress addr;
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+  if (getpeername(fd.fd(), const_cast<sockaddr*>(addr.address()), &len) < 0) {
+    return absl::InternalError(
+        absl::StrCat("getpeername:", grpc_core::StrError(errno)));
+  }
+  return EventEngine::ResolvedAddress(addr.address(), len);
+}
+
+absl::StatusOr<std::string> FileDescriptors::PeerAddressString(
+    const FileDescriptor& fd) {
+  auto status = PeerAddress(fd);
+  if (!status.ok()) {
+    return status.status();
+  }
+  return ResolvedAddressToNormalizedString((*status));
+}
 
 }  // namespace grpc_event_engine::experimental

@@ -28,7 +28,6 @@
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
-#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
@@ -300,19 +299,6 @@ void UnlinkIfUnixDomainSocket(
 #else
   (void)resolved_addr;
 #endif
-}
-
-// Instruct the kernel to wait for specified number of bytes to be received on
-// the socket before generating an interrupt for packet receive. If the call
-// succeeds, it returns the number of bytes (wait threshold) that was actually
-// set.
-absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int bytes) {
-  if (setsockopt(fd_, SOL_SOCKET, SO_RCVLOWAT, &bytes, sizeof(bytes)) != 0) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_RCVLOWAT): ", grpc_core::StrError(errno)));
-  }
-  return bytes;
 }
 
 // Set a socket to use zerocopy
@@ -709,43 +695,6 @@ bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
   return kIpv6LoopbackAvailable;
 }
 
-absl::StatusOr<EventEngine::ResolvedAddress>
-PosixSocketWrapper::LocalAddress() {
-  EventEngine::ResolvedAddress addr;
-  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  if (getsockname(fd_, const_cast<sockaddr*>(addr.address()), &len) < 0) {
-    return absl::InternalError(
-        absl::StrCat("getsockname:", grpc_core::StrError(errno)));
-  }
-  return EventEngine::ResolvedAddress(addr.address(), len);
-}
-
-absl::StatusOr<EventEngine::ResolvedAddress> PosixSocketWrapper::PeerAddress() {
-  EventEngine::ResolvedAddress addr;
-  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  if (getpeername(fd_, const_cast<sockaddr*>(addr.address()), &len) < 0) {
-    return absl::InternalError(
-        absl::StrCat("getpeername:", grpc_core::StrError(errno)));
-  }
-  return EventEngine::ResolvedAddress(addr.address(), len);
-}
-
-absl::StatusOr<std::string> PosixSocketWrapper::LocalAddressString() {
-  auto status = LocalAddress();
-  if (!status.ok()) {
-    return status.status();
-  }
-  return ResolvedAddressToNormalizedString((*status));
-}
-
-absl::StatusOr<std::string> PosixSocketWrapper::PeerAddressString() {
-  auto status = PeerAddress();
-  if (!status.ok()) {
-    return status.status();
-  }
-  return ResolvedAddressToNormalizedString((*status));
-}
-
 absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
     std::function<int(int, int, int)> socket_factory,
     const experimental::EventEngine::ResolvedAddress& addr, int type,
@@ -825,10 +774,6 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 }
 
 #else  // GRPC_POSIX_SOCKET_UTILS_COMMON
-
-absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int /*bytes*/) {
-  grpc_core::Crash("unimplemented");
-}
 
 absl::Status PosixSocketWrapper::SetSocketZeroCopy() {
   grpc_core::Crash("unimplemented");

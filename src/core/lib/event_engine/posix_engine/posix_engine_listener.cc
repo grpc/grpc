@@ -272,31 +272,31 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
   }
   PosixSocketWrapper sock(fd);
   (void)sock.SetSocketNoSigpipeIfPossible();
-  auto peer_name = sock.PeerAddressString();
+  FileDescriptor wrapped = poller_->GetFileDescriptors().Adopt(fd);
+  auto peer_name = poller_->GetFileDescriptors().PeerAddressString(wrapped);
   if (!peer_name.ok()) {
     return absl::UnknownError(
         absl::StrCat("HandleExternalConnection: peer not connected: ",
                      peer_name.status().ToString()));
   }
-  grpc_core::EnsureRunInExecCtx(
-      [this, peer_name = std::move(*peer_name), pending_data, listener_fd,
-       wrapped = poller_->GetFileDescriptors().Adopt(fd)]() mutable {
-        auto endpoint = CreatePosixEndpoint(
-            /*handle=*/poller_->CreateHandle(wrapped, peer_name,
-                                             poller_->CanTrackErrors()),
-            /*on_shutdown=*/nullptr, /*engine=*/engine_,
-            /*allocator=*/
-            memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
-                "external:endpoint-tcp-server-connection: ", peer_name)),
-            /*options=*/options_);
-        on_accept_(
-            /*listener_fd=*/listener_fd, /*endpoint=*/std::move(endpoint),
-            /*is_external=*/true,
-            /*memory_allocator=*/
-            memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
-                "external:on-accept-tcp-server-connection: ", peer_name)),
-            /*pending_data=*/pending_data);
-      });
+  grpc_core::EnsureRunInExecCtx([this, peer_name = std::move(*peer_name),
+                                 pending_data, listener_fd, wrapped]() mutable {
+    auto endpoint = CreatePosixEndpoint(
+        /*handle=*/poller_->CreateHandle(wrapped, peer_name,
+                                         poller_->CanTrackErrors()),
+        /*on_shutdown=*/nullptr, /*engine=*/engine_,
+        /*allocator=*/
+        memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
+            "external:endpoint-tcp-server-connection: ", peer_name)),
+        /*options=*/options_);
+    on_accept_(
+        /*listener_fd=*/listener_fd, /*endpoint=*/std::move(endpoint),
+        /*is_external=*/true,
+        /*memory_allocator=*/
+        memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
+            "external:on-accept-tcp-server-connection: ", peer_name)),
+        /*pending_data=*/pending_data);
+  });
   return absl::OkStatus();
 }
 
