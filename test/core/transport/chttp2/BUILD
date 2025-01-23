@@ -81,7 +81,7 @@ grpc_fuzz_test(
         "absl/status",
         "absl/random:mocking_bit_gen",
         "fuzztest",
-        "fuzztest_main"
+        "fuzztest_main",
     ],
     tags = ["no_windows"],
     deps = [
@@ -97,7 +97,7 @@ grpc_fuzz_test(
     external_deps = [
         "absl/strings",
         "fuzztest",
-        "fuzztest_main"
+        "fuzztest_main",
     ],
     tags = ["no_windows"],
     deps = [
