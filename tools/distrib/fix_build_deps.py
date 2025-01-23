@@ -119,7 +119,9 @@ EXTERNAL_DEPS = {
     "opentelemetry/sdk/resource/semantic_conventions.h": "otel/sdk:headers",
     "ares.h": "cares",
     "fuzztest/fuzztest.h": ["fuzztest", "fuzztest_main"],
-    "google/api/monitored_resource.pb.h": ("google/api:monitored_resource_cc_proto"),
+    "google/api/monitored_resource.pb.h": (
+        "google/api:monitored_resource_cc_proto"
+    ),
     "google/devtools/cloudtrace/v2/tracing.grpc.pb.h": (
         "googleapis_trace_grpc_service"
     ),
@@ -138,7 +140,9 @@ EXTERNAL_DEPS = {
         "opencensus-trace-stackdriver_exporter"
     ),
     "opencensus/trace/context_util.h": "opencensus-trace-context_util",
-    "opencensus/trace/propagation/grpc_trace_bin.h": ("opencensus-trace-propagation"),
+    "opencensus/trace/propagation/grpc_trace_bin.h": (
+        "opencensus-trace-propagation"
+    ),
     "opencensus/tags/context_util.h": "opencensus-tags-context_util",
     "opencensus/trace/span_context.h": "opencensus-trace-span_context",
     "openssl/base.h": "libssl",
@@ -228,7 +232,11 @@ parsing_path = None
 # Convert the source or header target to a relative path.
 def _get_filename(name, parsing_path):
     filename = "%s%s" % (
-        (parsing_path + "/" if (parsing_path and not name.startswith("//")) else ""),
+        (
+            parsing_path + "/"
+            if (parsing_path and not name.startswith("//"))
+            else ""
+        ),
         name,
     )
     filename = filename.replace("//:", "")
@@ -314,7 +322,9 @@ def buildozer_set_list(name, values, target, via=""):
         buildozer("remove %s" % name, target)
         return
     adjust = via if via else name
-    buildozer("set %s %s" % (adjust, " ".join('"%s"' % s for s in values)), target)
+    buildozer(
+        "set %s %s" % (adjust, " ".join('"%s"' % s for s in values)), target
+    )
     if via:
         buildozer("remove %s" % name, target)
         buildozer("rename %s %s" % (via, name), target)
@@ -406,9 +416,6 @@ for dirname in [
     "test/core/transport/chaotic_good",
     "test/core/transport/test_suite",
     "test/core/transport",
-    # "fuzztest",
-    # "fuzztest/core/channel",
-    # "fuzztest/core/transport/chttp2",
 ]:
     parsing_path = dirname
     exec(
@@ -495,11 +502,19 @@ class Choices:
     def add_one_of(self, choices, trigger):
         if not choices:
             return
-        choices = sum([self.apply_substitutions(choice) for choice in choices], [])
+        choices = sum(
+            [self.apply_substitutions(choice) for choice in choices], []
+        )
         if args.explain and (args.why is None or args.why in choices):
-            print("{}: Adding one of {} for {}".format(self.library, choices, trigger))
+            print(
+                "{}: Adding one of {} for {}".format(
+                    self.library, choices, trigger
+                )
+            )
         self.to_add.append(
-            tuple(make_relative_path(choice, self.library) for choice in choices)
+            tuple(
+                make_relative_path(choice, self.library) for choice in choices
+            )
         )
 
     def add(self, choice, trigger):
@@ -646,12 +661,16 @@ def make_library(library):
             # assume a system include
             continue
 
-        print("# ERROR: can't categorize header: %s used by %s" % (hdr, library))
+        print(
+            "# ERROR: can't categorize header: %s used by %s" % (hdr, library)
+        )
         error = True
 
     deps.remove(library)
 
-    deps = sorted(deps.best(lambda x: SCORERS[args.score](x, original_deps[library])))
+    deps = sorted(
+        deps.best(lambda x: SCORERS[args.score](x, original_deps[library]))
+    )
     external_deps = sorted(
         external_deps.best(
             lambda x: SCORERS[args.score](x, original_external_deps[library])

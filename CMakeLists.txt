@@ -3131,30 +3131,15 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
-  include/grpc/impl/call.h
   include/grpc/impl/channel_arg_names.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
   include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/fork.h
-  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/log.h
-  include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_abseil.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
   include/grpc/impl/compression_types.h
   include/grpc/impl/connectivity_state.h
   include/grpc/impl/grpc_types.h
@@ -3165,25 +3150,6 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
-  include/grpc/support/alloc.h
-  include/grpc/support/atm_gcc_atomic.h
-  include/grpc/support/atm_gcc_sync.h
-  include/grpc/support/atm_windows.h
-  include/grpc/support/cpu.h
-  include/grpc/support/json.h
-  include/grpc/support/log.h
-  include/grpc/support/log_windows.h
-  include/grpc/support/metrics.h
-  include/grpc/support/port_platform.h
-  include/grpc/support/string_util.h
-  include/grpc/support/sync.h
-  include/grpc/support/sync_abseil.h
-  include/grpc/support/sync_custom.h
-  include/grpc/support/sync_generic.h
-  include/grpc/support/sync_posix.h
-  include/grpc/support/sync_windows.h
-  include/grpc/support/thd_id.h
-  include/grpc/support/time.h
   include/grpc/support/workaround_list.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -3829,30 +3795,15 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
-  include/grpc/impl/call.h
   include/grpc/impl/channel_arg_names.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
   include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/fork.h
-  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/log.h
-  include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_abseil.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
   include/grpc/impl/compression_types.h
   include/grpc/impl/connectivity_state.h
   include/grpc/impl/grpc_types.h
@@ -3863,25 +3814,6 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
-  include/grpc/support/alloc.h
-  include/grpc/support/atm_gcc_atomic.h
-  include/grpc/support/atm_gcc_sync.h
-  include/grpc/support/atm_windows.h
-  include/grpc/support/cpu.h
-  include/grpc/support/json.h
-  include/grpc/support/log.h
-  include/grpc/support/log_windows.h
-  include/grpc/support/metrics.h
-  include/grpc/support/port_platform.h
-  include/grpc/support/string_util.h
-  include/grpc/support/sync.h
-  include/grpc/support/sync_abseil.h
-  include/grpc/support/sync_custom.h
-  include/grpc/support/sync_generic.h
-  include/grpc/support/sync_posix.h
-  include/grpc/support/sync_windows.h
-  include/grpc/support/thd_id.h
-  include/grpc/support/time.h
   include/grpc/support/workaround_list.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -5797,7 +5729,6 @@ add_library(grpc_authorization_provider
   src/core/lib/promise/party.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -5995,30 +5926,15 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
-  include/grpc/impl/call.h
   include/grpc/impl/channel_arg_names.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
   include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/fork.h
-  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/log.h
-  include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/slice.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_abseil.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
   include/grpc/impl/compression_types.h
   include/grpc/impl/connectivity_state.h
   include/grpc/impl/grpc_types.h
@@ -6029,25 +5945,6 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
-  include/grpc/support/alloc.h
-  include/grpc/support/atm_gcc_atomic.h
-  include/grpc/support/atm_gcc_sync.h
-  include/grpc/support/atm_windows.h
-  include/grpc/support/cpu.h
-  include/grpc/support/json.h
-  include/grpc/support/log.h
-  include/grpc/support/log_windows.h
-  include/grpc/support/metrics.h
-  include/grpc/support/port_platform.h
-  include/grpc/support/string_util.h
-  include/grpc/support/sync.h
-  include/grpc/support/sync_abseil.h
-  include/grpc/support/sync_custom.h
-  include/grpc/support/sync_generic.h
-  include/grpc/support/sync_posix.h
-  include/grpc/support/sync_windows.h
-  include/grpc/support/thd_id.h
-  include/grpc/support/time.h
   include/grpc/support/workaround_list.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -9373,7 +9270,6 @@ add_executable(call_filters_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -9864,7 +9760,6 @@ add_executable(call_utils_test
   src/core/lib/promise/party.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -10412,7 +10307,6 @@ add_executable(cancel_callback_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -11748,7 +11642,6 @@ add_executable(chunked_vector_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -15856,7 +15749,6 @@ add_executable(flow_control_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -15936,7 +15828,6 @@ add_executable(for_each_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -19413,14 +19304,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(if_test
   test/core/promise/if_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(if_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(if_test PUBLIC cxx_std_17)
 target_include_directories(if_test
   PRIVATE
@@ -19444,9 +19327,11 @@ target_include_directories(if_test
 target_link_libraries(if_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::any_invocable
+  absl::check
   absl::type_traits
   absl::statusor
-  gpr
+  absl::str_format
 )
 
 
@@ -19810,7 +19695,6 @@ add_executable(interceptor_list_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -21097,7 +20981,6 @@ target_link_libraries(lru_cache_test
   absl::flat_hash_map
   absl::any_invocable
   absl::check
-  absl::statusor
 )
 
 
@@ -21119,7 +21002,6 @@ add_executable(map_pipe_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -21184,14 +21066,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(match_promise_test
   test/core/promise/match_promise_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(match_promise_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(match_promise_test PUBLIC cxx_std_17)
 target_include_directories(match_promise_test
   PRIVATE
@@ -21215,8 +21089,11 @@ target_include_directories(match_promise_test
 target_link_libraries(match_promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::any_invocable
+  absl::check
   absl::type_traits
-  gpr
+  absl::status
+  absl::str_format
 )
 
 
@@ -24069,14 +23946,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(poll_test
   test/core/promise/poll_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(poll_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(poll_test PUBLIC cxx_std_17)
 target_include_directories(poll_test
   PRIVATE
@@ -24100,7 +23969,8 @@ target_include_directories(poll_test
 target_link_libraries(poll_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  gpr
+  absl::check
+  absl::str_format
 )
 
 
@@ -25015,14 +24885,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(prioritized_race_test
   test/core/promise/prioritized_race_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(prioritized_race_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(prioritized_race_test PUBLIC cxx_std_17)
 target_include_directories(prioritized_race_test
   PRIVATE
@@ -25046,7 +24908,8 @@ target_include_directories(prioritized_race_test
 target_link_libraries(prioritized_race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  gpr
+  absl::check
+  absl::str_format
 )
 
 
@@ -25099,14 +24962,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(promise_factory_test
   test/core/promise/promise_factory_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(promise_factory_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(promise_factory_test PUBLIC cxx_std_17)
 target_include_directories(promise_factory_test
   PRIVATE
@@ -25130,9 +24985,11 @@ target_include_directories(promise_factory_test
 target_link_libraries(promise_factory_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::any_invocable
   absl::bind_front
+  absl::check
   absl::type_traits
-  gpr
+  absl::str_format
 )
 
 
@@ -25142,14 +24999,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(promise_map_test
   test/core/promise/map_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(promise_map_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(promise_map_test PUBLIC cxx_std_17)
 target_include_directories(promise_map_test
   PRIVATE
@@ -25173,9 +25022,12 @@ target_include_directories(promise_map_test
 target_link_libraries(promise_map_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::any_invocable
+  absl::check
   absl::type_traits
+  absl::status
   absl::statusor
-  gpr
+  absl::str_format
 )
 
 
@@ -25239,14 +25091,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(promise_test
   test/core/promise/promise_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(promise_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(promise_test PUBLIC cxx_std_17)
 target_include_directories(promise_test
   PRIVATE
@@ -25270,8 +25114,11 @@ target_include_directories(promise_test
 target_link_libraries(promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::any_invocable
+  absl::check
   absl::type_traits
-  gpr
+  absl::status
+  absl::str_format
 )
 
 
@@ -25756,14 +25603,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(race_test
   test/core/promise/race_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(race_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(race_test PUBLIC cxx_std_17)
 target_include_directories(race_test
   PRIVATE
@@ -25787,7 +25626,8 @@ target_include_directories(race_test
 target_link_libraries(race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  gpr
+  absl::check
+  absl::str_format
 )
 
 
@@ -26221,7 +26061,6 @@ add_executable(request_buffer_test
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -32144,14 +31983,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(status_flag_test
   test/core/promise/status_flag_test.cc
 )
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(status_flag_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
 target_compile_features(status_flag_test PUBLIC cxx_std_17)
 target_include_directories(status_flag_test
   PRIVATE
@@ -32175,8 +32006,9 @@ target_include_directories(status_flag_test
 target_link_libraries(status_flag_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
+  absl::status
   absl::statusor
-  gpr
 )
 
 
