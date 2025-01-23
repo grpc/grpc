@@ -131,7 +131,6 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = [], flaky = False):
             "absl/strings:str_format",
             "gtest",
         ],
-        language = "C++",
         proto = None,
         tags = [
             "no_mac",

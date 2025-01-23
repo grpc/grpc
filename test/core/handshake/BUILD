@@ -30,7 +30,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -64,7 +63,6 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         ":server_ssl_common",
@@ -83,7 +81,6 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         ":server_ssl_common",
@@ -108,8 +105,7 @@ grpc_cc_test(
 #        "absl/log:check",
 #        "absl/log:log",
 #    ],
-#    language = "C++",
-#    tags = ["no_mac", no_windows"],
+#    #    tags = ["no_mac", no_windows"],
 #    deps = [
 #        "//:gpr",
 #        "//:grpc",
@@ -121,7 +117,6 @@ grpc_cc_test(
     name = "http_proxy_mapper_test",
     srcs = ["http_proxy_mapper_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//:gpr",
