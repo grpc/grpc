@@ -103,19 +103,19 @@ class FusedFns {
 // Takes a promise, and a synchronous function to mutate its result, and
 // returns a promise.
 template <typename Promise, typename Fn>
-class Map {
+class MapPromise {
   using PromiseType = promise_detail::PromiseLike<Promise>;
 
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Promise promise, Fn fn)
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION MapPromise(Promise promise, Fn fn)
       : promise_(std::move(promise)), fn_(std::move(fn)) {}
 
-  Map(const Map&) = delete;
-  Map& operator=(const Map&) = delete;
+  MapPromise(const MapPromise&) = delete;
+  MapPromise& operator=(const MapPromise&) = delete;
   // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
-  Map(Map&& other) = default;
+  MapPromise(MapPromise&& other) = default;
   // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
-  Map& operator=(Map&& other) = default;
+  MapPromise& operator=(MapPromise&& other) = default;
 
   using PromiseResult = typename PromiseType::Result;
   using Result = typename promise_detail::WrappedFn<Fn, PromiseResult>::Result;
@@ -130,33 +130,34 @@ class Map {
 
  private:
   template <typename SomeOtherPromise, typename SomeOtherFn>
-  friend class Map;
+  friend class MapPromise;
 
   GPR_NO_UNIQUE_ADDRESS PromiseType promise_;
   GPR_NO_UNIQUE_ADDRESS promise_detail::WrappedFn<Fn, PromiseResult> fn_;
 };
 
 template <typename Promise, typename Fn0, typename Fn1>
-class Map<Map<Promise, Fn0>, Fn1> {
-  using InnerMapFn = decltype(std::declval<Map<Promise, Fn0>>().fn_);
+class MapPromise<MapPromise<Promise, Fn0>, Fn1> {
+  using InnerMapFn = decltype(std::declval<MapPromise<Promise, Fn0>>().fn_);
   using FusedFn =
-      promise_detail::FusedFns<typename Map<Promise, Fn0>::PromiseResult,
+      promise_detail::FusedFns<typename MapPromise<Promise, Fn0>::PromiseResult,
                                InnerMapFn, Fn1>;
-  using PromiseType = typename Map<Promise, Fn0>::PromiseType;
+  using PromiseType = typename MapPromise<Promise, Fn0>::PromiseType;
 
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Map<Promise, Fn0> map, Fn1 fn1)
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION MapPromise(MapPromise<Promise, Fn0> map,
+                                                  Fn1 fn1)
       : promise_(std::move(map.promise_)),
         fn_(FusedFn(std::move(map.fn_), std::move(fn1))) {}
 
-  Map(const Map&) = delete;
-  Map& operator=(const Map&) = delete;
+  MapPromise(const MapPromise&) = delete;
+  MapPromise& operator=(const MapPromise&) = delete;
   // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
-  Map(Map&& other) = default;
+  MapPromise(MapPromise&& other) = default;
   // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
-  Map& operator=(Map&& other) = default;
+  MapPromise& operator=(MapPromise&& other) = default;
 
-  using PromiseResult = typename Map<Promise, Fn0>::PromiseResult;
+  using PromiseResult = typename MapPromise<Promise, Fn0>::PromiseResult;
   using Result = typename FusedFn::Result;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
@@ -169,7 +170,7 @@ class Map<Map<Promise, Fn0>, Fn1> {
 
  private:
   template <typename SomeOtherPromise, typename SomeOtherFn>
-  friend class Map;
+  friend class MapPromise;
 
   GPR_NO_UNIQUE_ADDRESS PromiseType promise_;
   GPR_NO_UNIQUE_ADDRESS FusedFn fn_;
@@ -185,7 +186,8 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Map(Promise promise, Fn fn) {
       return fn(promise.CallUnderlyingFn());
     };
   } else {
-    return promise_detail::Map<Promise, Fn>(std::move(promise), std::move(fn));
+    return promise_detail::MapPromise<Promise, Fn>(std::move(promise),
+                                                   std::move(fn));
   }
 }
 
