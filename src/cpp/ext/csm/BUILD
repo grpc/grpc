@@ -52,7 +52,6 @@ grpc_cc_library(
         "@com_google_protobuf//upb:base",
         "@com_google_protobuf//upb:mem",
     ],
-    language = "c++",
     visibility = ["//:__subpackages__"],
     deps = [
         "//:call_tracer",

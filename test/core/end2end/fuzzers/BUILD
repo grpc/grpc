@@ -118,7 +118,6 @@ grpc_proto_fuzzer(
     corpus = "client_fuzzer_corpus",
     end2end_fuzzer = True,
     external_deps = ["absl/log:check"],
-    language = "C++",
     proto = None,
     tags = ["no_windows"],
     uses_event_engine = False,
@@ -161,7 +160,6 @@ grpc_proto_fuzzer(
     srcs = ["server_fuzzer_chttp2.cc"],
     corpus = "server_fuzzer_chttp2_corpus",
     end2end_fuzzer = True,
-    language = "C++",
     proto = None,
     tags = [
         "no_mac",
@@ -180,7 +178,6 @@ grpc_proto_fuzzer(
     srcs = ["server_fuzzer_chttp2_fake_creds.cc"],
     corpus = "server_fuzzer_chttp2_fake_creds_corpus",
     end2end_fuzzer = True,
-    language = "C++",
     proto = None,
     tags = [
         "no_mac",
@@ -200,7 +197,6 @@ grpc_proto_fuzzer(
     corpus = "server_fuzzer_chaotic_good_corpus",
     end2end_fuzzer = True,
     external_deps = ["absl/log:check"],
-    language = "C++",
     proto = None,
     tags = [
         "no_mac",
@@ -238,7 +234,6 @@ grpc_proto_fuzzer(
     srcs = ["connector_fuzzer_chttp2.cc"],
     corpus = "connector_fuzzer_chttp2_corpus",
     end2end_fuzzer = True,
-    language = "C++",
     proto = None,
     tags = [
         "no_mac",
@@ -257,7 +252,6 @@ grpc_proto_fuzzer(
     srcs = ["connector_fuzzer_chttp2_fakesec.cc"],
     corpus = "connector_fuzzer_chttp2_fakesec_corpus",
     end2end_fuzzer = True,
-    language = "C++",
     proto = None,
     tags = [
         "no_mac",

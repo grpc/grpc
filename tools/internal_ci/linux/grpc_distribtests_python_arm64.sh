@@ -1,4 +1,5 @@
-# Copyright 2017 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2025 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,22 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+set -ex
 
-grpc_package(name = "test/core/service_config")
+# change to grpc repo root
+cd $(dirname $0)/../../..
 
-licenses(["notice"])
-
-grpc_cc_test(
-    name = "service_config_test",
-    srcs = ["service_config_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//src/core:channel_args",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
+echo "TODO: Building arm64 python artifacts"
