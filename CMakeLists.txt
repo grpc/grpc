@@ -4503,7 +4503,6 @@ add_library(benchmark_helpers ${_gRPC_STATIC_WIN32}
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -5258,7 +5257,6 @@ add_library(grpc++_test_util
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -6304,7 +6302,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(fd_conservation_posix_test
     test/core/iomgr/fd_conservation_posix_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -6526,7 +6523,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/util/subprocess_posix.cc
     src/core/util/subprocess_windows.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -7144,7 +7140,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(alarm_test
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -7690,7 +7685,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(alts_security_connector_test
   test/core/security/alts_security_connector_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -8081,7 +8075,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(auth_context_test
   test/core/security/auth_context_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -8175,7 +8168,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(authorization_matchers_test
   test/core/security/authorization_matchers_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -8315,7 +8307,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(aws_request_signer_test
   test/core/security/aws_request_signer_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -8583,7 +8574,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -8639,7 +8629,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -9109,7 +9098,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(buffer_list_test
   test/core/iomgr/buffer_list_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -10705,7 +10693,6 @@ add_executable(cel_authorization_engine_test
   src/core/lib/security/authorization/cel_authorization_engine.cc
   test/core/security/cel_authorization_engine_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -11095,7 +11082,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(channel_creds_registry_test
   test/core/security/channel_creds_registry_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -11582,7 +11568,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(check_gcp_environment_linux_test
   test/core/security/check_gcp_environment_linux_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -11633,7 +11618,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(check_gcp_environment_windows_test
   test/core/security/check_gcp_environment_windows_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -11684,7 +11668,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(chttp2_server_listener_test
   test/core/end2end/cq_verifier.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -12633,7 +12616,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(cmdline_test
   test/core/test_util/cmdline.cc
   test/core/test_util/cmdline_test.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -12773,7 +12755,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(combiner_test
     test/core/iomgr/combiner_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -13115,7 +13096,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(connection_context_test
   test/core/surface/connection_context_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -13252,7 +13232,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(connectivity_state_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -14606,7 +14585,6 @@ add_executable(endpoint_pair_test
   test/core/iomgr/endpoint_pair_test.cc
   test/core/iomgr/endpoint_tests.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -14768,7 +14746,6 @@ add_executable(error_test
   test/core/iomgr/endpoint_tests.cc
   test/core/iomgr/error_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -14818,7 +14795,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(error_utils_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -14870,7 +14846,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(evaluate_args_test
   test/core/security/evaluate_args_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -15415,7 +15390,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(fd_posix_test
     test/core/iomgr/fd_posix_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -16095,7 +16069,6 @@ add_executable(format_request_test
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -16756,7 +16729,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_alts_credentials_options_test
   test/core/security/grpc_alts_credentials_options_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -16850,7 +16822,6 @@ add_executable(grpc_authorization_engine_test
   test/core/security/grpc_authorization_engine_test.cc
   test/core/test_util/audit_logging_utils.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -16901,7 +16872,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_authorization_policy_provider_test
   test/core/security/grpc_authorization_policy_provider_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -17311,7 +17281,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_ipv6_loopback_available_test
   test/core/iomgr/grpc_ipv6_loopback_available_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -17552,7 +17521,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_tls_certificate_distributor_test
   test/core/security/grpc_tls_certificate_distributor_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -17603,7 +17571,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_tls_certificate_provider_test
   test/core/security/grpc_tls_certificate_provider_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -17654,7 +17621,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_tls_certificate_verifier_test
   test/core/security/grpc_tls_certificate_verifier_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -17705,7 +17671,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_tls_credentials_options_comparator_test
   test/core/security/grpc_tls_credentials_options_comparator_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -17756,7 +17721,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_tls_credentials_options_test
   test/core/security/grpc_tls_credentials_options_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -18546,7 +18510,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(histogram_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/histogram_test.cc
@@ -18639,7 +18602,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(hpack_encoder_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -18690,7 +18652,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(hpack_parser_table_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -18741,7 +18702,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(hpack_parser_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -18914,7 +18874,6 @@ add_executable(http2_client_transport_test
   src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -18968,7 +18927,6 @@ add_executable(http2_server_transport_test
   src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -19609,7 +19567,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(insecure_security_connector_test
   test/core/security/insecure_security_connector_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -20322,7 +20279,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(json_token_test
   test/core/security/json_token_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -20373,7 +20329,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(jwt_verifier_test
   test/core/security/jwt_verifier_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -20929,7 +20884,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(local_security_connector_test
   test/core/security/local_security_connector_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -21257,7 +21211,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(matchers_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -21747,7 +21700,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(message_compress_test
   test/core/compression/message_compress_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -21839,7 +21791,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(metadata_map_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -23371,7 +23322,6 @@ add_executable(parser_test
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -23693,7 +23643,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(ping_abuse_policy_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -23786,7 +23735,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(ping_configuration_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -23906,7 +23854,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(ping_rate_policy_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -25955,7 +25902,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(rbac_translator_test
   test/core/security/rbac_translator_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -26443,7 +26389,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(resolve_address_using_ares_resolver_posix_test
     test/core/iomgr/resolve_address_posix_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -26496,7 +26441,6 @@ add_executable(resolve_address_using_ares_resolver_test
   test/core/iomgr/resolve_address_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fake_udp_and_tcp_server.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -26549,7 +26493,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(resolve_address_using_native_resolver_posix_test
     test/core/iomgr/resolve_address_posix_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -26602,7 +26545,6 @@ add_executable(resolve_address_using_native_resolver_test
   test/core/iomgr/resolve_address_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fake_udp_and_tcp_server.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -29670,7 +29612,6 @@ add_executable(secure_endpoint_test
   test/core/iomgr/endpoint_tests.cc
   test/core/security/secure_endpoint_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -29721,7 +29662,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(security_connector_test
   test/core/security/security_connector_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -29974,7 +29914,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
     test/core/event_engine/event_engine_test_utils.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -30061,7 +30000,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -30637,7 +30575,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -30969,7 +30906,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(settings_timeout_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -31706,7 +31642,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(socket_utils_test
     test/core/iomgr/socket_utils_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -32092,7 +32027,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(status_conversion_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -32462,7 +32396,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(streams_not_seen_test
   test/core/end2end/cq_verifier.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -32727,7 +32660,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(system_roots_test
   test/core/security/system_roots_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -32815,7 +32747,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(tcp_client_posix_test
     test/core/iomgr/tcp_client_posix_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -32913,7 +32844,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/iomgr/endpoint_tests.cc
     test/core/iomgr/tcp_posix_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -32966,7 +32896,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(tcp_server_posix_test
     test/core/iomgr/tcp_server_posix_test.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -33319,7 +33248,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(test_core_iomgr_timer_heap_test
   test/core/iomgr/timer_heap_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -33376,7 +33304,6 @@ add_executable(test_core_security_credentials_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/security/credentials_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -33428,7 +33355,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(test_core_security_ssl_credentials_test
   test/core/security/ssl_credentials_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -34447,7 +34373,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(timeout_encoding_test
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -34827,7 +34752,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(tls_security_connector_test
   test/core/security/tls_security_connector_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc
@@ -36248,7 +36172,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/test_util/cmdline.cc
-    test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
     test/core/test_util/histogram.cc
     test/core/test_util/mock_endpoint.cc
@@ -39870,7 +39793,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(xds_credentials_test
   test/core/security/xds_credentials_test.cc
   test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
   test/core/test_util/histogram.cc
   test/core/test_util/mock_endpoint.cc

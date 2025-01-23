@@ -22,7 +22,11 @@ grpc_package(name = "test/core/security")
 grpc_fuzz_test(
     name = "alts_credentials_fuzzer",
     srcs = ["alts_credentials_fuzzer.cc"],
-    external_deps = ["absl/log:check", "fuzztest", "fuzztest_main"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -40,7 +44,11 @@ grpc_fuzz_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
-    external_deps = ["absl/log:check", "fuzztest", "fuzztest_main"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = ["no_windows"],
     deps = [
         "//:event_engine_base_hdrs",
