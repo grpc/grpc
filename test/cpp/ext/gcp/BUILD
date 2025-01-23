@@ -26,7 +26,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//:grpcpp_gcp_observability",
@@ -44,7 +43,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//src/cpp/ext/gcp:observability_config",
@@ -60,7 +58,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//src/cpp/ext/gcp:observability_logging_sink",
@@ -76,7 +73,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     linkstatic = True,
     deps = [
         "//src/cpp/ext/gcp:environment_autodetect",
