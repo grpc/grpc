@@ -69,7 +69,9 @@ void TenRequests(CoreEnd2endTest& test, int initial_sequence_number) {
   }
 }
 
-CORE_END2END_TEST(Http2Tests, HighInitialSeqno) { TenRequests(*this, 16777213); }
+CORE_END2END_TEST(Http2Tests, HighInitialSeqno) {
+  TenRequests(*this, 16777213);
+}
 CORE_END2END_TEST(RetryHttp2Tests, HighInitialSeqno) {
   TenRequests(*this, 2147483645);
 }
