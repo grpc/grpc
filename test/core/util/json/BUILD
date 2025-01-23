@@ -22,7 +22,11 @@ licenses(["notice"])
 grpc_fuzz_test(
     name = "json_fuzz_test",
     srcs = ["json_fuzz_test.cc"],
-    external_deps = ["absl/log:check", "fuzztest", "fuzztest_main"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
