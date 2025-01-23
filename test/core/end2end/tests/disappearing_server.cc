@@ -68,7 +68,7 @@ static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
   EXPECT_FALSE(client_closed.was_cancelled());
 }
 
-CORE_END2END_TEST(CoreClientChannelTest, DisappearingServer) {
+CORE_END2END_TEST(CoreClientChannelTests, DisappearingServer) {
   SKIP_IF_V3();
   OneRequestAndShutdownServer(*this);
   InitServer(ChannelArgs());

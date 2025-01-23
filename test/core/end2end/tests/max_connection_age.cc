@@ -49,7 +49,7 @@
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(Http2Test, MaxAgeForciblyClose) {
+CORE_END2END_TEST(Http2Tests, MaxAgeForciblyClose) {
   SKIP_IF_MINSTACK();
   InitClient(ChannelArgs());
   InitServer(ChannelArgs()
@@ -112,7 +112,7 @@ CORE_END2END_TEST(Http2Test, MaxAgeForciblyClose) {
               ::testing::MatchesRegex("max connection age"));
 }
 
-CORE_END2END_TEST(Http2Test, MaxAgeGracefullyClose) {
+CORE_END2END_TEST(Http2Tests, MaxAgeGracefullyClose) {
   SKIP_IF_MINSTACK();
   SKIP_IF_FUZZING();
 

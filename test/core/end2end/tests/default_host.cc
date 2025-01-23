@@ -32,7 +32,7 @@ using testing::StartsWith;
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(CoreClientChannelTest, DefaultHost) {
+CORE_END2END_TEST(CoreClientChannelTests, DefaultHost) {
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingStatusOnClient server_status;

@@ -114,9 +114,20 @@ grpc_cc_library(
     testonly = 1,
     srcs = [
         "end2end_tests.cc",
+        "end2end_test_suites.cc",
+        "fixtures/local_util.cc"
     ],
     hdrs = [
         "end2end_tests.h",
+        "fixtures/h2_oauth2_common.h",
+        "fixtures/h2_ssl_cred_reload_fixture.h",
+        "fixtures/h2_ssl_tls_common.h",
+        "fixtures/h2_tls_common.h",
+        "fixtures/inproc_fixture.h",
+        "fixtures/local_util.h",
+        "fixtures/secure_fixture.h",
+        "fixtures/sockpair_fixture.h",
+        "tests/cancel_test_helpers.h",
     ],
     external_deps = [
         "absl/functional:any_invocable",
@@ -127,9 +138,12 @@ grpc_cc_library(
         "absl/random",
         "absl/strings",
         "gtest",
+        "fuzztest",
     ],
     deps = [
         "cq_verifier",
+        "http_proxy",
+        "proxy",
         "//:config",
         "//:debug_location",
         "//:gpr",
@@ -144,141 +158,11 @@ grpc_cc_library(
         "//test/core/call:batch_builder",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_library(
-    name = "fixture_support",
-    testonly = 1,
-    srcs = ["fixtures/local_util.cc"],
-    hdrs = [
-        "fixtures/h2_oauth2_common.h",
-        "fixtures/h2_ssl_cred_reload_fixture.h",
-        "fixtures/h2_ssl_tls_common.h",
-        "fixtures/h2_tls_common.h",
-        "fixtures/inproc_fixture.h",
-        "fixtures/local_util.h",
-        "fixtures/secure_fixture.h",
-        "fixtures/sockpair_fixture.h",
-        "tests/cancel_test_helpers.h",
-    ],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/log:check",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "gtest",
-    ],
-    deps = [
-        "end2end_test_lib",
-        "//:channel_arg_names",
-        "//:config",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc",
-        "//:grpc_public_hdrs",
-        "//:grpc_security_base",
-        "//:grpc_transport_chttp2",
-        "//:ref_counted_ptr",
-        "//src/core:channel_args",
-        "//src/core:channel_args_preconditioning",
-        "//src/core:channel_stack_type",
-        "//src/core:error",
-        "//src/core:grpc_ssl_credentials",
-        "//src/core:grpc_tls_credentials",
-        "//src/core:grpc_transport_inproc",
-        "//src/core:slice",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_library(
-    name = "end2end_test_suites",
-    testonly = 1,
-    srcs = [
-        "end2end_test_suites.cc",
-    ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/functional:any_invocable",
-        "absl/log:check",
-        "absl/meta:type_traits",
-        "absl/random",
-        "absl/status",
-        "absl/strings:str_format",
-        "gtest",
-    ],
-    deps = [
-        "end2end_test_lib",
-        "fixture_support",
-        "http_proxy",
-        "proxy",
-        "//:channel_arg_names",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc",
-        "//:grpc_public_hdrs",
-        "//:grpc_trace",
-        "//src/core:channel_args",
-        "//src/core:chaotic_good_connector",
-        "//src/core:chaotic_good_server",
-        "//src/core:env",
-        "//src/core:error",
-        "//src/core:grpc_fake_credentials",
-        "//src/core:iomgr_port",
-        "//src/core:no_destruct",
-        "//test/core/test_util:grpc_test_util",
-    ],
-    alwayslink = 1,
-)
-
-grpc_cc_library(
-    name = "end2end_test_main",
-    testonly = 1,
-    srcs = [
-        "end2end_test_main.cc",
-    ],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/strings",
-        "gtest",
-    ],
-    tags = ["nofixdeps"],
-    deps = [
-        "end2end_test_lib",
-        "end2end_test_suites",
-        "fixture_support",
-        "//:config_vars",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_library(
-    name = "end2end_test_fuzzer",
-    testonly = 1,
-    srcs = [
-        "end2end_test_fuzzer.cc",
-    ],
-    hdrs = [
-        "end2end_test_fuzzer.h",
-    ],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/log:check",
-        "absl/strings",
-        "gtest",
-    ],
-    tags = ["nofixdeps"],
-    deps = [
         "end2end_test_fuzzer_cc_proto",
-        "end2end_test_lib",
-        "end2end_test_suites",
-        "fixture_support",
-        "//:config_vars",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:fuzz_config_vars",
-        "//test/core/test_util:grpc_test_util",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
     ],
 )
 

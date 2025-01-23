@@ -144,7 +144,7 @@ def grpc_proto_fuzzer(
         **kwargs
     )
 
-def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], external_deps = []):
+def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], external_deps = [], data = []):
     """Instantiates a fuzztest based test.
 
     This is the preferred method of writing fuzzers.
@@ -155,6 +155,7 @@ def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], external_deps = []):
         deps: The dependencies of the test.
         tags: The tags for the test.
         external_deps: External deps.
+        data: The data dependencies of the test.
     """
     grpc_cc_test(
         name = name,
@@ -168,4 +169,5 @@ def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], external_deps = []):
         ],
         deps = deps,
         external_deps = external_deps,
+        data = data,
     )

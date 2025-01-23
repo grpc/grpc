@@ -1074,9 +1074,14 @@ std::vector<CoreTestConfiguration> AllConfigs() {
 // that match some criteria.
 class ConfigQuery {
  public:
-  ConfigQuery() {
+  explicit ConfigQuery(bool fuzzing) {
     if (GetEnv("GRPC_CI_EXPERIMENTS").has_value()) {
       exclude_features_ |= FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS;
+    }
+    if (fuzzing) {
+      exclude_features_ |= FEATURE_MASK_DO_NOT_FUZZ;
+    } else {
+      enforce_features_ |= FEATURE_MASK_DO_NOT_FUZZ;
     }
   }
   ConfigQuery(const ConfigQuery&) = delete;
@@ -1140,75 +1145,79 @@ class ConfigQuery {
   std::vector<std::regex> excluded_names_;
 };
 
-CORE_END2END_TEST_SUITE(CoreEnd2endTest, ConfigQuery().Run());
+CORE_END2END_TEST_SUITE(CoreEnd2endTests, ConfigQuery(fuzzing).Run());
 
 CORE_END2END_TEST_SUITE(
-    SecureEnd2endTest,
-    ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_SECURE).Run());
+    SecureEnd2endTests,
+    ConfigQuery(fuzzing).EnforceFeatures(FEATURE_MASK_IS_SECURE).Run());
 
-CORE_END2END_TEST_SUITE(CoreLargeSendTest,
-                        ConfigQuery()
+CORE_END2END_TEST_SUITE(CoreLargeSendTests,
+                        ConfigQuery(fuzzing)
                             .ExcludeFeatures(FEATURE_MASK_1BYTE_AT_A_TIME |
                                              FEATURE_MASK_ENABLES_TRACES)
                             .Run());
 
 CORE_END2END_TEST_SUITE(
-    CoreDeadlineTest,
-    ConfigQuery().ExcludeFeatures(FEATURE_MASK_IS_MINSTACK).Run());
+    CoreDeadlineTests,
+    ConfigQuery(fuzzing).ExcludeFeatures(FEATURE_MASK_IS_MINSTACK).Run());
 
 CORE_END2END_TEST_SUITE(
-    CoreDeadlineSingleHopTest,
-    ConfigQuery()
+    CoreDeadlineSingleHopTests,
+    ConfigQuery(fuzzing)
         .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
                          FEATURE_MASK_IS_MINSTACK)
         .Run());
 
 CORE_END2END_TEST_SUITE(
-    CoreClientChannelTest,
-    ConfigQuery().EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL).Run());
+    CoreClientChannelTests,
+    ConfigQuery(fuzzing)
+        .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
+        .Run());
 
 CORE_END2END_TEST_SUITE(
-    Http2SingleHopTest,
-    ConfigQuery()
+    Http2SingleHopTests,
+    ConfigQuery(fuzzing)
         .EnforceFeatures(FEATURE_MASK_IS_HTTP2)
         .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
                          FEATURE_MASK_ENABLES_TRACES)
         .Run());
 
 CORE_END2END_TEST_SUITE(
-    Http2FullstackSingleHopTest,
-    ConfigQuery()
+    Http2FullstackSingleHopTests,
+    ConfigQuery(fuzzing)
         .EnforceFeatures(FEATURE_MASK_IS_HTTP2)
         .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
         .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)
         .Run());
 
 CORE_END2END_TEST_SUITE(
-    RetryTest, ConfigQuery()
-                   .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
-                   .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY)
-                   .Run());
+    RetryTests, ConfigQuery(fuzzing)
+                    .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
+                    .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY)
+                    .Run());
 
 CORE_END2END_TEST_SUITE(
-    WriteBufferingTest,
-    ConfigQuery()
+    WriteBufferingTests,
+    ConfigQuery(fuzzing)
         .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING)
         .Run());
 
 CORE_END2END_TEST_SUITE(
-    Http2Test, ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_HTTP2).Run());
+    Http2Tests,
+    ConfigQuery(fuzzing).EnforceFeatures(FEATURE_MASK_IS_HTTP2).Run());
 
 CORE_END2END_TEST_SUITE(
-    RetryHttp2Test, ConfigQuery()
-                        .EnforceFeatures(FEATURE_MASK_IS_HTTP2 |
-                                         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
-                        .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
-                                         FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)
-                        .Run());
+    RetryHttp2Tests,
+    ConfigQuery(fuzzing)
+        .EnforceFeatures(FEATURE_MASK_IS_HTTP2 |
+                         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
+        .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+                         FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)
+        .Run());
 
 CORE_END2END_TEST_SUITE(
-    ResourceQuotaTest,
-    ConfigQuery()
+    ResourceQuotaTests,
+    ConfigQuery(fuzzing)
         .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
                          FEATURE_MASK_1BYTE_AT_A_TIME)
         .ExcludeName("Chttp2.*Uds.*")
@@ -1216,24 +1225,24 @@ CORE_END2END_TEST_SUITE(
         .Run());
 
 CORE_END2END_TEST_SUITE(
-    PerCallCredsTest,
-    ConfigQuery()
+    PerCallCredsTests,
+    ConfigQuery(fuzzing)
         .EnforceFeatures(FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS)
         .Run());
 
 CORE_END2END_TEST_SUITE(
-    PerCallCredsOnInsecureTest,
-    ConfigQuery()
+    PerCallCredsOnInsecureTests,
+    ConfigQuery(fuzzing)
         .EnforceFeatures(
             FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE)
         .Run());
 
 CORE_END2END_TEST_SUITE(
-    NoLoggingTest,
-    ConfigQuery().ExcludeFeatures(FEATURE_MASK_ENABLES_TRACES).Run());
+    NoLoggingTests,
+    ConfigQuery(fuzzing).ExcludeFeatures(FEATURE_MASK_ENABLES_TRACES).Run());
 
-CORE_END2END_TEST_SUITE(ProxyAuthTest,
-                        ConfigQuery().AllowName("Chttp2HttpProxy").Run());
+CORE_END2END_TEST_SUITE(
+    ProxyAuthTests, ConfigQuery(fuzzing).AllowName("Chttp2HttpProxy").Run());
 
 void EnsureSuitesLinked() {}
 

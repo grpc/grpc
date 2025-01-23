@@ -29,7 +29,7 @@
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(CoreDeadlineTest, TimeoutBeforeRequestCall) {
+CORE_END2END_TEST(CoreDeadlineTests, TimeoutBeforeRequestCall) {
   SKIP_IF_V3();
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(1)).Create();
   IncomingStatusOnClient server_status;
@@ -71,7 +71,7 @@ CORE_END2END_TEST(CoreDeadlineTest, TimeoutBeforeRequestCall) {
   }
 }
 
-CORE_END2END_TEST(CoreDeadlineTest,
+CORE_END2END_TEST(CoreDeadlineTests,
                   TimeoutBeforeRequestCallWithRegisteredMethod) {
   SKIP_IF_V3();
   auto method = RegisterServerMethod("/foo", GRPC_SRM_PAYLOAD_NONE);
@@ -116,7 +116,7 @@ CORE_END2END_TEST(CoreDeadlineTest,
   }
 }
 
-CORE_END2END_TEST(CoreDeadlineSingleHopTest,
+CORE_END2END_TEST(CoreDeadlineSingleHopTests,
                   TimeoutBeforeRequestCallWithRegisteredMethodWithPayload) {
   SKIP_IF_V3();
   auto method =

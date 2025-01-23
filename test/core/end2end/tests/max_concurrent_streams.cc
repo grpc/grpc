@@ -56,7 +56,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   EXPECT_FALSE(client_close.was_cancelled());
 }
 
-CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreams) {
+CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreams) {
   SKIP_IF_MINSTACK();
   InitServer(
       ChannelArgs()
@@ -153,7 +153,7 @@ CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreams) {
   Step();
 }
 
-CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnFirst) {
+CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnFirst) {
   SKIP_IF_MINSTACK();
   InitServer(
       ChannelArgs()
@@ -201,7 +201,7 @@ CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnFirst) {
   Step();
 }
 
-CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnSecond) {
+CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnSecond) {
   SKIP_IF_MINSTACK();
   InitServer(
       ChannelArgs()
@@ -250,7 +250,7 @@ CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnSecond) {
   EXPECT_EQ(server_status2.status(), GRPC_STATUS_DEADLINE_EXCEEDED);
 }
 
-CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreamsRejectOnClient) {
+CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsRejectOnClient) {
   SKIP_IF_MINSTACK();
   InitServer(
       ChannelArgs()

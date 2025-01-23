@@ -16,8 +16,7 @@
 Generate one e2e test & associated fuzzer
 """
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 END2END_TEST_DATA = [
     "//src/core/tsi/test_creds:ca.pem",
@@ -38,19 +37,21 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = [], flaky = False):
     if len(name) > 60:
         fail("test name %s too long" % name)
 
-    grpc_cc_library(
-        name = "%s_library" % name,
-        testonly = 1,
+    grpc_fuzz_test(
+        name = name + "_test",
         srcs = [
             "tests/%s.cc" % name,
         ],
         external_deps = [
             "absl/log:log",
+            "gtest",
+            "fuzztest",
+            "fuzztest_main",
         ],
+        data = END2END_TEST_DATA,
         deps = [
             "cq_verifier",
             "end2end_test_lib",
-            "fixture_support",
             "http_proxy",
             "proxy",
             "//:channel_stack_builder",
@@ -92,54 +93,5 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = [], flaky = False):
             "//test/core/test_util:fake_stats_plugin",
             "//test/core/test_util:grpc_test_util",
             "//test/core/test_util:test_lb_policies",
-        ],
-        alwayslink = 1,
-    )
-
-    grpc_cc_test(
-        name = "%s_test" % name,
-        shard_count = shard_count,
-        data = END2END_TEST_DATA,
-        external_deps = [
-            "absl/functional:any_invocable",
-            "absl/status",
-            "absl/status:statusor",
-            "absl/strings",
-            "absl/strings:str_format",
-            "gtest",
-        ],
-        deps = [
-            "end2end_test_main",
-            "%s_library" % name,
-        ],
-        tags = ["core_end2end_test", "thready_tsan"] + tags,
-        flaky = flaky,
-    )
-
-    grpc_proto_fuzzer(
-        name = "%s_fuzzer" % name,
-        srcs = [
-            "end2end_test_fuzzer_main.cc",
-        ],
-        corpus = "end2end_test_corpus/%s" % name,
-        data = END2END_TEST_DATA,
-        external_deps = [
-            "absl/functional:any_invocable",
-            "absl/status",
-            "absl/status:statusor",
-            "absl/strings",
-            "absl/strings:str_format",
-            "gtest",
-        ],
-        proto = None,
-        tags = [
-            "no_mac",
-            "no_windows",
-        ],
-        uses_event_engine = False,
-        uses_polling = False,
-        deps = [
-            "%s_library" % name,
-            "end2end_test_fuzzer",
         ],
     )

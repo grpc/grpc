@@ -160,7 +160,7 @@ void SimpleRequest(CoreEnd2endTest& test) {
   EXPECT_FALSE(client_close.was_cancelled());
 }
 
-CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
+CORE_END2END_TEST(NoLoggingTests, NoLoggingTest) {
 // This test makes sure that we don't get log noise when making an rpc
 // especially when rpcs are successful.
 
