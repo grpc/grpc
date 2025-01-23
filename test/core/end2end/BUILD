@@ -113,9 +113,9 @@ grpc_cc_library(
     name = "end2end_test_lib",
     testonly = 1,
     srcs = [
-        "end2end_tests.cc",
         "end2end_test_suites.cc",
-        "fixtures/local_util.cc"
+        "end2end_tests.cc",
+        "fixtures/local_util.cc",
     ],
     hdrs = [
         "end2end_tests.h",
@@ -142,6 +142,7 @@ grpc_cc_library(
     ],
     deps = [
         "cq_verifier",
+        "end2end_test_fuzzer_cc_proto",
         "http_proxy",
         "proxy",
         "//:config",
@@ -151,18 +152,17 @@ grpc_cc_library(
         "//:grpc_public_hdrs",
         "//src/core:bitset",
         "//src/core:channel_args",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
         "//src/core:default_event_engine",
         "//src/core:no_destruct",
         "//src/core:slice",
         "//src/core:time",
         "//test/core/call:batch_builder",
         "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/test_util:grpc_test_util",
-        "end2end_test_fuzzer_cc_proto",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:fuzz_config_vars",
-        "//src/core:chaotic_good_connector",
-        "//src/core:chaotic_good_server",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 

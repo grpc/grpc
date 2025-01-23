@@ -244,7 +244,8 @@ CORE_END2END_TEST(CoreEnd2endTests,
   TestMaxMessageLengthOnServerOnResponse(*this);
 }
 
-CORE_END2END_TEST(Http2Tests, MaxMessageLengthOnServerOnRequestWithCompression) {
+CORE_END2END_TEST(Http2Tests,
+                  MaxMessageLengthOnServerOnRequestWithCompression) {
   SKIP_IF_MINSTACK();
   SKIP_IF_V3();
   // Set limit via channel args.
