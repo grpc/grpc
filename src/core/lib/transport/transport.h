@@ -416,7 +416,9 @@ typedef struct grpc_transport_op {
   /// Error contract: the transport that gets this op must cause
   ///                disconnect_with_error to be unref'ed after processing it
   grpc_error_handle disconnect_with_error;
-  /// what should the goaway contain?
+  /// Start a graceful goaway with the specified error message. (The error code
+  /// is ignored since graceful GOAWAYs use a NO_ERROR error code.). Use
+  /// disconnect_with_error if graceful shutdown is not needed.
   /// Error contract: the transport that gets this op must cause
   ///                goaway_error to be unref'ed after processing it
   grpc_error_handle goaway_error;
