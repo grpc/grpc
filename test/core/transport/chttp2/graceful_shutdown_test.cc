@@ -312,19 +312,17 @@ TEST_F(GracefulShutdownTest, GracefulGoaway) {
   // Initiate shutdown on the server
   grpc_server_shutdown_and_notify(server_, cq_, Tag(1));
   // Wait for first goaway
-  WaitForGoaway(
-      (1u << 31) - 1, /*error_code=*/0,
-      /*message=*/
-      grpc_core::Slice::FromStaticString("Server shutdown").TakeCSlice());
+  WaitForGoaway((1u << 31) - 1, /*error_code=*/0,
+                /*message=*/
+                Slice::FromStaticString("Server shutdown").TakeCSlice());
   // Wait for the ping
   uint64_t ping_id = WaitForPing();
   // Reply to the ping
   SendPingAck(ping_id);
   // Wait for final goaway
-  WaitForGoaway(
-      0, /*error_code=*/0,
-      /*message=*/
-      grpc_core::Slice::FromStaticString("Server shutdown").TakeCSlice());
+  WaitForGoaway(0, /*error_code=*/0,
+                /*message=*/
+                Slice::FromStaticString("Server shutdown").TakeCSlice());
   // The shutdown should successfully complete.
   cqv_->Expect(Tag(1), true);
   cqv_->Verify();
@@ -343,10 +341,9 @@ TEST_F(GracefulShutdownTest, RequestStartedBeforeFinalGoaway) {
   // Initiate shutdown on the server
   grpc_server_shutdown_and_notify(server_, cq_, Tag(1));
   // Wait for first goaway
-  WaitForGoaway(
-      (1u << 31) - 1, /*error_code=*/0,
-      /*message=*/
-      grpc_core::Slice::FromStaticString("Server shutdown").TakeCSlice());
+  WaitForGoaway((1u << 31) - 1, /*error_code=*/0,
+                /*message=*/
+                Slice::FromStaticString("Server shutdown").TakeCSlice());
   // Wait for the ping
   uint64_t ping_id = WaitForPing();
   // Start a request
@@ -367,10 +364,9 @@ TEST_F(GracefulShutdownTest, RequestStartedBeforeFinalGoaway) {
   SendPingAck(ping_id);
   // Wait for final goaway with last stream ID 1 to show that the HTTP2
   // transport accepted the stream.
-  WaitForGoaway(
-      1, /*error_code=*/0,
-      /*message=*/
-      grpc_core::Slice::FromStaticString("Server shutdown").TakeCSlice());
+  WaitForGoaway(1, /*error_code=*/0,
+                /*message=*/
+                Slice::FromStaticString("Server shutdown").TakeCSlice());
   // TODO(yashykt): The surface layer automatically cancels calls received after
   // shutdown has been called. Once that is fixed, this should be a success.
   cqv_->Expect(Tag(100), false);
@@ -413,19 +409,17 @@ TEST_F(GracefulShutdownTest, RequestStartedAfterFinalGoawayIsIgnored) {
   // Initiate shutdown on the server
   grpc_server_shutdown_and_notify(server_, cq_, Tag(1));
   // Wait for first goaway
-  WaitForGoaway(
-      (1u << 31) - 1, /*error_code=*/0,
-      /*message=*/
-      grpc_core::Slice::FromStaticString("Server shutdown").TakeCSlice());
+  WaitForGoaway((1u << 31) - 1, /*error_code=*/0,
+                /*message=*/
+                Slice::FromStaticString("Server shutdown").TakeCSlice());
   // Wait for the ping
   uint64_t ping_id = WaitForPing();
   // Reply to the ping
   SendPingAck(ping_id);
   // Wait for final goaway
-  WaitForGoaway(
-      1, /*error_code=*/0,
-      /*message=*/
-      grpc_core::Slice::FromStaticString("Server shutdown").TakeCSlice());
+  WaitForGoaway(1, /*error_code=*/0,
+                /*message=*/
+                Slice::FromStaticString("Server shutdown").TakeCSlice());
 
   // Send another request from the client which should be ignored.
   constexpr char kNewRequestFrame[] =
@@ -485,10 +479,9 @@ TEST_F(GracefulShutdownTest, UnresponsiveClient) {
   // Initiate shutdown on the server
   grpc_server_shutdown_and_notify(server_, cq_, Tag(1));
   // Wait for first goaway
-  WaitForGoaway(
-      (1u << 31) - 1, /*error_code=*/0,
-      /*message=*/
-      grpc_core::Slice::FromStaticString("Server shutdown").TakeCSlice());
+  WaitForGoaway((1u << 31) - 1, /*error_code=*/0,
+                /*message=*/
+                Slice::FromStaticString("Server shutdown").TakeCSlice());
   // Wait for the ping
   std::ignore = WaitForPing();
   // Wait for final goaway without sending a ping ACK.
