@@ -25,12 +25,17 @@
 #include <memory>
 
 #include "src/core/util/env.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/tchar.h"
 
 namespace grpc_core {
 
+NoDestruct<Mutex> g_mu;
+
 std::optional<std::string> GetEnv(const char* name) {
   auto tname = CharToTchar(name);
+  MutexLock lock(g_mu.get());
   DWORD ret = GetEnvironmentVariable(tname.c_str(), NULL, 0);
   if (ret == 0) return std::nullopt;
   std::unique_ptr<TCHAR[]> tresult(new TCHAR[ret]);
@@ -41,12 +46,14 @@ std::optional<std::string> GetEnv(const char* name) {
 }
 
 void SetEnv(const char* name, const char* value) {
+  MutexLock lock(g_mu.get());
   BOOL res = SetEnvironmentVariable(CharToTchar(name).c_str(),
                                     CharToTchar(value).c_str());
   if (!res) abort();
 }
 
 void UnsetEnv(const char* name) {
+  MutexLock lock(g_mu.get());
   BOOL res = SetEnvironmentVariable(CharToTchar(name).c_str(), NULL);
   if (!res) abort();
 }

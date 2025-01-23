@@ -23,21 +23,28 @@
 #include <stdlib.h>
 
 #include "src/core/util/env.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
+NoDestruct<Mutex> g_mu;
+
 std::optional<std::string> GetEnv(const char* name) {
+  MutexLock lock(g_mu.get());
   char* result = getenv(name);
   if (result == nullptr) return std::nullopt;
   return result;
 }
 
 void SetEnv(const char* name, const char* value) {
+  MutexLock lock(g_mu.get());
   int res = setenv(name, value, 1);
   if (res != 0) abort();
 }
 
 void UnsetEnv(const char* name) {
+  MutexLock lock(g_mu.get());
   int res = unsetenv(name);
   if (res != 0) abort();
 }

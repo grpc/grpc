@@ -32,11 +32,16 @@
 #include <stdlib.h>
 
 #include "src/core/util/env.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
+NoDestruct<Mutex> g_mu;
+
 std::optional<std::string> GetEnv(const char* name) {
   char* result = nullptr;
+  MutexLock lock(g_mu.get());
 #if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 17)
   result = secure_getenv(name);
 #else
@@ -47,11 +52,13 @@ std::optional<std::string> GetEnv(const char* name) {
 }
 
 void SetEnv(const char* name, const char* value) {
+  MutexLock lock(g_mu.get());
   int res = setenv(name, value, 1);
   if (res != 0) abort();
 }
 
 void UnsetEnv(const char* name) {
+  MutexLock lock(g_mu.get());
   int res = unsetenv(name);
   if (res != 0) abort();
 }
