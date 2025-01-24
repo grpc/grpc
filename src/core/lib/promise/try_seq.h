@@ -36,6 +36,45 @@ namespace grpc_core {
 
 namespace promise_detail {
 
+// TrySeq Promise combinator.
+//
+// Input :
+// 1. The TrySeq combinator needs minimum one promise as input.
+// 2. The first input to TrySeq combinator is a promise.
+// 3. The remaining inputs to TrySeq combinator are Promise Factories (functors
+// that return a promise). The input type of the Nth functor should be the
+// return value of the (N-1)th promise.
+// 4. Functors can return promises with return type any of the following :
+//    1. StatusOr<> to signal that a value is fed forward, or Status to
+//       indicate only success/failure. In the case of returning Status, the
+//       next functor in the chain takes no arguments.
+//    2. StatusFlag and ValueOrStatus can be return types if rich error
+//       information is not necessar. In this case the next functor in the chain
+//       takes no arguments.
+//
+// Return :
+// Polling the TrySeq Promise combinator returns Poll<StatusOr<T>> where T is
+// the type returned by the last promise in the list of input promises.
+//
+// Polling the TrySeq combinator works in the following way :
+// Run the first promise. If it returns Pending{}, nothing else is executed.
+// If the first promise returns a value, pass this result to the second functor,
+// and run the returned promise. If it returns Pending{}, nothing else is
+// executed. If it returns a value, pass this result to the third functor, and
+// run the returned promise. etc. Return the final value.
+//
+// If any of the promises in the TrySeq chain returns a failure status, TrySeq
+// will NOT proceed with the execution of the remaining promises. If you want
+// the execution to continue when a failure status is received, use the Seq
+// combinator instead.
+//
+// Promises in the TrySeq combinator are run in order, serially and on the same
+// thread.
+//
+// Example :
+// The unit tests (esp ThreeTypedPendingThens) in try_seq_test.cc provide all
+// possible permutations of how TrySeq combinator can be used.
+
 template <typename T, typename Ignored = void>
 struct TrySeqTraitsWithSfinae {
   using UnwrappedType = T;
@@ -256,18 +295,6 @@ struct TrySeqContainerResultTraits {
 
 }  // namespace promise_detail
 
-// Try a sequence of operations.
-// * Run the first functor as a promise.
-// * Feed its success result into the second functor to create a promise,
-//   then run that.
-// * ...
-// * Feed the second-final success result into the final functor to create a
-//   promise, then run that, with the overall success result being that
-//   promises success result.
-// If any step fails, fail everything.
-// Functors can return StatusOr<> to signal that a value is fed forward, or
-// Status to indicate only success/failure. In the case of returning Status,
-// the construction functors take no arguments.
 template <typename F>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline F TrySeq(F functor) {
   return functor;
