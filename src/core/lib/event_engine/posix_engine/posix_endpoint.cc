@@ -306,7 +306,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
   }
 
   CHECK_NE(incoming_buffer_->Length(), 0u);
-  DCHECK_GT(min_progress_size_, 0u);
+  DCHECK_GT(min_progress_size_, 0);
 
   do {
     // Assume there is something on the queue. If we receive TCP_INQ from
