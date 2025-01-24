@@ -21,9 +21,13 @@
 #include <cerrno>
 #include <cstdint>
 
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/strerror.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
@@ -80,6 +84,41 @@ Int64Result Int64Wrap(int64_t result) {
   return result < 0 ? Int64Result(OperationResultKind::kError, errno, result)
                     : Int64Result(result);
 }
+
+absl::Status ErrorForFd(
+    int fd, const experimental::EventEngine::ResolvedAddress& addr) {
+  if (fd >= 0) return absl::OkStatus();
+  const char* addr_str = reinterpret_cast<const char*>(addr.address());
+  return absl::Status(absl::StatusCode::kInternal,
+                      absl::StrCat("socket: ", grpc_core::StrError(errno),
+                                   std::string(addr_str, addr.size())));
+}
+
+IF_POSIX_SOCKET(
+    int CreateSocket(std::function<int(int, int, int)> socket_factory,
+                     int family, int type, int protocol),
+    {
+      int res = socket_factory != nullptr
+                    ? socket_factory(family, type, protocol)
+                    : socket(family, type, protocol);
+      if (res < 0 && errno == EMFILE) {
+        int saved_errno = errno;
+        LOG_EVERY_N_SEC(ERROR, 10)
+            << "socket(" << family << ", " << type << ", " << protocol
+            << ") returned " << res << " with error: |"
+            << grpc_core::StrError(errno)
+            << "|. This process might not have a sufficient file descriptor "
+               "limit "
+               "for the number of connections grpc wants to open (which is "
+               "generally a function of the number of grpc channels, the lb "
+               "policy "
+               "of each channel, and the number of backends each channel is "
+               "load "
+               "balancing across).";
+        errno = saved_errno;
+      }
+      return res;
+    })
 
 }  // namespace
 
@@ -172,6 +211,50 @@ IF_POSIX_SOCKET(
     })
 
 #endif  // GRPC_POSIX_SOCKETUTILS
+
+IF_POSIX_SOCKET(
+    absl::StatusOr<PosixSocketWrapper> FileDescriptors::CreateDualStackSocket(
+        std::function<int(int, int, int)> socket_factory,
+        const experimental::EventEngine::ResolvedAddress& addr, int type,
+        int protocol, PosixSocketWrapper::DSMode& dsmode),
+    {
+      const sockaddr* sock_addr = addr.address();
+      int family = sock_addr->sa_family;
+      int newfd;
+      if (family == AF_INET6) {
+        if (PosixSocketWrapper::IsIpv6LoopbackAvailable()) {
+          newfd = CreateSocket(socket_factory, family, type, protocol);
+        } else {
+          newfd = -1;
+          errno = EAFNOSUPPORT;
+        }
+        // Check if we've got a valid dualstack socket.
+        if (newfd > 0 && SetSocketDualStack(newfd)) {
+          dsmode = PosixSocketWrapper::DSMode::DSMODE_DUALSTACK;
+          return PosixSocketWrapper(newfd);
+        }
+        // If this isn't an IPv4 address, then return whatever we've got.
+        if (!ResolvedAddressIsV4Mapped(addr, nullptr)) {
+          if (newfd < 0) {
+            return ErrorForFd(newfd, addr);
+          }
+          dsmode = PosixSocketWrapper::DSMode::DSMODE_IPV6;
+          return PosixSocketWrapper(newfd);
+        }
+        // Fall back to AF_INET.
+        if (newfd >= 0) {
+          close(newfd);
+        }
+        family = AF_INET;
+      }
+      dsmode = family == AF_INET ? PosixSocketWrapper::DSMode::DSMODE_IPV4
+                                 : PosixSocketWrapper::DSMode::DSMODE_NONE;
+      newfd = CreateSocket(socket_factory, family, type, protocol);
+      if (newfd < 0) {
+        return ErrorForFd(newfd, addr);
+      }
+      return PosixSocketWrapper(newfd);
+    })
 
 IF_POSIX_SOCKET(PosixResult FileDescriptors::Ioctl(const FileDescriptor& fd,
                                                    int op, void* arg),
@@ -271,6 +354,125 @@ absl::StatusOr<std::string> FileDescriptors::PeerAddressString(
     return status.status();
   }
   return ResolvedAddressToNormalizedString((*status));
+}
+
+absl::Status FileDescriptors::SetSocketNoSigpipeIfPossible(
+    GRPC_UNUSED const FileDescriptor& fd) {
+#ifdef GRPC_HAVE_SO_NOSIGPIPE
+  int val = 1;
+  int newval;
+  socklen_t intlen = sizeof(newval);
+  int fd_posix = fd.fd();
+  if (0 != setsockopt(fd_posix, SOL_SOCKET, SO_NOSIGPIPE, &val, sizeof(val))) {
+    return absl::Status(
+        absl::StatusCode::kInternal,
+        absl::StrCat("setsockopt(SO_NOSIGPIPE): ", grpc_core::StrError(errno)));
+  }
+  if (0 != getsockopt(fd_posix, SOL_SOCKET, SO_NOSIGPIPE, &newval, &intlen)) {
+    return absl::Status(
+        absl::StatusCode::kInternal,
+        absl::StrCat("getsockopt(SO_NOSIGPIPE): ", grpc_core::StrError(errno)));
+  }
+  if ((newval != 0) != (val != 0)) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        "Failed to set SO_NOSIGPIPE");
+  }
+#endif
+  return absl::OkStatus();
+}
+
+IF_POSIX_SOCKET(absl::Status FileDescriptors::PrepareTcpClientSocket(
+                    PosixSocketWrapper sock, const FileDescriptor& fd,
+                    const EventEngine::ResolvedAddress& addr,
+                    const PosixTcpOptions& options),
+                {
+                  bool close_fd = true;
+                  auto sock_cleanup =
+                      absl::MakeCleanup([&close_fd, &sock]() -> void {
+                        if (close_fd and sock.Fd() >= 0) {
+                          close(sock.Fd());
+                        }
+                      });
+                  GRPC_RETURN_IF_ERROR(sock.SetSocketNonBlocking(1));
+                  GRPC_RETURN_IF_ERROR(sock.SetSocketCloexec(1));
+                  if (options.tcp_receive_buffer_size !=
+                      options.kReadBufferSizeUnset) {
+                    GRPC_RETURN_IF_ERROR(
+                        sock.SetSocketRcvBuf(options.tcp_receive_buffer_size));
+                  }
+                  if (addr.address()->sa_family != AF_UNIX &&
+                      !ResolvedAddressIsVSock(addr)) {
+                    // If its not a unix socket or vsock address.
+                    GRPC_RETURN_IF_ERROR(sock.SetSocketLowLatency(1));
+                    GRPC_RETURN_IF_ERROR(sock.SetSocketReuseAddr(1));
+                    GRPC_RETURN_IF_ERROR(sock.SetSocketDscp(options.dscp));
+                    sock.TrySetSocketTcpUserTimeout(options, true);
+                  }
+                  GRPC_RETURN_IF_ERROR(SetSocketNoSigpipeIfPossible(fd));
+                  GRPC_RETURN_IF_ERROR(ApplySocketMutatorInOptions(
+                      fd, GRPC_FD_CLIENT_CONNECTION_USAGE, options));
+                  // No errors. Set close_fd to false to ensure the socket is
+                  // not closed.
+                  close_fd = false;
+                  return absl::OkStatus();
+                })
+
+absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
+FileDescriptors::CreateAndPrepareTcpClientSocket(
+    const PosixTcpOptions& options,
+    const EventEngine::ResolvedAddress& target_addr) {
+  PosixSocketWrapper::DSMode dsmode;
+  EventEngine::ResolvedAddress mapped_target_addr;
+
+  // Use dualstack sockets where available. Set mapped to v6 or v4 mapped to
+  // v6.
+  if (!ResolvedAddressToV4Mapped(target_addr, &mapped_target_addr)) {
+    // addr is v4 mapped to v6 or just v6.
+    mapped_target_addr = target_addr;
+  }
+  absl::StatusOr<PosixSocketWrapper> posix_socket_wrapper =
+      CreateDualStackSocket(nullptr, mapped_target_addr, SOCK_STREAM, 0,
+                            dsmode);
+  if (!posix_socket_wrapper.ok()) {
+    return posix_socket_wrapper.status();
+  }
+
+  if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
+    // Original addr is either v4 or v4 mapped to v6. Set mapped_addr to v4.
+    if (!ResolvedAddressIsV4Mapped(target_addr, &mapped_target_addr)) {
+      mapped_target_addr = target_addr;
+    }
+  }
+
+  auto error = PrepareTcpClientSocket(*posix_socket_wrapper,
+                                      Adopt(posix_socket_wrapper->Fd()),
+                                      mapped_target_addr, options);
+  if (!error.ok()) {
+    return error;
+  }
+  return PosixSocketWrapper::PosixSocketCreateResult{*posix_socket_wrapper,
+                                                     mapped_target_addr};
+}
+
+// Set a socket using a grpc_socket_mutator
+absl::Status FileDescriptors::SetSocketMutator(const FileDescriptor& fd,
+                                               grpc_fd_usage usage,
+                                               grpc_socket_mutator* mutator) {
+  CHECK(mutator);
+  if (!grpc_socket_mutator_mutate_fd(mutator, fd.fd(), usage)) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        "grpc_socket_mutator failed.");
+  }
+  return absl::OkStatus();
+}
+
+absl::Status FileDescriptors::ApplySocketMutatorInOptions(
+    const FileDescriptor& fd, grpc_fd_usage usage,
+    const PosixTcpOptions& options) {
+  if (options.socket_mutator == nullptr) {
+    return absl::OkStatus();
+  }
+  return SetSocketMutator(fd, usage, options.socket_mutator);
 }
 
 }  // namespace grpc_event_engine::experimental

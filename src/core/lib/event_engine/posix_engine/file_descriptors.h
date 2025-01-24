@@ -23,6 +23,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -149,6 +150,25 @@ class FileDescriptors {
   FileDescriptorResult Accept4(const FileDescriptor& sockfd,
                                EventEngine::ResolvedAddress& addr, int nonblock,
                                int cloexec);
+
+  // Creates a new socket for connecting to (or listening on) an address.
+  //
+  // If addr is AF_INET6, this creates an IPv6 socket first.  If that fails,
+  // and addr is within ::ffff:0.0.0.0/96, then it automatically falls back to
+  // an IPv4 socket.
+  //
+  // If addr is AF_INET, AF_UNIX, or anything else, then this is similar to
+  // calling socket() directly.
+  //
+  // Returns an PosixSocketWrapper on success, otherwise returns a not-OK
+  // absl::Status
+  //
+  // The dsmode output indicates which address family was actually created.
+  absl::StatusOr<PosixSocketWrapper> CreateDualStackSocket(
+      std::function<int(int, int, int)> socket_factory,
+      const experimental::EventEngine::ResolvedAddress& addr, int type,
+      int protocol, PosixSocketWrapper::DSMode& dsmode);
+
   FileDescriptor Adopt(int fd);
 
   void Close(const FileDescriptor& fd);
@@ -182,8 +202,41 @@ class FileDescriptors {
       const FileDescriptor& fd);
   // Return PeerAddress as string
   absl::StatusOr<std::string> PeerAddressString(const FileDescriptor& fd);
+  // Tries to set SO_NOSIGPIPE if available on this platform.
+  // If SO_NO_SIGPIPE is not available, returns not OK status.
+  absl::Status SetSocketNoSigpipeIfPossible(const FileDescriptor& fd);
+
+  // Return a PosixSocketCreateResult which manages a configured, unbound,
+  // unconnected TCP client fd.
+  //  options: may contain custom tcp settings for the fd.
+  //  target_addr: the destination address.
+  //
+  // Returns: Not-OK status on error. Otherwise it returns a
+  // PosixSocketWrapper::PosixSocketCreateResult type which includes a sock
+  // of type PosixSocketWrapper and a mapped_target_addr which is
+  // target_addr mapped to an address appropriate to the type of socket FD
+  // created. For example, if target_addr is IPv4 and dual stack sockets are
+  // available, mapped_target_addr will be an IPv4-mapped IPv6 address.
+  //
+  absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
+  CreateAndPrepareTcpClientSocket(
+      const PosixTcpOptions& options,
+      const EventEngine::ResolvedAddress& target_addr);
+
+  // Extracts the first socket mutator from config if any and applies on the fd.
+  absl::Status ApplySocketMutatorInOptions(const FileDescriptor& fd,
+                                           grpc_fd_usage usage,
+                                           const PosixTcpOptions& options);
+
+  // Tries to set the socket using a grpc_socket_mutator
+  absl::Status SetSocketMutator(const FileDescriptor& fd, grpc_fd_usage usage,
+                                grpc_socket_mutator* mutator);
 
  private:
+  absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
+                                      const FileDescriptor& fd,
+                                      const EventEngine::ResolvedAddress& addr,
+                                      const PosixTcpOptions& options);
   FileDescriptorResult RegisterPosixResult(int result);
 };
 

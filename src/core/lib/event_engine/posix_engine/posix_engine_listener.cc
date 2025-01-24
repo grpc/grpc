@@ -98,20 +98,22 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     }
   }
 
+  FileDescriptors& fds = poller_->GetFileDescriptors();
+
   auto used_port = MaybeGetWildcardPortFromAddress(res_addr);
   // Update the callback. Any subsequent new sockets created and added to
   // acceptors_ in this function will invoke the new callback.
   acceptors_.UpdateOnAppendCallback(std::move(on_bind_new_fd));
   if (used_port.has_value()) {
     requested_port = *used_port;
-    return ListenerContainerAddWildcardAddresses(acceptors_, options_,
+    return ListenerContainerAddWildcardAddresses(&fds, acceptors_, options_,
                                                  requested_port);
   }
   if (ResolvedAddressToV4Mapped(res_addr, &addr6_v4mapped)) {
     res_addr = addr6_v4mapped;
   }
 
-  auto result = CreateAndPrepareListenerSocket(options_, res_addr);
+  auto result = CreateAndPrepareListenerSocket(&fds, options_, res_addr);
   GRPC_RETURN_IF_ERROR(result.status());
   acceptors_.Append(*result);
   return result->port;
@@ -136,10 +138,10 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
   for (;;) {
     EventEngine::ResolvedAddress addr;
     memset(const_cast<sockaddr*>(addr.address()), 0, addr.size());
+    auto& fds = handle_->Poller()->GetFileDescriptors();
     // Note: If we ever decide to return this address to the user, remember to
     // strip off the ::ffff:0.0.0.0/96 prefix first.
-    FileDescriptorResult fd = handle_->Poller()->GetFileDescriptors().Accept4(
-        handle_->WrappedFd(), addr, 1, 1);
+    FileDescriptorResult fd = fds.Accept4(handle_->WrappedFd(), addr, 1, 1);
     if (fd.kind() == OperationResultKind::kWrongGeneration) {
       LOG(ERROR) << "Closing acceptor. accept4 was called with fd from a wrong "
                     "generation";
@@ -205,17 +207,16 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
                    << (listener_addr_uri.ok() ? *listener_addr_uri
                                               : "<unknown>")
                    << ":" << socket_.port;
-        handle_->Poller()->GetFileDescriptors().Close(*fd);
+        fds.Close(*fd);
         handle_->NotifyOnRead(notify_on_accept_);
         return;
       }
       addr = EventEngine::ResolvedAddress(addr.address(), len);
     }
 
-    PosixSocketWrapper sock(fd.fd());
-    (void)sock.SetSocketNoSigpipeIfPossible();
-    auto result = sock.ApplySocketMutatorInOptions(
-        GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
+    (void)fds.SetSocketNoSigpipeIfPossible(*fd);
+    auto result = fds.ApplySocketMutatorInOptions(
+        *fd, GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
     if (!result.ok()) {
       LOG(ERROR) << "Closing acceptor. Failed to apply socket mutator: "
                  << result;
@@ -270,9 +271,10 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
     return absl::UnknownError(
         absl::StrCat("HandleExternalConnection: Invalid peer socket: ", fd));
   }
+  auto& fds = poller_->GetFileDescriptors();
+  FileDescriptor wrapped = fds.Adopt(fd);
   PosixSocketWrapper sock(fd);
-  (void)sock.SetSocketNoSigpipeIfPossible();
-  FileDescriptor wrapped = poller_->GetFileDescriptors().Adopt(fd);
+  (void)fds.SetSocketNoSigpipeIfPossible(wrapped);
   auto peer_name = poller_->GetFileDescriptors().PeerAddressString(wrapped);
   if (!peer_name.ok()) {
     return absl::UnknownError(

@@ -2026,6 +2026,7 @@ grpc_cc_library(
     srcs = ["lib/event_engine/posix_engine/file_descriptors.cc"],
     hdrs = ["lib/event_engine/posix_engine/file_descriptors.h"],
     external_deps = [
+        "absl/cleanup",
         "absl/log:check",
         "absl/log:log",
         "absl/status",
@@ -2035,6 +2036,8 @@ grpc_cc_library(
     deps = [
         "event_engine_tcp_socket_utils",
         "iomgr_port",
+        "posix_event_engine_tcp_socket_utils",
+        "status_helper",
         "strerror",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -2427,6 +2430,7 @@ grpc_cc_library(
     deps = [
         "event_engine_tcp_socket_utils",
         "iomgr_port",
+        "posix_event_engine_file_descriptors",
         "posix_event_engine_tcp_socket_utils",
         "socket_mutator",
         "status_helper",
