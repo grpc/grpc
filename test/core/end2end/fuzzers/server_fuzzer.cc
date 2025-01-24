@@ -21,6 +21,8 @@
 
 #include "absl/log/check.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/env.h"
@@ -30,6 +32,8 @@
 #include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/test_config.h"
+#include "fuzztest/fuzztest.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -87,8 +91,6 @@ class ServerFuzzer final : public BasicFuzzer {
   grpc_server* server_ = grpc_server_create(nullptr, nullptr);
 };
 
-}  // namespace testing
-
 void RunServerFuzzer(
     const fuzzer_input::Msg& msg,
     absl::FunctionRef<void(grpc_server*, int, const ChannelArgs&)>
@@ -107,4 +109,50 @@ void RunServerFuzzer(
   testing::ServerFuzzer(msg, server_setup).Run(msg.api_actions());
 }
 
+void ChaoticGood(fuzzer_input::Msg msg) {
+  RunServerFuzzer(
+      msg, [](grpc_server* server, int port_num,
+              const ChannelArgs& channel_args) {
+        ExecCtx exec_ctx;
+        auto* listener = new chaotic_good::ChaoticGoodServerListener(
+            Server::FromC(server), channel_args,
+            [next = uint64_t(0)]() mutable {
+              return absl::StrCat(absl::Hex(next++));
+            });
+        auto port = listener->Bind(
+            grpc_event_engine::experimental::URIToResolvedAddress(
+                absl::StrCat("ipv4:0.0.0.0:", port_num))
+                .value());
+        CHECK_OK(port);
+        CHECK_EQ(port.value(), port_num);
+        Server::FromC(server)->AddListener(
+            OrphanablePtr<
+                chaotic_good::ChaoticGoodServerListener>(listener));
+      });
+}
+FUZZ_TEST(ServerFuzzers, ChaoticGood);
+
+void Chttp2(fuzzer_input::Msg msg) {
+ RunServerFuzzer(msg, [](grpc_server* server, int port_num,
+                                     const ChannelArgs&) {
+    auto* creds = grpc_insecure_server_credentials_create();
+    grpc_server_add_http2_port(
+        server, absl::StrCat("0.0.0.0:", port_num).c_str(), creds);
+    grpc_server_credentials_release(creds);
+  });
+}
+FUZZ_TEST(ServerFuzzers, Chttp2);
+
+void Chttp2FakeSec(fuzzer_input::Msg msg) {
+  RunServerFuzzer(msg, [](grpc_server* server, int port_num,
+                                     const ChannelArgs&) {
+    auto* creds = grpc_fake_transport_security_server_credentials_create();
+    grpc_server_add_http2_port(
+        server, absl::StrCat("0.0.0.0:", port_num).c_str(), creds);
+    grpc_server_credentials_release(creds);
+  });
+}
+FUZZ_TEST(ServerFuzzers, Chttp2FakeSec);
+
+}  // namespace testing
 }  // namespace grpc_core

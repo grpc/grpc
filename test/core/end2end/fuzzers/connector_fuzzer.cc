@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/end2end/fuzzers/connector_fuzzer.h"
-
 #include <memory>
 
+#include "fuzztest/fuzztest.h"
+#include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
 #include "src/core/util/env.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/end2end/fuzzers/network_input.h"
@@ -164,8 +166,6 @@ class ConnectorFuzzer {
   OrphanablePtr<SubchannelConnector> connector_;
 };
 
-}  // namespace
-
 void RunConnectorFuzzer(
     const fuzzer_input::Msg& msg,
     absl::FunctionRef<RefCountedPtr<grpc_channel_security_connector>()>
@@ -185,4 +185,28 @@ void RunConnectorFuzzer(
   ConnectorFuzzer(msg, make_security_connector, make_connector).Run();
 }
 
+void Chttp2(fuzzer_input::Msg msg) {
+  grpc_core::RunConnectorFuzzer(
+      msg,
+      []() {
+        return grpc_core::RefCountedPtr<grpc_channel_security_connector>();
+      },
+      []() { return grpc_core::MakeOrphanable<grpc_core::Chttp2Connector>(); });
+}
+FUZZ_TEST(ConnectorFuzzers, Chttp2);
+
+void Chttp2Fakesec(fuzzer_input::Msg msg) {
+  grpc_core::RunConnectorFuzzer(
+      msg,
+      []() {
+        return grpc_fake_channel_security_connector_create(
+            grpc_core::RefCountedPtr<grpc_channel_credentials>(
+                grpc_fake_transport_security_credentials_create()),
+            nullptr, "foobar", grpc_core::ChannelArgs{});
+      },
+      []() { return grpc_core::MakeOrphanable<grpc_core::Chttp2Connector>(); });
+}
+FUZZ_TEST(ConnectorFuzzers, Chttp2Fakesec);
+
+}  // namespace
 }  // namespace grpc_core
