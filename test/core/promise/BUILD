@@ -543,6 +543,7 @@ grpc_fuzz_test(
     ],
     tags = ["no_windows"],
     deps = [
+        "promise_fuzzer_cc_proto",
         "//:gpr",
         "//:promise",
         "//src/core:activity",
@@ -552,7 +553,6 @@ grpc_fuzz_test(
         "//src/core:race",
         "//src/core:seq",
         "//test/core/test_util:grpc_test_util",
-        "promise_fuzzer_cc_proto",
     ],
 )
 
