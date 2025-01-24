@@ -17,7 +17,6 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 load(
     "//test/core/test_util:grpc_fuzzer.bzl",
     "grpc_fuzz_test",
-    "grpc_fuzzer",
     "grpc_proto_fuzzer",
 )
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
@@ -513,10 +512,14 @@ grpc_cc_test(
     ],
 )
 
-grpc_fuzzer(
+grpc_fuzz_test(
     name = "uri_fuzzer_test",
     srcs = ["uri_fuzzer_test.cc"],
-    corpus = "uri_corpus",
+    external_deps = [
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = [
         "no_windows",
         # Without "nofixdeps", "//:grpc" gets substituted with "//:event_engine_base_hdrs"

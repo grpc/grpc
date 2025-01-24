@@ -335,9 +335,16 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
               });
         };
       });
-  auto primary_ops = AllOk<StatusFlag>(
-      TrySeq(std::move(send_message), std::move(send_close_from_client)),
-      TrySeq(std::move(recv_initial_metadata), std::move(recv_message)));
+  // We capture 'this' in the op handlers, but the call may be destroyed before
+  // the party owned by CallInitiator/CallHandler is destroyed -- meaning that
+  // op callbacks may happen after call destruction if we don't hold a ref.
+  // We do that via an implicitly captured one in a Map() here so that we don't
+  // need a ref held per batch operation -- they have the same lifetime always.
+  auto primary_ops = Map(
+      AllOk<StatusFlag>(
+          TrySeq(std::move(send_message), std::move(send_close_from_client)),
+          TrySeq(std::move(recv_initial_metadata), std::move(recv_message))),
+      [self = WeakRef()](StatusFlag x) { return x; });
   Party::WakeupHold wakeup_hold;
   if (const grpc_op* op = op_index.op(GRPC_OP_SEND_INITIAL_METADATA)) {
     wakeup_hold = StartCall(*op);
