@@ -181,6 +181,8 @@ class Server : public ServerInterface,
     // tracking systems, without increasing memory utilization.
     class LogicalConnection : public InternallyRefCounted<LogicalConnection> {
      public:
+      explicit LogicalConnection(const char* trace = nullptr)
+          : InternallyRefCounted(trace) {}
       ~LogicalConnection() override = default;
 
       // The following two methods are called in the context of a server config
@@ -189,6 +191,8 @@ class Server : public ServerInterface,
       virtual void DisconnectImmediately() = 0;
     };
 
+    explicit ListenerInterface(const char* trace = nullptr)
+        : InternallyRefCounted(trace) {}
     ~ListenerInterface() override = default;
 
     /// Starts listening.
