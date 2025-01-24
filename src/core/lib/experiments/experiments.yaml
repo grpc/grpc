@@ -47,7 +47,7 @@
   test_tags: []
 - name: call_tracer_in_transport
   description: Transport directly passes byte counts to CallTracer.
-  expiry: 2025/02/01
+  expiry: 2025/06/01
   owner: roth@google.com
   test_tags: []
 - name: callv3_client_auth_filter
