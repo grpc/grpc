@@ -589,7 +589,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   TcpZerocopySendRecord* current_zerocopy_send_ = nullptr;
   // A hint from upper layers specifying the minimum number of bytes that need
   // to be read to make meaningful progress.
-  uint32_t min_progress_size_ = 1;
+  int min_progress_size_ = 1;
   TracedBufferList traced_buffers_;
   // The handle is owned by the PosixEndpointImpl object.
   EventHandle* handle_;
