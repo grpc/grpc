@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package","grpc_cc_proto_library",  "grpc_internal_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
 load(
     "//test/core/test_util:grpc_fuzzer.bzl",
     "grpc_fuzz_test",
@@ -373,12 +373,16 @@ grpc_cc_proto_library(
 grpc_fuzz_test(
     name = "chunked_vector_fuzzer",
     srcs = ["chunked_vector_fuzzer.cc"],
-    external_deps = ["absl/log:check", "fuzztest", "fuzztest_main"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     deps = [
+        "chunked_vector_fuzzer_cc_proto",
         "//src/core:chunked_vector",
         "//src/core:resource_quota",
         "//test/core/test_util:grpc_test_util",
-        "chunked_vector_fuzzer_cc_proto",
     ],
 )
 
@@ -743,9 +747,9 @@ grpc_fuzz_test(
         "fuzztest_main",
     ],
     deps = [
+        "avl_fuzzer_cc_proto",
         "//src/core:avl",
         "//test/core/test_util:grpc_test_util",
-        "avl_fuzzer_cc_proto",
     ],
 )
 
