@@ -62,7 +62,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
     {
       MutexLock lock(&mu_);
       picker_ = nullptr;
-      work_serializer_->Schedule(
+      work_serializer_->Run(
           [this, num_endpoints]() {
             EndpointAddressesList addresses;
             for (size_t i = 0; i < num_endpoints; i++) {
@@ -83,7 +83,6 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
           },
           DEBUG_LOCATION);
     }
-    work_serializer_->DrainQueue();
   }
 
  private:
@@ -131,7 +130,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
         std::shared_ptr<ConnectivityStateWatcherInterface> watcher) {
       {
         MutexLock lock(&helper_->mu_);
-        helper_->work_serializer_->Schedule(
+        helper_->work_serializer_->Run(
             [watcher]() {
               watcher->OnConnectivityStateChange(GRPC_CHANNEL_READY,
                                                  absl::OkStatus());
@@ -139,7 +138,6 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
             DEBUG_LOCATION);
         helper_->connectivity_watchers_.insert(std::move(watcher));
       }
-      helper_->work_serializer_->DrainQueue();
     }
 
     BenchmarkHelper* helper_;

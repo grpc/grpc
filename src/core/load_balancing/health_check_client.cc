@@ -78,7 +78,6 @@ class AsyncWorkSerializerDrainer final {
  private:
   static void RunInExecCtx(void* arg, grpc_error_handle) {
     auto* self = static_cast<AsyncWorkSerializerDrainer*>(arg);
-    self->work_serializer_->DrainQueue();
     delete self;
   }
 
@@ -147,7 +146,7 @@ void HealthProducer::HealthChecker::NotifyWatchersLocked(
   GRPC_TRACE_LOG(health_check_client, INFO)
       << "HealthProducer " << producer_.get() << " HealthChecker " << this
       << ": reporting state " << ConnectivityStateName(state) << " to watchers";
-  work_serializer_->Schedule(
+  work_serializer_->Run(
       [self = Ref(), state, status = std::move(status)]() {
         MutexLock lock(&self->producer_->mu_);
         for (HealthWatcher* watcher : self->watchers_) {
@@ -168,7 +167,7 @@ void HealthProducer::HealthChecker::OnHealthWatchStatusChange(
         status.code(), absl::StrCat(producer_->subchannel_->address(), ": ",
                                     status.message()));
   }
-  work_serializer_->Schedule(
+  work_serializer_->Run(
       [self = Ref(), state, status = std::move(use_status)]() mutable {
         MutexLock lock(&self->producer_->mu_);
         if (self->stream_client_ != nullptr) {
@@ -466,7 +465,7 @@ void HealthWatcher::SetSubchannel(Subchannel* subchannel) {
 }
 
 void HealthWatcher::Notify(grpc_connectivity_state state, absl::Status status) {
-  work_serializer_->Schedule(
+  work_serializer_->Run(
       [watcher = watcher_, state, status = std::move(status)]() mutable {
         watcher->OnConnectivityStateChange(state, std::move(status));
       },
