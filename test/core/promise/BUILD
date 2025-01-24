@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
@@ -521,18 +521,27 @@ grpc_cc_test(
     ],
 )
 
-grpc_proto_fuzzer(
+grpc_internal_proto_library(
+    name = "promise_fuzzer_proto",
+    srcs = ["promise_fuzzer.proto"],
+)
+
+grpc_cc_proto_library(
+    name = "promise_fuzzer_cc_proto",
+    deps = ["promise_fuzzer_proto"],
+)
+
+grpc_fuzz_test(
     name = "promise_fuzzer",
     srcs = ["promise_fuzzer.cc"],
-    corpus = "promise_fuzzer_corpus",
     external_deps = [
         "absl/functional:any_invocable",
         "absl/log:check",
         "absl/status",
+        "fuzztest",
+        "fuzztest_main",
     ],
-    proto = "promise_fuzzer.proto",
     tags = ["no_windows"],
-    uses_polling = False,
     deps = [
         "//:gpr",
         "//:promise",
@@ -543,6 +552,7 @@ grpc_proto_fuzzer(
         "//src/core:race",
         "//src/core:seq",
         "//test/core/test_util:grpc_test_util",
+        "promise_fuzzer_cc_proto",
     ],
 )
 
