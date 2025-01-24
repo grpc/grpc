@@ -27,8 +27,8 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/chunked_vector.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/util/chunked_vector_fuzzer.pb.h"
+#include "fuzztest/fuzztest.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -169,11 +169,12 @@ class Fuzzer {
   RefCountedPtr<Arena> arena_ = SimpleArenaAllocator(128)->MakeArena();
   std::map<int, Comparison> vectors_;
 };
-}  // namespace grpc_core
 
-DEFINE_PROTO_FUZZER(const chunked_vector_fuzzer::Msg& msg) {
+void SameAsVector(const chunked_vector_fuzzer::Msg& msg) {
   grpc_core::Fuzzer fuzzer;
   for (int i = 0; i < msg.actions_size(); i++) {
     fuzzer.Act(msg.actions(i));
   }
 }
+FUZZ_TEST(ChunkedVectorTest, SameAsVector);
+}  // namespace grpc_core

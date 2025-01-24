@@ -20,7 +20,7 @@
 #include <utility>
 
 #include "src/core/util/avl.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
+#include "fuzztest/fuzztest.h"
 #include "test/core/util/avl_fuzzer.pb.h"
 
 bool squelch = true;
@@ -88,9 +88,7 @@ std::map<int, int> MapFromProto(const RepeatedField& p) {
   return a;
 }
 
-}  // namespace grpc_core
-
-DEFINE_PROTO_FUZZER(const avl_fuzzer::Msg& msg) {
+void SameAsMap(const avl_fuzzer::Msg& msg) {
   grpc_core::Fuzzer fuzzer;
   for (const auto& action : msg.actions()) {
     grpc_core::Fuzzer().Run(action);
@@ -105,3 +103,6 @@ DEFINE_PROTO_FUZZER(const avl_fuzzer::Msg& msg) {
     if ((left_avl < right_avl) != (left_map < right_map)) abort();
   }
 }
+FUZZ_TEST(AvlFuzzer, SameAsMap);
+
+}  // namespace grpc_core
