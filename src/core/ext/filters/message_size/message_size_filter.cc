@@ -149,7 +149,7 @@ ServerMetadataHandle CheckPayload(const Message& msg,
       << (is_send ? "send" : "recv") << " len:" << msg.payload()->Length()
       << " max:" << *max_length;
   if (msg.payload()->Length() <= *max_length) return nullptr;
-  return ServerMetadataFromStatus(
+  return CancelledServerMetadataFromStatus(
       GRPC_STATUS_RESOURCE_EXHAUSTED,
       absl::StrFormat("%s: %s message larger than max (%u vs. %d)",
                       is_client ? "CLIENT" : "SERVER",
