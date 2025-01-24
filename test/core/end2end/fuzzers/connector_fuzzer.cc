@@ -186,25 +186,22 @@ void RunConnectorFuzzer(
 }
 
 void Chttp2(fuzzer_input::Msg msg) {
-  grpc_core::RunConnectorFuzzer(
-      msg,
-      []() {
-        return grpc_core::RefCountedPtr<grpc_channel_security_connector>();
-      },
-      []() { return grpc_core::MakeOrphanable<grpc_core::Chttp2Connector>(); });
+  RunConnectorFuzzer(
+      msg, []() { return RefCountedPtr<grpc_channel_security_connector>(); },
+      []() { return MakeOrphanable<Chttp2Connector>(); });
 }
 FUZZ_TEST(ConnectorFuzzers, Chttp2);
 
 void Chttp2Fakesec(fuzzer_input::Msg msg) {
-  grpc_core::RunConnectorFuzzer(
+  RunConnectorFuzzer(
       msg,
       []() {
         return grpc_fake_channel_security_connector_create(
-            grpc_core::RefCountedPtr<grpc_channel_credentials>(
+            RefCountedPtr<grpc_channel_credentials>(
                 grpc_fake_transport_security_credentials_create()),
-            nullptr, "foobar", grpc_core::ChannelArgs{});
+            nullptr, "foobar", ChannelArgs{});
       },
-      []() { return grpc_core::MakeOrphanable<grpc_core::Chttp2Connector>(); });
+      []() { return MakeOrphanable<Chttp2Connector>(); });
 }
 FUZZ_TEST(ConnectorFuzzers, Chttp2Fakesec);
 
