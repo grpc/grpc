@@ -19,8 +19,8 @@
 #include <map>
 #include <utility>
 
-#include "src/core/util/avl.h"
 #include "fuzztest/fuzztest.h"
+#include "src/core/util/avl.h"
 #include "test/core/util/avl_fuzzer.pb.h"
 
 bool squelch = true;
@@ -89,16 +89,16 @@ std::map<int, int> MapFromProto(const RepeatedField& p) {
 }
 
 void SameAsMap(const avl_fuzzer::Msg& msg) {
-  grpc_core::Fuzzer fuzzer;
+  Fuzzer fuzzer;
   for (const auto& action : msg.actions()) {
-    grpc_core::Fuzzer().Run(action);
+    Fuzzer().Run(action);
   }
 
   for (const auto& cmp : msg.compares()) {
-    auto left_avl = grpc_core::AvlFromProto(cmp.left());
-    auto left_map = grpc_core::MapFromProto(cmp.left());
-    auto right_avl = grpc_core::AvlFromProto(cmp.right());
-    auto right_map = grpc_core::MapFromProto(cmp.right());
+    auto left_avl = AvlFromProto(cmp.left());
+    auto left_map = MapFromProto(cmp.left());
+    auto right_avl = AvlFromProto(cmp.right());
+    auto right_map = MapFromProto(cmp.right());
     if ((left_avl == right_avl) != (left_map == right_map)) abort();
     if ((left_avl < right_avl) != (left_map < right_map)) abort();
   }
