@@ -57,16 +57,8 @@ class ABSL_LOCKABLE WorkSerializer {
 
   // Runs a given callback on the work serializer.
   //
-  // If experiment `work_serializer_dispatch` is enabled:
   // The callback will be executed as an EventEngine callback, that then
   // arranges for the next callback in the queue to execute.
-  //
-  // If experiment `work_serializer_dispatch` is NOT enabled:
-  // If there is no other thread currently executing the WorkSerializer, the
-  // callback is run immediately. In this case, the current thread is also
-  // borrowed for draining the queue for any callbacks that get added in the
-  // meantime.
-  // This behavior is deprecated and will be removed soon.
   //
   // If you want to use clang thread annotation to make sure that callback is
   // called by WorkSerializer only, you need to add the annotation to both the
@@ -94,7 +86,6 @@ class ABSL_LOCKABLE WorkSerializer {
 
  private:
   class WorkSerializerImpl;
-  class LegacyWorkSerializer;
   class DispatchingWorkSerializer;
 
   OrphanablePtr<WorkSerializerImpl> impl_;

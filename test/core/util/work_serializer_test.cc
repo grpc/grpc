@@ -269,10 +269,6 @@ TEST(WorkSerializerTest, WorkSerializerDestructionRaceMultipleThreads) {
 }
 
 TEST(WorkSerializerTest, MetricsWork) {
-  if (!IsWorkSerializerDispatchEnabled()) {
-    GTEST_SKIP() << "Work serializer dispatch experiment not enabled";
-  }
-
   auto serializer = std::make_unique<WorkSerializer>(GetDefaultEventEngine());
   auto schedule_sleep = [&serializer](absl::Duration how_long) {
     ExecCtx exec_ctx;
@@ -389,8 +385,7 @@ TEST(WorkSerializerTest, RunningInWorkSerializer) {
         EXPECT_FALSE(work_serializer2->RunningInWorkSerializer());
         work_serializer2->Run(
             [=]() {
-              EXPECT_EQ(work_serializer1->RunningInWorkSerializer(),
-                        !IsWorkSerializerDispatchEnabled());
+              EXPECT_FALSE(work_serializer1->RunningInWorkSerializer());
               EXPECT_TRUE(work_serializer2->RunningInWorkSerializer());
             },
             DEBUG_LOCATION);
@@ -405,8 +400,7 @@ TEST(WorkSerializerTest, RunningInWorkSerializer) {
         work_serializer1->Run(
             [=]() {
               EXPECT_TRUE(work_serializer1->RunningInWorkSerializer());
-              EXPECT_EQ(work_serializer2->RunningInWorkSerializer(),
-                        !IsWorkSerializerDispatchEnabled());
+              EXPECT_FALSE(work_serializer2->RunningInWorkSerializer());
             },
             DEBUG_LOCATION);
       },
