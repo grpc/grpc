@@ -121,6 +121,7 @@ libs:
   - absl/base:base
   - absl/base:core_headers
   - absl/base:log_severity
+  - absl/cleanup:cleanup
   - absl/flags:flag
   - absl/flags:marshalling
   - absl/functional:any_invocable
@@ -2073,7 +2074,6 @@ libs:
   - absl/algorithm:container
   - absl/base:config
   - absl/base:no_destructor
-  - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
@@ -3097,7 +3097,6 @@ libs:
   - absl/algorithm:container
   - absl/base:config
   - absl/base:no_destructor
-  - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
@@ -4966,7 +4965,6 @@ libs:
   - z
   - absl/base:config
   - absl/base:no_destructor
-  - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
@@ -7235,7 +7233,6 @@ targets:
   - z
   - absl/base:config
   - absl/base:no_destructor
-  - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
   - absl/functional:function_ref
@@ -15523,6 +15520,7 @@ targets:
   - gtest
   - absl/functional:any_invocable
   - absl/log:check
+  - absl/log:log
   - absl/meta:type_traits
   - absl/status:status
   - absl/status:statusor

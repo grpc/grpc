@@ -2138,6 +2138,7 @@ target_link_libraries(gpr
   absl::base
   absl::core_headers
   absl::log_severity
+  absl::cleanup
   absl::flags
   absl::flags_marshalling
   absl::any_invocable
@@ -3086,7 +3087,6 @@ target_link_libraries(grpc
   absl::algorithm_container
   absl::config
   absl::no_destructor
-  absl::cleanup
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
@@ -3751,7 +3751,6 @@ target_link_libraries(grpc_unsecure
   absl::algorithm_container
   absl::config
   absl::no_destructor
-  absl::cleanup
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
@@ -5889,7 +5888,6 @@ target_link_libraries(grpc_authorization_provider
   ${_gRPC_ZLIB_LIBRARIES}
   absl::config
   absl::no_destructor
-  absl::cleanup
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
@@ -9882,7 +9880,6 @@ target_link_libraries(call_utils_test
   ${_gRPC_ZLIB_LIBRARIES}
   absl::config
   absl::no_destructor
-  absl::cleanup
   absl::flat_hash_map
   absl::inlined_vector
   absl::function_ref
@@ -25024,6 +25021,7 @@ target_link_libraries(promise_map_test
   gtest
   absl::any_invocable
   absl::check
+  absl::log
   absl::type_traits
   absl::status
   absl::statusor
@@ -50393,7 +50391,7 @@ generate_pkgconfig(
   "gpr"
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
-  "absl_any_invocable absl_base absl_bits absl_check absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_log absl_log_globals absl_log_severity absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time"
+  "absl_any_invocable absl_base absl_bits absl_check absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_log absl_log_globals absl_log_severity absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time"
   ""
   "-lgpr"
   ""

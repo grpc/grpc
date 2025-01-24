@@ -433,6 +433,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base",
         "absl/base:core_headers",
+        "absl/cleanup",
         "absl/log:check",
         "absl/synchronization",
         "absl/time",
