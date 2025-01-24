@@ -587,11 +587,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         grpc_connectivity_state state, const absl::Status& status,
         RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
       MutexLock lock(&mu_);
-      StateUpdate update{
-          state, status,
-          IsWorkSerializerDispatchEnabled()
-              ? std::move(picker)
-              : MakeRefCounted<PickerWrapper>(test_, std::move(picker))};
+      StateUpdate update{state, status, std::move(picker)};
       LOG(INFO) << "enqueuing state update from LB policy: "
                 << update.ToString();
       queue_.push_back(std::move(update));

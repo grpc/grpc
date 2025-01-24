@@ -508,12 +508,9 @@ bool WorkSerializer::DispatchingWorkSerializer::Refill() {
 
 WorkSerializer::WorkSerializer(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
-    : impl_(IsWorkSerializerDispatchEnabled()
-                ? OrphanablePtr<WorkSerializerImpl>(
-                      MakeOrphanable<DispatchingWorkSerializer>(
-                          std::move(event_engine)))
-                : OrphanablePtr<WorkSerializerImpl>(
-                      MakeOrphanable<LegacyWorkSerializer>())) {}
+    : impl_(OrphanablePtr<WorkSerializerImpl>(
+          MakeOrphanable<DispatchingWorkSerializer>(std::move(event_engine)))) {
+}
 
 WorkSerializer::~WorkSerializer() = default;
 
