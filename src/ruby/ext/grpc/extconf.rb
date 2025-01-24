@@ -148,6 +148,8 @@ $CFLAGS << ' -g'
 
 def have_ruby_abi_version()
   return true if RUBY_ENGINE == 'truffleruby'
+  # ruby_abi_version is only available in development versions: https://github.com/ruby/ruby/pull/6231
+  return false if RUBY_PATCHLEVEL >= 0
 
   m = /(\d+)\.(\d+)/.match(RUBY_VERSION)
   if m.nil?

@@ -24,7 +24,6 @@ grpc_fuzzer(
     srcs = ["alts_credentials_fuzzer.cc"],
     corpus = "corpus/alts_credentials_corpus",
     external_deps = ["absl/log:check"],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -44,7 +43,6 @@ grpc_fuzzer(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["absl/log:check"],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:event_engine_base_hdrs",
@@ -61,7 +59,6 @@ grpc_cc_library(
     srcs = ["oauth2_utils.cc"],
     hdrs = ["oauth2_utils.h"],
     external_deps = ["absl/log:log"],
-    language = "C++",
     visibility = ["//test/cpp:__subpackages__"],
     deps = ["//:grpc"],
 )
@@ -73,7 +70,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -88,7 +84,6 @@ grpc_cc_test(
     name = "cel_authorization_engine_test",
     srcs = ["cel_authorization_engine_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -106,7 +101,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -126,7 +120,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -139,7 +132,6 @@ grpc_cc_test(
     name = "evaluate_args_test",
     srcs = ["evaluate_args_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -156,7 +148,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     tags = ["credential_token_tests"],
     uses_event_engine = False,
     uses_polling = False,
@@ -173,7 +164,6 @@ grpc_cc_test(
     name = "jwt_verifier_test",
     srcs = ["jwt_verifier_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     tags = ["credential_token_tests"],
     uses_event_engine = False,
     uses_polling = False,
@@ -193,7 +183,6 @@ grpc_cc_test(
         "gtest",
     ],
     flaky = True,
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -211,7 +200,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -233,7 +221,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -248,7 +235,6 @@ grpc_cc_test(
     name = "ssl_credentials_test",
     srcs = ["ssl_credentials_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -260,7 +246,6 @@ grpc_cc_test(
 grpc_cc_binary(
     name = "create_jwt",
     srcs = ["create_jwt.cc"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -276,7 +261,6 @@ grpc_cc_binary(
         "absl/log:check",
         "absl/log:log",
     ],
-    language = "C++",
     deps = [
         ":oauth2_utils",
         "//:gpr",
@@ -291,7 +275,6 @@ grpc_cc_binary(
     name = "verify_jwt",
     srcs = ["verify_jwt.cc"],
     external_deps = ["absl/log:check"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -304,7 +287,6 @@ grpc_cc_test(
     name = "check_gcp_environment_linux_test",
     srcs = ["check_gcp_environment_linux_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -317,7 +299,6 @@ grpc_cc_test(
     name = "check_gcp_environment_windows_test",
     srcs = ["check_gcp_environment_windows_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -330,7 +311,6 @@ grpc_cc_test(
     name = "grpc_alts_credentials_options_test",
     srcs = ["grpc_alts_credentials_options_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -346,7 +326,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -372,7 +351,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -389,7 +367,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -412,7 +389,6 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -425,7 +401,6 @@ grpc_cc_test(
     name = "grpc_tls_credentials_options_comparator_test",
     srcs = ["grpc_tls_credentials_options_comparator_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -441,7 +416,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -469,7 +443,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -486,7 +459,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -528,7 +500,6 @@ grpc_cc_test(
     name = "rbac_translator_test",
     srcs = ["rbac_translator_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -542,7 +513,6 @@ grpc_cc_test(
     name = "authorization_matchers_test",
     srcs = ["authorization_matchers_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -556,7 +526,6 @@ grpc_cc_test(
     name = "grpc_authorization_engine_test",
     srcs = ["grpc_authorization_engine_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -576,7 +545,6 @@ grpc_cc_test(
         "//test/core/security/authorization/test_policies:valid_policy_2.json",
     ],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -592,7 +560,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -605,7 +572,6 @@ grpc_cc_test(
     name = "certificate_provider_registry_test",
     srcs = ["certificate_provider_registry_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -617,7 +583,6 @@ grpc_cc_test(
     name = "grpc_audit_logging_test",
     srcs = ["grpc_audit_logging_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -638,7 +603,6 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
     ],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

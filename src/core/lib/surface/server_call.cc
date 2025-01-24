@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <utility>
@@ -169,16 +170,28 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
       metadata->Set(GrpcMessageMetadata(), Slice(grpc_slice_copy(*details)));
     }
     CHECK(metadata != nullptr);
-    return [this, metadata = std::move(metadata)]() mutable {
+    bool wait_for_initial_metadata_scheduled =
+        sent_server_initial_metadata_batch_.load(std::memory_order_relaxed);
+    return [this, metadata = std::move(metadata),
+            wait_for_initial_metadata_scheduled]() mutable {
       CHECK(metadata != nullptr);
-      return [this, metadata = std::move(metadata)]() mutable -> Poll<Success> {
-        CHECK(metadata != nullptr);
-        call_handler_.PushServerTrailingMetadata(std::move(metadata));
-        return Success{};
-      };
+      // If there was a send initial metadata batch sent prior to this one, then
+      // make sure it's been scheduled first - otherwise we may accidentally
+      // treat this as trailers only.
+      return Seq(
+          If(
+              wait_for_initial_metadata_scheduled,
+              [this]() { return server_initial_metadata_scheduled_.Wait(); },
+              []() { return Empty{}; }),
+          [this, metadata = std::move(metadata)]() mutable -> Poll<Success> {
+            CHECK(metadata != nullptr);
+            call_handler_.PushServerTrailingMetadata(std::move(metadata));
+            return Success{};
+          });
     };
   };
 
+  // Handle send trailing metadata only
   if (op_index.has_op(GRPC_OP_SEND_INITIAL_METADATA) &&
       op_index.has_op(GRPC_OP_SEND_STATUS_FROM_SERVER) &&
       !op_index.has_op(GRPC_OP_SEND_MESSAGE) &&
@@ -189,6 +202,7 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
     commit_with_send_ops(OpHandler<GRPC_OP_SEND_STATUS_FROM_SERVER>(
         make_send_trailing_metadata(trailing_metadata)));
   } else {
+    // Non-send-trailing-metadata path
     auto send_initial_metadata =
         op_index.OpHandler<GRPC_OP_SEND_INITIAL_METADATA>(
             [this](const grpc_op& op) {
@@ -196,9 +210,12 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
               PrepareOutgoingInitialMetadata(op, *metadata);
               CToMetadata(op.data.send_initial_metadata.metadata,
                           op.data.send_initial_metadata.count, metadata.get());
+              sent_server_initial_metadata_batch_.store(
+                  true, std::memory_order_relaxed);
               GRPC_TRACE_LOG(call, INFO)
                   << DebugTag() << "[call] Send initial metadata";
               return [this, metadata = std::move(metadata)]() mutable {
+                server_initial_metadata_scheduled_.Set();
                 return call_handler_.PushServerInitialMetadata(
                     std::move(metadata));
               };

@@ -76,7 +76,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//:gpr_platform",
@@ -185,7 +184,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -200,7 +198,6 @@ grpc_cc_test(
     name = "handle_tests",
     srcs = ["handle_tests.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -239,7 +236,6 @@ grpc_cc_test(
     name = "query_extensions_test",
     srcs = ["query_extensions_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [

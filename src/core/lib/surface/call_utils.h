@@ -197,8 +197,12 @@ class OpHandlerImpl {
   Poll<StatusFlag> operator()() {
     switch (state_) {
       case State::kDismissed:
+        GRPC_TRACE_LOG(call, INFO)
+            << Activity::current()->DebugTag() << "Dismissed " << OpName();
         return Success{};
       case State::kPromiseFactory: {
+        GRPC_TRACE_LOG(call, INFO)
+            << Activity::current()->DebugTag() << "Construct " << OpName();
         auto promise = promise_factory_.Make();
         Destruct(&promise_factory_);
         Construct(&promise_, std::move(promise));
