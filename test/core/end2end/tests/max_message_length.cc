@@ -144,7 +144,6 @@ CORE_END2END_TEST(
     CoreEnd2endTest,
     MaxMessageLengthOnClientOnRequestViaServiceConfigWithStringJsonValue) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -163,7 +162,6 @@ CORE_END2END_TEST(
     CoreEnd2endTest,
     MaxMessageLengthOnClientOnRequestViaServiceConfigWithIntegerJsonValue) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -198,7 +196,6 @@ CORE_END2END_TEST(
     CoreEnd2endTest,
     MaxMessageLengthOnClientOnResponseViaServiceConfigWithStringJsonValue) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -217,7 +214,6 @@ CORE_END2END_TEST(
     CoreEnd2endTest,
     MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
