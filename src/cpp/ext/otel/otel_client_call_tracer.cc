@@ -156,7 +156,7 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
             std::make_pair(
                 "sequence-number",
                 opentelemetry::common::AttributeValue(send_seq_num_ - 1)),
-            std::make_pair("message-size",
+            std::make_pair("message-size-compressed",
                            opentelemetry::common::AttributeValue(
                                send_compressed_message.payload()->Length()))};
     span_->AddEvent("Outbound message compressed", attributes);
@@ -169,13 +169,19 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     std::array<std::pair<opentelemetry::nostd::string_view,
                          opentelemetry::common::AttributeValue>,
                2>
-        attributes = {std::make_pair("sequence-number",
-                                     opentelemetry::common::AttributeValue(
-                                         recv_seq_num_++)),
-                      std::make_pair("message-size",
-                                     opentelemetry::common::AttributeValue(
-                                         recv_message.payload()->Length()))};
-    span_->AddEvent("Inbound message", attributes);
+        attributes = {
+            std::make_pair(
+                "sequence-number",
+                opentelemetry::common::AttributeValue(recv_seq_num_++)),
+            std::make_pair(recv_message.flags() & GRPC_WRITE_INTERNAL_COMPRESS
+                               ? "message-size-compressed"
+                               : "message-size",
+                           opentelemetry::common::AttributeValue(
+                               recv_message.payload()->Length()))};
+    span_->AddEvent(recv_message.flags() & GRPC_WRITE_INTERNAL_COMPRESS
+                        ? "Inbound compressed message"
+                        : "Inbound message",
+                    attributes);
   }
 }
 
@@ -193,7 +199,7 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
             std::make_pair("message-size",
                            opentelemetry::common::AttributeValue(
                                recv_decompressed_message.payload()->Length()))};
-    span_->AddEvent("Inbound message decompressed", attributes);
+    span_->AddEvent("Inbound message", attributes);
   }
 }
 
