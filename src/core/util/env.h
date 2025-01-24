@@ -47,6 +47,14 @@ void SetOrUnsetEnv(const char* name, const std::optional<T>& value) {
   }
 }
 
+// getenv/setenv/unsetenv are not thread-safe, and calls from multiple threads
+// can cause data races. This is generally not an issue since we do not expect
+// setenv/unsetenv to be invoked after initialization, but for tests, we use
+// setenv/unsetenv to test different environments and that causes crashes.
+// This method synchronizes calls to getenv/setenv/unsetenv. We do not do this
+// outside of tests to avoid adding a global mutex in our channel's path.
+void SetTestOnlyEnvSynchronize();
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_UTIL_ENV_H

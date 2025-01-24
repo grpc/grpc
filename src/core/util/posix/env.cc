@@ -28,24 +28,46 @@
 
 namespace grpc_core {
 
+namespace {
 NoDestruct<Mutex> g_mu;
+bool g_test_only = false;
+}  // namespace
 
-std::optional<std::string> GetEnv(const char* name) {
-  MutexLock lock(g_mu.get());
+void SetTestOnlyEnvSynchronize() { g_test_only = true; }
+
+std::optional<std::string> GetEnv(const char* name)
+    ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  if (g_test_only) {
+    g_mu->Lock();
+  }
   char* result = getenv(name);
+  if (g_test_only) {
+    g_mu->Unlock();
+  }
   if (result == nullptr) return std::nullopt;
   return result;
 }
 
-void SetEnv(const char* name, const char* value) {
-  MutexLock lock(g_mu.get());
+void SetEnv(const char* name,
+            const char* value) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  if (g_test_only) {
+    g_mu->Lock();
+  }
   int res = setenv(name, value, 1);
+  if (g_test_only) {
+    g_mu->Unlock();
+  }
   if (res != 0) abort();
 }
 
-void UnsetEnv(const char* name) {
-  MutexLock lock(g_mu.get());
+void UnsetEnv(const char* name) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  if (g_test_only) {
+    g_mu->Lock();
+  }
   int res = unsetenv(name);
+  if (g_test_only) {
+    g_mu->Unlock();
+  }
   if (res != 0) abort();
 }
 

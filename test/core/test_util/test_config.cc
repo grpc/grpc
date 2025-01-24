@@ -36,6 +36,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/lib/surface/init.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/env.h"
 #include "test/core/event_engine/test_init.h"
 #include "test/core/test_util/build.h"
 #include "test/core/test_util/stack_tracer.h"
@@ -147,6 +148,7 @@ void grpc_test_init(int* argc, char** argv) {
   grpc_core::testing::InitializeStackTracer(argv[0]);
   absl::FailureSignalHandlerOptions options;
   absl::InstallFailureSignalHandler(options);
+  grpc_core::SetTestOnlyEnvSynchronize();
   VLOG(2) << "test slowdown factor: sanitizer="
           << grpc_test_sanitizer_slowdown_factor()
           << ", fixture=" << g_fixture_slowdown_factor
