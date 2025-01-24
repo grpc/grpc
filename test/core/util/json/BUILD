@@ -24,7 +24,6 @@ grpc_fuzzer(
     srcs = ["fuzzer.cc"],
     corpus = "corpus",
     external_deps = ["absl/log:check"],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -40,7 +39,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -56,7 +54,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_polling = False,
     deps = [
         "//src/core:json_object_loader",
