@@ -69,6 +69,14 @@ static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(CoreClientChannelTest, DisappearingServer) {
+  // TODO(ctiller): Currently v3 connections are tracked as a set of
+  // OrphanablePtr<ServerTransport> in the Server class. This allows us to only
+  // remove and destroy them which means we have no means of sending a goaway
+  // (and chaotic good anyway doesn't yet support goaways).
+  // After the `server_listener` experiment is completely rolled out we should
+  // migrate both v1 server channels and v3 transports to a common data
+  // structure around LogicalConnection instances. We could then use that
+  // data structure to broadcast goaways to transports at the appropriate time.
   SKIP_IF_V3();
   OneRequestAndShutdownServer(*this);
   InitServer(ChannelArgs());
