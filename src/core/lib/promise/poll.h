@@ -17,12 +17,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <string>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
@@ -135,8 +135,8 @@ class Poll {
   //
   // Why not optional<T>?
   //
-  // We have cases where we want to return absl::nullopt{} from a promise, and
-  // have that upgraded to a Poll<absl::nullopt_t> prior to a cast to some
+  // We have cases where we want to return std::nullopt{} from a promise, and
+  // have that upgraded to a Poll<std::nullopt_t> prior to a cast to some
   // Poll<optional<T>>.
   //
   // Since optional<nullopt_t> is not allowed, we'd not be allowed to make
@@ -151,6 +151,9 @@ class Poll {
     T value_;
   };
 };
+
+template <typename T>
+class Poll<T&&>;
 
 template <>
 class Poll<Empty> {
@@ -300,7 +303,7 @@ void AbslStringify(Sink& sink, const Poll<absl::StatusOr<T>>& poll) {
 }
 
 template <typename Sink, typename T>
-void AbslStringify(Sink& sink, const Poll<absl::optional<T>>& poll) {
+void AbslStringify(Sink& sink, const Poll<std::optional<T>>& poll) {
   if (poll.pending()) {
     absl::Format(&sink, "<<pending>>");
     return;
@@ -316,7 +319,7 @@ void AbslStringify(Sink& sink, const Poll<absl::optional<T>>& poll) {
 // Hack to get metadata printing
 template <typename Sink, typename T, typename Deleter>
 void AbslStringify(
-    Sink& sink, const Poll<absl::optional<std::unique_ptr<T, Deleter>>>& poll) {
+    Sink& sink, const Poll<std::optional<std::unique_ptr<T, Deleter>>>& poll) {
   if (poll.pending()) {
     absl::Format(&sink, "<<pending>>");
     return;

@@ -26,10 +26,10 @@
 #include <gtest/gtest.h>
 
 #include <memory>
+#include <optional>
 
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
@@ -39,6 +39,7 @@
 #include "src/proto/grpc/testing/echo.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -57,7 +58,7 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
   void SetUp() override {}  // No-op -- individual tests do this themselves.
 
   void DoSetUp(
-      const absl::optional<XdsBootstrapBuilder>& builder = absl::nullopt) {
+      const std::optional<XdsBootstrapBuilder>& builder = std::nullopt) {
     // We use insecure creds here as a convenience to be able to easily
     // create new channels in some of the tests below.  None of the
     // tests here actually depend on the channel creds anyway.
@@ -91,8 +92,110 @@ TEST_P(XdsEnabledServerTest, Basic) {
   WaitForBackend(DEBUG_LOCATION, 0);
 }
 
-TEST_P(XdsEnabledServerTest, ListenerDeletionIgnored) {
+TEST_P(XdsEnabledServerTest, ListenerDeletionFailsByDefault) {
+  DoSetUp();
+  StartBackend(0);
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Check that we ACKed.
+  // TODO(roth): There may be multiple entries in the resource state response
+  // queue, because the client doesn't necessarily subscribe to all resources
+  // in a single message, and the server currently (I suspect incorrectly?)
+  // thinks that each subscription message is an ACK.  So for now, we
+  // drain the entire LDS resource state response queue, ensuring that
+  // all responses are ACKs.  Need to look more closely at the protocol
+  // semantics here and make sure the server is doing the right thing,
+  // in which case we may be able to avoid this.
+  while (true) {
+    auto response_state = balancer_->ads_service()->lds_response_state();
+    if (!response_state.has_value()) break;
+    ASSERT_TRUE(response_state.has_value());
+    EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  }
+  // Now unset the resource.
+  balancer_->ads_service()->UnsetResource(
+      kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
+  // Server should stop serving.
+  ASSERT_TRUE(
+      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::NOT_FOUND));
+}
+
+TEST_P(XdsEnabledServerTest, ListenerDeletionIgnoredIfConfigured) {
   DoSetUp(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
+  StartBackend(0);
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Check that we ACKed.
+  // TODO(roth): There may be multiple entries in the resource state response
+  // queue, because the client doesn't necessarily subscribe to all resources
+  // in a single message, and the server currently (I suspect incorrectly?)
+  // thinks that each subscription message is an ACK.  So for now, we
+  // drain the entire LDS resource state response queue, ensuring that
+  // all responses are ACKs.  Need to look more closely at the protocol
+  // semantics here and make sure the server is doing the right thing,
+  // in which case we may be able to avoid this.
+  while (true) {
+    auto response_state = balancer_->ads_service()->lds_response_state();
+    if (!response_state.has_value()) break;
+    ASSERT_TRUE(response_state.has_value());
+    EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  }
+  // Now unset the resource.
+  balancer_->ads_service()->UnsetResource(
+      kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
+  // Wait for update to be ACKed.
+  absl::Time deadline =
+      absl::Now() + (absl::Seconds(10) * grpc_test_slowdown_factor());
+  while (true) {
+    auto response_state = balancer_->ads_service()->lds_response_state();
+    if (!response_state.has_value()) {
+      gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+      continue;
+    }
+    EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+    ASSERT_LT(absl::Now(), deadline);
+    break;
+  }
+  // Make sure server is still serving.
+  CheckRpcSendOk(DEBUG_LOCATION);
+}
+
+TEST_P(XdsEnabledServerTest,
+       ListenerDeletionFailsWithFailOnDataErrorsIfEnabled) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
+  DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
+  StartBackend(0);
+  ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Check that we ACKed.
+  // TODO(roth): There may be multiple entries in the resource state response
+  // queue, because the client doesn't necessarily subscribe to all resources
+  // in a single message, and the server currently (I suspect incorrectly?)
+  // thinks that each subscription message is an ACK.  So for now, we
+  // drain the entire LDS resource state response queue, ensuring that
+  // all responses are ACKs.  Need to look more closely at the protocol
+  // semantics here and make sure the server is doing the right thing,
+  // in which case we may be able to avoid this.
+  while (true) {
+    auto response_state = balancer_->ads_service()->lds_response_state();
+    if (!response_state.has_value()) break;
+    ASSERT_TRUE(response_state.has_value());
+    EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  }
+  // Now unset the resource.
+  balancer_->ads_service()->UnsetResource(
+      kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
+  // Server should stop serving.
+  ASSERT_TRUE(
+      backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::NOT_FOUND));
+}
+
+TEST_P(XdsEnabledServerTest,
+       ListenerDeletionIgnoredByDefaultIfDataErrorHandlingEnabled) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
+  DoSetUp();
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   WaitForBackend(DEBUG_LOCATION, 0);
@@ -188,8 +291,6 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
 
 class XdsEnabledServerStatusNotificationTest : public XdsEnabledServerTest {
  protected:
-  void SetUp() override { DoSetUp(); }
-
   void SetValidLdsUpdate() {
     SetServerListenerNameAndRouteConfiguration(
         balancer_.get(), default_server_listener_, backends_[0]->port(),
@@ -213,12 +314,14 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerStatusNotificationTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(XdsEnabledServerStatusNotificationTest, ServingStatus) {
+  DoSetUp();
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
+  DoSetUp();
   SetInvalidLdsUpdate();
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
@@ -229,6 +332,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
+  DoSetUp();
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_wait_for_ready(true));
@@ -248,6 +352,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
 
 TEST_P(XdsEnabledServerStatusNotificationTest,
        NotServingStatusToServingStatusTransition) {
+  DoSetUp();
   SetInvalidLdsUpdate();
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(
@@ -265,6 +370,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
 // results in future connections being dropped.
 TEST_P(XdsEnabledServerStatusNotificationTest,
        ServingStatusToNonServingStatusTransition) {
+  DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
   SetValidLdsUpdate();
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
@@ -280,6 +386,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
+  DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
   StartBackend(0);
   for (int i = 0; i < 5; ++i) {
     // Send a valid LDS update to get the server to start listening
@@ -298,6 +405,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
+  DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   constexpr int kNumChannels = 10;
@@ -352,6 +460,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
 
 TEST_P(XdsEnabledServerStatusNotificationTest,
        ExistingRpcsFailOnResourceUpdateAfterDrainGraceTimeExpires) {
+  DoSetUp();
   constexpr int kDrainGraceTimeMs = 100;
   xds_drain_grace_time_ms_ = kDrainGraceTimeMs;
   StartBackend(0);
@@ -817,10 +926,9 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
                                              default_server_route_config_);
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "RDS resource unknown_server_route_config: does not exist "
-      "\\(node ID:xds_end2end_test\\)");
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "RDS resource unknown_server_route_config: "
+                      "does not exist \\(node ID:xds_end2end_test\\)");
 }
 
 // TODO(yashykt): Once https://github.com/grpc/grpc/issues/24035 is fixed, we

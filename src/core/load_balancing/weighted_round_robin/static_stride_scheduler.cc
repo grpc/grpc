@@ -76,11 +76,11 @@ constexpr double kMinRatio = 0.01;
 
 }  // namespace
 
-absl::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
+std::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
     absl::Span<const float> float_weights,
     absl::AnyInvocable<uint32_t()> next_sequence_func) {
-  if (float_weights.empty()) return absl::nullopt;
-  if (float_weights.size() == 1) return absl::nullopt;
+  if (float_weights.empty()) return std::nullopt;
+  if (float_weights.size() == 1) return std::nullopt;
 
   // TODO(b/190488683): should we normalize negative weights to 0?
 
@@ -96,7 +96,7 @@ absl::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
     }
   }
 
-  if (num_zero_weight_channels == n) return absl::nullopt;
+  if (num_zero_weight_channels == n) return std::nullopt;
 
   // Mean of non-zero weights before scaling to `kMaxWeight`.
   const double unscaled_mean =

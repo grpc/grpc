@@ -302,14 +302,14 @@ OpenTelemetryPluginImpl::CallbackMetricReporter::CallbackMetricReporter(
     switch (descriptor.value_type) {
       case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64: {
         auto& callback_gauge_state =
-            absl::get<std::unique_ptr<CallbackGaugeState<int64_t>>>(
+            std::get<std::unique_ptr<CallbackGaugeState<int64_t>>>(
                 ot_plugin_->instruments_data_.at(handle.index).instrument);
         callback_gauge_state->caches[key].clear();
         break;
       }
       case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble: {
         auto& callback_gauge_state =
-            absl::get<std::unique_ptr<CallbackGaugeState<double>>>(
+            std::get<std::unique_ptr<CallbackGaugeState<double>>>(
                 ot_plugin_->instruments_data_.at(handle.index).instrument);
         callback_gauge_state->caches[key].clear();
         break;
@@ -327,7 +327,7 @@ void OpenTelemetryPluginImpl::CallbackMetricReporter::ReportInt64(
     absl::Span<const absl::string_view> optional_values) {
   const auto& instrument_data = ot_plugin_->instruments_data_.at(handle.index);
   auto* callback_gauge_state =
-      absl::get_if<std::unique_ptr<CallbackGaugeState<int64_t>>>(
+      std::get_if<std::unique_ptr<CallbackGaugeState<int64_t>>>(
           &instrument_data.instrument);
   CHECK_NE(callback_gauge_state, nullptr);
   const auto& descriptor =
@@ -364,7 +364,7 @@ void OpenTelemetryPluginImpl::CallbackMetricReporter::ReportDouble(
     absl::Span<const absl::string_view> optional_values) {
   const auto& instrument_data = ot_plugin_->instruments_data_.at(handle.index);
   auto* callback_gauge_state =
-      absl::get_if<std::unique_ptr<CallbackGaugeState<double>>>(
+      std::get_if<std::unique_ptr<CallbackGaugeState<double>>>(
           &instrument_data.instrument);
   CHECK_NE(callback_gauge_state, nullptr);
   const auto& descriptor =
@@ -672,13 +672,13 @@ absl::string_view OpenTelemetryPluginImpl::OptionalLabelKeyToString(
   }
 }
 
-absl::optional<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
+std::optional<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
 OpenTelemetryPluginImpl::OptionalLabelStringToKey(absl::string_view key) {
   if (key == kLocality) {
     return grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
         kLocality;
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 absl::string_view OpenTelemetryPluginImpl::GetMethodFromPath(
@@ -732,11 +732,11 @@ void OpenTelemetryPluginImpl::AddCounter(
     return;
   }
   const auto& instrument_data = instruments_data_.at(handle.index);
-  if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+  if (std::holds_alternative<Disabled>(instrument_data.instrument)) {
     // This instrument is disabled.
     return;
   }
-  CHECK(absl::holds_alternative<
+  CHECK(std::holds_alternative<
         std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>>(
       instrument_data.instrument));
   const auto& descriptor =
@@ -744,11 +744,11 @@ void OpenTelemetryPluginImpl::AddCounter(
   CHECK(descriptor.label_keys.size() == label_values.size());
   CHECK(descriptor.optional_label_keys.size() == optional_values.size());
   if (label_values.empty() && optional_values.empty()) {
-    absl::get<std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>>(
+    std::get<std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>>(
         instrument_data.instrument)
         ->Add(value);
   } else {
-    absl::get<std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>>(
+    std::get<std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>>(
         instrument_data.instrument)
         ->Add(value, NPCMetricsKeyValueIterable(
                          descriptor.label_keys, label_values,
@@ -765,11 +765,11 @@ void OpenTelemetryPluginImpl::AddCounter(
     return;
   }
   const auto& instrument_data = instruments_data_.at(handle.index);
-  if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+  if (std::holds_alternative<Disabled>(instrument_data.instrument)) {
     // This instrument is disabled.
     return;
   }
-  CHECK(absl::holds_alternative<
+  CHECK(std::holds_alternative<
         std::unique_ptr<opentelemetry::metrics::Counter<double>>>(
       instrument_data.instrument));
   const auto& descriptor =
@@ -777,11 +777,11 @@ void OpenTelemetryPluginImpl::AddCounter(
   CHECK(descriptor.label_keys.size() == label_values.size());
   CHECK(descriptor.optional_label_keys.size() == optional_values.size());
   if (label_values.empty() && optional_values.empty()) {
-    absl::get<std::unique_ptr<opentelemetry::metrics::Counter<double>>>(
+    std::get<std::unique_ptr<opentelemetry::metrics::Counter<double>>>(
         instrument_data.instrument)
         ->Add(value);
   } else {
-    absl::get<std::unique_ptr<opentelemetry::metrics::Counter<double>>>(
+    std::get<std::unique_ptr<opentelemetry::metrics::Counter<double>>>(
         instrument_data.instrument)
         ->Add(value, NPCMetricsKeyValueIterable(
                          descriptor.label_keys, label_values,
@@ -798,11 +798,11 @@ void OpenTelemetryPluginImpl::RecordHistogram(
     return;
   }
   const auto& instrument_data = instruments_data_.at(handle.index);
-  if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+  if (std::holds_alternative<Disabled>(instrument_data.instrument)) {
     // This instrument is disabled.
     return;
   }
-  CHECK(absl::holds_alternative<
+  CHECK(std::holds_alternative<
         std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>>(
       instrument_data.instrument));
   const auto& descriptor =
@@ -810,11 +810,11 @@ void OpenTelemetryPluginImpl::RecordHistogram(
   CHECK(descriptor.label_keys.size() == label_values.size());
   CHECK(descriptor.optional_label_keys.size() == optional_values.size());
   if (label_values.empty() && optional_values.empty()) {
-    absl::get<std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>>(
+    std::get<std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>>(
         instrument_data.instrument)
         ->Record(value, opentelemetry::context::Context{});
   } else {
-    absl::get<std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>>(
+    std::get<std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>>(
         instrument_data.instrument)
         ->Record(value,
                  NPCMetricsKeyValueIterable(
@@ -833,11 +833,11 @@ void OpenTelemetryPluginImpl::RecordHistogram(
     return;
   }
   const auto& instrument_data = instruments_data_.at(handle.index);
-  if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+  if (std::holds_alternative<Disabled>(instrument_data.instrument)) {
     // This instrument is disabled.
     return;
   }
-  CHECK(absl::holds_alternative<
+  CHECK(std::holds_alternative<
         std::unique_ptr<opentelemetry::metrics::Histogram<double>>>(
       instrument_data.instrument));
   const auto& descriptor =
@@ -845,11 +845,11 @@ void OpenTelemetryPluginImpl::RecordHistogram(
   CHECK(descriptor.label_keys.size() == label_values.size());
   CHECK(descriptor.optional_label_keys.size() == optional_values.size());
   if (label_values.empty() && optional_values.empty()) {
-    absl::get<std::unique_ptr<opentelemetry::metrics::Histogram<double>>>(
+    std::get<std::unique_ptr<opentelemetry::metrics::Histogram<double>>>(
         instrument_data.instrument)
         ->Record(value, opentelemetry::context::Context{});
   } else {
-    absl::get<std::unique_ptr<opentelemetry::metrics::Histogram<double>>>(
+    std::get<std::unique_ptr<opentelemetry::metrics::Histogram<double>>>(
         instrument_data.instrument)
         ->Record(value,
                  NPCMetricsKeyValueIterable(
@@ -866,7 +866,7 @@ void OpenTelemetryPluginImpl::AddCallback(
     return;
   }
   std::vector<
-      absl::variant<CallbackGaugeState<int64_t>*, CallbackGaugeState<double>*>>
+      std::variant<CallbackGaugeState<int64_t>*, CallbackGaugeState<double>*>>
       gauges_that_need_to_add_callback;
   {
     grpc_core::MutexLock lock(&mu_);
@@ -880,12 +880,12 @@ void OpenTelemetryPluginImpl::AddCallback(
       switch (descriptor.value_type) {
         case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64: {
           const auto& instrument_data = instruments_data_.at(handle.index);
-          if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+          if (std::holds_alternative<Disabled>(instrument_data.instrument)) {
             // This instrument is disabled.
             continue;
           }
           auto* callback_gauge_state =
-              absl::get_if<std::unique_ptr<CallbackGaugeState<int64_t>>>(
+              std::get_if<std::unique_ptr<CallbackGaugeState<int64_t>>>(
                   &instrument_data.instrument);
           CHECK_NE(callback_gauge_state, nullptr);
           (*callback_gauge_state)
@@ -899,12 +899,12 @@ void OpenTelemetryPluginImpl::AddCallback(
         }
         case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble: {
           const auto& instrument_data = instruments_data_.at(handle.index);
-          if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+          if (std::holds_alternative<Disabled>(instrument_data.instrument)) {
             // This instrument is disabled.
             continue;
           }
           auto* callback_gauge_state =
-              absl::get_if<std::unique_ptr<CallbackGaugeState<double>>>(
+              std::get_if<std::unique_ptr<CallbackGaugeState<double>>>(
                   &instrument_data.instrument);
           CHECK_NE(callback_gauge_state, nullptr);
           (*callback_gauge_state)
@@ -956,12 +956,12 @@ void OpenTelemetryPluginImpl::RemoveCallback(
       switch (descriptor.value_type) {
         case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64: {
           const auto& instrument_data = instruments_data_.at(handle.index);
-          if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+          if (std::holds_alternative<Disabled>(instrument_data.instrument)) {
             // This instrument is disabled.
             continue;
           }
           auto* callback_gauge_state =
-              absl::get_if<std::unique_ptr<CallbackGaugeState<int64_t>>>(
+              std::get_if<std::unique_ptr<CallbackGaugeState<int64_t>>>(
                   &instrument_data.instrument);
           CHECK_NE(callback_gauge_state, nullptr);
           CHECK((*callback_gauge_state)->ot_callback_registered);
@@ -970,12 +970,12 @@ void OpenTelemetryPluginImpl::RemoveCallback(
         }
         case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble: {
           const auto& instrument_data = instruments_data_.at(handle.index);
-          if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+          if (std::holds_alternative<Disabled>(instrument_data.instrument)) {
             // This instrument is disabled.
             continue;
           }
           auto* callback_gauge_state =
-              absl::get_if<std::unique_ptr<CallbackGaugeState<double>>>(
+              std::get_if<std::unique_ptr<CallbackGaugeState<double>>>(
                   &instrument_data.instrument);
           CHECK_NE(callback_gauge_state, nullptr);
           CHECK((*callback_gauge_state)->ot_callback_registered);
@@ -1079,7 +1079,7 @@ grpc_core::ServerCallTracer* OpenTelemetryPluginImpl::GetServerCallTracer(
 
 bool OpenTelemetryPluginImpl::IsInstrumentEnabled(
     grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) const {
-  return !absl::holds_alternative<Disabled>(
+  return !std::holds_alternative<Disabled>(
       instruments_data_.at(handle.index).instrument);
 }
 

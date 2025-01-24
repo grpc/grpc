@@ -38,7 +38,7 @@ TEST(LruCache, Basic) {
   const std::array<int, 5> kOrder = {3, 1, 2, 0, 4};
   for (int i : kOrder) {
     std::string key = absl::StrCat(i);
-    EXPECT_EQ(absl::nullopt, cache.Get(key));
+    EXPECT_EQ(std::nullopt, cache.Get(key));
     EXPECT_EQ(i, cache.GetOrInsert(key, create));
     EXPECT_EQ(i, cache.Get(key));
   }
@@ -56,12 +56,12 @@ TEST(LruCache, Basic) {
   for (size_t i = 0; i < kOrder2.size(); ++i) {
     int value2 = kOrder2[i];
     std::string key2 = absl::StrCat(value2);
-    EXPECT_EQ(absl::nullopt, cache.Get(key2));
+    EXPECT_EQ(std::nullopt, cache.Get(key2));
     EXPECT_EQ(value2, cache.GetOrInsert(key2, create));
     EXPECT_EQ(value2, cache.Get(key2));
     int value1 = kOrder[i];
     std::string key1 = absl::StrCat(value1);
-    EXPECT_EQ(absl::nullopt, cache.Get(key1));
+    EXPECT_EQ(std::nullopt, cache.Get(key1));
   }
   EXPECT_THAT(created_list, ::testing::ElementsAreArray(kOrder2));
 }
@@ -77,7 +77,7 @@ TEST(LruCache, SetMaxSize) {
   // Insert 10 values.
   for (int i = 1; i <= 10; ++i) {
     std::string key = absl::StrCat(i);
-    EXPECT_EQ(absl::nullopt, cache.Get(key));
+    EXPECT_EQ(std::nullopt, cache.Get(key));
     EXPECT_EQ(i, cache.GetOrInsert(key, create));
     EXPECT_EQ(i, cache.Get(key));
   }
@@ -91,7 +91,7 @@ TEST(LruCache, SetMaxSize) {
   cache.SetMaxSize(6);
   for (int i = 1; i <= 4; ++i) {
     std::string key = absl::StrCat(i);
-    EXPECT_EQ(absl::nullopt, cache.Get(key)) << i;
+    EXPECT_EQ(std::nullopt, cache.Get(key)) << i;
   }
   for (int i = 5; i <= 10; ++i) {
     std::string key = absl::StrCat(i);

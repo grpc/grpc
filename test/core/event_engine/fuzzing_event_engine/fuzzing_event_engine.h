@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <queue>
 #include <set>
 #include <thread>
@@ -38,7 +39,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/no_destruct.h"
@@ -238,7 +238,7 @@ class FuzzingEventEngine : public EventEngine {
     // The sizes of each accepted write, as determined by the fuzzer actions.
     std::queue<size_t> write_sizes[2] ABSL_GUARDED_BY(mu_);
     // The next read that's pending (or nullopt).
-    absl::optional<PendingRead> pending_read[2] ABSL_GUARDED_BY(mu_);
+    std::optional<PendingRead> pending_read[2] ABSL_GUARDED_BY(mu_);
 
     // Helper to take some bytes from data and queue them into pending[index].
     // Returns true if all bytes were consumed, false if more writes are needed.

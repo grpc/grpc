@@ -16,11 +16,11 @@
 #include <stdlib.h>
 
 #include <deque>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
@@ -128,7 +128,7 @@ class WorkQueueFuzzer {
   //  B) last_executed_key_ is set, so its value must match this closure's own
   //     key to assert that it is the other part of the pair. last_executed_key_
   //     is then reset.
-  absl::optional<int> last_executed_key_;
+  std::optional<int> last_executed_key_;
 };
 
 }  // namespace experimental

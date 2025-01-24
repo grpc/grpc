@@ -106,7 +106,6 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = [], flaky = False):
             "absl/status:statusor",
             "absl/strings",
             "absl/strings:str_format",
-            "absl/types:optional",
             "gtest",
         ],
         deps = [
@@ -130,10 +129,8 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = [], flaky = False):
             "absl/status:statusor",
             "absl/strings",
             "absl/strings:str_format",
-            "absl/types:optional",
             "gtest",
         ],
-        language = "C++",
         proto = None,
         tags = [
             "no_mac",

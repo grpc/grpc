@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.70.0-dev
+PROJECT_NUMBER         = 1.71.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -2942,6 +2942,7 @@ src/core/util/uuid_v4.cc \
 src/core/util/uuid_v4.h \
 src/core/util/validation_errors.cc \
 src/core/util/validation_errors.h \
+src/core/util/wait_for_single_owner.h \
 src/core/util/windows/cpu.cc \
 src/core/util/windows/directory_reader.cc \
 src/core/util/windows/env.cc \

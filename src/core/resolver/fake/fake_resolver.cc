@@ -62,7 +62,7 @@ class FakeResolver final : public Resolver {
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
   // The next resolution result to be returned, if any.  Present when we
   // get a result before the resolver is started.
-  absl::optional<Result> next_result_;
+  std::optional<Result> next_result_;
   // True after the call to StartLocked().
   bool started_ = false;
   // True after the call to ShutdownLocked().

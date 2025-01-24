@@ -150,6 +150,9 @@ def grpc_deps():
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20240722.0.tar.gz",
                 "https://github.com/abseil/abseil-cpp/archive/20240722.0.tar.gz",
             ],
+            repo_mapping = {
+                "@googletest": "@com_google_googletest",
+            },
         )
 
     if "bazel_toolchains" not in native.existing_rules():
@@ -177,11 +180,11 @@ def grpc_deps():
     if "bazel_compdb" not in native.existing_rules():
         http_archive(
             name = "bazel_compdb",
-            sha256 = "bcecfd622c4ef272fd4ba42726a52e140b961c4eac23025f18b346c968a8cfb4",
-            strip_prefix = "bazel-compilation-database-0.4.5",
+            sha256 = "79502264d1a3a4b6309d4dae8c822e7349bcfe33e84f3c6d1affb2a40d11a31d",
+            strip_prefix = "bazel-compilation-database-d198303a4319092ab31895c4b98d64174ebe8872",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/grailbio/bazel-compilation-database/archive/0.4.5.tar.gz",
-                "https://github.com/grailbio/bazel-compilation-database/archive/0.4.5.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/grailbio/bazel-compilation-database/archive/d198303a4319092ab31895c4b98d64174ebe8872.tar.gz",
+                "https://github.com/grailbio/bazel-compilation-database/archive/d198303a4319092ab31895c4b98d64174ebe8872.tar.gz",
             ],
         )
 
@@ -231,6 +234,27 @@ def grpc_deps():
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_proto/archive/refs/tags/7.0.2.tar.gz",
                 "https://github.com/bazelbuild/rules_proto/archive/refs/tags/7.0.2.tar.gz",
+            ],
+        )
+
+    if "rules_shell" not in native.existing_rules():
+        http_archive(
+            name = "rules_shell",
+            sha256 = "d8cd4a3a91fc1dc68d4c7d6b655f09def109f7186437e3f50a9b60ab436a0c53",
+            strip_prefix = "rules_shell-0.3.0",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_shell/releases/download/v0.3.0/rules_shell-v0.3.0.tar.gz",
+                "https://github.com/bazelbuild/rules_shell/releases/download/v0.3.0/rules_shell-v0.3.0.tar.gz",
+            ],
+        )
+
+    if "rules_java" not in native.existing_rules():
+        http_archive(
+            name = "rules_java",
+            sha256 = "5449ed36d61269579dd9f4b0e532cd131840f285b389b3795ae8b4d717387dd8",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_java/releases/download/8.7.0/rules_java-8.7.0.tar.gz",
+                "https://github.com/bazelbuild/rules_java/releases/download/8.7.0/rules_java-8.7.0.tar.gz",
             ],
         )
 

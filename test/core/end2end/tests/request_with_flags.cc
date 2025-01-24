@@ -24,9 +24,9 @@
 #include <string.h>
 
 #include <map>
+#include <optional>
 #include <utility>
 
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/time.h"
@@ -64,7 +64,7 @@ void InvokeRequestWithFlags(CoreEnd2endTest& test,
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
-  absl::optional<CoreEnd2endTest::Call> c =
+  std::optional<CoreEnd2endTest::Call> c =
       test.NewClientCall("/foo").Timeout(Duration::Seconds(1)).Create();
 
   memset(ops, 0, sizeof(ops));

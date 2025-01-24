@@ -25,6 +25,7 @@
 #include <cstddef>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -34,7 +35,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/activity.h"
@@ -151,7 +151,7 @@ class ReclaimerQueue {
 
     class Sweep {
      public:
-      virtual void RunAndDelete(absl::optional<ReclamationSweep> sweep) = 0;
+      virtual void RunAndDelete(std::optional<ReclamationSweep> sweep) = 0;
 
      protected:
       explicit Sweep(std::shared_ptr<State> state) : state_(std::move(state)) {}
@@ -167,7 +167,7 @@ class ReclaimerQueue {
      public:
       explicit SweepFn(F&& f, std::shared_ptr<State> state)
           : Sweep(std::move(state)), f_(std::move(f)) {}
-      void RunAndDelete(absl::optional<ReclamationSweep> sweep) override {
+      void RunAndDelete(std::optional<ReclamationSweep> sweep) override {
         if (!sweep.has_value()) MarkCancelled();
         f_(std::move(sweep));
         delete this;
@@ -459,7 +459,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   static constexpr size_t kMaxQuotaBufferSize = 1024 * 1024;
 
   // Primitive reservation function.
-  GRPC_MUST_USE_RESULT absl::optional<size_t> TryReserve(MemoryRequest request);
+  GRPC_MUST_USE_RESULT std::optional<size_t> TryReserve(MemoryRequest request);
   // This function may be invoked during a memory release operation.
   // It will try to return half of our free pool to the quota.
   void MaybeDonateBack();

@@ -72,7 +72,7 @@ class GreeterClientReactor final
   void OnWriteDone(bool ok) override {
     absl::MutexLock lock(&mu_);
     std::cout << "Writing took " << absl::Now() - *time_ << std::endl;
-    time_ = absl::nullopt;
+    time_ = std::nullopt;
     if (ok) {
       Write();
     }
@@ -104,7 +104,7 @@ class GreeterClientReactor final
   bool done_ ABSL_GUARDED_BY(&mu_) = false;
   HelloRequest req_;
   size_t reqs_;
-  absl::optional<absl::Time> time_ ABSL_GUARDED_BY(mu_);
+  std::optional<absl::Time> time_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace

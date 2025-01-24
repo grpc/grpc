@@ -80,8 +80,7 @@ class IncomingFrame {
 
  private:
   FrameHeader header_;
-  absl::variant<absl::StatusOr<SliceBuffer>, DataEndpoints::ReadTicket>
-      payload_;
+  std::variant<absl::StatusOr<SliceBuffer>, DataEndpoints::ReadTicket> payload_;
   size_t remove_padding_;
 };
 

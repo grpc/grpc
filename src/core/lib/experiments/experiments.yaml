@@ -47,12 +47,12 @@
   test_tags: []
 - name: call_tracer_in_transport
   description: Transport directly passes byte counts to CallTracer.
-  expiry: 2025/02/01
+  expiry: 2025/06/01
   owner: roth@google.com
   test_tags: []
-- name: chaotic_good_legacy_protocol
-  description: If set, use the first version of the chaotic-good protocol when that protocol is enabled.
-  expiry: 2025/01/15
+- name: callv3_client_auth_filter
+  description: Use the CallV3 client auth filter.
+  expiry: 2025/06/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
 - name: disable_buffer_hint_on_high_memory_pressure
@@ -103,6 +103,13 @@
   expiry: 2025/03/31
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
+- name: keep_alive_ping_timer_batch
+  description:
+    Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
+    itself to the next ping interval.
+  expiry: 2025/03/01
+  owner: vigneshbabu@google.com
+  test_tags: []
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
   expiry: 2025/01/30
@@ -208,11 +215,6 @@
   expiry: 2025/03/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
-- name: time_caching_in_party
-  description: Disable time caching in exec_ctx, and enable it only in a single party execution.
-  owner: ctiller@google.com
-  expiry: 2025/01/17
-  test_tags: []
 - name: trace_record_callops
   description: Enables tracing of call batch initiation and completion.
   expiry: 2025/01/30

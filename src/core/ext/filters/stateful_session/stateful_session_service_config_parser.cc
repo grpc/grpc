@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 
 namespace grpc_core {

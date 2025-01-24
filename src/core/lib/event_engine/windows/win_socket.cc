@@ -34,8 +34,7 @@
 #define GRPC_FIONBIO FIONBIO
 #endif
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // ---- WinSocket ----
 
@@ -234,7 +233,6 @@ absl::Status PrepareSocket(SOCKET sock) {
   return absl::OkStatus();
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GPR_WINDOWS

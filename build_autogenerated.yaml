@@ -137,7 +137,6 @@ libs:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
-  - absl/types:variant
 - name: grpc
   build: all
   language: c
@@ -1234,6 +1233,7 @@ libs:
   - src/core/util/uri.h
   - src/core/util/uuid_v4.h
   - src/core/util/validation_errors.h
+  - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - src/core/util/xxhash_inline.h
   - src/core/xds/grpc/certificate_provider_store.h
@@ -2756,6 +2756,7 @@ libs:
   - src/core/util/uri.h
   - src/core/util/uuid_v4.h
   - src/core/util/validation_errors.h
+  - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -4791,6 +4792,7 @@ libs:
   - src/core/util/unique_type_name.h
   - src/core/util/uri.h
   - src/core/util/validation_errors.h
+  - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -5207,34 +5209,6 @@ targets:
   - linux
   - posix
   - windows
-- name: test_core_iomgr_timer_list_test
-  build: test
-  language: c
-  headers:
-  - test/core/test_util/cmdline.h
-  - test/core/test_util/evaluate_args_test_util.h
-  - test/core/test_util/fuzzer_util.h
-  - test/core/test_util/grpc_profiler.h
-  - test/core/test_util/histogram.h
-  - test/core/test_util/mock_endpoint.h
-  - test/core/test_util/parse_hexstring.h
-  - test/core/test_util/resolve_localhost_ip46.h
-  - test/core/test_util/slice_splitter.h
-  - test/core/test_util/tracer_util.h
-  src:
-  - test/core/iomgr/timer_list_test.cc
-  - test/core/test_util/cmdline.cc
-  - test/core/test_util/fuzzer_util.cc
-  - test/core/test_util/grpc_profiler.cc
-  - test/core/test_util/histogram.cc
-  - test/core/test_util/mock_endpoint.cc
-  - test/core/test_util/parse_hexstring.cc
-  - test/core/test_util/resolve_localhost_ip46.cc
-  - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/tracer_util.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: activity_test
   gtest: true
   build: test
@@ -5984,14 +5958,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -6030,13 +5996,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -6237,14 +6196,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -6283,13 +6234,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -6456,14 +6400,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -6502,13 +6438,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -6713,14 +6642,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -6759,13 +6680,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -7182,6 +7096,7 @@ targets:
   - src/core/util/unique_type_name.h
   - src/core/util/uri.h
   - src/core/util/validation_errors.h
+  - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -7458,14 +7373,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -7504,13 +7411,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -7548,14 +7448,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -7594,13 +7486,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -7639,14 +7524,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -7685,13 +7562,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -7729,14 +7599,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -7775,13 +7637,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -7836,14 +7691,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -7882,13 +7729,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -8030,14 +7870,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -8076,13 +7908,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -8121,14 +7946,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -8167,13 +7984,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -9294,14 +9104,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -9340,13 +9142,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -9467,6 +9262,7 @@ targets:
   - gtest
   - absl/status:statusor
   - gpr
+  uses_polling: false
 - name: completion_queue_threading_test
   gtest: true
   build: test
@@ -9495,14 +9291,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -9541,13 +9329,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -9714,14 +9495,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -9760,13 +9533,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -9894,12 +9660,14 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/mock_event_engine.h
   src:
   - test/core/event_engine/default_engine_methods_test.cc
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: default_host_test
   gtest: true
   build: test
@@ -9918,14 +9686,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -9964,13 +9724,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -10049,14 +9802,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -10095,13 +9840,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -10227,14 +9965,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -10273,13 +10003,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -10700,12 +10423,14 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/mock_event_engine.h
   - test/core/event_engine/util/aborting_event_engine.h
   src:
   - test/core/event_engine/factory_test.cc
   deps:
   - gtest
   - grpc_test_util_unsecure
+  uses_polling: false
 - name: fake_resolver_test
   gtest: true
   build: test
@@ -10790,14 +10515,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -10836,13 +10553,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -10880,14 +10590,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -10926,13 +10628,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -10988,14 +10683,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -11034,13 +10721,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -11564,14 +11244,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -11610,13 +11282,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -11790,14 +11455,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -11836,13 +11493,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -12430,14 +12080,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -12476,13 +12118,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -12651,14 +12286,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -12697,13 +12324,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -12837,14 +12457,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -12883,13 +12495,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -13368,14 +12973,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -13414,13 +13011,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -13483,9 +13073,11 @@ targets:
   - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/status_flag.h
   - src/core/util/bitset.h
   - src/core/util/glob.h
   - test/core/promise/poll_matcher.h
@@ -13601,14 +13193,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -13647,13 +13231,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -13703,14 +13280,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -13749,13 +13318,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -14191,14 +13753,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -14237,13 +13791,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -14281,14 +13828,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -14327,13 +13866,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -14371,14 +13903,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -14417,13 +13941,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -14461,14 +13978,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -14507,13 +14016,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -14800,14 +14302,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -14846,13 +14340,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -14902,14 +14389,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -14948,13 +14427,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -14992,14 +14464,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -15038,13 +14502,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -15467,14 +14924,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -15513,13 +14962,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -15731,14 +15173,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -15777,13 +15211,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -15851,14 +15278,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -15897,13 +15316,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -16442,14 +15854,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -16488,13 +15892,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -16730,14 +16127,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -16776,13 +16165,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -17003,14 +16385,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -17049,13 +16423,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -17093,14 +16460,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -17139,13 +16498,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -17335,14 +16687,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -17381,13 +16725,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -17436,14 +16773,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -17482,13 +16811,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -17526,14 +16848,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -17572,13 +16886,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -17616,14 +16923,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -17662,13 +16961,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -17706,14 +16998,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -17752,13 +17036,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -17796,14 +17073,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -17842,13 +17111,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -17886,14 +17148,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -17932,13 +17186,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -17976,14 +17223,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -18022,13 +17261,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -18066,14 +17298,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -18112,13 +17336,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -18179,14 +17396,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -18225,13 +17434,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -18269,14 +17471,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -18315,13 +17509,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -18359,14 +17546,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -18405,13 +17584,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -18449,14 +17621,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -18495,13 +17659,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -18539,14 +17696,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -18585,13 +17734,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -18629,14 +17771,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -18675,13 +17809,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -18719,14 +17846,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -18765,13 +17884,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -18809,14 +17921,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -18855,13 +17959,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -18899,14 +17996,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -18945,13 +18034,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -18989,14 +18071,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -19035,13 +18109,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -19079,14 +18146,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -19125,13 +18184,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -19169,14 +18221,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -19215,13 +18259,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -19259,14 +18296,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -19305,13 +18334,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -19349,14 +18371,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -19395,13 +18409,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -19439,14 +18446,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -19485,13 +18484,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -19540,14 +18532,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -19586,13 +18570,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -19630,14 +18607,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -19676,13 +18645,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -19720,14 +18682,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -19766,13 +18720,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -19810,14 +18757,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -19856,13 +18795,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -19911,14 +18843,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -19957,13 +18881,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -20001,14 +18918,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -20047,13 +18956,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -20091,14 +18993,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -20137,13 +19031,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -20181,14 +19068,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -20227,13 +19106,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -20271,14 +19143,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -20317,13 +19181,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -20361,14 +19218,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -20407,13 +19256,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -20451,14 +19293,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -20497,13 +19331,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -20945,14 +19772,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -20991,13 +19810,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -21129,14 +19941,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -21175,13 +19979,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -21289,14 +20086,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -21335,13 +20124,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -21379,14 +20161,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -21425,13 +20199,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -21488,14 +20255,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -21534,13 +20293,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -21578,14 +20330,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -21624,13 +20368,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -21682,14 +20419,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -21728,13 +20457,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -21806,16 +20528,6 @@ targets:
   - absl/status:statusor
   - gpr
   uses_polling: false
-- name: smoke_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/event_engine/smoke_test.cc
-  deps:
-  - gtest
-  - grpc_test_util_unsecure
 - name: sockaddr_resolver_test
   gtest: true
   build: test
@@ -22069,14 +20781,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -22115,13 +20819,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -22485,14 +21182,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -22531,13 +21220,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -22573,26 +21255,6 @@ targets:
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
   - test/core/event_engine/posix/timer_heap_test.cc
-  deps:
-  - gtest
-  - absl/status:statusor
-  - gpr
-  uses_polling: false
-- name: test_core_event_engine_posix_timer_list_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/event_engine/posix_engine/timer.h
-  - src/core/lib/event_engine/posix_engine/timer_heap.h
-  - src/core/util/time.h
-  - src/core/util/time_averaged_stats.h
-  src:
-  - src/core/lib/event_engine/posix_engine/timer.cc
-  - src/core/lib/event_engine/posix_engine/timer_heap.cc
-  - src/core/util/time.cc
-  - src/core/util/time_averaged_stats.cc
-  - test/core/event_engine/posix/timer_list_test.cc
   deps:
   - gtest
   - absl/status:statusor
@@ -22636,6 +21298,7 @@ targets:
   - absl/status:statusor
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: test_core_iomgr_timer_heap_test
   gtest: true
   build: test
@@ -22878,14 +21541,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -22908,13 +21563,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/cpp/ext/chaotic_good.cc
   - test/cpp/ext/chaotic_good_test.cc
@@ -22990,6 +21638,7 @@ targets:
   - gtest
   - grpc
   - grpc_test_util_unsecure
+  uses_polling: false
 - name: thread_quota_test
   gtest: true
   build: test
@@ -23103,14 +21752,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -23149,13 +21790,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -23204,6 +21838,26 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
+- name: timer_list_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/posix_engine/timer.h
+  - src/core/lib/event_engine/posix_engine/timer_heap.h
+  - src/core/util/time.h
+  - src/core/util/time_averaged_stats.h
+  src:
+  - src/core/lib/event_engine/posix_engine/timer.cc
+  - src/core/lib/event_engine/posix_engine/timer_heap.cc
+  - src/core/util/time.cc
+  - src/core/util/time_averaged_stats.cc
+  - test/core/event_engine/posix/timer_list_test.cc
+  deps:
+  - gtest
+  - absl/status:statusor
+  - gpr
   uses_polling: false
 - name: timer_manager_test
   gtest: true
@@ -23366,14 +22020,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -23412,13 +22058,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -23674,6 +22313,21 @@ targets:
   - absl/status:statusor
   - gpr
   uses_polling: false
+- name: wait_for_single_owner_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/time.h
+  - src/core/util/wait_for_single_owner.h
+  src:
+  - src/core/util/time.cc
+  - test/core/util/wait_for_single_owner_test.cc
+  deps:
+  - gtest
+  - absl/status:statusor
+  - gpr
+  uses_polling: false
 - name: wakeup_fd_posix_test
   gtest: true
   build: test
@@ -23804,14 +22458,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -23850,13 +22496,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -23894,14 +22533,6 @@ targets:
   - src/core/ext/transport/chaotic_good/pending_connection.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.h
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_latch.h
@@ -23940,13 +22571,6 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -25226,6 +23850,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -27390,6 +26015,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h

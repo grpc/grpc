@@ -24,6 +24,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -31,7 +32,6 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"

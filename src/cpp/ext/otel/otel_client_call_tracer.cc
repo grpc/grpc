@@ -26,6 +26,7 @@
 #include <array>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -37,7 +38,6 @@
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
@@ -133,36 +133,21 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
-    RecordSendMessage(const grpc_core::SliceBuffer& send_message) {
+    RecordSendMessage(const grpc_core::Message& send_message) {
   if (span_ != nullptr) {
     std::array<std::pair<opentelemetry::nostd::string_view,
                          opentelemetry::common::AttributeValue>,
                2>
-        attributes = {std::make_pair("sequence-number", send_seq_num_++),
-                      std::make_pair("message-size", send_message.Length())};
+        attributes = {
+            std::make_pair("sequence-number", send_seq_num_++),
+            std::make_pair("message-size", send_message.payload()->Length())};
     span_->AddEvent("Outbound message", attributes);
   }
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     RecordSendCompressedMessage(
-        const grpc_core::SliceBuffer& send_compressed_message) {
-  if (span_ != nullptr) {
-    std::array<std::pair<opentelemetry::nostd::string_view,
-                         opentelemetry::common::AttributeValue>,
-               2>
-        attributes = {std::make_pair("sequence-number",
-                                     opentelemetry::common::AttributeValue(
-                                         send_seq_num_ - 1)),
-                      std::make_pair("message-size",
-                                     opentelemetry::common::AttributeValue(
-                                         send_compressed_message.Length()))};
-    span_->AddEvent("Outbound message compressed", attributes);
-  }
-}
-
-void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
-    RecordReceivedMessage(const grpc_core::SliceBuffer& recv_message) {
+        const grpc_core::Message& send_compressed_message) {
   if (span_ != nullptr) {
     std::array<std::pair<opentelemetry::nostd::string_view,
                          opentelemetry::common::AttributeValue>,
@@ -170,27 +155,44 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
         attributes = {
             std::make_pair(
                 "sequence-number",
-                opentelemetry::common::AttributeValue(recv_seq_num_++)),
-            std::make_pair(
-                "message-size",
-                opentelemetry::common::AttributeValue(recv_message.Length()))};
-    span_->AddEvent("Inbound message", attributes);
+                opentelemetry::common::AttributeValue(send_seq_num_ - 1)),
+            std::make_pair("message-size",
+                           opentelemetry::common::AttributeValue(
+                               send_compressed_message.payload()->Length()))};
+    span_->AddEvent("Outbound message compressed", attributes);
   }
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
-    RecordReceivedDecompressedMessage(
-        const grpc_core::SliceBuffer& recv_decompressed_message) {
+    RecordReceivedMessage(const grpc_core::Message& recv_message) {
   if (span_ != nullptr) {
     std::array<std::pair<opentelemetry::nostd::string_view,
                          opentelemetry::common::AttributeValue>,
                2>
         attributes = {std::make_pair("sequence-number",
                                      opentelemetry::common::AttributeValue(
-                                         recv_seq_num_ - 1)),
+                                         recv_seq_num_++)),
                       std::make_pair("message-size",
                                      opentelemetry::common::AttributeValue(
-                                         recv_decompressed_message.Length()))};
+                                         recv_message.payload()->Length()))};
+    span_->AddEvent("Inbound message", attributes);
+  }
+}
+
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
+    RecordReceivedDecompressedMessage(
+        const grpc_core::Message& recv_decompressed_message) {
+  if (span_ != nullptr) {
+    std::array<std::pair<opentelemetry::nostd::string_view,
+                         opentelemetry::common::AttributeValue>,
+               2>
+        attributes = {
+            std::make_pair(
+                "sequence-number",
+                opentelemetry::common::AttributeValue(recv_seq_num_ - 1)),
+            std::make_pair("message-size",
+                           opentelemetry::common::AttributeValue(
+                               recv_decompressed_message.payload()->Length()))};
     span_->AddEvent("Inbound message decompressed", attributes);
   }
 }

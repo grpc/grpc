@@ -19,11 +19,11 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "re2/re2.h"
 
 namespace grpc_core {
@@ -134,7 +134,7 @@ class HeaderMatcher {
   // Valid for kSafeRegex.
   RE2* regex_matcher() const { return matcher_.regex_matcher(); }
 
-  bool Match(const absl::optional<absl::string_view>& value) const;
+  bool Match(const std::optional<absl::string_view>& value) const;
 
   std::string ToString() const;
 

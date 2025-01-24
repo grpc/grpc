@@ -46,8 +46,7 @@ struct iovec {
   size_t iov_len;
 };
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 namespace {
 
 constexpr int kRecvFromSourceAddrSize = 200;
@@ -844,7 +843,6 @@ void GrpcPolledFdFactoryWindows::ConfigureAresChannelLocked(
   ares_set_socket_functions(channel, &kCustomSockFuncs, this);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)

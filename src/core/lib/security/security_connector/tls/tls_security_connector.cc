@@ -296,11 +296,11 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   // Register the watcher with the distributor.
   grpc_tls_certificate_distributor* distributor =
       options_->certificate_distributor();
-  absl::optional<std::string> watched_root_cert_name;
+  std::optional<std::string> watched_root_cert_name;
   if (options_->watch_root_cert()) {
     watched_root_cert_name = options_->root_cert_name();
   }
-  absl::optional<std::string> watched_identity_cert_name;
+  std::optional<std::string> watched_identity_cert_name;
   if (options_->watch_identity_pair()) {
     watched_identity_cert_name = options_->identity_cert_name();
   }
@@ -312,7 +312,7 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   // hence no need to register the watcher.
   bool use_default_roots = !options_->watch_root_cert();
   if (use_default_roots && !options_->watch_identity_pair()) {
-    watcher_ptr->OnCertificatesChanged(absl::nullopt, absl::nullopt);
+    watcher_ptr->OnCertificatesChanged(std::nullopt, std::nullopt);
   } else {
     distributor->WatchTlsCertificates(std::move(watcher_ptr),
                                       watched_root_cert_name,
@@ -428,8 +428,8 @@ ArenaPromise<absl::Status> TlsChannelSecurityConnector::CheckCallHost(
 }
 
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
-    OnCertificatesChanged(absl::optional<absl::string_view> root_certs,
-                          absl::optional<PemKeyCertPairList> key_cert_pairs) {
+    OnCertificatesChanged(std::optional<absl::string_view> root_certs,
+                          std::optional<PemKeyCertPairList> key_cert_pairs) {
   CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);
   if (root_certs.has_value()) {
@@ -588,11 +588,11 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
   // Register the watcher with the distributor.
   grpc_tls_certificate_distributor* distributor =
       options_->certificate_distributor();
-  absl::optional<std::string> watched_root_cert_name;
+  std::optional<std::string> watched_root_cert_name;
   if (options_->watch_root_cert()) {
     watched_root_cert_name = options_->root_cert_name();
   }
-  absl::optional<std::string> watched_identity_cert_name;
+  std::optional<std::string> watched_identity_cert_name;
   if (options_->watch_identity_pair()) {
     watched_identity_cert_name = options_->identity_cert_name();
   }
@@ -688,8 +688,8 @@ int TlsServerSecurityConnector::cmp(
 }
 
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::
-    OnCertificatesChanged(absl::optional<absl::string_view> root_certs,
-                          absl::optional<PemKeyCertPairList> key_cert_pairs) {
+    OnCertificatesChanged(std::optional<absl::string_view> root_certs,
+                          std::optional<PemKeyCertPairList> key_cert_pairs) {
   CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);
   if (root_certs.has_value()) {

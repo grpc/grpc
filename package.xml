@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.70.0dev</release>
-  <api>1.70.0dev</api>
+  <release>1.71.0dev</release>
+  <api>1.71.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.70.0 update
+- gRPC Core 1.71.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -1959,6 +1959,7 @@
     <file baseinstalldir="/" name="src/core/util/uuid_v4.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/validation_errors.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/validation_errors.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/wait_for_single_owner.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/directory_reader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/env.cc" role="src" />

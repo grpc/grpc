@@ -28,13 +28,13 @@
 #include <atomic>
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/per_cpu.h"
@@ -152,31 +152,12 @@ class PerCpuCallCountingHelper final {
 
   // We want to ensure that this per-cpu data structure lands on different
   // cachelines per cpu.
-  // With C++17 we can do so explicitly with an `alignas` specifier.
-  // Prior versions we can at best approximate it by padding the structure.
-  // It'll probably work out ok, but it's not guaranteed across allocators.
-  // (in the bad case where this gets split across cachelines we'll just have
-  // two cpus fighting over the same cacheline with a slight performance
-  // degregation).
-  // TODO(ctiller): When we move to C++17 delete the duplicate definition.
-#if __cplusplus >= 201703L
   struct alignas(GPR_CACHELINE_SIZE) PerCpuData {
     std::atomic<int64_t> calls_started{0};
     std::atomic<int64_t> calls_succeeded{0};
     std::atomic<int64_t> calls_failed{0};
     std::atomic<gpr_cycle_counter> last_call_started_cycle{0};
   };
-#else
-  struct PerCpuDataHeader {
-    std::atomic<int64_t> calls_started{0};
-    std::atomic<int64_t> calls_succeeded{0};
-    std::atomic<int64_t> calls_failed{0};
-    std::atomic<gpr_cycle_counter> last_call_started_cycle{0};
-  };
-  struct PerCpuData : public PerCpuDataHeader {
-    uint8_t padding[GPR_CACHELINE_SIZE - sizeof(PerCpuDataHeader)];
-  };
-#endif
   PerCpu<PerCpuData> per_cpu_data_{PerCpuOptions().SetCpusPerShard(4)};
 };
 
@@ -346,8 +327,8 @@ class SocketNode final : public BaseNode {
     };
     enum class ModelType { kUnset = 0, kTls = 1, kOther = 2 };
     ModelType type = ModelType::kUnset;
-    absl::optional<Tls> tls;
-    absl::optional<Json> other;
+    std::optional<Tls> tls;
+    std::optional<Json> other;
 
     Json RenderJson();
 

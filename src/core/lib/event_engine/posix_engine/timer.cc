@@ -30,8 +30,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 static const size_t kInvalidHeapIndex = std::numeric_limits<size_t>::max();
 static const double kAddDeadlineScale = 0.33;
@@ -280,7 +279,7 @@ std::vector<experimental::EventEngine::Closure*> TimerList::FindExpiredTimers(
   return done;
 }
 
-absl::optional<std::vector<experimental::EventEngine::Closure*>>
+std::optional<std::vector<experimental::EventEngine::Closure*>>
 TimerList::TimerCheck(grpc_core::Timestamp* next) {
   // prelude
   grpc_core::Timestamp now = host_->Now();
@@ -298,7 +297,7 @@ TimerList::TimerCheck(grpc_core::Timestamp* next) {
     return std::vector<experimental::EventEngine::Closure*>();
   }
 
-  if (!checker_mu_.TryLock()) return absl::nullopt;
+  if (!checker_mu_.TryLock()) return std::nullopt;
   std::vector<experimental::EventEngine::Closure*> run =
       FindExpiredTimers(now, next);
   checker_mu_.Unlock();
@@ -306,5 +305,4 @@ TimerList::TimerCheck(grpc_core::Timestamp* next) {
   return std::move(run);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
