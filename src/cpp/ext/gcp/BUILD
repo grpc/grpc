@@ -49,7 +49,6 @@ grpc_cc_library(
         "opencensus-trace",
         "opencensus-trace-stackdriver_exporter",
     ],
-    language = "c++",
     visibility = ["//:__subpackages__"],
     deps = [
         "environment_autodetect",
@@ -78,7 +77,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
     ],
-    language = "c++",
     visibility = [
         "//test:__subpackages__",
         "@grpc:grpc_python_observability",
@@ -122,7 +120,6 @@ grpc_cc_library(
         "googleapis_logging_grpc_service",
         "protobuf_headers",
     ],
-    language = "c++",
     visibility = ["//test:__subpackages__"],
     deps = [
         "environment_autodetect",
@@ -159,7 +156,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
     ],
-    language = "c++",
     visibility = [
         "//src/cpp/ext/gcp:__subpackages__",
         "//test:__subpackages__",

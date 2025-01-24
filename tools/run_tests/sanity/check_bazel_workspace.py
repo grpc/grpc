@@ -82,6 +82,7 @@ _GRPC_DEP_NAMES = [
     "com_github_cncf_xds",
     "google_cloud_cpp",
     "rules_shell",
+    "rules_java",
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -111,6 +112,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     "com_google_libprotobuf_mutator",
     "google_cloud_cpp",
     "rules_shell",
+    "rules_java",
 ]
 
 
