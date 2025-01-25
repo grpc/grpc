@@ -142,6 +142,7 @@ grpc_fuzz_test(
         "absl/log:check",
         "fuzztest",
         "fuzztest_main",
+        "gtest"
     ],
     deps = [
         "fuzzer_input_cc_proto",
