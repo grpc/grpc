@@ -19,6 +19,8 @@
 
 #include <utility>
 
+#include "src/core/lib/promise/detail/promise_like.h"
+
 namespace grpc_core {
 
 template <typename A, typename B>
@@ -46,8 +48,8 @@ class TwoPartyPrioritizedRace {
   }
 
  private:
-  A a_;
-  B b_;
+  promise_detail::PromiseLike<A> a_;
+  promise_detail::PromiseLike<B> b_;
 };
 
 /// Run all the promises until one is non-pending.
