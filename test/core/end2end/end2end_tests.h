@@ -653,20 +653,10 @@ DECLARE_SUITE(ProxyAuthTests);
     GTEST_SKIP() << "Disabled for Local TCP Connection";               \
   }
 
-#define CORE_END2END_TEST(suite, name)                                        \
-  class CoreEnd2endTest_##suite##_##name final                                \
-      : public grpc_core::CoreEnd2endTest {                                   \
-   public:                                                                    \
-    using grpc_core::CoreEnd2endTest::CoreEnd2endTest;                        \
-    void RunTest();                                                           \
-  };                                                                          \
-  TEST_P(suite, name) {                                                       \
-    if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&               \
-        (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {            \
-      GTEST_SKIP() << "call-v3 not supported with poll poller";               \
-    }                                                                         \
-    CoreEnd2endTest_##suite##_##name(GetParam(), nullptr).RunTest();          \
-  }                                                                           \
+#ifdef GRPC_END2END_TEST_NO_FUZZER
+#define CORE_END2END_FUZZER(suite, name)
+#else
+#define CORE_END2END_FUZZER(suite, name)                                      \
   namespace suite##_tests {                                                   \
     namespace {                                                               \
     void name(const grpc_core::CoreTestConfiguration* config,                 \
@@ -678,7 +668,24 @@ DECLARE_SUITE(ProxyAuthTests);
         .WithDomains(::fuzztest::ElementOf(suite::AllSuiteConfigs(true)),     \
                      ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>()); \
     }                                                                         \
-  }                                                                           \
+  }
+#endif
+
+#define CORE_END2END_TEST(suite, name)                               \
+  class CoreEnd2endTest_##suite##_##name final                       \
+      : public grpc_core::CoreEnd2endTest {                          \
+   public:                                                           \
+    using grpc_core::CoreEnd2endTest::CoreEnd2endTest;               \
+    void RunTest();                                                  \
+  };                                                                 \
+  TEST_P(suite, name) {                                              \
+    if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&      \
+        (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {   \
+      GTEST_SKIP() << "call-v3 not supported with poll poller";      \
+    }                                                                \
+    CoreEnd2endTest_##suite##_##name(GetParam(), nullptr).RunTest(); \
+  }                                                                  \
+  CORE_END2END_FUZZER(suite, name)                                   \
   void CoreEnd2endTest_##suite##_##name::RunTest()
 
 #define CORE_END2END_TEST_SUITE(suite, configs)                                \

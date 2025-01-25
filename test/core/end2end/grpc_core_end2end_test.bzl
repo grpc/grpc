@@ -24,7 +24,7 @@ END2END_TEST_DATA = [
     "//src/core/tsi/test_creds:server1.pem",
 ]
 
-def grpc_core_end2end_test(name, shard_count = 10, tags = [], flaky = False):
+def grpc_core_end2end_test(name, shard_count = 10, enable_fuzzing = True, tags = [], flaky = False):
     """Generate one core end2end test
 
     Args:
@@ -50,6 +50,7 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = [], flaky = False):
         ],
         data = END2END_TEST_DATA,
         shard_count = shard_count,
+        defines = [] if enable_fuzzing else ["GRPC_END2END_TEST_NO_FUZZER"],
         deps = [
             "cq_verifier",
             "end2end_test_lib",

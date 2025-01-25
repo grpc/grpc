@@ -144,7 +144,7 @@ def grpc_proto_fuzzer(
         **kwargs
     )
 
-def grpc_fuzz_test(name, shard_count = None, srcs = [], deps = [], tags = [], external_deps = [], data = []):
+def grpc_fuzz_test(name, shard_count = None, defines = [], srcs = [], deps = [], tags = [], external_deps = [], data = []):
     """Instantiates a fuzztest based test.
 
     This is the preferred method of writing fuzzers.
@@ -169,6 +169,7 @@ def grpc_fuzz_test(name, shard_count = None, srcs = [], deps = [], tags = [], ex
             "bazel_only",
         ],
         deps = deps,
+        defines = defines,
         shard_count = shard_count,
         external_deps = external_deps,
         data = data,
