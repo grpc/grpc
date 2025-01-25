@@ -183,7 +183,11 @@ for config in _CONFIGURATION:
                             contents = f.read()
                     except IOError:
                         continue
-                    updated = update_file(contents, config.namespaces)
+                    try:
+                        updated = update_file(contents, config.namespaces)
+                    except:
+                        print(f"error checking {file}")
+                        continue
                     if updated != contents:
                         changed.append(path)
                         with open(os.path.join(root, file), "w") as f:
