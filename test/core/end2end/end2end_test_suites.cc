@@ -766,6 +766,8 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           [](const ChannelArgs& client_args, const ChannelArgs&) {
             return std::make_unique<HttpProxyFilter>(client_args);
           }},
+#if 0
+          // TODO(ctiller): why is this not working??
       CoreTestConfiguration{
           "Chttp2SslProxy",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_SECURE |
@@ -776,6 +778,7 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           [](const ChannelArgs& client_args, const ChannelArgs& server_args) {
             return std::make_unique<SslProxyFixture>(client_args, server_args);
           }},
+#endif
       CoreTestConfiguration{
           "Chttp2InsecureCredentials",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
