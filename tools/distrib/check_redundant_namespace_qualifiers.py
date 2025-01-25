@@ -37,8 +37,18 @@ def find_closing_mustache(contents, initial_depth):
     depth = initial_depth
     start_len = len(contents)
     while contents:
+        # Skip over raw strings.
+        if contents.startswith('R"'):
+            contents = contents[2:]
+            offset = contents.find('(')
+            assert offset != -1
+            prefix = contents[:offset]
+            contents = contents[offset:]
+            offset = contents.find(f'){prefix}"')
+            assert offset != -1
+            contents = contents[offset + len(prefix) + 2 :]
         # Skip over strings.
-        if contents[0] == '"':
+        elif contents[0] == '"':
             contents = contents[1:]
             while contents[0] != '"':
                 if contents.startswith("\\\\"):
@@ -139,6 +149,9 @@ namespace foo {
     foo::a;
     ::foo::a;
 }
+{R"foo({
+foo::a;
+}foo)"}
 """
 _TEST_EXPECTED = """
 namespace bar {
@@ -150,6 +163,9 @@ namespace foo {
     a;
     ::foo::a;
 }
+{R"foo({
+foo::a;
+}foo)"}
 """
 output = update_file(_TEST, ["foo"])
 if output != _TEST_EXPECTED:
@@ -187,7 +203,7 @@ for config in _CONFIGURATION:
                         updated = update_file(contents, config.namespaces)
                     except:
                         print(f"error checking {file}")
-                        continue
+                        raise
                     if updated != contents:
                         changed.append(path)
                         with open(os.path.join(root, file), "w") as f:
