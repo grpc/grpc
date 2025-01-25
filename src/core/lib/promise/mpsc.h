@@ -35,11 +35,15 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 
-// Multi producer single consumer inter-activity comms.
-
 namespace grpc_core {
 
 namespace mpscpipe_detail {
+
+// Multi Producer Single Consumer (MPSC) inter-activity communications.
+// MPSC is used to communicate in between two or more Activities or Promise
+// Parties in a thread safe way.
+// The communication consists of one or more MpscSender objects and one
+// MpscReceiver.
 
 // "Center" of the communication pipe.
 // Contains sent but not received messages, and open/close state.
@@ -150,13 +154,21 @@ class MpscSender {
   MpscSender(MpscSender&&) noexcept = default;
   MpscSender& operator=(MpscSender&&) noexcept = default;
 
-  // Return a promise that will send one item.
-  // Resolves to true if sent, false if the receiver was closed (and the value
-  // will never be successfully sent).
+  // Input: Input is the object that you want to send. The promise that is
+  // returned by Send will take ownership of the object.
+  // Return: Returns a promise that will send one item.
+  // This promise can either return
+  // 1. Pending{} if the sending is still pending
+  // 2. Resolves to true if sending is successful
+  // 3. Resolves to false if the receiver was closed and the value
+  //    will never be successfully sent.
+  // The promise returned is thread safe. We can use multiple send calls
+  // in parallel to generate multiple such send promises and these promises can
+  // be run in parallel in a thread safe way.
   auto Send(T t) { return SendGeneric<false>(std::move(t)); }
 
-  // Per send, but do not resolve until the item has been received by the
-  // receiver.
+  // Similar to send, but the promise returned by SendAcked will not resolve
+  // until the item has been received by the receiver.
   auto SendAcked(T t) { return SendGeneric<true>(std::move(t)); }
 
   bool UnbufferedImmediateSend(T t) {
@@ -203,6 +215,9 @@ class MpscReceiver {
   ~MpscReceiver() {
     if (center_ != nullptr) center_->ReceiverClosed(false);
   }
+  // Marking the receiver closed will make sure it will not receive any
+  // messages. If a sender tries to Send a message to a closed receiver,
+  // sending will fail.
   void MarkClosed() {
     if (center_ != nullptr) center_->ReceiverClosed(true);
   }
@@ -220,12 +235,14 @@ class MpscReceiver {
     return *this;
   }
 
-  // Construct a new sender for this receiver.
+  // Construct a new sender for this receiver. One receiver can have multiple
+  // senders.
   MpscSender<T> MakeSender() { return MpscSender<T>(center_); }
 
-  // Return a promise that will resolve to ValueOrFailure<T>.
-  // If receiving is closed, it will resolve to failure.
-  // Otherwise, resolves to the next item (and removes said item).
+  // Returns a promise that will resolve to ValueOrFailure<T>.
+  // If receiving is closed, the promise will resolve to failure.
+  // Otherwise, the promise resolves to the next item and removes
+  // said item from the queue.
   auto Next() {
     return [this]() -> Poll<ValueOrFailure<T>> {
       if (buffer_it_ != buffer_.end()) {
