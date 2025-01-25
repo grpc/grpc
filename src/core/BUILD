@@ -366,7 +366,6 @@ grpc_cc_library(
         "util/windows/time.cc",
     ],
     hdrs = [
-        "util/gpr_time.cc",
     ],
     external_deps = ["absl/log:check"],
     tags = [
