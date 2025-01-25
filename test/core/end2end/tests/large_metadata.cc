@@ -33,7 +33,7 @@ namespace {
 
 class LargeMetadataTest {
  public:
-  LargeMetadataTest(Http2SingleHopTest& test, const ChannelArgs& args)
+  LargeMetadataTest(CoreEnd2endTest& test, const ChannelArgs& args)
       : test_(test) {
     test_.InitClient(args);
     test_.InitServer(args);
@@ -80,7 +80,7 @@ class LargeMetadataTest {
     return server_status;
   }
 
-  Http2SingleHopTest& test_;
+  CoreEnd2endTest& test_;
 };
 
 // Server responds with metadata under soft limit of what client accepts. No

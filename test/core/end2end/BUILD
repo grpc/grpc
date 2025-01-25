@@ -550,7 +550,6 @@ grpc_cc_test(
     deps = [
         "cq_verifier",
         "end2end_test_lib",
-        "fixture_support",
         "ssl_test_data",
         "//:channel_arg_names",
         "//:config_vars",

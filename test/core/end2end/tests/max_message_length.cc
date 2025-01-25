@@ -141,7 +141,7 @@ CORE_END2END_TEST(CoreEnd2endTests,
 }
 
 CORE_END2END_TEST(
-    CoreEnd2endTest,
+    CoreEnd2endTests,
     MaxMessageLengthOnClientOnRequestViaServiceConfigWithStringJsonValue) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());
@@ -159,7 +159,7 @@ CORE_END2END_TEST(
 }
 
 CORE_END2END_TEST(
-    CoreEnd2endTest,
+    CoreEnd2endTests,
     MaxMessageLengthOnClientOnRequestViaServiceConfigWithIntegerJsonValue) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());
@@ -193,7 +193,7 @@ CORE_END2END_TEST(CoreEnd2endTests,
 }
 
 CORE_END2END_TEST(
-    CoreEnd2endTest,
+    CoreEnd2endTests,
     MaxMessageLengthOnClientOnResponseViaServiceConfigWithStringJsonValue) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());
@@ -211,7 +211,7 @@ CORE_END2END_TEST(
 }
 
 CORE_END2END_TEST(
-    CoreEnd2endTest,
+    CoreEnd2endTests,
     MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());

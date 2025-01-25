@@ -58,8 +58,8 @@ CORE_END2END_TEST(CoreClientChannelTests, DefaultHost) {
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
   EXPECT_EQ(server_status.message(), "xyz");
   EXPECT_EQ(s.method(), "/foo");
-  if (GetParam()->overridden_call_host != nullptr) {
-    EXPECT_EQ(GetParam()->overridden_call_host, s.host());
+  if (test_config()->overridden_call_host != nullptr) {
+    EXPECT_EQ(test_config()->overridden_call_host, s.host());
   } else {
     EXPECT_THAT(s.host(),
                 AnyOf(StartsWith("localhost"), StartsWith("127.0.0.1"),

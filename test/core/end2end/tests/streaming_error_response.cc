@@ -116,7 +116,7 @@ CORE_END2END_TEST(CoreEnd2endTests, StreamingErrorResponseRequestStatusEarly) {
 }
 
 CORE_END2END_TEST(
-    CoreEnd2endTest,
+    CoreEnd2endTests,
     StreamingErrorResponseRequestStatusEarlyAndRecvMessageSeparately) {
   SKIP_IF_V3();
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();

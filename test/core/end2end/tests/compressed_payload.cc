@@ -383,14 +383,14 @@ CORE_END2END_TEST(Http2SingleHopTests, RequestWithServerLevelDecompressInApp) {
 }
 
 CORE_END2END_TEST(
-    Http2SingleHopTest,
+    Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideNoneToGzipDecompressInCore) {
   TestConfigurator(*this).RequestWithPayload(
       0, {{"grpc-internal-encoding-request", "gzip"}});
 }
 
 CORE_END2END_TEST(
-    Http2SingleHopTest,
+    Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideNoneToGzipDecompressInApp) {
   TestConfigurator(*this)
       .DecompressInApp()
@@ -399,7 +399,7 @@ CORE_END2END_TEST(
 }
 
 CORE_END2END_TEST(
-    Http2SingleHopTest,
+    Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideDeflateToGzipDecompressInCore) {
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_DEFLATE)
@@ -407,7 +407,7 @@ CORE_END2END_TEST(
 }
 
 CORE_END2END_TEST(
-    Http2SingleHopTest,
+    Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideDeflateToGzipDecompressInApp) {
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_DEFLATE)
@@ -417,7 +417,7 @@ CORE_END2END_TEST(
 }
 
 CORE_END2END_TEST(
-    Http2SingleHopTest,
+    Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideDeflateToIdentityDecompressInCore) {
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_DEFLATE)
@@ -425,7 +425,7 @@ CORE_END2END_TEST(
 }
 
 CORE_END2END_TEST(
-    Http2SingleHopTest,
+    Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideDeflateToIdentityDecompressInApp) {
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_DEFLATE)

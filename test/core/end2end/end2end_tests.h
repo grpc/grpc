@@ -641,7 +641,7 @@ DECLARE_SUITE(ProxyAuthTests);
   GTEST_SKIP() << "Skipping test for minstack"
 
 #define SKIP_IF_FUZZING() \
-  if (fuzzing_) GTEST_SKIP() << "Skipping test for fuzzing"
+  if (fuzzing()) GTEST_SKIP() << "Skipping test for fuzzing"
 
 #define SKIP_IF_V3()                                           \
   if (test_config()->feature_mask & FEATURE_MASK_IS_CALL_V3) { \
@@ -653,28 +653,33 @@ DECLARE_SUITE(ProxyAuthTests);
     GTEST_SKIP() << "Disabled for Local TCP Connection";               \
   }
 
-#define CORE_END2END_TEST(suite, name)                                      \
-  class CoreEnd2endTest_##name : public grpc_core::CoreEnd2endTest {        \
-   public:                                                                  \
-    using grpc_core::CoreEnd2endTest::CoreEnd2endTest;                      \
-    void RunTest();                                                         \
-  };                                                                        \
-  TEST_P(suite, name) {                                                     \
-    if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&             \
-        (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {          \
-      GTEST_SKIP() << "call-v3 not supported with poll poller";             \
-    }                                                                       \
-    CoreEnd2endTest_##name(GetParam(), nullptr).RunTest();                  \
-  }                                                                         \
-  static void name(const grpc_core::CoreTestConfiguration* config,          \
-                   core_end2end_test_fuzzer::Msg msg) {                     \
-    CoreEnd2endTest_##name(config, &msg).RunTest();                         \
-    grpc_event_engine::experimental::ShutdownDefaultEventEngine();          \
-  }                                                                         \
-  FUZZ_TEST(suite##Fuzzer, name)                                            \
-      .WithDomains(::fuzztest::ElementOf(suite::AllSuiteConfigs(true)),     \
-                   ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>()); \
-  void CoreEnd2endTest_##name::RunTest()
+#define CORE_END2END_TEST(suite, name)                                        \
+  class CoreEnd2endTest_##suite##_##name final                                \
+      : public grpc_core::CoreEnd2endTest {                                   \
+   public:                                                                    \
+    using grpc_core::CoreEnd2endTest::CoreEnd2endTest;                        \
+    void RunTest();                                                           \
+  };                                                                          \
+  TEST_P(suite, name) {                                                       \
+    if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&               \
+        (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {            \
+      GTEST_SKIP() << "call-v3 not supported with poll poller";               \
+    }                                                                         \
+    CoreEnd2endTest_##suite##_##name(GetParam(), nullptr).RunTest();          \
+  }                                                                           \
+  namespace suite##_tests {                                                   \
+    namespace {                                                               \
+    void name(const grpc_core::CoreTestConfiguration* config,                 \
+              core_end2end_test_fuzzer::Msg msg) {                            \
+      CoreEnd2endTest_##suite##_##name(config, &msg).RunTest();               \
+      grpc_event_engine::experimental::ShutdownDefaultEventEngine();          \
+    }                                                                         \
+    FUZZ_TEST(suite##Fuzzer, name)                                            \
+        .WithDomains(::fuzztest::ElementOf(suite::AllSuiteConfigs(true)),     \
+                     ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>()); \
+    }                                                                         \
+  }                                                                           \
+  void CoreEnd2endTest_##suite##_##name::RunTest()
 
 #define CORE_END2END_TEST_SUITE(suite, configs)                                \
   INSTANTIATE_TEST_SUITE_P(, suite,                                            \
