@@ -64,6 +64,10 @@
   signature { grpc_core::Crash("unimplemented"); }
 #endif  // GRPC_POSIX_SOCKET
 
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+#include <sys/uio.h>
+#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+
 namespace grpc_event_engine::experimental {
 
 namespace {
@@ -256,6 +260,23 @@ IF_POSIX_SOCKET(
       return PosixSocketWrapper(newfd);
     })
 
+IF_POSIX_SOCKET(FileDescriptorResult FileDescriptors::Socket(int domain,
+                                                             int type,
+                                                             int protocol),
+                { return RegisterPosixResult(socket(domain, type, protocol)); })
+
+int FileDescriptors::AsInteger(const FileDescriptor& fd) { return fd.fd(); }
+
+FileDescriptorResult FileDescriptors::FromInteger(int fd) {
+  return FileDescriptorResult(FileDescriptor(fd));
+}
+
+IF_POSIX_SOCKET(
+    PosixResult FileDescriptors::Connect(const FileDescriptor& sockfd,
+                                         const struct sockaddr* addr,
+                                         socklen_t addrlen),
+    { return PosixResultWrap(connect(sockfd.fd(), addr, addrlen)); })
+
 IF_POSIX_SOCKET(PosixResult FileDescriptors::Ioctl(const FileDescriptor& fd,
                                                    int op, void* arg),
                 { return PosixResultWrap(ioctl(fd.fd(), op, arg)); });
@@ -284,6 +305,14 @@ IF_POSIX_SOCKET(
       }
     })
 
+IF_POSIX_SOCKET(Int64Result FileDescriptors::RecvFrom(
+                    const FileDescriptor& fd, void* buf, size_t len, int flags,
+                    struct sockaddr* src_addr, socklen_t* addrlen),
+                {
+                  return Int64Wrap(
+                      recvfrom(fd.fd(), buf, len, flags, src_addr, addrlen));
+                })
+
 IF_POSIX_SOCKET(Int64Result FileDescriptors::RecvMsg(const FileDescriptor& fd,
                                                      struct msghdr* message,
                                                      int flags),
@@ -293,6 +322,17 @@ IF_POSIX_SOCKET(Int64Result FileDescriptors::SendMsg(
                     const FileDescriptor& fd, const struct msghdr* message,
                     int flags),
                 { return Int64Wrap(sendmsg(fd.fd(), message, flags)); })
+
+IF_POSIX_SOCKET(Int64Result FileDescriptors::WriteV(const FileDescriptor& fd,
+                                                    const struct iovec* iov,
+                                                    int iovcnt),
+                {
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+                  return Int64Wrap(writev(fd.fd(), iov, iovcnt));
+#else   // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+                  grpc_core::Crash("Not available");
+#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+                })
 
 //
 // Epoll
@@ -393,8 +433,8 @@ IF_POSIX_SOCKET(absl::Status FileDescriptors::PrepareTcpClientSocket(
                           close(sock.Fd());
                         }
                       });
-                  GRPC_RETURN_IF_ERROR(sock.SetSocketNonBlocking(1));
-                  GRPC_RETURN_IF_ERROR(sock.SetSocketCloexec(1));
+                  GRPC_RETURN_IF_ERROR(SetSocketNonBlocking(fd, 1));
+                  GRPC_RETURN_IF_ERROR(SetSocketCloexec(fd, 1));
                   if (options.tcp_receive_buffer_size !=
                       options.kReadBufferSizeUnset) {
                     GRPC_RETURN_IF_ERROR(
@@ -403,8 +443,8 @@ IF_POSIX_SOCKET(absl::Status FileDescriptors::PrepareTcpClientSocket(
                   if (addr.address()->sa_family != AF_UNIX &&
                       !ResolvedAddressIsVSock(addr)) {
                     // If its not a unix socket or vsock address.
-                    GRPC_RETURN_IF_ERROR(sock.SetSocketLowLatency(1));
-                    GRPC_RETURN_IF_ERROR(sock.SetSocketReuseAddr(1));
+                    GRPC_RETURN_IF_ERROR(SetSocketLowLatency(fd, 1));
+                    GRPC_RETURN_IF_ERROR(SetSocketReuseAddr(fd, 1));
                     GRPC_RETURN_IF_ERROR(sock.SetSocketDscp(options.dscp));
                     sock.TrySetSocketTcpUserTimeout(options, true);
                   }
@@ -473,6 +513,136 @@ absl::Status FileDescriptors::ApplySocketMutatorInOptions(
     return absl::OkStatus();
   }
   return SetSocketMutator(fd, usage, options.socket_mutator);
+}
+
+// Set a socket to use zerocopy
+absl::Status FileDescriptors::SetSocketZeroCopy(const FileDescriptor& fd) {
+#ifdef GRPC_LINUX_ERRQUEUE
+  const int enable = 1;
+  auto err =
+      setsockopt(fd.fd(), SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
+  if (err != 0) {
+    return absl::Status(
+        absl::StatusCode::kInternal,
+        absl::StrCat("setsockopt(SO_ZEROCOPY): ", grpc_core::StrError(errno)));
+  }
+  return absl::OkStatus();
+#else
+  return absl::Status(absl::StatusCode::kInternal,
+                      absl::StrCat("setsockopt(SO_ZEROCOPY): ",
+                                   grpc_core::StrError(ENOSYS).c_str()));
+#endif
+}
+
+// Set a socket to non blocking mode
+absl::Status FileDescriptors::SetSocketNonBlocking(const FileDescriptor& fd,
+                                                   int non_blocking) {
+  int oldflags = fcntl(fd.fd(), F_GETFL, 0);
+  if (oldflags < 0) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
+  }
+
+  if (non_blocking) {
+    oldflags |= O_NONBLOCK;
+  } else {
+    oldflags &= ~O_NONBLOCK;
+  }
+
+  if (fcntl(fd.fd(), F_SETFL, oldflags) != 0) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
+  }
+
+  return absl::OkStatus();
+}
+
+// Set a socket to close on exec
+absl::Status FileDescriptors::SetSocketCloexec(const FileDescriptor& fd,
+                                               int close_on_exec) {
+  int oldflags = fcntl(fd.fd(), F_GETFD, 0);
+  if (oldflags < 0) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
+  }
+
+  if (close_on_exec) {
+    oldflags |= FD_CLOEXEC;
+  } else {
+    oldflags &= ~FD_CLOEXEC;
+  }
+
+  if (fcntl(fd.fd(), F_SETFD, oldflags) != 0) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
+  }
+
+  return absl::OkStatus();
+}
+
+// set a socket to reuse old addresses
+absl::Status FileDescriptors::SetSocketReuseAddr(const FileDescriptor& fd,
+                                                 int reuse) {
+  int val = (reuse != 0);
+  int newval;
+  socklen_t intlen = sizeof(newval);
+  if (0 != setsockopt(fd.fd(), SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val))) {
+    return absl::Status(
+        absl::StatusCode::kInternal,
+        absl::StrCat("setsockopt(SO_REUSEADDR): ", grpc_core::StrError(errno)));
+  }
+  if (0 != getsockopt(fd.fd(), SOL_SOCKET, SO_REUSEADDR, &newval, &intlen)) {
+    return absl::Status(
+        absl::StatusCode::kInternal,
+        absl::StrCat("getsockopt(SO_REUSEADDR): ", grpc_core::StrError(errno)));
+  }
+  if ((newval != 0) != val) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        "Failed to set SO_REUSEADDR");
+  }
+
+  return absl::OkStatus();
+}
+
+// Disable nagle algorithm
+IF_POSIX_SOCKET(
+    absl::Status FileDescriptors::SetSocketLowLatency(const FileDescriptor& fd,
+                                                      int low_latency),
+    {
+      int val = (low_latency != 0);
+      int newval;
+      socklen_t intlen = sizeof(newval);
+      int unwrapped = fd.fd();
+      if (0 !=
+          setsockopt(unwrapped, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val))) {
+        return absl::Status(absl::StatusCode::kInternal,
+                            absl::StrCat("setsockopt(TCP_NODELAY): ",
+                                         grpc_core::StrError(errno)));
+      }
+      if (0 !=
+          getsockopt(unwrapped, IPPROTO_TCP, TCP_NODELAY, &newval, &intlen)) {
+        return absl::Status(absl::StatusCode::kInternal,
+                            absl::StrCat("getsockopt(TCP_NODELAY): ",
+                                         grpc_core::StrError(errno)));
+      }
+      if ((newval != 0) != val) {
+        return absl::Status(absl::StatusCode::kInternal,
+                            "Failed to set TCP_NODELAY");
+      }
+      return absl::OkStatus();
+    })
+
+int FileDescriptors::ConfigureSocket(const FileDescriptor& fd, int type) {
+  // clang-format off
+#define RETURN_IF_ERROR(expr) if (!(expr).ok()) { return -1; }
+  // clang-format on
+  PosixSocketWrapper sock(fd.fd());
+  RETURN_IF_ERROR(SetSocketNonBlocking(fd, 1));
+  RETURN_IF_ERROR(SetSocketCloexec(fd, 1));
+  if (type == SOCK_STREAM) {
+    RETURN_IF_ERROR(SetSocketLowLatency(fd, 1));
+  }
+  return 0;
 }
 
 }  // namespace grpc_event_engine::experimental

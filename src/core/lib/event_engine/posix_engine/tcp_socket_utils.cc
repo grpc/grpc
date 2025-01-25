@@ -239,46 +239,6 @@ void UnlinkIfUnixDomainSocket(
 #endif
 }
 
-// Set a socket to use zerocopy
-absl::Status PosixSocketWrapper::SetSocketZeroCopy() {
-#ifdef GRPC_LINUX_ERRQUEUE
-  const int enable = 1;
-  auto err = setsockopt(fd_, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
-  if (err != 0) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_ZEROCOPY): ", grpc_core::StrError(errno)));
-  }
-  return absl::OkStatus();
-#else
-  return absl::Status(absl::StatusCode::kInternal,
-                      absl::StrCat("setsockopt(SO_ZEROCOPY): ",
-                                   grpc_core::StrError(ENOSYS).c_str()));
-#endif
-}
-
-// Set a socket to non blocking mode
-absl::Status PosixSocketWrapper::SetSocketNonBlocking(int non_blocking) {
-  int oldflags = fcntl(fd_, F_GETFL, 0);
-  if (oldflags < 0) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
-  }
-
-  if (non_blocking) {
-    oldflags |= O_NONBLOCK;
-  } else {
-    oldflags &= ~O_NONBLOCK;
-  }
-
-  if (fcntl(fd_, F_SETFL, oldflags) != 0) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
-  }
-
-  return absl::OkStatus();
-}
-
 absl::Status PosixSocketWrapper::SetSocketIpPktInfoIfPossible() {
 #ifdef GRPC_HAVE_IP_PKTINFO
   int get_local_ip = 1;
@@ -321,51 +281,6 @@ absl::Status PosixSocketWrapper::SetSocketRcvBuf(int buffer_size_bytes) {
              : absl::Status(absl::StatusCode::kInternal,
                             absl::StrCat("setsockopt(SO_RCVBUF): ",
                                          grpc_core::StrError(errno)));
-}
-
-// Set a socket to close on exec
-absl::Status PosixSocketWrapper::SetSocketCloexec(int close_on_exec) {
-  int oldflags = fcntl(fd_, F_GETFD, 0);
-  if (oldflags < 0) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
-  }
-
-  if (close_on_exec) {
-    oldflags |= FD_CLOEXEC;
-  } else {
-    oldflags &= ~FD_CLOEXEC;
-  }
-
-  if (fcntl(fd_, F_SETFD, oldflags) != 0) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
-  }
-
-  return absl::OkStatus();
-}
-
-// set a socket to reuse old addresses
-absl::Status PosixSocketWrapper::SetSocketReuseAddr(int reuse) {
-  int val = (reuse != 0);
-  int newval;
-  socklen_t intlen = sizeof(newval);
-  if (0 != setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val))) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_REUSEADDR): ", grpc_core::StrError(errno)));
-  }
-  if (0 != getsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &newval, &intlen)) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("getsockopt(SO_REUSEADDR): ", grpc_core::StrError(errno)));
-  }
-  if ((newval != 0) != val) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        "Failed to set SO_REUSEADDR");
-  }
-
-  return absl::OkStatus();
 }
 
 // set a socket to reuse old ports
@@ -415,28 +330,6 @@ bool PosixSocketWrapper::IsSocketReusePortSupported() {
     }
   }();
   return kSupportSoReusePort;
-}
-
-// Disable nagle algorithm
-absl::Status PosixSocketWrapper::SetSocketLowLatency(int low_latency) {
-  int val = (low_latency != 0);
-  int newval;
-  socklen_t intlen = sizeof(newval);
-  if (0 != setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val))) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(TCP_NODELAY): ", grpc_core::StrError(errno)));
-  }
-  if (0 != getsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &newval, &intlen)) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("getsockopt(TCP_NODELAY): ", grpc_core::StrError(errno)));
-  }
-  if ((newval != 0) != val) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        "Failed to set TCP_NODELAY");
-  }
-  return absl::OkStatus();
 }
 
 // Set Differentiated Services Code Point (DSCP)

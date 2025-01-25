@@ -148,8 +148,10 @@ absl::Status PrepareSocket(FileDescriptors* fds, const PosixTcpOptions& options,
     GRPC_RETURN_IF_ERROR(socket.sock.SetSocketReusePort(1));
   }
 
+  FileDescriptor wrapped = fds->Adopt(fd);
+
 #ifdef GRPC_LINUX_ERRQUEUE
-  if (!socket.sock.SetSocketZeroCopy().ok()) {
+  if (!fds->SetSocketZeroCopy(wrapped).ok()) {
     // it's not fatal, so just log it.
     VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
   } else {
@@ -157,17 +159,16 @@ absl::Status PrepareSocket(FileDescriptors* fds, const PosixTcpOptions& options,
   }
 #endif
 
-  GRPC_RETURN_IF_ERROR(socket.sock.SetSocketNonBlocking(1));
-  GRPC_RETURN_IF_ERROR(socket.sock.SetSocketCloexec(1));
+  GRPC_RETURN_IF_ERROR(fds->SetSocketNonBlocking(wrapped, 1));
+  GRPC_RETURN_IF_ERROR(fds->SetSocketCloexec(wrapped, 1));
 
   if (socket.addr.address()->sa_family != AF_UNIX &&
       !ResolvedAddressIsVSock(socket.addr)) {
-    GRPC_RETURN_IF_ERROR(socket.sock.SetSocketLowLatency(1));
-    GRPC_RETURN_IF_ERROR(socket.sock.SetSocketReuseAddr(1));
+    GRPC_RETURN_IF_ERROR(fds->SetSocketLowLatency(wrapped, 1));
+    GRPC_RETURN_IF_ERROR(fds->SetSocketReuseAddr(wrapped, 1));
     GRPC_RETURN_IF_ERROR(socket.sock.SetSocketDscp(options.dscp));
     socket.sock.TrySetSocketTcpUserTimeout(options, false);
   }
-  FileDescriptor wrapped = fds->Adopt(fd);
   GRPC_RETURN_IF_ERROR(fds->SetSocketNoSigpipeIfPossible(wrapped));
   GRPC_RETURN_IF_ERROR(fds->ApplySocketMutatorInOptions(
       wrapped, GRPC_FD_SERVER_LISTENER_USAGE, options));

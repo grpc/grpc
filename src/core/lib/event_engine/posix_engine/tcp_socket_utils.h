@@ -162,21 +162,6 @@ class PosixSocketWrapper {
 
   ~PosixSocketWrapper() = default;
 
-  // Set socket to use zerocopy
-  absl::Status SetSocketZeroCopy();
-
-  // Set socket to non blocking mode
-  absl::Status SetSocketNonBlocking(int non_blocking);
-
-  // Set socket to close on exec
-  absl::Status SetSocketCloexec(int close_on_exec);
-
-  // Set socket to reuse old addresses
-  absl::Status SetSocketReuseAddr(int reuse);
-
-  // Disable nagle algorithm
-  absl::Status SetSocketLowLatency(int low_latency);
-
   // Set SO_REUSEPORT
   absl::Status SetSocketReusePort(int reuse);
 
