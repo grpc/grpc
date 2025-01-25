@@ -49,6 +49,7 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = [], flaky = False):
             "fuzztest_main",
         ],
         data = END2END_TEST_DATA,
+        shard_count = shard_count,
         deps = [
             "cq_verifier",
             "end2end_test_lib",
