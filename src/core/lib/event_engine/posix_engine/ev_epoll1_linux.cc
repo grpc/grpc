@@ -27,6 +27,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/iomgr/port.h"
