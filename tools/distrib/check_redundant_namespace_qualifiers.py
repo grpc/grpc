@@ -40,7 +40,7 @@ def find_closing_mustache(contents, initial_depth):
         # Skip over raw strings.
         if contents.startswith('R"'):
             contents = contents[2:]
-            offset = contents.find('(')
+            offset = contents.find("(")
             assert offset != -1
             prefix = contents[:offset]
             contents = contents[offset:]
