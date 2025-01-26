@@ -272,7 +272,10 @@ grpc_core_end2end_test(name = "ping")
 
 grpc_core_end2end_test(name = "ping_pong_streaming")
 
-grpc_core_end2end_test(name = "proxy_auth", enable_fuzzing = False)
+grpc_core_end2end_test(
+    name = "proxy_auth",
+    enable_fuzzing = False,
+)
 
 grpc_core_end2end_test(name = "registered_call")
 
