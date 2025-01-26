@@ -45,7 +45,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -62,6 +61,10 @@
 #include "test/core/end2end/end2end_test_fuzzer.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/test_config.h"
+
+#ifndef GRPC_END2END_TEST_NO_FUZZER
+#include "fuzztest/fuzztest.h"
+#endif
 
 // Test feature flags.
 #define FEATURE_MASK_DOES_NOT_SUPPORT_RETRY (1 << 0)
@@ -668,28 +671,38 @@ DECLARE_SUITE(ProxyAuthTests);
                    ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>());
 #endif
 
-#define CORE_END2END_TEST(suite, name)                               \
-  class CoreEnd2endTest_##suite##_##name final                       \
-      : public grpc_core::CoreEnd2endTest {                          \
-   public:                                                           \
-    using grpc_core::CoreEnd2endTest::CoreEnd2endTest;               \
-    void RunTest();                                                  \
-  };                                                                 \
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#define CORE_END2END_TEST_P(suite, name)
+#define CORE_END2END_INSTANTIATE_TEST_SUITE_P(suite)
+#else
+#define CORE_END2END_TEST_P(suite, name)                             \
   TEST_P(suite, name) {                                              \
     if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&      \
         (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {   \
       GTEST_SKIP() << "call-v3 not supported with poll poller";      \
     }                                                                \
     CoreEnd2endTest_##suite##_##name(GetParam(), nullptr).RunTest(); \
-  }                                                                  \
-  CORE_END2END_FUZZER(suite, name)                                   \
-  void CoreEnd2endTest_##suite##_##name::RunTest()
-
-#define CORE_END2END_TEST_SUITE(suite, configs)                                \
+  }
+#define CORE_END2END_INSTANTIATE_TEST_SUITE_P(suite)                           \
   INSTANTIATE_TEST_SUITE_P(, suite,                                            \
                            ::testing::ValuesIn(suite::AllSuiteConfigs(false)), \
                            [](auto info) { return info.param->name; });        \
-  GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(suite);                        \
+  GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(suite);
+#endif
+
+#define CORE_END2END_TEST(suite, name)                 \
+  class CoreEnd2endTest_##suite##_##name final         \
+      : public grpc_core::CoreEnd2endTest {            \
+   public:                                             \
+    using grpc_core::CoreEnd2endTest::CoreEnd2endTest; \
+    void RunTest();                                    \
+  };                                                   \
+  CORE_END2END_TEST_P(suite, name)                     \
+  CORE_END2END_FUZZER(suite, name)                     \
+  void CoreEnd2endTest_##suite##_##name::RunTest()
+
+#define CORE_END2END_TEST_SUITE(suite, configs)                                \
+  CORE_END2END_INSTANTIATE_TEST_SUITE_P(suite)                                 \
   std::vector<const grpc_core::CoreTestConfiguration*> suite::AllSuiteConfigs( \
       bool fuzzing) {                                                          \
     return configs;                                                            \
