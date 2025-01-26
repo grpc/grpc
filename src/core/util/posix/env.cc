@@ -23,22 +23,51 @@
 #include <stdlib.h>
 
 #include "src/core/util/env.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
-std::optional<std::string> GetEnv(const char* name) {
+namespace {
+NoDestruct<Mutex> g_mu;
+bool g_test_only = false;
+}  // namespace
+
+void SetTestOnlyEnvSynchronize() { g_test_only = true; }
+
+std::optional<std::string> GetEnv(const char* name)
+    ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  if (g_test_only) {
+    g_mu->Lock();
+  }
   char* result = getenv(name);
+  if (g_test_only) {
+    g_mu->Unlock();
+  }
   if (result == nullptr) return std::nullopt;
   return result;
 }
 
-void SetEnv(const char* name, const char* value) {
+void SetEnv(const char* name,
+            const char* value) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  if (g_test_only) {
+    g_mu->Lock();
+  }
   int res = setenv(name, value, 1);
+  if (g_test_only) {
+    g_mu->Unlock();
+  }
   if (res != 0) abort();
 }
 
-void UnsetEnv(const char* name) {
+void UnsetEnv(const char* name) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  if (g_test_only) {
+    g_mu->Lock();
+  }
   int res = unsetenv(name);
+  if (g_test_only) {
+    g_mu->Unlock();
+  }
   if (res != 0) abort();
 }
 

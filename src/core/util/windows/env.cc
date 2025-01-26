@@ -24,13 +24,32 @@
 
 #include <memory>
 
+#include "absl/cleanup/cleanup.h"
 #include "src/core/util/env.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/tchar.h"
 
 namespace grpc_core {
 
-std::optional<std::string> GetEnv(const char* name) {
+namespace {
+NoDestruct<Mutex> g_mu;
+bool g_test_only = false;
+}  // namespace
+
+void SetTestOnlyEnvSynchronize() { g_test_only = true; }
+
+std::optional<std::string> GetEnv(const char* name)
+    ABSL_NO_THREAD_SAFETY_ANALYSIS {
   auto tname = CharToTchar(name);
+  if (g_test_only) {
+    g_mu->Lock();
+  }
+  auto cleanup = absl::MakeCleanup([]() {
+    if (g_test_only) {
+      g_mu->Unlock();
+    }
+  });
   DWORD ret = GetEnvironmentVariable(tname.c_str(), NULL, 0);
   if (ret == 0) return std::nullopt;
   std::unique_ptr<TCHAR[]> tresult(new TCHAR[ret]);
@@ -40,14 +59,27 @@ std::optional<std::string> GetEnv(const char* name) {
   return TcharToChar(tresult.get());
 }
 
-void SetEnv(const char* name, const char* value) {
+void SetEnv(const char* name,
+            const char* value) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  if (g_test_only) {
+    g_mu->Lock();
+  }
   BOOL res = SetEnvironmentVariable(CharToTchar(name).c_str(),
                                     CharToTchar(value).c_str());
+  if (g_test_only) {
+    g_mu->Unlock();
+  }
   if (!res) abort();
 }
 
-void UnsetEnv(const char* name) {
+void UnsetEnv(const char* name) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  if (g_test_only) {
+    g_mu->Lock();
+  }
   BOOL res = SetEnvironmentVariable(CharToTchar(name).c_str(), NULL);
+  if (g_test_only) {
+    g_mu->Unlock();
+  }
   if (!res) abort();
 }
 

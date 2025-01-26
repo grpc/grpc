@@ -21,7 +21,6 @@
 #include <type_traits>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"

@@ -135,6 +135,7 @@ grpc_cc_test(
     srcs = ["map_test.cc"],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log",
         "gtest",
     ],
     tags = ["promise_test"],
