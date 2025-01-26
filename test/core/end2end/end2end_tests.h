@@ -656,14 +656,15 @@ DECLARE_SUITE(ProxyAuthTests);
 #ifdef GRPC_END2END_TEST_NO_FUZZER
 #define CORE_END2END_FUZZER(suite, name)
 #else
-#define CORE_END2END_FUZZER(suite, name)                                \
-  void suite##_##name(const grpc_core::CoreTestConfiguration* config,   \
-                      core_end2end_test_fuzzer::Msg msg) {              \
-    CoreEnd2endTest_##suite##_##name(config, &msg).RunTest();           \
-    grpc_event_engine::experimental::ShutdownDefaultEventEngine();      \
-  }                                                                     \
-  FUZZ_TEST(Fuzzers, suite##_##name)                                    \
-      .WithDomains(::fuzztest::ElementOf(suite::AllSuiteConfigs(true)), \
+#define CORE_END2END_FUZZER(suite, name)                                       \
+  void suite##_##name(const grpc_core::CoreTestConfiguration* config,          \
+                      core_end2end_test_fuzzer::Msg msg) {                     \
+    if (absl::StartsWith(#name, "DISABLED_")) GTEST_SKIP() << "disabled test"; \
+    CoreEnd2endTest_##suite##_##name(config, &msg).RunTest();                  \
+    grpc_event_engine::experimental::ShutdownDefaultEventEngine();             \
+  }                                                                            \
+  FUZZ_TEST(Fuzzers, suite##_##name)                                           \
+      .WithDomains(::fuzztest::ElementOf(suite::AllSuiteConfigs(true)),        \
                    ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>());
 #endif
 
