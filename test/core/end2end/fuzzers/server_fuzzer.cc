@@ -37,9 +37,6 @@
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/test_config.h"
 
-bool squelch = true;
-bool leak_check = true;
-
 namespace grpc_core {
 namespace testing {
 
@@ -97,9 +94,6 @@ void RunServerFuzzer(
     const fuzzer_input::Msg& msg,
     absl::FunctionRef<void(grpc_server*, int, const ChannelArgs&)>
         server_setup) {
-  if (squelch && !GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    grpc_disable_all_absl_logs();
-  }
   static const int once = []() {
     ForceEnableExperiment("event_engine_client", true);
     ForceEnableExperiment("event_engine_listener", true);

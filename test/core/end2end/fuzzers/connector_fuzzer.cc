@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <google/protobuf/text_format.h>
+
 #include <memory>
 
 #include "fuzztest/fuzztest.h"
+#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -29,9 +32,6 @@
 #include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/test_config.h"
-
-bool squelch = true;
-bool leak_check = true;
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
@@ -54,6 +54,7 @@ class ConnectorFuzzer {
             FuzzingEventEngine::Options(), msg.event_engine_actions())),
         mock_endpoint_controller_(MockEndpointController::Create(engine_)),
         connector_(make_connector()) {
+    LOG(INFO) << msg.ShortDebugString();
     CHECK(engine_);
     grpc_event_engine::experimental::SetDefaultEventEngine(engine_);
     for (const auto& input : msg.network_input()) {
@@ -171,9 +172,6 @@ void RunConnectorFuzzer(
     absl::FunctionRef<RefCountedPtr<grpc_channel_security_connector>()>
         make_security_connector,
     absl::FunctionRef<OrphanablePtr<SubchannelConnector>()> make_connector) {
-  if (squelch && !GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    grpc_disable_all_absl_logs();
-  }
   static const int once = []() {
     ForceEnableExperiment("event_engine_client", true);
     ForceEnableExperiment("event_engine_listener", true);
@@ -183,6 +181,12 @@ void RunConnectorFuzzer(
   ApplyFuzzConfigVars(msg.config_vars());
   TestOnlyReloadExperimentsFromConfigVariables();
   ConnectorFuzzer(msg, make_security_connector, make_connector).Run();
+}
+
+auto ParseTestProto(const std::string& proto) {
+  fuzzer_input::Msg msg;
+  CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
+  return msg;
 }
 
 void Chttp2(fuzzer_input::Msg msg) {
@@ -204,6 +208,33 @@ void Chttp2Fakesec(fuzzer_input::Msg msg) {
       []() { return MakeOrphanable<Chttp2Connector>(); });
 }
 FUZZ_TEST(ConnectorFuzzers, Chttp2Fakesec);
+
+TEST(ConnectorFuzzers, Chttp2FakesecTimeout1) {
+  Chttp2Fakesec(ParseTestProto(R"pb(network_input {
+                                      input_segments {
+                                        segments { delay_ms: 1 }
+                                        segments {
+                                          delay_ms: 1
+                                          chaotic_good {
+                                            known_type: SETTINGS
+                                            payload_empty_of_length: 2147483647
+                                          }
+                                        }
+                                      }
+                                      connect_delay_ms: -1603816748
+                                      connect_timeout_ms: 3
+                                    }
+                                    event_engine_actions {
+                                      run_delay: 1
+                                      assign_ports: 1
+                                      assign_ports: 2147483647
+                                      connections {}
+                                    }
+                                    config_vars {
+                                      verbosity: ""
+                                      experiments: 9223372036854775807
+                                    })pb"));
+}
 
 }  // namespace
 }  // namespace grpc_core
