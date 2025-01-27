@@ -1103,12 +1103,11 @@ CallState::PollWasCancelled() {
       << GRPC_DUMP_ARGS(this, server_trailing_metadata_state_);
   switch (server_trailing_metadata_state_) {
     case ServerTrailingMetadataState::kNotPushed:
-    case ServerTrailingMetadataState::kPushed:
-    case ServerTrailingMetadataState::kPushedCancel: {
       return server_trailing_metadata_waiter_.pending();
-    }
+    case ServerTrailingMetadataState::kPushed:
     case ServerTrailingMetadataState::kPulled:
       return false;
+    case ServerTrailingMetadataState::kPushedCancel:
     case ServerTrailingMetadataState::kPulledCancel:
       return true;
   }

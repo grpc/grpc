@@ -89,6 +89,13 @@ class URI {
   // the wire in an HTTP request.
   std::string EncodedPathAndQueryParams() const;
 
+  bool operator==(const URI& other) const {
+    return scheme_ == other.scheme_ && authority_ == other.authority_ &&
+           path_ == other.path_ &&
+           query_parameter_pairs_ == other.query_parameter_pairs_ &&
+           fragment_ == other.fragment_;
+  }
+
  private:
   URI(std::string scheme, std::string authority, std::string path,
       std::vector<QueryParam> query_parameter_pairs, std::string fragment);

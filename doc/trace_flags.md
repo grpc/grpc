@@ -92,6 +92,7 @@ accomplished by invoking `bazel build --config=dbg <target>`
   - call_combiner - Call combiner state.
   - call_refcount - Refcount on call.
   - call_state - Traces transitions through the call spine state machine.
+  - chttp2_server_refcount - Refcounting in Chttp2 Server.
   - closure - Legacy closure creation, scheduling, and completion.
   - combiner - Combiner lock state.
   - cq_refcount - Completion queue refcounting.

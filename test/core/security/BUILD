@@ -13,17 +13,20 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
 grpc_package(name = "test/core/security")
 
-grpc_fuzzer(
+grpc_fuzz_test(
     name = "alts_credentials_fuzzer",
     srcs = ["alts_credentials_fuzzer.cc"],
-    corpus = "corpus/alts_credentials_corpus",
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -33,16 +36,19 @@ grpc_fuzzer(
     ],
 )
 
-grpc_fuzzer(
+grpc_fuzz_test(
     name = "ssl_server_fuzzer",
     srcs = ["ssl_server_fuzzer.cc"],
-    corpus = "corpus/ssl_server_corpus",
     data = [
         "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = ["no_windows"],
     deps = [
         "//:event_engine_base_hdrs",
