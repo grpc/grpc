@@ -55,6 +55,7 @@ grpc_fuzz_test(
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
+        "gtest",
         "fuzztest",
         "fuzztest_main",
     ],
