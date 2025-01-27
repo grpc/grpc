@@ -44,7 +44,7 @@
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/stub_options.h>
 #include <grpcpp/support/sync_stream.h>
-#include <grpcpp/ports_def.inc>
+#include <grpcpp/ports_def.h>
 
 namespace grpc {
 namespace testing {
@@ -931,5 +931,5 @@ class ServiceB final {
 }  // namespace grpc
 
 
-#include <grpcpp/ports_undef.inc>
+#include <grpcpp/ports_undef.h>
 #endif  // GRPC_src_2fproto_2fgrpc_2ftesting_2fcompiler_5ftest_2eproto__INCLUDED

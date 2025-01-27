@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * #undefs all macros defined in port_def.inc.  See comments in port_def.inc
+ * #undefs all macros defined in port_def.h .  See comments in port_def.h
  * for more info.
  */
 
 #ifndef GRPC_PORT_
-#error "port_undef.inc must be included after port_def.inc"
+#error "port_undef.h must be included after port_def.h"
 #endif
 #undef GRPC_PORT_
 

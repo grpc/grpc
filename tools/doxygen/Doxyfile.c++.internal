@@ -1047,8 +1047,8 @@ include/grpcpp/impl/service_type.h \
 include/grpcpp/impl/status.h \
 include/grpcpp/impl/sync.h \
 include/grpcpp/passive_listener.h \
-include/grpcpp/ports_def.inc \
-include/grpcpp/ports_undef.inc \
+include/grpcpp/ports_def.h \
+include/grpcpp/ports_undef.h \
 include/grpcpp/resource_quota.h \
 include/grpcpp/security/audit_logging.h \
 include/grpcpp/security/auth_context.h \
