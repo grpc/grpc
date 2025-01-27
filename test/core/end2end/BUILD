@@ -176,23 +176,23 @@ grpc_core_end2end_test(name = "call_host_override")
 
 grpc_core_end2end_test(
     name = "cancel_after_accept",
-    shard_count = 50,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(
     name = "cancel_after_client_done",
-    shard_count = 50,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(
     name = "cancel_after_invoke",
     flaky = True,
-    shard_count = 50,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(
     name = "cancel_after_round_trip",
-    shard_count = 50,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(name = "cancel_before_invoke")
@@ -233,12 +233,12 @@ grpc_core_end2end_test(name = "grpc_authz")
 
 grpc_core_end2end_test(
     name = "high_initial_seqno",
-    shard_count = 20,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(
     name = "hpack_size",
-    shard_count = 50,
+    shard_count = 10,
 )
 
 grpc_core_end2end_test(name = "http2_stats")
@@ -249,7 +249,7 @@ grpc_core_end2end_test(name = "keepalive_timeout")
 
 grpc_core_end2end_test(
     name = "large_metadata",
-    shard_count = 50,
+    shard_count = 5,
 )
 
 grpc_core_end2end_test(name = "max_concurrent_streams")
@@ -281,7 +281,7 @@ grpc_core_end2end_test(name = "registered_call")
 
 grpc_core_end2end_test(
     name = "request_with_flags",
-    shard_count = 50,
+    shard_count = 10,
 )
 
 grpc_core_end2end_test(name = "request_with_payload")

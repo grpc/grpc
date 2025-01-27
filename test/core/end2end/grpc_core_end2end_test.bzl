@@ -74,7 +74,7 @@ _DEPS = [
     "//test/core/test_util:test_lb_policies",
 ]
 
-def grpc_core_end2end_test(name, shard_count = 10, enable_fuzzing = True, tags = [], flaky = False):
+def grpc_core_end2end_test(name, shard_count = 1, enable_fuzzing = True, tags = [], flaky = False):
     """Generate one core end2end test
 
     Args:
