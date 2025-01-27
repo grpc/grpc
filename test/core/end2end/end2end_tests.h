@@ -590,6 +590,7 @@ class CoreEnd2endTest {
 // tests against. Each new name gets a differing set of configurations in
 // end2end_test_main.cc to customize the set of fixtures the tests run against.
 
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define DECLARE_SUITE(name)                                                    \
   class name : public ::testing::TestWithParam<const CoreTestConfiguration*> { \
    public:                                                                     \
@@ -635,6 +636,7 @@ DECLARE_SUITE(NoLoggingTests);
 DECLARE_SUITE(ProxyAuthTests);
 
 #undef DECLARE_SUITE
+// NOLINTEND(bugprone-macro-parentheses)
 
 }  // namespace grpc_core
 
@@ -671,6 +673,7 @@ DECLARE_SUITE(ProxyAuthTests);
                    ::fuzztest::Arbitrary<core_end2end_test_fuzzer::Msg>());
 #endif
 
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #if defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION) || \
     defined(GRPC_END2END_TEST_NO_GTEST)
 #define CORE_END2END_TEST_P(suite, name)
@@ -712,5 +715,6 @@ DECLARE_SUITE(ProxyAuthTests);
       bool fuzzing) {                                                          \
     return configs;                                                            \
   }
+// NOLINTEND(bugprone-macro-parentheses)
 
 #endif  // GRPC_TEST_CORE_END2END_END2END_TESTS_H
