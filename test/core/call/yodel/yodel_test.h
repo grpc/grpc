@@ -213,10 +213,9 @@ class YodelTest {
  public:
   YodelTest(const fuzzing_event_engine::Actions& actions, absl::BitGenRef rng);
   void RunTest();
+  virtual ~YodelTest() = default;
 
  protected:
-  ~YodelTest() = default;
-
   // Helpers to generate various random values.
   // When we're fuzzing, delegates to the fuzzer input to generate this data.
   std::string RandomString(int min_length, int max_length,
