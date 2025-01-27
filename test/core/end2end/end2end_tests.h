@@ -34,6 +34,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <string>
 #include <utility>
 #include <variant>
@@ -124,6 +125,19 @@ struct CoreTestConfiguration {
       const ChannelArgs& client_args, const ChannelArgs& server_args)>
       create_fixture;
 };
+
+const CoreTestConfiguration* CoreTestConfigurationNamed(absl::string_view name);
+
+template <typename Sink>
+void AbslStringify(Sink& sink, const CoreTestConfiguration* config) {
+  sink.Append(
+      absl::StrCat("CoreTestConfigurationNamed(\"", config->name, "\")"));
+}
+
+inline std::ostream& operator<<(std::ostream& out,
+                                const CoreTestConfiguration* config) {
+  return out << "CoreTestConfigurationNamed(\"" << config->name << "\")";
+}
 
 // Base class for e2e tests.
 //

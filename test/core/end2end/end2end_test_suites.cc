@@ -1073,6 +1073,16 @@ std::vector<CoreTestConfiguration> AllConfigs() {
   return configs;
 }
 
+static NoDestruct<std::vector<CoreTestConfiguration>> kConfigs(AllConfigs());
+
+const CoreTestConfiguration* CoreTestConfigurationNamed(
+    absl::string_view name) {
+  for (const CoreTestConfiguration& config : *kConfigs) {
+    if (config.name == name) return &config;
+  }
+  return nullptr;
+}
+
 // A ConfigQuery queries a database a set of test configurations
 // that match some criteria.
 class ConfigQuery {
@@ -1114,8 +1124,6 @@ class ConfigQuery {
   }
 
   auto Run() const {
-    static NoDestruct<std::vector<CoreTestConfiguration>> kConfigs(
-        AllConfigs());
     std::vector<const CoreTestConfiguration*> out;
     for (const CoreTestConfiguration& config : *kConfigs) {
       if ((config.feature_mask & enforce_features_) == enforce_features_ &&
