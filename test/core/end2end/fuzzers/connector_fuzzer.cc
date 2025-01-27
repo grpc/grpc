@@ -54,7 +54,6 @@ class ConnectorFuzzer {
             FuzzingEventEngine::Options(), msg.event_engine_actions())),
         mock_endpoint_controller_(MockEndpointController::Create(engine_)),
         connector_(make_connector()) {
-    LOG(INFO) << msg.ShortDebugString();
     CHECK(engine_);
     grpc_event_engine::experimental::SetDefaultEventEngine(engine_);
     for (const auto& input : msg.network_input()) {
