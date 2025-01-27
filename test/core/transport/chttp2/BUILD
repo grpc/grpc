@@ -14,7 +14,7 @@
 
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test", "grpc_fuzzer", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test", "grpc_proto_fuzzer")
 
 licenses(["notice"])
 
@@ -83,18 +83,18 @@ grpc_fuzz_test(
     ],
 )
 
-grpc_fuzzer(
+grpc_fuzz_test(
     name = "hpack_parser_input_size_fuzzer",
     srcs = ["hpack_parser_input_size_fuzzer.cc"],
-    corpus = "hpack_parser_input_size_corpus",
     external_deps = [
         "absl/cleanup",
         "absl/status:statusor",
         "absl/status",
-        "absl/random:mocking_bit_gen",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
     tags = ["no_windows"],
-    uses_polling = False,
     deps = [
         "//:grpc",
         "//test/core/test_util:grpc_test_util",
@@ -102,27 +102,14 @@ grpc_fuzzer(
     ],
 )
 
-grpc_fuzzer(
-    name = "decode_huff_fuzzer",
-    srcs = ["decode_huff_fuzzer.cc"],
-    corpus = "decode_huff_corpus",
+grpc_fuzz_test(
+    name = "huff_fuzzer",
+    srcs = ["huff_fuzzer.cc"],
     external_deps = [
         "absl/strings",
-    ],
-    tags = ["no_windows"],
-    deps = [
-        "//:grpc",
-        "//src/core:decode_huff",
-        "//src/core:huffsyms",
-    ],
-)
-
-grpc_fuzzer(
-    name = "encode_decode_huff_fuzzer",
-    srcs = ["encode_decode_huff_fuzzer.cc"],
-    corpus = "encode_decode_huff_corpus",
-    external_deps = [
-        "absl/strings",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
     tags = ["no_windows"],
     deps = [
