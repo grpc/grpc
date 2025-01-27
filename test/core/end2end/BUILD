@@ -173,7 +173,7 @@ grpc_cc_library(
     for (fuzz, gtest) in [
         (True, False),
         (False, True),
-        (True, True)
+        (True, True),
     ]
 ]
 

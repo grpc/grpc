@@ -18376,13 +18376,47 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(h2_ssl_cert_test
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/control_endpoint.cc
+  src/core/ext/transport/chaotic_good/data_endpoints.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/data/client_certs.cc
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
+  test/core/end2end/end2end_test_suites.cc
+  test/core/end2end/end2end_tests.cc
+  test/core/end2end/fixtures/http_proxy_fixture.cc
+  test/core/end2end/fixtures/local_util.cc
+  test/core/end2end/fixtures/proxy.cc
   test/core/end2end/h2_ssl_cert_test.cc
   test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/fuzz_config_vars_helpers.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -18416,6 +18450,7 @@ target_include_directories(h2_ssl_cert_test
 target_link_libraries(h2_ssl_cert_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
