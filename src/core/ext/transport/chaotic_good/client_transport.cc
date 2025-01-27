@@ -163,33 +163,33 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
     return TrySeq(
         transport->ReadFrameBytes(),
         [this, transport](IncomingFrame incoming_frame) mutable {
-          return Switch(
-              incoming_frame.header().type,
-              Case<FrameType, FrameType::kServerInitialMetadata>([&, this]() {
-                return DispatchFrame<ServerInitialMetadataFrame>(
-                    std::move(transport), std::move(incoming_frame));
-              }),
-              Case<FrameType, FrameType::kServerTrailingMetadata>([&, this]() {
-                return DispatchFrame<ServerTrailingMetadataFrame>(
-                    std::move(transport), std::move(incoming_frame));
-              }),
-              Case<FrameType, FrameType::kMessage>([&, this]() {
-                return DispatchFrame<MessageFrame>(std::move(transport),
-                                                   std::move(incoming_frame));
-              }),
-              Case<FrameType, FrameType::kBeginMessage>([&, this]() {
-                return DispatchFrame<BeginMessageFrame>(
-                    std::move(transport), std::move(incoming_frame));
-              }),
-              Case<FrameType, FrameType::kMessageChunk>([&, this]() {
-                return DispatchFrame<MessageChunkFrame>(
-                    std::move(transport), std::move(incoming_frame));
-              }),
-              Default([&]() {
-                LOG_EVERY_N_SEC(INFO, 10)
-                    << "Bad frame type: " << incoming_frame.header().ToString();
-                return absl::OkStatus();
-              }));
+          return Switch(incoming_frame.header().type,
+                        Case<FrameType::kServerInitialMetadata>([&, this]() {
+                          return DispatchFrame<ServerInitialMetadataFrame>(
+                              std::move(transport), std::move(incoming_frame));
+                        }),
+                        Case<FrameType::kServerTrailingMetadata>([&, this]() {
+                          return DispatchFrame<ServerTrailingMetadataFrame>(
+                              std::move(transport), std::move(incoming_frame));
+                        }),
+                        Case<FrameType::kMessage>([&, this]() {
+                          return DispatchFrame<MessageFrame>(
+                              std::move(transport), std::move(incoming_frame));
+                        }),
+                        Case<FrameType::kBeginMessage>([&, this]() {
+                          return DispatchFrame<BeginMessageFrame>(
+                              std::move(transport), std::move(incoming_frame));
+                        }),
+                        Case<FrameType::kMessageChunk>([&, this]() {
+                          return DispatchFrame<MessageChunkFrame>(
+                              std::move(transport), std::move(incoming_frame));
+                        }),
+                        Default([&]() {
+                          LOG_EVERY_N_SEC(INFO, 10)
+                              << "Bad frame type: "
+                              << incoming_frame.header().ToString();
+                          return absl::OkStatus();
+                        }));
         },
         []() -> LoopCtl<absl::Status> { return Continue{}; });
   });
@@ -264,6 +264,9 @@ uint32_t ChaoticGoodClientTransport::MakeStream(CallHandler call_handler) {
   const bool on_done_added =
       call_handler.OnDone([self = RefAsSubclass<ChaoticGoodClientTransport>(),
                            stream_id](bool cancelled) {
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CHAOTIC_GOOD: Client call " << self.get() << " id=" << stream_id
+            << " done: cancelled=" << cancelled;
         if (cancelled) {
           self->outgoing_frames_.MakeSender().UnbufferedImmediateSend(
               CancelFrame{stream_id});
@@ -318,6 +321,12 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
           [send_fragment]() mutable {
             ClientEndOfStream frame;
             return send_fragment(std::move(frame));
+          },
+          [call_handler]() mutable {
+            return Map(call_handler.WasCancelled(), [](bool cancelled) {
+              if (cancelled) return absl::CancelledError();
+              return absl::OkStatus();
+            });
           }));
 }
 

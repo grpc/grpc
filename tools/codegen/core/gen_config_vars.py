@@ -115,10 +115,10 @@ MEMBER_TYPE = {
 }
 
 FLAG_TYPE = {
-    "int": "absl::optional<int32_t>",
-    "string": "absl::optional<std::string>",
+    "int": "std::optional<int32_t>",
+    "string": "std::optional<std::string>",
     "comma_separated_string": "std::vector<std::string>",
-    "bool": "absl::optional<bool>",
+    "bool": "std::optional<bool>",
 }
 
 PROTO_TYPE = {
@@ -321,9 +321,9 @@ with open("src/core/config/config_vars.h", "w") as H:
     print(file=H)
     print("#include <string>", file=H)
     print("#include <atomic>", file=H)
+    print("#include <optional>", file=H)
     print("#include <stdint.h>", file=H)
     print('#include "absl/strings/string_view.h"', file=H)
-    print('#include "absl/types/optional.h"', file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
     print(file=H)
@@ -332,7 +332,7 @@ with open("src/core/config/config_vars.h", "w") as H:
     print("  struct Overrides {", file=H)
     for attr in attrs_in_packing_order:
         print(
-            "    absl::optional<%s> %s;"
+            "    std::optional<%s> %s;"
             % (MEMBER_TYPE[attr["type"]], attr["name"]),
             file=H,
         )
@@ -387,7 +387,7 @@ with open("src/core/config/config_vars.h", "w") as H:
         if attr.get("force-load-on-access", False) == False:
             continue
         print(
-            "  absl::optional<%s> override_%s_;"
+            "  std::optional<%s> override_%s_;"
             % (MEMBER_TYPE[attr["type"]], attr["name"]),
             file=H,
         )

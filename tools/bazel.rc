@@ -4,6 +4,14 @@
 # Therefore, this option is disabled until gRPC works with bzlmod.
 common --enable_bzlmod=false
 
+# gRPC build will break under Bazel 8 because Bazel 8 disables workspace by default.
+# To prevent this, we've enabled workspace again until gRPC fully transitions to Bzlmod.
+common --enable_workspace=true
+
+# Bazel 8 needs this
+common --incompatible_disallow_empty_glob=false
+common --incompatible_disallow_struct_provider_syntax=false
+
 # for platform-appropriate cxxopts
 common --enable_platform_specific_config
 
@@ -30,7 +38,6 @@ build --client_env=CC=clang
 build --copt=-DGRPC_BAZEL_BUILD
 build --host_copt=-DGRPC_BAZEL_BUILD
 build --action_env=GRPC_BAZEL_RUNTIME=1
-build --define=use_fast_cpp_protos=true
 
 build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384

@@ -49,8 +49,7 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 std::ostream& operator<<(
     std::ostream& out,
@@ -594,7 +593,6 @@ WindowsEventEngine::CreateListener(
       std::move(memory_allocator_factory), shared_from_this(),
       thread_pool_.get(), config);
 }
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GPR_WINDOWS

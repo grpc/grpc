@@ -27,9 +27,11 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
@@ -43,8 +45,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -198,10 +198,10 @@ class XdsServerConfigFetcher::ListenerWatcher final
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager final
     : public ServerConfigFetcher::ConnectionManager {
  public:
-  FilterChainMatchManager(RefCountedPtr<GrpcXdsClient> xds_client,
-                          XdsListenerResource::FilterChainMap filter_chain_map,
-                          absl::optional<XdsListenerResource::FilterChainData>
-                              default_filter_chain);
+  FilterChainMatchManager(
+      RefCountedPtr<GrpcXdsClient> xds_client,
+      XdsListenerResource::FilterChainMap filter_chain_map,
+      std::optional<XdsListenerResource::FilterChainData> default_filter_chain);
 
   ~FilterChainMatchManager() override {
     xds_client_.reset(DEBUG_LOCATION, "FilterChainMatchManager");
@@ -218,7 +218,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager final
     return filter_chain_map_;
   }
 
-  const absl::optional<XdsListenerResource::FilterChainData>&
+  const std::optional<XdsListenerResource::FilterChainData>&
   default_filter_chain() const {
     return default_filter_chain_;
   }
@@ -227,8 +227,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager final
   class RouteConfigWatcher;
   struct RdsUpdateState {
     RouteConfigWatcher* watcher;
-    absl::optional<
-        absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>>
+    std::optional<absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>>
         rds_update;
   };
 
@@ -257,7 +256,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager final
   // a pointer to the filter chain data within that LDS resource, rather
   // than copying the filter chain data here.
   XdsListenerResource::FilterChainMap filter_chain_map_;
-  absl::optional<XdsListenerResource::FilterChainData> default_filter_chain_;
+  std::optional<XdsListenerResource::FilterChainData> default_filter_chain_;
   Mutex mu_;
   size_t rds_resources_yet_to_fetch_ ABSL_GUARDED_BY(mu_) = 0;
   std::map<std::string /* resource_name */, RdsUpdateState> rds_map_
@@ -584,7 +583,7 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
       << "[ListenerWatcher " << this << "] Received LDS update from xds client "
       << xds_client_.get() << ": " << (*listener)->ToString();
   auto* tcp_listener =
-      absl::get_if<XdsListenerResource::TcpListener>(&(*listener)->listener);
+      std::get_if<XdsListenerResource::TcpListener>(&(*listener)->listener);
   if (tcp_listener == nullptr) {
     MutexLock lock(&mu_);
     OnFatalError(
@@ -679,7 +678,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     FilterChainMatchManager(
         RefCountedPtr<GrpcXdsClient> xds_client,
         XdsListenerResource::FilterChainMap filter_chain_map,
-        absl::optional<XdsListenerResource::FilterChainData>
+        std::optional<XdsListenerResource::FilterChainData>
             default_filter_chain)
     : xds_client_(std::move(xds_client)),
       filter_chain_map_(std::move(filter_chain_map)),
@@ -697,7 +696,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       for (const auto& source_ip : source_type) {
         for (const auto& source_port_pair : source_ip.ports_map) {
           auto* filter_chain_data = source_port_pair.second.data.get();
-          const auto* rds_name = absl::get_if<std::string>(
+          const auto* rds_name = std::get_if<std::string>(
               &filter_chain_data->http_connection_manager.route_config);
           if (rds_name != nullptr) resource_names.insert(*rds_name);
           filter_chain_data_set.insert(filter_chain_data);
@@ -707,7 +706,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   }
   if (default_filter_chain_.has_value()) {
     auto& hcm = default_filter_chain_->http_connection_manager;
-    const auto* rds_name = absl::get_if<std::string>(&hcm.route_config);
+    const auto* rds_name = std::get_if<std::string>(&hcm.route_config);
     if (rds_name != nullptr) resource_names.insert(*rds_name);
     std::reverse(hcm.http_filters.begin(), hcm.http_filters.end());
   }
@@ -730,7 +729,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       auto route_config_watcher = MakeRefCounted<RouteConfigWatcher>(
           resource_name, WeakRefAsSubclass<FilterChainMatchManager>());
       rds_map_.emplace(resource_name, RdsUpdateState{route_config_watcher.get(),
-                                                     absl::nullopt});
+                                                     std::nullopt});
       watchers_to_start.push_back(
           WatcherToStart{resource_name, std::move(route_config_watcher)});
     }
@@ -773,7 +772,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   if (it != certificate_providers_map_.end()) return it->second;
   // Configure root cert.
   auto* ca_cert_provider =
-      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+      std::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
           &filter_chain->downstream_tls_context.common_tls_context
                .certificate_validation_context.ca_certs);
   absl::string_view root_provider_cert_name;
@@ -1115,7 +1114,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       auto& config_selector_route = virtual_host.routes.back();
       config_selector_route.matchers = route.matchers;
       config_selector_route.unsupported_action =
-          absl::get_if<XdsRouteConfigResource::Route::NonForwardingAction>(
+          std::get_if<XdsRouteConfigResource::Route::NonForwardingAction>(
               &route.action) == nullptr;
       auto result = XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
           http_filter_registry, http_filters, vhost, route, nullptr,

@@ -78,10 +78,9 @@ int MetadataMatchCount(
     const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
     const std::string& key, const std::string& value) {
   int count = 0;
-  for (const auto& metadatum : metadata) {
-    if (ToString(metadatum.first) == key &&
-        ToString(metadatum.second) == value) {
-      count++;
+  for (const auto& [k, v] : metadata) {
+    if (ToString(k) == key && ToString(v) == value) {
+      ++count;
     }
   }
   return count;
@@ -262,9 +261,8 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       if (req_->has_param() && req_->param().echo_metadata_initially()) {
         const std::multimap<grpc::string_ref, grpc::string_ref>&
             client_metadata = ctx_->client_metadata();
-        for (const auto& metadatum : client_metadata) {
-          ctx_->AddInitialMetadata(ToString(metadatum.first),
-                                   ToString(metadatum.second));
+        for (const auto& [key, value] : client_metadata) {
+          ctx_->AddInitialMetadata(ToString(key), ToString(value));
         }
         StartSendInitialMetadata();
       }
@@ -272,9 +270,8 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       if (req_->has_param() && req_->param().echo_metadata()) {
         const std::multimap<grpc::string_ref, grpc::string_ref>&
             client_metadata = ctx_->client_metadata();
-        for (const auto& metadatum : client_metadata) {
-          ctx_->AddTrailingMetadata(ToString(metadatum.first),
-                                    ToString(metadatum.second));
+        for (const auto& [key, value] : client_metadata) {
+          ctx_->AddTrailingMetadata(ToString(key), ToString(value));
         }
         // Terminate rpc with error and debug info in trailer.
         if (req_->param().debug_info().stack_entries_size() ||

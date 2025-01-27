@@ -32,7 +32,6 @@ grpc_cc_library(
         "opencensus-tags",
         "opencensus-with-tag-map",
     ],
-    language = "C++",
     deps = [
         "//:grpc++",
         "//:grpc_opencensus_plugin",
@@ -58,7 +57,6 @@ grpc_cc_test(
         "opencensus-with-tag-map",
     ],
     flaky = True,
-    language = "C++",
     linkstatic = True,
     tags = [
         "census_test",
@@ -87,7 +85,6 @@ grpc_cc_test(
         "opencensus-with-tag-map",
     ],
     flaky = True,
-    language = "C++",
     linkstatic = True,
     tags = [
         "census_test",

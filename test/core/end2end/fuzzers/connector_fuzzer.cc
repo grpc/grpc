@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/end2end/fuzzers/connector_fuzzer.h"
+#include <memory>
 
+#include "fuzztest/fuzztest.h"
+#include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
 #include "src/core/util/env.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/end2end/fuzzers/network_input.h"
@@ -32,9 +36,7 @@ bool leak_check = true;
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using ::grpc_event_engine::experimental::MockEndpointController;
-using ::grpc_event_engine::experimental::SetEventEngineFactory;
 using ::grpc_event_engine::experimental::URIToResolvedAddress;
 
 namespace grpc_core {
@@ -48,17 +50,12 @@ class ConnectorFuzzer {
           make_security_connector,
       absl::FunctionRef<OrphanablePtr<SubchannelConnector>()> make_connector)
       : make_security_connector_(make_security_connector),
-        engine_([actions = msg.event_engine_actions()]() {
-          SetEventEngineFactory([actions]() -> std::unique_ptr<EventEngine> {
-            return std::make_unique<FuzzingEventEngine>(
-                FuzzingEventEngine::Options(), actions);
-          });
-          return std::dynamic_pointer_cast<FuzzingEventEngine>(
-              GetDefaultEventEngine());
-        }()),
+        engine_(std::make_shared<FuzzingEventEngine>(
+            FuzzingEventEngine::Options(), msg.event_engine_actions())),
         mock_endpoint_controller_(MockEndpointController::Create(engine_)),
         connector_(make_connector()) {
     CHECK(engine_);
+    grpc_event_engine::experimental::SetDefaultEventEngine(engine_);
     for (const auto& input : msg.network_input()) {
       network_inputs_.push(input);
     }
@@ -121,6 +118,9 @@ class ConnectorFuzzer {
     engine_->TickUntilIdle();
     grpc_shutdown_blocking();
     engine_->UnsetGlobalHooks();
+    // The engine ref must be released for ShutdownDefaultEventEngine to finish.
+    engine_.reset();
+    grpc_event_engine::experimental::ShutdownDefaultEventEngine();
   }
 
   void Run() {
@@ -166,8 +166,6 @@ class ConnectorFuzzer {
   OrphanablePtr<SubchannelConnector> connector_;
 };
 
-}  // namespace
-
 void RunConnectorFuzzer(
     const fuzzer_input::Msg& msg,
     absl::FunctionRef<RefCountedPtr<grpc_channel_security_connector>()>
@@ -187,4 +185,25 @@ void RunConnectorFuzzer(
   ConnectorFuzzer(msg, make_security_connector, make_connector).Run();
 }
 
+void Chttp2(fuzzer_input::Msg msg) {
+  RunConnectorFuzzer(
+      msg, []() { return RefCountedPtr<grpc_channel_security_connector>(); },
+      []() { return MakeOrphanable<Chttp2Connector>(); });
+}
+FUZZ_TEST(ConnectorFuzzers, Chttp2);
+
+void Chttp2Fakesec(fuzzer_input::Msg msg) {
+  RunConnectorFuzzer(
+      msg,
+      []() {
+        return grpc_fake_channel_security_connector_create(
+            RefCountedPtr<grpc_channel_credentials>(
+                grpc_fake_transport_security_credentials_create()),
+            nullptr, "foobar", ChannelArgs{});
+      },
+      []() { return MakeOrphanable<Chttp2Connector>(); });
+}
+FUZZ_TEST(ConnectorFuzzers, Chttp2Fakesec);
+
+}  // namespace
 }  // namespace grpc_core

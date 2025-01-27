@@ -16,11 +16,12 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
+#include "fuzztest/fuzztest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -35,7 +36,6 @@
 #include "src/core/util/env.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
@@ -101,15 +101,16 @@ class ClientFuzzer final : public BasicFuzzer {
   grpc_channel* channel_ = nullptr;
 };
 
-}  // namespace testing
-}  // namespace grpc_core
-
-DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
-  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
+void Run(fuzzer_input::Msg msg) {
+  if (squelch && !GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     grpc_disable_all_absl_logs();
   }
   if (msg.network_input().size() != 1) return;
-  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
-  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
-  grpc_core::testing::ClientFuzzer(msg).Run(msg.api_actions());
+  ApplyFuzzConfigVars(msg.config_vars());
+  TestOnlyReloadExperimentsFromConfigVariables();
+  testing::ClientFuzzer(msg).Run(msg.api_actions());
 }
+FUZZ_TEST(ClientFuzzerTest, Run);
+
+}  // namespace testing
+}  // namespace grpc_core

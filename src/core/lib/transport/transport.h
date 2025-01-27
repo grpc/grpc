@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include <functional>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -36,7 +37,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -364,7 +364,7 @@ struct grpc_transport_stream_op_batch_payload {
     // Will be set by the transport to point to the byte stream containing a
     // received message. Will be nullopt if trailing metadata is received
     // instead of a message.
-    absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
+    std::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
     uint32_t* flags = nullptr;
     // Was this recv_message failed for reasons other than a clean end-of-stream
     bool* call_failed_before_recv_message = nullptr;

@@ -279,7 +279,7 @@ void CheckServiceConfigResultLocked(const char* service_config_json,
 
 void CheckLBPolicyResultLocked(const grpc_core::ChannelArgs channel_args,
                                ArgsStruct* args) {
-  absl::optional<absl::string_view> lb_policy_arg =
+  std::optional<absl::string_view> lb_policy_arg =
       channel_args.GetString(GRPC_ARG_LB_POLICY_NAME);
   if (!args->expected_lb_policy.empty()) {
     EXPECT_TRUE(lb_policy_arg.has_value());

@@ -19,8 +19,8 @@
 #include <grpc/status.h>
 
 #include <memory>
+#include <optional>
 
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -116,7 +116,7 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   EXPECT_EQ(s2.method(), "/service/method");
   // Make sure the "grpc-previous-rpc-attempts" header was NOT sent, since
   // we don't do that for transparent retries.
-  EXPECT_EQ(s2.GetInitialMetadata("grpc-previous-rpc-attempts"), absl::nullopt);
+  EXPECT_EQ(s2.GetInitialMetadata("grpc-previous-rpc-attempts"), std::nullopt);
   // Server handles the second call.
   IncomingMessage client_message2;
   IncomingCloseOnServer client_close2;

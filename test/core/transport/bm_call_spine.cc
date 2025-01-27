@@ -75,7 +75,7 @@ class ForwardCallFixture {
             ForwardCall(std::move(p1_handler), std::move(p2.initiator));
           });
     });
-    absl::optional<CallHandler> p2_handler;
+    std::optional<CallHandler> p2_handler;
     p2.handler.SpawnInfallible("start",
                                [&]() { p2_handler = p2.handler.StartCall(); });
     return {std::move(p1.initiator), std::move(*p2_handler)};

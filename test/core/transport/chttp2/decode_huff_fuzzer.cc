@@ -17,20 +17,20 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
 bool squelch = true;
 bool leak_check = true;
 
-absl::optional<std::vector<uint8_t>> DecodeHuffSlow(const uint8_t* begin,
-                                                    const uint8_t* end) {
+std::optional<std::vector<uint8_t>> DecodeHuffSlow(const uint8_t* begin,
+                                                   const uint8_t* end) {
   uint64_t bits = 0;
   size_t bits_left = 0u;
   std::vector<uint8_t> out;
@@ -63,7 +63,7 @@ absl::optional<std::vector<uint8_t>> DecodeHuffSlow(const uint8_t* begin,
   }
   while (bits_left > 0) {
     if ((bits & 1) == 0) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     bits >>= 1;
     bits_left--;
@@ -71,17 +71,17 @@ absl::optional<std::vector<uint8_t>> DecodeHuffSlow(const uint8_t* begin,
   return out;
 }
 
-std::string ToString(absl::optional<std::vector<uint8_t>> s) {
-  if (s == absl::nullopt) return "nullopt";
+std::string ToString(std::optional<std::vector<uint8_t>> s) {
+  if (s == std::nullopt) return "nullopt";
   return absl::StrCat("{", absl::StrJoin(*s, ","), "}");
 }
 
-absl::optional<std::vector<uint8_t>> DecodeHuffFast(const uint8_t* begin,
-                                                    const uint8_t* end) {
+std::optional<std::vector<uint8_t>> DecodeHuffFast(const uint8_t* begin,
+                                                   const uint8_t* end) {
   std::vector<uint8_t> v;
   auto f = [&](uint8_t x) { v.push_back(x); };
   if (!grpc_core::HuffDecoder<decltype(f)>(f, begin, end).Run()) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   return v;
 }

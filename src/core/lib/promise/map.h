@@ -19,6 +19,7 @@
 #include <stddef.h>
 
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -31,23 +32,82 @@ namespace grpc_core {
 
 namespace promise_detail {
 
-// Implementation of mapping combinator - use this via the free function below!
-// Promise is the type of promise to poll on, Fn is a function that takes the
-// result of Promise and maps it to some new type.
-template <typename Promise, typename Fn, typename SfinaeVoid = void>
-class Map;
+template <typename Fn, typename Arg, typename SfinaeVoid = void>
+class WrappedFn;
 
+template <typename Fn, typename Arg>
+class WrappedFn<
+    Fn, Arg, std::enable_if_t<!std::is_void_v<std::invoke_result_t<Fn, Arg>>>> {
+ public:
+  using Result = RemoveCVRef<std::invoke_result_t<Fn, Arg>>;
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit WrappedFn(Fn&& fn)
+      : fn_(std::move(fn)) {}
+  WrappedFn(const WrappedFn&) = delete;
+  WrappedFn& operator=(const WrappedFn&) = delete;
+  WrappedFn(WrappedFn&&) = default;
+  WrappedFn& operator=(WrappedFn&&) = default;
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Result operator()(Arg&& arg) {
+    return fn_(std::forward<Arg>(arg));
+  }
+
+ private:
+  GPR_NO_UNIQUE_ADDRESS Fn fn_;
+};
+
+template <typename Fn, typename Arg>
+class WrappedFn<
+    Fn, Arg, std::enable_if_t<std::is_void_v<std::invoke_result_t<Fn, Arg>>>> {
+ public:
+  using Result = Empty;
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit WrappedFn(Fn&& fn)
+      : fn_(std::move(fn)) {}
+  WrappedFn(const WrappedFn&) = delete;
+  WrappedFn& operator=(const WrappedFn&) = delete;
+  WrappedFn(WrappedFn&&) = default;
+  WrappedFn& operator=(WrappedFn&&) = default;
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Empty operator()(Arg&& arg) {
+    fn_(std::forward<Arg>(arg));
+    return Empty{};
+  }
+
+ private:
+  GPR_NO_UNIQUE_ADDRESS Fn fn_;
+};
+
+template <typename PromiseResult, typename Fn0, typename Fn1>
+class FusedFns {
+  using InnerResult =
+      decltype(std::declval<Fn0>()(std::declval<PromiseResult>()));
+
+ public:
+  using Result = typename WrappedFn<Fn1, InnerResult>::Result;
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION FusedFns(Fn0 fn0, Fn1 fn1)
+      : fn0_(std::move(fn0)), fn1_(std::move(fn1)) {}
+  FusedFns(const FusedFns&) = delete;
+  FusedFns& operator=(const FusedFns&) = delete;
+  FusedFns(FusedFns&&) = default;
+  FusedFns& operator=(FusedFns&&) = default;
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Result operator()(PromiseResult arg) {
+    InnerResult inner_result = fn0_(std::move(arg));
+    return fn1_(std::move(inner_result));
+  }
+
+ private:
+  GPR_NO_UNIQUE_ADDRESS Fn0 fn0_;
+  GPR_NO_UNIQUE_ADDRESS WrappedFn<Fn1, InnerResult> fn1_;
+};
+
+}  // namespace promise_detail
+
+// Mapping combinator.
+// Takes a promise, and a synchronous function to mutate its result, and
+// returns a promise.
 template <typename Promise, typename Fn>
-class Map<Promise, Fn,
-          absl::enable_if_t<!std::is_void<
-#if (defined(__cpp_lib_is_invocable) && __cpp_lib_is_invocable >= 201703L) || \
-    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
-              std::invoke_result_t<Fn, typename PromiseLike<Promise>::Result>
-#else
-              typename std::result_of<Fn(
-                  typename PromiseLike<Promise>::Result)>::type
-#endif
-              >::value>> {
+class Map {
+  using PromiseType = promise_detail::PromiseLike<Promise>;
+
  public:
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Promise promise, Fn fn)
       : promise_(std::move(promise)), fn_(std::move(fn)) {}
@@ -59,9 +119,8 @@ class Map<Promise, Fn,
   // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
   Map& operator=(Map&& other) = default;
 
-  using PromiseResult = typename PromiseLike<Promise>::Result;
-  using Result =
-      RemoveCVRef<decltype(std::declval<Fn>()(std::declval<PromiseResult>()))>;
+  using PromiseResult = typename PromiseType::Result;
+  using Result = typename promise_detail::WrappedFn<Fn, PromiseResult>::Result;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     Poll<PromiseResult> r = promise_();
@@ -72,24 +131,25 @@ class Map<Promise, Fn,
   }
 
  private:
-  PromiseLike<Promise> promise_;
-  Fn fn_;
+  template <typename SomeOtherPromise, typename SomeOtherFn>
+  friend class Map;
+
+  GPR_NO_UNIQUE_ADDRESS PromiseType promise_;
+  GPR_NO_UNIQUE_ADDRESS promise_detail::WrappedFn<Fn, PromiseResult> fn_;
 };
 
-template <typename Promise, typename Fn>
-class Map<Promise, Fn,
-          absl::enable_if_t<std::is_void<
-#if (defined(__cpp_lib_is_invocable) && __cpp_lib_is_invocable >= 201703L) || \
-    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
-              std::invoke_result_t<Fn, typename PromiseLike<Promise>::Result>
-#else
-              typename std::result_of<Fn(
-                  typename PromiseLike<Promise>::Result)>::type
-#endif
-              >::value>> {
+template <typename Promise, typename Fn0, typename Fn1>
+class Map<Map<Promise, Fn0>, Fn1> {
+  using InnerMapFn = decltype(std::declval<Map<Promise, Fn0>>().fn_);
+  using FusedFn =
+      promise_detail::FusedFns<typename Map<Promise, Fn0>::PromiseResult,
+                               InnerMapFn, Fn1>;
+  using PromiseType = typename Map<Promise, Fn0>::PromiseType;
+
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Promise promise, Fn fn)
-      : promise_(std::move(promise)), fn_(std::move(fn)) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Map<Promise, Fn0> map, Fn1 fn1)
+      : promise_(std::move(map.promise_)),
+        fn_(FusedFn(std::move(map.fn_), std::move(fn1))) {}
 
   Map(const Map&) = delete;
   Map& operator=(const Map&) = delete;
@@ -98,33 +158,27 @@ class Map<Promise, Fn,
   // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
   Map& operator=(Map&& other) = default;
 
-  using PromiseResult = typename PromiseLike<Promise>::Result;
-  using Result = Empty;
+  using PromiseResult = typename Map<Promise, Fn0>::PromiseResult;
+  using Result = typename FusedFn::Result;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     Poll<PromiseResult> r = promise_();
     if (auto* p = r.value_if_ready()) {
-      fn_(std::move(*p));
-      return Empty{};
+      return fn_(std::move(*p));
     }
     return Pending();
   }
 
  private:
-  PromiseLike<Promise> promise_;
-  Fn fn_;
+  template <typename SomeOtherPromise, typename SomeOtherFn>
+  friend class Map;
+
+  GPR_NO_UNIQUE_ADDRESS PromiseType promise_;
+  GPR_NO_UNIQUE_ADDRESS FusedFn fn_;
 };
 
-}  // namespace promise_detail
-
-// Mapping combinator.
-// Takes a promise, and a synchronous function to mutate its result, and
-// returns a promise.
 template <typename Promise, typename Fn>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Map<Promise, Fn>
-Map(Promise promise, Fn fn) {
-  return promise_detail::Map<Promise, Fn>(std::move(promise), std::move(fn));
-}
+Map(Promise, Fn) -> Map<Promise, Fn>;
 
 // Maps a promise to a new promise that returns a tuple of the original result
 // and a bool indicating whether there was ever a Pending{} value observed from

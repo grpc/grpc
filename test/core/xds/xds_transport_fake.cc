@@ -88,7 +88,7 @@ bool FakeXdsTransportFactory::FakeStreamingCall::HaveMessageFromClient() {
   return !from_client_messages_.empty();
 }
 
-absl::optional<std::string>
+std::optional<std::string>
 FakeXdsTransportFactory::FakeStreamingCall::WaitForMessageFromClient() {
   while (true) {
     {
@@ -98,7 +98,7 @@ FakeXdsTransportFactory::FakeStreamingCall::WaitForMessageFromClient() {
         from_client_messages_.pop_front();
         return payload;
       }
-      if (event_engine_->IsIdle()) return absl::nullopt;
+      if (event_engine_->IsIdle()) return std::nullopt;
     }
     event_engine_->Tick();
   }
