@@ -30,7 +30,6 @@ _DATA = [
 
 _DEPS = [
     "cq_verifier",
-    "end2end_test_lib",
     "http_proxy",
     "proxy",
     "//:channel_stack_builder",
@@ -97,10 +96,9 @@ def grpc_core_end2end_test(name, shard_count = 1, enable_fuzzing = True, tags = 
             "gtest",
             "gtest_main",
         ],
-        deps = _DEPS,
+        deps = _DEPS + ["end2end_test_lib"],
         data = _DATA,
         shard_count = shard_count,
-        defines = ["GRPC_END2END_TEST_NO_FUZZER"],
         tags = tags,
     )
 
@@ -116,7 +114,7 @@ def grpc_core_end2end_test(name, shard_count = 1, enable_fuzzing = True, tags = 
                 "fuzztest",
                 "fuzztest_main",
             ],
-            deps = _DEPS,
+            deps = _DEPS + ["end2end_test_lib_fuzzing"],
             data = _DATA,
             defines = ["GRPC_END2END_TEST_NO_GTEST"],
         )
