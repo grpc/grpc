@@ -24,6 +24,7 @@ grpc_fuzz_test(
     srcs = ["json_fuzz_test.cc"],
     external_deps = [
         "absl/log:check",
+        "gtest",
         "fuzztest",
         "fuzztest_main",
     ],
