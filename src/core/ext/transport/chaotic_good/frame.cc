@@ -23,7 +23,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
@@ -50,13 +50,13 @@ absl::Status ReadProto(SliceBuffer payload,
 void WriteProto(const google::protobuf::MessageLite& msg, SliceBuffer& output) {
   auto length = msg.ByteSizeLong();
   auto slice = MutableSlice::CreateUninitialized(length);
-  CHECK(msg.SerializeToArray(slice.data(), length));
+  ABSL_CHECK(msg.SerializeToArray(slice.data(), length));
   output.AppendIndexed(Slice(std::move(slice)));
 }
 
 uint32_t ProtoPayloadSize(const google::protobuf::MessageLite& msg) {
   auto length = msg.ByteSizeLong();
-  CHECK_LE(length, std::numeric_limits<uint32_t>::max());
+  ABSL_CHECK_LE(length, std::numeric_limits<uint32_t>::max());
   return static_cast<uint32_t>(length);
 }
 
@@ -151,7 +151,7 @@ struct ServerMetadataEncoder {
   }
 
   void EncodeWithWarning(const Slice& key, const Slice& value) {
-    LOG_EVERY_N_SEC(INFO, 10) << "encoding known key " << key.as_string_view()
+    ABSL_LOG_EVERY_N_SEC(INFO, 10) << "encoding known key " << key.as_string_view()
                               << " with unknown encoding";
     Encode(key, value);
   }
@@ -229,7 +229,7 @@ absl::StatusOr<ServerMetadataHandle> ServerMetadataGrpcFromProto(
 
 absl::Status MessageFrame::Deserialize(const FrameHeader& header,
                                        SliceBuffer payload) {
-  CHECK_EQ(header.type, FrameType::kMessage);
+  ABSL_CHECK_EQ(header.type, FrameType::kMessage);
   if (header.stream_id == 0) {
     return absl::InternalError("Expected non-zero stream id");
   }
@@ -240,13 +240,13 @@ absl::Status MessageFrame::Deserialize(const FrameHeader& header,
 
 FrameHeader MessageFrame::MakeHeader() const {
   auto length = message->payload()->Length();
-  CHECK_LE(length, std::numeric_limits<uint32_t>::max());
+  ABSL_CHECK_LE(length, std::numeric_limits<uint32_t>::max());
   return FrameHeader{FrameType::kMessage, 0, stream_id,
                      static_cast<uint32_t>(length)};
 }
 
 void MessageFrame::SerializePayload(SliceBuffer& payload) const {
-  CHECK_NE(stream_id, 0u);
+  ABSL_CHECK_NE(stream_id, 0u);
   payload.Append(*message->payload());
 }
 
@@ -261,7 +261,7 @@ std::string MessageFrame::ToString() const {
 
 absl::Status MessageChunkFrame::Deserialize(const FrameHeader& header,
                                             SliceBuffer payload) {
-  CHECK_EQ(header.type, FrameType::kMessageChunk);
+  ABSL_CHECK_EQ(header.type, FrameType::kMessageChunk);
   if (header.stream_id == 0) {
     return absl::InternalError("Expected non-zero stream id");
   }
@@ -272,13 +272,13 @@ absl::Status MessageChunkFrame::Deserialize(const FrameHeader& header,
 
 FrameHeader MessageChunkFrame::MakeHeader() const {
   auto length = payload.Length();
-  CHECK_LE(length, std::numeric_limits<uint32_t>::max());
+  ABSL_CHECK_LE(length, std::numeric_limits<uint32_t>::max());
   return FrameHeader{FrameType::kMessageChunk, 0, stream_id,
                      static_cast<uint32_t>(length)};
 }
 
 void MessageChunkFrame::SerializePayload(SliceBuffer& payload) const {
-  CHECK_NE(stream_id, 0u);
+  ABSL_CHECK_NE(stream_id, 0u);
   payload.Append(this->payload);
 }
 

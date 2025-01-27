@@ -20,18 +20,18 @@
 
 #include <string.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 
 static LibraryInitializer* g_libraryInitializer;
 
 LibraryInitializer::LibraryInitializer() {
-  CHECK_EQ(g_libraryInitializer, nullptr);
+  ABSL_CHECK_EQ(g_libraryInitializer, nullptr);
   g_libraryInitializer = this;
 }
 
 LibraryInitializer::~LibraryInitializer() { g_libraryInitializer = nullptr; }
 
 LibraryInitializer& LibraryInitializer::get() {
-  CHECK_NE(g_libraryInitializer, nullptr);
+  ABSL_CHECK_NE(g_libraryInitializer, nullptr);
   return *g_libraryInitializer;
 }

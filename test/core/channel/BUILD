@@ -23,8 +23,8 @@ grpc_cc_test(
     name = "channel_args_test",
     srcs = ["channel_args_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,
@@ -70,7 +70,7 @@ grpc_cc_test(
     name = "minimal_stack_is_minimal_test",
     srcs = ["minimal_stack_is_minimal_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     uses_event_engine = False,

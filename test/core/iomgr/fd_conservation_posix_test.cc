@@ -19,7 +19,7 @@
 #include <grpc/grpc.h>
 #include <sys/resource.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/crash.h"
@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     // verify we can create and destroy many more than this number
     // of descriptors
     rlim.rlim_cur = rlim.rlim_max = 1000;
-    CHECK_EQ(setrlimit(RLIMIT_NOFILE, &rlim), 0);
+    ABSL_CHECK_EQ(setrlimit(RLIMIT_NOFILE, &rlim), 0);
     for (i = 0; i < 10000; i++) {
       p = grpc_iomgr_create_endpoint_pair("test", nullptr);
       grpc_endpoint_destroy(p.client);

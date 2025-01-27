@@ -37,8 +37,8 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -87,12 +87,12 @@ void StartCall(grpc_call* call, grpc_completion_queue* cq) {
   void* tag = call;
   grpc_call_error error = grpc_call_start_batch(
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
   grpc_event event = grpc_completion_queue_next(
       cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-  CHECK(event.type == GRPC_OP_COMPLETE);
-  CHECK(event.success);
-  CHECK(event.tag == tag);
+  ABSL_CHECK(event.type == GRPC_OP_COMPLETE);
+  ABSL_CHECK(event.success);
+  ABSL_CHECK(event.tag == tag);
 }
 
 void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
@@ -131,12 +131,12 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   void* tag = call;
   grpc_call_error error = grpc_call_start_batch(
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
   grpc_event event = grpc_completion_queue_next(
       cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-  CHECK(event.type == GRPC_OP_COMPLETE);
-  CHECK(event.success);
-  CHECK(event.tag == tag);
+  ABSL_CHECK(event.type == GRPC_OP_COMPLETE);
+  ABSL_CHECK(event.success);
+  ABSL_CHECK(event.tag == tag);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_byte_buffer_destroy(recv_payload);
@@ -152,7 +152,7 @@ class TestServer {
     grpc_server_register_completion_queue(server_, cq_, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    CHECK(grpc_server_add_http2_port(server_, address_.c_str(), server_creds));
+    ABSL_CHECK(grpc_server_add_http2_port(server_, address_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     accept_thread_ = std::thread(std::bind(&TestServer::AcceptThread, this));
@@ -197,12 +197,12 @@ class TestServer {
           grpc_call_error error = grpc_server_request_call(
               server_, &call, &call_details, &request_metadata_recv, call_cq,
               cq_, request_call_tag);
-          CHECK_EQ(error, GRPC_CALL_OK);
+          ABSL_CHECK_EQ(error, GRPC_CALL_OK);
         }
       }
       grpc_event event = grpc_completion_queue_next(
           cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-      CHECK(event.type == GRPC_OP_COMPLETE);
+      ABSL_CHECK(event.type == GRPC_OP_COMPLETE);
       grpc_call_details_destroy(&call_details);
       grpc_metadata_array_destroy(&request_metadata_recv);
       if (event.success) {
@@ -213,23 +213,23 @@ class TestServer {
               std::thread(std::bind(&TestServer::HandleOneRpc, call, call_cq)));
         } else if (event.tag == this /* shutdown_and_notify tag */) {
           grpc_core::MutexLock lock(&shutdown_mu_);
-          CHECK(shutdown_);
-          CHECK_EQ(call_cq, nullptr);
+          ABSL_CHECK(shutdown_);
+          ABSL_CHECK_EQ(call_cq, nullptr);
           got_shutdown_and_notify_tag = true;
         } else {
-          CHECK(0);
+          ABSL_CHECK(0);
         }
       } else {
         grpc_core::MutexLock lock(&shutdown_mu_);
-        CHECK(shutdown_);
+        ABSL_CHECK(shutdown_);
         grpc_completion_queue_destroy(call_cq);
       }
     }
-    LOG(INFO) << "test server shutdown, joining RPC threads...";
+    ABSL_LOG(INFO) << "test server shutdown, joining RPC threads...";
     for (auto& t : rpc_threads) {
       t.join();
     }
-    LOG(INFO) << "test server threads all finished!";
+    ABSL_LOG(INFO) << "test server threads all finished!";
   }
 
   static void HandleOneRpc(grpc_call* call, grpc_completion_queue* call_cq) {
@@ -254,7 +254,7 @@ class TestServer {
     op++;
     grpc_call_error error = grpc_call_start_batch(
         call, ops, static_cast<size_t>(op - ops), tag, nullptr);
-    CHECK_EQ(error, GRPC_CALL_OK);
+    ABSL_CHECK_EQ(error, GRPC_CALL_OK);
     std::thread poller([call_cq]() {
       // poll the connection so that we actively pick up bytes off the wire,
       // including settings frames with window size increases
@@ -334,16 +334,16 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
   for (auto& thread : threads) {
     thread.join();
   }
-  VLOG(2) << "All RPCs completed!";
+  ABSL_VLOG(2) << "All RPCs completed!";
   int num_calls_seen_at_server = test_server->ShutdownAndGetNumCallsHandled();
   if (num_calls_seen_at_server != kNumCalls) {
-    LOG(ERROR) << "Expected server to handle " << kNumCalls
+    ABSL_LOG(ERROR) << "Expected server to handle " << kNumCalls
                << " calls, but instead it only handled "
                << num_calls_seen_at_server
                << ". This suggests some or all RPCs didn't make it to the "
                   "server, which means that this test likely isn't doing what "
                   "it's meant to be doing.";
-    CHECK(0);
+    ABSL_CHECK(0);
   }
 }
 

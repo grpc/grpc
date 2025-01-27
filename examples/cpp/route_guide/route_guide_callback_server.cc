@@ -33,7 +33,7 @@
 #include "absl/flags/parse.h"
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "helper.h"
 #ifdef BAZEL_BUILD
 #include "examples/protos/route_guide.grpc.pb.h"
@@ -106,11 +106,11 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
 
      private:
       void OnDone() override {
-        LOG(INFO) << "RPC Completed";
+        ABSL_LOG(INFO) << "RPC Completed";
         delete this;
       }
 
-      void OnCancel() override { LOG(ERROR) << "RPC Cancelled"; }
+      void OnCancel() override { ABSL_LOG(ERROR) << "RPC Cancelled"; }
     };
     return new Reactor(*point, feature_list_, feature);
   }
@@ -155,11 +155,11 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
       }
 
       void OnDone() override {
-        LOG(INFO) << "RPC Completed";
+        ABSL_LOG(INFO) << "RPC Completed";
         delete this;
       }
 
-      void OnCancel() override { LOG(ERROR) << "RPC Cancelled"; }
+      void OnCancel() override { ABSL_LOG(ERROR) << "RPC Cancelled"; }
 
      private:
       void NextWrite() {
@@ -221,11 +221,11 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
       }
 
       void OnDone() override {
-        LOG(INFO) << "RPC Completed";
+        ABSL_LOG(INFO) << "RPC Completed";
         delete this;
       }
 
-      void OnCancel() override { LOG(ERROR) << "RPC Cancelled"; }
+      void OnCancel() override { ABSL_LOG(ERROR) << "RPC Cancelled"; }
 
      private:
       system_clock::time_point start_time_;
@@ -277,11 +277,11 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
       void OnWriteDone(bool /*ok*/) override { NextWrite(); }
 
       void OnDone() override {
-        LOG(INFO) << "RPC Completed";
+        ABSL_LOG(INFO) << "RPC Completed";
         delete this;
       }
 
-      void OnCancel() override { LOG(ERROR) << "RPC Cancelled"; }
+      void OnCancel() override { ABSL_LOG(ERROR) << "RPC Cancelled"; }
 
      private:
       void NextWrite() {
@@ -319,7 +319,7 @@ void RunServer(const std::string& db_path) {
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  LOG(INFO) << "Server listening on " << server_address;
+  ABSL_LOG(INFO) << "Server listening on " << server_address;
   server->Wait();
 }
 

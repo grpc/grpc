@@ -18,8 +18,8 @@
 
 #include <map>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
@@ -48,12 +48,12 @@ TlsSessionKeyLoggerCache::TlsSessionKeyLogger::TlsSessionKeyLogger(
     grpc_core::RefCountedPtr<TlsSessionKeyLoggerCache> cache)
     : tls_session_key_log_file_path_(std::move(tls_session_key_log_file_path)),
       cache_(std::move(cache)) {
-  CHECK(!tls_session_key_log_file_path_.empty());
-  CHECK(cache_ != nullptr);
+  ABSL_CHECK(!tls_session_key_log_file_path_.empty());
+  ABSL_CHECK(cache_ != nullptr);
   fd_ = fopen(tls_session_key_log_file_path_.c_str(), "a");
   if (fd_ == nullptr) {
     grpc_error_handle error = GRPC_OS_ERROR(errno, "fopen");
-    LOG(ERROR) << "Ignoring TLS Key logging. ERROR Opening TLS Keylog file: "
+    ABSL_LOG(ERROR) << "Ignoring TLS Key logging. ERROR Opening TLS Keylog file: "
                << grpc_core::StatusToString(error);
   }
   cache_->tls_session_key_logger_map_.emplace(tls_session_key_log_file_path_,
@@ -86,7 +86,7 @@ void TlsSessionKeyLoggerCache::TlsSessionKeyLogger::LogSessionKeys(
 
   if (err) {
     grpc_error_handle error = GRPC_OS_ERROR(errno, "fwrite");
-    LOG(ERROR) << "Error Appending to TLS session key log file: "
+    ABSL_LOG(ERROR) << "Error Appending to TLS session key log file: "
                << grpc_core::StatusToString(error);
     fclose(fd_);
     fd_ = nullptr;  // disable future attempts to write to this file
@@ -108,7 +108,7 @@ TlsSessionKeyLoggerCache::~TlsSessionKeyLoggerCache() {
 grpc_core::RefCountedPtr<TlsSessionKeyLogger> TlsSessionKeyLoggerCache::Get(
     std::string tls_session_key_log_file_path) {
   gpr_once_init(&g_cache_mutex_init, do_cache_mutex_init);
-  DCHECK_NE(g_tls_session_key_log_cache_mu, nullptr);
+  ABSL_DCHECK_NE(g_tls_session_key_log_cache_mu, nullptr);
   if (tls_session_key_log_file_path.empty()) {
     return nullptr;
   }

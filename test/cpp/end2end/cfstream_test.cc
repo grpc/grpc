@@ -35,8 +35,8 @@
 #include <random>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/crash.h"
@@ -100,13 +100,13 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
   }
 
   void NetworkUp() {
-    VLOG(2) << "Bringing network up";
+    ABSL_VLOG(2) << "Bringing network up";
     InterfaceUp();
     DNSUp();
   }
 
   void NetworkDown() {
-    VLOG(2) << "Bringing network down";
+    ABSL_VLOG(2) << "Bringing network down";
     InterfaceDown();
     DNSDown();
   }
@@ -154,10 +154,10 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     ClientContext context;
     Status status = stub->Echo(&context, request, response.get());
     if (status.ok()) {
-      VLOG(2) << "RPC with succeeded";
+      ABSL_VLOG(2) << "RPC with succeeded";
       EXPECT_EQ(msg, response->message());
     } else {
-      VLOG(2) << "RPC failed: " << status.error_message();
+      ABSL_VLOG(2) << "RPC failed: " << status.error_message();
     }
     if (expect_success) {
       EXPECT_TRUE(status.ok());
@@ -188,7 +188,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     } else if (ret == grpc::CompletionQueue::SHUTDOWN) {
       return false;
     } else {
-      CHECK(ret == grpc::CompletionQueue::TIMEOUT);
+      ABSL_CHECK(ret == grpc::CompletionQueue::TIMEOUT);
       // This can happen if we hit the Apple CFStream bug which results in the
       // read stream freezing. We are ignoring hangs and timeouts, but these
       // tests are still useful as they can catch memory memory corruptions,
@@ -239,7 +239,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
         : port_(port), creds_(creds) {}
 
     void Start(const std::string& server_host) {
-      LOG(INFO) << "starting server on port " << port_;
+      ABSL_LOG(INFO) << "starting server on port " << port_;
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
@@ -247,7 +247,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
           std::bind(&ServerData::Serve, this, server_host, &mu, &cond)));
       cond.wait(lock, [this] { return server_ready_; });
       server_ready_ = false;
-      LOG(INFO) << "server startup complete";
+      ABSL_LOG(INFO) << "server startup complete";
     }
 
     void Serve(const std::string& server_host, std::mutex* mu,
@@ -375,17 +375,17 @@ TEST_P(CFStreamTest, NetworkFlapRpcsInFlight) {
 
     while (CQNext(&got_tag, &ok)) {
       ++total_completions;
-      CHECK(ok);
+      ABSL_CHECK(ok);
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
       if (!call->status.ok()) {
-        VLOG(2) << "RPC failed with error: " << call->status.error_message();
+        ABSL_VLOG(2) << "RPC failed with error: " << call->status.error_message();
         // Bring network up when RPCs start failing
         if (network_down) {
           NetworkUp();
           network_down = false;
         }
       } else {
-        VLOG(2) << "RPC succeeded";
+        ABSL_VLOG(2) << "RPC succeeded";
       }
       delete call;
     }
@@ -421,13 +421,13 @@ TEST_P(CFStreamTest, ConcurrentRpc) {
 
     while (CQNext(&got_tag, &ok)) {
       ++total_completions;
-      CHECK(ok);
+      ABSL_CHECK(ok);
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
       if (!call->status.ok()) {
-        VLOG(2) << "RPC failed with error: " << call->status.error_message();
+        ABSL_VLOG(2) << "RPC failed with error: " << call->status.error_message();
         // Bring network up when RPCs start failing
       } else {
-        VLOG(2) << "RPC succeeded";
+        ABSL_VLOG(2) << "RPC succeeded";
       }
       delete call;
     }

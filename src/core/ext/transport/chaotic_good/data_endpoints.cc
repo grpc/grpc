@@ -75,7 +75,7 @@ Poll<SliceBuffer> OutputBuffers::PollNext(uint32_t connection_id) {
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
   MutexLock lock(&mu_);
   auto& buffer = buffers_[connection_id];
-  CHECK(buffer.has_value());
+  ABSL_CHECK(buffer.has_value());
   if (buffer->HavePending()) {
     waker = std::move(write_waker_);
     return buffer->TakePending();
@@ -91,7 +91,7 @@ void OutputBuffers::AddEndpoint(uint32_t connection_id) {
   if (buffers_.size() < connection_id + 1) {
     buffers_.resize(connection_id + 1);
   }
-  CHECK(!buffers_[connection_id].has_value()) << GRPC_DUMP_ARGS(connection_id);
+  ABSL_CHECK(!buffers_[connection_id].has_value()) << GRPC_DUMP_ARGS(connection_id);
   buffers_[connection_id].emplace();
   waker = std::move(write_waker_);
   ready_endpoints_.fetch_add(1, std::memory_order_relaxed);
@@ -125,7 +125,7 @@ absl::StatusOr<uint64_t> InputQueues::CreateTicket(uint32_t connection_id,
 Poll<absl::StatusOr<SliceBuffer>> InputQueues::PollRead(uint64_t ticket) {
   MutexLock lock(&mu_);
   auto it = outstanding_reads_.find(ticket);
-  CHECK(it != outstanding_reads_.end()) << " ticket=" << ticket;
+  ABSL_CHECK(it != outstanding_reads_.end()) << " ticket=" << ticket;
   if (auto* waker = std::get_if<Waker>(&it->second)) {
     *waker = GetContext<Activity>()->MakeNonOwningWaker();
     return Pending{};
@@ -172,7 +172,7 @@ void InputQueues::CancelTicket(uint64_t ticket) {
 
 void InputQueues::AddEndpoint(uint32_t connection_id) {
   MutexLock lock(&mu_);
-  CHECK_EQ(read_requests_.size(), read_request_waker_.size());
+  ABSL_CHECK_EQ(read_requests_.size(), read_request_waker_.size());
   if (read_requests_.size() <= connection_id) {
     read_requests_.resize(connection_id + 1);
     read_request_waker_.resize(connection_id + 1);
@@ -289,7 +289,7 @@ DataEndpoints::DataEndpoints(
     bool enable_tracing)
     : output_buffers_(MakeRefCounted<data_endpoints_detail::OutputBuffers>()),
       input_queues_(MakeRefCounted<data_endpoints_detail::InputQueues>()) {
-  CHECK(event_engine != nullptr);
+  ABSL_CHECK(event_engine != nullptr);
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(i, output_buffers_, input_queues_,
                             std::move(endpoints_vec[i]), enable_tracing,

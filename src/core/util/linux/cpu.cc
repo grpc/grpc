@@ -31,7 +31,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/strerror.h"
 
@@ -40,7 +40,7 @@ static int ncpus = 0;
 static void init_num_cpus() {
 #ifndef GPR_MUSL_LIBC_COMPAT
   if (sched_getcpu() < 0) {
-    LOG(ERROR) << "Error determining current CPU: "
+    ABSL_LOG(ERROR) << "Error determining current CPU: "
                << grpc_core::StrError(errno) << "\n";
     ncpus = 1;
     return;
@@ -50,7 +50,7 @@ static void init_num_cpus() {
   // determined
   ncpus = static_cast<int>(sysconf(_SC_NPROCESSORS_CONF));
   if (ncpus < 1) {
-    LOG(ERROR) << "Cannot determine number of CPUs: assuming 1";
+    ABSL_LOG(ERROR) << "Cannot determine number of CPUs: assuming 1";
     ncpus = 1;
   }
 }
@@ -71,12 +71,12 @@ unsigned gpr_cpu_current_cpu(void) {
   }
   int cpu = sched_getcpu();
   if (cpu < 0) {
-    LOG(ERROR) << "Error determining current CPU: "
+    ABSL_LOG(ERROR) << "Error determining current CPU: "
                << grpc_core::StrError(errno) << "\n";
     return 0;
   }
   if (static_cast<unsigned>(cpu) >= gpr_cpu_num_cores()) {
-    VLOG(2) << "Cannot handle hot-plugged CPUs";
+    ABSL_VLOG(2) << "Cannot handle hot-plugged CPUs";
     return 0;
   }
   return static_cast<unsigned>(cpu);

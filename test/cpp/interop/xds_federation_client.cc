@@ -23,8 +23,8 @@
 #include <thread>
 
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_split.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
@@ -73,7 +73,7 @@ ABSL_FLAG(std::string, test_case, "rpc_soak",
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  LOG(INFO) << "Testing these cases: " << absl::GetFlag(FLAGS_test_case);
+  ABSL_LOG(INFO) << "Testing these cases: " << absl::GetFlag(FLAGS_test_case);
   std::string test_case = absl::GetFlag(FLAGS_test_case);
   // validate flags
   std::vector<std::string> uris =
@@ -81,14 +81,14 @@ int main(int argc, char** argv) {
   std::vector<std::string> creds =
       absl::StrSplit(absl::GetFlag(FLAGS_credentials_types), ',');
   if (uris.size() != creds.size()) {
-    LOG(ERROR) << "Number of entries in --server_uris " << uris.size()
+    ABSL_LOG(ERROR) << "Number of entries in --server_uris " << uris.size()
                << " != number of entries in --credentials_types "
                << creds.size();
-    CHECK(0);
+    ABSL_CHECK(0);
   }
   if (uris.empty()) {
-    LOG(ERROR) << "--server_uris has zero entries";
-    CHECK(0);
+    ABSL_LOG(ERROR) << "--server_uris has zero entries";
+    ABSL_CHECK(0);
   }
   // construct and start clients
   std::vector<std::thread> threads;
@@ -118,15 +118,15 @@ int main(int argc, char** argv) {
             absl::GetFlag(FLAGS_soak_request_size),
             absl::GetFlag(FLAGS_soak_response_size));
       } else {
-        LOG(ERROR)
+        ABSL_LOG(ERROR)
             << "Invalid test case, must be either rpc_soak or channel_soak";
-        CHECK(0);
+        ABSL_CHECK(0);
       }
     }));
   }
   for (auto& thd : threads) {
     thd.join();
   }
-  LOG(INFO) << "All clients done!";
+  ABSL_LOG(INFO) << "All clients done!";
   return 0;
 }

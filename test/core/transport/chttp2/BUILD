@@ -25,7 +25,7 @@ grpc_proto_fuzzer(
     srcs = ["hpack_parser_fuzzer_test.cc"],
     corpus = "hpack_parser_corpus",
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
     ],
     proto = "hpack_parser_fuzzer.proto",
     proto_deps = ["//test/core/test_util:fuzz_config_vars_proto"],
@@ -59,7 +59,7 @@ grpc_proto_fuzzer(
     name = "flow_control_fuzzer",
     srcs = ["flow_control_fuzzer.cc"],
     corpus = "flow_control_fuzzer_corpus",
-    external_deps = ["absl/log:check"],
+    external_deps = ["absl/log:absl_check"],
     proto = "flow_control_fuzzer.proto",
     proto_deps = ["//test/core/test_util:fuzz_config_vars_proto"],
     tags = ["no_windows"],
@@ -136,7 +136,7 @@ grpc_cc_test(
     name = "bin_decoder_test",
     srcs = ["bin_decoder_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,
@@ -165,7 +165,7 @@ grpc_cc_test(
     name = "bin_encoder_test",
     srcs = ["bin_encoder_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,
@@ -249,7 +249,7 @@ grpc_cc_test(
     name = "flow_control_test",
     srcs = ["flow_control_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     tags = ["flow_control_test"],
@@ -265,7 +265,7 @@ grpc_cc_test(
     name = "graceful_shutdown_test",
     srcs = ["graceful_shutdown_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -283,7 +283,7 @@ grpc_cc_test(
     name = "hpack_encoder_test",
     srcs = ["hpack_encoder_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = ["hpack_test"],
@@ -331,7 +331,7 @@ grpc_cc_test(
     name = "streams_not_seen_test",
     srcs = ["streams_not_seen_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -351,8 +351,8 @@ grpc_cc_test(
     name = "settings_timeout_test",
     srcs = ["settings_timeout_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "gtest",
     ],
     deps = [
@@ -369,8 +369,8 @@ grpc_cc_test(
     timeout = "long",  # Required for internal test infrastructure (cl/325757166)
     srcs = ["too_many_pings_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "gtest",
     ],
     flaky = True,
@@ -391,7 +391,7 @@ grpc_cc_test(
     name = "varint_test",
     srcs = ["varint_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,
@@ -415,8 +415,8 @@ grpc_cc_test(
     # LARGE_MACHINE, it can reproduce at a high rate.
     exec_properties = LARGE_MACHINE,
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = [
@@ -435,8 +435,8 @@ grpc_cc_test(
     name = "stream_leak_with_queued_flow_control_update_test",
     srcs = ["stream_leak_with_queued_flow_control_update_test.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "gtest",
     ],
     deps = [

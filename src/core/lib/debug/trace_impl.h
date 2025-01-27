@@ -22,7 +22,7 @@
 #include <string>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/string_view.h"
 
 #ifdef _WIN32
@@ -86,13 +86,13 @@ class TraceFlag {
   GPR_UNLIKELY((grpc_core::tracer##_trace).enabled())
 
 #define GRPC_TRACE_LOG(tracer, level) \
-  LOG_IF(level, GRPC_TRACE_FLAG_ENABLED(tracer))
+  ABSL_LOG_IF(level, GRPC_TRACE_FLAG_ENABLED(tracer))
 
 #define GRPC_TRACE_DLOG(tracer, level) \
-  DLOG_IF(level, GRPC_TRACE_FLAG_ENABLED(tracer))
+  ABSL_DLOG_IF(level, GRPC_TRACE_FLAG_ENABLED(tracer))
 
 #define GRPC_TRACE_VLOG(tracer, level) \
-  if (GRPC_TRACE_FLAG_ENABLED(tracer)) VLOG(level)
+  if (GRPC_TRACE_FLAG_ENABLED(tracer)) ABSL_VLOG(level)
 
 #ifndef NDEBUG
 typedef TraceFlag DebugOnlyTraceFlag;

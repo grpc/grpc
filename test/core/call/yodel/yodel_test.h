@@ -18,7 +18,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"

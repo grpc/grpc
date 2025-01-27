@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.pb.h"
@@ -83,7 +83,7 @@ TEST_P(WrrTest, Basic) {
   size_t num_picks = 0;
   SendRpcsUntil(DEBUG_LOCATION, [&](const RpcResult&) {
     if (++num_picks == 13) {
-      LOG(INFO) << "request counts: "
+      ABSL_LOG(INFO) << "request counts: "
                 << backends_[0]->backend_service()->request_count() << " "
                 << backends_[1]->backend_service()->request_count() << " "
                 << backends_[2]->backend_service()->request_count();

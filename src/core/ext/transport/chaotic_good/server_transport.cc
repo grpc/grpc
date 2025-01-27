@@ -24,8 +24,8 @@
 #include <tuple>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -216,7 +216,7 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
 absl::Status ChaoticGoodServerTransport::NewStream(
     ChaoticGoodTransport& transport, const FrameHeader& header,
     SliceBuffer payload) {
-  CHECK_EQ(header.payload_length, payload.Length());
+  ABSL_CHECK_EQ(header.payload_length, payload.Length());
   auto client_initial_metadata_frame =
       transport.DeserializeFrame<ClientInitialMetadataFrame>(
           header, std::move(payload));
@@ -300,7 +300,7 @@ auto ChaoticGoodServerTransport::ReadOneFrame(
                       []() -> absl::Status { return absl::OkStatus(); });
                 }),
                 Default([&]() {
-                  LOG_EVERY_N_SEC(INFO, 10)
+                  ABSL_LOG_EVERY_N_SEC(INFO, 10)
                       << "Bad frame type: "
                       << incoming_frame.header().ToString();
                   return ImmediateOkStatus();
@@ -360,8 +360,8 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
 
 void ChaoticGoodServerTransport::SetCallDestination(
     RefCountedPtr<UnstartedCallDestination> call_destination) {
-  CHECK(call_destination_ == nullptr);
-  CHECK(call_destination != nullptr);
+  ABSL_CHECK(call_destination_ == nullptr);
+  ABSL_CHECK(call_destination != nullptr);
   call_destination_ = call_destination;
   got_acceptor_.Set();
 }

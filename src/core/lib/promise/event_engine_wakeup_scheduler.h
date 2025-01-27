@@ -21,7 +21,7 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
@@ -34,7 +34,7 @@ class EventEngineWakeupScheduler {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine)
       : event_engine_(std::move(event_engine)) {
-    CHECK_NE(event_engine_, nullptr);
+    ABSL_CHECK_NE(event_engine_, nullptr);
   }
 
   template <typename ActivityType>

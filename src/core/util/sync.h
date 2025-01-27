@@ -23,7 +23,7 @@
 #include <grpc/support/sync.h>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/synchronization/mutex.h"
 
 #ifndef GPR_ABSEIL_SYNC
@@ -112,7 +112,7 @@ class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
   ReleasableMutexLock& operator=(const ReleasableMutexLock&) = delete;
 
   void Release() ABSL_UNLOCK_FUNCTION() {
-    DCHECK(!released_);
+    ABSL_DCHECK(!released_);
     released_ = true;
     mu_->Unlock();
   }
@@ -178,13 +178,13 @@ class ABSL_SCOPED_LOCKABLE LockableAndReleasableMutexLock {
       const LockableAndReleasableMutexLock&) = delete;
 
   void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() {
-    DCHECK(released_);
+    ABSL_DCHECK(released_);
     mu_->Lock();
     released_ = false;
   }
 
   void Release() ABSL_UNLOCK_FUNCTION() {
-    DCHECK(!released_);
+    ABSL_DCHECK(!released_);
     released_ = true;
     mu_->Unlock();
   }

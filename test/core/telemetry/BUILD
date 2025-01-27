@@ -35,7 +35,7 @@ grpc_cc_test(
     name = "metrics_test",
     srcs = ["metrics_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,

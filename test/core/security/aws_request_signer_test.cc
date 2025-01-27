@@ -19,7 +19,7 @@
 #include <gmock/gmock.h>
 #include <grpc/grpc_security.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "test/core/test_util/test_config.h"
 
 namespace testing {
@@ -247,7 +247,7 @@ TEST(GrpcAwsRequestSignerTest, InvalidUrl) {
                                      "token", "POST", "invalid_url",
                                      "us-east-1", "", {}, &error);
   std::string actual_error_description;
-  CHECK(grpc_error_get_str(error, grpc_core::StatusStrProperty::kDescription,
+  ABSL_CHECK(grpc_error_get_str(error, grpc_core::StatusStrProperty::kDescription,
                            &actual_error_description));
   EXPECT_EQ(actual_error_description, "Invalid Aws request url.");
 }
@@ -259,7 +259,7 @@ TEST(GrpcAwsRequestSignerTest, DuplicateRequestDate) {
       "us-east-1", "", {{"date", kBotoTestDate}, {"x-amz-date", kAmzTestDate}},
       &error);
   std::string actual_error_description;
-  CHECK(grpc_error_get_str(error, grpc_core::StatusStrProperty::kDescription,
+  ABSL_CHECK(grpc_error_get_str(error, grpc_core::StatusStrProperty::kDescription,
                            &actual_error_description));
   EXPECT_EQ(actual_error_description,
             "Only one of {date, x-amz-date} can be specified, not both.");

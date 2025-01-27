@@ -23,7 +23,7 @@ grpc_fuzzer(
     name = "json_fuzzer",
     srcs = ["fuzzer.cc"],
     corpus = "corpus",
-    external_deps = ["absl/log:check"],
+    external_deps = ["absl/log:absl_check"],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
@@ -36,7 +36,7 @@ grpc_cc_test(
     name = "json_test",
     srcs = ["json_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,

@@ -17,7 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
@@ -131,7 +131,7 @@ class CallSpine final : public Party {
   // The resulting (returned) promise will resolve to Empty.
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
-    DCHECK(GetContext<Activity>() == this);
+    ABSL_DCHECK(GetContext<Activity>() == this);
     using P = promise_detail::PromiseLike<Promise>;
     using ResultType = typename P::Result;
     return Map(std::move(promise), [this](ResultType r) {
@@ -352,14 +352,14 @@ class CallInitiator {
   }
 
   void Cancel(absl::Status error) {
-    CHECK(!error.ok());
+    ABSL_CHECK(!error.ok());
     auto status = ServerMetadataFromStatus(error);
     status->Set(GrpcCallWasCancelled(), true);
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
   void SpawnCancel(absl::Status error) {
-    CHECK(!error.ok());
+    ABSL_CHECK(!error.ok());
     auto status = ServerMetadataFromStatus(error);
     status->Set(GrpcCallWasCancelled(), true);
     spine_->SpawnPushServerTrailingMetadata(std::move(status));
@@ -481,7 +481,7 @@ class CallHandler {
   }
 
   void AddChildCall(const CallInitiator& initiator) {
-    CHECK(initiator.spine_ != nullptr);
+    ABSL_CHECK(initiator.spine_ != nullptr);
     spine_->AddChildCall(initiator.spine_);
   }
 

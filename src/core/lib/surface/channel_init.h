@@ -29,7 +29,7 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
@@ -246,26 +246,26 @@ class ChannelInit {
     // stack.
     FilterRegistration& ExcludeFromMinimalStack();
     FilterRegistration& SkipV3() {
-      CHECK_EQ(version_, Version::kAny);
+      ABSL_CHECK_EQ(version_, Version::kAny);
       version_ = Version::kV2;
       return *this;
     }
     FilterRegistration& SkipV2() {
-      CHECK_EQ(version_, Version::kAny);
+      ABSL_CHECK_EQ(version_, Version::kAny);
       version_ = Version::kV3;
       return *this;
     }
     // Request this filter be placed as high as possible in the stack (given
     // before/after constraints).
     FilterRegistration& FloatToTop() {
-      CHECK_EQ(ordering_, Ordering::kDefault);
+      ABSL_CHECK_EQ(ordering_, Ordering::kDefault);
       ordering_ = Ordering::kTop;
       return *this;
     }
     // Request this filter be placed as low as possible in the stack (given
     // before/after constraints).
     FilterRegistration& SinkToBottom() {
-      CHECK_EQ(ordering_, Ordering::kDefault);
+      ABSL_CHECK_EQ(ordering_, Ordering::kDefault);
       ordering_ = Ordering::kBottom;
       return *this;
     }
@@ -301,7 +301,7 @@ class ChannelInit {
     FilterRegistration& RegisterFilter(
         grpc_channel_stack_type type, const grpc_channel_filter* filter,
         SourceLocation registration_source = {}) {
-      CHECK(filter != nullptr);
+      ABSL_CHECK(filter != nullptr);
       return RegisterFilter(type, NameFromChannelFilter(filter), filter,
                             nullptr, registration_source);
     }
@@ -331,7 +331,7 @@ class ChannelInit {
                                PostProcessorSlot slot,
                                PostProcessor post_processor) {
       auto& slot_value = post_processors_[type][static_cast<int>(slot)];
-      CHECK(slot_value == nullptr);
+      ABSL_CHECK(slot_value == nullptr);
       slot_value = std::move(post_processor);
     }
 

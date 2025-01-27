@@ -27,8 +27,8 @@
 
 #include <algorithm>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -46,7 +46,7 @@ grpc_call_error grpc_call_set_credentials(grpc_call* call,
   GRPC_TRACE_LOG(api, INFO) << "grpc_call_set_credentials(call=" << call
                             << ", creds=" << creds << ")";
   if (!grpc_call_is_client(call)) {
-    LOG(ERROR) << "Method is client-side only.";
+    ABSL_LOG(ERROR) << "Method is client-side only.";
     return GRPC_CALL_ERROR_NOT_ON_SERVER;
   }
   auto* arena = grpc_call_get_arena(call);
@@ -154,7 +154,7 @@ int grpc_auth_context_set_peer_identity_property_name(grpc_auth_context* ctx,
       << "grpc_auth_context_set_peer_identity_property_name(ctx=" << ctx
       << ", name=" << name << ")";
   if (prop == nullptr) {
-    LOG(ERROR) << "Property name " << (name != nullptr ? name : "NULL")
+    ABSL_LOG(ERROR) << "Property name " << (name != nullptr ? name : "NULL")
                << " not found in auth context.";
     return 0;
   }
@@ -194,7 +194,7 @@ const grpc_auth_property* grpc_auth_property_iterator_next(
     while (it->index < it->ctx->properties().count) {
       const grpc_auth_property* prop =
           &it->ctx->properties().array[it->index++];
-      CHECK_NE(prop->name, nullptr);
+      ABSL_CHECK_NE(prop->name, nullptr);
       if (strcmp(it->name, prop->name) == 0) {
         return prop;
       }
@@ -312,7 +312,7 @@ grpc_arg grpc_auth_context_to_arg(grpc_auth_context* c) {
 grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg) {
   if (strcmp(arg->key, GRPC_AUTH_CONTEXT_ARG) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
-    LOG(ERROR) << "Invalid type " << arg->type << " for arg "
+    ABSL_LOG(ERROR) << "Invalid type " << arg->type << " for arg "
                << GRPC_AUTH_CONTEXT_ARG;
     return nullptr;
   }

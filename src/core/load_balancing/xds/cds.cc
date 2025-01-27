@@ -30,8 +30,8 @@
 #include <variant>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -277,13 +277,13 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       << "[cdslb " << this
       << "] received update: cluster=" << new_config->cluster()
       << " is_dynamic=" << new_config->is_dynamic();
-  CHECK(new_config != nullptr);
+  ABSL_CHECK(new_config != nullptr);
   // Cluster name should never change, because we should use a different
   // child name in xds_cluster_manager in that case.
   if (cluster_name_.empty()) {
     cluster_name_ = new_config->cluster();
   } else {
-    CHECK(cluster_name_ == new_config->cluster());
+    ABSL_CHECK(cluster_name_ == new_config->cluster());
   }
   // Start dynamic subscription if needed.
   if (new_config->is_dynamic() && subscription_ == nullptr) {
@@ -335,7 +335,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
     ReportTransientFailure(new_cluster_config.status());
     return new_cluster_config.status();
   }
-  CHECK_NE(new_cluster_config->cluster, nullptr);
+  ABSL_CHECK_NE(new_cluster_config->cluster, nullptr);
   // Find old cluster, if any.
   const XdsConfig::ClusterConfig* old_cluster_config = nullptr;
   if (xds_config_ != nullptr) {
@@ -375,7 +375,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
           ReportTransientFailure(aggregate_cluster_config.status());
           return aggregate_cluster_config.status();
         }
-        CHECK_NE(aggregate_cluster_config->cluster, nullptr);
+        ABSL_CHECK_NE(aggregate_cluster_config->cluster, nullptr);
         aggregate_cluster_resource = aggregate_cluster_config->cluster.get();
       }
     } else {
@@ -456,7 +456,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
     const XdsConfig::ClusterConfig* old_cluster,
     const XdsConfig::ClusterConfig& new_cluster,
     const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) const {
-  CHECK(!std::holds_alternative<XdsConfig::ClusterConfig::AggregateConfig>(
+  ABSL_CHECK(!std::holds_alternative<XdsConfig::ClusterConfig::AggregateConfig>(
       new_cluster.children));
   // First, build some maps from locality to child number and the reverse
   // from old_cluster and child_name_state_.

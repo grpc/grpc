@@ -39,8 +39,8 @@
 #include <string>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/client_channel/backup_poller.h"
@@ -173,9 +173,9 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      CHECK_OK(lb_uri);
+      ABSL_CHECK_OK(lb_uri);
       grpc_resolved_address address;
-      CHECK(grpc_parse_uri(*lb_uri, &address));
+      ABSL_CHECK(grpc_parse_uri(*lb_uri, &address));
       result.addresses->emplace_back(address, grpc_core::ChannelArgs());
     }
     return result;
@@ -309,7 +309,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
         : port_(port > 0 ? port : grpc_pick_unused_port_or_die()) {}
 
     void Start(const std::string& server_host) {
-      LOG(INFO) << "starting server on port " << port_;
+      ABSL_LOG(INFO) << "starting server on port " << port_;
       grpc::internal::MutexLock lock(&mu_);
       started_ = true;
       thread_ = std::make_unique<std::thread>(
@@ -318,7 +318,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
         cond_.Wait(&mu_);
       }
       server_ready_ = false;
-      LOG(INFO) << "server startup complete";
+      ABSL_LOG(INFO) << "server startup complete";
     }
 
     void Serve(const std::string& server_host) {

@@ -34,8 +34,8 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -124,7 +124,7 @@ int raw_byte_buffer_eq_slice(grpc_byte_buffer* rbb, grpc_slice b) {
        0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
                    GRPC_SLICE_LENGTH(a));
   if (!ok) {
-    LOG(ERROR) << "SLICE MISMATCH: left_length=" << GRPC_SLICE_LENGTH(a)
+    ABSL_LOG(ERROR) << "SLICE MISMATCH: left_length=" << GRPC_SLICE_LENGTH(a)
                << " right_length=" << GRPC_SLICE_LENGTH(b);
     std::string out;
     const char* a_str = reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(a));
@@ -148,7 +148,7 @@ int raw_byte_buffer_eq_slice(grpc_byte_buffer* rbb, grpc_slice b) {
                         absl::CEscape(absl::string_view(&b_str[i], 1)),
                         "\u001b[0m");
       }
-      LOG(ERROR) << out;
+      ABSL_LOG(ERROR) << out;
     }
   }
   grpc_slice_unref(a);
@@ -161,7 +161,7 @@ int byte_buffer_eq_slice(grpc_byte_buffer* bb, grpc_slice b) {
   if (bb->data.raw.compression > GRPC_COMPRESS_NONE) {
     grpc_slice_buffer decompressed_buffer;
     grpc_slice_buffer_init(&decompressed_buffer);
-    CHECK(grpc_msg_decompress(bb->data.raw.compression,
+    ABSL_CHECK(grpc_msg_decompress(bb->data.raw.compression,
                               &bb->data.raw.slice_buffer,
                               &decompressed_buffer));
     grpc_byte_buffer* rbb = grpc_raw_byte_buffer_create(
@@ -366,7 +366,7 @@ void CqVerifier::Verify(Duration timeout, SourceLocation location) {
   while (!expectations_.empty()) {
     must_log = std::exchange(added_expectations_, false) || must_log;
     if (log_verifications_ && must_log) {
-      LOG(ERROR) << "Verify " << ToShortString() << " for " << timeout;
+      ABSL_LOG(ERROR) << "Verify " << ToShortString() << " for " << timeout;
     }
     must_log = false;
     grpc_event ev = Step(deadline);
@@ -423,11 +423,11 @@ bool CqVerifier::AllMaybes() const {
 
 void CqVerifier::VerifyEmpty(Duration timeout, SourceLocation location) {
   if (log_verifications_) {
-    LOG(ERROR) << "Verify empty completion queue for " << timeout;
+    ABSL_LOG(ERROR) << "Verify empty completion queue for " << timeout;
   }
   const gpr_timespec deadline =
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), timeout.as_timespec());
-  CHECK(expectations_.empty());
+  ABSL_CHECK(expectations_.empty());
   grpc_event ev = Step(deadline);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
     FailUnexpectedEvent(&ev, location);

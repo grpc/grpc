@@ -19,7 +19,7 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice.h"
@@ -146,7 +146,7 @@ CORE_END2END_TEST(CoreDeadlineSingleHopTest,
   bool got_call = false;
   std::unique_ptr<IncomingCloseOnServer> client_close;
   Expect(2, MaybePerformAction{[this, &s, &got_call, &client_close](bool ok) {
-           LOG(INFO) << "\n***\n*** got call: " << ok << "\n***";
+           ABSL_LOG(INFO) << "\n***\n*** got call: " << ok << "\n***";
            got_call = true;
            if (ok) {
              // If we successfully get a call, then we should additionally get a

@@ -17,7 +17,7 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/time.h"
 
@@ -49,7 +49,7 @@ void WaitForSingleOwnerWithTimeout(std::shared_ptr<T> obj, Duration timeout) {
     }
     // To avoid log spam, wait a few seconds to begin logging the wait time.
     if (elapsed >= Duration::Seconds(2)) {
-      LOG_EVERY_N_SEC(INFO, 2)
+      ABSL_LOG_EVERY_N_SEC(INFO, 2)
           << "obj.use_count() = " << obj.use_count() << " timeout_remaining = "
           << absl::FormatDuration(absl::Milliseconds(remaining.millis()));
     }

@@ -21,7 +21,7 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "upb/base/string_view.h"
@@ -49,13 +49,13 @@ std::unique_ptr<CelAuthorizationEngine>
 CelAuthorizationEngine::CreateCelAuthorizationEngine(
     const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies) {
   if (rbac_policies.empty() || rbac_policies.size() > 2) {
-    LOG(ERROR) << "Invalid rbac policies vector. Must contain either one or "
+    ABSL_LOG(ERROR) << "Invalid rbac policies vector. Must contain either one or "
                   "two rbac policies.";
     return nullptr;
   } else if (rbac_policies.size() == 2 &&
              (envoy_config_rbac_v3_RBAC_action(rbac_policies[0]) != kDeny ||
               envoy_config_rbac_v3_RBAC_action(rbac_policies[1]) != kAllow)) {
-    LOG(ERROR) << "Invalid rbac policies vector. Must contain one deny policy "
+    ABSL_LOG(ERROR) << "Invalid rbac policies vector. Must contain one deny policy "
                   "and one allow policy, in that order.";
     return nullptr;
   } else {
@@ -172,7 +172,7 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
             mock_cel::CelValue::CreateStringView(cert_server_name));
       }
     } else {
-      LOG(ERROR) << "Error: Authorization engine does not support evaluating "
+      ABSL_LOG(ERROR) << "Error: Authorization engine does not support evaluating "
                     "attribute "
                  << elem;
     }

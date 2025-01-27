@@ -21,7 +21,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/synchronization/notification.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -74,7 +74,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     // Create security connector
     grpc_core::RefCountedPtr<grpc_server_security_connector> sc =
         creds->create_security_connector(grpc_core::ChannelArgs());
-    CHECK(sc != nullptr);
+    ABSL_CHECK(sc != nullptr);
     grpc_core::Timestamp deadline =
         grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now();
 
@@ -89,7 +89,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
                                channel_args, deadline, nullptr /* acceptor */,
                                [&](absl::StatusOr<HandshakerArgs*> result) {
                                  // The fuzzer should not pass the handshake.
-                                 CHECK(!result.ok());
+                                 ABSL_CHECK(!result.ok());
                                  handshake_completed.Notify();
                                });
     grpc_core::ExecCtx::Get()->Flush();

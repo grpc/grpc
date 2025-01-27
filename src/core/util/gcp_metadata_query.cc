@@ -27,8 +27,8 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -70,7 +70,7 @@ GcpMetadataQuery::GcpMetadataQuery(
   GRPC_CLOSURE_INIT(&on_done_, OnDone, this, nullptr);
   auto uri = URI::Create("http", std::move(metadata_server_name), attribute_,
                          {} /* query params */, "" /* fragment */);
-  CHECK(uri.ok());  // params are hardcoded
+  ABSL_CHECK(uri.ok());  // params are hardcoded
   grpc_http_request request;
   memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),

@@ -25,7 +25,7 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -115,7 +115,7 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
 
   grpc_ssl_certificate_config_reload_status FetchCertConfig(
       grpc_ssl_server_certificate_config** config) {
-    DCHECK(has_cert_config_fetcher());
+    ABSL_DCHECK(has_cert_config_fetcher());
     return certificate_config_fetcher_.cb(certificate_config_fetcher_.user_data,
                                           config);
   }

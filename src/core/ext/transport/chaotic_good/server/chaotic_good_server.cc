@@ -26,8 +26,8 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -104,7 +104,7 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
     grpc_event_engine::experimental::EventEngine::ResolvedAddress addr) {
   if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
     auto str = grpc_event_engine::experimental::ResolvedAddressToString(addr);
-    LOG(INFO) << "CHAOTIC_GOOD: Listen on "
+    ABSL_LOG(INFO) << "CHAOTIC_GOOD: Listen on "
               << (str.ok() ? str->c_str() : str.status().ToString());
   }
   EventEngine::Listener::AcceptCallback accept_cb =
@@ -118,16 +118,16 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
       };
   auto shutdown_cb = [](absl::Status status) {
     if (!status.ok()) {
-      LOG(ERROR) << "Server accept connection failed: " << status;
+      ABSL_LOG(ERROR) << "Server accept connection failed: " << status;
     }
   };
-  CHECK_NE(event_engine_, nullptr);
+  ABSL_CHECK_NE(event_engine_, nullptr);
   auto ee_listener = event_engine_->CreateListener(
       std::move(accept_cb), std::move(shutdown_cb),
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args_),
       std::make_unique<MemoryQuota>("chaotic_good_server_listener"));
   if (!ee_listener.ok()) {
-    LOG(ERROR) << "Bind failed: " << ee_listener.status().ToString();
+    ABSL_LOG(ERROR) << "Bind failed: " << ee_listener.status().ToString();
     return ee_listener.status();
   }
   ee_listener_ = std::move(ee_listener.value());
@@ -139,10 +139,10 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
 }
 
 absl::Status ChaoticGoodServerListener::StartListening() {
-  CHECK(ee_listener_ != nullptr);
+  ABSL_CHECK(ee_listener_ != nullptr);
   auto status = ee_listener_->Start();
   if (!status.ok()) {
-    LOG(ERROR) << "Start listening failed: " << status;
+    ABSL_LOG(ERROR) << "Start listening failed: " << status;
   } else {
     GRPC_TRACE_LOG(chaotic_good, INFO) << "CHAOTIC_GOOD: Started listening";
   }
@@ -244,7 +244,7 @@ void ChaoticGoodServerListener::DataConnectionListener::Orphaned() {
   absl::flat_hash_map<std::string, PendingConnectionInfo> pending_connections;
   {
     MutexLock lock(&mu_);
-    CHECK(!shutdown_);
+    ABSL_CHECK(!shutdown_);
     pending_connections = std::move(pending_connections_);
     pending_connections_.clear();
     shutdown_ = true;
@@ -406,18 +406,18 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   if (!result.ok()) {
-    LOG_EVERY_N_SEC(ERROR, 5) << "Handshake failed: ", result.status();
+    ABSL_LOG_EVERY_N_SEC(ERROR, 5) << "Handshake failed: ", result.status();
     connection_->Done();
     return;
   }
-  CHECK_NE(*result, nullptr);
+  ABSL_CHECK_NE(*result, nullptr);
   if ((*result)->endpoint == nullptr) {
-    LOG_EVERY_N_SEC(ERROR, 5)
+    ABSL_LOG_EVERY_N_SEC(ERROR, 5)
         << "Server handshake done but has empty endpoint.";
     connection_->Done();
     return;
   }
-  CHECK(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
+  ABSL_CHECK(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
       (*result)->endpoint.get()));
   auto ee_endpoint =
       grpc_event_engine::experimental::grpc_take_wrapped_event_engine_endpoint(
@@ -489,14 +489,14 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
         core_server->channel_args().GetObjectRef<EventEngine>()->GetDNSResolver(
             EventEngine::DNSResolver::ResolverOptions());
     if (!ee_resolver.ok()) {
-      LOG(ERROR) << "Failed to resolve " << addr << ": "
+      ABSL_LOG(ERROR) << "Failed to resolve " << addr << ": "
                  << ee_resolver.status().ToString();
       return 0;
     }
     results = grpc_event_engine::experimental::LookupHostnameBlocking(
         ee_resolver->get(), parsed_addr, absl::StrCat(0xd20));
     if (!results.ok()) {
-      LOG(ERROR) << "Failed to resolve " << addr << ": "
+      ABSL_LOG(ERROR) << "Failed to resolve " << addr << ": "
                  << results.status().ToString();
       return 0;
     }
@@ -507,7 +507,7 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
         grpc_core::GetDNSResolver()->LookupHostnameBlocking(
             parsed_addr, absl::StrCat(0xd20));
     if (!resolved_or.ok()) {
-      LOG(ERROR) << "Failed to resolve " << addr << ": "
+      ABSL_LOG(ERROR) << "Failed to resolve " << addr << ": "
                  << resolved_or.status().ToString();
       return 0;
     }
@@ -534,17 +534,17 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
     if (port_num == 0) {
       port_num = bind_result.value();
     } else {
-      CHECK(port_num == bind_result.value());
+      ABSL_CHECK(port_num == bind_result.value());
     }
     core_server->AddListener(std::move(listener));
   }
   if (error_list.size() == results->size()) {
-    LOG(ERROR) << "Failed to bind any address for " << addr;
+    ABSL_LOG(ERROR) << "Failed to bind any address for " << addr;
     for (const auto& error : error_list) {
-      LOG(ERROR) << "  " << error.first << ": " << error.second;
+      ABSL_LOG(ERROR) << "  " << error.first << ": " << error.second;
     }
   } else if (!error_list.empty()) {
-    LOG(INFO) << "Failed to bind some addresses for " << addr;
+    ABSL_LOG(INFO) << "Failed to bind some addresses for " << addr;
     for (const auto& error : error_list) {
       GRPC_TRACE_LOG(chaotic_good, INFO)
           << "Binding Failed: " << error.first << ": " << error.second;

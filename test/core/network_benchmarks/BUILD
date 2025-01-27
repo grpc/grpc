@@ -28,8 +28,8 @@ grpc_cc_binary(
     name = "low_level_ping_pong",
     srcs = ["low_level_ping_pong.cc"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
     ],
     tags = ["no_windows"],
     deps = [

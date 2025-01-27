@@ -30,8 +30,8 @@
 #include <vector>
 
 #include "absl/functional/bind_front.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "src/core/handshaker/security/security_handshaker.h"
@@ -62,7 +62,7 @@ char* CopyCoreString(char* src, size_t length) {
 void PendingVerifierRequestInit(
     const char* target_name, tsi_peer peer,
     grpc_tls_custom_verification_check_request* request) {
-  CHECK_NE(request, nullptr);
+  ABSL_CHECK_NE(request, nullptr);
   // The verifier holds a ref to the security connector, so it's fine to
   // directly point this to the name cached in the security connector.
   request->target_name = target_name;
@@ -174,7 +174,7 @@ void PendingVerifierRequestInit(
 
 void PendingVerifierRequestDestroy(
     grpc_tls_custom_verification_check_request* request) {
-  CHECK_NE(request, nullptr);
+  ABSL_CHECK_NE(request, nullptr);
   if (request->peer_info.common_name != nullptr) {
     gpr_free(const_cast<char*>(request->peer_info.common_name));
   }
@@ -218,13 +218,13 @@ tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
   tsi_ssl_pem_key_cert_pair* tsi_pairs = nullptr;
   size_t num_key_cert_pairs = cert_pair_list.size();
   if (num_key_cert_pairs > 0) {
-    CHECK_NE(cert_pair_list.data(), nullptr);
+    ABSL_CHECK_NE(cert_pair_list.data(), nullptr);
     tsi_pairs = static_cast<tsi_ssl_pem_key_cert_pair*>(
         gpr_zalloc(num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair)));
   }
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    CHECK(!cert_pair_list[i].private_key().empty());
-    CHECK(!cert_pair_list[i].cert_chain().empty());
+    ABSL_CHECK(!cert_pair_list[i].private_key().empty());
+    ABSL_CHECK(!cert_pair_list[i].cert_chain().empty());
     tsi_pairs[i].cert_chain =
         gpr_strdup(cert_pair_list[i].cert_chain().c_str());
     tsi_pairs[i].private_key =
@@ -244,17 +244,17 @@ TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
     const char* target_name, const char* overridden_target_name,
     tsi_ssl_session_cache* ssl_session_cache) {
   if (channel_creds == nullptr) {
-    LOG(ERROR) << "channel_creds is nullptr in "
+    ABSL_LOG(ERROR) << "channel_creds is nullptr in "
                   "TlsChannelSecurityConnectorCreate()";
     return nullptr;
   }
   if (options == nullptr) {
-    LOG(ERROR) << "options is nullptr in "
+    ABSL_LOG(ERROR) << "options is nullptr in "
                   "TlsChannelSecurityConnectorCreate()";
     return nullptr;
   }
   if (target_name == nullptr) {
-    LOG(ERROR) << "target_name is nullptr in "
+    ABSL_LOG(ERROR) << "target_name is nullptr in "
                   "TlsChannelSecurityConnectorCreate()";
     return nullptr;
   }
@@ -349,7 +349,7 @@ void TlsChannelSecurityConnector::add_handshakers(
         /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0, &tsi_hs);
     if (result != TSI_OK) {
-      LOG(ERROR) << "Handshaker creation failed with error "
+      ABSL_LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);
     }
   }
@@ -372,7 +372,7 @@ void TlsChannelSecurityConnector::check_peer(
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-  CHECK_NE(options_->certificate_verifier(), nullptr);
+  ABSL_CHECK_NE(options_->certificate_verifier(), nullptr);
   auto* pending_request = new ChannelPendingVerifierRequest(
       RefAsSubclass<TlsChannelSecurityConnector>(), on_peer_checked, peer,
       target_name);
@@ -395,7 +395,7 @@ void TlsChannelSecurityConnector::cancel_check_peer(
       if (it != pending_verifier_requests_.end()) {
         pending_verifier_request = it->second->request();
       } else {
-        VLOG(2) << "TlsChannelSecurityConnector::cancel_check_peer: no "
+        ABSL_VLOG(2) << "TlsChannelSecurityConnector::cancel_check_peer: no "
                    "corresponding pending request found";
       }
     }
@@ -430,7 +430,7 @@ ArenaPromise<absl::Status> TlsChannelSecurityConnector::CheckCallHost(
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
     OnCertificatesChanged(std::optional<absl::string_view> root_certs,
                           std::optional<PemKeyCertPairList> key_cert_pairs) {
-  CHECK_NE(security_connector_, nullptr);
+  ABSL_CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);
   if (root_certs.has_value()) {
     security_connector_->pem_root_certs_ = root_certs;
@@ -446,7 +446,7 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
   if (root_ready && identity_ready) {
     if (security_connector_->UpdateHandshakerFactoryLocked() !=
         GRPC_SECURITY_OK) {
-      LOG(ERROR) << "Update handshaker factory failed.";
+      ABSL_LOG(ERROR) << "Update handshaker factory failed.";
     }
   }
 }
@@ -456,11 +456,11 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::OnError(
     grpc_error_handle root_cert_error, grpc_error_handle identity_cert_error) {
   if (!root_cert_error.ok()) {
-    LOG(ERROR) << "TlsChannelCertificateWatcher getting root_cert_error: "
+    ABSL_LOG(ERROR) << "TlsChannelCertificateWatcher getting root_cert_error: "
                << StatusToString(root_cert_error);
   }
   if (!identity_cert_error.ok()) {
-    LOG(ERROR) << "TlsChannelCertificateWatcher getting identity_cert_error: "
+    ABSL_LOG(ERROR) << "TlsChannelCertificateWatcher getting identity_cert_error: "
                << StatusToString(identity_cert_error);
   }
 }
@@ -557,12 +557,12 @@ TlsServerSecurityConnector::CreateTlsServerSecurityConnector(
     RefCountedPtr<grpc_server_credentials> server_creds,
     RefCountedPtr<grpc_tls_credentials_options> options) {
   if (server_creds == nullptr) {
-    LOG(ERROR) << "server_creds is nullptr in "
+    ABSL_LOG(ERROR) << "server_creds is nullptr in "
                   "TlsServerSecurityConnectorCreate()";
     return nullptr;
   }
   if (options == nullptr) {
-    LOG(ERROR) << "options is nullptr in "
+    ABSL_LOG(ERROR) << "options is nullptr in "
                   "TlsServerSecurityConnectorCreate()";
     return nullptr;
   }
@@ -623,7 +623,7 @@ void TlsServerSecurityConnector::add_handshakers(
         server_handshaker_factory_, /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0, &tsi_hs);
     if (result != TSI_OK) {
-      LOG(ERROR) << "Handshaker creation failed with error "
+      ABSL_LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);
     }
   }
@@ -669,7 +669,7 @@ void TlsServerSecurityConnector::cancel_check_peer(
       if (it != pending_verifier_requests_.end()) {
         pending_verifier_request = it->second->request();
       } else {
-        LOG(INFO) << "TlsServerSecurityConnector::cancel_check_peer: no "
+        ABSL_LOG(INFO) << "TlsServerSecurityConnector::cancel_check_peer: no "
                      "corresponding pending request found";
       }
     }
@@ -690,7 +690,7 @@ int TlsServerSecurityConnector::cmp(
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::
     OnCertificatesChanged(std::optional<absl::string_view> root_certs,
                           std::optional<PemKeyCertPairList> key_cert_pairs) {
-  CHECK_NE(security_connector_, nullptr);
+  ABSL_CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);
   if (root_certs.has_value()) {
     security_connector_->pem_root_certs_ = root_certs;
@@ -710,7 +710,7 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
       (!root_being_watched && identity_being_watched && identity_has_value)) {
     if (security_connector_->UpdateHandshakerFactoryLocked() !=
         GRPC_SECURITY_OK) {
-      LOG(ERROR) << "Update handshaker factory failed.";
+      ABSL_LOG(ERROR) << "Update handshaker factory failed.";
     }
   }
 }
@@ -720,11 +720,11 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::OnError(
     grpc_error_handle root_cert_error, grpc_error_handle identity_cert_error) {
   if (!root_cert_error.ok()) {
-    LOG(ERROR) << "TlsServerCertificateWatcher getting root_cert_error: "
+    ABSL_LOG(ERROR) << "TlsServerCertificateWatcher getting root_cert_error: "
                << StatusToString(root_cert_error);
   }
   if (!identity_cert_error.ok()) {
-    LOG(ERROR) << "TlsServerCertificateWatcher getting identity_cert_error: "
+    ABSL_LOG(ERROR) << "TlsServerCertificateWatcher getting identity_cert_error: "
                << StatusToString(identity_cert_error);
   }
 }
@@ -787,8 +787,8 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
     tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
   }
   // The identity certs on the server side shouldn't be empty.
-  CHECK(pem_key_cert_pair_list_.has_value());
-  CHECK(!(*pem_key_cert_pair_list_).empty());
+  ABSL_CHECK(pem_key_cert_pair_list_.has_value());
+  ABSL_CHECK(!(*pem_key_cert_pair_list_).empty());
   std::string pem_root_certs;
   if (pem_root_certs_.has_value()) {
     // TODO(ZhenLian): update the underlying TSI layer to use C++ types like

@@ -25,8 +25,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -122,7 +122,7 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
         CoreConfiguration::Get().resolver_registry().CreateResolver(
             absl::StrCat("dns:", name_to_resolve), args.args, args.pollset_set,
             work_serializer_, std::move(args.result_handler));
-    CHECK(child_resolver_ != nullptr);
+    ABSL_CHECK(child_resolver_ != nullptr);
     return;
   }
   // Maybe override metadata server name for testing
@@ -141,7 +141,7 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
   child_resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       xds_uri, args.args, args.pollset_set, work_serializer_,
       std::move(args.result_handler));
-  CHECK(child_resolver_ != nullptr);
+  ABSL_CHECK(child_resolver_ != nullptr);
 }
 
 void GoogleCloud2ProdResolver::StartLocked() {
@@ -281,7 +281,7 @@ class GoogleCloud2ProdResolverFactory final : public ResolverFactory {
 
   bool IsValidUri(const URI& uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {
-      LOG(ERROR) << "google-c2p URI scheme does not support authorities";
+      ABSL_LOG(ERROR) << "google-c2p URI scheme does not support authorities";
       return false;
     }
     return true;
@@ -304,7 +304,7 @@ class ExperimentalGoogleCloud2ProdResolverFactory final
 
   bool IsValidUri(const URI& uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {
-      LOG(ERROR) << "google-c2p-experimental URI scheme does not support "
+      ABSL_LOG(ERROR) << "google-c2p-experimental URI scheme does not support "
                     "authorities";
       return false;
     }

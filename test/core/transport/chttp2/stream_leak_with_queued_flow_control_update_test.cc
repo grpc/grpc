@@ -28,8 +28,8 @@
 #include <string>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -51,7 +51,7 @@ class TestServer {
     grpc_server_register_completion_queue(server_, cq_, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    CHECK(grpc_server_add_http2_port(server_, address_.c_str(), server_creds));
+    ABSL_CHECK(grpc_server_add_http2_port(server_, address_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
   }
@@ -60,9 +60,9 @@ class TestServer {
     grpc_server_shutdown_and_notify(server_, cq_, this /* tag */);
     grpc_event event = grpc_completion_queue_next(
         cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-    CHECK(event.type == GRPC_OP_COMPLETE);
-    CHECK(event.success);
-    CHECK(event.tag == this);
+    ABSL_CHECK(event.type == GRPC_OP_COMPLETE);
+    ABSL_CHECK(event.success);
+    ABSL_CHECK(event.tag == this);
     grpc_server_destroy(server_);
   }
 
@@ -78,14 +78,14 @@ class TestServer {
     grpc_call* call;
     grpc_call_error error = grpc_server_request_call(
         server_, &call, &call_details, &request_metadata_recv, cq_, cq_, tag);
-    CHECK_EQ(error, GRPC_CALL_OK);
+    ABSL_CHECK_EQ(error, GRPC_CALL_OK);
     grpc_event event = grpc_completion_queue_next(
         cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-    CHECK(event.type == GRPC_OP_COMPLETE);
+    ABSL_CHECK(event.type == GRPC_OP_COMPLETE);
     grpc_call_details_destroy(&call_details);
     grpc_metadata_array_destroy(&request_metadata_recv);
-    CHECK(event.success);
-    CHECK(event.tag == tag);
+    ABSL_CHECK(event.success);
+    ABSL_CHECK(event.tag == tag);
     // Send a response with a 1-byte payload. The 1-byte length is important
     // because it's enough to get the client to *queue* a flow control update,
     // but not long enough to get the client to initiate a write on that update.
@@ -110,12 +110,12 @@ class TestServer {
     op++;
     error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag,
                                   nullptr);
-    CHECK_EQ(error, GRPC_CALL_OK);
+    ABSL_CHECK_EQ(error, GRPC_CALL_OK);
     event = grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME),
                                        nullptr);
-    CHECK(event.type == GRPC_OP_COMPLETE);
-    CHECK(event.success);
-    CHECK(event.tag == tag);
+    ABSL_CHECK(event.type == GRPC_OP_COMPLETE);
+    ABSL_CHECK(event.success);
+    ABSL_CHECK(event.tag == tag);
     grpc_byte_buffer_destroy(response_payload);
     grpc_call_unref(call);
   }
@@ -140,12 +140,12 @@ void StartCallAndCloseWrites(grpc_call* call, grpc_completion_queue* cq) {
   void* tag = call;
   grpc_call_error error = grpc_call_start_batch(
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
   grpc_event event = grpc_completion_queue_next(
       cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-  CHECK(event.type == GRPC_OP_COMPLETE);
-  CHECK(event.success);
-  CHECK(event.tag == tag);
+  ABSL_CHECK(event.type == GRPC_OP_COMPLETE);
+  ABSL_CHECK(event.success);
+  ABSL_CHECK(event.tag == tag);
 }
 
 void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
@@ -178,12 +178,12 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   op++;
   grpc_call_error error = grpc_call_start_batch(
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
   grpc_event event = grpc_completion_queue_next(
       cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-  CHECK(event.type == GRPC_OP_COMPLETE);
-  CHECK(event.success);
-  CHECK(event.tag == tag);
+  ABSL_CHECK(event.type == GRPC_OP_COMPLETE);
+  ABSL_CHECK(event.success);
+  ABSL_CHECK(event.tag == tag);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   grpc_byte_buffer_destroy(recv_payload);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -197,14 +197,14 @@ class TransportCounter {
     grpc_core::MutexLock lock(&mu_);
     ++num_created_;
     ++num_live_;
-    LOG(INFO) << "TransportCounter num_created_=" << num_created_
+    ABSL_LOG(INFO) << "TransportCounter num_created_=" << num_created_
               << " num_live_=" << num_live_ << " InitCallback";
   }
 
   void DestructCallback() {
     grpc_core::MutexLock lock(&mu_);
     --num_live_;
-    LOG(INFO) << "TransportCounter num_created_=" << num_created_
+    ABSL_LOG(INFO) << "TransportCounter num_created_=" << num_created_
               << " num_live_=" << num_live_ << " DestructCallback";
   }
 
@@ -231,23 +231,23 @@ void CounterInitCallback() { g_transport_counter->InitCallback(); }
 void CounterDestructCallback() { g_transport_counter->DestructCallback(); }
 
 void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
-  LOG(INFO) << "The channel has been destroyed, wait for it to shut down and "
+  ABSL_LOG(INFO) << "The channel has been destroyed, wait for it to shut down and "
                "close...";
   // Do a quick initial poll to try to exit the test early if things have
   // already cleaned up.
-  CHECK(grpc_completion_queue_next(
+  ABSL_CHECK(grpc_completion_queue_next(
             cq,
             gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                          gpr_time_from_millis(1, GPR_TIMESPAN)),
             nullptr)
             .type == GRPC_QUEUE_TIMEOUT);
   if (g_transport_counter->num_created() < 2) {
-    LOG(ERROR) << "g_transport_counter->num_created() == "
+    ABSL_LOG(ERROR) << "g_transport_counter->num_created() == "
                << g_transport_counter->num_created()
                << ". This means that g_transport_counter isn't working and "
                   "this test is broken. At least a couple of transport objects "
                   "should have been created.";
-    CHECK(0);
+    ABSL_CHECK(0);
   }
   gpr_timespec overall_deadline = grpc_timeout_seconds_to_deadline(120);
   for (;;) {
@@ -256,13 +256,13 @@ void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
     int64_t live_transports = g_transport_counter->num_live();
     if (live_transports == 0) return;
     if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
-      LOG(INFO) << "g_transport_counter->num_live() never returned 0. "
+      ABSL_LOG(INFO) << "g_transport_counter->num_live() never returned 0. "
                    "It's likely this test has triggered a connection leak.";
-      CHECK(0);
+      ABSL_CHECK(0);
     }
-    LOG(INFO) << "g_transport_counter->num_live() returned " << live_transports
+    ABSL_LOG(INFO) << "g_transport_counter->num_live() returned " << live_transports
               << ", keep waiting until it reaches 0";
-    CHECK(grpc_completion_queue_next(
+    ABSL_CHECK(grpc_completion_queue_next(
               cq,
               gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                            gpr_time_from_seconds(1, GPR_TIMESPAN)),
@@ -304,7 +304,7 @@ TEST(
     // the wire, *before* it begins the RECV_MESSAGE and RECV_STATUS ops.
     // The timeout here just needs to be long enough that the client has
     // most likely reads everything the server sent it by the time it's done.
-    CHECK(grpc_completion_queue_next(
+    ABSL_CHECK(grpc_completion_queue_next(
               cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
               .type == GRPC_QUEUE_TIMEOUT);
     // Perform the receive message and status. Note that the incoming bytes

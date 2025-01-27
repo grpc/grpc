@@ -20,8 +20,8 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -86,7 +86,7 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
     return;
   }
   // Prepare the WSABUF struct
-  CHECK(buffer->Count() <= kMaxWSABUFCount);
+  ABSL_CHECK(buffer->Count() <= kMaxWSABUFCount);
   WSABUF wsa_buffers[kMaxWSABUFCount];
   for (size_t i = 0; i < buffer->Count(); i++) {
     auto& slice = buffer->MutableSliceAt(i);
@@ -165,11 +165,11 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
           << " WRITE (peer=" << peer_address_string_ << "): " << str;
     }
   }
-  CHECK(data->Count() <= UINT_MAX);
+  ABSL_CHECK(data->Count() <= UINT_MAX);
   absl::InlinedVector<WSABUF, kMaxWSABUFCount> buffers(data->Count());
   for (size_t i = 0; i < data->Count(); i++) {
     auto& slice = data->MutableSliceAt(i);
-    CHECK(slice.size() <= ULONG_MAX);
+    ABSL_CHECK(slice.size() <= ULONG_MAX);
     buffers[i].len = slice.size();
     buffers[i].buf = (char*)slice.begin();
   }
@@ -294,10 +294,10 @@ void WindowsEndpoint::HandleReadClosure::Run() {
     return ResetAndReturnCallback()(status);
   }
   if (result.bytes_transferred == 0) {
-    DCHECK_GT(io_state.use_count(), 0);
+    ABSL_DCHECK_GT(io_state.use_count(), 0);
     // Either the endpoint is shut down or we've seen the end of the stream
     if (GRPC_TRACE_FLAG_ENABLED(event_engine_endpoint_data)) {
-      LOG(INFO) << "WindowsEndpoint::" << this << " read 0 bytes.";
+      ABSL_LOG(INFO) << "WindowsEndpoint::" << this << " read 0 bytes.";
       DumpSliceBuffer(
           &last_read_buffer_,
           absl::StrFormat("WindowsEndpoint::%p READ last_read_buffer_: ",
@@ -313,8 +313,8 @@ void WindowsEndpoint::HandleReadClosure::Run() {
     }
     return ResetAndReturnCallback()(status);
   }
-  DCHECK_GT(result.bytes_transferred, 0);
-  DCHECK(result.bytes_transferred <= buffer_->Length());
+  ABSL_DCHECK_GT(result.bytes_transferred, 0);
+  ABSL_DCHECK(result.bytes_transferred <= buffer_->Length());
   buffer_->MoveFirstNBytesIntoSliceBuffer(result.bytes_transferred,
                                           last_read_buffer_);
   if (buffer_->Length() == 0) {
@@ -345,9 +345,9 @@ bool WindowsEndpoint::HandleReadClosure::MaybeFinishIfDataHasAlreadyBeenRead() {
 void WindowsEndpoint::HandleReadClosure::DonateSpareSlices(
     SliceBuffer* buffer) {
   // Donee buffer must be empty.
-  CHECK_EQ(buffer->Length(), 0);
+  ABSL_CHECK_EQ(buffer->Length(), 0);
   // HandleReadClosure must be in the reset state.
-  CHECK_EQ(buffer_, nullptr);
+  ABSL_CHECK_EQ(buffer_, nullptr);
   buffer->Swap(last_read_buffer_);
 }
 
@@ -365,7 +365,7 @@ void WindowsEndpoint::HandleWriteClosure::Run() {
   if (result.wsa_error != 0) {
     status = GRPC_WSA_ERROR(result.wsa_error, "WSASend");
   } else {
-    CHECK(result.bytes_transferred == buffer_->Length());
+    ABSL_CHECK(result.bytes_transferred == buffer_->Length());
   }
   return ResetAndReturnCallback()(status);
 }

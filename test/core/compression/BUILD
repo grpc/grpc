@@ -27,7 +27,7 @@ grpc_cc_test(
     name = "compression_test",
     srcs = ["compression_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,
@@ -70,7 +70,7 @@ grpc_cc_test(
     name = "message_compress_test",
     srcs = ["message_compress_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,

@@ -31,8 +31,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "google/protobuf/timestamp.pb.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
@@ -77,7 +77,7 @@ static deque<string> get_workers(const string& env_name) {
     }
   }
   if (out.empty()) {
-    LOG(ERROR) << "Environment variable \"" << env_name
+    ABSL_LOG(ERROR) << "Environment variable \"" << env_name
                << "\" does not contain a list of QPS "
                   "workers to use. Set it to a comma-separated list of "
                   "hostname:port pairs, starting with hosts that should act as "
@@ -236,7 +236,7 @@ struct ServerData {
 
 static void FinishClients(const std::vector<ClientData>& clients,
                           const ClientArgs& client_mark) {
-  LOG(INFO) << "Finishing clients";
+  ABSL_LOG(INFO) << "Finishing clients";
   for (size_t i = 0, i_end = clients.size(); i < i_end; i++) {
     auto client = &clients[i];
     if (!client->stream->Write(client_mark)) {
@@ -251,13 +251,13 @@ static void FinishClients(const std::vector<ClientData>& clients,
 static void ReceiveFinalStatusFromClients(
     const std::vector<ClientData>& clients, Histogram& merged_latencies,
     std::unordered_map<int, int64_t>& merged_statuses, ScenarioResult& result) {
-  LOG(INFO) << "Receiving final status from clients";
+  ABSL_LOG(INFO) << "Receiving final status from clients";
   ClientStatus client_status;
   for (size_t i = 0, i_end = clients.size(); i < i_end; i++) {
     auto client = &clients[i];
     // Read the client final status
     if (client->stream->Read(&client_status)) {
-      LOG(INFO) << "Received final status from client " << i;
+      ABSL_LOG(INFO) << "Received final status from client " << i;
       const auto& stats = client_status.stats();
       merged_latencies.MergeProto(stats.latencies());
       for (int i = 0; i < stats.request_results_size(); i++) {
@@ -271,7 +271,7 @@ static void ReceiveFinalStatusFromClients(
       // long on some scenarios (e.g. unconstrained streaming_from_server). See
       // https://github.com/grpc/grpc/blob/3bd0cd208ea549760a2daf595f79b91b247fe240/test/cpp/qps/server_async.cc#L176
       // where the shutdown delay pretty much determines the wait here.
-      CHECK(!client->stream->Read(&client_status));
+      ABSL_CHECK(!client->stream->Read(&client_status));
     } else {
       grpc_core::Crash(
           absl::StrFormat("Couldn't get final status from client %zu", i));
@@ -281,7 +281,7 @@ static void ReceiveFinalStatusFromClients(
 
 static void ShutdownClients(const std::vector<ClientData>& clients,
                             ScenarioResult& result) {
-  LOG(INFO) << "Shutdown clients";
+  ABSL_LOG(INFO) << "Shutdown clients";
   for (size_t i = 0, i_end = clients.size(); i < i_end; i++) {
     auto client = &clients[i];
     Status s = client->stream->Finish();
@@ -299,7 +299,7 @@ static void ShutdownClients(const std::vector<ClientData>& clients,
 
 static void FinishServers(const std::vector<ServerData>& servers,
                           const ServerArgs& server_mark) {
-  LOG(INFO) << "Finishing servers";
+  ABSL_LOG(INFO) << "Finishing servers";
   for (size_t i = 0, i_end = servers.size(); i < i_end; i++) {
     auto server = &servers[i];
     if (!server->stream->Write(server_mark)) {
@@ -313,17 +313,17 @@ static void FinishServers(const std::vector<ServerData>& servers,
 
 static void ReceiveFinalStatusFromServer(const std::vector<ServerData>& servers,
                                          ScenarioResult& result) {
-  LOG(INFO) << "Receiving final status from servers";
+  ABSL_LOG(INFO) << "Receiving final status from servers";
   ServerStatus server_status;
   for (size_t i = 0, i_end = servers.size(); i < i_end; i++) {
     auto server = &servers[i];
     // Read the server final status
     if (server->stream->Read(&server_status)) {
-      LOG(INFO) << "Received final status from server " << i;
+      ABSL_LOG(INFO) << "Received final status from server " << i;
       result.add_server_stats()->CopyFrom(server_status.stats());
       result.add_server_cores(server_status.cores());
       // That final status should be the last message on the server stream
-      CHECK(!server->stream->Read(&server_status));
+      ABSL_CHECK(!server->stream->Read(&server_status));
     } else {
       grpc_core::Crash(
           absl::StrFormat("Couldn't get final status from server %zu", i));
@@ -333,7 +333,7 @@ static void ReceiveFinalStatusFromServer(const std::vector<ServerData>& servers,
 
 static void ShutdownServers(const std::vector<ServerData>& servers,
                             ScenarioResult& result) {
-  LOG(INFO) << "Shutdown servers";
+  ABSL_LOG(INFO) << "Shutdown servers";
   for (size_t i = 0, i_end = servers.size(); i < i_end; i++) {
     auto server = &servers[i];
     Status s = server->stream->Finish();
@@ -405,7 +405,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       workers.push_back(addr);
     }
   }
-  CHECK(!workers.empty());
+  ABSL_CHECK(!workers.empty());
 
   // if num_clients is set to <=0, do dynamic sizing: all workers
   // except for servers are clients
@@ -416,7 +416,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // TODO(ctiller): support running multiple configurations, and binpack
   // client/server pairs
   // to available workers
-  CHECK_GE(workers.size(), num_clients + num_servers);
+  ABSL_CHECK_GE(workers.size(), num_clients + num_servers);
 
   // Trim to just what we need
   workers.resize(num_clients + num_servers);
@@ -427,7 +427,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   ChannelArguments channel_args;
 
   for (size_t i = 0; i < num_servers; i++) {
-    LOG(INFO) << "Starting server on " << workers[i] << " (worker #" << i
+    ABSL_LOG(INFO) << "Starting server on " << workers[i] << " (worker #" << i
               << ")";
     if (!run_inproc) {
       servers[i].stub = WorkerService::NewStub(grpc::CreateTestChannel(
@@ -470,7 +470,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   if (!qps_server_target_override.empty()) {
     // overriding the qps server target only makes since if there is <= 1
     // servers
-    CHECK_LE(num_servers, 1u);
+    ABSL_CHECK_LE(num_servers, 1u);
     client_config.clear_server_targets();
     client_config.add_server_targets(qps_server_target_override);
   }
@@ -484,7 +484,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   size_t channels_allocated = 0;
   for (size_t i = 0; i < num_clients; i++) {
     const auto& worker = workers[i + num_servers];
-    LOG(INFO) << "Starting client on " << worker << " (worker #"
+    ABSL_LOG(INFO) << "Starting client on " << worker << " (worker #"
               << i + num_servers << ")";
     if (!run_inproc) {
       clients[i].stub = WorkerService::NewStub(grpc::CreateTestChannel(
@@ -507,7 +507,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
         (client_config.client_channels() - channels_allocated) /
         (num_clients - i);
     channels_allocated += num_channels;
-    VLOG(2) << "Client " << i << " gets " << num_channels << " channels";
+    ABSL_VLOG(2) << "Client " << i << " gets " << num_channels << " channels";
     per_client_config.set_client_channels(num_channels);
 
     ClientArgs args;
@@ -529,7 +529,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   // Send an initial mark: clients can use this to know that everything is ready
   // to start
-  LOG(INFO) << "Initiating";
+  ABSL_LOG(INFO) << "Initiating";
   ServerArgs server_mark;
   server_mark.mutable_mark()->set_reset(true);
   ClientArgs client_mark;
@@ -551,13 +551,13 @@ std::unique_ptr<ScenarioResult> RunScenario(
   }
 
   // Let everything warmup
-  LOG(INFO) << "Warming up";
+  ABSL_LOG(INFO) << "Warming up";
   gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
   gpr_sleep_until(
       gpr_time_add(start, gpr_time_from_seconds(warmup_seconds, GPR_TIMESPAN)));
 
   // Start a run
-  LOG(INFO) << "Starting";
+  ABSL_LOG(INFO) << "Starting";
 
   auto start_time = time(nullptr);
 
@@ -589,7 +589,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   }
 
   // Wait some time
-  LOG(INFO) << "Running";
+  ABSL_LOG(INFO) << "Running";
   // Use gpr_sleep_until rather than this_thread::sleep_until to support
   // compilers that don't work with this_thread
   gpr_sleep_until(gpr_time_add(
@@ -665,7 +665,7 @@ bool RunQuit(
     ctx.set_wait_for_ready(true);
     Status s = stub->QuitWorker(&ctx, phony, &phony);
     if (!s.ok()) {
-      LOG(ERROR) << "Worker " << i << " could not be properly quit because "
+      ABSL_LOG(ERROR) << "Worker " << i << " could not be properly quit because "
                  << s.error_message();
       result = false;
     }

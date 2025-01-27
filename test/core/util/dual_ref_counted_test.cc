@@ -18,7 +18,7 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "gtest/gtest.h"
 #include "src/core/util/manual_constructor.h"
 #include "src/core/util/ref_counted.h"
@@ -31,7 +31,7 @@ namespace {
 class Foo : public DualRefCounted<Foo> {
  public:
   Foo() = default;
-  ~Foo() override { CHECK(shutting_down_); }
+  ~Foo() override { ABSL_CHECK(shutting_down_); }
 
   void Orphaned() override { shutting_down_ = true; }
 
@@ -94,7 +94,7 @@ TEST(DualRefCounted, RefAndWeakRefAsSubclass) {
 class FooWithTracing : public DualRefCounted<FooWithTracing> {
  public:
   FooWithTracing() : DualRefCounted("FooWithTracing") {}
-  ~FooWithTracing() override { CHECK(shutting_down_); }
+  ~FooWithTracing() override { ABSL_CHECK(shutting_down_); }
 
   void Orphaned() override { shutting_down_ = true; }
 

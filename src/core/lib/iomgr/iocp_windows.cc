@@ -28,8 +28,8 @@
 
 #include <limits>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/socket_windows.h"
@@ -73,8 +73,8 @@ grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
   if (success == 0 && overlapped == NULL) {
     return GRPC_IOCP_WORK_TIMEOUT;
   }
-  CHECK(completion_key);
-  CHECK(overlapped);
+  ABSL_CHECK(completion_key);
+  ABSL_CHECK(overlapped);
   if (overlapped == &g_iocp_custom_overlap) {
     gpr_atm_full_fetch_add(&g_custom_events, -1);
     if (completion_key == (ULONG_PTR)&g_iocp_kick_token) {
@@ -102,7 +102,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
     info->bytes_transferred = bytes;
     info->wsa_error = success ? 0 : WSAGetLastError();
   }
-  CHECK(overlapped == &info->overlapped);
+  ABSL_CHECK(overlapped == &info->overlapped);
   bool should_destroy = grpc_socket_become_ready(socket, info);
   gpr_mu_unlock(&socket->state_mu);
   if (should_destroy) {
@@ -114,7 +114,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
 void grpc_iocp_init(void) {
   g_iocp =
       CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, (ULONG_PTR)NULL, 0);
-  CHECK(g_iocp);
+  ABSL_CHECK(g_iocp);
 }
 
 void grpc_iocp_kick(void) {
@@ -123,7 +123,7 @@ void grpc_iocp_kick(void) {
   gpr_atm_full_fetch_add(&g_custom_events, 1);
   success = PostQueuedCompletionStatus(g_iocp, 0, (ULONG_PTR)&g_iocp_kick_token,
                                        &g_iocp_custom_overlap);
-  CHECK(success);
+  ABSL_CHECK(success);
 }
 
 void grpc_iocp_flush(void) {
@@ -145,7 +145,7 @@ void grpc_iocp_shutdown(void) {
     grpc_core::ExecCtx::Get()->Flush();
   }
 
-  CHECK(CloseHandle(g_iocp));
+  ABSL_CHECK(CloseHandle(g_iocp));
 }
 
 void grpc_iocp_add_socket(grpc_winsocket* socket) {
@@ -155,13 +155,13 @@ void grpc_iocp_add_socket(grpc_winsocket* socket) {
                                (uintptr_t)socket, 0);
   if (!ret) {
     char* utf8_message = gpr_format_message(WSAGetLastError());
-    LOG(ERROR) << "Unable to add socket to iocp: " << utf8_message;
+    ABSL_LOG(ERROR) << "Unable to add socket to iocp: " << utf8_message;
     gpr_free(utf8_message);
     __debugbreak();
     abort();
   }
   socket->added_to_iocp = 1;
-  CHECK(ret == g_iocp);
+  ABSL_CHECK(ret == g_iocp);
 }
 
 void grpc_iocp_register_socket_shutdown_socket_locked(grpc_winsocket* socket) {

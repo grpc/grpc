@@ -25,7 +25,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -45,7 +45,7 @@ EndpointAddresses::EndpointAddresses(const grpc_resolved_address& address,
 EndpointAddresses::EndpointAddresses(
     std::vector<grpc_resolved_address> addresses, const ChannelArgs& args)
     : addresses_(std::move(addresses)), args_(args) {
-  CHECK(!addresses_.empty());
+  ABSL_CHECK(!addresses_.empty());
 }
 
 EndpointAddresses::EndpointAddresses(const EndpointAddresses& other)
@@ -108,7 +108,7 @@ bool EndpointAddressSet::operator==(const EndpointAddressSet& other) const {
   if (addresses_.size() != other.addresses_.size()) return false;
   auto other_it = other.addresses_.begin();
   for (auto it = addresses_.begin(); it != addresses_.end(); ++it) {
-    CHECK(other_it != other.addresses_.end());
+    ABSL_CHECK(other_it != other.addresses_.end());
     if (it->len != other_it->len ||
         memcmp(it->addr, other_it->addr, it->len) != 0) {
       return false;

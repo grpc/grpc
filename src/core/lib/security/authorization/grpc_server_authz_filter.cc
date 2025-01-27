@@ -21,7 +21,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
 #include "src/core/lib/channel/channel_stack.h"

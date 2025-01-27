@@ -19,7 +19,7 @@
 #include <memory>
 #include <optional>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/util/crash.h"
 
 namespace grpc_core {
@@ -50,7 +50,7 @@ GlobalInstrumentsRegistry::RegisterInstrument(
     }
   }
   InstrumentID index = instruments.size();
-  CHECK_LT(index, std::numeric_limits<uint32_t>::max());
+  ABSL_CHECK_LT(index, std::numeric_limits<uint32_t>::max());
   GlobalInstrumentDescriptor descriptor;
   descriptor.value_type = value_type;
   descriptor.instrument_type = instrument_type;

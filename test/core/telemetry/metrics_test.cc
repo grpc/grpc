@@ -17,7 +17,7 @@
 #include <memory>
 #include <thread>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -223,7 +223,7 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   auto plugin3 = MakeStatsPluginForTarget(kDomain1To4);
   // Register two callbacks that set the same metric but with different
   // label values.  The callbacks get used only by plugin1.
-  LOG(INFO) << "testing callbacks for: plugin1";
+  ABSL_LOG(INFO) << "testing callbacks for: plugin1";
   auto group1 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain3To4, "", endpoint_config_));
   auto callback1 = group1.RegisterCallback(
@@ -284,7 +284,7 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   callback1.reset();
   callback2.reset();
   // Now register callbacks that hit both plugin1 and plugin2.
-  LOG(INFO) << "testing callbacks for: plugin1, plugin2";
+  ABSL_LOG(INFO) << "testing callbacks for: plugin1, plugin2";
   auto group2 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain2To4, "", endpoint_config_));
   callback1 = group2.RegisterCallback(
@@ -345,7 +345,7 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   callback1.reset();
   callback2.reset();
   // Now register callbacks that hit all three plugins.
-  LOG(INFO) << "testing callbacks for: plugin1, plugin2, plugin3";
+  ABSL_LOG(INFO) << "testing callbacks for: plugin1, plugin2, plugin3";
   auto group3 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain1To4, "", endpoint_config_));
   callback1 = group3.RegisterCallback(
@@ -428,7 +428,7 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   auto plugin3 = MakeStatsPluginForTarget(kDomain1To4);
   // Register two callbacks that set the same metric but with different
   // label values.  The callbacks get used only by plugin1.
-  LOG(INFO) << "testing callbacks for: plugin1";
+  ABSL_LOG(INFO) << "testing callbacks for: plugin1";
   auto group1 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain3To4, "", endpoint_config_));
   auto callback1 = group1.RegisterCallback(
@@ -489,7 +489,7 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   callback1.reset();
   callback2.reset();
   // Now register callbacks that hit both plugin1 and plugin2.
-  LOG(INFO) << "testing callbacks for: plugin1, plugin2";
+  ABSL_LOG(INFO) << "testing callbacks for: plugin1, plugin2";
   auto group2 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain2To4, "", endpoint_config_));
   callback1 = group2.RegisterCallback(
@@ -550,7 +550,7 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   callback1.reset();
   callback2.reset();
   // Now register callbacks that hit all three plugins.
-  LOG(INFO) << "testing callbacks for: plugin1, plugin2, plugin3";
+  ABSL_LOG(INFO) << "testing callbacks for: plugin1, plugin2, plugin3";
   auto group3 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain1To4, "", endpoint_config_));
   callback1 = group3.RegisterCallback(

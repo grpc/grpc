@@ -81,7 +81,7 @@ template <FrameType frame_type, typename Body>
 struct ProtoTransportFrame final : public FrameInterface {
   absl::Status Deserialize(const FrameHeader& header,
                            SliceBuffer payload) override {
-    DCHECK_EQ(header.type, frame_type);
+    ABSL_DCHECK_EQ(header.type, frame_type);
     return ReadTransportProto(header, std::move(payload), body);
   }
   FrameHeader MakeHeader() const override {
@@ -104,14 +104,14 @@ template <FrameType frame_type, typename Body>
 struct ProtoStreamFrame final : public FrameInterface {
   absl::Status Deserialize(const FrameHeader& header,
                            SliceBuffer payload) override {
-    DCHECK_EQ(header.type, frame_type);
+    ABSL_DCHECK_EQ(header.type, frame_type);
     return ReadStreamProto(header, std::move(payload), body, stream_id);
   }
   FrameHeader MakeHeader() const override {
     return FrameHeader{frame_type, 0, stream_id, ProtoPayloadSize(body)};
   }
   void SerializePayload(SliceBuffer& payload) const override {
-    DCHECK_NE(stream_id, 0u);
+    ABSL_DCHECK_NE(stream_id, 0u);
     WriteProto(body, payload);
   }
   std::string ToString() const override {
@@ -129,7 +129,7 @@ struct EmptyStreamFrame final : public FrameInterface {
   EmptyStreamFrame() = default;
   explicit EmptyStreamFrame(uint32_t stream_id) : stream_id(stream_id) {}
   absl::Status Deserialize(const FrameHeader& header, SliceBuffer) override {
-    DCHECK_EQ(header.type, frame_type);
+    ABSL_DCHECK_EQ(header.type, frame_type);
     return ReadEmptyFrame(header, stream_id);
   }
   FrameHeader MakeHeader() const override {

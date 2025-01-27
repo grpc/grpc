@@ -34,7 +34,7 @@ grpc_cc_library(
     hdrs = ["yodel_test.h"],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/log",
+        "absl/log:absl_log",
         "absl/random",
         "absl/random:bit_gen_ref",
         "absl/strings",

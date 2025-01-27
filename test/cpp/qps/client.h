@@ -34,7 +34,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
@@ -201,10 +201,10 @@ class Client {
     if (median_latency_collection_interval_seconds_ > 0) {
       std::vector<double> medians_per_interval =
           threads_[0]->GetMedianPerIntervalList();
-      LOG(INFO) << "Num threads: " << threads_.size();
-      LOG(INFO) << "Number of medians: " << medians_per_interval.size();
+      ABSL_LOG(INFO) << "Num threads: " << threads_.size();
+      ABSL_LOG(INFO) << "Number of medians: " << medians_per_interval.size();
       for (size_t j = 0; j < medians_per_interval.size(); j++) {
-        LOG(INFO) << medians_per_interval[j];
+        ABSL_LOG(INFO) << medians_per_interval[j];
       }
     }
 
@@ -316,7 +316,7 @@ class Client {
           &client_->start_requests_,
           gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                        gpr_time_from_seconds(20, GPR_TIMESPAN)))) {
-        LOG(INFO) << idx_ << ": Waiting for benchmark to start (" << wait_loop
+        ABSL_LOG(INFO) << idx_ << ": Waiting for benchmark to start (" << wait_loop
                   << ")";
         wait_loop++;
       }
@@ -461,7 +461,7 @@ class ClientImpl : public Client {
         !channel_connect_timeout_str->empty()) {
       connect_deadline_seconds = atoi(channel_connect_timeout_str->c_str());
     }
-    LOG(INFO) << "Waiting for up to " << connect_deadline_seconds
+    ABSL_LOG(INFO) << "Waiting for up to " << connect_deadline_seconds
               << " seconds for all channels to connect";
     gpr_timespec connect_deadline = gpr_time_add(
         gpr_now(GPR_CLOCK_REALTIME),
@@ -473,7 +473,7 @@ class ClientImpl : public Client {
         Channel* channel = c.get_channel();
         grpc_connectivity_state last_observed = channel->GetState(true);
         if (last_observed == GRPC_CHANNEL_READY) {
-          LOG(INFO) << "Channel " << channel << " connected!";
+          ABSL_LOG(INFO) << "Channel " << channel << " connected!";
         } else {
           num_remaining++;
           channel->NotifyOnStateChange(last_observed, connect_deadline, &cq,
@@ -492,7 +492,7 @@ class ClientImpl : public Client {
       } else {
         grpc_connectivity_state last_observed = channel->GetState(true);
         if (last_observed == GRPC_CHANNEL_READY) {
-          LOG(INFO) << "Channel " << channel << " connected!";
+          ABSL_LOG(INFO) << "Channel " << channel << " connected!";
           num_remaining--;
         } else {
           channel->NotifyOnStateChange(last_observed, connect_deadline, &cq,
@@ -531,7 +531,7 @@ class ClientImpl : public Client {
             target, type, config.security_params().server_host_override(),
             !config.security_params().use_test_ca(),
             std::shared_ptr<CallCredentials>(), args);
-        LOG(INFO) << "Connecting to " << target;
+        ABSL_LOG(INFO) << "Connecting to " << target;
         is_inproc_ = false;
       } else {
         std::string tgt = target;
@@ -554,7 +554,7 @@ class ClientImpl : public Client {
         } else if (channel_arg.value_case() == ChannelArg::kIntValue) {
           args->SetInt(channel_arg.name(), channel_arg.int_value());
         } else {
-          LOG(ERROR) << "Empty channel arg value.";
+          ABSL_LOG(ERROR) << "Empty channel arg value.";
         }
       }
     }

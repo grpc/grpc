@@ -377,7 +377,7 @@ ClusterLoadAssignment XdsResourceUtils::BuildEdsResource(
           absl::Status status = grpc::protobuf::json::JsonStringToMessage(
               value, &filter_map[key],
               grpc::protobuf::json::JsonParseOptions());
-          CHECK(status.ok()) << status;
+          ABSL_CHECK(status.ok()) << status;
         }
       }
     }

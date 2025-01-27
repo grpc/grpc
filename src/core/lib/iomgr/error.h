@@ -26,7 +26,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -72,7 +72,7 @@ absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name);
 
 inline absl::Status grpc_assert_never_ok(absl::Status error) {
-  CHECK(!error.ok());
+  ABSL_CHECK(!error.ok());
   return error;
 }
 

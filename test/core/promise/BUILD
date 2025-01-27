@@ -527,7 +527,7 @@ grpc_proto_fuzzer(
     corpus = "promise_fuzzer_corpus",
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/log:check",
+        "absl/log:absl_check",
         "absl/status",
     ],
     proto = "promise_fuzzer.proto",
@@ -604,7 +604,7 @@ grpc_cc_test(
     name = "sleep_test",
     srcs = ["sleep_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = ["promise_test"],
@@ -657,7 +657,7 @@ grpc_cc_test(
     srcs = ["party_test.cc"],
     external_deps = [
         "absl/base:core_headers",
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = ["promise_test"],

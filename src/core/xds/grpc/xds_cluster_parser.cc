@@ -19,8 +19,8 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -446,7 +446,7 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
     ValidationErrors::ScopedField field(&errors, ".cluster_type");
     const auto* custom_cluster_type =
         envoy_config_cluster_v3_Cluster_cluster_type(cluster);
-    CHECK_NE(custom_cluster_type, nullptr);
+    ABSL_CHECK_NE(custom_cluster_type, nullptr);
     ValidationErrors::ScopedField field2(&errors, ".typed_config");
     const auto* typed_config =
         envoy_config_cluster_v3_Cluster_CustomClusterType_typed_config(
@@ -729,7 +729,7 @@ void MaybeLogCluster(const XdsResourceType::DecodeContext& context,
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(cluster), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    VLOG(2) << "[xds_client " << context.client << "] Cluster: " << buf;
+    ABSL_VLOG(2) << "[xds_client " << context.client << "] Cluster: " << buf;
   }
 }
 
@@ -754,13 +754,13 @@ XdsResourceType::DecodeResult XdsClusterResourceType::Decode(
   auto cds_resource = CdsResourceParse(context, resource);
   if (!cds_resource.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-      LOG(ERROR) << "[xds_client " << context.client << "] invalid Cluster "
+      ABSL_LOG(ERROR) << "[xds_client " << context.client << "] invalid Cluster "
                  << *result.name << ": " << cds_resource.status();
     }
     result.resource = cds_resource.status();
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-      LOG(INFO) << "[xds_client " << context.client << "] parsed Cluster "
+      ABSL_LOG(INFO) << "[xds_client " << context.client << "] parsed Cluster "
                 << *result.name << ": " << (*cds_resource)->ToString();
     }
     result.resource = std::move(*cds_resource);

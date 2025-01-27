@@ -20,7 +20,7 @@
 
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -66,7 +66,7 @@ TEST(ExamineStackTest, AbseilStackProvider) {
   const std::optional<std::string> stack_trace =
       grpc_core::GetCurrentStackTrace();
   EXPECT_NE(stack_trace, std::nullopt);
-  LOG(INFO) << "stack_trace=" << *stack_trace;
+  ABSL_LOG(INFO) << "stack_trace=" << *stack_trace;
 #if !defined(NDEBUG) && !defined(GPR_MUSL_LIBC_COMPAT)
   // Expect to see some gtest signature on the stack (this used to be
   // GetCurrentStackTrace, but some operating systems have trouble with the leaf

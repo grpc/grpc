@@ -31,7 +31,7 @@ ValueOrFailure<size_t> RequestBuffer::PushClientInitialMetadata(
   MutexLock lock(&mu_);
   if (std::get_if<Cancelled>(&state_)) return Failure{};
   auto& buffering = std::get<Buffering>(state_);
-  CHECK_EQ(buffering.initial_metadata.get(), nullptr);
+  ABSL_CHECK_EQ(buffering.initial_metadata.get(), nullptr);
   buffering.initial_metadata = std::move(md);
   buffering.buffered += buffering.initial_metadata->TransportSize();
   WakeupAsyncAllPullers();
@@ -50,7 +50,7 @@ Poll<ValueOrFailure<size_t>> RequestBuffer::PollPushMessage(
     buffering->messages.push_back(std::move(message));
   } else {
     auto& streaming = std::get<Streaming>(state_);
-    CHECK_EQ(streaming.end_of_stream, false);
+    ABSL_CHECK_EQ(streaming.end_of_stream, false);
     if (streaming.message != nullptr) {
       return PendingPush();
     }
@@ -69,7 +69,7 @@ StatusFlag RequestBuffer::FinishSends() {
     state_.emplace<Buffered>(std::move(buffered));
   } else {
     auto& streaming = std::get<Streaming>(state_);
-    CHECK_EQ(streaming.end_of_stream, false);
+    ABSL_CHECK_EQ(streaming.end_of_stream, false);
     streaming.end_of_stream = true;
   }
   WakeupAsyncAllPullers();
@@ -85,7 +85,7 @@ void RequestBuffer::Cancel(absl::Status error) {
 
 void RequestBuffer::Commit(Reader* winner) {
   MutexLock lock(&mu_);
-  CHECK_EQ(winner_, nullptr);
+  ABSL_CHECK_EQ(winner_, nullptr);
   winner_ = winner;
   if (auto* buffering = std::get_if<Buffering>(&state_)) {
     if (buffering->initial_metadata != nullptr &&
@@ -94,7 +94,7 @@ void RequestBuffer::Commit(Reader* winner) {
       state_.emplace<Streaming>();
     }
   } else if (auto* buffered = std::get_if<Buffered>(&state_)) {
-    CHECK_NE(buffered->initial_metadata.get(), nullptr);
+    ABSL_CHECK_NE(buffered->initial_metadata.get(), nullptr);
     if (winner->message_index_ == buffered->messages.size()) {
       state_.emplace<Streaming>().end_of_stream = true;
     }

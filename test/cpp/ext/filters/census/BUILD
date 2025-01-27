@@ -50,7 +50,7 @@ grpc_cc_test(
         "stats_plugin_end2end_test.cc",
     ],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
         "opencensus-stats-test",
         "opencensus-tags",

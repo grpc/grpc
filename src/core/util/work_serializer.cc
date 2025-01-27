@@ -29,8 +29,8 @@
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -105,7 +105,7 @@ class WorkSerializer::LegacyWorkSerializer final : public WorkSerializerImpl {
   // First 16 bits indicate ownership of the WorkSerializer, next 48 bits are
   // queue size (i.e., refs).
   static uint64_t MakeRefPair(uint16_t owners, uint64_t size) {
-    CHECK_EQ(size >> 48, 0u);
+    ABSL_CHECK_EQ(size >> 48, 0u);
     return (static_cast<uint64_t>(owners) << 48) + static_cast<int64_t>(size);
   }
   static uint32_t GetOwners(uint64_t ref_pair) {
@@ -142,7 +142,7 @@ void WorkSerializer::LegacyWorkSerializer::Run(std::function<void()> callback,
   const uint64_t prev_ref_pair =
       refs_.fetch_add(MakeRefPair(1, 1), std::memory_order_acq_rel);
   // The work serializer should not have been orphaned.
-  DCHECK_GT(GetSize(prev_ref_pair), 0u);
+  ABSL_DCHECK_GT(GetSize(prev_ref_pair), 0u);
   if (GetOwners(prev_ref_pair) == 0) {
     // We took ownership of the WorkSerializer. Invoke callback and drain queue.
     SetCurrentThread();
@@ -403,7 +403,7 @@ void WorkSerializer::DispatchingWorkSerializer::Run(
     running_start_time_ = std::chrono::steady_clock::now();
     items_processed_during_run_ = 0;
     time_running_items_ = std::chrono::steady_clock::duration();
-    CHECK(processing_.empty());
+    ABSL_CHECK(processing_.empty());
     processing_.emplace_back(std::move(callback), location);
     event_engine_->Run(this);
   } else {

@@ -33,7 +33,7 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/time.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/util/debug_location.h"
@@ -314,8 +314,8 @@ class GRPC_DLL ApplicationCallbackExecCtx {
         Fork::DecExecCtxCount();
       }
     } else {
-      DCHECK_EQ(head_, nullptr);
-      DCHECK_EQ(tail_, nullptr);
+      ABSL_DCHECK_EQ(head_, nullptr);
+      ABSL_DCHECK_EQ(tail_, nullptr);
     }
   }
 

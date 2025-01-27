@@ -23,7 +23,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -66,7 +66,7 @@ class Fuzzer {
     grpc_init();
     auto bootstrap = GrpcXdsBootstrap::Create(bootstrap_json);
     if (!bootstrap.ok()) {
-      LOG(ERROR) << "error creating bootstrap: " << bootstrap.status();
+      ABSL_LOG(ERROR) << "error creating bootstrap: " << bootstrap.status();
       // Leave xds_client_ unset, so Act() will be a no-op.
       return;
     }
@@ -142,7 +142,7 @@ class Fuzzer {
                 [](const testing::XdsClientTestPeer::ResourceCountLabels&
                        labels,
                    uint64_t count) {
-                  LOG(INFO) << "xds_authority=\"" << labels.xds_authority
+                  ABSL_LOG(INFO) << "xds_authority=\"" << labels.xds_authority
                             << "\", resource_type=\"" << labels.resource_type
                             << "\", cache_state=\"" << labels.cache_state
                             << "\" count=" << count;
@@ -152,7 +152,7 @@ class Fuzzer {
         testing::XdsClientTestPeer(xds_client_.get())
             .TestReportServerConnections(
                 [](absl::string_view xds_server, bool connected) {
-                  LOG(INFO) << "xds_server=\"" << xds_server
+                  ABSL_LOG(INFO) << "xds_server=\"" << xds_server
                             << "\" connected=" << connected;
                 });
         break;
@@ -194,7 +194,7 @@ class Fuzzer {
             resource,
         RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
         override {
-      LOG(INFO) << "==> OnResourceChanged(" << ResourceType::Get()->type_url()
+      ABSL_LOG(INFO) << "==> OnResourceChanged(" << ResourceType::Get()->type_url()
                 << " " << resource_name_ << "): "
                 << (resource.ok() ? (*resource)->ToString()
                                   : resource.status().ToString());
@@ -204,7 +204,7 @@ class Fuzzer {
         absl::Status status,
         RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
         override {
-      LOG(INFO) << "==> OnAmbientError(" << ResourceType::Get()->type_url()
+      ABSL_LOG(INFO) << "==> OnAmbientError(" << ResourceType::Get()->type_url()
                 << " " << resource_name_ << "): " << status;
     }
 
@@ -220,7 +220,7 @@ class Fuzzer {
   template <typename WatcherType>
   void StartWatch(std::map<std::string, std::set<WatcherType*>>* watchers,
                   std::string resource_name) {
-    LOG(INFO) << "### StartWatch("
+    ABSL_LOG(INFO) << "### StartWatch("
               << WatcherType::ResourceType::Get()->type_url() << " "
               << resource_name << ")";
     auto watcher = MakeRefCounted<WatcherType>(resource_name);
@@ -232,7 +232,7 @@ class Fuzzer {
   template <typename WatcherType>
   void StopWatch(std::map<std::string, std::set<WatcherType*>>* watchers,
                  std::string resource_name) {
-    LOG(INFO) << "### StopWatch("
+    ABSL_LOG(INFO) << "### StopWatch("
               << WatcherType::ResourceType::Get()->type_url() << " "
               << resource_name << ")";
     auto& watchers_set = (*watchers)[resource_name];
@@ -264,7 +264,7 @@ class Fuzzer {
 
   void TriggerConnectionFailure(const std::string& authority,
                                 absl::Status status) {
-    LOG(INFO) << "### TriggerConnectionFailure(" << authority
+    ABSL_LOG(INFO) << "### TriggerConnectionFailure(" << authority
               << "): " << status;
     const auto* xds_server = GetServer(authority);
     if (xds_server == nullptr) return;
@@ -301,14 +301,14 @@ class Fuzzer {
 
   void ReadMessageFromClient(const xds_client_fuzzer::StreamId& stream_id,
                              bool ok) {
-    LOG(INFO) << "### ReadMessageFromClient(" << StreamIdString(stream_id)
+    ABSL_LOG(INFO) << "### ReadMessageFromClient(" << StreamIdString(stream_id)
               << "): " << (ok ? "true" : "false");
     auto stream = GetStream(stream_id);
     if (stream == nullptr) return;
-    LOG(INFO) << "    stream=" << stream.get();
+    ABSL_LOG(INFO) << "    stream=" << stream.get();
     auto message = stream->WaitForMessageFromClient();
     if (message.has_value()) {
-      LOG(INFO) << "    completing send_message";
+      ABSL_LOG(INFO) << "    completing send_message";
       stream->CompleteSendMessageFromClient(ok);
     }
   }
@@ -316,20 +316,20 @@ class Fuzzer {
   void SendMessageToClient(
       const xds_client_fuzzer::StreamId& stream_id,
       const envoy::service::discovery::v3::DiscoveryResponse& response) {
-    LOG(INFO) << "### SendMessageToClient(" << StreamIdString(stream_id) << ")";
+    ABSL_LOG(INFO) << "### SendMessageToClient(" << StreamIdString(stream_id) << ")";
     auto stream = GetStream(stream_id);
     if (stream == nullptr) return;
-    LOG(INFO) << "    stream=" << stream.get();
+    ABSL_LOG(INFO) << "    stream=" << stream.get();
     stream->SendMessageToClient(response.SerializeAsString());
   }
 
   void SendStatusToClient(const xds_client_fuzzer::StreamId& stream_id,
                           absl::Status status) {
-    LOG(INFO) << "### SendStatusToClient(" << StreamIdString(stream_id)
+    ABSL_LOG(INFO) << "### SendStatusToClient(" << StreamIdString(stream_id)
               << "): " << status;
     auto stream = GetStream(stream_id);
     if (stream == nullptr) return;
-    LOG(INFO) << "    stream=" << stream.get();
+    ABSL_LOG(INFO) << "    stream=" << stream.get();
     stream->MaybeSendStatusToClient(std::move(status));
   }
 

@@ -27,8 +27,8 @@
 #include <set>
 #include <unordered_map>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/cpp/server/load_reporter/constants.h"
 
@@ -74,7 +74,7 @@ std::set<V> UnorderedMapOfSetExtract(std::unordered_map<K, std::set<V>>& map,
 // From a non-empty container, returns a pointer to a random element.
 template <typename C>
 const typename C::value_type* RandomElement(const C& container) {
-  CHECK(!container.empty());
+  ABSL_CHECK(!container.empty());
   auto it = container.begin();
   std::advance(it, std::rand() % container.size());
   return &(*it);
@@ -85,11 +85,11 @@ const typename C::value_type* RandomElement(const C& container) {
 LoadRecordKey::LoadRecordKey(const std::string& client_ip_and_token,
                              std::string user_id)
     : user_id_(std::move(user_id)) {
-  CHECK_GE(client_ip_and_token.size(), 2u);
+  ABSL_CHECK_GE(client_ip_and_token.size(), 2u);
   int ip_hex_size;
-  CHECK(sscanf(client_ip_and_token.substr(0, 2).c_str(), "%d", &ip_hex_size) ==
+  ABSL_CHECK(sscanf(client_ip_and_token.substr(0, 2).c_str(), "%d", &ip_hex_size) ==
         1);
-  CHECK(ip_hex_size == 0 || ip_hex_size == kIpv4AddressLength ||
+  ABSL_CHECK(ip_hex_size == 0 || ip_hex_size == kIpv4AddressLength ||
         ip_hex_size == kIpv6AddressLength);
   size_t cur_pos = 2;
   client_ip_hex_ = client_ip_and_token.substr(cur_pos, ip_hex_size);
@@ -109,7 +109,7 @@ std::string LoadRecordKey::GetClientIpBytes() const {
   } else if (client_ip_hex_.size() == kIpv4AddressLength) {
     uint32_t ip_bytes;
     if (sscanf(client_ip_hex_.c_str(), "%x", &ip_bytes) != 1) {
-      LOG(ERROR) << "Can't parse client IP (" << client_ip_hex_
+      ABSL_LOG(ERROR) << "Can't parse client IP (" << client_ip_hex_
                  << ") from a hex string to an integer.";
       return "";
     }
@@ -121,7 +121,7 @@ std::string LoadRecordKey::GetClientIpBytes() const {
     for (size_t i = 0; i < 4; ++i) {
       if (sscanf(client_ip_hex_.substr(i * 8, (i + 1) * 8).c_str(), "%x",
                  ip_bytes + i) != 1) {
-        LOG(ERROR) << "Can't parse client IP part ("
+        ABSL_LOG(ERROR) << "Can't parse client IP part ("
                    << client_ip_hex_.substr(i * 8, (i + 1) * 8)
                    << ") from a hex string to an integer.";
         return "";
@@ -146,18 +146,18 @@ void PerBalancerStore::MergeRow(const LoadRecordKey& key,
   // During suspension, the load data received will be dropped.
   if (!suspended_) {
     load_record_map_[key].MergeFrom(value);
-    VLOG(2) << "[PerBalancerStore " << this
+    ABSL_VLOG(2) << "[PerBalancerStore " << this
             << "] Load data merged (Key: " << key.ToString()
             << ", Value: " << value.ToString() << ").";
   } else {
-    VLOG(2) << "[PerBalancerStore " << this
+    ABSL_VLOG(2) << "[PerBalancerStore " << this
             << "] Load data dropped (Key: " << key.ToString()
             << ", Value: " << value.ToString() << ").";
   }
   // We always keep track of num_calls_in_progress_, so that when this
   // store is resumed, we still have a correct value of
   // num_calls_in_progress_.
-  CHECK(static_cast<int64_t>(num_calls_in_progress_) +
+  ABSL_CHECK(static_cast<int64_t>(num_calls_in_progress_) +
             value.GetNumCallsInProgressDelta() >=
         0);
   num_calls_in_progress_ += value.GetNumCallsInProgressDelta();
@@ -166,23 +166,23 @@ void PerBalancerStore::MergeRow(const LoadRecordKey& key,
 void PerBalancerStore::Suspend() {
   suspended_ = true;
   load_record_map_.clear();
-  VLOG(2) << "[PerBalancerStore " << this << "] Suspended.";
+  ABSL_VLOG(2) << "[PerBalancerStore " << this << "] Suspended.";
 }
 
 void PerBalancerStore::Resume() {
   suspended_ = false;
-  VLOG(2) << "[PerBalancerStore " << this << "] Resumed.";
+  ABSL_VLOG(2) << "[PerBalancerStore " << this << "] Resumed.";
 }
 
 uint64_t PerBalancerStore::GetNumCallsInProgressForReport() {
-  CHECK(!suspended_);
+  ABSL_CHECK(!suspended_);
   last_reported_num_calls_in_progress_ = num_calls_in_progress_;
   return num_calls_in_progress_;
 }
 
 void PerHostStore::ReportStreamCreated(const std::string& lb_id,
                                        const std::string& load_key) {
-  CHECK(lb_id != kInvalidLbId);
+  ABSL_CHECK(lb_id != kInvalidLbId);
   SetUpForNewLbId(lb_id, load_key);
   // Prior to this one, there was no load balancer receiving report, so we may
   // have unassigned orphaned stores to assign to this new balancer.
@@ -208,9 +208,9 @@ void PerHostStore::ReportStreamCreated(const std::string& lb_id,
 
 void PerHostStore::ReportStreamClosed(const std::string& lb_id) {
   auto it_store_for_gone_lb = per_balancer_stores_.find(lb_id);
-  CHECK(it_store_for_gone_lb != per_balancer_stores_.end());
+  ABSL_CHECK(it_store_for_gone_lb != per_balancer_stores_.end());
   // Remove this closed stream from our records.
-  CHECK(UnorderedMapOfSetEraseKeyValue(load_key_to_receiving_lb_ids_,
+  ABSL_CHECK(UnorderedMapOfSetEraseKeyValue(load_key_to_receiving_lb_ids_,
                                        it_store_for_gone_lb->second->load_key(),
                                        lb_id));
   std::set<PerBalancerStore*> orphaned_stores =
@@ -254,9 +254,9 @@ const std::set<PerBalancerStore*>* PerHostStore::GetAssignedStores(
 void PerHostStore::AssignOrphanedStore(PerBalancerStore* orphaned_store,
                                        const std::string& new_receiver) {
   auto it = assigned_stores_.find(new_receiver);
-  CHECK(it != assigned_stores_.end());
+  ABSL_CHECK(it != assigned_stores_.end());
   it->second.insert(orphaned_store);
-  LOG(INFO) << "[PerHostStore " << this << "] Re-assigned orphaned store ("
+  ABSL_LOG(INFO) << "[PerHostStore " << this << "] Re-assigned orphaned store ("
             << orphaned_store << ") with original LB ID of "
             << orphaned_store->lb_id() << " to new receiver " << new_receiver;
 }
@@ -265,8 +265,8 @@ void PerHostStore::SetUpForNewLbId(const std::string& lb_id,
                                    const std::string& load_key) {
   // The top-level caller (i.e., LoadReportService) should guarantee the
   // lb_id is unique for each reporting stream.
-  CHECK(per_balancer_stores_.find(lb_id) == per_balancer_stores_.end());
-  CHECK(assigned_stores_.find(lb_id) == assigned_stores_.end());
+  ABSL_CHECK(per_balancer_stores_.find(lb_id) == per_balancer_stores_.end());
+  ABSL_CHECK(assigned_stores_.find(lb_id) == assigned_stores_.end());
   load_key_to_receiving_lb_ids_[load_key].insert(lb_id);
   std::unique_ptr<PerBalancerStore> per_balancer_store(
       new PerBalancerStore(lb_id, load_key));
@@ -300,14 +300,14 @@ void LoadDataStore::MergeRow(const std::string& hostname,
   if (in_progress_delta != 0) {
     auto it_tracker = unknown_balancer_id_trackers_.find(key.lb_id());
     if (it_tracker == unknown_balancer_id_trackers_.end()) {
-      VLOG(2) << "[LoadDataStore " << this
+      ABSL_VLOG(2) << "[LoadDataStore " << this
               << "] Start tracking unknown balancer (lb_id_: " << key.lb_id()
               << ").";
       unknown_balancer_id_trackers_.insert(
           {key.lb_id(), static_cast<uint64_t>(in_progress_delta)});
     } else if ((it_tracker->second += in_progress_delta) == 0) {
       unknown_balancer_id_trackers_.erase(it_tracker);
-      VLOG(2) << "[LoadDataStore " << this
+      ABSL_VLOG(2) << "[LoadDataStore " << this
               << "] Stop tracking unknown balancer (lb_id_: " << key.lb_id()
               << ").";
     }
@@ -330,7 +330,7 @@ void LoadDataStore::ReportStreamCreated(const std::string& hostname,
 void LoadDataStore::ReportStreamClosed(const std::string& hostname,
                                        const std::string& lb_id) {
   auto it_per_host_store = per_host_stores_.find(hostname);
-  CHECK(it_per_host_store != per_host_stores_.end());
+  ABSL_CHECK(it_per_host_store != per_host_stores_.end());
   it_per_host_store->second.ReportStreamClosed(lb_id);
 }
 

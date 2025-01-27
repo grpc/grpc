@@ -17,7 +17,7 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 
 namespace grpc_core {
 namespace testing {
@@ -33,11 +33,11 @@ class CallChecker {
  public:
   explicit CallChecker(bool optional) : optional_(optional) {}
   ~CallChecker() {
-    if (!optional_) CHECK(called_);
+    if (!optional_) ABSL_CHECK(called_);
   }
 
   void Called() {
-    CHECK(!called_);
+    ABSL_CHECK(!called_);
     called_ = true;
   }
 

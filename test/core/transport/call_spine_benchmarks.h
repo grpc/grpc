@@ -58,7 +58,7 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
                     [](ClientToServerNextMessage msg) { return msg.status(); }),
                 handler.PushMessage(fixture.MakePayload())),
             [&handler_done, &fixture, handler](StatusFlag status) mutable {
-              CHECK(status.ok());
+              ABSL_CHECK(status.ok());
               handler.PushServerTrailingMetadata(
                   fixture.MakeServerTrailingMetadata());
               handler_done.Notify();
@@ -80,7 +80,7 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
                 Map(initiator.PullServerTrailingMetadata(),
                     [](ServerMetadataHandle) { return Success(); })),
             [&initiator_done](StatusFlag result) {
-              CHECK(result.ok());
+              ABSL_CHECK(result.ok());
               initiator_done.Notify();
             });
       });
@@ -99,7 +99,7 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
   call.handler.SpawnInfallible("handler-initial-metadata", [&]() {
     return Map(call.handler.PullClientInitialMetadata(),
                [&](ValueOrFailure<ClientMetadataHandle> md) {
-                 CHECK(md.ok());
+                 ABSL_CHECK(md.ok());
                  call.handler.PushServerInitialMetadata(
                      fixture.MakeServerInitialMetadata());
                  handler_metadata_done.Notify();
@@ -108,7 +108,7 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
   call.initiator.SpawnInfallible("initiator-initial-metadata", [&]() {
     return Map(call.initiator.PullServerInitialMetadata(),
                [&](std::optional<ServerMetadataHandle> md) {
-                 CHECK(md.has_value());
+                 ABSL_CHECK(md.has_value());
                  initiator_metadata_done.Notify();
                });
   });
@@ -120,14 +120,14 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
     call.handler.SpawnInfallible("handler", [&]() {
       return Map(call.handler.PullMessage(),
                  [&](ClientToServerNextMessage msg) {
-                   CHECK(msg.ok());
+                   ABSL_CHECK(msg.ok());
                    handler_done.Notify();
                  });
     });
     call.initiator.SpawnInfallible("initiator", [&]() {
       return Map(call.initiator.PushMessage(fixture.MakePayload()),
                  [&](StatusFlag result) {
-                   CHECK(result.ok());
+                   ABSL_CHECK(result.ok());
                    initiator_done.Notify();
                  });
     });
@@ -180,7 +180,7 @@ class FilterFixture {
   const RefCountedPtr<CallFilters::Stack> stack_ = [this]() {
     auto filter = Traits::Filter::Create(traits_.MakeChannelArgs(),
                                          typename Traits::Filter::Args{});
-    CHECK(filter.ok());
+    ABSL_CHECK(filter.ok());
     CallFilters::StackBuilder builder;
     builder.Add(filter->get());
     builder.AddOwnedObject(std::move(*filter));
@@ -209,7 +209,7 @@ class UnstartedCallDestinationFixture {
       started.Notify();
     });
     started.WaitForNotification();
-    CHECK(started_handler.has_value());
+    ABSL_CHECK(started_handler.has_value());
     return {std::move(p.initiator), std::move(*started_handler)};
   }
 
@@ -304,7 +304,7 @@ class TransportFixture {
       started.Notify();
     });
     started.WaitForNotification();
-    CHECK(started_handler.has_value());
+    ABSL_CHECK(started_handler.has_value());
     return {std::move(p.initiator), std::move(*started_handler)};
   }
 

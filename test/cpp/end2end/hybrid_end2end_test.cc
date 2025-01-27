@@ -29,8 +29,8 @@
 #include <memory>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/env.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -212,8 +212,8 @@ void HandleGenericCall(AsyncGenericService* service,
              "/grpc.testing.EchoTestService/RequestStream") {
     HandleGenericRequestStream(&stream, cq);
   } else {  // other methods not handled yet.
-    LOG(ERROR) << "method: " << srv_ctx.method();
-    CHECK(0);
+    ABSL_LOG(ERROR) << "method: " << srv_ctx.method();
+    ABSL_CHECK(0);
   }
 }
 
@@ -571,10 +571,10 @@ class StreamedUnaryDupPkg
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    LOG(INFO) << "Streamed Unary Next Message Size is " << next_msg_sz;
-    CHECK(stream->Read(&req));
+    ABSL_LOG(INFO) << "Streamed Unary Next Message Size is " << next_msg_sz;
+    ABSL_CHECK(stream->Read(&req));
     resp.set_message(req.message() + "_dup");
-    CHECK(stream->Write(resp));
+    ABSL_CHECK(stream->Write(resp));
     return Status::OK;
   }
 };
@@ -609,10 +609,10 @@ class FullyStreamedUnaryDupPkg
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    LOG(INFO) << "Streamed Unary Next Message Size is " << next_msg_sz;
-    CHECK(stream->Read(&req));
+    ABSL_LOG(INFO) << "Streamed Unary Next Message Size is " << next_msg_sz;
+    ABSL_CHECK(stream->Read(&req));
     resp.set_message(req.message() + "_dup");
-    CHECK(stream->Write(resp));
+    ABSL_CHECK(stream->Write(resp));
     return Status::OK;
   }
 };
@@ -648,11 +648,11 @@ class SplitResponseStreamDupPkg
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    LOG(INFO) << "Split Streamed Next Message Size is " << next_msg_sz;
-    CHECK(stream->Read(&req));
+    ABSL_LOG(INFO) << "Split Streamed Next Message Size is " << next_msg_sz;
+    ABSL_CHECK(stream->Read(&req));
     for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       resp.set_message(req.message() + std::to_string(i) + "_dup");
-      CHECK(stream->Write(resp));
+      ABSL_CHECK(stream->Write(resp));
     }
     return Status::OK;
   }
@@ -688,11 +688,11 @@ class FullySplitStreamedDupPkg
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    LOG(INFO) << "Split Streamed Next Message Size is " << next_msg_sz;
-    CHECK(stream->Read(&req));
+    ABSL_LOG(INFO) << "Split Streamed Next Message Size is " << next_msg_sz;
+    ABSL_CHECK(stream->Read(&req));
     for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       resp.set_message(req.message() + std::to_string(i) + "_dup");
-      CHECK(stream->Write(resp));
+      ABSL_CHECK(stream->Write(resp));
     }
     return Status::OK;
   }
@@ -727,10 +727,10 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    LOG(INFO) << "Streamed Unary Next Message Size is " << next_msg_sz;
-    CHECK(stream->Read(&req));
+    ABSL_LOG(INFO) << "Streamed Unary Next Message Size is " << next_msg_sz;
+    ABSL_CHECK(stream->Read(&req));
     resp.set_message(req.message() + "_dup");
-    CHECK(stream->Write(resp));
+    ABSL_CHECK(stream->Write(resp));
     return Status::OK;
   }
   Status StreamedResponseStream(
@@ -740,11 +740,11 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    LOG(INFO) << "Split Streamed Next Message Size is " << next_msg_sz;
-    CHECK(stream->Read(&req));
+    ABSL_LOG(INFO) << "Split Streamed Next Message Size is " << next_msg_sz;
+    ABSL_CHECK(stream->Read(&req));
     for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       resp.set_message(req.message() + std::to_string(i) + "_dup");
-      CHECK(stream->Write(resp));
+      ABSL_CHECK(stream->Write(resp));
     }
     return Status::OK;
   }
@@ -811,7 +811,7 @@ TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
     ServerGenericBidiReactor* CreateReactor(
         GenericCallbackServerContext* context) override {
       EXPECT_EQ(context->method(), "/grpc.testing.EchoTestService/Echo");
-      VLOG(2) << "Constructor of generic service "
+      ABSL_VLOG(2) << "Constructor of generic service "
               << context->deadline().time_since_epoch().count();
 
       class Reactor : public ServerGenericBidiReactor {

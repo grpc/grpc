@@ -79,8 +79,8 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
 
 CallInitiatorAndHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata, RefCountedPtr<Arena> arena) {
-  DCHECK_NE(arena.get(), nullptr);
-  DCHECK_NE(arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
+  ABSL_DCHECK_NE(arena.get(), nullptr);
+  ABSL_DCHECK_NE(arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
             nullptr);
   auto spine =
       CallSpine::Create(std::move(client_initial_metadata), std::move(arena));

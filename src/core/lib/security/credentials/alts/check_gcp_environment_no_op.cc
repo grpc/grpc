@@ -20,12 +20,12 @@
 
 #if !defined(GPR_LINUX) && !defined(GPR_WINDOWS)
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/util/crash.h"
 
 bool grpc_alts_is_running_on_gcp() {
-  VLOG(2) << "ALTS: Platforms other than Linux and Windows are not supported";
+  ABSL_VLOG(2) << "ALTS: Platforms other than Linux and Windows are not supported";
   return false;
 }
 

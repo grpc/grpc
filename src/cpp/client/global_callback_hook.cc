@@ -17,7 +17,7 @@
 #include <memory>
 
 #include "absl/base/no_destructor.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 
 namespace grpc {
 
@@ -29,8 +29,8 @@ std::shared_ptr<GlobalCallbackHook> GetGlobalCallbackHook() {
 }
 
 void SetGlobalCallbackHook(GlobalCallbackHook* hook) {
-  CHECK(hook != nullptr);
-  CHECK(hook != (*g_callback_hook).get());
+  ABSL_CHECK(hook != nullptr);
+  ABSL_CHECK(hook != (*g_callback_hook).get());
   *g_callback_hook = std::shared_ptr<GlobalCallbackHook>(hook);
 }
 }  // namespace grpc

@@ -30,7 +30,7 @@
 #include <netinet/in.h>
 #include <string.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/cfstream_handle.h"

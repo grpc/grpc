@@ -29,8 +29,8 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -77,12 +77,12 @@ grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create(
   grpc_auth_context_add_cstring_property(
       ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_LOCAL_TRANSPORT_SECURITY_TYPE);
-  CHECK(grpc_auth_context_set_peer_identity_property_name(
+  ABSL_CHECK(grpc_auth_context_set_peer_identity_property_name(
             ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME) == 1);
-  CHECK_EQ(peer->property_count, 1u);
+  ABSL_CHECK_EQ(peer->property_count, 1u);
   const tsi_peer_property* prop = &peer->properties[0];
-  CHECK_NE(prop, nullptr);
-  CHECK_EQ(strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY), 0);
+  ABSL_CHECK_NE(prop, nullptr);
+  ABSL_CHECK_EQ(strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY), 0);
   grpc_auth_context_add_property(ctx.get(),
                                  GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
                                  prop->value.data, prop->value.length);
@@ -98,7 +98,7 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
   absl::string_view local_addr = grpc_endpoint_get_local_address(ep);
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(local_addr);
   if (!uri.ok() || !grpc_parse_uri(*uri, &resolved_addr)) {
-    LOG(ERROR) << "Could not parse endpoint address: " << local_addr;
+    ABSL_LOG(ERROR) << "Could not parse endpoint address: " << local_addr;
   } else {
     grpc_resolved_address addr_normalized;
     grpc_resolved_address* addr =
@@ -186,7 +186,7 @@ class grpc_local_channel_security_connector final
       grpc_pollset_set* /*interested_parties*/,
       grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
-    CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
+    ABSL_CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
@@ -241,7 +241,7 @@ class grpc_local_server_security_connector final
       grpc_pollset_set* /*interested_parties*/,
       grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
-    CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
+    ABSL_CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
@@ -272,7 +272,7 @@ grpc_local_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const grpc_core::ChannelArgs& args, const char* target_name) {
   if (channel_creds == nullptr || target_name == nullptr) {
-    LOG(ERROR) << "Invalid arguments to "
+    ABSL_LOG(ERROR) << "Invalid arguments to "
                   "grpc_local_channel_security_connector_create()";
     return nullptr;
   }
@@ -285,7 +285,7 @@ grpc_local_channel_security_connector_create(
   if (creds->connect_type() == UDS &&
       !absl::StartsWith(server_uri_str, GRPC_UDS_URI_PATTERN) &&
       !absl::StartsWith(server_uri_str, GRPC_ABSTRACT_UDS_URI_PATTERN)) {
-    LOG(ERROR) << "Invalid UDS target name to "
+    ABSL_LOG(ERROR) << "Invalid UDS target name to "
                   "grpc_local_channel_security_connector_create()";
     return nullptr;
   }
@@ -297,7 +297,7 @@ grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_local_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_creds) {
   if (server_creds == nullptr) {
-    LOG(ERROR)
+    ABSL_LOG(ERROR)
         << "Invalid arguments to grpc_local_server_security_connector_create()";
     return nullptr;
   }

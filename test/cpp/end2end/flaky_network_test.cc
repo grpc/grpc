@@ -37,7 +37,7 @@
 #include <random>
 #include <thread>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/memory/memory.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/crash.h"
@@ -224,9 +224,9 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     Status status = stub->Echo(&context, request, response.get());
     auto ok = status.ok();
     if (ok) {
-      VLOG(2) << "RPC succeeded";
+      ABSL_VLOG(2) << "RPC succeeded";
     } else {
-      VLOG(2) << "RPC failed: " << status.error_message();
+      ABSL_VLOG(2) << "RPC failed: " << status.error_message();
     }
     return ok;
   }
@@ -243,7 +243,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
         : port_(port), creds_(creds) {}
 
     void Start(const std::string& server_host) {
-      LOG(INFO) << "starting server on port " << port_;
+      ABSL_LOG(INFO) << "starting server on port " << port_;
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
@@ -251,7 +251,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
           std::bind(&ServerData::Serve, this, server_host, &mu, &cond));
       cond.wait(lock, [this] { return server_ready_; });
       server_ready_ = false;
-      LOG(INFO) << "server startup complete";
+      ABSL_LOG(INFO) << "server startup complete";
     }
 
     void Serve(const std::string& server_host, std::mutex* mu,
@@ -397,7 +397,7 @@ TEST_P(FlakyNetworkTest, ServerUnreachableWithKeepalive) {
   // max time between reconnect attempts
   args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, kReconnectBackoffMs);
 
-  VLOG(2) << "FlakyNetworkTest.ServerUnreachableWithKeepalive start";
+  ABSL_VLOG(2) << "FlakyNetworkTest.ServerUnreachableWithKeepalive start";
   auto channel = BuildChannel("pick_first", args);
   auto stub = BuildStub(channel);
   // Channel should be in READY state after we send an RPC
@@ -416,18 +416,18 @@ TEST_P(FlakyNetworkTest, ServerUnreachableWithKeepalive) {
   });
 
   // break network connectivity
-  VLOG(2) << "Adding iptables rule to drop packets";
+  ABSL_VLOG(2) << "Adding iptables rule to drop packets";
   DropPackets();
   std::this_thread::sleep_for(std::chrono::milliseconds(10000));
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   // bring network interface back up
   RestoreNetwork();
-  VLOG(2) << "Removed iptables rule to drop packets";
+  ABSL_VLOG(2) << "Removed iptables rule to drop packets";
   EXPECT_TRUE(WaitForChannelReady(channel.get()));
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
   shutdown.store(true);
   sender.join();
-  VLOG(2) << "FlakyNetworkTest.ServerUnreachableWithKeepalive end";
+  ABSL_VLOG(2) << "FlakyNetworkTest.ServerUnreachableWithKeepalive end";
 }
 
 //

@@ -21,7 +21,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 
 grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
     const grpc_alts_credentials_options* options) {
@@ -30,7 +30,7 @@ grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
     return options->vtable->copy(options);
   }
   // An error occurred.
-  LOG(ERROR) << "Invalid arguments to grpc_alts_credentials_options_copy()";
+  ABSL_LOG(ERROR) << "Invalid arguments to grpc_alts_credentials_options_copy()";
   return nullptr;
 }
 

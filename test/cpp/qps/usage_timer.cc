@@ -24,7 +24,7 @@
 #include <sstream>
 #include <string>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #ifdef __linux__
 #include <sys/resource.h>
@@ -74,7 +74,7 @@ static void get_cpu_usage(unsigned long long* total_cpu_time,
   // Use the parameters to avoid unused-parameter warning
   (void)total_cpu_time;
   (void)idle_cpu_time;
-  LOG(INFO) << "get_cpu_usage(): Non-linux platform is not supported.";
+  ABSL_LOG(INFO) << "get_cpu_usage(): Non-linux platform is not supported.";
 #endif
 }
 

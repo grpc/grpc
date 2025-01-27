@@ -40,7 +40,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -162,7 +162,7 @@ static void session_read_cb(void* arg,  // session
       // before notify_on_read is called.
       grpc_fd_notify_on_read(se->em_fd, &se->session_read_closure);
     } else {
-      LOG(FATAL) << "Unhandled read error " << grpc_core::StrError(errno);
+      ABSL_LOG(FATAL) << "Unhandled read error " << grpc_core::StrError(errno);
     }
   }
 }
@@ -327,7 +327,7 @@ static void client_session_write(void* arg,  // client
     }
     gpr_mu_unlock(g_mu);
   } else {
-    LOG(FATAL) << "unknown errno " << grpc_core::StrError(errno).c_str();
+    ABSL_LOG(FATAL) << "unknown errno " << grpc_core::StrError(errno).c_str();
   }
 }
 
@@ -344,10 +344,10 @@ static void client_start(client* cl, int port) {
       pfd.events = POLLOUT;
       pfd.revents = 0;
       if (poll(&pfd, 1, -1) == -1) {
-        LOG(FATAL) << "poll() failed during connect; errno=" << errno;
+        ABSL_LOG(FATAL) << "poll() failed during connect; errno=" << errno;
       }
     } else {
-      LOG(FATAL) << "Failed to connect to the server (errno=" << errno << ")";
+      ABSL_LOG(FATAL) << "Failed to connect to the server (errno=" << errno << ")";
     }
   }
 
@@ -390,7 +390,7 @@ static void test_grpc_fd(void) {
   client_wait_and_shutdown(&cl);
   server_wait_and_shutdown(&sv);
   ASSERT_EQ(sv.read_bytes_total, cl.write_bytes_total);
-  LOG(INFO) << "Total read bytes " << sv.read_bytes_total;
+  ABSL_LOG(INFO) << "Total read bytes " << sv.read_bytes_total;
 }
 
 typedef struct fd_change_data {

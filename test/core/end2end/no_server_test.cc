@@ -27,8 +27,8 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
@@ -43,7 +43,7 @@
 #include "test/core/test_util/test_config.h"
 
 void run_test(bool wait_for_ready) {
-  LOG(INFO) << "TEST: wait_for_ready=" << wait_for_ready;
+  ABSL_LOG(INFO) << "TEST: wait_for_ready=" << wait_for_ready;
 
   grpc_init();
 
@@ -84,7 +84,7 @@ void run_test(bool wait_for_ready) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK_EQ(GRPC_CALL_OK,
+  ABSL_CHECK_EQ(GRPC_CALL_OK,
            grpc_call_start_batch(call, ops, (size_t)(op - ops),
                                  grpc_core::CqVerifier::tag(1), nullptr));
 
@@ -102,11 +102,11 @@ void run_test(bool wait_for_ready) {
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
-  LOG(INFO) << "call status: " << status;
+  ABSL_LOG(INFO) << "call status: " << status;
   if (wait_for_ready) {
-    CHECK_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
+    ABSL_CHECK_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
   } else {
-    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
+    ABSL_CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_slice_unref(details);

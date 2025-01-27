@@ -52,7 +52,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
@@ -231,7 +231,7 @@ void ListenCb(server* sv, absl::Status status) {
     listen_em_fd->NotifyOnRead(sv->listen_closure);
     return;
   } else if (fd < 0) {
-    LOG(ERROR) << "Failed to accept a connection, returned error: "
+    ABSL_LOG(ERROR) << "Failed to accept a connection, returned error: "
                << grpc_core::StrError(errno);
   }
   EXPECT_GE(fd, 0);
@@ -345,7 +345,7 @@ void ClientStart(client* cl, int port) {
       pfd.events = POLLOUT;
       pfd.revents = 0;
       if (poll(&pfd, 1, -1) == -1) {
-        LOG(ERROR) << "poll() failed during connect; errno=" << errno;
+        ABSL_LOG(ERROR) << "poll() failed during connect; errno=" << errno;
         abort();
       }
     } else {
@@ -385,7 +385,7 @@ class EventPollerTest : public ::testing::Test {
     EXPECT_NE(engine_, nullptr);
     scheduler_->ChangeCurrentEventEngine(engine_.get());
     if (g_event_poller != nullptr) {
-      LOG(INFO) << "Using poller: " << g_event_poller->Name();
+      ABSL_LOG(INFO) << "Using poller: " << g_event_poller->Name();
     }
   }
 

@@ -29,8 +29,8 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
@@ -392,7 +392,7 @@ void ExternalAccountCredentials::ExternalFetchRequest::FinishTokenFetch(
     absl::StatusOr<std::string> response_body) {
   absl::StatusOr<RefCountedPtr<Token>> result;
   if (!response_body.ok()) {
-    LOG(ERROR) << "Fetch external account credentials access token: "
+    ABSL_LOG(ERROR) << "Fetch external account credentials access token: "
                << response_body.status();
     result = absl::Status(response_body.status().code(),
                           absl::StrCat("error fetching oauth2 token: ",
@@ -627,7 +627,7 @@ grpc_call_credentials* grpc_external_account_credentials_create(
     const char* json_string, const char* scopes_string) {
   auto json = grpc_core::JsonParse(json_string);
   if (!json.ok()) {
-    LOG(ERROR) << "External account credentials creation failed. Error: "
+    ABSL_LOG(ERROR) << "External account credentials creation failed. Error: "
                << json.status();
     return nullptr;
   }
@@ -635,7 +635,7 @@ grpc_call_credentials* grpc_external_account_credentials_create(
   auto creds =
       grpc_core::ExternalAccountCredentials::Create(*json, std::move(scopes));
   if (!creds.ok()) {
-    LOG(ERROR) << "External account credentials creation failed. Error: "
+    ABSL_LOG(ERROR) << "External account credentials creation failed. Error: "
                << grpc_core::StatusToString(creds.status());
     return nullptr;
   }

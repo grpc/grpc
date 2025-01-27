@@ -35,8 +35,8 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -100,7 +100,7 @@ class CrlProviderTest : public ::testing::Test {
     options.set_cert_request_type(
         GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
     auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-    CHECK_NE(server_credentials.get(), nullptr);
+    ABSL_CHECK_NE(server_credentials.get(), nullptr);
 
     grpc::ServerBuilder builder;
     TestServiceImpl service_;
@@ -145,7 +145,7 @@ void DoRpc(const std::string& server_addr,
   if (expect_success) {
     EXPECT_TRUE(result.ok());
     if (!result.ok()) {
-      LOG(ERROR) << result.error_message().c_str() << ", "
+      ABSL_LOG(ERROR) << result.error_message().c_str() << ", "
                  << result.error_details().c_str();
     }
     EXPECT_EQ(response.message(), kMessage);

@@ -21,7 +21,7 @@
 #include <memory>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
@@ -134,7 +134,7 @@ FanoutParameters GetFanoutParameters(benchmark::State& state) {
         (1 - std::pow(params.fanout, params.depth + 1)) / (1 - params.fanout);
   }
   // sanity checking
-  CHECK(params.limit >= params.fanout * params.depth);
+  ABSL_CHECK(params.limit >= params.fanout * params.depth);
   return params;
 }
 
@@ -154,7 +154,7 @@ void FanOutCallback(std::shared_ptr<ThreadPool> pool,
     signal.Notify();
     return;
   }
-  DCHECK_LT(local_cnt, params.limit);
+  ABSL_DCHECK_LT(local_cnt, params.limit);
   if (params.depth == processing_layer) return;
   for (int i = 0; i < params.fanout; i++) {
     pool->Run([pool, params, processing_layer, &count, &signal]() {
@@ -220,7 +220,7 @@ void BM_ThreadPool_Closure_FanOut(benchmark::State& state) {
         }));
   }
   for (auto _ : state) {
-    DCHECK_EQ(count.load(std::memory_order_relaxed), 0);
+    ABSL_DCHECK_EQ(count.load(std::memory_order_relaxed), 0);
     pool->Run(closures[params.depth + 1]);
     do {
       signal->WaitForNotification();

@@ -37,7 +37,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/map.h"
@@ -169,12 +169,12 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
       // after passing it in, which shouldn't be a supported API.
       metadata->Set(GrpcMessageMetadata(), Slice(grpc_slice_copy(*details)));
     }
-    CHECK(metadata != nullptr);
+    ABSL_CHECK(metadata != nullptr);
     bool wait_for_initial_metadata_scheduled =
         sent_server_initial_metadata_batch_.load(std::memory_order_relaxed);
     return [this, metadata = std::move(metadata),
             wait_for_initial_metadata_scheduled]() mutable {
-      CHECK(metadata != nullptr);
+      ABSL_CHECK(metadata != nullptr);
       // If there was a send initial metadata batch sent prior to this one, then
       // make sure it's been scheduled first - otherwise we may accidentally
       // treat this as trailers only.
@@ -184,7 +184,7 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
               [this]() { return server_initial_metadata_scheduled_.Wait(); },
               []() { return Empty{}; }),
           [this, metadata = std::move(metadata)]() mutable -> Poll<Success> {
-            CHECK(metadata != nullptr);
+            ABSL_CHECK(metadata != nullptr);
             call_handler_.PushServerTrailingMetadata(std::move(metadata));
             return Success{};
           });

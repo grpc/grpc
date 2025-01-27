@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/util/crash.h"
 
 void* gpr_malloc(size_t size) {
@@ -57,7 +57,7 @@ void* gpr_realloc(void* p, size_t size) {
 }
 
 void* gpr_malloc_aligned(size_t size, size_t alignment) {
-  CHECK_EQ(((alignment - 1) & alignment), 0u);  // Must be power of 2.
+  ABSL_CHECK_EQ(((alignment - 1) & alignment), 0u);  // Must be power of 2.
   size_t extra = alignment - 1 + sizeof(void*);
   void* p = gpr_malloc(size + extra);
   void** ret = reinterpret_cast<void**>(

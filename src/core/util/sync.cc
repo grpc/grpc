@@ -23,7 +23,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 
 // Number of mutexes to allocate for events, to avoid lock contention.
 // Should be a prime.
@@ -58,11 +58,11 @@ void gpr_event_init(gpr_event* ev) {
 void gpr_event_set(gpr_event* ev, void* value) {
   struct sync_array_s* s = hash(ev);
   gpr_mu_lock(&s->mu);
-  CHECK_EQ(gpr_atm_acq_load(&ev->state), 0);
+  ABSL_CHECK_EQ(gpr_atm_acq_load(&ev->state), 0);
   gpr_atm_rel_store(&ev->state, (gpr_atm)value);
   gpr_cv_broadcast(&s->cv);
   gpr_mu_unlock(&s->mu);
-  CHECK_NE(value, nullptr);
+  ABSL_CHECK_NE(value, nullptr);
 }
 
 void* gpr_event_get(gpr_event* ev) {
@@ -101,7 +101,7 @@ void gpr_refn(gpr_refcount* r, int n) {
 
 int gpr_unref(gpr_refcount* r) {
   gpr_atm prior = gpr_atm_full_fetch_add(&r->count, -1);
-  CHECK_GT(prior, 0);
+  ABSL_CHECK_GT(prior, 0);
   return prior == 1;
 }
 

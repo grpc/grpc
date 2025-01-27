@@ -31,7 +31,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -186,7 +186,7 @@ static grpc_ares_request* test_dns_lookup_ares(
   static auto last_resolution_time = grpc_core::Timestamp::ProcessEpoch();
   auto now =
       grpc_core::Timestamp::FromTimespecRoundUp(gpr_now(GPR_CLOCK_MONOTONIC));
-  VLOG(2) << "last_resolution_time:"
+  ABSL_VLOG(2) << "last_resolution_time:"
           << last_resolution_time.milliseconds_after_process_epoch()
           << " now:" << now.milliseconds_after_process_epoch()
           << " min_time_between:" << kMinResolutionPeriodMs;
@@ -250,7 +250,7 @@ static void poll_pollset_until_request_done(iomgr_args* args) {
       break;
     }
     grpc_core::Duration time_left = deadline - grpc_core::Timestamp::Now();
-    VLOG(2) << "done=" << done << ", time_left=" << time_left.millis();
+    ABSL_VLOG(2) << "done=" << done << ", time_left=" << time_left.millis();
     ASSERT_GE(time_left, grpc_core::Duration::Zero());
     grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(args->mu);
@@ -308,7 +308,7 @@ static grpc_core::NoDestruct<grpc_core::Notification> g_all_callbacks_invoked;
 // from "Now()". Thus the more rounds ran, the more highlighted the
 // difference is between absolute and relative times values.
 static void on_fourth_resolution(OnResolutionCallbackArg* cb_arg) {
-  LOG(INFO) << "4th: g_resolution_count: " << g_resolution_count;
+  ABSL_LOG(INFO) << "4th: g_resolution_count: " << g_resolution_count;
   ASSERT_EQ(g_resolution_count, 4);
   cb_arg->resolver.reset();
   gpr_atm_rel_store(&g_iomgr_args.done_atm, 1);
@@ -321,7 +321,7 @@ static void on_fourth_resolution(OnResolutionCallbackArg* cb_arg) {
 }
 
 static void on_third_resolution(OnResolutionCallbackArg* cb_arg) {
-  LOG(INFO) << "3rd: g_resolution_count: " << g_resolution_count;
+  ABSL_LOG(INFO) << "3rd: g_resolution_count: " << g_resolution_count;
   ASSERT_EQ(g_resolution_count, 3);
   cb_arg->result_handler->SetCallback(on_fourth_resolution, cb_arg);
   cb_arg->resolver->RequestReresolutionLocked();
@@ -332,7 +332,7 @@ static void on_third_resolution(OnResolutionCallbackArg* cb_arg) {
 }
 
 static void on_second_resolution(OnResolutionCallbackArg* cb_arg) {
-  LOG(INFO) << "2nd: g_resolution_count: " << g_resolution_count;
+  ABSL_LOG(INFO) << "2nd: g_resolution_count: " << g_resolution_count;
   // The resolution callback was not invoked until new data was
   // available, which was delayed until after the cooldown period.
   ASSERT_EQ(g_resolution_count, 2);
@@ -345,7 +345,7 @@ static void on_second_resolution(OnResolutionCallbackArg* cb_arg) {
 }
 
 static void on_first_resolution(OnResolutionCallbackArg* cb_arg) {
-  LOG(INFO) << "1st: g_resolution_count: " << g_resolution_count;
+  ABSL_LOG(INFO) << "1st: g_resolution_count: " << g_resolution_count;
   // There's one initial system-level resolution and one invocation of a
   // notification callback (the current function).
   ASSERT_EQ(g_resolution_count, 1);
@@ -366,10 +366,10 @@ static void start_test_under_work_serializer(void* arg) {
                                             .LookupResolverFactory("dns");
   absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Parse(res_cb_arg->uri_str);
-  VLOG(2) << "test: '" << res_cb_arg->uri_str << "' should be valid for '"
+  ABSL_VLOG(2) << "test: '" << res_cb_arg->uri_str << "' should be valid for '"
           << factory->scheme() << "'";
   if (!uri.ok()) {
-    LOG(ERROR) << uri.status();
+    ABSL_LOG(ERROR) << uri.status();
     ASSERT_TRUE(uri.ok());
   }
   grpc_core::ResolverArgs args;

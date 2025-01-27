@@ -28,7 +28,7 @@
 #include <memory>
 #include <thread>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 
@@ -162,7 +162,7 @@ TEST_P(ThreadManagerTest, TestPollAndWork) {
   for (auto& tm : thread_manager_) {
     // Verify that The number of times DoWork() was called is equal to the
     // number of times WORK_FOUND was returned
-    VLOG(2) << "DoWork() called " << tm->num_do_work() << " times";
+    ABSL_VLOG(2) << "DoWork() called " << tm->num_do_work() << " times";
     EXPECT_GE(tm->num_poll_for_work(), GetParam().max_poll_calls);
     EXPECT_EQ(tm->num_do_work(), tm->num_work_found());
   }

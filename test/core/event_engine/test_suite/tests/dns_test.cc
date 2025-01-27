@@ -26,7 +26,7 @@
 #include <tuple>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -128,7 +128,7 @@ class EventEngineDNSTest : public EventEngineTest {
 // an indication whether the test is running on RBE or not. Find a better way of
 // doing this.
 #ifndef GRPC_PORT_ISOLATED_RUNTIME
-      LOG(ERROR) << "You are invoking the test locally with Bazel, you may "
+      ABSL_LOG(ERROR) << "You are invoking the test locally with Bazel, you may "
                     "need to invoke Bazel with --enable_runfiles=yes.";
 #endif  // GRPC_PORT_ISOLATED_RUNTIME
       test_records_path = grpc::testing::NormalizeFilePath(test_records_path);

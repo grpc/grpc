@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -352,7 +352,7 @@ class AresClientChannelDNSResolverFactory final : public ResolverFactory {
 
   bool IsValidUri(const URI& uri) const override {
     if (absl::StripPrefix(uri.path(), "/").empty()) {
-      LOG(ERROR) << "no server name supplied in dns URI";
+      ABSL_LOG(ERROR) << "no server name supplied in dns URI";
       return false;
     }
     return true;

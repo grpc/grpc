@@ -27,7 +27,7 @@
 #include <string>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
@@ -63,7 +63,7 @@ struct grpc_tls_certificate_provider
   // be reused when two different `grpc_tls_certificate_provider` objects are
   // used but they compare as equal (assuming other channel args match).
   int Compare(const grpc_tls_certificate_provider* other) const {
-    CHECK_NE(other, nullptr);
+    ABSL_CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return CompareImpl(other);

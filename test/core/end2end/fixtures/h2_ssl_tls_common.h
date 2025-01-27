@@ -24,7 +24,7 @@
 #include <grpc/status.h>
 #include <string.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
@@ -95,7 +95,7 @@ class SslTlsFixture : public SecureFixture {
                                    size_t /*md_count*/,
                                    grpc_process_auth_metadata_done_cb cb,
                                    void* user_data) {
-    CHECK_EQ(state, nullptr);
+    ABSL_CHECK_EQ(state, nullptr);
     cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
   }
 

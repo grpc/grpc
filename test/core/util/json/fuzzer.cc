@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/core/util/json/json_reader.h"
@@ -35,8 +35,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (json.ok()) {
     auto text2 = grpc_core::JsonDump(*json);
     auto json2 = grpc_core::JsonParse(text2);
-    CHECK(json2.ok());
-    CHECK(*json == *json2);
+    ABSL_CHECK(json2.ok());
+    ABSL_CHECK(*json == *json2);
   }
   return 0;
 }

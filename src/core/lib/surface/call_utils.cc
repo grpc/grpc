@@ -40,8 +40,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -86,7 +86,7 @@ void CToMetadata(grpc_metadata* metadata, size_t count,
     if (key == "content-length") continue;
     b->Append(key, Slice(CSliceRef(md->value)),
               [md](absl::string_view error, const Slice& value) {
-                VLOG(2) << "Append error: key=" << StringViewFromSlice(md->key)
+                ABSL_VLOG(2) << "Append error: key=" << StringViewFromSlice(md->key)
                         << " error=" << error
                         << " value=" << value.as_string_view();
               });
@@ -215,7 +215,7 @@ bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
 void EndOpImmediately(grpc_completion_queue* cq, void* notify_tag,
                       bool is_notify_tag_closure) {
   if (!is_notify_tag_closure) {
-    CHECK(grpc_cq_begin_op(cq, notify_tag));
+    ABSL_CHECK(grpc_cq_begin_op(cq, notify_tag));
     grpc_cq_end_op(
         cq, notify_tag, absl::OkStatus(),
         [](void*, grpc_cq_completion* completion) { gpr_free(completion); },

@@ -26,7 +26,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -87,7 +87,7 @@ class ServiceConfigImpl final : public ServiceConfig {
   /// ServiceConfig object.
   ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(
       size_t index) override {
-    DCHECK(index < parsed_global_configs_.size());
+    ABSL_DCHECK(index < parsed_global_configs_.size());
     return parsed_global_configs_[index].get();
   }
 

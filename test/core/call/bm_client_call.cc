@@ -35,7 +35,7 @@ class TestCallDestination : public UnstartedCallDestination {
   }
 
   UnstartedCallHandler TakeHandler() {
-    CHECK(handler_.has_value());
+    ABSL_CHECK(handler_.has_value());
     auto handler = std::move(*handler_);
     handler_.reset();
     return handler;
@@ -53,7 +53,7 @@ class Helper {
     grpc_completion_queue_shutdown(cq_);
     auto ev = grpc_completion_queue_next(
         cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-    CHECK_EQ(ev.type, GRPC_QUEUE_SHUTDOWN);
+    ABSL_CHECK_EQ(ev.type, GRPC_QUEUE_SHUTDOWN);
     grpc_completion_queue_destroy(cq_);
   }
 
@@ -155,7 +155,7 @@ void BM_Unary(benchmark::State& state) {
                   }),
               handler.PushMessage(std::move(response))),
           [handler](StatusFlag status) mutable {
-            CHECK(status.ok());
+            ABSL_CHECK(status.ok());
             auto trailing_metadata =
                 Arena::MakePooledForOverwrite<ServerMetadata>();
             trailing_metadata->Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
@@ -164,7 +164,7 @@ void BM_Unary(benchmark::State& state) {
     });
     auto ev = grpc_completion_queue_next(
         helper.cq(), gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-    CHECK_EQ(ev.type, GRPC_OP_COMPLETE);
+    ABSL_CHECK_EQ(ev.type, GRPC_OP_COMPLETE);
     call.reset();
     grpc_byte_buffer_destroy(recv_response_payload);
     grpc_metadata_array_destroy(&initial_metadata_recv);

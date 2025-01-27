@@ -78,7 +78,7 @@ CORE_END2END_TEST(RetryTest, RetryNonRetriableStatus) {
   Expect(102, true);
   Expect(1, true);
   // TODO(roth): After promise conversion, reevalute this.
-  LOG(INFO)
+  ABSL_LOG(INFO)
       << "NOTE(roth): We've seen infrequent flakiness in this test due to "
          "a callback reordering issue.  I considered making a change similar "
          "to https://github.com/grpc/grpc/pull/37944 here to avoid the "

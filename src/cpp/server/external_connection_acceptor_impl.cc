@@ -25,8 +25,8 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 
 namespace grpc {
 namespace internal {
@@ -51,14 +51,14 @@ ExternalConnectionAcceptorImpl::ExternalConnectionAcceptorImpl(
     ServerBuilder::experimental_type::ExternalConnectionType type,
     std::shared_ptr<ServerCredentials> creds)
     : name_(name), creds_(std::move(creds)) {
-  CHECK(type ==
+  ABSL_CHECK(type ==
         ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD);
 }
 
 std::unique_ptr<experimental::ExternalConnectionAcceptor>
 ExternalConnectionAcceptorImpl::GetAcceptor() {
   grpc_core::MutexLock lock(&mu_);
-  CHECK(!has_acceptor_);
+  ABSL_CHECK(!has_acceptor_);
   has_acceptor_ = true;
   return std::unique_ptr<experimental::ExternalConnectionAcceptor>(
       new AcceptorWrapper(shared_from_this()));
@@ -69,7 +69,7 @@ void ExternalConnectionAcceptorImpl::HandleNewConnection(
   grpc_core::MutexLock lock(&mu_);
   if (shutdown_ || !started_) {
     // TODO(yangg) clean up.
-    LOG(ERROR) << "NOT handling external connection with fd " << p->fd
+    ABSL_LOG(ERROR) << "NOT handling external connection with fd " << p->fd
                << ", started " << started_ << ", shutdown " << shutdown_;
     return;
   }
@@ -85,9 +85,9 @@ void ExternalConnectionAcceptorImpl::Shutdown() {
 
 void ExternalConnectionAcceptorImpl::Start() {
   grpc_core::MutexLock lock(&mu_);
-  CHECK(!started_);
-  CHECK(has_acceptor_);
-  CHECK(!shutdown_);
+  ABSL_CHECK(!started_);
+  ABSL_CHECK(has_acceptor_);
+  ABSL_CHECK(!shutdown_);
   started_ = true;
 }
 

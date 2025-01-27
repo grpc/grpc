@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 
 TEST(HistogramTest, NoOp) {
@@ -30,7 +30,7 @@ TEST(HistogramTest, NoOp) {
 static void expect_percentile(grpc_histogram* h, double percentile,
                               double min_expect, double max_expect) {
   double got = grpc_histogram_percentile(h, percentile);
-  LOG(INFO) << "@" << percentile << "%%, expect " << min_expect << " <= " << got
+  ABSL_LOG(INFO) << "@" << percentile << "%%, expect " << min_expect << " <= " << got
             << " <= " << max_expect;
   ASSERT_LE(min_expect, got);
   ASSERT_LE(got, max_expect);
@@ -39,7 +39,7 @@ static void expect_percentile(grpc_histogram* h, double percentile,
 TEST(HistogramTest, Simple) {
   grpc_histogram* h;
 
-  LOG(INFO) << "test_simple";
+  ABSL_LOG(INFO) << "test_simple";
 
   h = grpc_histogram_create(0.01, 60e9);
   grpc_histogram_add(h, 10000);
@@ -59,7 +59,7 @@ TEST(HistogramTest, Percentile) {
   double i;
   double cur;
 
-  LOG(INFO) << "test_percentile";
+  ABSL_LOG(INFO) << "test_percentile";
 
   h = grpc_histogram_create(0.05, 1e9);
   grpc_histogram_add(h, 2.5);
@@ -104,7 +104,7 @@ TEST(HistogramTest, Merge) {
   double i;
   double cur;
 
-  LOG(INFO) << "test_merge";
+  ABSL_LOG(INFO) << "test_merge";
 
   h1 = grpc_histogram_create(0.05, 1e9);
   grpc_histogram_add(h1, 2.5);

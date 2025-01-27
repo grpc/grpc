@@ -21,8 +21,8 @@
 #include <sstream>
 
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
@@ -39,7 +39,7 @@ static void RunFakeHandshakerServer(const std::string& server_address,
   grpc::ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(service.get());
-  LOG(INFO) << "Fake handshaker server listening on " << server_address;
+  ABSL_LOG(INFO) << "Fake handshaker server listening on " << server_address;
   std::unique_ptr<grpc::Server> server = builder.BuildAndStart();
   server->Wait();
 }
@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 
-  CHECK_NE(absl::GetFlag(FLAGS_handshaker_port), 0);
+  ABSL_CHECK_NE(absl::GetFlag(FLAGS_handshaker_port), 0);
   std::ostringstream server_address;
   server_address << "[::1]:" << absl::GetFlag(FLAGS_handshaker_port);
 

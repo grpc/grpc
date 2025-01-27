@@ -26,8 +26,8 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/config/core_configuration.h"
@@ -101,7 +101,7 @@ absl::Status EndpointList::Endpoint::Init(
       CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
           "pick_first", std::move(lb_policy_args));
   if (GPR_UNLIKELY(endpoint_list_->tracer_ != nullptr)) {
-    LOG(INFO) << "[" << endpoint_list_->tracer_ << " "
+    ABSL_LOG(INFO) << "[" << endpoint_list_->tracer_ << " "
               << endpoint_list_->policy_.get() << "] endpoint " << this
               << ": created child policy " << child_policy_.get();
   }
@@ -116,7 +116,7 @@ absl::Status EndpointList::Endpoint::Init(
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
           Json::FromArray(
               {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
-  CHECK(config.ok());
+  ABSL_CHECK(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
   update_args.addresses = std::make_shared<SingleEndpointIterator>(addresses);

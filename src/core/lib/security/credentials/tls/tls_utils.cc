@@ -23,7 +23,7 @@
 
 #include <algorithm>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -98,11 +98,11 @@ absl::string_view GetAuthPropertyValue(grpc_auth_context* context,
       grpc_auth_context_find_properties_by_name(context, property_name);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   if (prop == nullptr) {
-    VLOG(2) << "No value found for " << property_name << " property.";
+    ABSL_VLOG(2) << "No value found for " << property_name << " property.";
     return "";
   }
   if (grpc_auth_property_iterator_next(&it) != nullptr) {
-    VLOG(2) << "Multiple values found for " << property_name << " property.";
+    ABSL_VLOG(2) << "Multiple values found for " << property_name << " property.";
     return "";
   }
   return absl::string_view(prop->value, prop->value_length);
@@ -119,7 +119,7 @@ std::vector<absl::string_view> GetAuthPropertyArray(grpc_auth_context* context,
     prop = grpc_auth_property_iterator_next(&it);
   }
   if (values.empty()) {
-    VLOG(2) << "No value found for " << property_name << " property.";
+    ABSL_VLOG(2) << "No value found for " << property_name << " property.";
   }
   return values;
 }

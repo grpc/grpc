@@ -28,8 +28,8 @@
 
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/host_port.h"
@@ -47,7 +47,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_status_code status;
   grpc_slice details;
 
-  LOG(INFO) << "TEST: wait_for_ready=" << wait_for_ready
+  ABSL_LOG(INFO) << "TEST: wait_for_ready=" << wait_for_ready
             << " use_service_config=" << use_service_config;
 
   grpc_init();
@@ -60,7 +60,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   // if using service config, create channel args
   grpc_channel_args* args = nullptr;
   if (use_service_config) {
-    CHECK(wait_for_ready);
+    ABSL_CHECK(wait_for_ready);
     grpc_arg arg;
     arg.type = GRPC_ARG_STRING;
     arg.key = const_cast<char*>(GRPC_ARG_SERVICE_CONFIG);
@@ -79,7 +79,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   // create a call, channel to a port which will refuse connection
   int port = grpc_pick_unused_port_or_die();
   std::string addr = grpc_core::JoinHostPort("127.0.0.1", port);
-  LOG(INFO) << "server: " << addr;
+  ABSL_LOG(INFO) << "server: " << addr;
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   chan = grpc_channel_create(addr.c_str(), creds, args);
   grpc_channel_credentials_release(creds);
@@ -107,7 +107,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK_EQ(GRPC_CALL_OK,
+  ABSL_CHECK_EQ(GRPC_CALL_OK,
            grpc_call_start_batch(call, ops, (size_t)(op - ops),
                                  grpc_core::CqVerifier::tag(1), nullptr));
   // verify that all tags get completed
@@ -115,9 +115,9 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   cqv.Verify();
 
   if (wait_for_ready) {
-    CHECK_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
+    ABSL_CHECK_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
   } else {
-    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
+    ABSL_CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_completion_queue_shutdown(cq);

@@ -34,7 +34,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/function_ref.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/string_view.h"
 #include "src/core/util/per_cpu.h"
 #include "src/core/util/sync.h"
@@ -123,7 +123,7 @@ class Log {
       atexit([] {
         auto json = log->TryGenerateJson();
         if (!json.has_value()) {
-          LOG(INFO) << "Failed to generate latent_see.json (contention with "
+          ABSL_LOG(INFO) << "Failed to generate latent_see.json (contention with "
                        "another writer)";
           return;
         }
@@ -131,7 +131,7 @@ class Log {
           log->stats_flusher_(*json);
           return;
         }
-        LOG(INFO) << "Writing latent_see.json in " << get_current_dir_name();
+        ABSL_LOG(INFO) << "Writing latent_see.json in " << get_current_dir_name();
         FILE* f = fopen("latent_see.json", "w");
         if (f == nullptr) return;
         fprintf(f, "%s", json->c_str());
@@ -182,7 +182,7 @@ class Scope {
       bin_descriptor_ = Log::StartBin(this);
       bin_ = Log::ToBin(bin_descriptor_);
     }
-    CHECK_NE(bin_, nullptr);
+    ABSL_CHECK_NE(bin_, nullptr);
     bin_->Append(metadata_, EventType::kBegin, 0);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Scope() {

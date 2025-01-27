@@ -55,8 +55,8 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -202,7 +202,7 @@ static void init_openssl(void) {
 #if OPENSSL_VERSION_NUMBER < 0x10100000
   if (!CRYPTO_get_locking_callback()) {
     int num_locks = CRYPTO_num_locks();
-    CHECK_GT(num_locks, 0);
+    ABSL_CHECK_GT(num_locks, 0);
     g_openssl_mutexes = static_cast<gpr_mu*>(
         gpr_malloc(static_cast<size_t>(num_locks) * sizeof(gpr_mu)));
     for (int i = 0; i < num_locks; i++) {
@@ -216,15 +216,15 @@ static void init_openssl(void) {
 #endif
   g_ssl_ctx_ex_factory_index =
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
-  CHECK_NE(g_ssl_ctx_ex_factory_index, -1);
+  ABSL_CHECK_NE(g_ssl_ctx_ex_factory_index, -1);
 
   g_ssl_ctx_ex_crl_provider_index =
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
-  CHECK_NE(g_ssl_ctx_ex_crl_provider_index, -1);
+  ABSL_CHECK_NE(g_ssl_ctx_ex_crl_provider_index, -1);
 
   g_ssl_ex_verified_root_cert_index = SSL_get_ex_new_index(
       0, nullptr, nullptr, nullptr, verified_root_cert_free);
-  CHECK_NE(g_ssl_ex_verified_root_cert_index, -1);
+  ABSL_CHECK_NE(g_ssl_ex_verified_root_cert_index, -1);
 }
 
 // --- Ssl utils. ---
@@ -233,7 +233,7 @@ static void init_openssl(void) {
 static void ssl_log_where_info(const SSL* ssl, int where, int flag,
                                const char* msg) {
   if ((where & flag) && GRPC_TRACE_FLAG_ENABLED(tsi)) {
-    LOG(INFO) << absl::StrFormat("%20.20s - %s  - %s", msg,
+    ABSL_LOG(INFO) << absl::StrFormat("%20.20s - %s  - %s", msg,
                                  SSL_state_string_long(ssl),
                                  SSL_state_string(ssl));
   }
@@ -242,7 +242,7 @@ static void ssl_log_where_info(const SSL* ssl, int where, int flag,
 // Used for debugging. TODO(jboeuf): Remove when code is mature enough.
 static void ssl_info_callback(const SSL* ssl, int where, int ret) {
   if (ret == 0) {
-    LOG(ERROR) << "ssl_info_callback: error occurred.\n";
+    ABSL_LOG(ERROR) << "ssl_info_callback: error occurred.\n";
     return;
   }
 
@@ -285,28 +285,28 @@ static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
   X509_NAME* subject_name = X509_get_subject_name(cert);
   int utf8_returned_size = 0;
   if (subject_name == nullptr) {
-    VLOG(2) << "Could not get subject name from certificate.";
+    ABSL_VLOG(2) << "Could not get subject name from certificate.";
     return TSI_NOT_FOUND;
   }
   common_name_index =
       X509_NAME_get_index_by_NID(subject_name, NID_commonName, -1);
   if (common_name_index == -1) {
-    VLOG(2) << "Could not get common name of subject from certificate.";
+    ABSL_VLOG(2) << "Could not get common name of subject from certificate.";
     return TSI_NOT_FOUND;
   }
   common_name_entry = X509_NAME_get_entry(subject_name, common_name_index);
   if (common_name_entry == nullptr) {
-    LOG(ERROR) << "Could not get common name entry from certificate.";
+    ABSL_LOG(ERROR) << "Could not get common name entry from certificate.";
     return TSI_INTERNAL_ERROR;
   }
   common_name_asn1 = X509_NAME_ENTRY_get_data(common_name_entry);
   if (common_name_asn1 == nullptr) {
-    LOG(ERROR) << "Could not get common name entry asn1 from certificate.";
+    ABSL_LOG(ERROR) << "Could not get common name entry asn1 from certificate.";
     return TSI_INTERNAL_ERROR;
   }
   utf8_returned_size = ASN1_STRING_to_UTF8(utf8, common_name_asn1);
   if (utf8_returned_size < 0) {
-    LOG(ERROR) << "Could not extract utf8 from asn1 string.";
+    ABSL_LOG(ERROR) << "Could not extract utf8 from asn1 string.";
     return TSI_OUT_OF_RESOURCES;
   }
   *utf8_size = static_cast<size_t>(utf8_returned_size);
@@ -350,7 +350,7 @@ static tsi_result peer_property_from_x509_subject(X509* cert,
   char* contents;
   long len = BIO_get_mem_data(bio, &contents);
   if (len < 0) {
-    LOG(ERROR) << "Could not get subject entry from certificate.";
+    ABSL_LOG(ERROR) << "Could not get subject entry from certificate.";
     BIO_free(bio);
     return TSI_INTERNAL_ERROR;
   }
@@ -415,7 +415,7 @@ static tsi_result add_subject_alt_names_properties_to_peer(
         property_name = TSI_X509_URI_PEER_PROPERTY;
       }
       if (name_size < 0) {
-        LOG(ERROR) << "Could not get utf8 from asn1 string.";
+        ABSL_LOG(ERROR) << "Could not get utf8 from asn1 string.";
         result = TSI_INTERNAL_ERROR;
         break;
       }
@@ -441,14 +441,14 @@ static tsi_result add_subject_alt_names_properties_to_peer(
       } else if (subject_alt_name->d.iPAddress->length == 16) {
         af = AF_INET6;
       } else {
-        LOG(ERROR) << "SAN IP Address contained invalid IP";
+        ABSL_LOG(ERROR) << "SAN IP Address contained invalid IP";
         result = TSI_INTERNAL_ERROR;
         break;
       }
       const char* name = inet_ntop(af, subject_alt_name->d.iPAddress->data,
                                    ntop_buf, INET6_ADDRSTRLEN);
       if (name == nullptr) {
-        LOG(ERROR) << "Could not get IP string from asn1 octet.";
+        ABSL_LOG(ERROR) << "Could not get IP string from asn1 octet.";
         result = TSI_INTERNAL_ERROR;
         break;
       }
@@ -482,7 +482,7 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
           : 0;
   size_t property_count;
   tsi_result result;
-  CHECK_GE(subject_alt_name_count, 0);
+  ABSL_CHECK_GE(subject_alt_name_count, 0);
   property_count = (include_certificate_type ? size_t{1} : 0) +
                    3 /* subject, common name, certificate */ +
                    static_cast<size_t>(subject_alt_name_count);
@@ -537,7 +537,7 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
   }
   if (result != TSI_OK) tsi_peer_destruct(peer);
 
-  CHECK((int)peer->property_count == current_insert_index);
+  ABSL_CHECK((int)peer->property_count == current_insert_index);
   return result;
 }
 
@@ -548,7 +548,7 @@ static tsi_result ssl_ctx_use_certificate_chain(SSL_CTX* context,
   tsi_result result = TSI_OK;
   X509* certificate = nullptr;
   BIO* pem;
-  CHECK_LE(pem_cert_chain_size, static_cast<size_t>(INT_MAX));
+  ABSL_CHECK_LE(pem_cert_chain_size, static_cast<size_t>(INT_MAX));
   pem = BIO_new_mem_buf(pem_cert_chain, static_cast<int>(pem_cert_chain_size));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
 
@@ -611,7 +611,7 @@ static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
     }
     engine_name = static_cast<char*>(gpr_zalloc(engine_name_length + 1));
     memcpy(engine_name, engine_start, engine_name_length);
-    VLOG(2) << "ENGINE key: " << engine_name;
+    ABSL_VLOG(2) << "ENGINE key: " << engine_name;
     ENGINE_load_dynamic();
     engine = ENGINE_by_id(engine_name);
     if (engine == nullptr) {
@@ -619,7 +619,7 @@ static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
       // current working directory.
       engine = ENGINE_by_id("dynamic");
       if (engine == nullptr) {
-        LOG(ERROR) << "Cannot load dynamic engine";
+        ABSL_LOG(ERROR) << "Cannot load dynamic engine";
         result = TSI_INVALID_ARGUMENT;
         break;
       }
@@ -628,29 +628,29 @@ static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
           !ENGINE_ctrl_cmd_string(engine, "DIR_ADD", ".", 0) ||
           !ENGINE_ctrl_cmd_string(engine, "LIST_ADD", "1", 0) ||
           !ENGINE_ctrl_cmd_string(engine, "LOAD", NULL, 0)) {
-        LOG(ERROR) << "Cannot find engine";
+        ABSL_LOG(ERROR) << "Cannot find engine";
         result = TSI_INVALID_ARGUMENT;
         break;
       }
     }
     if (!ENGINE_set_default(engine, ENGINE_METHOD_ALL)) {
-      LOG(ERROR) << "ENGINE_set_default with ENGINE_METHOD_ALL failed";
+      ABSL_LOG(ERROR) << "ENGINE_set_default with ENGINE_METHOD_ALL failed";
       result = TSI_INVALID_ARGUMENT;
       break;
     }
     if (!ENGINE_init(engine)) {
-      LOG(ERROR) << "ENGINE_init failed";
+      ABSL_LOG(ERROR) << "ENGINE_init failed";
       result = TSI_INVALID_ARGUMENT;
       break;
     }
     private_key = ENGINE_load_private_key(engine, key_id, 0, 0);
     if (private_key == nullptr) {
-      LOG(ERROR) << "ENGINE_load_private_key failed";
+      ABSL_LOG(ERROR) << "ENGINE_load_private_key failed";
       result = TSI_INVALID_ARGUMENT;
       break;
     }
     if (!SSL_CTX_use_PrivateKey(context, private_key)) {
-      LOG(ERROR) << "SSL_CTX_use_PrivateKey failed";
+      ABSL_LOG(ERROR) << "SSL_CTX_use_PrivateKey failed";
       result = TSI_INVALID_ARGUMENT;
       break;
     }
@@ -668,7 +668,7 @@ static tsi_result ssl_ctx_use_pem_private_key(SSL_CTX* context,
   tsi_result result = TSI_OK;
   EVP_PKEY* private_key = nullptr;
   BIO* pem;
-  CHECK_LE(pem_key_size, static_cast<size_t>(INT_MAX));
+  ABSL_CHECK_LE(pem_key_size, static_cast<size_t>(INT_MAX));
   pem = BIO_new_mem_buf(pem_key, static_cast<int>(pem_key_size));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
   do {
@@ -713,7 +713,7 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
   X509* root = nullptr;
   X509_NAME* root_name = nullptr;
   BIO* pem;
-  CHECK_LE(pem_roots_size, static_cast<size_t>(INT_MAX));
+  ABSL_CHECK_LE(pem_roots_size, static_cast<size_t>(INT_MAX));
   pem = BIO_new_mem_buf(pem_roots, static_cast<int>(pem_roots_size));
   if (cert_store == nullptr) return TSI_INVALID_ARGUMENT;
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
@@ -731,7 +731,7 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
     if (root_names != nullptr) {
       root_name = X509_get_subject_name(root);
       if (root_name == nullptr) {
-        LOG(ERROR) << "Could not get name from root certificate.";
+        ABSL_LOG(ERROR) << "Could not get name from root certificate.";
         result = TSI_INVALID_ARGUMENT;
         break;
       }
@@ -748,7 +748,7 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
       unsigned long error = ERR_get_error();
       if (ERR_GET_LIB(error) != ERR_LIB_X509 ||
           ERR_GET_REASON(error) != X509_R_CERT_ALREADY_IN_HASH_TABLE) {
-        LOG(ERROR) << "Could not add root certificate to ssl context.";
+        ABSL_LOG(ERROR) << "Could not add root certificate to ssl context.";
         result = TSI_INTERNAL_ERROR;
         break;
       }
@@ -757,7 +757,7 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
     num_roots++;
   }
   if (num_roots == 0) {
-    LOG(ERROR) << "Could not load any root certificate.";
+    ABSL_LOG(ERROR) << "Could not load any root certificate.";
     result = TSI_INVALID_ARGUMENT;
   }
 
@@ -796,7 +796,7 @@ static tsi_result populate_ssl_context(
       result = ssl_ctx_use_certificate_chain(context, key_cert_pair->cert_chain,
                                              strlen(key_cert_pair->cert_chain));
       if (result != TSI_OK) {
-        LOG(ERROR) << "Invalid cert chain file.";
+        ABSL_LOG(ERROR) << "Invalid cert chain file.";
         return result;
       }
     }
@@ -804,21 +804,21 @@ static tsi_result populate_ssl_context(
       result = ssl_ctx_use_private_key(context, key_cert_pair->private_key,
                                        strlen(key_cert_pair->private_key));
       if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
-        LOG(ERROR) << "Invalid private key.";
+        ABSL_LOG(ERROR) << "Invalid private key.";
         return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
       }
     }
   }
   if ((cipher_list != nullptr) &&
       !SSL_CTX_set_cipher_list(context, cipher_list)) {
-    LOG(ERROR) << "Invalid cipher list: " << cipher_list;
+    ABSL_LOG(ERROR) << "Invalid cipher list: " << cipher_list;
     return TSI_INVALID_ARGUMENT;
   }
   {
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
     EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
     if (!SSL_CTX_set_tmp_ecdh(context, ecdh)) {
-      LOG(ERROR) << "Could not set ephemeral ECDH key.";
+      ABSL_LOG(ERROR) << "Could not set ephemeral ECDH key.";
       EC_KEY_free(ecdh);
       return TSI_INTERNAL_ERROR;
     }
@@ -826,7 +826,7 @@ static tsi_result populate_ssl_context(
     EC_KEY_free(ecdh);
 #else
     if (!SSL_CTX_set1_groups(context, kSslEcCurveNames, 1)) {
-      LOG(ERROR) << "Could not set ephemeral ECDH key.";
+      ABSL_LOG(ERROR) << "Could not set ephemeral ECDH key.";
       return TSI_INTERNAL_ERROR;
     }
     SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
@@ -846,7 +846,7 @@ tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
 
   cert = PEM_read_bio_X509(pem, nullptr, nullptr, const_cast<char*>(""));
   if (cert == nullptr) {
-    LOG(ERROR) << "Invalid certificate";
+    ABSL_LOG(ERROR) << "Invalid certificate";
     result = TSI_INVALID_ARGUMENT;
   } else {
     result = peer_from_x509(cert, 0, peer);
@@ -869,7 +869,7 @@ static tsi_result build_alpn_protocol_name_list(
     size_t length =
         alpn_protocols[i] == nullptr ? 0 : strlen(alpn_protocols[i]);
     if (length == 0 || length > 255) {
-      LOG(ERROR) << "Invalid protocol name length: " << length;
+      ABSL_LOG(ERROR) << "Invalid protocol name length: " << length;
       return TSI_INVALID_ARGUMENT;
     }
     *protocol_name_list_length += length + 1;
@@ -904,7 +904,7 @@ static int verify_cb(int ok, X509_STORE_CTX* ctx) {
     return 1;
   }
   if (cert_error != 0) {
-    LOG(ERROR) << "Certificate verify failed with code " << cert_error;
+    ABSL_LOG(ERROR) << "Certificate verify failed with code " << cert_error;
   }
   return ok;
 }
@@ -948,7 +948,7 @@ static int RootCertExtractCallback(X509_STORE_CTX* ctx, void* /*arg*/) {
   if (ssl_index < 0) {
     char err_str[256];
     ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
-    LOG(ERROR) << "error getting the SSL index from the X509_STORE_CTX: "
+    ABSL_LOG(ERROR) << "error getting the SSL index from the X509_STORE_CTX: "
                << err_str;
     return ret;
   }
@@ -1053,12 +1053,12 @@ static bool ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   // 6.3.3b verify issuer and scope
   valid = grpc_core::VerifyCrlCertIssuerNamesMatch(crl, cert);
   if (!valid) {
-    VLOG(2) << "CRL and cert issuer names mismatched.";
+    ABSL_VLOG(2) << "CRL and cert issuer names mismatched.";
     return valid;
   }
   valid = grpc_core::HasCrlSignBit(issuer);
   if (!valid) {
-    VLOG(2) << "CRL issuer not allowed to sign CRLs.";
+    ABSL_VLOG(2) << "CRL issuer not allowed to sign CRLs.";
     return valid;
   }
   // 6.3.3c Not supporting deltas
@@ -1069,7 +1069,7 @@ static bool ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   // 6.3.3g Verify CRL Signature
   valid = grpc_core::VerifyCrlSignature(crl, issuer);
   if (!valid) {
-    VLOG(2) << "Crl signature check failed.";
+    ABSL_VLOG(2) << "Crl signature check failed.";
   }
   return valid;
 }
@@ -1159,7 +1159,7 @@ static int CheckChainRevocation(
 static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
   int ret = X509_verify_cert(ctx);
   if (ret <= 0) {
-    VLOG(2) << "Failed to verify cert chain.";
+    ABSL_VLOG(2) << "Failed to verify cert chain.";
     // Verification failed. We shouldn't expect to have a verified chain, so
     // there is no need to attempt to extract the root cert from it, check for
     // revocation, or check anything else.
@@ -1169,7 +1169,7 @@ static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
   if (provider != nullptr) {
     ret = CheckChainRevocation(ctx, provider);
     if (ret <= 0) {
-      VLOG(2) << "The chain failed revocation checks.";
+      ABSL_VLOG(2) << "The chain failed revocation checks.";
       return ret;
     }
   }
@@ -1236,25 +1236,25 @@ static tsi_result tsi_set_min_and_max_tls_versions(
 tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
     const char* pem_roots) {
   if (pem_roots == nullptr) {
-    LOG(ERROR) << "The root certificates are empty.";
+    ABSL_LOG(ERROR) << "The root certificates are empty.";
     return nullptr;
   }
   tsi_ssl_root_certs_store* root_store = static_cast<tsi_ssl_root_certs_store*>(
       gpr_zalloc(sizeof(tsi_ssl_root_certs_store)));
   if (root_store == nullptr) {
-    LOG(ERROR) << "Could not allocate buffer for ssl_root_certs_store.";
+    ABSL_LOG(ERROR) << "Could not allocate buffer for ssl_root_certs_store.";
     return nullptr;
   }
   root_store->store = X509_STORE_new();
   if (root_store->store == nullptr) {
-    LOG(ERROR) << "Could not allocate buffer for X509_STORE.";
+    ABSL_LOG(ERROR) << "Could not allocate buffer for X509_STORE.";
     gpr_free(root_store);
     return nullptr;
   }
   tsi_result result = x509_store_load_certs(root_store->store, pem_roots,
                                             strlen(pem_roots), nullptr);
   if (result != TSI_OK) {
-    LOG(ERROR) << "Could not load root certificates.";
+    ABSL_LOG(ERROR) << "Could not load root certificates.";
     X509_STORE_free(root_store->store);
     gpr_free(root_store);
     return nullptr;
@@ -1380,7 +1380,7 @@ static tsi_ssl_handshaker_factory_vtable handshaker_factory_vtable = {nullptr};
 // allocating memory for the factory.
 static void tsi_ssl_handshaker_factory_init(
     tsi_ssl_handshaker_factory* factory) {
-  CHECK_NE(factory, nullptr);
+  ABSL_CHECK_NE(factory, nullptr);
 
   factory->vtable = &handshaker_factory_vtable;
   gpr_ref_init(&factory->refcount, 1);
@@ -1484,7 +1484,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
     result = peer_property_from_x509_subject(
         verified_root_cert, &peer->properties[peer->property_count], true);
     if (result != TSI_OK) {
-      VLOG(2) << "Problem extracting subject from verified_root_cert. result: "
+      ABSL_VLOG(2) << "Problem extracting subject from verified_root_cert. result: "
               << result;
     }
     peer->property_count++;
@@ -1529,7 +1529,7 @@ static tsi_result ssl_handshaker_result_create_frame_protector(
   protector_impl->buffer =
       static_cast<unsigned char*>(gpr_malloc(protector_impl->buffer_size));
   if (protector_impl->buffer == nullptr) {
-    LOG(ERROR) << "Could not allocate buffer for tsi_ssl_frame_protector.";
+    ABSL_LOG(ERROR) << "Could not allocate buffer for tsi_ssl_frame_protector.";
     gpr_free(protector_impl);
     return TSI_INTERNAL_ERROR;
   }
@@ -1606,7 +1606,7 @@ static tsi_result ssl_handshaker_get_bytes_to_send_to_peer(
     if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
-  CHECK_LE(*bytes_size, static_cast<size_t>(INT_MAX));
+  ABSL_CHECK_LE(*bytes_size, static_cast<size_t>(INT_MAX));
   bytes_read_from_ssl =
       BIO_read(impl->network_io, bytes, static_cast<int>(*bytes_size));
   if (bytes_read_from_ssl < 0) {
@@ -1662,7 +1662,7 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
           const char* verify_err = X509_verify_cert_error_string(verify_result);
           verify_result_str = absl::StrCat(": ", verify_err);
         }
-        LOG(INFO) << "Handshake failed with error "
+        ABSL_LOG(INFO) << "Handshake failed with error "
                   << grpc_core::SslErrorString(ssl_result) << ": " << err_str
                   << verify_result_str;
         if (error != nullptr) {
@@ -1684,11 +1684,11 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
     if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
-  CHECK_LE(*bytes_size, static_cast<size_t>(INT_MAX));
+  ABSL_CHECK_LE(*bytes_size, static_cast<size_t>(INT_MAX));
   bytes_written_into_ssl_size =
       BIO_write(impl->network_io, bytes, static_cast<int>(*bytes_size));
   if (bytes_written_into_ssl_size < 0) {
-    LOG(ERROR) << "Could not write to memory BIO.";
+    ABSL_LOG(ERROR) << "Could not write to memory BIO.";
     if (error != nullptr) *error = "could not write to memory BIO";
     impl->result = TSI_INTERNAL_ERROR;
     return impl->result;
@@ -1728,7 +1728,7 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
   // If an unexpected number of bytes were read, return an error status and
   // free all of the bytes that were read.
   if (bytes_read < 0 || static_cast<size_t>(bytes_read) != bytes_in_ssl) {
-    LOG(ERROR)
+    ABSL_LOG(ERROR)
         << "Failed to read the expected number of bytes from SSL object.";
     gpr_free(*bytes_remaining);
     *bytes_remaining = nullptr;
@@ -1835,7 +1835,7 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
         ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size, error);
     if (status != TSI_OK) return status;
     if (unused_bytes_size > received_bytes_size) {
-      LOG(ERROR) << "More unused bytes than received bytes.";
+      ABSL_LOG(ERROR) << "More unused bytes than received bytes.";
       gpr_free(unused_bytes);
       if (error != nullptr) *error = "More unused bytes than received bytes.";
       return TSI_INTERNAL_ERROR;
@@ -1900,7 +1900,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
   tsi_ssl_handshaker* impl = nullptr;
   *handshaker = nullptr;
   if (ctx == nullptr) {
-    LOG(ERROR) << "SSL Context is null. Should never happen.";
+    ABSL_LOG(ERROR) << "SSL Context is null. Should never happen.";
     return TSI_INTERNAL_ERROR;
   }
   if (ssl == nullptr) {
@@ -1910,7 +1910,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
 
   if (!BIO_new_bio_pair(&network_io, network_bio_buf_size, &ssl_io,
                         ssl_bio_buf_size)) {
-    LOG(ERROR) << "BIO_new_bio_pair failed.";
+    ABSL_LOG(ERROR) << "BIO_new_bio_pair failed.";
     SSL_free(ssl);
     return TSI_OUT_OF_RESOURCES;
   }
@@ -1923,7 +1923,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
     if (server_name_indication != nullptr &&
         !looks_like_ip_address(server_name_indication)) {
       if (!SSL_set_tlsext_host_name(ssl, server_name_indication)) {
-        LOG(ERROR) << "Invalid server name indication "
+        ABSL_LOG(ERROR) << "Invalid server name indication "
                    << server_name_indication;
         SSL_free(ssl);
         BIO_free(network_io);
@@ -1940,7 +1940,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
     ssl_result = SSL_do_handshake(ssl);
     ssl_result = SSL_get_error(ssl, ssl_result);
     if (ssl_result != SSL_ERROR_WANT_READ) {
-      LOG(ERROR)
+      ABSL_LOG(ERROR)
           << "Unexpected error received from first SSL_do_handshake call: "
           << grpc_core::SslErrorString(ssl_result);
       SSL_free(ssl);
@@ -2099,7 +2099,7 @@ static int does_entry_match_name(absl::string_view entry,
 
   // Wildchar subdomain matching.
   if (entry.size() < 3 || entry[1] != '.') {  // At least *.x
-    LOG(ERROR) << "Invalid wildchar entry.";
+    ABSL_LOG(ERROR) << "Invalid wildchar entry.";
     return 0;
   }
   size_t name_subdomain_pos = name.find('.');
@@ -2110,7 +2110,7 @@ static int does_entry_match_name(absl::string_view entry,
   entry.remove_prefix(2);                   // Remove *.
   size_t dot = name_subdomain.find('.');
   if (dot == absl::string_view::npos || dot == name_subdomain.size() - 1) {
-    LOG(ERROR) << "Invalid toplevel subdomain: " << name_subdomain;
+    ABSL_LOG(ERROR) << "Invalid toplevel subdomain: " << name_subdomain;
     return 0;
   }
   if (name_subdomain.back() == '.') {
@@ -2137,7 +2137,7 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
       return SSL_TLSEXT_ERR_OK;
     }
   }
-  LOG(ERROR) << "No match found for server name: " << servername;
+  ABSL_LOG(ERROR) << "No match found for server name: " << servername;
   return SSL_TLSEXT_ERR_NOACK;
 }
 
@@ -2158,7 +2158,7 @@ static int server_handshaker_factory_npn_advertised_callback(
   tsi_ssl_server_handshaker_factory* factory =
       static_cast<tsi_ssl_server_handshaker_factory*>(arg);
   *out = factory->alpn_protocol_list;
-  CHECK(factory->alpn_protocol_list_length <= UINT_MAX);
+  ABSL_CHECK(factory->alpn_protocol_list_length <= UINT_MAX);
   *outlen = static_cast<unsigned int>(factory->alpn_protocol_list_length);
   return SSL_TLSEXT_ERR_OK;
 }
@@ -2192,7 +2192,7 @@ static int server_handshaker_factory_new_session_callback(
 template <typename T>
 static void ssl_keylogging_callback(const SSL* ssl, const char* info) {
   SSL_CTX* ssl_context = SSL_get_SSL_CTX(ssl);
-  CHECK_NE(ssl_context, nullptr);
+  ABSL_CHECK_NE(ssl_context, nullptr);
   void* arg = SSL_CTX_get_ex_data(ssl_context, g_ssl_ctx_ex_factory_index);
   T* factory = static_cast<T*>(arg);
   factory->key_logger->LogSessionKeys(ssl_context, info);
@@ -2244,7 +2244,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #endif
   if (ssl_context == nullptr) {
     grpc_core::LogSslErrorStack();
-    LOG(ERROR) << "Could not create ssl context.";
+    ABSL_LOG(ERROR) << "Could not create ssl context.";
     return TSI_INVALID_ARGUMENT;
   }
 
@@ -2311,7 +2311,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 
       X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
       if (result != TSI_OK) {
-        LOG(ERROR) << "Cannot load server root certificates.";
+        ABSL_LOG(ERROR) << "Cannot load server root certificates.";
         break;
       }
     }
@@ -2321,16 +2321,16 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
           options->alpn_protocols, options->num_alpn_protocols,
           &impl->alpn_protocol_list, &impl->alpn_protocol_list_length);
       if (result != TSI_OK) {
-        LOG(ERROR) << "Building alpn list failed with error "
+        ABSL_LOG(ERROR) << "Building alpn list failed with error "
                    << tsi_result_to_string(result);
         break;
       }
 #if TSI_OPENSSL_ALPN_SUPPORT
-      CHECK(impl->alpn_protocol_list_length < UINT_MAX);
+      ABSL_CHECK(impl->alpn_protocol_list_length < UINT_MAX);
       if (SSL_CTX_set_alpn_protos(
               ssl_context, impl->alpn_protocol_list,
               static_cast<unsigned int>(impl->alpn_protocol_list_length))) {
-        LOG(ERROR) << "Could not set alpn protocol list to context.";
+        ABSL_LOG(ERROR) << "Could not set alpn protocol list to context.";
         result = TSI_INVALID_ARGUMENT;
         break;
       }
@@ -2360,7 +2360,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     X509_STORE_set_verify_cb(cert_store, verify_cb);
     if (!X509_STORE_load_locations(cert_store, nullptr,
                                    options->crl_directory)) {
-      LOG(ERROR) << "Failed to load CRL File from directory.";
+      ABSL_LOG(ERROR) << "Failed to load CRL File from directory.";
     } else {
       X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
       X509_VERIFY_PARAM_set_flags(
@@ -2465,7 +2465,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #endif
       if (impl->ssl_contexts[i] == nullptr) {
         grpc_core::LogSslErrorStack();
-        LOG(ERROR) << "Could not create ssl context.";
+        ABSL_LOG(ERROR) << "Could not create ssl context.";
         result = TSI_OUT_OF_RESOURCES;
         break;
       }
@@ -2487,7 +2487,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           impl->ssl_contexts[i], kSslSessionIdContext,
           GPR_ARRAY_SIZE(kSslSessionIdContext));
       if (set_sid_ctx_result == 0) {
-        LOG(ERROR) << "Failed to set session id context.";
+        ABSL_LOG(ERROR) << "Failed to set session id context.";
         result = TSI_INTERNAL_ERROR;
         break;
       }
@@ -2497,7 +2497,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                 impl->ssl_contexts[i],
                 const_cast<char*>(options->session_ticket_key),
                 options->session_ticket_key_size) == 0) {
-          LOG(ERROR) << "Invalid STEK size.";
+          ABSL_LOG(ERROR) << "Invalid STEK size.";
           result = TSI_INVALID_ARGUMENT;
           break;
         }
@@ -2510,7 +2510,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
             strlen(options->pem_client_root_certs),
             options->send_client_ca_list ? &root_names : nullptr);
         if (result != TSI_OK) {
-          LOG(ERROR) << "Invalid verification certs.";
+          ABSL_LOG(ERROR) << "Invalid verification certs.";
           break;
         }
         if (options->send_client_ca_list) {
@@ -2558,7 +2558,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         X509_STORE_set_verify_cb(cert_store, verify_cb);
         if (!X509_STORE_load_locations(cert_store, nullptr,
                                        options->crl_directory)) {
-          LOG(ERROR) << "Failed to load CRL File from directory.";
+          ABSL_LOG(ERROR) << "Failed to load CRL File from directory.";
         } else {
           X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
           X509_VERIFY_PARAM_set_flags(
@@ -2654,8 +2654,8 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer, absl::string_view name) {
 const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(
     tsi_ssl_handshaker_factory* factory,
     tsi_ssl_handshaker_factory_vtable* new_vtable) {
-  CHECK_NE(factory, nullptr);
-  CHECK_NE(factory->vtable, nullptr);
+  ABSL_CHECK_NE(factory, nullptr);
+  ABSL_CHECK_NE(factory->vtable, nullptr);
 
   const tsi_ssl_handshaker_factory_vtable* orig_vtable = factory->vtable;
   factory->vtable = new_vtable;

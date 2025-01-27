@@ -40,13 +40,13 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
  public:
   BenchmarkHelper(absl::string_view name, absl::string_view config)
       : name_(name), config_json_(config) {
-    CHECK(lb_policy_ != nullptr) << "Failed to create LB policy: " << name;
+    ABSL_CHECK(lb_policy_ != nullptr) << "Failed to create LB policy: " << name;
     auto parsed_json = JsonParse(std::string(config_json_));
-    CHECK_OK(parsed_json);
+    ABSL_CHECK_OK(parsed_json);
     auto config_parsed =
         CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
             *parsed_json);
-    CHECK_OK(config_parsed);
+    ABSL_CHECK_OK(config_parsed);
     config_ = std::move(*config_parsed);
   }
 
@@ -69,14 +69,14 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
               grpc_resolved_address addr;
               int port = i % 65536;
               int ip = i / 65536;
-              CHECK_LT(ip, 256);
-              CHECK(grpc_parse_uri(
+              ABSL_CHECK_LT(ip, 256);
+              ABSL_CHECK(grpc_parse_uri(
                   URI::Parse(absl::StrCat("ipv4:127.0.0.", ip, ":", port))
                       .value(),
                   &addr));
               addresses.emplace_back(addr, ChannelArgs());
             }
-            CHECK_OK(lb_policy_->UpdateLocked(LoadBalancingPolicy::UpdateArgs{
+            ABSL_CHECK_OK(lb_policy_->UpdateLocked(LoadBalancingPolicy::UpdateArgs{
                 std::make_shared<EndpointAddressesListIterator>(
                     std::move(addresses)),
                 config_, "", ChannelArgs()}));
@@ -105,9 +105,9 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
       helper_->connectivity_watchers_.erase(watcher);
     }
 
-    void RequestConnection() override { LOG(FATAL) << "unimplemented"; }
+    void RequestConnection() override { ABSL_LOG(FATAL) << "unimplemented"; }
 
-    void ResetBackoff() override { LOG(FATAL) << "unimplemented"; }
+    void ResetBackoff() override { ABSL_LOG(FATAL) << "unimplemented"; }
 
     void AddDataWatcher(
         std::unique_ptr<DataWatcherInterface> watcher) override {
@@ -117,7 +117,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
         AddConnectivityWatcherInternal(
             DownCast<HealthWatcher*>(watcher_internal)->TakeWatcher());
       } else {
-        LOG(FATAL) << "unimplemented watcher type: "
+        ABSL_LOG(FATAL) << "unimplemented watcher type: "
                    << watcher_internal->type();
       }
     }
@@ -163,19 +163,19 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
       helper_->cv_.SignalAll();
     }
 
-    void RequestReresolution() override { LOG(FATAL) << "unimplemented"; }
+    void RequestReresolution() override { ABSL_LOG(FATAL) << "unimplemented"; }
 
     absl::string_view GetTarget() override { return "foo"; }
 
     absl::string_view GetAuthority() override { return "foo"; }
 
     RefCountedPtr<grpc_channel_credentials> GetChannelCredentials() override {
-      LOG(FATAL) << "unimplemented";
+      ABSL_LOG(FATAL) << "unimplemented";
     }
 
     RefCountedPtr<grpc_channel_credentials> GetUnsafeChannelCredentials()
         override {
-      LOG(FATAL) << "unimplemented";
+      ABSL_LOG(FATAL) << "unimplemented";
     }
 
     grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
@@ -189,7 +189,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
 
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override {
-      LOG(FATAL) << "unimplemented";
+      ABSL_LOG(FATAL) << "unimplemented";
     }
 
     BenchmarkHelper* helper_;

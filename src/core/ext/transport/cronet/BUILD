@@ -40,8 +40,8 @@ grpc_cc_library(
         "transport/cronet_transport.h",
     ],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "cronet_c_for_grpc",
     ],
     public_hdrs = [

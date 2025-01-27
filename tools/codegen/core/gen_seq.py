@@ -110,7 +110,7 @@ tail${i}:
 % endfor
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    ABSL_DCHECK(state == State::kState0);
     Construct(&${"prior."*(n-1)}current_promise,
             other.${"prior."*(n-1)}current_promise);
 % for i in range(0,n-1):
@@ -120,7 +120,7 @@ tail${i}:
   }
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    ABSL_DCHECK(state == State::kState0);
     Construct(&${"prior."*(n-1)}current_promise,
               std::move(other.${"prior."*(n-1)}current_promise));
 % for i in range(0,n-1):
@@ -185,8 +185,8 @@ front_matter = """
 
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
 

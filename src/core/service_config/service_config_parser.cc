@@ -21,7 +21,7 @@
 
 #include <string>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 
 namespace grpc_core {
 
@@ -33,7 +33,7 @@ void ServiceConfigParser::Builder::RegisterParser(
     std::unique_ptr<Parser> parser) {
   for (const auto& registered_parser : registered_parsers_) {
     if (registered_parser->name() == parser->name()) {
-      LOG(ERROR) << "Parser with name '" << parser->name()
+      ABSL_LOG(ERROR) << "Parser with name '" << parser->name()
                  << "' already registered";
       // We'll otherwise crash later.
       abort();

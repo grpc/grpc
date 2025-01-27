@@ -23,7 +23,7 @@
 #include <thread>  // NOLINT
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
@@ -517,7 +517,7 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
             ::testing::ElementsAre(client_method_name_), ::testing::Eq(0))));
     auto data = client_retry_delay_per_call_view.GetData().distribution_data();
     for (const auto& entry : data) {
-      LOG(ERROR) << "Mean Retry Delay " << entry.first[0] << ": "
+      ABSL_LOG(ERROR) << "Mean Retry Delay " << entry.first[0] << ": "
                  << entry.second.mean() << " ms";
     }
     // We expect the retry delay to be around 100ms.
@@ -1013,94 +1013,94 @@ TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusTracing) {
 // This test verifies that users depending on src/cpp/ext/filters/census header
 // files can continue using the non-experimental names.
 TEST(StatsPluginDeclarationTest, Declarations) {
-  LOG(INFO) << ClientMethodTagKey;
-  LOG(INFO) << ClientStatusTagKey;
-  LOG(INFO) << ServerMethodTagKey;
-  LOG(INFO) << ServerStatusTagKey;
+  ABSL_LOG(INFO) << ClientMethodTagKey;
+  ABSL_LOG(INFO) << ClientStatusTagKey;
+  ABSL_LOG(INFO) << ServerMethodTagKey;
+  ABSL_LOG(INFO) << ServerStatusTagKey;
 
-  LOG(INFO) << kRpcClientReceivedBytesPerRpcMeasureName.data();
-  LOG(INFO) << kRpcClientReceivedMessagesPerRpcMeasureName.data();
-  LOG(INFO) << kRpcClientRetriesPerCallMeasureName.data();
-  LOG(INFO) << kRpcClientRetryDelayPerCallMeasureName.data();
-  LOG(INFO) << kRpcClientRoundtripLatencyMeasureName.data();
-  LOG(INFO) << kRpcClientSentBytesPerRpcMeasureName.data();
-  LOG(INFO) << kRpcClientSentMessagesPerRpcMeasureName.data();
-  LOG(INFO) << kRpcClientServerLatencyMeasureName.data();
-  LOG(INFO) << kRpcClientStartedRpcsMeasureName.data();
-  LOG(INFO) << kRpcClientTransparentRetriesPerCallMeasureName.data();
+  ABSL_LOG(INFO) << kRpcClientReceivedBytesPerRpcMeasureName.data();
+  ABSL_LOG(INFO) << kRpcClientReceivedMessagesPerRpcMeasureName.data();
+  ABSL_LOG(INFO) << kRpcClientRetriesPerCallMeasureName.data();
+  ABSL_LOG(INFO) << kRpcClientRetryDelayPerCallMeasureName.data();
+  ABSL_LOG(INFO) << kRpcClientRoundtripLatencyMeasureName.data();
+  ABSL_LOG(INFO) << kRpcClientSentBytesPerRpcMeasureName.data();
+  ABSL_LOG(INFO) << kRpcClientSentMessagesPerRpcMeasureName.data();
+  ABSL_LOG(INFO) << kRpcClientServerLatencyMeasureName.data();
+  ABSL_LOG(INFO) << kRpcClientStartedRpcsMeasureName.data();
+  ABSL_LOG(INFO) << kRpcClientTransparentRetriesPerCallMeasureName.data();
 
-  LOG(INFO) << kRpcServerReceivedBytesPerRpcMeasureName.data();
-  LOG(INFO) << kRpcServerReceivedMessagesPerRpcMeasureName.data();
-  LOG(INFO) << kRpcServerSentBytesPerRpcMeasureName.data();
-  LOG(INFO) << kRpcServerSentMessagesPerRpcMeasureName.data();
-  LOG(INFO) << kRpcServerServerLatencyMeasureName.data();
-  LOG(INFO) << kRpcServerStartedRpcsMeasureName.data();
+  ABSL_LOG(INFO) << kRpcServerReceivedBytesPerRpcMeasureName.data();
+  ABSL_LOG(INFO) << kRpcServerReceivedMessagesPerRpcMeasureName.data();
+  ABSL_LOG(INFO) << kRpcServerSentBytesPerRpcMeasureName.data();
+  ABSL_LOG(INFO) << kRpcServerSentMessagesPerRpcMeasureName.data();
+  ABSL_LOG(INFO) << kRpcServerServerLatencyMeasureName.data();
+  ABSL_LOG(INFO) << kRpcServerStartedRpcsMeasureName.data();
 
-  LOG(INFO) << ClientCompletedRpcsCumulative;
-  LOG(INFO) << ClientReceivedBytesPerRpcCumulative;
-  LOG(INFO) << ClientReceivedMessagesPerRpcCumulative;
-  LOG(INFO) << ClientRetriesCumulative;
-  LOG(INFO) << ClientRetriesPerCallCumulative;
-  LOG(INFO) << ClientRetryDelayPerCallCumulative;
-  LOG(INFO) << ClientRoundtripLatencyCumulative;
-  LOG(INFO) << ClientSentBytesPerRpcCumulative;
-  LOG(INFO) << ClientSentMessagesPerRpcCumulative;
-  LOG(INFO) << ClientServerLatencyCumulative;
-  LOG(INFO) << ClientStartedRpcsCumulative;
-  LOG(INFO) << ClientTransparentRetriesCumulative;
-  LOG(INFO) << ClientTransparentRetriesPerCallCumulative;
+  ABSL_LOG(INFO) << ClientCompletedRpcsCumulative;
+  ABSL_LOG(INFO) << ClientReceivedBytesPerRpcCumulative;
+  ABSL_LOG(INFO) << ClientReceivedMessagesPerRpcCumulative;
+  ABSL_LOG(INFO) << ClientRetriesCumulative;
+  ABSL_LOG(INFO) << ClientRetriesPerCallCumulative;
+  ABSL_LOG(INFO) << ClientRetryDelayPerCallCumulative;
+  ABSL_LOG(INFO) << ClientRoundtripLatencyCumulative;
+  ABSL_LOG(INFO) << ClientSentBytesPerRpcCumulative;
+  ABSL_LOG(INFO) << ClientSentMessagesPerRpcCumulative;
+  ABSL_LOG(INFO) << ClientServerLatencyCumulative;
+  ABSL_LOG(INFO) << ClientStartedRpcsCumulative;
+  ABSL_LOG(INFO) << ClientTransparentRetriesCumulative;
+  ABSL_LOG(INFO) << ClientTransparentRetriesPerCallCumulative;
 
-  LOG(INFO) << ServerCompletedRpcsCumulative;
-  LOG(INFO) << ServerReceivedBytesPerRpcCumulative;
-  LOG(INFO) << ServerReceivedMessagesPerRpcCumulative;
-  LOG(INFO) << ServerSentBytesPerRpcCumulative;
-  LOG(INFO) << ServerSentMessagesPerRpcCumulative;
-  LOG(INFO) << ServerServerLatencyCumulative;
-  LOG(INFO) << ServerStartedRpcsCumulative;
+  ABSL_LOG(INFO) << ServerCompletedRpcsCumulative;
+  ABSL_LOG(INFO) << ServerReceivedBytesPerRpcCumulative;
+  ABSL_LOG(INFO) << ServerReceivedMessagesPerRpcCumulative;
+  ABSL_LOG(INFO) << ServerSentBytesPerRpcCumulative;
+  ABSL_LOG(INFO) << ServerSentMessagesPerRpcCumulative;
+  ABSL_LOG(INFO) << ServerServerLatencyCumulative;
+  ABSL_LOG(INFO) << ServerStartedRpcsCumulative;
 
-  LOG(INFO) << ClientCompletedRpcsMinute;
-  LOG(INFO) << ClientReceivedBytesPerRpcMinute;
-  LOG(INFO) << ClientReceivedMessagesPerRpcMinute;
-  LOG(INFO) << ClientRetriesMinute;
-  LOG(INFO) << ClientRetriesPerCallMinute;
-  LOG(INFO) << ClientRetryDelayPerCallMinute;
-  LOG(INFO) << ClientRoundtripLatencyMinute;
-  LOG(INFO) << ClientSentBytesPerRpcMinute;
-  LOG(INFO) << ClientSentMessagesPerRpcMinute;
-  LOG(INFO) << ClientServerLatencyMinute;
-  LOG(INFO) << ClientStartedRpcsMinute;
-  LOG(INFO) << ClientTransparentRetriesMinute;
-  LOG(INFO) << ClientTransparentRetriesPerCallMinute;
+  ABSL_LOG(INFO) << ClientCompletedRpcsMinute;
+  ABSL_LOG(INFO) << ClientReceivedBytesPerRpcMinute;
+  ABSL_LOG(INFO) << ClientReceivedMessagesPerRpcMinute;
+  ABSL_LOG(INFO) << ClientRetriesMinute;
+  ABSL_LOG(INFO) << ClientRetriesPerCallMinute;
+  ABSL_LOG(INFO) << ClientRetryDelayPerCallMinute;
+  ABSL_LOG(INFO) << ClientRoundtripLatencyMinute;
+  ABSL_LOG(INFO) << ClientSentBytesPerRpcMinute;
+  ABSL_LOG(INFO) << ClientSentMessagesPerRpcMinute;
+  ABSL_LOG(INFO) << ClientServerLatencyMinute;
+  ABSL_LOG(INFO) << ClientStartedRpcsMinute;
+  ABSL_LOG(INFO) << ClientTransparentRetriesMinute;
+  ABSL_LOG(INFO) << ClientTransparentRetriesPerCallMinute;
 
-  LOG(INFO) << ServerCompletedRpcsMinute;
-  LOG(INFO) << ServerReceivedBytesPerRpcMinute;
-  LOG(INFO) << ServerReceivedMessagesPerRpcMinute;
-  LOG(INFO) << ServerSentBytesPerRpcMinute;
-  LOG(INFO) << ServerSentMessagesPerRpcMinute;
-  LOG(INFO) << ServerServerLatencyMinute;
-  LOG(INFO) << ServerStartedRpcsMinute;
+  ABSL_LOG(INFO) << ServerCompletedRpcsMinute;
+  ABSL_LOG(INFO) << ServerReceivedBytesPerRpcMinute;
+  ABSL_LOG(INFO) << ServerReceivedMessagesPerRpcMinute;
+  ABSL_LOG(INFO) << ServerSentBytesPerRpcMinute;
+  ABSL_LOG(INFO) << ServerSentMessagesPerRpcMinute;
+  ABSL_LOG(INFO) << ServerServerLatencyMinute;
+  ABSL_LOG(INFO) << ServerStartedRpcsMinute;
 
-  LOG(INFO) << ClientCompletedRpcsHour;
-  LOG(INFO) << ClientReceivedBytesPerRpcHour;
-  LOG(INFO) << ClientReceivedMessagesPerRpcHour;
-  LOG(INFO) << ClientRetriesHour;
-  LOG(INFO) << ClientRetriesPerCallHour;
-  LOG(INFO) << ClientRetryDelayPerCallHour;
-  LOG(INFO) << ClientRoundtripLatencyHour;
-  LOG(INFO) << ClientSentBytesPerRpcHour;
-  LOG(INFO) << ClientSentMessagesPerRpcHour;
-  LOG(INFO) << ClientServerLatencyHour;
-  LOG(INFO) << ClientStartedRpcsHour;
-  LOG(INFO) << ClientTransparentRetriesHour;
-  LOG(INFO) << ClientTransparentRetriesPerCallHour;
+  ABSL_LOG(INFO) << ClientCompletedRpcsHour;
+  ABSL_LOG(INFO) << ClientReceivedBytesPerRpcHour;
+  ABSL_LOG(INFO) << ClientReceivedMessagesPerRpcHour;
+  ABSL_LOG(INFO) << ClientRetriesHour;
+  ABSL_LOG(INFO) << ClientRetriesPerCallHour;
+  ABSL_LOG(INFO) << ClientRetryDelayPerCallHour;
+  ABSL_LOG(INFO) << ClientRoundtripLatencyHour;
+  ABSL_LOG(INFO) << ClientSentBytesPerRpcHour;
+  ABSL_LOG(INFO) << ClientSentMessagesPerRpcHour;
+  ABSL_LOG(INFO) << ClientServerLatencyHour;
+  ABSL_LOG(INFO) << ClientStartedRpcsHour;
+  ABSL_LOG(INFO) << ClientTransparentRetriesHour;
+  ABSL_LOG(INFO) << ClientTransparentRetriesPerCallHour;
 
-  LOG(INFO) << ServerCompletedRpcsHour;
-  LOG(INFO) << ServerReceivedBytesPerRpcHour;
-  LOG(INFO) << ServerReceivedMessagesPerRpcHour;
-  LOG(INFO) << ServerSentBytesPerRpcHour;
-  LOG(INFO) << ServerSentMessagesPerRpcHour;
-  LOG(INFO) << ServerServerLatencyHour;
-  LOG(INFO) << ServerStartedRpcsHour;
+  ABSL_LOG(INFO) << ServerCompletedRpcsHour;
+  ABSL_LOG(INFO) << ServerReceivedBytesPerRpcHour;
+  ABSL_LOG(INFO) << ServerReceivedMessagesPerRpcHour;
+  ABSL_LOG(INFO) << ServerSentBytesPerRpcHour;
+  ABSL_LOG(INFO) << ServerSentMessagesPerRpcHour;
+  ABSL_LOG(INFO) << ServerServerLatencyHour;
+  ABSL_LOG(INFO) << ServerStartedRpcsHour;
 }
 
 }  // namespace

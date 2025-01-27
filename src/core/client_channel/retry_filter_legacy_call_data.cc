@@ -20,8 +20,8 @@
 #include <memory>
 #include <new>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -1501,14 +1501,14 @@ RetryFilter::LegacyCallData::~LegacyCallData() {
   CSliceUnref(path_);
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
-    CHECK_EQ(pending_batches_[i].batch, nullptr);
+    ABSL_CHECK_EQ(pending_batches_[i].batch, nullptr);
   }
 }
 
 void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
   if (GRPC_TRACE_FLAG_ENABLED(retry) && !GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << "chand=" << chand_ << " calld=" << this
+    ABSL_LOG(INFO) << "chand=" << chand_ << " calld=" << this
               << ": batch started from surface: "
               << grpc_transport_stream_op_batch_string(batch, false);
   }
@@ -1730,7 +1730,7 @@ RetryFilter::LegacyCallData::PendingBatchesAdd(
   GRPC_TRACE_LOG(retry, INFO) << "chand=" << chand_ << " calld=" << this
                               << ": adding pending batch at index " << idx;
   PendingBatch* pending = &pending_batches_[idx];
-  CHECK_EQ(pending->batch, nullptr);
+  ABSL_CHECK_EQ(pending->batch, nullptr);
   pending->batch = batch;
   pending->send_ops_cached = false;
   // Update state in calld about pending batches.
@@ -1809,13 +1809,13 @@ void RetryFilter::LegacyCallData::FailPendingBatchInCallCombiner(
 
 // This is called via the call combiner, so access to calld is synchronized.
 void RetryFilter::LegacyCallData::PendingBatchesFail(grpc_error_handle error) {
-  CHECK(!error.ok());
+  ABSL_CHECK(!error.ok());
   if (GRPC_TRACE_FLAG_ENABLED(retry)) {
     size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i].batch != nullptr) ++num_batches;
     }
-    LOG(INFO) << "chand=" << chand_ << " calld=" << this << ": failing "
+    ABSL_LOG(INFO) << "chand=" << chand_ << " calld=" << this << ": failing "
               << num_batches << " pending batches: " << StatusToString(error);
   }
   CallCombinerClosureList closures;
@@ -1886,7 +1886,7 @@ void RetryFilter::LegacyCallData::StartRetryTimer(
   // Compute backoff delay.
   Duration next_attempt_timeout;
   if (server_pushback.has_value()) {
-    CHECK(*server_pushback >= Duration::Zero());
+    ABSL_CHECK(*server_pushback >= Duration::Zero());
     next_attempt_timeout = *server_pushback;
     retry_backoff_.Reset();
   } else {

@@ -26,8 +26,8 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/endpoint/v3/endpoint.pb.h"
 #include "envoy/config/listener/v3/listener.pb.h"
@@ -231,12 +231,12 @@ class AdsServiceImpl
 
   Status StreamAggregatedResources(ServerContext* context,
                                    Stream* stream) override {
-    LOG(INFO) << "ADS[" << debug_label_
+    ABSL_LOG(INFO) << "ADS[" << debug_label_
               << "]: StreamAggregatedResources starts";
     {
       grpc_core::MutexLock lock(&ads_mu_);
       if (forced_ads_failure_.has_value()) {
-        LOG(INFO) << "ADS[" << debug_label_
+        ABSL_LOG(INFO) << "ADS[" << debug_label_
                   << "]: StreamAggregatedResources forcing early failure "
                      "with status code: "
                   << forced_ads_failure_.value().error_code() << ", message: "
@@ -281,7 +281,7 @@ class AdsServiceImpl
           DiscoveryRequest request = std::move(requests.front());
           requests.pop_front();
           did_work = true;
-          LOG(INFO) << "ADS[" << debug_label_ << "]: Received request for type "
+          ABSL_LOG(INFO) << "ADS[" << debug_label_ << "]: Received request for type "
                     << request.type_url() << " with content "
                     << request.DebugString();
           SentState& sent_state = sent_state_map[request.type_url()];
@@ -291,7 +291,7 @@ class AdsServiceImpl
         }
       }
       if (response.has_value()) {
-        LOG(INFO) << "ADS[" << debug_label_
+        ABSL_LOG(INFO) << "ADS[" << debug_label_
                   << "]: Sending response: " << response->DebugString();
         stream->Write(response.value());
       }
@@ -309,7 +309,7 @@ class AdsServiceImpl
         }
       }
       if (response.has_value()) {
-        LOG(INFO) << "ADS[" << debug_label_
+        ABSL_LOG(INFO) << "ADS[" << debug_label_
                   << "]: Sending update response: " << response->DebugString();
         stream->Write(response.value());
       }
@@ -341,7 +341,7 @@ class AdsServiceImpl
         }
       }
     }
-    LOG(INFO) << "ADS[" << debug_label_ << "]: StreamAggregatedResources done";
+    ABSL_LOG(INFO) << "ADS[" << debug_label_ << "]: StreamAggregatedResources done";
     RemoveClient(context->peer());
     return Status::OK;
   }
@@ -358,7 +358,7 @@ class AdsServiceImpl
     if (request.response_nonce().empty()) {
       int client_resource_type_version = 0;
       if (!request.version_info().empty()) {
-        CHECK(absl::SimpleAtoi(request.version_info(),
+        ABSL_CHECK(absl::SimpleAtoi(request.version_info(),
                                &client_resource_type_version));
       }
       if (check_version_callback_ != nullptr) {
@@ -367,12 +367,12 @@ class AdsServiceImpl
       }
     } else {
       int client_nonce;
-      CHECK(absl::SimpleAtoi(request.response_nonce(), &client_nonce));
+      ABSL_CHECK(absl::SimpleAtoi(request.response_nonce(), &client_nonce));
       // Check for ACK or NACK.
       ResponseState response_state;
       if (!request.has_error_detail()) {
         response_state.state = ResponseState::ACKED;
-        LOG(INFO) << "ADS[" << debug_label_
+        ABSL_LOG(INFO) << "ADS[" << debug_label_
                   << "]: client ACKed resource_type=" << request.type_url()
                   << " version=" << request.version_info();
       } else {
@@ -382,7 +382,7 @@ class AdsServiceImpl
               static_cast<absl::StatusCode>(request.error_detail().code()));
         }
         response_state.error_message = request.error_detail().message();
-        LOG(INFO) << "ADS[" << debug_label_
+        ABSL_LOG(INFO) << "ADS[" << debug_label_
                   << "]: client NACKed resource_type=" << request.type_url()
                   << " version=" << request.version_info() << ": "
                   << response_state.error_message;
@@ -415,7 +415,7 @@ class AdsServiceImpl
                          &resource_state, update_queue) ||
           ClientNeedsResourceUpdate(resource_type_state, resource_state,
                                     sent_state->resource_type_version)) {
-        LOG(INFO) << "ADS[" << debug_label_
+        ABSL_LOG(INFO) << "ADS[" << debug_label_
                   << "]: Sending update for type=" << request.type_url()
                   << " name=" << resource_name;
         resources_added_to_response.emplace(resource_name);
@@ -430,7 +430,7 @@ class AdsServiceImpl
           }
         }
       } else {
-        LOG(INFO) << "ADS[" << debug_label_
+        ABSL_LOG(INFO) << "ADS[" << debug_label_
                   << "]: client does not need update for type="
                   << request.type_url() << " name=" << resource_name;
       }
@@ -455,7 +455,7 @@ class AdsServiceImpl
                      SubscriptionMap* subscription_map, SentState* sent_state,
                      std::optional<DiscoveryResponse>* response)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(ads_mu_) {
-    LOG(INFO) << "ADS[" << debug_label_
+    ABSL_LOG(INFO) << "ADS[" << debug_label_
               << "]: Received update for type=" << resource_type
               << " name=" << resource_name;
     auto& subscription_name_map = (*subscription_map)[resource_type];
@@ -466,7 +466,7 @@ class AdsServiceImpl
       ResourceState& resource_state = resource_name_map[resource_name];
       if (ClientNeedsResourceUpdate(resource_type_state, resource_state,
                                     sent_state->resource_type_version)) {
-        LOG(INFO) << "ADS[" << debug_label_
+        ABSL_LOG(INFO) << "ADS[" << debug_label_
                   << "]: Sending update for type=" << resource_type
                   << " name=" << resource_name;
         response->emplace();
@@ -499,7 +499,7 @@ class AdsServiceImpl
         requests->emplace_back(std::move(request));
       }
     }
-    LOG(INFO) << "ADS[" << debug_label_ << "]: Null read, stream closed";
+    ABSL_LOG(INFO) << "ADS[" << debug_label_ << "]: Null read, stream closed";
     grpc_core::MutexLock lock(&ads_mu_);
     *stream_closed = true;
   }
@@ -758,7 +758,7 @@ class LrsServiceImpl
   using Stream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
 
   Status StreamLoadStats(ServerContext* /*context*/, Stream* stream) override {
-    LOG(INFO) << "LRS[" << debug_label_ << "]: StreamLoadStats starts";
+    ABSL_LOG(INFO) << "LRS[" << debug_label_ << "]: StreamLoadStats starts";
     if (stream_started_callback_ != nullptr) stream_started_callback_();
     // Take a reference of the LrsServiceImpl object, reference will go
     // out of scope after this method exits.
@@ -785,7 +785,7 @@ class LrsServiceImpl
       // Wait for report.
       request.Clear();
       while (stream->Read(&request)) {
-        LOG(INFO) << "LRS[" << debug_label_
+        ABSL_LOG(INFO) << "LRS[" << debug_label_
                   << "]: received client load report message: "
                   << request.DebugString();
         std::vector<ClientStats> stats;
@@ -804,7 +804,7 @@ class LrsServiceImpl
         lrs_cv_.Wait(&lrs_mu_);
       }
     }
-    LOG(INFO) << "LRS[" << debug_label_ << "]: StreamLoadStats done";
+    ABSL_LOG(INFO) << "LRS[" << debug_label_ << "]: StreamLoadStats done";
     return Status::OK;
   }
 

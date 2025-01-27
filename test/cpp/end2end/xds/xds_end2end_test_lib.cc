@@ -28,8 +28,8 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -80,7 +80,7 @@ bool XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
   while ((it = status_map.find(uri)) == status_map.end() ||
          it->second.error_code() != expected_status) {
     if (cond_.WaitWithDeadline(&mu_, deadline)) {
-      LOG(ERROR) << "\nTimeout Elapsed waiting on serving status "
+      ABSL_LOG(ERROR) << "\nTimeout Elapsed waiting on serving status "
                     "change\nExpected status: "
                  << expected_status << "\nActual:"
                  << (it == status_map.end()
@@ -154,8 +154,8 @@ XdsEnd2endTest::ServerThread::ServerThread(
       port_(grpc_pick_unused_port_or_die()) {}
 
 void XdsEnd2endTest::ServerThread::Start() {
-  LOG(INFO) << "starting " << Type() << " server on port " << port_;
-  CHECK(!running_);
+  ABSL_LOG(INFO) << "starting " << Type() << " server on port " << port_;
+  ABSL_CHECK(!running_);
   running_ = true;
   StartAllServices();
   grpc_core::Mutex mu;
@@ -166,38 +166,38 @@ void XdsEnd2endTest::ServerThread::Start() {
   thread_ = std::make_unique<std::thread>(
       std::bind(&ServerThread::Serve, this, &mu, &cond));
   cond.Wait(&mu);
-  LOG(INFO) << Type() << " server startup complete";
+  ABSL_LOG(INFO) << Type() << " server startup complete";
 }
 
 void XdsEnd2endTest::ServerThread::Shutdown() {
   if (!running_) return;
-  LOG(INFO) << Type() << " about to shutdown";
+  ABSL_LOG(INFO) << Type() << " about to shutdown";
   ShutdownAllServices();
   server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   thread_->join();
-  LOG(INFO) << Type() << " shutdown completed";
+  ABSL_LOG(INFO) << Type() << " shutdown completed";
   running_ = false;
 }
 
 void XdsEnd2endTest::ServerThread::StopListeningAndSendGoaways() {
-  LOG(INFO) << Type() << " sending GOAWAYs";
+  ABSL_LOG(INFO) << Type() << " sending GOAWAYs";
   {
     grpc_core::ExecCtx exec_ctx;
     auto* server = grpc_core::Server::FromC(server_->c_server());
     server->StopListening();
     server->SendGoaways();
   }
-  LOG(INFO) << Type() << " done sending GOAWAYs";
+  ABSL_LOG(INFO) << Type() << " done sending GOAWAYs";
 }
 
 void XdsEnd2endTest::ServerThread::StopListening() {
-  LOG(INFO) << Type() << " about to stop listening";
+  ABSL_LOG(INFO) << Type() << " about to stop listening";
   {
     grpc_core::ExecCtx exec_ctx;
     auto* server = grpc_core::Server::FromC(server_->c_server());
     server->StopListening();
   }
-  LOG(INFO) << Type() << " stopped listening";
+  ABSL_LOG(INFO) << Type() << " stopped listening";
 }
 
 void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
@@ -796,7 +796,7 @@ size_t XdsEnd2endTest::WaitForAllBackends(
           << debug_location.file() << ":" << debug_location.line();
     };
   }
-  LOG(INFO) << "========= WAITING FOR BACKENDS [" << start_index << ", "
+  ABSL_LOG(INFO) << "========= WAITING FOR BACKENDS [" << start_index << ", "
             << stop_index << ") ==========";
   size_t num_rpcs = 0;
   SendRpcsUntil(
@@ -808,7 +808,7 @@ size_t XdsEnd2endTest::WaitForAllBackends(
       },
       wait_options.timeout_ms, rpc_options);
   if (wait_options.reset_counters) ResetBackendCounters();
-  LOG(INFO) << "Backends up; sent " << num_rpcs << " warm up requests";
+  ABSL_LOG(INFO) << "Backends up; sent " << num_rpcs << " warm up requests";
   return num_rpcs;
 }
 

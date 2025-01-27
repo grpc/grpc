@@ -25,8 +25,8 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -118,12 +118,12 @@ class EventEngineEndpointWrapper {
     read_buffer->~SliceBuffer();
     if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       size_t i;
-      LOG(INFO) << "TCP: " << eeep_->wrapper << " READ error=" << status;
+      ABSL_LOG(INFO) << "TCP: " << eeep_->wrapper << " READ error=" << status;
       if (ABSL_VLOG_IS_ON(2)) {
         for (i = 0; i < pending_read_buffer_->count; i++) {
           char* dump = grpc_dump_slice(pending_read_buffer_->slices[i],
                                        GPR_DUMP_HEX | GPR_DUMP_ASCII);
-          VLOG(2) << "READ DATA: " << dump;
+          ABSL_VLOG(2) << "READ DATA: " << dump;
           gpr_free(dump);
         }
       }
@@ -148,12 +148,12 @@ class EventEngineEndpointWrapper {
     Ref();
     if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       size_t i;
-      LOG(INFO) << "TCP: " << this << " WRITE (peer=" << PeerAddress() << ")";
+      ABSL_LOG(INFO) << "TCP: " << this << " WRITE (peer=" << PeerAddress() << ")";
       if (ABSL_VLOG_IS_ON(2)) {
         for (i = 0; i < slices->count; i++) {
           char* dump =
               grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-          VLOG(2) << "WRITE DATA: " << dump;
+          ABSL_VLOG(2) << "WRITE DATA: " << dump;
           gpr_free(dump);
         }
       }
@@ -414,7 +414,7 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
 
 grpc_endpoint* grpc_event_engine_endpoint_create(
     std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
-  DCHECK(ee_endpoint != nullptr);
+  ABSL_DCHECK(ee_endpoint != nullptr);
   auto wrapper = new EventEngineEndpointWrapper(std::move(ee_endpoint));
   return wrapper->GetGrpcEndpoint();
 }

@@ -25,14 +25,14 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 
 static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
                                  const grpc_metadata* /*md*/,
                                  size_t /*md_count*/,
                                  grpc_process_auth_metadata_done_cb cb,
                                  void* user_data) {
-  CHECK_EQ(state, nullptr);
+  ABSL_CHECK_EQ(state, nullptr);
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
@@ -53,7 +53,7 @@ grpc_server* LocalTestFixture::MakeServer(
     grpc_server_credentials_set_auth_metadata_processor(server_creds,
                                                         processor);
   }
-  CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
+  ABSL_CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
   grpc_server_credentials_release(server_creds);
   pre_server_start(server);
   grpc_server_start(server);
@@ -65,7 +65,7 @@ grpc_channel* LocalTestFixture::MakeClient(const grpc_core::ChannelArgs& args,
   grpc_channel_credentials* creds = grpc_local_credentials_create(type_);
   auto* client =
       grpc_channel_create(localaddr_.c_str(), creds, args.ToC().get());
-  CHECK_NE(client, nullptr);
+  ABSL_CHECK_NE(client, nullptr);
   grpc_channel_credentials_release(creds);
   return client;
 }

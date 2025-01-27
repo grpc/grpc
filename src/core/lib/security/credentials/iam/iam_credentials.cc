@@ -24,7 +24,7 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
@@ -69,9 +69,9 @@ grpc_call_credentials* grpc_google_iam_credentials_create(
   GRPC_TRACE_LOG(api, INFO) << "grpc_iam_credentials_create(token=" << token
                             << ", authority_selector=" << authority_selector
                             << ", reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
-  CHECK_NE(token, nullptr);
-  CHECK_NE(authority_selector, nullptr);
+  ABSL_CHECK_EQ(reserved, nullptr);
+  ABSL_CHECK_NE(token, nullptr);
+  ABSL_CHECK_NE(authority_selector, nullptr);
   return grpc_core::MakeRefCounted<grpc_google_iam_credentials>(
              token, authority_selector)
       .release();

@@ -23,7 +23,7 @@
 #include <grpc/support/alloc.h>
 #include <string.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/strerror.h"
@@ -134,7 +134,7 @@ TEST(ErrorTest, PrintErrorString) {
       grpc_error_set_int(error, grpc_core::StatusIntProperty::kHttp2Error, 666);
   error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kGrpcMessage,
                              "message");
-  //  VLOG(2) << grpc_core::StatusToString(error);
+  //  ABSL_VLOG(2) << grpc_core::StatusToString(error);
 }
 
 TEST(ErrorTest, PrintErrorStringReference) {

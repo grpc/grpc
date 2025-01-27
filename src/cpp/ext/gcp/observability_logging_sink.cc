@@ -31,7 +31,7 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/numeric/int128.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
@@ -359,14 +359,14 @@ void ObservabilityLoggingSink::FlushEntriesHelper(
       &(call->context), &(call->request), &(call->response),
       [this, call](Status status) {
         if (!status.ok()) {
-          LOG(ERROR) << "GCP Observability Logging Error "
+          ABSL_LOG(ERROR) << "GCP Observability Logging Error "
                      << status.error_code() << ": " << status.error_message()
                      << ". Dumping log entries.";
           for (auto& entry : call->request.entries()) {
             std::string output;
             ::google::protobuf::TextFormat::PrintToString(entry.json_payload(),
                                                           &output);
-            LOG(INFO) << "Log Entry recorded at time: "
+            ABSL_LOG(INFO) << "Log Entry recorded at time: "
                       << grpc_core::Timestamp::FromTimespecRoundUp(
                              gpr_timespec{entry.timestamp().seconds(),
                                           entry.timestamp().nanos(),
@@ -412,14 +412,14 @@ void ObservabilityLoggingSink::MaybeTriggerFlushLocked() {
   if (entries_.size() > kMaxEntriesBeforeDump ||
       entries_memory_footprint_ > kMaxMemoryFootprintBeforeDump) {
     // Buffer limits have been reached. Dump entries with LOG
-    LOG(INFO) << "Buffer limit reached. Dumping log entries.";
+    ABSL_LOG(INFO) << "Buffer limit reached. Dumping log entries.";
     for (auto& entry : entries_) {
       google::protobuf::Struct proto;
       std::string timestamp = entry.timestamp.ToString();
       EntryToJsonStructProto(std::move(entry), &proto);
       std::string output;
       ::google::protobuf::TextFormat::PrintToString(proto, &output);
-      LOG(INFO) << "Log Entry recorded at time: " << timestamp << " : "
+      ABSL_LOG(INFO) << "Log Entry recorded at time: " << timestamp << " : "
                 << output;
     }
     entries_.clear();

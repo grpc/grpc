@@ -21,7 +21,7 @@ grpc_cc_library(
     testonly = True,
     srcs = ["cf_engine_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     tags = [
@@ -45,7 +45,7 @@ grpc_cc_test(
     timeout = "short",
     srcs = ["cf_engine_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     tags = [

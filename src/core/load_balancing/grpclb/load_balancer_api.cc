@@ -24,7 +24,7 @@
 
 #include <algorithm>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 #include "src/core/util/memory.h"
@@ -143,7 +143,7 @@ bool ParseServerList(const grpc_lb_v1_LoadBalanceResponse& response,
       } else if (token.size <= GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE) {
         memcpy(cur.load_balance_token, token.data, token.size);
       } else {
-        LOG(ERROR) << "grpc_lb_v1_LoadBalanceResponse has too long token. len="
+        ABSL_LOG(ERROR) << "grpc_lb_v1_LoadBalanceResponse has too long token. len="
                    << token.size;
       }
       cur.drop = grpc_lb_v1_Server_drop(servers[i]);

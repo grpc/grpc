@@ -26,7 +26,7 @@
 #include <memory>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "src/core/config/core_configuration.h"
@@ -114,7 +114,7 @@ RefCountedPtr<grpc_tls_certificate_provider>
 FileWatcherCertificateProviderFactory::CreateCertificateProvider(
     RefCountedPtr<CertificateProviderFactory::Config> config) {
   if (config->name() != name()) {
-    LOG(ERROR) << "Wrong config type Actual:" << config->name()
+    ABSL_LOG(ERROR) << "Wrong config type Actual:" << config->name()
                << " vs Expected:" << name();
     return nullptr;
   }

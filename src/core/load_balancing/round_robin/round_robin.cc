@@ -27,8 +27,8 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -209,8 +209,8 @@ RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
 RoundRobin::~RoundRobin() {
   GRPC_TRACE_LOG(round_robin, INFO)
       << "[RR " << this << "] Destroying Round Robin policy";
-  CHECK(endpoint_list_ == nullptr);
-  CHECK(latest_pending_endpoint_list_ == nullptr);
+  ABSL_CHECK(endpoint_list_ == nullptr);
+  ABSL_CHECK(latest_pending_endpoint_list_ == nullptr);
 }
 
 void RoundRobin::ShutdownLocked() {
@@ -243,7 +243,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
   // Create new child list, replacing the previous pending list, if any.
   if (GRPC_TRACE_FLAG_ENABLED(round_robin) &&
       latest_pending_endpoint_list_ != nullptr) {
-    LOG(INFO) << "[RR " << this << "] replacing previous pending child list "
+    ABSL_LOG(INFO) << "[RR " << this << "] replacing previous pending child list "
               << latest_pending_endpoint_list_.get();
   }
   std::vector<std::string> errors;
@@ -254,7 +254,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
   // endpoint_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_endpoint_list_->size() == 0) {
     if (GRPC_TRACE_FLAG_ENABLED(round_robin) && endpoint_list_ != nullptr) {
-      LOG(INFO) << "[RR " << this << "] replacing previous child list "
+      ABSL_LOG(INFO) << "[RR " << this << "] replacing previous child list "
                 << endpoint_list_.get();
     }
     endpoint_list_ = std::move(latest_pending_endpoint_list_);
@@ -316,20 +316,20 @@ void RoundRobin::RoundRobinEndpointList::UpdateStateCountersLocked(
   // We treat IDLE the same as CONNECTING, since it will immediately
   // transition into that state anyway.
   if (old_state.has_value()) {
-    CHECK(*old_state != GRPC_CHANNEL_SHUTDOWN);
+    ABSL_CHECK(*old_state != GRPC_CHANNEL_SHUTDOWN);
     if (*old_state == GRPC_CHANNEL_READY) {
-      CHECK_GT(num_ready_, 0u);
+      ABSL_CHECK_GT(num_ready_, 0u);
       --num_ready_;
     } else if (*old_state == GRPC_CHANNEL_CONNECTING ||
                *old_state == GRPC_CHANNEL_IDLE) {
-      CHECK_GT(num_connecting_, 0u);
+      ABSL_CHECK_GT(num_connecting_, 0u);
       --num_connecting_;
     } else if (*old_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      CHECK_GT(num_transient_failure_, 0u);
+      ABSL_CHECK_GT(num_transient_failure_, 0u);
       --num_transient_failure_;
     }
   }
-  CHECK(new_state != GRPC_CHANNEL_SHUTDOWN);
+  ABSL_CHECK(new_state != GRPC_CHANNEL_SHUTDOWN);
   if (new_state == GRPC_CHANNEL_READY) {
     ++num_ready_;
   } else if (new_state == GRPC_CHANNEL_CONNECTING ||
@@ -356,7 +356,7 @@ void RoundRobin::RoundRobinEndpointList::
        (num_ready_ > 0 && AllEndpointsSeenInitialState()) ||
        num_transient_failure_ == size())) {
     if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {
-      LOG(INFO) << "[RR " << round_robin << "] swapping out child list "
+      ABSL_LOG(INFO) << "[RR " << round_robin << "] swapping out child list "
                 << round_robin->endpoint_list_.get() << " ("
                 << round_robin->endpoint_list_->CountersString()
                 << ") in favor of " << this << " (" << CountersString() << ")";
@@ -381,7 +381,7 @@ void RoundRobin::RoundRobinEndpointList::
         pickers.push_back(endpoint->picker());
       }
     }
-    CHECK(!pickers.empty());
+    ABSL_CHECK(!pickers.empty());
     round_robin->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_READY, absl::OkStatus(),
         MakeRefCounted<Picker>(round_robin, std::move(pickers)));

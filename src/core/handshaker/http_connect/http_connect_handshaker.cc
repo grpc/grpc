@@ -31,7 +31,7 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -111,7 +111,7 @@ void HttpConnectHandshaker::HandshakeFailedLocked(absl::Status error) {
   if (args_ != nullptr && args_->endpoint != nullptr) {
     peer_string = grpc_endpoint_get_peer(args_->endpoint.get());
   }
-  LOG_EVERY_N_SEC(ERROR, 60)
+  ABSL_LOG_EVERY_N_SEC(ERROR, 60)
       << "HTTP proxy handshake with " << peer_string << " failed: " << error;
   // Invoke callback.
   FinishLocked(std::move(error));
@@ -282,7 +282,7 @@ void HttpConnectHandshaker::DoHandshake(
     for (size_t i = 0; i < num_header_strings; ++i) {
       char* sep = strchr(header_strings[i], ':');
       if (sep == nullptr) {
-        LOG(ERROR) << "skipping unparsable HTTP CONNECT header: "
+        ABSL_LOG(ERROR) << "skipping unparsable HTTP CONNECT header: "
                    << header_strings[i];
         continue;
       }
@@ -299,7 +299,7 @@ void HttpConnectHandshaker::DoHandshake(
   // Log connection via proxy.
   std::string proxy_name(grpc_endpoint_get_peer(args->endpoint.get()));
   std::string server_name_string(*server_name);
-  VLOG(2) << "Connecting to server " << server_name_string << " via HTTP proxy "
+  ABSL_VLOG(2) << "Connecting to server " << server_name_string << " via HTTP proxy "
           << proxy_name;
   // Construct HTTP CONNECT request.
   grpc_http_request request;

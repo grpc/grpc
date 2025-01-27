@@ -35,8 +35,8 @@
 #include <memory>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -83,7 +83,7 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
   memset(&result, 0, sizeof(grpc_auth_refresh_token));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
   if (json.type() != Json::Type::kObject) {
-    LOG(ERROR) << "Invalid json.";
+    ABSL_LOG(ERROR) << "Invalid json.";
     goto end;
   }
 
@@ -114,7 +114,7 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
   Json json;
   auto json_or = grpc_core::JsonParse(json_string);
   if (!json_or.ok()) {
-    LOG(ERROR) << "JSON parsing failed: " << json_or.status();
+    ABSL_LOG(ERROR) << "JSON parsing failed: " << json_or.status();
   } else {
     json = std::move(*json_or);
   }
@@ -148,34 +148,34 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response_body(
     grpc_core::Duration* token_lifetime) {
   auto json = grpc_core::JsonParse(body);
   if (!json.ok()) {
-    LOG(ERROR) << "Could not parse JSON from " << body << ": " << json.status();
+    ABSL_LOG(ERROR) << "Could not parse JSON from " << body << ": " << json.status();
     return GRPC_CREDENTIALS_ERROR;
   }
   if (json->type() != Json::Type::kObject) {
-    LOG(ERROR) << "Response should be a JSON object";
+    ABSL_LOG(ERROR) << "Response should be a JSON object";
     return GRPC_CREDENTIALS_ERROR;
   }
   auto it = json->object().find("access_token");
   if (it == json->object().end() || it->second.type() != Json::Type::kString) {
-    LOG(ERROR) << "Missing or invalid access_token in JSON.";
+    ABSL_LOG(ERROR) << "Missing or invalid access_token in JSON.";
     return GRPC_CREDENTIALS_ERROR;
   }
   absl::string_view access_token = it->second.string();
   it = json->object().find("token_type");
   if (it == json->object().end() || it->second.type() != Json::Type::kString) {
-    LOG(ERROR) << "Missing or invalid token_type in JSON.";
+    ABSL_LOG(ERROR) << "Missing or invalid token_type in JSON.";
     return GRPC_CREDENTIALS_ERROR;
   }
   absl::string_view token_type = it->second.string();
   it = json->object().find("expires_in");
   if (it == json->object().end() || it->second.type() != Json::Type::kNumber) {
-    LOG(ERROR) << "Missing or invalid expires_in in JSON.";
+    ABSL_LOG(ERROR) << "Missing or invalid expires_in in JSON.";
     return GRPC_CREDENTIALS_ERROR;
   }
   absl::string_view expires_in = it->second.string();
   long seconds;
   if (!absl::SimpleAtoi(expires_in, &seconds)) {
-    LOG(ERROR) << "Invalid expires_in in JSON.";
+    ABSL_LOG(ERROR) << "Invalid expires_in in JSON.";
     return GRPC_CREDENTIALS_ERROR;
   }
   *token_lifetime = grpc_core::Duration::Seconds(seconds);
@@ -191,12 +191,12 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     grpc_core::Duration* token_lifetime) {
   *token_value = std::nullopt;
   if (response == nullptr) {
-    LOG(ERROR) << "Received NULL response.";
+    ABSL_LOG(ERROR) << "Received NULL response.";
     return GRPC_CREDENTIALS_ERROR;
   }
   absl::string_view body(response->body, response->body_length);
   if (response->status != 200) {
-    LOG(ERROR) << "Call to http server ended with error " << response->status
+    ABSL_LOG(ERROR) << "Call to http server ended with error " << response->status
                << " [" << body << "]";
     return GRPC_CREDENTIALS_ERROR;
   }
@@ -316,7 +316,7 @@ class grpc_compute_engine_token_fetcher_credentials
     auto uri = grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_METADATA_HOST,
                                       GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH,
                                       {} /* query params */, "" /* fragment */);
-    CHECK(uri.ok());  // params are hardcoded
+    ABSL_CHECK(uri.ok());  // params are hardcoded
     auto http_request = grpc_core::HttpRequest::Get(
         std::move(*uri), /*args=*/nullptr, pollent, &request, deadline,
         on_complete, response,
@@ -333,7 +333,7 @@ grpc_call_credentials* grpc_google_compute_engine_credentials_create(
     void* reserved) {
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_compute_engine_credentials_create(reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
+  ABSL_CHECK_EQ(reserved, nullptr);
   return grpc_core::MakeRefCounted<
              grpc_compute_engine_token_fetcher_credentials>()
       .release();
@@ -374,7 +374,7 @@ grpc_google_refresh_token_credentials::StartHttpRequest(
   auto uri = grpc_core::URI::Create("https", GRPC_GOOGLE_OAUTH2_SERVICE_HOST,
                                     GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH,
                                     {} /* query params */, "" /* fragment */);
-  CHECK(uri.ok());  // params are hardcoded
+  ABSL_CHECK(uri.ok());  // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Post(
       std::move(*uri), /*args=*/nullptr, pollent, &request, deadline,
       on_complete, response, grpc_core::CreateHttpRequestSSLCredentials());
@@ -386,7 +386,7 @@ grpc_core::RefCountedPtr<grpc_call_credentials>
 grpc_refresh_token_credentials_create_from_auth_refresh_token(
     grpc_auth_refresh_token refresh_token) {
   if (!grpc_auth_refresh_token_is_valid(&refresh_token)) {
-    LOG(ERROR) << "Invalid input for refresh token credentials creation";
+    ABSL_LOG(ERROR) << "Invalid input for refresh token credentials creation";
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_google_refresh_token_credentials>(
@@ -423,7 +423,7 @@ grpc_call_credentials* grpc_google_refresh_token_credentials_create(
       << "grpc_refresh_token_credentials_create(json_refresh_token="
       << create_loggable_refresh_token(&token) << ", reserved=" << reserved
       << ")";
-  CHECK_EQ(reserved, nullptr);
+  ABSL_CHECK_EQ(reserved, nullptr);
   return grpc_refresh_token_credentials_create_from_auth_refresh_token(token)
       .release();
 }
@@ -446,7 +446,7 @@ grpc_error_handle LoadTokenFile(const char* path, grpc_slice* token) {
   auto slice = LoadFile(path, /*add_null_terminator=*/true);
   if (!slice.ok()) return slice.status();
   if (slice->empty()) {
-    LOG(ERROR) << "Token file " << path << " is empty";
+    ABSL_LOG(ERROR) << "Token file " << path << " is empty";
     return GRPC_ERROR_CREATE("Token file is empty.");
   }
   *token = slice->TakeCSlice();
@@ -601,11 +601,11 @@ absl::StatusOr<URI> ValidateStsCredentialsOptions(
 
 grpc_call_credentials* grpc_sts_credentials_create(
     const grpc_sts_credentials_options* options, void* reserved) {
-  CHECK_EQ(reserved, nullptr);
+  ABSL_CHECK_EQ(reserved, nullptr);
   absl::StatusOr<grpc_core::URI> sts_url =
       grpc_core::ValidateStsCredentialsOptions(options);
   if (!sts_url.ok()) {
-    LOG(ERROR) << "STS Credentials creation failed. Error: "
+    ABSL_LOG(ERROR) << "STS Credentials creation failed. Error: "
                << sts_url.status();
     return nullptr;
   }
@@ -647,7 +647,7 @@ grpc_call_credentials* grpc_access_token_credentials_create(
   GRPC_TRACE_LOG(api, INFO) << "grpc_access_token_credentials_create(access_"
                                "token=<redacted>, reserved="
                             << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
+  ABSL_CHECK_EQ(reserved, nullptr);
   return grpc_core::MakeRefCounted<grpc_access_token_credentials>(access_token)
       .release();
 }

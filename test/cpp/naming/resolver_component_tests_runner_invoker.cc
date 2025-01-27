@@ -30,8 +30,8 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "src/core/util/crash.h"
 
@@ -98,11 +98,11 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   grpc_init();
-  CHECK(!absl::GetFlag(FLAGS_test_bin_name).empty());
+  ABSL_CHECK(!absl::GetFlag(FLAGS_test_bin_name).empty());
   std::string my_bin = argv[0];
   int result = 0;
   if (absl::GetFlag(FLAGS_running_under_bazel)) {
-    CHECK(!absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir)
+    ABSL_CHECK(!absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir)
                .empty());
     // Use bazel's TEST_SRCDIR environment variable to locate the "test data"
     // binaries.
@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
 // an indication whether the test is running on RBE or not. Find a better way of
 // doing this.
 #ifndef GRPC_PORT_ISOLATED_RUNTIME
-    LOG(ERROR) << "You are invoking the test locally with Bazel, you may need "
+    ABSL_LOG(ERROR) << "You are invoking the test locally with Bazel, you may need "
                   "to invoke Bazel with --enable_runfiles=yes.";
 #endif  // GRPC_PORT_ISOLATED_RUNTIME
     result = grpc::testing::InvokeResolverComponentTestsRunner(

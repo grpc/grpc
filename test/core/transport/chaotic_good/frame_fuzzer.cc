@@ -19,8 +19,8 @@
 #include <limits>
 #include <memory>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/statusor.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -49,15 +49,15 @@ struct DeterministicBitGen : public std::numeric_limits<uint64_t> {
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   FrameHeader hdr = input.MakeHeader();
-  CHECK_EQ(hdr.type, expected_frame_type);
-  CHECK_EQ(hdr.payload_connection_id, 0);
+  ABSL_CHECK_EQ(hdr.type, expected_frame_type);
+  ABSL_CHECK_EQ(hdr.payload_connection_id, 0);
   SliceBuffer payload;
   input.SerializePayload(payload);
-  CHECK_GE(hdr.payload_length, payload.Length());
+  ABSL_CHECK_GE(hdr.payload_length, payload.Length());
   T output;
   auto deser = output.Deserialize(hdr, std::move(payload));
-  CHECK_OK(deser);
-  CHECK_EQ(input.ToString(), output.ToString());
+  ABSL_CHECK_OK(deser);
+  ABSL_CHECK_EQ(input.ToString(), output.ToString());
 }
 
 template <typename T>

@@ -20,7 +20,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/direct_channel.h"
@@ -120,6 +120,6 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
   auto channel =
       grpc_core::ChannelCreate(target == nullptr ? "" : target, std::move(args),
                                GRPC_CLIENT_LAME_CHANNEL, nullptr);
-  CHECK(channel.ok());
+  ABSL_CHECK(channel.ok());
   return channel->release()->c_ptr();
 }

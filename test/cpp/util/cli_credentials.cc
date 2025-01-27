@@ -22,7 +22,7 @@
 #include <grpcpp/support/slice.h>
 
 #include "absl/flags/flag.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/load_file.h"
 
@@ -96,7 +96,7 @@ CliCredentials::GetChannelCredentials() const {
       auto cert = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_cert),
                                       /*add_null_terminator=*/false);
       if (!cert.ok()) {
-        LOG(ERROR) << "error loading file "
+        ABSL_LOG(ERROR) << "error loading file "
                    << absl::GetFlag(FLAGS_ssl_client_cert) << ": "
                    << cert.status();
       } else {
@@ -107,7 +107,7 @@ CliCredentials::GetChannelCredentials() const {
       auto key = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_key),
                                      /*add_null_terminator=*/false);
       if (!key.ok()) {
-        LOG(ERROR) << "error loading file "
+        ABSL_LOG(ERROR) << "error loading file "
                    << absl::GetFlag(FLAGS_ssl_client_key) << ": "
                    << key.status();
       } else {

@@ -34,7 +34,7 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
@@ -549,7 +549,7 @@ class Transport : public InternallyRefCounted<Transport> {
   }
 
   void DisconnectWithError(grpc_error_handle error) {
-    CHECK(!error.ok()) << error;
+    ABSL_CHECK(!error.ok()) << error;
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->disconnect_with_error = error;
     PerformOp(op);

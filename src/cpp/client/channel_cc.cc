@@ -39,7 +39,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
 namespace grpc {
@@ -207,7 +207,7 @@ bool Channel::WaitForStateChangeImpl(grpc_connectivity_state last_observed,
   void* tag = nullptr;
   NotifyOnStateChangeImpl(last_observed, deadline, &cq, nullptr);
   cq.Next(&tag, &ok);
-  CHECK_EQ(tag, nullptr);
+  ABSL_CHECK_EQ(tag, nullptr);
   return ok;
 }
 

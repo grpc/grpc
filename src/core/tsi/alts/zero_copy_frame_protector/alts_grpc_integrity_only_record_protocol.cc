@@ -22,8 +22,8 @@
 #include <grpc/support/port_platform.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"
@@ -67,7 +67,7 @@ static tsi_result alts_grpc_integrity_only_extra_copy_protect(
   grpc_status_code status = alts_iovec_record_protocol_integrity_only_protect(
       rp->iovec_rp, rp->iovec_buf, 1, header_iovec, tag_iovec, &error_details);
   if (status != GRPC_STATUS_OK) {
-    LOG(ERROR) << "Failed to protect, " << error_details;
+    ABSL_LOG(ERROR) << "Failed to protect, " << error_details;
     gpr_free(error_details);
     return TSI_INTERNAL_ERROR;
   }
@@ -82,7 +82,7 @@ static tsi_result alts_grpc_integrity_only_protect(
   // Input sanity check.
   if (rp == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
-    LOG(ERROR)
+    ABSL_LOG(ERROR)
         << "Invalid nullptr arguments to alts_grpc_record_protocol protect.";
     return TSI_INVALID_ARGUMENT;
   }
@@ -107,7 +107,7 @@ static tsi_result alts_grpc_integrity_only_protect(
       rp->iovec_rp, rp->iovec_buf, unprotected_slices->count, header_iovec,
       tag_iovec, &error_details);
   if (status != GRPC_STATUS_OK) {
-    LOG(ERROR) << "Failed to protect, " << error_details;
+    ABSL_LOG(ERROR) << "Failed to protect, " << error_details;
     gpr_free(error_details);
     return TSI_INTERNAL_ERROR;
   }
@@ -124,12 +124,12 @@ static tsi_result alts_grpc_integrity_only_unprotect(
   // Input sanity check.
   if (rp == nullptr || protected_slices == nullptr ||
       unprotected_slices == nullptr) {
-    LOG(ERROR)
+    ABSL_LOG(ERROR)
         << "Invalid nullptr arguments to alts_grpc_record_protocol unprotect.";
     return TSI_INVALID_ARGUMENT;
   }
   if (protected_slices->length < rp->header_length + rp->tag_length) {
-    LOG(ERROR) << "Protected slices do not have sufficient data.";
+    ABSL_LOG(ERROR) << "Protected slices do not have sufficient data.";
     return TSI_INVALID_ARGUMENT;
   }
   // In this method, rp points to alts_grpc_record_protocol struct
@@ -141,14 +141,14 @@ static tsi_result alts_grpc_integrity_only_unprotect(
   grpc_slice_buffer_reset_and_unref(&rp->header_sb);
   grpc_slice_buffer_move_first(protected_slices, rp->header_length,
                                &rp->header_sb);
-  CHECK(rp->header_sb.length == rp->header_length);
+  ABSL_CHECK(rp->header_sb.length == rp->header_length);
   iovec_t header_iovec = alts_grpc_record_protocol_get_header_iovec(rp);
   // Moves protected slices data to data_sb and leaves the remaining tag.
   grpc_slice_buffer_reset_and_unref(&integrity_only_record_protocol->data_sb);
   grpc_slice_buffer_move_first(protected_slices,
                                protected_slices->length - rp->tag_length,
                                &integrity_only_record_protocol->data_sb);
-  CHECK(protected_slices->length == rp->tag_length);
+  ABSL_CHECK(protected_slices->length == rp->tag_length);
   iovec_t tag_iovec = {nullptr, rp->tag_length};
   if (protected_slices->count == 1) {
     tag_iovec.iov_base = GRPC_SLICE_START_PTR(protected_slices->slices[0]);
@@ -168,7 +168,7 @@ static tsi_result alts_grpc_integrity_only_unprotect(
       integrity_only_record_protocol->data_sb.count, header_iovec, tag_iovec,
       &error_details);
   if (status != GRPC_STATUS_OK) {
-    LOG(ERROR) << "Failed to unprotect, " << error_details;
+    ABSL_LOG(ERROR) << "Failed to unprotect, " << error_details;
     gpr_free(error_details);
     return TSI_INTERNAL_ERROR;
   }
@@ -198,7 +198,7 @@ tsi_result alts_grpc_integrity_only_record_protocol_create(
     gsec_aead_crypter* crypter, size_t overflow_size, bool is_client,
     bool is_protect, bool enable_extra_copy, alts_grpc_record_protocol** rp) {
   if (crypter == nullptr || rp == nullptr) {
-    LOG(ERROR)
+    ABSL_LOG(ERROR)
         << "Invalid nullptr arguments to alts_grpc_record_protocol create.";
     return TSI_INVALID_ARGUMENT;
   }

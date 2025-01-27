@@ -23,7 +23,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -191,7 +191,7 @@ class HpackParseResult {
 
   static HpackParseResult InvalidMetadataError(ValidateMetadataResult result,
                                                absl::string_view key) {
-    DCHECK(result != ValidateMetadataResult::kOk);
+    ABSL_DCHECK(result != ValidateMetadataResult::kOk);
     HpackParseResult p{HpackParseStatus::kInvalidMetadata};
     p.state_->key = std::string(key);
     p.state_->validate_metadata_result = result;

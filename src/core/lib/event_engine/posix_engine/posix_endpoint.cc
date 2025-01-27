@@ -32,8 +32,8 @@
 #include <type_traits>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -241,7 +241,7 @@ msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
     ++(out_offset_.slice_idx);
     out_offset_.byte_idx = 0;
   }
-  DCHECK_GT(iov_size, 0u);
+  ABSL_DCHECK_GT(iov_size, 0u);
   return iov_size;
 }
 
@@ -307,8 +307,8 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     iov[i].iov_len = slice.length();
   }
 
-  CHECK_NE(incoming_buffer_->Length(), 0u);
-  DCHECK_GT(min_progress_size_, 0);
+  ABSL_CHECK_NE(incoming_buffer_->Length(), 0u);
+  ABSL_DCHECK_GT(min_progress_size_, 0);
 
   do {
     // Assume there is something on the queue. If we receive TCP_INQ from
@@ -368,11 +368,11 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 
     grpc_core::global_stats().IncrementTcpReadSize(read_bytes);
     AddToEstimate(static_cast<size_t>(read_bytes));
-    DCHECK((size_t)read_bytes <= incoming_buffer_->Length() - total_read_bytes);
+    ABSL_DCHECK((size_t)read_bytes <= incoming_buffer_->Length() - total_read_bytes);
 
 #ifdef GRPC_HAVE_TCP_INQ
     if (inq_capable_) {
-      DCHECK(!(msg.msg_flags & MSG_CTRUNC));
+      ABSL_DCHECK(!(msg.msg_flags & MSG_CTRUNC));
       struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msg);
       for (; cmsg != nullptr; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
         if (cmsg->cmsg_level == SOL_TCP && cmsg->cmsg_type == TCP_CM_INQ &&
@@ -421,7 +421,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     inq_ = 1;
   }
 
-  DCHECK_GT(total_read_bytes, 0u);
+  ABSL_DCHECK_GT(total_read_bytes, 0u);
   status = absl::OkStatus();
   if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
     // Update min progress size based on the total number of bytes read in
@@ -514,7 +514,7 @@ void PosixEndpointImpl::UpdateRcvLowat() {
   if (result.ok()) {
     set_rcvlowat_ = *result;
   } else {
-    LOG(ERROR) << "ERROR in SO_RCVLOWAT: " << result.status().message();
+    ABSL_LOG(ERROR) << "ERROR in SO_RCVLOWAT: " << result.status().message();
   }
 }
 
@@ -599,7 +599,7 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   grpc_core::ReleasableMutexLock lock(&read_mu_);
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
       << "Endpoint[" << this << "]: Read";
-  CHECK(read_cb_ == nullptr);
+  ABSL_CHECK(read_cb_ == nullptr);
   incoming_buffer_ = buffer;
   incoming_buffer_->Clear();
   incoming_buffer_->Swap(last_read_buffer_);
@@ -673,8 +673,8 @@ TcpZerocopySendRecord* PosixEndpointImpl::TcpGetSendZerocopyRecord(
     }
     if (zerocopy_send_record != nullptr) {
       zerocopy_send_record->PrepareForSends(buf);
-      DCHECK_EQ(buf.Count(), 0u);
-      DCHECK_EQ(buf.Length(), 0u);
+      ABSL_DCHECK_EQ(buf.Count(), 0u);
+      ABSL_DCHECK_EQ(buf.Length(), 0u);
       outgoing_byte_idx_ = 0;
       outgoing_buffer_ = nullptr;
     }
@@ -721,7 +721,7 @@ bool PosixEndpointImpl::ProcessErrors() {
       return processed_err;
     }
     if (GPR_UNLIKELY((msg.msg_flags & MSG_CTRUNC) != 0)) {
-      LOG(ERROR) << "Error message was truncated.";
+      ABSL_LOG(ERROR) << "Error message was truncated.";
     }
 
     if (msg.msg_controllen == 0) {
@@ -761,10 +761,10 @@ void PosixEndpointImpl::ZerocopyDisableAndWaitForRemaining() {
 
 // Reads \a cmsg to process zerocopy control messages.
 void PosixEndpointImpl::ProcessZerocopy(struct cmsghdr* cmsg) {
-  DCHECK(cmsg);
+  ABSL_DCHECK(cmsg);
   auto serr = reinterpret_cast<struct sock_extended_err*>(CMSG_DATA(cmsg));
-  DCHECK_EQ(serr->ee_errno, 0u);
-  DCHECK(serr->ee_origin == SO_EE_ORIGIN_ZEROCOPY);
+  ABSL_DCHECK_EQ(serr->ee_errno, 0u);
+  ABSL_DCHECK(serr->ee_origin == SO_EE_ORIGIN_ZEROCOPY);
   const uint32_t lo = serr->ee_info;
   const uint32_t hi = serr->ee_data;
   for (uint32_t seq = lo; seq <= hi; ++seq) {
@@ -774,7 +774,7 @@ void PosixEndpointImpl::ProcessZerocopy(struct cmsghdr* cmsg) {
     // both; if so, batch the unref/put.
     TcpZerocopySendRecord* record =
         tcp_zerocopy_send_ctx_->ReleaseSendRecord(seq);
-    DCHECK(record);
+    ABSL_DCHECK(record);
     UnrefMaybePutZerocopySendRecord(record);
   }
   if (tcp_zerocopy_send_ctx_->UpdateZeroCopyOptMemStateAfterFree()) {
@@ -816,7 +816,7 @@ struct cmsghdr* PosixEndpointImpl::ProcessTimestamp(msghdr* msg,
   auto serr = reinterpret_cast<struct sock_extended_err*>(CMSG_DATA(next_cmsg));
   if (serr->ee_errno != ENOMSG ||
       serr->ee_origin != SO_EE_ORIGIN_TIMESTAMPING) {
-    LOG(ERROR) << "Unexpected control message";
+    ABSL_LOG(ERROR) << "Unexpected control message";
     return cmsg;
   }
   traced_buffers_.ProcessTimestamp(serr, opt_stats, tss);
@@ -987,7 +987,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
         handle_->SetWritable();
       } else {
 #ifdef GRPC_LINUX_ERRQUEUE
-        LOG_EVERY_N_SEC(INFO, 1)
+        ABSL_LOG_EVERY_N_SEC(INFO, 1)
             << "Tx0cp encountered an ENOBUFS error possibly because one or "
                "both of RLIMIT_MEMLOCK or hard memlock ulimit values are too "
                "small for the intended user. Current system value of "
@@ -1063,7 +1063,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
       outgoing_slice_idx++;
       outgoing_byte_idx_ = 0;
     }
-    CHECK_GT(iov_size, 0u);
+    ABSL_CHECK_GT(iov_size, 0u);
 
     msg.msg_name = nullptr;
     msg.msg_namelen = 0;
@@ -1108,7 +1108,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
       }
     }
 
-    CHECK_EQ(outgoing_byte_idx_, 0u);
+    ABSL_CHECK_EQ(outgoing_byte_idx_, 0u);
     bytes_counter_ += sent_length;
     trailing = sending_length - static_cast<size_t>(sent_length);
     while (trailing > 0) {
@@ -1147,7 +1147,7 @@ void PosixEndpointImpl::HandleWrite(absl::Status status) {
                           ? TcpFlushZerocopy(current_zerocopy_send_, status)
                           : TcpFlush(status);
   if (!flush_result) {
-    DCHECK(status.ok());
+    ABSL_DCHECK(status.ok());
     handle_->NotifyOnWrite(on_write_);
   } else {
     GRPC_TRACE_LOG(event_engine_endpoint, INFO)
@@ -1166,9 +1166,9 @@ bool PosixEndpointImpl::Write(
   absl::Status status = absl::OkStatus();
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
 
-  CHECK(write_cb_ == nullptr);
-  DCHECK_EQ(current_zerocopy_send_, nullptr);
-  DCHECK_NE(data, nullptr);
+  ABSL_CHECK(write_cb_ == nullptr);
+  ABSL_DCHECK_EQ(current_zerocopy_send_, nullptr);
+  ABSL_DCHECK_NE(data, nullptr);
 
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
       << "Endpoint[" << this << "]: Write " << data->Length() << " bytes";
@@ -1200,7 +1200,7 @@ bool PosixEndpointImpl::Write(
     outgoing_buffer_arg_ = args->google_specific;
   }
   if (outgoing_buffer_arg_) {
-    CHECK(poller_->CanTrackErrors());
+    ABSL_CHECK(poller_->CanTrackErrors());
   }
 
   bool flush_result = zerocopy_send_record != nullptr
@@ -1275,7 +1275,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       engine_(engine) {
   PosixSocketWrapper sock(handle->WrappedFd());
   fd_ = handle_->WrappedFd();
-  CHECK(options.resource_quota != nullptr);
+  ABSL_CHECK(options.resource_quota != nullptr);
   auto peer_addr_string = sock.PeerAddressString();
   mem_quota_ = options.resource_quota->memory_quota();
   memory_owner_ = mem_quota_->CreateMemoryOwner();
@@ -1298,12 +1298,12 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   if (zerocopy_enabled) {
     if (GetRLimitMemLockMax() == 0) {
       zerocopy_enabled = false;
-      LOG(ERROR) << "Tx zero-copy will not be used by gRPC since RLIMIT_MEMLOCK"
+      ABSL_LOG(ERROR) << "Tx zero-copy will not be used by gRPC since RLIMIT_MEMLOCK"
                  << " value is not set. Consider raising its value with "
                  << "setrlimit().";
     } else if (GetUlimitHardMemLock() == 0) {
       zerocopy_enabled = false;
-      LOG(ERROR) << "Tx zero-copy will not be used by gRPC since hard memlock "
+      ABSL_LOG(ERROR) << "Tx zero-copy will not be used by gRPC since hard memlock "
                  << "ulimit value is not set. Use ulimit -l <value> to set its "
                  << "value.";
     } else {
@@ -1311,12 +1311,12 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       if (setsockopt(fd_, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable)) !=
           0) {
         zerocopy_enabled = false;
-        LOG(ERROR) << "Failed to set zerocopy options on the socket.";
+        ABSL_LOG(ERROR) << "Failed to set zerocopy options on the socket.";
       }
     }
 
     if (zerocopy_enabled) {
-      VLOG(2) << "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value "
+      ABSL_VLOG(2) << "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value "
               << "=" << GetRLimitMemLockMax()
               << ",ulimit hard memlock value = " << GetUlimitHardMemLock();
     }
@@ -1330,7 +1330,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   if (setsockopt(fd_, SOL_TCP, TCP_INQ, &one, sizeof(one)) == 0) {
     inq_capable_ = true;
   } else {
-    VLOG(2) << "cannot set inq fd=" << fd_ << " errno=" << errno;
+    ABSL_VLOG(2) << "cannot set inq fd=" << fd_ << " errno=" << errno;
     inq_capable_ = false;
   }
 #else
@@ -1355,7 +1355,7 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
     std::shared_ptr<EventEngine> engine, MemoryAllocator&& allocator,
     const PosixTcpOptions& options) {
-  DCHECK_NE(handle, nullptr);
+  ABSL_DCHECK_NE(handle, nullptr);
   return std::make_unique<PosixEndpoint>(handle, on_shutdown, std::move(engine),
                                          std::move(allocator), options);
 }

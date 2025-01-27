@@ -26,7 +26,7 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -94,7 +94,7 @@ ChannelCompression::ChannelCompression(const ChannelArgs& args)
                                          &name)) {
       name = "<unknown>";
     }
-    LOG(ERROR) << "default compression algorithm " << name
+    ABSL_LOG(ERROR) << "default compression algorithm " << name
                << " not enabled: switching to none";
     default_compression_algorithm_ = GRPC_COMPRESS_NONE;
   }
@@ -131,8 +131,8 @@ MessageHandle ChannelCompression::CompressMessage(
       const size_t after_size = tmp.Length();
       const float savings_ratio = 1.0f - (static_cast<float>(after_size) /
                                           static_cast<float>(before_size));
-      CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
-      LOG(INFO) << absl::StrFormat(
+      ABSL_CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
+      ABSL_LOG(INFO) << absl::StrFormat(
           "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
           " bytes (%.2f%% savings)",
           algo_name, before_size, after_size, 100 * savings_ratio);
@@ -145,8 +145,8 @@ MessageHandle ChannelCompression::CompressMessage(
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(compression)) {
       const char* algo_name;
-      CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
-      LOG(INFO) << "Algorithm '" << algo_name
+      ABSL_CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
+      ABSL_LOG(INFO) << "Algorithm '" << algo_name
                 << "' enabled but decided not to compress. Input size: "
                 << payload->Length();
     }

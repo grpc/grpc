@@ -35,7 +35,7 @@ void ParseRoundTrips(std::string buffer) {
   if (!uri.ok()) return;
   auto buffer2 = uri->ToString();
   auto uri2 = URI::Parse(buffer2);
-  CHECK_OK(uri2);
+  ABSL_CHECK_OK(uri2);
   EXPECT_EQ(uri->ToString(), uri2->ToString())
       << GRPC_DUMP_ARGS(absl::CEscape(buffer), absl::CEscape(buffer2));
   EXPECT_EQ(uri->scheme(), uri2->scheme())

@@ -20,8 +20,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/crash.h"
@@ -78,7 +78,7 @@ void LockfreeEvent::DestroyEvent() {
     if (curr & kShutdownBit) {
       internal::StatusFreeHeapPtr(curr & ~kShutdownBit);
     } else {
-      CHECK(curr == kClosureNotReady || curr == kClosureReady);
+      ABSL_CHECK(curr == kClosureNotReady || curr == kClosureReady);
     }
     // we CAS in a shutdown, no error value here. If this event is interacted
     // with post-deletion (see the note in the constructor) we want the bit

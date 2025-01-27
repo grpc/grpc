@@ -26,8 +26,8 @@
 #include <algorithm>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -89,7 +89,7 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
   }
 
   if (p->byte == 8) {
-    CHECK(is_last);
+    ABSL_CHECK(is_last);
     if (p->is_ack) {
       GRPC_TRACE_LOG(http2_ping, INFO)
           << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
@@ -101,7 +101,7 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
             t->keepalive_permit_without_calls == 0 && t->stream_map.empty();
         if (GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
             GRPC_TRACE_FLAG_ENABLED(http)) {
-          LOG(INFO) << "SERVER[" << t << "]: received ping " << p->opaque_8bytes
+          ABSL_LOG(INFO) << "SERVER[" << t << "]: received ping " << p->opaque_8bytes
                     << ": "
                     << t->ping_abuse_policy.GetDebugString(transport_idle);
         }

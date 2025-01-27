@@ -29,8 +29,8 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "google/protobuf/duration.upb.h"
@@ -145,7 +145,7 @@ class OrcaProducer::OrcaStreamEventHandler final
     if (status == GRPC_STATUS_UNIMPLEMENTED) {
       static const char kErrorMessage[] =
           "Orca stream returned UNIMPLEMENTED; disabling";
-      LOG(ERROR) << kErrorMessage;
+      ABSL_LOG(ERROR) << kErrorMessage;
       auto* channelz_node = producer_->subchannel_->channelz_node();
       if (channelz_node != nullptr) {
         channelz_node->AddTraceEvent(
@@ -221,7 +221,7 @@ void OrcaProducer::Orphaned() {
     MutexLock lock(&mu_);
     stream_client_.reset();
   }
-  CHECK(subchannel_ != nullptr);  // Should not be called before Start().
+  ABSL_CHECK(subchannel_ != nullptr);  // Should not be called before Start().
   subchannel_->CancelConnectivityStateWatch(connectivity_watcher_);
   subchannel_->RemoveDataProducer(this);
 }

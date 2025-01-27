@@ -24,7 +24,7 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/util/string.h"
@@ -44,7 +44,7 @@ static void test_vector(const char* raw, size_t raw_length, const char* encoded,
   char* raw_msg = gpr_dump(raw, raw_length, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   char* encoded_msg =
       gpr_dump(encoded, encoded_length, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-  VLOG(2) << "Trial:\nraw = " << raw_msg << "\nencoded = " << encoded_msg;
+  ABSL_VLOG(2) << "Trial:\nraw = " << raw_msg << "\nencoded = " << encoded_msg;
   gpr_free(raw_msg);
   gpr_free(encoded_msg);
 
@@ -59,7 +59,7 @@ static void test_vector(const char* raw, size_t raw_length, const char* encoded,
                                           GPR_DUMP_HEX | GPR_DUMP_ASCII);
   char* encoded2raw_permissive_msg = grpc_dump_slice(
       encoded2raw_permissive_slice.c_slice(), GPR_DUMP_HEX | GPR_DUMP_ASCII);
-  VLOG(2) << "Result:\nraw2encoded = " << raw2encoded_msg
+  ABSL_VLOG(2) << "Result:\nraw2encoded = " << raw2encoded_msg
           << "\nencoded2raw_permissive = " << encoded2raw_permissive_msg;
   gpr_free(raw2encoded_msg);
   gpr_free(encoded2raw_permissive_msg);
@@ -77,7 +77,7 @@ static void test_nonconformant_vector(const char* encoded,
                GPR_DUMP_HEX | GPR_DUMP_ASCII);
   char* encoded_msg =
       gpr_dump(encoded, encoded_length, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-  VLOG(2) << "Trial:\nraw = " << permissive_unencoded_msg
+  ABSL_VLOG(2) << "Trial:\nraw = " << permissive_unencoded_msg
           << "\nencoded = " << encoded_msg;
   gpr_free(permissive_unencoded_msg);
   gpr_free(encoded_msg);
@@ -91,7 +91,7 @@ static void test_nonconformant_vector(const char* encoded,
 
   char* encoded2raw_permissive_msg = grpc_dump_slice(
       encoded2raw_permissive_slice.c_slice(), GPR_DUMP_HEX | GPR_DUMP_ASCII);
-  VLOG(2) << "Result:\nencoded2raw_permissive = " << encoded2raw_permissive_msg;
+  ABSL_VLOG(2) << "Result:\nencoded2raw_permissive = " << encoded2raw_permissive_msg;
   gpr_free(encoded2raw_permissive_msg);
 
   ASSERT_EQ(permissive_unencoded_slice, encoded2raw_permissive_slice);

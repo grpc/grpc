@@ -33,8 +33,8 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
@@ -121,7 +121,7 @@ tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version) {
     case grpc_tls_version::TLS1_3:
       return tsi_tls_version::TSI_TLS1_3;
     default:
-      LOG(INFO) << "Falling back to TLS 1.2.";
+      ABSL_LOG(INFO) << "Falling back to TLS 1.2.";
       return tsi_tls_version::TSI_TLS1_2;
   }
 }
@@ -178,7 +178,7 @@ absl::Status SslCheckCallHost(absl::string_view host,
     status = GRPC_SECURITY_OK;
   }
   if (status != GRPC_SECURITY_OK) {
-    LOG(ERROR) << "call host does not match SSL server name";
+    ABSL_LOG(ERROR) << "call host does not match SSL server name";
     grpc_shallow_peer_destruct(&peer);
     return absl::UnauthenticatedError(
         "call host does not match SSL server name");
@@ -190,7 +190,7 @@ absl::Status SslCheckCallHost(absl::string_view host,
 }  // namespace grpc_core
 
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
-  CHECK_NE(num_alpn_protocols, nullptr);
+  ABSL_CHECK_NE(num_alpn_protocols, nullptr);
   *num_alpn_protocols = grpc_chttp2_num_alpn_versions();
   const char** alpn_protocol_strings = static_cast<const char**>(
       gpr_malloc(sizeof(const char*) * (*num_alpn_protocols)));
@@ -253,7 +253,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   const char* peer_identity_property_name = nullptr;
 
   // The caller has checked the certificate type property.
-  CHECK_GE(peer->property_count, 1u);
+  ABSL_CHECK_GE(peer->property_count, 1u);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(
@@ -320,14 +320,14 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
     }
   }
   if (peer_identity_property_name != nullptr) {
-    CHECK(grpc_auth_context_set_peer_identity_property_name(
+    ABSL_CHECK(grpc_auth_context_set_peer_identity_property_name(
               ctx.get(), peer_identity_property_name) == 1);
   }
   // A valid SPIFFE certificate can only have exact one URI SAN field.
   if (has_spiffe_id) {
     if (uri_count == 1) {
-      CHECK_GT(spiffe_length, 0u);
-      CHECK_NE(spiffe_data, nullptr);
+      ABSL_CHECK_GT(spiffe_length, 0u);
+      ABSL_CHECK_NE(spiffe_data, nullptr);
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
                                      spiffe_data, spiffe_length);
@@ -425,7 +425,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     // Use default root certificates.
     root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
     if (root_certs == nullptr) {
-      LOG(ERROR) << "Could not get default pem root certs.";
+      ABSL_LOG(ERROR) << "Could not get default pem root certs.";
       return GRPC_SECURITY_ERROR;
     }
     root_store = grpc_core::DefaultSslRootStore::GetRootStore();
@@ -458,7 +458,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
                                                             handshaker_factory);
   gpr_free(options.alpn_protocols);
   if (result != TSI_OK) {
-    LOG(ERROR) << "Handshaker factory creation failed with "
+    ABSL_LOG(ERROR) << "Handshaker factory creation failed with "
                << tsi_result_to_string(result);
     return GRPC_SECURITY_ERROR;
   }
@@ -497,7 +497,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
                                                             handshaker_factory);
   gpr_free(alpn_protocol_strings);
   if (result != TSI_OK) {
-    LOG(ERROR) << "Handshaker factory creation failed with "
+    ABSL_LOG(ERROR) << "Handshaker factory creation failed with "
                << tsi_result_to_string(result);
     return GRPC_SECURITY_ERROR;
   }
@@ -575,7 +575,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
     auto slice =
         LoadFile(default_root_certs_path, /*add_null_terminator=*/true);
     if (!slice.ok()) {
-      LOG(ERROR) << "error loading file " << default_root_certs_path << ": "
+      ABSL_LOG(ERROR) << "error loading file " << default_root_certs_path << ": "
                  << slice.status();
     } else {
       result = std::move(*slice);
@@ -587,7 +587,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
     char* pem_root_certs = nullptr;
     ovrd_res = ssl_roots_override_cb(&pem_root_certs);
     if (ovrd_res == GRPC_SSL_ROOTS_OVERRIDE_OK) {
-      CHECK_NE(pem_root_certs, nullptr);
+      ABSL_CHECK_NE(pem_root_certs, nullptr);
       result = Slice::FromCopiedBuffer(
           pem_root_certs,
           strlen(pem_root_certs) + 1);  // nullptr terminator.
@@ -602,7 +602,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   if (result.empty() && ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
     auto slice = LoadFile(installed_roots_path, /*add_null_terminator=*/true);
     if (!slice.ok()) {
-      LOG(ERROR) << "error loading file " << installed_roots_path << ": "
+      ABSL_LOG(ERROR) << "error loading file " << installed_roots_path << ": "
                  << slice.status();
     } else {
       result = std::move(*slice);

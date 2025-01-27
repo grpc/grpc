@@ -45,7 +45,7 @@ grpc_cc_library(
     hdrs = [
         "proto_reflection_descriptor_database.h",
     ],
-    external_deps = ["absl/log:log"],
+    external_deps = ["absl/log:absl_log"],
     deps = [
         "//:grpc++",
         "//:grpc++_config_proto",
@@ -78,8 +78,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "protobuf",
     ],
     deps = [
@@ -142,8 +142,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "protobuf",
         "protobuf_clib",
     ],
@@ -178,7 +178,7 @@ grpc_cc_library(
     hdrs = [
         "metrics_server.h",
     ],
-    external_deps = ["absl/log:log"],
+    external_deps = ["absl/log:absl_log"],
     deps = [
         "//:grpc++",
         "//src/proto/grpc/testing:metrics_cc_grpc",
@@ -339,8 +339,8 @@ grpc_cc_binary(
     srcs = ["channelz_sampler.cc"],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/strings",
     ],
     tags = [
@@ -365,8 +365,8 @@ grpc_cc_test(
         ":channelz_sampler",
     ],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "gtest",
     ],
     flaky = True,

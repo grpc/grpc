@@ -26,8 +26,8 @@
 #include <cstring>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -40,7 +40,7 @@
 namespace grpc_core {
 
 void HPackTable::MementoRingBuffer::Put(Memento m) {
-  CHECK_LT(num_entries_, max_entries_);
+  ABSL_CHECK_LT(num_entries_, max_entries_);
   if (entries_.size() < max_entries_) {
     ++num_entries_;
     return entries_.push_back(std::move(m));
@@ -55,7 +55,7 @@ void HPackTable::MementoRingBuffer::Put(Memento m) {
 }
 
 auto HPackTable::MementoRingBuffer::PopOne() -> Memento {
-  CHECK_GT(num_entries_, 0u);
+  ABSL_CHECK_GT(num_entries_, 0u);
   size_t index = first_entry_ % max_entries_;
   if (index == timestamp_index_) {
     global_stats().IncrementHttp2HpackEntryLifetime(
@@ -120,7 +120,7 @@ HPackTable::MementoRingBuffer::~MementoRingBuffer() {
 // Evict one element from the table
 void HPackTable::EvictOne() {
   auto first_entry = entries_.PopOne();
-  CHECK(first_entry.md.transport_size() <= mem_used_);
+  ABSL_CHECK(first_entry.md.transport_size() <= mem_used_);
   mem_used_ -= first_entry.md.transport_size();
 }
 

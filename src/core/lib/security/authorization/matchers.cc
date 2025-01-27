@@ -20,7 +20,7 @@
 
 #include <string>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -155,7 +155,7 @@ IpAuthorizationMatcher::IpAuthorizationMatcher(Type type, Rbac::CidrRange range)
   auto address =
       StringToSockaddr(range.address_prefix, 0);  // Port does not matter here.
   if (!address.ok()) {
-    VLOG(2) << "CidrRange address \"" << range.address_prefix
+    ABSL_VLOG(2) << "CidrRange address \"" << range.address_prefix
             << "\" is not IPv4/IPv6. Error: " << address.status();
     memset(&subnet_address_, 0, sizeof(subnet_address_));
     return;

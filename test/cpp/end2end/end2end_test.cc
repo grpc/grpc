@@ -35,8 +35,8 @@
 #include <mutex>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
@@ -537,7 +537,7 @@ class End2endServerTryCancelTest : public End2endTest {
       }
       num_msgs_sent++;
     }
-    LOG(INFO) << "Sent " << num_msgs_sent << " messages";
+    ABSL_LOG(INFO) << "Sent " << num_msgs_sent << " messages";
 
     stream->WritesDone();
     Status s = stream->Finish();
@@ -565,7 +565,7 @@ class End2endServerTryCancelTest : public End2endTest {
         break;
 
       default:
-        LOG(ERROR) << "Invalid server_try_cancel value: " << server_try_cancel;
+        ABSL_LOG(ERROR) << "Invalid server_try_cancel value: " << server_try_cancel;
         EXPECT_TRUE(server_try_cancel > DO_NOT_CANCEL &&
                     server_try_cancel <= CANCEL_AFTER_PROCESSING);
         break;
@@ -616,7 +616,7 @@ class End2endServerTryCancelTest : public End2endTest {
                 request.message() + std::to_string(num_msgs_read));
       num_msgs_read++;
     }
-    LOG(INFO) << "Read " << num_msgs_read << " messages";
+    ABSL_LOG(INFO) << "Read " << num_msgs_read << " messages";
 
     Status s = stream->Finish();
 
@@ -645,7 +645,7 @@ class End2endServerTryCancelTest : public End2endTest {
         break;
 
       default: {
-        LOG(ERROR) << "Invalid server_try_cancel value: " << server_try_cancel;
+        ABSL_LOG(ERROR) << "Invalid server_try_cancel value: " << server_try_cancel;
         EXPECT_TRUE(server_try_cancel > DO_NOT_CANCEL &&
                     server_try_cancel <= CANCEL_AFTER_PROCESSING);
         break;
@@ -702,8 +702,8 @@ class End2endServerTryCancelTest : public End2endTest {
 
       EXPECT_EQ(response.message(), request.message());
     }
-    LOG(INFO) << "Sent " << num_msgs_sent << " messages";
-    LOG(INFO) << "Read " << num_msgs_read << " messages";
+    ABSL_LOG(INFO) << "Sent " << num_msgs_sent << " messages";
+    ABSL_LOG(INFO) << "Read " << num_msgs_read << " messages";
 
     stream->WritesDone();
     Status s = stream->Finish();
@@ -732,7 +732,7 @@ class End2endServerTryCancelTest : public End2endTest {
         break;
 
       default:
-        LOG(ERROR) << "Invalid server_try_cancel value: " << server_try_cancel;
+        ABSL_LOG(ERROR) << "Invalid server_try_cancel value: " << server_try_cancel;
         EXPECT_TRUE(server_try_cancel > DO_NOT_CANCEL &&
                     server_try_cancel <= CANCEL_AFTER_PROCESSING);
         break;
@@ -1349,7 +1349,7 @@ void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream,
   EchoResponse resp;
   gpr_event_set(ev, reinterpret_cast<void*>(1));
   while (stream->Read(&resp)) {
-    LOG(INFO) << "Read message";
+    ABSL_LOG(INFO) << "Read message";
   }
 }
 
@@ -1743,8 +1743,8 @@ TEST_P(ProxyEnd2endTest, Peer) {
 class SecureEnd2endTest : public End2endTest {
  protected:
   SecureEnd2endTest() {
-    CHECK(!GetParam().use_proxy());
-    CHECK(GetParam().credentials_type() != kInsecureCredentialsType);
+    ABSL_CHECK(!GetParam().use_proxy());
+    ABSL_CHECK(GetParam().credentials_type() != kInsecureCredentialsType);
   }
 };
 
@@ -2276,7 +2276,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   }
 
   // Test callback with inproc or if the event-engine allows it
-  CHECK(!credentials_types.empty());
+  ABSL_CHECK(!credentials_types.empty());
   for (const auto& cred : credentials_types) {
     scenarios.emplace_back(false, false, false, cred, false);
     scenarios.emplace_back(true, false, false, cred, false);

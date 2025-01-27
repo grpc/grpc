@@ -43,7 +43,7 @@ ControlEndpoint::ControlEndpoint(
   auto arena = SimpleArenaAllocator(0)->MakeArena();
   arena->SetContext(event_engine);
   write_party_ = Party::Make(arena);
-  CHECK(event_engine != nullptr);
+  ABSL_CHECK(event_engine != nullptr);
   write_party_->arena()->SetContext(event_engine);
   write_party_->Spawn(
       "flush-control",

@@ -29,7 +29,7 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "src/proto/grpc/testing/empty.pb.h"
@@ -191,7 +191,7 @@ std::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
     absl::string_view header_value, absl::string_view hostname) {
   for (auto part : absl::StrSplit(header_value, ' ')) {
     if (absl::ConsumePrefix(&part, kHostnameRpcBehaviorFilter)) {
-      LOG(INFO) << part;
+      ABSL_LOG(INFO) << part;
       if (part.empty()) {
         return Status(
             grpc::StatusCode::INVALID_ARGUMENT,
@@ -199,7 +199,7 @@ std::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
                          header_value));
       }
       if (part != hostname) {
-        VLOG(2) << "RPC behavior for a different host: \"" << std::string(part)
+        ABSL_VLOG(2) << "RPC behavior for a different host: \"" << std::string(part)
                 << "\", this one is: \"" << hostname << "\"";
         return std::nullopt;
       }
@@ -241,14 +241,14 @@ void RunServer(bool secure_mode, int port, const int maintenance_port,
         absl::StrCat("0.0.0.0:", port),
         grpc::XdsServerCredentials(grpc::InsecureServerCredentials()));
     xds_enabled_server = xds_builder.BuildAndStart();
-    LOG(INFO) << "Server starting on 0.0.0.0:" << port;
+    ABSL_LOG(INFO) << "Server starting on 0.0.0.0:" << port;
     ServerBuilder builder;
     maintenance_services.AddToServerBuilder(&builder);
     server = builder
                  .AddListeningPort(absl::StrCat("0.0.0.0:", maintenance_port),
                                    grpc::InsecureServerCredentials())
                  .BuildAndStart();
-    LOG(INFO) << "Maintenance server listening on 0.0.0.0:" << maintenance_port;
+    ABSL_LOG(INFO) << "Maintenance server listening on 0.0.0.0:" << maintenance_port;
   } else {
     ServerBuilder builder;
     maintenance_services.AddToServerBuilder(&builder);
@@ -257,7 +257,7 @@ void RunServer(bool secure_mode, int port, const int maintenance_port,
                                    grpc::InsecureServerCredentials())
                  .RegisterService(&service)
                  .BuildAndStart();
-    LOG(INFO) << "Server listening on 0.0.0.0:" << port;
+    ABSL_LOG(INFO) << "Server listening on 0.0.0.0:" << port;
   }
   server_callback(server.get());
   server->Wait();

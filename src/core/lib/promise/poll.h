@@ -21,7 +21,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/str_format.h"
 #include "src/core/util/construct_destruct.h"
 
@@ -111,12 +111,12 @@ class Poll {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ready() const { return ready_; }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() {
-    DCHECK(ready());
+    ABSL_DCHECK(ready());
     return value_;
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T& value() const {
-    DCHECK(ready());
+    ABSL_DCHECK(ready());
     return value_;
   }
 
@@ -173,7 +173,7 @@ class Poll<Empty> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ready() const { return ready_; }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Empty value() const {
-    DCHECK(ready());
+    ABSL_DCHECK(ready());
     return Empty{};
   }
 

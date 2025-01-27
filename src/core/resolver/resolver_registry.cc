@@ -18,8 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
@@ -51,10 +51,10 @@ bool IsLowerCase(absl::string_view str) {
 
 void ResolverRegistry::Builder::RegisterResolverFactory(
     std::unique_ptr<ResolverFactory> factory) {
-  CHECK(IsLowerCase(factory->scheme())) << factory->scheme();
+  ABSL_CHECK(IsLowerCase(factory->scheme())) << factory->scheme();
   auto [_, inserted] =
       state_.factories.try_emplace(factory->scheme(), std::move(factory));
-  CHECK(inserted) << "scheme " << factory->scheme() << " already registered";
+  ABSL_CHECK(inserted) << "scheme " << factory->scheme() << " already registered";
 }
 
 bool ResolverRegistry::Builder::HasResolverFactory(
@@ -132,7 +132,7 @@ ResolverFactory* ResolverRegistry::LookupResolverFactory(
 // point to the parsed URI.
 ResolverFactory* ResolverRegistry::FindResolverFactory(
     absl::string_view target, URI* uri, std::string* canonical_target) const {
-  CHECK_NE(uri, nullptr);
+  ABSL_CHECK_NE(uri, nullptr);
   absl::StatusOr<URI> tmp_uri = URI::Parse(target);
   ResolverFactory* factory =
       tmp_uri.ok() ? LookupResolverFactory(tmp_uri->scheme()) : nullptr;
@@ -148,12 +148,12 @@ ResolverFactory* ResolverRegistry::FindResolverFactory(
     return factory;
   }
   if (!tmp_uri.ok() || !tmp_uri2.ok()) {
-    LOG(ERROR) << "Error parsing URI(s). '" << target
+    ABSL_LOG(ERROR) << "Error parsing URI(s). '" << target
                << "':" << tmp_uri.status() << "; '" << *canonical_target
                << "':" << tmp_uri2.status();
     return nullptr;
   }
-  LOG(ERROR) << "Don't know how to resolve '" << target << "' or '"
+  ABSL_LOG(ERROR) << "Don't know how to resolve '" << target << "' or '"
              << *canonical_target << "'.";
   return nullptr;
 }

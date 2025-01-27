@@ -23,8 +23,8 @@
 
 #include <atomic>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -74,14 +74,14 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
                                       grpc_pollset_worker** /*worker*/,
                                       grpc_core::Timestamp deadline) {
   if (deadline == grpc_core::Timestamp::ProcessEpoch()) {
-    VLOG(2) << "no-op";
+    ABSL_VLOG(2) << "no-op";
     return absl::OkStatus();
   }
 
   gpr_mu_unlock(&ps->mu);
 
   void* tag = reinterpret_cast<void*>(10);  // Some random number
-  CHECK(grpc_cq_begin_op(g_cq, tag));
+  ABSL_CHECK(grpc_cq_begin_op(g_cq, tag));
   grpc_cq_end_op(
       g_cq, tag, absl::OkStatus(), cq_done_cb, nullptr,
       static_cast<grpc_cq_completion*>(gpr_malloc(sizeof(grpc_cq_completion))));
@@ -116,7 +116,7 @@ static grpc_event_engine_vtable make_engine_vtable(const char* name) {
 
 static void setup() {
   grpc_init();
-  CHECK(strcmp(grpc_get_poll_strategy_name(), "none") == 0 ||
+  ABSL_CHECK(strcmp(grpc_get_poll_strategy_name(), "none") == 0 ||
         strcmp(grpc_get_poll_strategy_name(), "bm_cq_multiple_threads") == 0);
 
   g_cq = grpc_completion_queue_create_for_next(nullptr);
@@ -174,7 +174,7 @@ static void BM_Cq_Throughput(benchmark::State& state) {
   gpr_mu_unlock(&g_mu);
 
   for (auto _ : state) {
-    CHECK(grpc_completion_queue_next(g_cq, deadline, nullptr).type ==
+    ABSL_CHECK(grpc_completion_queue_next(g_cq, deadline, nullptr).type ==
           GRPC_OP_COMPLETE);
   }
 

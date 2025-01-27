@@ -32,8 +32,8 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -135,7 +135,7 @@ grpc_google_default_channel_credentials::create_security_connector(
                         is_xds_non_cfe_cluster;
   // Return failure if ALTS is selected but not running on GCE.
   if (use_alts && alts_creds_ == nullptr) {
-    LOG(ERROR) << "ALTS is selected, but not running on GCE.";
+    ABSL_LOG(ERROR) << "ALTS is selected, but not running on GCE.";
     return nullptr;
   }
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
@@ -213,7 +213,7 @@ static int is_metadata_server_reachable() {
   auto uri =
       grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_DETECTION_HOST, "/",
                              {} /* query params */, "" /* fragment */);
-  CHECK(uri.ok());  // params are hardcoded
+  ABSL_CHECK(uri.ok());  // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &detector.pollent, &request,
       grpc_core::Timestamp::Now() + max_detection_delay,
@@ -378,7 +378,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
     // Create google default credentials.
     grpc_channel_credentials* ssl_creds =
         grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
-    CHECK_NE(ssl_creds, nullptr);
+    ABSL_CHECK_NE(ssl_creds, nullptr);
     grpc_alts_credentials_options* options =
         grpc_alts_credentials_client_options_create();
     grpc_channel_credentials* alts_creds =
@@ -390,9 +390,9 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
             grpc_core::RefCountedPtr<grpc_channel_credentials>(ssl_creds));
     result = grpc_composite_channel_credentials_create(
         creds.get(), call_creds.get(), nullptr);
-    CHECK_NE(result, nullptr);
+    ABSL_CHECK_NE(result, nullptr);
   } else {
-    LOG(ERROR) << "Could not create google default credentials: "
+    ABSL_LOG(ERROR) << "Could not create google default credentials: "
                << grpc_core::StatusToString(error);
   }
   return result;

@@ -24,8 +24,8 @@
 #include <memory>
 #include <ostream>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -75,7 +75,7 @@ WindowsEventEngine::ConnectionState::ConnectionState(
       allocator_(std::move(allocator)),
       on_connect_user_callback_(std::move(on_connect_user_callback)),
       engine_(std::move(engine)) {
-  CHECK(socket_ != nullptr);
+  ABSL_CHECK(socket_ != nullptr);
   connection_handle_ = ConnectionHandle{reinterpret_cast<intptr_t>(this),
                                         engine_->aba_token_.fetch_add(1)};
 }
@@ -112,7 +112,7 @@ void WindowsEventEngine::ConnectionState::AbortDeadlineTimer() {
 }
 
 void WindowsEventEngine::ConnectionState::OnConnectedCallback::Run() {
-  DCHECK_NE(connection_state_, nullptr)
+  ABSL_DCHECK_NE(connection_state_, nullptr)
       << "ConnectionState::OnConnectedCallback::" << this
       << " has already run. It should only ever run once.";
   bool has_run;
@@ -131,7 +131,7 @@ void WindowsEventEngine::ConnectionState::OnConnectedCallback::Run() {
 }
 
 void WindowsEventEngine::ConnectionState::DeadlineTimerCallback::Run() {
-  DCHECK_NE(connection_state_, nullptr)
+  ABSL_DCHECK_NE(connection_state_, nullptr)
       << "ConnectionState::DeadlineTimerCallback::" << this
       << " has already run. It should only ever run once.";
   bool has_run;
@@ -207,7 +207,7 @@ WindowsEventEngine::WindowsEventEngine()
       iocp_worker_(thread_pool_.get(), &iocp_) {
   WSADATA wsaData;
   int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
-  CHECK_EQ(status, 0);
+  ABSL_CHECK_EQ(status, 0);
 }
 
 WindowsEventEngine::~WindowsEventEngine() {
@@ -217,7 +217,7 @@ WindowsEventEngine::~WindowsEventEngine() {
     if (!known_handles_.empty()) {
       if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
         for (auto handle : known_handles_) {
-          LOG(ERROR) << "WindowsEventEngine:" << this
+          ABSL_LOG(ERROR) << "WindowsEventEngine:" << this
                      << " uncleared TaskHandle at shutdown:"
                      << HandleToString<EventEngine::TaskHandle>(handle);
         }
@@ -227,7 +227,7 @@ WindowsEventEngine::~WindowsEventEngine() {
           timer_manager_.Now() + grpc_core::Duration::FromSecondsAsDouble(10);
       while (!known_handles_.empty() && timer_manager_.Now() < deadline) {
         if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
-          VLOG_EVERY_N_SEC(2, 1) << "Waiting for timers. "
+          ABSL_VLOG_EVERY_N_SEC(2, 1) << "Waiting for timers. "
                                  << known_handles_.size() << " remaining";
         }
         task_mu_.Unlock();
@@ -235,13 +235,13 @@ WindowsEventEngine::~WindowsEventEngine() {
         task_mu_.Lock();
       }
     }
-    CHECK(GPR_LIKELY(known_handles_.empty()));
+    ABSL_CHECK(GPR_LIKELY(known_handles_.empty()));
     task_mu_.Unlock();
   }
   iocp_.Kick();
   iocp_worker_.WaitForShutdown();
   iocp_.Shutdown();
-  CHECK_EQ(WSACleanup(), 0);
+  ABSL_CHECK_EQ(WSACleanup(), 0);
   timer_manager_.Shutdown();
   thread_pool_->Quiesce();
 }
@@ -511,7 +511,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     erased_handles =
         known_connection_handles_.erase(connection_state->connection_handle());
   }
-  CHECK_EQ(erased_handles, 1) << "Did not find connection handle "
+  ABSL_CHECK_EQ(erased_handles, 1) << "Did not find connection handle "
                               << connection_state->connection_handle()
                               << " after a synchronous connection failure. "
                                  "This should not be possible.";

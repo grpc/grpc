@@ -25,8 +25,8 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -75,7 +75,7 @@ static void log_resolved_addrs(const char* label, const char* hostname) {
     return;
   }
   for (const auto& addr : *addresses_or) {
-    LOG(INFO) << label << ": " << grpc_sockaddr_to_uri(&addr)->c_str();
+    ABSL_LOG(INFO) << label << ": " << grpc_sockaddr_to_uri(&addr)->c_str();
   }
 }
 
@@ -119,13 +119,13 @@ void test_connect(const char* server_host, const char* client_host, int port,
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_credentials* server_creds =
       grpc_insecure_server_credentials_create();
-  CHECK((got_port = grpc_server_add_http2_port(server, server_hostport.c_str(),
+  ABSL_CHECK((got_port = grpc_server_add_http2_port(server, server_hostport.c_str(),
                                                server_creds)) > 0);
   grpc_server_credentials_release(server_creds);
   if (port == 0) {
     port = got_port;
   } else {
-    CHECK_EQ(port, got_port);
+    ABSL_CHECK_EQ(port, got_port);
   }
   grpc_server_start(server);
   grpc_core::CqVerifier cqv(cq);
@@ -149,7 +149,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
   client = grpc_channel_create(client_hostport.c_str(), creds, nullptr);
   grpc_channel_credentials_release(creds);
 
-  LOG(INFO) << "Testing with server=" << server_hostport.c_str()
+  ABSL_LOG(INFO) << "Testing with server=" << server_hostport.c_str()
             << " client=" << client_hostport.c_str() << " (expecting "
             << (expect_ok ? "success" : "failure") << ")";
   log_resolved_addrs("server resolved addr", server_host);
@@ -169,7 +169,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
   c = grpc_channel_create_call(client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), &host,
                                deadline, nullptr);
-  CHECK(c);
+  ABSL_CHECK(c);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -196,14 +196,14 @@ void test_connect(const char* server_host, const char* client_host, int port,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(1), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(error, GRPC_CALL_OK);
 
   if (expect_ok) {
     // Check for a successful request.
     error = grpc_server_request_call(server, &s, &call_details,
                                      &request_metadata_recv, cq, cq,
                                      grpc_core::CqVerifier::tag(101));
-    CHECK_EQ(error, GRPC_CALL_OK);
+    ABSL_CHECK_EQ(error, GRPC_CALL_OK);
     cqv.Expect(grpc_core::CqVerifier::tag(101), true);
     cqv.Verify();
 
@@ -226,21 +226,21 @@ void test_connect(const char* server_host, const char* client_host, int port,
     op++;
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                   grpc_core::CqVerifier::tag(102), nullptr);
-    CHECK_EQ(error, GRPC_CALL_OK);
+    ABSL_CHECK_EQ(error, GRPC_CALL_OK);
 
     cqv.Expect(grpc_core::CqVerifier::tag(102), true);
     cqv.Expect(grpc_core::CqVerifier::tag(1), true);
     cqv.Verify();
 
     peer = grpc_call_get_peer(c);
-    VLOG(2) << "got peer: '" << peer << "'";
+    ABSL_VLOG(2) << "got peer: '" << peer << "'";
     gpr_free(peer);
 
-    CHECK_EQ(status, GRPC_STATUS_UNIMPLEMENTED);
-    CHECK_EQ(grpc_slice_str_cmp(details, "xyz"), 0);
-    CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo"), 0);
-    CHECK_EQ(grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"), 0);
-    CHECK_EQ(was_cancelled, 0);
+    ABSL_CHECK_EQ(status, GRPC_STATUS_UNIMPLEMENTED);
+    ABSL_CHECK_EQ(grpc_slice_str_cmp(details, "xyz"), 0);
+    ABSL_CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo"), 0);
+    ABSL_CHECK_EQ(grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"), 0);
+    ABSL_CHECK_EQ(was_cancelled, 0);
 
     grpc_call_unref(s);
   } else {
@@ -248,9 +248,9 @@ void test_connect(const char* server_host, const char* client_host, int port,
     cqv.Expect(grpc_core::CqVerifier::tag(1), true);
     cqv.Verify();
 
-    LOG(INFO) << "status: " << status
+    ABSL_LOG(INFO) << "status: " << status
               << " (expected: " << GRPC_STATUS_UNAVAILABLE << ")";
-    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
+    ABSL_CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_call_unref(c);
@@ -298,7 +298,7 @@ int external_dns_works(const char* host) {
     // dualstack_socket_test from functioning correctly). See b/201064791.
     if (grpc_sockaddr_to_uri(&addr).value() ==
         "ipv6:%5B64:ff9b::7f00:1%5D:80") {
-      LOG(INFO) << "Detected DNS64 server response. Tests that depend on "
+      ABSL_LOG(INFO) << "Detected DNS64 server response. Tests that depend on "
                    "*.unittest.grpc.io. will be skipped as they won't work "
                    "with DNS64.";
       result = 0;
@@ -315,7 +315,7 @@ int main(int argc, char** argv) {
   grpc_init();
 
   if (!grpc_ipv6_loopback_available()) {
-    LOG(INFO) << "Can't bind to ::1.  Skipping IPv6 tests.";
+    ABSL_LOG(INFO) << "Can't bind to ::1.  Skipping IPv6 tests.";
     do_ipv6 = 0;
   }
 
@@ -356,7 +356,7 @@ int main(int argc, char** argv) {
 
     if (!external_dns_works("loopback4.unittest.grpc.io") ||
         !external_dns_works("loopback46.unittest.grpc.io")) {
-      LOG(INFO) << "Skipping tests that depend on *.unittest.grpc.io.";
+      ABSL_LOG(INFO) << "Skipping tests that depend on *.unittest.grpc.io.";
     } else {
       test_connect("loopback46.unittest.grpc.io", "loopback4.unittest.grpc.io",
                    0, 1);

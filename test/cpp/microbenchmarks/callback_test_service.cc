@@ -18,8 +18,8 @@
 
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 
 namespace grpc {
 namespace testing {
@@ -74,7 +74,7 @@ CallbackStreamingTestService::BidiStream(CallbackServerContext* context) {
       StartRead(&request_);
     }
     void OnDone() override {
-      CHECK(finished_);
+      ABSL_CHECK(finished_);
       delete this;
     }
     void OnCancel() override {}
@@ -94,7 +94,7 @@ CallbackStreamingTestService::BidiStream(CallbackServerContext* context) {
     }
     void OnWriteDone(bool ok) override {
       if (!ok) {
-        LOG(ERROR) << "Server write failed";
+        ABSL_LOG(ERROR) << "Server write failed";
         return;
       }
       StartRead(&request_);

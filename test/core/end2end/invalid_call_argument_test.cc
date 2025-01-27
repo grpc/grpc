@@ -32,8 +32,8 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/host_port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
@@ -108,11 +108,11 @@ static void prepare_test(int is_client) {
     op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
     op->reserved = nullptr;
     op++;
-    CHECK_EQ(GRPC_CALL_OK,
+    ABSL_CHECK_EQ(GRPC_CALL_OK,
              grpc_call_start_batch(g_state.call, g_state.ops,
                                    (size_t)(op - g_state.ops),
                                    grpc_core::CqVerifier::tag(1), nullptr));
-    CHECK_EQ(GRPC_CALL_OK,
+    ABSL_CHECK_EQ(GRPC_CALL_OK,
              grpc_server_request_call(
                  g_state.server, &g_state.server_call, &g_state.call_details,
                  &g_state.server_initial_metadata_recv, g_state.cq, g_state.cq,
@@ -153,17 +153,17 @@ static void cleanup_test() {
 }
 
 static void test_non_null_reserved_on_start_batch() {
-  LOG(INFO) << "test_non_null_reserved_on_start_batch";
+  ABSL_LOG(INFO) << "test_non_null_reserved_on_start_batch";
 
   prepare_test(1);
-  CHECK(GRPC_CALL_ERROR ==
+  ABSL_CHECK(GRPC_CALL_ERROR ==
         grpc_call_start_batch(g_state.call, nullptr, 0, nullptr,
                               grpc_core::CqVerifier::tag(1)));
   cleanup_test();
 }
 
 static void test_non_null_reserved_on_op() {
-  LOG(INFO) << "test_non_null_reserved_on_op";
+  ABSL_LOG(INFO) << "test_non_null_reserved_on_op";
 
   grpc_op* op;
   prepare_test(1);
@@ -174,7 +174,7 @@ static void test_non_null_reserved_on_op() {
   op->flags = 0;
   op->reserved = grpc_core::CqVerifier::tag(2);
   op++;
-  CHECK(GRPC_CALL_ERROR == grpc_call_start_batch(g_state.call, g_state.ops,
+  ABSL_CHECK(GRPC_CALL_ERROR == grpc_call_start_batch(g_state.call, g_state.ops,
                                                  (size_t)(op - g_state.ops),
                                                  grpc_core::CqVerifier::tag(1),
                                                  nullptr));
@@ -182,7 +182,7 @@ static void test_non_null_reserved_on_op() {
 }
 
 static void test_send_initial_metadata_more_than_once() {
-  LOG(INFO) << "test_send_initial_metadata_more_than_once";
+  ABSL_LOG(INFO) << "test_send_initial_metadata_more_than_once";
 
   grpc_op* op;
   prepare_test(1);
@@ -193,7 +193,7 @@ static void test_send_initial_metadata_more_than_once() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK_EQ(GRPC_CALL_OK,
+  ABSL_CHECK_EQ(GRPC_CALL_OK,
            grpc_call_start_batch(g_state.call, g_state.ops,
                                  (size_t)(op - g_state.ops),
                                  grpc_core::CqVerifier::tag(1), nullptr));
@@ -206,7 +206,7 @@ static void test_send_initial_metadata_more_than_once() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
+  ABSL_CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
         grpc_call_start_batch(g_state.call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(1), nullptr));
@@ -214,7 +214,7 @@ static void test_send_initial_metadata_more_than_once() {
 }
 
 static void test_too_many_metadata() {
-  LOG(INFO) << "test_too_many_metadata";
+  ABSL_LOG(INFO) << "test_too_many_metadata";
 
   grpc_op* op;
   prepare_test(1);
@@ -225,7 +225,7 @@ static void test_too_many_metadata() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_INVALID_METADATA ==
+  ABSL_CHECK(GRPC_CALL_ERROR_INVALID_METADATA ==
         grpc_call_start_batch(g_state.call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(1), nullptr));
@@ -233,7 +233,7 @@ static void test_too_many_metadata() {
 }
 
 static void test_send_null_message() {
-  LOG(INFO) << "test_send_null_message";
+  ABSL_LOG(INFO) << "test_send_null_message";
 
   grpc_op* op;
   prepare_test(1);
@@ -249,7 +249,7 @@ static void test_send_null_message() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_INVALID_MESSAGE ==
+  ABSL_CHECK(GRPC_CALL_ERROR_INVALID_MESSAGE ==
         grpc_call_start_batch(g_state.call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(1), nullptr));
@@ -257,7 +257,7 @@ static void test_send_null_message() {
 }
 
 static void test_send_messages_at_the_same_time() {
-  LOG(INFO) << "test_send_messages_at_the_same_time";
+  ABSL_LOG(INFO) << "test_send_messages_at_the_same_time";
 
   grpc_op* op;
   grpc_slice request_payload_slice =
@@ -282,7 +282,7 @@ static void test_send_messages_at_the_same_time() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
+  ABSL_CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
         grpc_call_start_batch(g_state.call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(1), nullptr));
@@ -291,7 +291,7 @@ static void test_send_messages_at_the_same_time() {
 }
 
 static void test_send_server_status_from_client() {
-  LOG(INFO) << "test_send_server_status_from_client";
+  ABSL_LOG(INFO) << "test_send_server_status_from_client";
 
   grpc_op* op;
   prepare_test(1);
@@ -305,7 +305,7 @@ static void test_send_server_status_from_client() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_NOT_ON_CLIENT ==
+  ABSL_CHECK(GRPC_CALL_ERROR_NOT_ON_CLIENT ==
         grpc_call_start_batch(g_state.call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(1), nullptr));
@@ -313,7 +313,7 @@ static void test_send_server_status_from_client() {
 }
 
 static void test_receive_initial_metadata_twice_at_client() {
-  LOG(INFO) << "test_receive_initial_metadata_twice_at_client";
+  ABSL_LOG(INFO) << "test_receive_initial_metadata_twice_at_client";
 
   grpc_op* op;
   prepare_test(1);
@@ -324,7 +324,7 @@ static void test_receive_initial_metadata_twice_at_client() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK_EQ(GRPC_CALL_OK,
+  ABSL_CHECK_EQ(GRPC_CALL_OK,
            grpc_call_start_batch(g_state.call, g_state.ops,
                                  (size_t)(op - g_state.ops),
                                  grpc_core::CqVerifier::tag(1), nullptr));
@@ -337,7 +337,7 @@ static void test_receive_initial_metadata_twice_at_client() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
+  ABSL_CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
         grpc_call_start_batch(g_state.call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(1), nullptr));
@@ -345,7 +345,7 @@ static void test_receive_initial_metadata_twice_at_client() {
 }
 
 static void test_receive_message_with_invalid_flags() {
-  LOG(INFO) << "test_receive_message_with_invalid_flags";
+  ABSL_LOG(INFO) << "test_receive_message_with_invalid_flags";
 
   grpc_op* op;
   grpc_byte_buffer* payload = nullptr;
@@ -356,7 +356,7 @@ static void test_receive_message_with_invalid_flags() {
   op->flags = 1;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_INVALID_FLAGS ==
+  ABSL_CHECK(GRPC_CALL_ERROR_INVALID_FLAGS ==
         grpc_call_start_batch(g_state.call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(1), nullptr));
@@ -364,7 +364,7 @@ static void test_receive_message_with_invalid_flags() {
 }
 
 static void test_receive_two_messages_at_the_same_time() {
-  LOG(INFO) << "test_receive_two_messages_at_the_same_time";
+  ABSL_LOG(INFO) << "test_receive_two_messages_at_the_same_time";
 
   grpc_op* op;
   grpc_byte_buffer* payload = nullptr;
@@ -380,7 +380,7 @@ static void test_receive_two_messages_at_the_same_time() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
+  ABSL_CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
         grpc_call_start_batch(g_state.call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(1), nullptr));
@@ -388,7 +388,7 @@ static void test_receive_two_messages_at_the_same_time() {
 }
 
 static void test_recv_close_on_server_from_client() {
-  LOG(INFO) << "test_recv_close_on_server_from_client";
+  ABSL_LOG(INFO) << "test_recv_close_on_server_from_client";
 
   grpc_op* op;
   prepare_test(1);
@@ -399,7 +399,7 @@ static void test_recv_close_on_server_from_client() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_NOT_ON_CLIENT ==
+  ABSL_CHECK(GRPC_CALL_ERROR_NOT_ON_CLIENT ==
         grpc_call_start_batch(g_state.call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(1), nullptr));
@@ -407,7 +407,7 @@ static void test_recv_close_on_server_from_client() {
 }
 
 static void test_recv_status_on_client_twice() {
-  LOG(INFO) << "test_recv_status_on_client_twice";
+  ABSL_LOG(INFO) << "test_recv_status_on_client_twice";
 
   grpc_op* op;
   prepare_test(1);
@@ -421,7 +421,7 @@ static void test_recv_status_on_client_twice() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK_EQ(GRPC_CALL_OK,
+  ABSL_CHECK_EQ(GRPC_CALL_OK,
            grpc_call_start_batch(g_state.call, g_state.ops,
                                  (size_t)(op - g_state.ops),
                                  grpc_core::CqVerifier::tag(1), nullptr));
@@ -436,7 +436,7 @@ static void test_recv_status_on_client_twice() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
+  ABSL_CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
         grpc_call_start_batch(g_state.call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(1), nullptr));
@@ -444,7 +444,7 @@ static void test_recv_status_on_client_twice() {
 }
 
 static void test_send_close_from_client_on_server() {
-  LOG(INFO) << "test_send_close_from_client_on_server";
+  ABSL_LOG(INFO) << "test_send_close_from_client_on_server";
 
   grpc_op* op;
   prepare_test(0);
@@ -454,7 +454,7 @@ static void test_send_close_from_client_on_server() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_NOT_ON_SERVER ==
+  ABSL_CHECK(GRPC_CALL_ERROR_NOT_ON_SERVER ==
         grpc_call_start_batch(g_state.server_call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(2), nullptr));
@@ -462,7 +462,7 @@ static void test_send_close_from_client_on_server() {
 }
 
 static void test_recv_status_on_client_from_server() {
-  LOG(INFO) << "test_recv_status_on_client_from_server";
+  ABSL_LOG(INFO) << "test_recv_status_on_client_from_server";
 
   grpc_op* op;
   prepare_test(0);
@@ -476,7 +476,7 @@ static void test_recv_status_on_client_from_server() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_NOT_ON_SERVER ==
+  ABSL_CHECK(GRPC_CALL_ERROR_NOT_ON_SERVER ==
         grpc_call_start_batch(g_state.server_call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(2), nullptr));
@@ -484,7 +484,7 @@ static void test_recv_status_on_client_from_server() {
 }
 
 static void test_send_status_from_server_with_invalid_flags() {
-  LOG(INFO) << "test_send_status_from_server_with_invalid_flags";
+  ABSL_LOG(INFO) << "test_send_status_from_server_with_invalid_flags";
 
   grpc_op* op;
   prepare_test(0);
@@ -498,7 +498,7 @@ static void test_send_status_from_server_with_invalid_flags() {
   op->flags = 1;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_INVALID_FLAGS ==
+  ABSL_CHECK(GRPC_CALL_ERROR_INVALID_FLAGS ==
         grpc_call_start_batch(g_state.server_call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(2), nullptr));
@@ -506,7 +506,7 @@ static void test_send_status_from_server_with_invalid_flags() {
 }
 
 static void test_too_many_trailing_metadata() {
-  LOG(INFO) << "test_too_many_trailing_metadata";
+  ABSL_LOG(INFO) << "test_too_many_trailing_metadata";
 
   grpc_op* op;
   prepare_test(0);
@@ -521,7 +521,7 @@ static void test_too_many_trailing_metadata() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_INVALID_METADATA ==
+  ABSL_CHECK(GRPC_CALL_ERROR_INVALID_METADATA ==
         grpc_call_start_batch(g_state.server_call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(2), nullptr));
@@ -529,7 +529,7 @@ static void test_too_many_trailing_metadata() {
 }
 
 static void test_send_server_status_twice() {
-  LOG(INFO) << "test_send_server_status_twice";
+  ABSL_LOG(INFO) << "test_send_server_status_twice";
 
   grpc_op* op;
   prepare_test(0);
@@ -550,7 +550,7 @@ static void test_send_server_status_twice() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
+  ABSL_CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
         grpc_call_start_batch(g_state.server_call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(2), nullptr));
@@ -558,7 +558,7 @@ static void test_send_server_status_twice() {
 }
 
 static void test_recv_close_on_server_with_invalid_flags() {
-  LOG(INFO) << "test_recv_close_on_server_with_invalid_flags";
+  ABSL_LOG(INFO) << "test_recv_close_on_server_with_invalid_flags";
 
   grpc_op* op;
   prepare_test(0);
@@ -569,7 +569,7 @@ static void test_recv_close_on_server_with_invalid_flags() {
   op->flags = 1;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_INVALID_FLAGS ==
+  ABSL_CHECK(GRPC_CALL_ERROR_INVALID_FLAGS ==
         grpc_call_start_batch(g_state.server_call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(2), nullptr));
@@ -577,7 +577,7 @@ static void test_recv_close_on_server_with_invalid_flags() {
 }
 
 static void test_recv_close_on_server_twice() {
-  LOG(INFO) << "test_recv_close_on_server_twice";
+  ABSL_LOG(INFO) << "test_recv_close_on_server_twice";
 
   grpc_op* op;
   prepare_test(0);
@@ -593,7 +593,7 @@ static void test_recv_close_on_server_twice() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
+  ABSL_CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
         grpc_call_start_batch(g_state.server_call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(2), nullptr));
@@ -601,7 +601,7 @@ static void test_recv_close_on_server_twice() {
 }
 
 static void test_invalid_initial_metadata_reserved_key() {
-  LOG(INFO) << "test_invalid_initial_metadata_reserved_key";
+  ABSL_LOG(INFO) << "test_invalid_initial_metadata_reserved_key";
 
   grpc_metadata metadata;
   metadata.key = grpc_slice_from_static_string(":start_with_colon");
@@ -616,7 +616,7 @@ static void test_invalid_initial_metadata_reserved_key() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_ERROR_INVALID_METADATA ==
+  ABSL_CHECK(GRPC_CALL_ERROR_INVALID_METADATA ==
         grpc_call_start_batch(g_state.call, g_state.ops,
                               (size_t)(op - g_state.ops),
                               grpc_core::CqVerifier::tag(1), nullptr));
@@ -624,7 +624,7 @@ static void test_invalid_initial_metadata_reserved_key() {
 }
 
 static void test_multiple_ops_in_a_single_batch() {
-  LOG(INFO) << "test_multiple_ops_in_a_single_batch";
+  ABSL_LOG(INFO) << "test_multiple_ops_in_a_single_batch";
 
   grpc_op* op;
   prepare_test(1);
@@ -639,7 +639,7 @@ static void test_multiple_ops_in_a_single_batch() {
     op++;
     op->op = which;
     op++;
-    CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
+    ABSL_CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
           grpc_call_start_batch(g_state.call, g_state.ops,
                                 (size_t)(op - g_state.ops),
                                 grpc_core::CqVerifier::tag(1), nullptr));

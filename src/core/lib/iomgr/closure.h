@@ -24,8 +24,8 @@
 #include <grpc/support/port_platform.h>
 #include <stdbool.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
@@ -293,7 +293,7 @@ class Closure {
         << "running closure " << closure << ": created ["
         << closure->file_created << ":" << closure->line_created << "]: run ["
         << location.file() << ":" << location.line() << "]";
-    CHECK_NE(closure->cb, nullptr);
+    ABSL_CHECK_NE(closure->cb, nullptr);
 #endif
     closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG

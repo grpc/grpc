@@ -25,7 +25,7 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
 
@@ -36,7 +36,7 @@ TEST(GrpcByteBufferReaderTest, TestReadOneSlice) {
   grpc_slice first_slice, second_slice;
   int first_code, second_code;
 
-  LOG(INFO) << "test_read_one_slice";
+  ABSL_LOG(INFO) << "test_read_one_slice";
   slice = grpc_slice_from_copied_string("test");
   buffer = grpc_raw_byte_buffer_create(&slice, 1);
   grpc_slice_unref(slice);
@@ -58,7 +58,7 @@ TEST(GrpcByteBufferReaderTest, TestReadOneSliceMalloc) {
   grpc_slice first_slice, second_slice;
   int first_code, second_code;
 
-  LOG(INFO) << "test_read_one_slice_malloc";
+  ABSL_LOG(INFO) << "test_read_one_slice_malloc";
   slice = grpc_slice_malloc(4);
   memcpy(GRPC_SLICE_START_PTR(slice), "test", 4);
   buffer = grpc_raw_byte_buffer_create(&slice, 1);
@@ -81,7 +81,7 @@ TEST(GrpcByteBufferReaderTest, TestReadNoneCompressedSlice) {
   grpc_slice first_slice, second_slice;
   int first_code, second_code;
 
-  LOG(INFO) << "test_read_none_compressed_slice";
+  ABSL_LOG(INFO) << "test_read_none_compressed_slice";
   slice = grpc_slice_from_copied_string("test");
   buffer = grpc_raw_byte_buffer_create(&slice, 1);
   grpc_slice_unref(slice);
@@ -104,7 +104,7 @@ TEST(GrpcByteBufferReaderTest, TestPeekOneSlice) {
   grpc_slice* second_slice;
   int first_code, second_code;
 
-  LOG(INFO) << "test_peek_one_slice";
+  ABSL_LOG(INFO) << "test_peek_one_slice";
   slice = grpc_slice_from_copied_string("test");
   buffer = grpc_raw_byte_buffer_create(&slice, 1);
   grpc_slice_unref(slice);
@@ -126,7 +126,7 @@ TEST(GrpcByteBufferReaderTest, TestPeekOneSliceMalloc) {
   grpc_slice* second_slice;
   int first_code, second_code;
 
-  LOG(INFO) << "test_peek_one_slice_malloc";
+  ABSL_LOG(INFO) << "test_peek_one_slice_malloc";
   slice = grpc_slice_malloc(4);
   memcpy(GRPC_SLICE_START_PTR(slice), "test", 4);
   buffer = grpc_raw_byte_buffer_create(&slice, 1);
@@ -149,7 +149,7 @@ TEST(GrpcByteBufferReaderTest, TestPeekNoneCompressedSlice) {
   grpc_slice* second_slice;
   int first_code, second_code;
 
-  LOG(INFO) << "test_peek_none_compressed_slice";
+  ABSL_LOG(INFO) << "test_peek_none_compressed_slice";
   slice = grpc_slice_from_copied_string("test");
   buffer = grpc_raw_byte_buffer_create(&slice, 1);
   grpc_slice_unref(slice);
@@ -168,7 +168,7 @@ TEST(GrpcByteBufferReaderTest, TestByteBufferFromReader) {
   grpc_byte_buffer *buffer, *buffer_from_reader;
   grpc_byte_buffer_reader reader;
 
-  LOG(INFO) << "test_byte_buffer_from_reader";
+  ABSL_LOG(INFO) << "test_byte_buffer_from_reader";
   slice = grpc_slice_malloc(4);
   memcpy(GRPC_SLICE_START_PTR(slice), "test", 4);
   buffer = grpc_raw_byte_buffer_create(&slice, 1);
@@ -197,7 +197,7 @@ TEST(GrpcByteBufferReaderTest, TestReadall) {
   grpc_byte_buffer_reader reader;
   grpc_slice slice_out;
 
-  LOG(INFO) << "test_readall";
+  ABSL_LOG(INFO) << "test_readall";
 
   memset(lotsa_as, 'a', 512 * sizeof(lotsa_as[0]));
   memset(lotsa_bs, 'b', 1024 * sizeof(lotsa_bs[0]));
@@ -231,7 +231,7 @@ TEST(GrpcByteBufferReaderTest, TestByteBufferCopy) {
   grpc_byte_buffer_reader reader;
   grpc_slice slice_out;
 
-  LOG(INFO) << "test_byte_buffer_copy";
+  ABSL_LOG(INFO) << "test_byte_buffer_copy";
 
   memset(lotsa_as, 'a', 512 * sizeof(lotsa_as[0]));
   memset(lotsa_bs, 'b', 1024 * sizeof(lotsa_bs[0]));

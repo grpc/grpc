@@ -24,8 +24,8 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "src/core/util/crash.h"
 #include "test/cpp/interop/interop_client.h"
@@ -65,7 +65,7 @@ TestCaseType WeightedRandomTestSelector::GetNextTest() const {
   }
 
   // It is a bug in the logic if no test is selected at this point
-  CHECK(selected_test != UNKNOWN_TEST);
+  ABSL_CHECK(selected_test != UNKNOWN_TEST);
   return selected_test;
 }
 
@@ -85,7 +85,7 @@ StressTestInteropClient::StressTestInteropClient(
 
 void StressTestInteropClient::MainLoop(
     const std::shared_ptr<QpsGauge>& qps_gauge) {
-  LOG(INFO) << "Running test " << test_id_
+  ABSL_LOG(INFO) << "Running test " << test_id_
             << ". ServerAddr: " << server_address_;
 
   gpr_timespec test_end_time;
@@ -102,7 +102,7 @@ void StressTestInteropClient::MainLoop(
   while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), test_end_time) < 0) {
     // Select the test case to execute based on the weights and execute it
     TestCaseType test_case = test_selector_.GetNextTest();
-    VLOG(2) << test_id_ << " - Executing the test case " << test_case;
+    ABSL_VLOG(2) << test_id_ << " - Executing the test case " << test_case;
     RunTest(test_case);
 
     qps_gauge->Incr();

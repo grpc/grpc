@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "src/core/util/crash.h"
 
@@ -51,7 +51,7 @@ int ConnectToServerOrDie(const ResolvedAddress& server_address) {
       pfd.events = POLLOUT;
       pfd.revents = 0;
       if (poll(&pfd, 1, -1) == -1) {
-        LOG(ERROR) << "poll() failed during connect; errno=" << errno;
+        ABSL_LOG(ERROR) << "poll() failed during connect; errno=" << errno;
         abort();
       }
     } else {

@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -48,7 +48,7 @@ bool KernelSupportsErrqueue() {
     // least 4.0.0
     struct utsname buffer;
     if (uname(&buffer) != 0) {
-      LOG(ERROR) << "uname: " << grpc_core::StrError(errno);
+      ABSL_LOG(ERROR) << "uname: " << grpc_core::StrError(errno);
       return false;
     }
     char* release = buffer.release;
@@ -59,7 +59,7 @@ bool KernelSupportsErrqueue() {
     if (strtol(release, nullptr, 10) >= 4) {
       return true;
     } else {
-      VLOG(2) << "ERRQUEUE support not enabled";
+      ABSL_VLOG(2) << "ERRQUEUE support not enabled";
     }
 #endif  // GRPC_LINUX_ERRQUEUE
     return false;

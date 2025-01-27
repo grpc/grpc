@@ -87,7 +87,7 @@ void BM_AddCounterWithOTelPlugin(benchmark::State& state) {
                     .EnableMetrics({kMetricName})
                     .SetMeterProvider(std::move(meter_provider))
                     .BuildAndRegisterGlobal();
-  CHECK(status.ok());
+  ABSL_CHECK(status.ok());
   grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config;
   auto stats_plugin_group =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
@@ -108,7 +108,7 @@ void BM_AddCounterWithLabelsWithOTelPlugin(benchmark::State& state) {
                     .EnableMetrics({kMetricName})
                     .SetMeterProvider(std::move(meter_provider))
                     .BuildAndRegisterGlobal();
-  CHECK(status.ok());
+  ABSL_CHECK(status.ok());
   grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config;
   auto stats_plugin_group =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(

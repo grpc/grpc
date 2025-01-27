@@ -37,8 +37,8 @@
 #include <vector>
 
 #include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -211,7 +211,7 @@ class FakeCertificateProviderFactory
       absl::string_view name,
       FakeCertificateProvider::CertDataMapWrapper* cert_data_map)
       : name_(name), cert_data_map_(cert_data_map) {
-    CHECK_NE(cert_data_map, nullptr);
+    ABSL_CHECK_NE(cert_data_map, nullptr);
   }
 
   absl::string_view name() const override { return name_; }
@@ -228,7 +228,7 @@ class FakeCertificateProviderFactory
   CreateCertificateProvider(
       grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
       /*config*/) override {
-    CHECK_NE(cert_data_map_, nullptr);
+    ABSL_CHECK_NE(cert_data_map_, nullptr);
     return grpc_core::MakeRefCounted<FakeCertificateProvider>(
         cert_data_map_->Get());
   }
@@ -901,7 +901,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     options.set_verify_server_certs(true);
     options.set_certificate_verifier(std::move(verifier));
     auto channel_creds = grpc::experimental::TlsCredentials(options);
-    CHECK_NE(channel_creds.get(), nullptr);
+    ABSL_CHECK_NE(channel_creds.get(), nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
@@ -922,7 +922,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     options.set_verify_server_certs(true);
     options.set_certificate_verifier(std::move(verifier));
     auto channel_creds = grpc::experimental::TlsCredentials(options);
-    CHECK_NE(channel_creds.get(), nullptr);
+    ABSL_CHECK_NE(channel_creds.get(), nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
@@ -952,7 +952,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       bool test_expects_failure = false,
       std::optional<grpc::StatusCode> expected_status = std::nullopt,
       absl::string_view expected_error_message_regex = "") {
-    LOG(INFO) << "Sending RPC";
+    ABSL_LOG(INFO) << "Sending RPC";
     int num_tries = 0;
     constexpr int kRetryCount = 100;
     auto overall_deadline =
@@ -974,12 +974,12 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       Status status = stub->Echo(&context, request, &response);
       if (test_expects_failure) {
         if (status.ok()) {
-          LOG(ERROR) << "RPC succeeded. Failure expected. Trying again.";
+          ABSL_LOG(ERROR) << "RPC succeeded. Failure expected. Trying again.";
           continue;
         }
         if (expected_status.has_value() &&
             *expected_status != status.error_code()) {
-          LOG(ERROR) << "Expected status does not match Actual("
+          ABSL_LOG(ERROR) << "Expected status does not match Actual("
                      << status.error_code() << ") vs Expected("
                      << *expected_status << ")";
           continue;
@@ -988,7 +988,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
                     ::testing::MatchesRegex(expected_error_message_regex));
       } else {
         if (!status.ok()) {
-          LOG(ERROR) << "RPC failed. code=" << status.error_code()
+          ABSL_LOG(ERROR) << "RPC failed. code=" << status.error_code()
                      << " message=" << status.error_message()
                      << " Trying again.";
           continue;
@@ -1000,7 +1000,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
               std::string(entry.data(), entry.size()).c_str());
         }
         if (peer_identity != expected_server_identity) {
-          LOG(ERROR) << "Expected server identity does not match. (actual) "
+          ABSL_LOG(ERROR) << "Expected server identity does not match. (actual) "
                      << absl::StrJoin(peer_identity, ",") << " vs (expected) "
                      << absl::StrJoin(expected_server_identity, ",")
                      << " Trying again.";
@@ -1008,7 +1008,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
         }
         if (backends_[0]->backend_service()->last_peer_identity() !=
             expected_client_identity) {
-          LOG(ERROR)
+          ABSL_LOG(ERROR)
               << "Expected client identity does not match. (actual) "
               << absl::StrJoin(
                      backends_[0]->backend_service()->last_peer_identity(), ",")

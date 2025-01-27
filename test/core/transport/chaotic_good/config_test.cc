@@ -67,21 +67,21 @@ void ConfigTest(FuzzerChannelArgs client_args_input,
   // Initialize configs
   chaotic_good::Config client_config(client_args);
   chaotic_good::Config server_config(server_args);
-  VLOG(2) << "client_config: " << client_config;
-  VLOG(2) << "server_config: " << server_config;
+  ABSL_VLOG(2) << "client_config: " << client_config;
+  ABSL_VLOG(2) << "server_config: " << server_config;
   // Perform handshake
   chaotic_good_frame::Settings client_settings;
   client_config.PrepareClientOutgoingSettings(client_settings);
-  VLOG(2) << "client settings: " << client_settings.ShortDebugString();
-  CHECK_OK(server_config.ReceiveClientIncomingSettings(client_settings));
-  VLOG(2) << "server_config': " << server_config;
+  ABSL_VLOG(2) << "client settings: " << client_settings.ShortDebugString();
+  ABSL_CHECK_OK(server_config.ReceiveClientIncomingSettings(client_settings));
+  ABSL_VLOG(2) << "server_config': " << server_config;
   chaotic_good_frame::Settings server_settings;
   server_config.PrepareServerOutgoingSettings(server_settings);
-  VLOG(2) << "server settings: " << server_settings.ShortDebugString();
+  ABSL_VLOG(2) << "server settings: " << server_settings.ShortDebugString();
   FakeClientConnectionFactory fake_factory;
-  CHECK_OK(client_config.ReceiveServerIncomingSettings(server_settings,
+  ABSL_CHECK_OK(client_config.ReceiveServerIncomingSettings(server_settings,
                                                        fake_factory));
-  VLOG(2) << "client_config': " << client_config;
+  ABSL_VLOG(2) << "client_config': " << client_config;
   // Generate results
   const chaotic_good::ChaoticGoodTransport::Options client_options =
       client_config.MakeTransportOptions();

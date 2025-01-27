@@ -24,8 +24,8 @@
 
 #include <algorithm>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 
 namespace grpc_core {
 
@@ -50,7 +50,7 @@ Timestamp BdpEstimator::CompletePing() {
       << "bdp[" << name_ << "]:complete acc=" << accumulator_
       << " est=" << estimate_ << " dt=" << dt << " bw=" << bw / 125000.0
       << "Mbs bw_est=" << bw_est_ / 125000.0 << "Mbs";
-  CHECK(ping_state_ == PingState::STARTED);
+  ABSL_CHECK(ping_state_ == PingState::STARTED);
   if (accumulator_ > 2 * estimate_ / 3 && bw > bw_est_) {
     estimate_ = std::max(accumulator_, estimate_ * 2);
     bw_est_ = bw;

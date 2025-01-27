@@ -24,7 +24,7 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/sync.h"
 
@@ -45,7 +45,7 @@ void FillGprFromTimestamp(gpr_timespec* gts, const struct timespec* ts) {
 
 void DefaultTimestampsCallback(void* /*arg*/, Timestamps* /*ts*/,
                                absl::Status /*shutdown_err*/) {
-  VLOG(2) << "Timestamps callback has not been registered";
+  ABSL_VLOG(2) << "Timestamps callback has not been registered";
 }
 
 // The saved callback function that will be invoked when we get all the

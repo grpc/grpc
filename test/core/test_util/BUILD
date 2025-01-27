@@ -79,8 +79,8 @@ grpc_cc_library(
         "tracer_util.h",
     ],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
@@ -117,10 +117,10 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/debugging:failure_signal_handler",
-        "absl/log:check",
+        "absl/log:absl_check",
         "absl/log:globals",
         "absl/log:initialize",
-        "absl/log:log",
+        "absl/log:absl_log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -165,9 +165,9 @@ grpc_cc_library(
     hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS,
     external_deps = [
         "absl/debugging:failure_signal_handler",
-        "absl/log:check",
+        "absl/log:absl_check",
         "absl/log:initialize",
-        "absl/log:log",
+        "absl/log:absl_log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -205,7 +205,7 @@ grpc_cc_test(
     name = "cmdline_test",
     srcs = ["cmdline_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,
@@ -224,8 +224,8 @@ grpc_cc_library(
     srcs = ["fuzzer_corpus_test.cc"],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "gtest",
     ],
     linkstatic = True,
@@ -244,7 +244,7 @@ grpc_cc_test(
     name = "histogram_test",
     srcs = ["histogram_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = ["nofixdeps"],
@@ -281,7 +281,7 @@ grpc_cc_test(
         "stack_tracer_test.cc",
     ],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "absl/strings",
         "gtest",
     ],
@@ -302,8 +302,8 @@ grpc_cc_library(
     srcs = ["test_lb_policies.cc"],
     hdrs = ["test_lb_policies.h"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -343,8 +343,8 @@ grpc_cc_library(
     srcs = ["fake_udp_and_tcp_server.cc"],
     hdrs = ["fake_udp_and_tcp_server.h"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -380,7 +380,7 @@ grpc_cc_library(
     srcs = ["socket_use_after_close_detector.cc"],
     hdrs = ["socket_use_after_close_detector.h"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     deps = [
@@ -515,8 +515,8 @@ grpc_cc_library(
     external_deps = [
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/status",
         "absl/strings",
         "absl/types:span",

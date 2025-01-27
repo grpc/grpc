@@ -25,7 +25,7 @@
 
 #include <sstream>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
@@ -82,21 +82,21 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     response_reader->Finish(&recv_response, &recv_status, tag(4));
     void* t;
     bool ok;
-    CHECK(fixture->cq()->Next(&t, &ok));
-    CHECK(ok);
-    CHECK(t == tag(0) || t == tag(1));
+    ABSL_CHECK(fixture->cq()->Next(&t, &ok));
+    ABSL_CHECK(ok);
+    ABSL_CHECK(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
     ServerEnv* senv = server_env[slot];
     ServerContextMutator svr_ctx_mut(&senv->ctx);
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
-      CHECK(fixture->cq()->Next(&t, &ok));
-      CHECK(ok);
+      ABSL_CHECK(fixture->cq()->Next(&t, &ok));
+      ABSL_CHECK(ok);
       int tagnum = static_cast<int>(reinterpret_cast<intptr_t>(t));
-      CHECK(i & (1 << tagnum));
+      ABSL_CHECK(i & (1 << tagnum));
       i -= 1 << tagnum;
     }
-    CHECK(recv_status.ok());
+    ABSL_CHECK(recv_status.ok());
 
     senv->~ServerEnv();
     senv = new (senv) ServerEnv();

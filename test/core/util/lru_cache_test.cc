@@ -16,7 +16,7 @@
 
 #include "src/core/util/lru_cache.h"
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "gmock/gmock.h"
@@ -28,7 +28,7 @@ TEST(LruCache, Basic) {
   std::vector<int> created_list;
   auto create = [&](const std::string& key) {
     int value;
-    CHECK(absl::SimpleAtoi(key, &value));
+    ABSL_CHECK(absl::SimpleAtoi(key, &value));
     created_list.push_back(value);
     return value;
   };
@@ -69,7 +69,7 @@ TEST(LruCache, Basic) {
 TEST(LruCache, SetMaxSize) {
   auto create = [&](const std::string& key) {
     int value;
-    CHECK(absl::SimpleAtoi(key, &value));
+    ABSL_CHECK(absl::SimpleAtoi(key, &value));
     return value;
   };
   // Create a cache with max size 10.

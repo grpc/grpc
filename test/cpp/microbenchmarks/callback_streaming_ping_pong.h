@@ -23,8 +23,8 @@
 
 #include <sstream>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
@@ -54,7 +54,7 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
 
   void OnReadDone(bool ok) override {
     if (!ok) {
-      LOG(ERROR) << "Client read failed";
+      ABSL_LOG(ERROR) << "Client read failed";
       return;
     }
     MaybeWrite();
@@ -62,7 +62,7 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
 
   void OnWriteDone(bool ok) override {
     if (!ok) {
-      LOG(ERROR) << "Client write failed";
+      ABSL_LOG(ERROR) << "Client write failed";
       return;
     }
     writes_complete_++;
@@ -70,8 +70,8 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
   }
 
   void OnDone(const Status& s) override {
-    CHECK(s.ok());
-    CHECK_EQ(writes_complete_, msgs_to_send_);
+    ABSL_CHECK(s.ok());
+    ABSL_CHECK_EQ(writes_complete_, msgs_to_send_);
     if (state_->KeepRunning()) {
       writes_complete_ = 0;
       StartNewRpc();

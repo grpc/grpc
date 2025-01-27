@@ -26,7 +26,7 @@ grpc_cc_library(
     srcs = ["transport_security_test_lib.cc"],
     hdrs = ["transport_security_test_lib.h"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "libssl",
         "libcrypto",
     ],
@@ -51,7 +51,7 @@ grpc_cc_test(
     name = "ssl_session_cache_test",
     srcs = ["ssl_session_cache_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -108,7 +108,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "absl/strings",
         "gtest",
     ],
@@ -147,7 +147,7 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data/crls_missing_root:b9322cac.r0",
     ],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     tags = ["no_windows"],
@@ -164,7 +164,7 @@ grpc_cc_test(
     name = "transport_security_test",
     srcs = ["transport_security_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     deps = [

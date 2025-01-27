@@ -37,8 +37,8 @@
 #include <grpc/support/time.h>
 #include <sys/socket.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/util/strerror.h"
@@ -82,7 +82,7 @@ static int read_bytes(int fd, char* buf, size_t read_size, int spin) {
         if (errno == EAGAIN && spin == 1) {
           continue;
         }
-        LOG(ERROR) << "Read failed: " << grpc_core::StrError(errno);
+        ABSL_LOG(ERROR) << "Read failed: " << grpc_core::StrError(errno);
         return -1;
       }
     } else {
@@ -115,18 +115,18 @@ static int poll_read_bytes(int fd, char* buf, size_t read_size, int spin) {
       if (errno == EINTR) {
         continue;
       } else {
-        LOG(ERROR) << "Poll failed: " << grpc_core::StrError(errno);
+        ABSL_LOG(ERROR) << "Poll failed: " << grpc_core::StrError(errno);
         return -1;
       }
     }
     if (err == 0 && spin) continue;
-    CHECK_EQ(err, 1);
-    CHECK(pfd.revents == POLLIN);
+    ABSL_CHECK_EQ(err, 1);
+    ABSL_CHECK(pfd.revents == POLLIN);
     do {
       err2 = read(fd, buf + bytes_read, read_size - bytes_read);
     } while (err2 < 0 && errno == EINTR);
     if (err2 < 0 && errno != EAGAIN) {
-      LOG(ERROR) << "Read failed: " << grpc_core::StrError(errno);
+      ABSL_LOG(ERROR) << "Read failed: " << grpc_core::StrError(errno);
       return -1;
     }
     bytes_read += static_cast<size_t>(err2);
@@ -155,13 +155,13 @@ static int epoll_read_bytes(struct thread_args* args, char* buf, int spin) {
     err = epoll_wait(args->epoll_fd, &ev, 1, spin ? 0 : -1);
     if (err < 0) {
       if (errno == EINTR) continue;
-      LOG(ERROR) << "epoll_wait failed: " << grpc_core::StrError(errno);
+      ABSL_LOG(ERROR) << "epoll_wait failed: " << grpc_core::StrError(errno);
       return -1;
     }
     if (err == 0 && spin) continue;
-    CHECK_EQ(err, 1);
-    CHECK(ev.events & EPOLLIN);
-    CHECK(ev.data.fd == args->fds.read_fd);
+    ABSL_CHECK_EQ(err, 1);
+    ABSL_CHECK(ev.events & EPOLLIN);
+    ABSL_CHECK(ev.data.fd == args->fds.read_fd);
     do {
       do {
         err2 =
@@ -173,7 +173,7 @@ static int epoll_read_bytes(struct thread_args* args, char* buf, int spin) {
       // done to ensure we see an EAGAIN
     } while (bytes_read < read_size);
   } while (bytes_read < read_size);
-  CHECK(bytes_read == read_size);
+  ABSL_CHECK(bytes_read == read_size);
   return 0;
 }
 
@@ -201,7 +201,7 @@ static int blocking_write_bytes(struct thread_args* args, char* buf) {
       if (errno == EINTR) {
         continue;
       } else {
-        LOG(ERROR) << "Read failed: " << grpc_core::StrError(errno);
+        ABSL_LOG(ERROR) << "Read failed: " << grpc_core::StrError(errno);
         return -1;
       }
     } else {
@@ -239,7 +239,7 @@ static int epoll_setup(thread_args* args) {
   set_socket_nonblocking(args);
   epoll_fd = epoll_create(1);
   if (epoll_fd < 0) {
-    LOG(ERROR) << "epoll_create: " << grpc_core::StrError(errno);
+    ABSL_LOG(ERROR) << "epoll_create: " << grpc_core::StrError(errno);
     return -1;
   }
 
@@ -248,7 +248,7 @@ static int epoll_setup(thread_args* args) {
   ev.events = EPOLLIN | EPOLLET;
   ev.data.fd = args->fds.read_fd;
   if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, args->fds.read_fd, &ev) < 0) {
-    LOG(ERROR) << "epoll_ctl: " << grpc_core::StrError(errno);
+    ABSL_LOG(ERROR) << "epoll_ctl: " << grpc_core::StrError(errno);
   }
   return 0;
 }
@@ -257,16 +257,16 @@ static int epoll_setup(thread_args* args) {
 static void server_thread(thread_args* args) {
   char* buf = static_cast<char*>(gpr_malloc(args->msg_size));
   if (args->setup(args) < 0) {
-    LOG(ERROR) << "Setup failed";
+    ABSL_LOG(ERROR) << "Setup failed";
   }
   for (;;) {
     if (args->read_bytes(args, buf) < 0) {
-      LOG(ERROR) << "Server read failed";
+      ABSL_LOG(ERROR) << "Server read failed";
       gpr_free(buf);
       return;
     }
     if (args->write_bytes(args, buf) < 0) {
-      LOG(ERROR) << "Server write failed";
+      ABSL_LOG(ERROR) << "Server write failed";
       gpr_free(buf);
       return;
     }
@@ -281,7 +281,7 @@ static void server_thread_wrap(void* arg) {
 static void print_histogram(grpc_histogram* histogram) {
   // TODO(klempner): Print more detailed information, such as detailed histogram
   // buckets
-  LOG(INFO) << "latency (50/95/99/99.9): "
+  ABSL_LOG(INFO) << "latency (50/95/99/99.9): "
             << grpc_histogram_percentile(histogram, 50) << "/"
             << grpc_histogram_percentile(histogram, 95) << "/"
             << grpc_histogram_percentile(histogram, 99) << "/"
@@ -305,16 +305,16 @@ static void client_thread(thread_args* args) {
   int i;
 
   if (args->setup(args) < 0) {
-    LOG(ERROR) << "Setup failed";
+    ABSL_LOG(ERROR) << "Setup failed";
   }
   for (i = 0; i < kNumIters; ++i) {
     start_time = now();
     if (args->write_bytes(args, buf) < 0) {
-      LOG(ERROR) << "Client write failed";
+      ABSL_LOG(ERROR) << "Client write failed";
       goto error;
     }
     if (args->read_bytes(args, buf) < 0) {
-      LOG(ERROR) << "Client read failed";
+      ABSL_LOG(ERROR) << "Client read failed";
       goto error;
     }
     end_time = now();
@@ -333,7 +333,7 @@ error:
 static int create_listening_socket(struct sockaddr* port, socklen_t len) {
   int fd = socket(port->sa_family, SOCK_STREAM, 0);
   if (fd < 0) {
-    LOG(ERROR) << "Unable to create socket: " << grpc_core::StrError(errno);
+    ABSL_LOG(ERROR) << "Unable to create socket: " << grpc_core::StrError(errno);
     goto error;
   }
 
@@ -351,17 +351,17 @@ static int create_listening_socket(struct sockaddr* port, socklen_t len) {
   }
 
   if (bind(fd, port, len) < 0) {
-    LOG(ERROR) << "bind: " << grpc_core::StrError(errno);
+    ABSL_LOG(ERROR) << "bind: " << grpc_core::StrError(errno);
     goto error;
   }
 
   if (listen(fd, 1) < 0) {
-    LOG(ERROR) << "listen: " << grpc_core::StrError(errno);
+    ABSL_LOG(ERROR) << "listen: " << grpc_core::StrError(errno);
     goto error;
   }
 
   if (getsockname(fd, port, &len) < 0) {
-    LOG(ERROR) << "getsockname: " << grpc_core::StrError(errno);
+    ABSL_LOG(ERROR) << "getsockname: " << grpc_core::StrError(errno);
     goto error;
   }
 
@@ -378,7 +378,7 @@ static int connect_client(struct sockaddr* addr, socklen_t len) {
   int fd = socket(addr->sa_family, SOCK_STREAM, 0);
   int err;
   if (fd < 0) {
-    LOG(ERROR) << "Unable to create socket: " << grpc_core::StrError(errno);
+    ABSL_LOG(ERROR) << "Unable to create socket: " << grpc_core::StrError(errno);
     goto error;
   }
 
@@ -396,7 +396,7 @@ static int connect_client(struct sockaddr* addr, socklen_t len) {
   } while (err < 0 && errno == EINTR);
 
   if (err < 0) {
-    LOG(ERROR) << "connect error: " << grpc_core::StrError(errno);
+    ABSL_LOG(ERROR) << "connect error: " << grpc_core::StrError(errno);
     goto error;
   }
   return fd;
@@ -411,7 +411,7 @@ error:
 static int accept_server(int listen_fd) {
   int fd = accept(listen_fd, nullptr, nullptr);
   if (fd < 0) {
-    LOG(ERROR) << "Accept failed: " << grpc_core::StrError(errno);
+    ABSL_LOG(ERROR) << "Accept failed: " << grpc_core::StrError(errno);
     return -1;
   }
   return fd;
@@ -431,19 +431,19 @@ static int create_sockets_tcp(fd_pair* client_fds, fd_pair* server_fds) {
 
   listen_fd = create_listening_socket(sa_port, sizeof(port));
   if (listen_fd == -1) {
-    LOG(ERROR) << "Listen failed";
+    ABSL_LOG(ERROR) << "Listen failed";
     goto error;
   }
 
   client_fd = connect_client(sa_port, sizeof(port));
   if (client_fd == -1) {
-    LOG(ERROR) << "Connect failed";
+    ABSL_LOG(ERROR) << "Connect failed";
     goto error;
   }
 
   server_fd = accept_server(listen_fd);
   if (server_fd == -1) {
-    LOG(ERROR) << "Accept failed";
+    ABSL_LOG(ERROR) << "Accept failed";
     goto error;
   }
 
@@ -470,7 +470,7 @@ error:
 static int create_sockets_socketpair(fd_pair* client_fds, fd_pair* server_fds) {
   int fds[2];
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) < 0) {
-    LOG(ERROR) << "socketpair: " << grpc_core::StrError(errno);
+    ABSL_LOG(ERROR) << "socketpair: " << grpc_core::StrError(errno);
     return -1;
   }
 
@@ -485,12 +485,12 @@ static int create_sockets_pipe(fd_pair* client_fds, fd_pair* server_fds) {
   int cfds[2];
   int sfds[2];
   if (pipe(cfds) < 0) {
-    LOG(ERROR) << "pipe: " << grpc_core::StrError(errno);
+    ABSL_LOG(ERROR) << "pipe: " << grpc_core::StrError(errno);
     return -1;
   }
 
   if (pipe(sfds) < 0) {
-    LOG(ERROR) << "pipe: " << grpc_core::StrError(errno);
+    ABSL_LOG(ERROR) << "pipe: " << grpc_core::StrError(errno);
     return -1;
   }
 
@@ -585,7 +585,7 @@ static int run_benchmark(const char* socket_type, thread_args* client_args,
     return rv;
   }
 
-  LOG(INFO) << "Starting test " << client_args->strategy_name << " "
+  ABSL_LOG(INFO) << "Starting test " << client_args->strategy_name << " "
             << socket_type << " " << client_args->msg_size;
 
   grpc_core::Thread server("server_thread", server_thread_wrap, server_args);
@@ -656,7 +656,7 @@ int main(int argc, char** argv) {
   }
 
   if (read_strategy == nullptr) {
-    LOG(INFO) << "No strategy specified, running all benchmarks";
+    ABSL_LOG(INFO) << "No strategy specified, running all benchmarks";
     return run_all_benchmarks(static_cast<size_t>(msg_size));
   }
 

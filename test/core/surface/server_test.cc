@@ -27,7 +27,7 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
@@ -109,7 +109,7 @@ void test_bind_server_twice(void) {
 void test_bind_server_to_addr(const char* host, bool secure) {
   int port = grpc_pick_unused_port_or_die();
   std::string addr = grpc_core::JoinHostPort(host, port);
-  LOG(INFO) << "Test bind to " << addr;
+  ABSL_LOG(INFO) << "Test bind to " << addr;
 
   grpc_server* server = grpc_server_create(nullptr, nullptr);
   if (secure) {

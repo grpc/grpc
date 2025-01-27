@@ -56,7 +56,7 @@ grpc_cc_test(
     name = "interception_chain_test",
     srcs = ["interception_chain_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,
@@ -143,7 +143,7 @@ grpc_cc_test(
     name = "parsed_metadata_test",
     srcs = ["parsed_metadata_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [

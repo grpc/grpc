@@ -26,7 +26,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 
@@ -210,7 +210,7 @@ ServerMetricRecorder::GetMetricsIfChanged() const {
   }
   if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
     const auto& data = result->data;
-    LOG(INFO) << "[" << this
+    ABSL_LOG(INFO) << "[" << this
               << "] GetMetrics() returned: seq:" << result->sequence_number
               << " cpu:" << data.cpu_utilization
               << " mem:" << data.mem_utilization

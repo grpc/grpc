@@ -28,8 +28,8 @@
 
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -77,7 +77,7 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
     return server;
   }
 
-  void TearDown() override { CHECK(shutdown_); }
+  void TearDown() override { ABSL_CHECK(shutdown_); }
 
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
@@ -99,9 +99,9 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
     EchoResponse response;
     request.set_message("Hello");
     ClientContext context;
-    CHECK(!shutdown_);
+    ABSL_CHECK(!shutdown_);
     Status s = stub_->Echo(&context, request, &response);
-    CHECK(shutdown_);
+    ABSL_CHECK(shutdown_);
   }
 
  protected:
@@ -124,13 +124,13 @@ std::vector<string> GetAllCredentialsTypeList() {
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
     credentials_types.push_back(*sec);
   }
-  CHECK(!credentials_types.empty());
+  ABSL_CHECK(!credentials_types.empty());
 
   std::string credentials_type_list("credentials types:");
   for (const string& type : credentials_types) {
     credentials_type_list.append(" " + type);
   }
-  LOG(INFO) << credentials_type_list;
+  ABSL_LOG(INFO) << credentials_type_list;
   return credentials_types;
 }
 

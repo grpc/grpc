@@ -15,7 +15,7 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_MESSAGE_REASSEMBLY_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_MESSAGE_REASSEMBLY_H
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/lib/transport/call_spine.h"
 
@@ -27,11 +27,11 @@ namespace chaotic_good {
 class MessageReassembly {
  public:
   void FailCall(CallInitiator& call, absl::string_view msg) {
-    LOG_EVERY_N_SEC(INFO, 10) << "Call failed during reassembly: " << msg;
+    ABSL_LOG_EVERY_N_SEC(INFO, 10) << "Call failed during reassembly: " << msg;
     call.Cancel();
   }
   void FailCall(CallHandler& call, absl::string_view msg) {
-    LOG_EVERY_N_SEC(INFO, 10) << "Call failed during reassembly: " << msg;
+    ABSL_LOG_EVERY_N_SEC(INFO, 10) << "Call failed during reassembly: " << msg;
     call.PushServerTrailingMetadata(
         CancelledServerMetadataFromStatus(GRPC_STATUS_INTERNAL, msg));
   }

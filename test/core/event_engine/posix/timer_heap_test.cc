@@ -24,7 +24,7 @@
 #include <algorithm>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
@@ -167,7 +167,7 @@ TEST(TimerHeapTest, RandomMutations) {
         pq.Pop();
         for (size_t i = 0; i < elems_size; i++) {
           if (top == &elems[i].elem) {
-            CHECK(elems[i].inserted);
+            ABSL_CHECK(elems[i].inserted);
             elems[i].inserted = false;
           }
         }
@@ -189,7 +189,7 @@ TEST(TimerHeapTest, RandomMutations) {
           }
         }
       }
-      CHECK(pq.Top()->deadline == *min_deadline);
+      ABSL_CHECK(pq.Top()->deadline == *min_deadline);
     }
   }
 }

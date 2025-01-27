@@ -47,8 +47,8 @@
 #include <atomic>
 #include <cstring>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/util/status_helper.h"
@@ -103,7 +103,7 @@ int CreateSocket(std::function<int(int, int, int)> socket_factory, int family,
                                       : socket(family, type, protocol);
   if (res < 0 && errno == EMFILE) {
     int saved_errno = errno;
-    LOG_EVERY_N_SEC(ERROR, 10)
+    ABSL_LOG_EVERY_N_SEC(ERROR, 10)
         << "socket(" << family << ", " << type << ", " << protocol
         << ") returned " << res << " with error: |"
         << grpc_core::StrError(errno)
@@ -647,18 +647,18 @@ void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
     if (g_socket_supports_tcp_user_timeout.load() > 0) {
       if (0 != setsockopt(fd_, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
                           sizeof(timeout))) {
-        LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
+        ABSL_LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
                    << grpc_core::StrError(errno);
         return;
       }
       if (0 != getsockopt(fd_, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-        LOG(ERROR) << "getsockopt(TCP_USER_TIMEOUT) "
+        ABSL_LOG(ERROR) << "getsockopt(TCP_USER_TIMEOUT) "
                    << grpc_core::StrError(errno);
         return;
       }
       if (newval != timeout) {
         // Do not fail on failing to set TCP_USER_TIMEOUT
-        LOG(ERROR) << "Failed to set TCP_USER_TIMEOUT";
+        ABSL_LOG(ERROR) << "Failed to set TCP_USER_TIMEOUT";
         return;
       }
     }
@@ -668,7 +668,7 @@ void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
 // Set a socket using a grpc_socket_mutator
 absl::Status PosixSocketWrapper::SetSocketMutator(
     grpc_fd_usage usage, grpc_socket_mutator* mutator) {
-  CHECK(mutator);
+  ABSL_CHECK(mutator);
   if (!grpc_socket_mutator_mutate_fd(mutator, fd_, usage)) {
     return absl::Status(absl::StatusCode::kInternal,
                         "grpc_socket_mutator failed.");

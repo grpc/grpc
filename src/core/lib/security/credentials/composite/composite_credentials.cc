@@ -24,7 +24,7 @@
 #include <memory>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "src/core/lib/debug/trace.h"
@@ -127,9 +127,9 @@ grpc_call_credentials* grpc_composite_call_credentials_create(
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_composite_call_credentials_create(creds1=" << creds1
       << ", creds2=" << creds2 << ", reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
-  CHECK_NE(creds1, nullptr);
-  CHECK_NE(creds2, nullptr);
+  ABSL_CHECK_EQ(reserved, nullptr);
+  ABSL_CHECK_NE(creds1, nullptr);
+  ABSL_CHECK_NE(creds2, nullptr);
 
   return composite_call_credentials_create(creds1->Ref(), creds2->Ref())
       .release();
@@ -141,8 +141,8 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_composite_channel_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target, grpc_core::ChannelArgs* args) {
-  CHECK(inner_creds_ != nullptr);
-  CHECK(call_creds_ != nullptr);
+  ABSL_CHECK(inner_creds_ != nullptr);
+  ABSL_CHECK(call_creds_ != nullptr);
   // If we are passed a call_creds, create a call composite to pass it
   // downstream.
   if (call_creds != nullptr) {
@@ -157,7 +157,7 @@ grpc_composite_channel_credentials::create_security_connector(
 grpc_channel_credentials* grpc_composite_channel_credentials_create(
     grpc_channel_credentials* channel_creds, grpc_call_credentials* call_creds,
     void* reserved) {
-  CHECK(channel_creds != nullptr && call_creds != nullptr &&
+  ABSL_CHECK(channel_creds != nullptr && call_creds != nullptr &&
         reserved == nullptr);
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_composite_channel_credentials_create(channel_creds="

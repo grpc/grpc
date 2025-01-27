@@ -25,7 +25,7 @@
 #include <tchar.h>
 #include <windows.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/span.h"
 #include "src/core/util/crash.h"
@@ -112,7 +112,7 @@ void gpr_subprocess_interrupt(gpr_subprocess* p) {
   DWORD dwExitCode;
   if (GetExitCodeProcess(p->pi.hProcess, &dwExitCode)) {
     if (dwExitCode == STILL_ACTIVE) {
-      VLOG(2) << "sending ctrl-break";
+      ABSL_VLOG(2) << "sending ctrl-break";
       GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, p->pi.dwProcessId);
       p->joined = 1;
       p->interrupted = 1;

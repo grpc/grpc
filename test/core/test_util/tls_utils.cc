@@ -21,7 +21,7 @@
 #include <grpc/support/time.h>
 #include <stdio.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -35,33 +35,33 @@ namespace testing {
 
 TmpFile::TmpFile(absl::string_view data) {
   name_ = CreateTmpFileAndWriteData(data);
-  CHECK(!name_.empty());
+  ABSL_CHECK(!name_.empty());
 }
 
-TmpFile::~TmpFile() { CHECK_EQ(remove(name_.c_str()), 0); }
+TmpFile::~TmpFile() { ABSL_CHECK_EQ(remove(name_.c_str()), 0); }
 
 void TmpFile::RewriteFile(absl::string_view data) {
   // Create a new file containing new data.
   std::string new_name = CreateTmpFileAndWriteData(data);
-  CHECK(!new_name.empty());
+  ABSL_CHECK(!new_name.empty());
 #ifdef GPR_WINDOWS
   // Remove the old file.
   // On Windows rename requires that the new name not exist, whereas
   // on posix systems rename does an atomic replacement of the new
   // name.
-  CHECK_EQ(remove(name_.c_str()), 0);
+  ABSL_CHECK_EQ(remove(name_.c_str()), 0);
 #endif
   // Rename the new file to the original name.
-  CHECK_EQ(rename(new_name.c_str(), name_.c_str()), 0);
+  ABSL_CHECK_EQ(rename(new_name.c_str(), name_.c_str()), 0);
 }
 
 std::string TmpFile::CreateTmpFileAndWriteData(absl::string_view data) {
   char* name = nullptr;
   FILE* file_descriptor = gpr_tmpfile("test", &name);
-  CHECK(fwrite(data.data(), 1, data.size(), file_descriptor) == data.size());
-  CHECK_EQ(fclose(file_descriptor), 0);
-  CHECK_NE(file_descriptor, nullptr);
-  CHECK_NE(name, nullptr);
+  ABSL_CHECK(fwrite(data.data(), 1, data.size(), file_descriptor) == data.size());
+  ABSL_CHECK_EQ(fclose(file_descriptor), 0);
+  ABSL_CHECK_NE(file_descriptor, nullptr);
+  ABSL_CHECK_NE(name, nullptr);
   std::string name_to_return = name;
   gpr_free(name);
   return name_to_return;

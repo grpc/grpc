@@ -34,8 +34,8 @@
 #include <sstream>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/memory/memory.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/env.h"
@@ -80,7 +80,7 @@ std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
 void TestScenario::Log() const {
   std::ostringstream out;
   out << *this;
-  VLOG(2) << out.str();
+  ABSL_VLOG(2) << out.str();
 }
 
 class ClientCallbackEnd2endTest
@@ -196,7 +196,7 @@ class ClientCallbackEnd2endTest
           &cli_ctx, &request, &response,
           [&cli_ctx, &request, &response, &done, &mu, &cv, val,
            with_binary_metadata](Status s) {
-            CHECK(s.ok());
+            ABSL_CHECK(s.ok());
 
             EXPECT_EQ(request.message(), response.message());
             if (with_binary_metadata) {
@@ -238,7 +238,7 @@ class ClientCallbackEnd2endTest
       generic_stub_->UnaryCall(
           &cli_ctx, kMethodName, options, send_buf.get(), &recv_buf,
           [&request, &recv_buf, &done, &mu, &cv, maybe_except](Status s) {
-            CHECK(s.ok());
+            ABSL_CHECK(s.ok());
 
             EchoResponse response;
             EXPECT_TRUE(ParseFromByteBuffer(&recv_buf, &response));
@@ -251,7 +251,7 @@ class ClientCallbackEnd2endTest
               throw -1;
             }
 #else
-            CHECK(!maybe_except);
+            ABSL_CHECK(!maybe_except);
 #endif
           });
       std::unique_lock<std::mutex> l(mu);
@@ -486,7 +486,7 @@ TEST_P(ClientCallbackEnd2endTest, SendClientInitialMetadata) {
   bool done = false;
   stub_->async()->CheckClientInitialMetadata(
       &cli_ctx, &request, &response, [&done, &mu, &cv](Status s) {
-        CHECK(s.ok());
+        ABSL_CHECK(s.ok());
 
         std::lock_guard<std::mutex> l(mu);
         done = true;
@@ -668,7 +668,7 @@ class WriteClient : public grpc::ClientWriteReactor<EchoRequest> {
     }
   }
   void OnDone(const Status& s) override {
-    LOG(INFO) << "Sent " << num_msgs_sent_ << " messages";
+    ABSL_LOG(INFO) << "Sent " << num_msgs_sent_ << " messages";
     int num_to_send =
         (client_cancel_.cancel)
             ? std::min(num_msgs_to_send_, client_cancel_.ops_before_cancel)
@@ -957,7 +957,7 @@ class ReadClient : public grpc::ClientReadReactor<EchoResponse> {
     }
   }
   void OnDone(const Status& s) override {
-    LOG(INFO) << "Read " << reads_complete_ << " messages";
+    ABSL_LOG(INFO) << "Read " << reads_complete_ << " messages";
     switch (server_try_cancel_) {
       case DO_NOT_CANCEL:
         if (!client_cancel_.cancel || client_cancel_.ops_before_cancel >
@@ -1118,8 +1118,8 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
     MaybeWrite();
   }
   void OnDone(const Status& s) override {
-    LOG(INFO) << "Sent " << writes_complete_ << " messages";
-    LOG(INFO) << "Read " << reads_complete_ << " messages";
+    ABSL_LOG(INFO) << "Sent " << writes_complete_ << " messages";
+    ABSL_LOG(INFO) << "Read " << reads_complete_ << " messages";
     switch (server_try_cancel_) {
       case DO_NOT_CANCEL:
         if (!client_cancel_.cancel ||
@@ -1539,7 +1539,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   if (test_insecure && insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
-  CHECK(!credentials_types.empty());
+  ABSL_CHECK(!credentials_types.empty());
 
   bool barr[]{false, true};
   Protocol parr[]{Protocol::INPROC, Protocol::TCP};

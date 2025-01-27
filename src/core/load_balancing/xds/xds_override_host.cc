@@ -36,8 +36,8 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -225,7 +225,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
     // already has an owned subchannel.
     void SetOwnedSubchannel(RefCountedPtr<SubchannelWrapper> subchannel)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
-      DCHECK(!HasOwnedSubchannel());
+      ABSL_DCHECK(!HasOwnedSubchannel());
       subchannel_ = std::move(subchannel);
     }
 
@@ -470,7 +470,7 @@ XdsOverrideHostLb::Picker::Picker(
 std::optional<LoadBalancingPolicy::PickResult>
 XdsOverrideHostLb::Picker::PickOverriddenHost(
     XdsOverrideHostAttribute* override_host_attr) const {
-  CHECK_NE(override_host_attr, nullptr);
+  ABSL_CHECK_NE(override_host_attr, nullptr);
   auto cookie_address_list = override_host_attr->cookie_address_list();
   if (cookie_address_list.empty()) return std::nullopt;
   // The cookie has an address list, so look through the addresses in order.
@@ -943,7 +943,7 @@ void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
       << "[xds_override_host_lb " << this << "] creating owned subchannel for "
       << address;
   auto addr = StringToSockaddr(address);
-  CHECK(addr.ok());
+  ABSL_CHECK(addr.ok());
   // Note: We don't currently have any cases where per_address_args need to
   // be passed through.  If we encounter any such cases in the future, we
   // will need to change this to store those attributes from the resolver
@@ -1008,7 +1008,7 @@ RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::Helper::CreateSubchannel(
     const ChannelArgs& args) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
     auto key = grpc_sockaddr_to_string(&address, /*normalize=*/false);
-    LOG(INFO) << "[xds_override_host_lb " << this
+    ABSL_LOG(INFO) << "[xds_override_host_lb " << this
               << "] creating subchannel for " << key.value_or("<unknown>")
               << ", per_address_args=" << per_address_args << ", args=" << args;
   }

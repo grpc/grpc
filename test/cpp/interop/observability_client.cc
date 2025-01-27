@@ -27,7 +27,7 @@
 #include <unordered_map>
 
 #include "absl/flags/flag.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
@@ -159,7 +159,7 @@ bool ParseAdditionalMetadataFlag(
   while (start_pos < flag.length()) {
     size_t colon_pos = flag.find(':', start_pos);
     if (colon_pos == std::string::npos) {
-      LOG(ERROR)
+      ABSL_LOG(ERROR)
           << "Couldn't parse metadata flag: extra characters at end of flag";
       return false;
     }
@@ -174,7 +174,7 @@ bool ParseAdditionalMetadataFlag(
         "abcdefghijklmnopqrstuvwxyz"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     if (key.find_first_not_of(alphanum_and_hyphen) != std::string::npos) {
-      LOG(ERROR) << "Couldn't parse metadata flag: key contains characters "
+      ABSL_LOG(ERROR) << "Couldn't parse metadata flag: key contains characters "
                     "other than alphanumeric and hyphens: "
                  << key;
       return false;
@@ -187,7 +187,7 @@ bool ParseAdditionalMetadataFlag(
       }
     }
 
-    LOG(INFO) << "Adding additional metadata with key " << key << " and value "
+    ABSL_LOG(INFO) << "Adding additional metadata with key " << key << " and value "
               << value;
     additional_metadata->insert({key, value});
 
@@ -206,14 +206,14 @@ bool ParseAdditionalMetadataFlag(
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  LOG(INFO) << "Testing these cases: " << absl::GetFlag(FLAGS_test_case);
+  ABSL_LOG(INFO) << "Testing these cases: " << absl::GetFlag(FLAGS_test_case);
   int ret = 0;
 
   if (absl::GetFlag(FLAGS_enable_observability)) {
     // TODO(someone): remove deprecated usage
     // NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
     auto status = grpc::experimental::GcpObservabilityInit();
-    VLOG(2) << "GcpObservabilityInit() status_code: " << status.code();
+    ABSL_VLOG(2) << "GcpObservabilityInit() status_code: " << status.code();
     if (!status.ok()) {
       return 1;
     }
@@ -222,7 +222,7 @@ int main(int argc, char** argv) {
   // TODO(stanleycheung): switch to CsmObservabilityBuilder once xds setup is
   // ready
   if (absl::GetFlag(FLAGS_enable_otel_plugin)) {
-    VLOG(2) << "Registering Prometheus exporter";
+    ABSL_VLOG(2) << "Registering Prometheus exporter";
     opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
     // default was "localhost:9464" which causes connection issue across GKE
     // pods
@@ -386,7 +386,7 @@ int main(int argc, char** argv) {
       if (!test_cases.empty()) test_cases += "\n";
       test_cases += action.first;
     }
-    LOG(ERROR) << "Unsupported test case " << absl::GetFlag(FLAGS_test_case)
+    ABSL_LOG(ERROR) << "Unsupported test case " << absl::GetFlag(FLAGS_test_case)
                << ". Valid options are\n"
                << test_cases;
     ret = 1;

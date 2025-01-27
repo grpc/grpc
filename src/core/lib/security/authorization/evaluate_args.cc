@@ -18,7 +18,7 @@
 #include <grpc/support/port_platform.h>
 #include <string.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -39,22 +39,22 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
   EvaluateArgs::PerChannelArgs::Address address;
   absl::StatusOr<URI> uri = URI::Parse(uri_text);
   if (!uri.ok()) {
-    VLOG(2) << "Failed to parse uri.";
+    ABSL_VLOG(2) << "Failed to parse uri.";
     return address;
   }
   absl::string_view host_view;
   absl::string_view port_view;
   if (!SplitHostPort(uri->path(), &host_view, &port_view)) {
-    VLOG(2) << "Failed to split " << uri->path() << " into host and port.";
+    ABSL_VLOG(2) << "Failed to split " << uri->path() << " into host and port.";
     return address;
   }
   if (!absl::SimpleAtoi(port_view, &address.port)) {
-    VLOG(2) << "Port " << port_view << " is out of range or null.";
+    ABSL_VLOG(2) << "Port " << port_view << " is out of range or null.";
   }
   address.address_str = std::string(host_view);
   auto resolved_address = StringToSockaddr(uri->path());
   if (!resolved_address.ok()) {
-    VLOG(2) << "Address \"" << uri->path()
+    ABSL_VLOG(2) << "Address \"" << uri->path()
             << "\" is not IPv4/IPv6. Error: " << resolved_address.status();
     memset(&address.address, 0, sizeof(address.address));
   } else {

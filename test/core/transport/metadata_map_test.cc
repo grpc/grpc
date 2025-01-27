@@ -132,11 +132,11 @@ TEST(MetadataMapTest, NonTraitKeyWithMultipleValues) {
   const absl::string_view kKey = "key";
   map.Append(kKey, Slice::FromStaticString("value1"),
              [](absl::string_view error, const Slice& value) {
-               LOG(ERROR) << error << " value:" << value.as_string_view();
+               ABSL_LOG(ERROR) << error << " value:" << value.as_string_view();
              });
   map.Append(kKey, Slice::FromStaticString("value2"),
              [](absl::string_view error, const Slice& value) {
-               LOG(ERROR) << error << " value:" << value.as_string_view();
+               ABSL_LOG(ERROR) << error << " value:" << value.as_string_view();
              });
   map.Encode(&encoder);
   EXPECT_EQ(encoder.output(),

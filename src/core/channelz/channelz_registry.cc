@@ -29,8 +29,8 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/json/json.h"
@@ -57,9 +57,9 @@ void ChannelzRegistry::InternalRegister(BaseNode* node) {
 }
 
 void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
-  CHECK_GE(uuid, 1);
+  ABSL_CHECK_GE(uuid, 1);
   MutexLock lock(&mu_);
-  CHECK(uuid <= uuid_generator_);
+  ABSL_CHECK(uuid <= uuid_generator_);
   node_map_.erase(uuid);
 }
 
@@ -170,7 +170,7 @@ void ChannelzRegistry::InternalLogAllEntities() {
   }
   for (size_t i = 0; i < nodes.size(); ++i) {
     std::string json = nodes[i]->RenderJsonString();
-    LOG(INFO) << json;
+    ABSL_LOG(INFO) << json;
   }
 }
 

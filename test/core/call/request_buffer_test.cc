@@ -24,7 +24,7 @@ namespace grpc_core {
 
 namespace {
 void CrashOnParseError(absl::string_view error, const Slice& data) {
-  LOG(FATAL) << "Failed to parse " << error << " from "
+  ABSL_LOG(FATAL) << "Failed to parse " << error << " from "
              << data.as_string_view();
 }
 

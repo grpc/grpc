@@ -33,7 +33,7 @@
 #include <mutex>
 #include <thread>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -175,7 +175,7 @@ TEST_F(End2endTest, StreamingThroughput) {
     request.set_message(kLargeString);
     ASSERT_TRUE(stream->Write(request));
     if (i % 1000 == 0) {
-      LOG(INFO) << "Send count = " << i;
+      ABSL_LOG(INFO) << "Send count = " << i;
     }
   }
   stream->WritesDone();

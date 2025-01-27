@@ -19,8 +19,8 @@
 
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
@@ -70,9 +70,9 @@ class ClusterTypeTest : public XdsEnd2endTest {
     for (int port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      CHECK_OK(lb_uri);
+      ABSL_CHECK_OK(lb_uri);
       grpc_resolved_address address;
-      CHECK(grpc_parse_uri(*lb_uri, &address));
+      ABSL_CHECK(grpc_parse_uri(*lb_uri, &address));
       addresses.emplace_back(address, grpc_core::ChannelArgs());
     }
     return addresses;
@@ -600,9 +600,9 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
   // Meanwhile, the channel will also start a second attempt for backend
   // 0, which we have NOT held, so it will complete normally, and the
   // RPC will finish on backend 0.
-  LOG(INFO) << "=== WAITING FOR RPC TO FINISH === ";
+  ABSL_LOG(INFO) << "=== WAITING FOR RPC TO FINISH === ";
   Status status = rpc.GetStatus();
-  LOG(INFO) << "=== RPC FINISHED === ";
+  ABSL_LOG(INFO) << "=== RPC FINISHED === ";
   EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                            << " message=" << status.error_message();
   EXPECT_EQ(1UL, backends_[0]->backend_service()->request_count());

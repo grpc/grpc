@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
@@ -142,12 +142,12 @@ static bool test_identity(const grpc_auth_context* ctx,
   prop = grpc_auth_property_iterator_next(&it);
   EXPECT_NE(prop, nullptr);
   if (strcmp(prop->name, expected_property_name) != 0) {
-    LOG(ERROR) << "Expected peer identity property name "
+    ABSL_LOG(ERROR) << "Expected peer identity property name "
                << expected_property_name << " and got " << prop->name;
     return false;
   }
   if (strncmp(prop->value, expected_identity, prop->value_length) != 0) {
-    LOG(ERROR) << "Expected peer identity " << expected_identity << " and got "
+    ABSL_LOG(ERROR) << "Expected peer identity " << expected_identity << " and got "
                << prop->value;
     return false;
   }

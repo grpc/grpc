@@ -22,8 +22,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -73,7 +73,7 @@ grpc_channel_credentials* grpc_channel_credentials_from_arg(
     const grpc_arg* arg) {
   if (strcmp(arg->key, GRPC_ARG_CHANNEL_CREDENTIALS) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
-    LOG(ERROR) << "Invalid type " << arg->type << " for arg "
+    ABSL_LOG(ERROR) << "Invalid type " << arg->type << " for arg "
                << GRPC_ARG_CHANNEL_CREDENTIALS;
     return nullptr;
   }
@@ -112,7 +112,7 @@ void grpc_server_credentials::set_auth_metadata_processor(
 
 void grpc_server_credentials_set_auth_metadata_processor(
     grpc_server_credentials* creds, grpc_auth_metadata_processor processor) {
-  DCHECK_NE(creds, nullptr);
+  ABSL_DCHECK_NE(creds, nullptr);
   creds->set_auth_metadata_processor(processor);
 }
 
@@ -140,7 +140,7 @@ grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* c) {
 grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg) {
   if (strcmp(arg->key, GRPC_SERVER_CREDENTIALS_ARG) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
-    LOG(ERROR) << "Invalid type " << arg->type << " for arg "
+    ABSL_LOG(ERROR) << "Invalid type " << arg->type << " for arg "
                << GRPC_SERVER_CREDENTIALS_ARG;
     return nullptr;
   }

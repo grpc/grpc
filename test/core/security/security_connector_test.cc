@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -81,16 +81,16 @@ static int check_property(const grpc_auth_context* ctx,
       grpc_auth_context_find_properties_by_name(ctx, expected_property_name);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   if (prop == nullptr) {
-    LOG(ERROR) << "Expected value " << expected_property_value << " not found.";
+    ABSL_LOG(ERROR) << "Expected value " << expected_property_value << " not found.";
     return 0;
   }
   if (strncmp(prop->value, expected_property_value, prop->value_length) != 0) {
-    LOG(ERROR) << "Expected value " << expected_property_value << " and got "
+    ABSL_LOG(ERROR) << "Expected value " << expected_property_value << " and got "
                << prop->value << " for property " << expected_property_name;
     return 0;
   }
   if (grpc_auth_property_iterator_next(&it) != nullptr) {
-    LOG(ERROR) << "Expected only one property for " << expected_property_name;
+    ABSL_LOG(ERROR) << "Expected only one property for " << expected_property_name;
     return 0;
   }
   return 1;
@@ -104,22 +104,22 @@ static int check_properties(
   for (const auto& property_value : expected_property_values) {
     const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
     if (prop == nullptr) {
-      LOG(ERROR) << "Expected value " << property_value << " not found.";
+      ABSL_LOG(ERROR) << "Expected value " << property_value << " not found.";
       return 0;
     }
     if (strcmp(prop->name, expected_property_name) != 0) {
-      LOG(ERROR) << "Expected peer property name " << expected_property_name
+      ABSL_LOG(ERROR) << "Expected peer property name " << expected_property_name
                  << " and got " << prop->name;
       return 0;
     }
     if (strncmp(prop->value, property_value.c_str(), prop->value_length) != 0) {
-      LOG(ERROR) << "Expected peer property value " << property_value
+      ABSL_LOG(ERROR) << "Expected peer property value " << property_value
                  << " and got " << prop->value;
       return 0;
     }
   }
   if (grpc_auth_property_iterator_next(&it) != nullptr) {
-    LOG(ERROR) << "Expected only " << expected_property_values.size()
+    ABSL_LOG(ERROR) << "Expected only " << expected_property_values.size()
                << " property values.";
     return 0;
   }
@@ -136,20 +136,20 @@ static int check_spiffe_id(const grpc_auth_context* ctx,
     return 1;
   }
   if (prop != nullptr && !expect_spiffe_id) {
-    LOG(ERROR) << "SPIFFE ID not expected, but got " << prop->value;
+    ABSL_LOG(ERROR) << "SPIFFE ID not expected, but got " << prop->value;
     return 0;
   }
   if (prop == nullptr && expect_spiffe_id) {
-    LOG(ERROR) << "SPIFFE ID expected, but got nullptr.";
+    ABSL_LOG(ERROR) << "SPIFFE ID expected, but got nullptr.";
     return 0;
   }
   if (strncmp(prop->value, expected_spiffe_id, prop->value_length) != 0) {
-    LOG(ERROR) << "Expected SPIFFE ID " << expected_spiffe_id << " but got "
+    ABSL_LOG(ERROR) << "Expected SPIFFE ID " << expected_spiffe_id << " but got "
                << prop->value;
     return 0;
   }
   if (grpc_auth_property_iterator_next(&it) != nullptr) {
-    LOG(ERROR) << "Expected only one property for SPIFFE ID.";
+    ABSL_LOG(ERROR) << "Expected only one property for SPIFFE ID.";
     return 0;
   }
   return 1;

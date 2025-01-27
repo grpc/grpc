@@ -40,7 +40,7 @@ grpc_cc_test(
     name = "forkable_test",
     srcs = ["forkable_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     deps = [
@@ -123,7 +123,7 @@ grpc_cc_test(
     name = "slice_buffer_test",
     srcs = ["slice_buffer_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     uses_polling = False,
@@ -178,7 +178,7 @@ grpc_cc_test(
     name = "tcp_socket_utils_test",
     srcs = ["tcp_socket_utils_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -212,8 +212,8 @@ grpc_cc_library(
     srcs = ["event_engine_test_utils.cc"],
     hdrs = ["event_engine_test_utils.h"],
     external_deps = [
-        "absl/log:check",
-        "absl/log:log",
+        "absl/log:absl_check",
+        "absl/log:absl_log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

@@ -28,8 +28,8 @@
 #include <set>
 #include <tuple>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "opencensus/tags/tag_key.h"
 #include "src/cpp/server/load_reporter/constants.h"
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
@@ -167,10 +167,10 @@ double CensusViewProvider::GetRelatedViewDataRowDouble(
     const ViewDataMap& view_data_map, const char* view_name,
     size_t view_name_len, const std::vector<std::string>& tag_values) {
   auto it_vd = view_data_map.find(std::string(view_name, view_name_len));
-  CHECK(it_vd != view_data_map.end());
-  CHECK(it_vd->second.type() == ::opencensus::stats::ViewData::Type::kDouble);
+  ABSL_CHECK(it_vd != view_data_map.end());
+  ABSL_CHECK(it_vd->second.type() == ::opencensus::stats::ViewData::Type::kDouble);
   auto it_row = it_vd->second.double_data().find(tag_values);
-  CHECK(it_row != it_vd->second.double_data().end());
+  ABSL_CHECK(it_row != it_vd->second.double_data().end());
   return it_row->second;
 }
 
@@ -178,11 +178,11 @@ uint64_t CensusViewProvider::GetRelatedViewDataRowInt(
     const ViewDataMap& view_data_map, const char* view_name,
     size_t view_name_len, const std::vector<std::string>& tag_values) {
   auto it_vd = view_data_map.find(std::string(view_name, view_name_len));
-  CHECK(it_vd != view_data_map.end());
-  CHECK(it_vd->second.type() == ::opencensus::stats::ViewData::Type::kInt64);
+  ABSL_CHECK(it_vd != view_data_map.end());
+  ABSL_CHECK(it_vd->second.type() == ::opencensus::stats::ViewData::Type::kInt64);
   auto it_row = it_vd->second.int_data().find(tag_values);
-  CHECK(it_row != it_vd->second.int_data().end());
-  CHECK_GE(it_row->second, 0);
+  ABSL_CHECK(it_row != it_vd->second.int_data().end());
+  ABSL_CHECK_GE(it_row->second, 0);
   return it_row->second;
 }
 
@@ -199,17 +199,17 @@ CensusViewProviderDefaultImpl::CensusViewProviderDefaultImpl() {
 }
 
 CensusViewProvider::ViewDataMap CensusViewProviderDefaultImpl::FetchViewData() {
-  VLOG(2) << "[CVP " << this << "] Starts fetching Census view data.";
+  ABSL_VLOG(2) << "[CVP " << this << "] Starts fetching Census view data.";
   ViewDataMap view_data_map;
   for (auto& p : view_map_) {
     const std::string& view_name = p.first;
     ::opencensus::stats::View& view = p.second;
     if (view.IsValid()) {
       view_data_map.emplace(view_name, view.GetData());
-      VLOG(2) << "[CVP " << this << "] Fetched view data (view: " << view_name
+      ABSL_VLOG(2) << "[CVP " << this << "] Fetched view data (view: " << view_name
               << ").";
     } else {
-      VLOG(2) << "[CVP " << this
+      ABSL_VLOG(2) << "[CVP " << this
               << "] Can't fetch view data because view is invalid (view: "
               << view_name << ").";
     }
@@ -220,13 +220,13 @@ CensusViewProvider::ViewDataMap CensusViewProviderDefaultImpl::FetchViewData() {
 std::string LoadReporter::GenerateLbId() {
   while (true) {
     if (next_lb_id_ > UINT32_MAX) {
-      LOG(ERROR) << "[LR " << this
+      ABSL_LOG(ERROR) << "[LR " << this
                  << "] The LB ID exceeds the max valid value!";
       return "";
     }
     int64_t lb_id = next_lb_id_++;
     // Overflow should never happen.
-    CHECK_GE(lb_id, 0);
+    ABSL_CHECK_GE(lb_id, 0);
     // Convert to padded hex string for a 32-bit LB ID. E.g, "0000ca5b".
     char buf[kLbIdLength + 1];
     snprintf(buf, sizeof(buf), "%08" PRIx64, lb_id);
@@ -295,11 +295,11 @@ LoadReporter::GenerateLoads(const std::string& hostname,
                             const std::string& lb_id) {
   grpc_core::MutexLock lock(&store_mu_);
   auto assigned_stores = load_data_store_.GetAssignedStores(hostname, lb_id);
-  CHECK_NE(assigned_stores, nullptr);
-  CHECK(!assigned_stores->empty());
+  ABSL_CHECK_NE(assigned_stores, nullptr);
+  ABSL_CHECK(!assigned_stores->empty());
   ::google::protobuf::RepeatedPtrField<grpc::lb::v1::Load> loads;
   for (PerBalancerStore* per_balancer_store : *assigned_stores) {
-    CHECK(!per_balancer_store->IsSuspended());
+    ABSL_CHECK(!per_balancer_store->IsSuspended());
     if (!per_balancer_store->load_record_map().empty()) {
       for (const auto& p : per_balancer_store->load_record_map()) {
         const auto& key = p.first;
@@ -384,7 +384,7 @@ void LoadReporter::ReportStreamCreated(const std::string& hostname,
                                        const std::string& load_key) {
   grpc_core::MutexLock lock(&store_mu_);
   load_data_store_.ReportStreamCreated(hostname, lb_id, load_key);
-  LOG(INFO) << "[LR " << this << "] Report stream created (host: " << hostname
+  ABSL_LOG(INFO) << "[LR " << this << "] Report stream created (host: " << hostname
             << ", LB ID: " << lb_id << ", load key: " << load_key << ").";
 }
 
@@ -392,7 +392,7 @@ void LoadReporter::ReportStreamClosed(const std::string& hostname,
                                       const std::string& lb_id) {
   grpc_core::MutexLock lock(&store_mu_);
   load_data_store_.ReportStreamClosed(hostname, lb_id);
-  LOG(INFO) << "[LR " << this << "] Report stream closed (host: " << hostname
+  ABSL_LOG(INFO) << "[LR " << this << "] Report stream closed (host: " << hostname
             << ", LB ID: " << lb_id << ").";
 }
 
@@ -433,7 +433,7 @@ void LoadReporter::ProcessViewDataCallEnd(
       // implementation.
       // TODO(juanlishen): Check whether this situation happens in OSS C++.
       if (client_ip_and_token.empty()) {
-        VLOG(2) << "Skipping processing Opencensus record with empty "
+        ABSL_VLOG(2) << "Skipping processing Opencensus record with empty "
                    "client_ip_and_token tag.";
         continue;
       }
@@ -495,7 +495,7 @@ void LoadReporter::ProcessViewDataOtherCallMetrics(
 }
 
 void LoadReporter::FetchAndSample() {
-  VLOG(2) << "[LR " << this
+  ABSL_VLOG(2) << "[LR " << this
           << "] Starts fetching Census view data and sampling LB feedback "
              "record.";
   CensusViewProvider::ViewDataMap view_data_map =

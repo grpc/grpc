@@ -26,7 +26,7 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
@@ -511,11 +511,11 @@ class PromiseActivity final
     // We shouldn't destruct without calling Cancel() first, and that must get
     // us to be done_, so we assume that and have no logic to destruct the
     // promise here.
-    CHECK(done_);
+    ABSL_CHECK(done_);
   }
 
   void RunScheduledWakeup() {
-    CHECK(wakeup_scheduled_.exchange(false, std::memory_order_acq_rel));
+    ABSL_CHECK(wakeup_scheduled_.exchange(false, std::memory_order_acq_rel));
     Step();
     WakeupComplete();
   }
@@ -581,7 +581,7 @@ class PromiseActivity final
   // Notification that we're no longer executing - it's ok to destruct the
   // promise.
   void MarkDone() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
-    CHECK(!std::exchange(done_, true));
+    ABSL_CHECK(!std::exchange(done_, true));
     ScopedContext contexts(this);
     Destruct(&promise_holder_.promise);
   }
@@ -628,10 +628,10 @@ class PromiseActivity final
   // Until there are no wakeups from within and the promise is incomplete:
   // poll the promise.
   std::optional<ResultType> StepLoop() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
-    CHECK(is_current());
+    ABSL_CHECK(is_current());
     while (true) {
       // Run the promise.
-      CHECK(!done_);
+      ABSL_CHECK(!done_);
       auto r = promise_holder_.promise();
       if (auto* status = r.value_if_ready()) {
         // If complete, destroy the promise, flag done, and exit this loop.

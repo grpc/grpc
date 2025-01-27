@@ -23,7 +23,7 @@ grpc_fuzz_test(
     name = "percent_encode_fuzzer",
     srcs = ["percent_encode_fuzzer.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "fuzztest",
         "fuzztest_main",
     ],
@@ -53,7 +53,7 @@ grpc_cc_test(
     name = "slice_test",
     srcs = ["slice_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,
@@ -70,7 +70,7 @@ grpc_cc_test(
     name = "slice_string_helpers_test",
     srcs = ["slice_string_helpers_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,
@@ -85,7 +85,7 @@ grpc_cc_test(
     name = "slice_buffer_test",
     srcs = ["slice_buffer_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     uses_event_engine = False,

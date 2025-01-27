@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
@@ -55,7 +55,7 @@ std::string ManifestFile::Get(const std::string& key) {
     std::getline(filestream_, line);
     if (!line.empty()) {
       std::vector<std::string> kv = absl::StrSplit(line, " ");
-      CHECK_EQ(kv.size(), 2u);
+      ABSL_CHECK_EQ(kv.size(), 2u);
       cache_.emplace(kv[0], kv[1]);
       if (kv[0] == key) {
         return kv[1];

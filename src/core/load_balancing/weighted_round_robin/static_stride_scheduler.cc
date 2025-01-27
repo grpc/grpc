@@ -25,7 +25,7 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 
 namespace grpc_core {
 
@@ -146,7 +146,7 @@ std::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
     }
   }
 
-  CHECK(weights.size() == float_weights.size());
+  ABSL_CHECK(weights.size() == float_weights.size());
   return StaticStrideScheduler{std::move(weights),
                                std::move(next_sequence_func)};
 }
@@ -156,7 +156,7 @@ StaticStrideScheduler::StaticStrideScheduler(
     absl::AnyInvocable<uint32_t()> next_sequence_func)
     : next_sequence_func_(std::move(next_sequence_func)),
       weights_(std::move(weights)) {
-  CHECK(next_sequence_func_ != nullptr);
+  ABSL_CHECK(next_sequence_func_ != nullptr);
 }
 
 size_t StaticStrideScheduler::Pick() const {

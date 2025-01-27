@@ -19,7 +19,7 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/meta/type_traits.h"
 #include "src/core/util/down_cast.h"
 
@@ -113,7 +113,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool HasContext() {
 template <typename T>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T* GetContext() {
   auto* p = promise_detail::Context<T>::get();
-  DCHECK_NE(p, nullptr);
+  ABSL_DCHECK_NE(p, nullptr);
   return p;
 }
 

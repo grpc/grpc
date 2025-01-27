@@ -26,7 +26,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -107,7 +107,7 @@ TEST_F(PartyTest, SpawnAndRunOneParty) {
   n.WaitForNotification();
   absl::StrAppend(&execution_order, "3");
   EXPECT_STREQ(execution_order.c_str(), "PPPP123");
-  VLOG(2) << "Execution order : " << execution_order;
+  ABSL_VLOG(2) << "Execution order : " << execution_order;
 }
 
 auto MakePromise(std::string& execution_order, int num) {
@@ -146,7 +146,7 @@ TEST_F(PartyTest, TestLargeNumberOfSpawnedPromises) {
     std::string current = absl::StrFormat(".L%dD%d", i, i);
     EXPECT_TRUE(absl::StrContains(execution_order, current));
   }
-  VLOG(2) << "Execution order : " << execution_order;
+  ABSL_VLOG(2) << "Execution order : " << execution_order;
 }
 
 auto MakePendingPromise(std::string& execution_order, int num) {
@@ -180,7 +180,7 @@ TEST_F(PartyTest, Test16SpawnedPendingPromises) {
   }
   // The on_done callback should never be called for pending Promises.
   EXPECT_FALSE(absl::StrContains(execution_order, 'D'));
-  VLOG(2) << "Execution order : " << execution_order;
+  ABSL_VLOG(2) << "Execution order : " << execution_order;
 }
 
 TEST_F(PartyTest, SpawnWaitableAndRunTwoParties) {
@@ -267,7 +267,7 @@ TEST_F(PartyTest, CanSpawnFromSpawn) {
   n2.WaitForNotification();
   absl::StrAppend(&execution_order, "6");
   EXPECT_STREQ(execution_order.c_str(), "123PPPP456");
-  VLOG(2) << "Execution order : " << execution_order;
+  ABSL_VLOG(2) << "Execution order : " << execution_order;
 }
 
 TEST_F(PartyTest, CanWakeupWithOwningWaker) {
@@ -322,7 +322,7 @@ TEST_F(PartyTest, CanWakeupWithOwningWaker) {
   // up only after the previous Notification is received.
   EXPECT_STREQ(execution_order.c_str(),
                "AP 0AP 1AP 2AP 3AP 4AP 5AP 6AP 7AP 8AB 9 End");
-  VLOG(2) << "Execution order : " << execution_order;
+  ABSL_VLOG(2) << "Execution order : " << execution_order;
 }
 
 TEST_F(PartyTest, CanWakeupWithNonOwningWaker) {
@@ -361,7 +361,7 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWaker) {
   complete.WaitForNotification();
   EXPECT_TRUE(waker.is_unwakeable());
   absl::StrAppend(&execution_order, " End");
-  VLOG(2) << "Execution order : " << execution_order;
+  ABSL_VLOG(2) << "Execution order : " << execution_order;
   EXPECT_STREQ(execution_order.c_str(),
                "AP 0AP 1AP 2AP 3AP 4AP 5AP 6AP 7AP 8AB 9 End");
 }
@@ -539,7 +539,7 @@ void StressTestAsserts(std::vector<Timestamp>& start_times,
     }
   }
 
-  LOG(INFO) << "Small thread run time : " << fastest_thread_run_time;
+  ABSL_LOG(INFO) << "Small thread run time : " << fastest_thread_run_time;
 
   // TODO(tjagtap) : Too many ways to check the same thing. Explore what we
   // want to keep and what to remove. Just presenting all the options here.
@@ -558,7 +558,7 @@ void StressTestAsserts(std::vector<Timestamp>& start_times,
             (total_sleep_time / kNumThreads) * run_time_by_sleep_time);
 
   for (int i = 0; i < kNumThreads; i++) {
-    LOG(INFO) << "Thread " << i << " started at " << start_times[i]
+    ABSL_LOG(INFO) << "Thread " << i << " started at " << start_times[i]
               << " and finished at " << end_times[i];
 
     // All threads should start before any thread finishes. Thread 1 is likely
@@ -698,7 +698,7 @@ TEST_F(PartyTest, ThreadStressTestQuickSpawn) {
                 // characters, it means that the test has changed and needs
                 // to be updated.
                 EXPECT_EQ(order.length(), 880);
-                VLOG(2) << "Notification by spawn " << spawn_num;
+                ABSL_VLOG(2) << "Notification by spawn " << spawn_num;
                 promise_complete.Notify();
               }
             });
@@ -706,9 +706,9 @@ TEST_F(PartyTest, ThreadStressTestQuickSpawn) {
     });
   }
   for (int i = 0; i < kNumThreads; i++) {
-    VLOG(2) << "Waiting for thread " << i;
+    ABSL_VLOG(2) << "Waiting for thread " << i;
     promises_complete[i].WaitForNotification();
-    VLOG(2) << "Got notification for thread " << i;
+    ABSL_VLOG(2) << "Got notification for thread " << i;
   }
   for (auto& thread : threads) {
     thread.join();

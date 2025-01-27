@@ -26,8 +26,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -46,10 +46,10 @@ FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
     MutexLock lock(&mu_);
     if (transport_->abort_on_undrained_messages()) {
       for (const auto& message : from_client_messages_) {
-        LOG(ERROR) << "[" << transport_->server()->server_uri() << "] " << this
+        ABSL_LOG(ERROR) << "[" << transport_->server()->server_uri() << "] " << this
                    << " From client message left in queue: " << message;
       }
-      CHECK(from_client_messages_.empty());
+      ABSL_CHECK(from_client_messages_.empty());
     }
   }
   // Can't call event_handler_->OnStatusReceived() or unref event_handler_
@@ -76,7 +76,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
     std::string payload) {
   MutexLock lock(&mu_);
-  CHECK(!orphaned_);
+  ABSL_CHECK(!orphaned_);
   from_client_messages_.push_back(std::move(payload));
   if (transport_->auto_complete_messages_from_client()) {
     CompleteSendMessageFromClientLocked(/*ok=*/true);
@@ -118,7 +118,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::
 
 void FakeXdsTransportFactory::FakeStreamingCall::CompleteSendMessageFromClient(
     bool ok) {
-  CHECK(!transport_->auto_complete_messages_from_client());
+  ABSL_CHECK(!transport_->auto_complete_messages_from_client());
   MutexLock lock(&mu_);
   CompleteSendMessageFromClientLocked(ok);
 }

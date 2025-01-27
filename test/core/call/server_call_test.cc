@@ -42,7 +42,7 @@ class ServerCallTest : public YodelTest {
   }
 
   grpc_call* InitCall(ClientMetadataHandle client_initial_metadata) {
-    CHECK_EQ(call_, nullptr);
+    ABSL_CHECK_EQ(call_, nullptr);
     auto arena = SimpleArenaAllocator()->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
         event_engine().get());
@@ -85,7 +85,7 @@ class ServerCallTest : public YodelTest {
   }
 
   std::optional<std::string> GetClientInitialMetadata(absl::string_view key) {
-    CHECK_NE(call_.load(std::memory_order_acquire), nullptr);
+    ABSL_CHECK_NE(call_.load(std::memory_order_acquire), nullptr);
     return FindInMetadataArray(publish_initial_metadata_, key);
   }
 
@@ -121,7 +121,7 @@ class ServerCallTest : public YodelTest {
     grpc_completion_queue_shutdown(cq_);
     auto ev = grpc_completion_queue_next(
         cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-    CHECK_EQ(ev.type, GRPC_QUEUE_SHUTDOWN);
+    ABSL_CHECK_EQ(ev.type, GRPC_QUEUE_SHUTDOWN);
     grpc_completion_queue_destroy(cq_);
   }
 

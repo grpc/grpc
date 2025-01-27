@@ -25,7 +25,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
@@ -172,7 +172,7 @@ class MpscSender {
       if (center == nullptr) return false;
       if (batch == 0) {
         batch = center->Send(std::move(t), kAwaitReceipt);
-        CHECK_NE(batch, 0u);
+        ABSL_CHECK_NE(batch, 0u);
         if (batch == mpscpipe_detail::Center<T>::kClosedBatch) return false;
       }
       auto p = center->PollReceiveBatch(batch);
@@ -212,10 +212,10 @@ class MpscReceiver {
   // a non-empty buffer during a legal move!
   MpscReceiver(MpscReceiver&& other) noexcept
       : center_(std::move(other.center_)) {
-    DCHECK(other.buffer_.empty());
+    ABSL_DCHECK(other.buffer_.empty());
   }
   MpscReceiver& operator=(MpscReceiver&& other) noexcept {
-    DCHECK(other.buffer_.empty());
+    ABSL_DCHECK(other.buffer_.empty());
     center_ = std::move(other.center_);
     return *this;
   }

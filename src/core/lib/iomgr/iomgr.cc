@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -81,7 +81,7 @@ size_t grpc_iomgr_count_objects_for_testing(void) {
 static void dump_objects(const char* kind) {
   grpc_iomgr_object* obj;
   for (obj = g_root_object.next; obj != &g_root_object; obj = obj->next) {
-    VLOG(2) << kind << " OBJECT: " << obj->name << " " << obj;
+    ABSL_VLOG(2) << kind << " OBJECT: " << obj->name << " " << obj;
   }
 }
 
@@ -101,7 +101,7 @@ void grpc_iomgr_shutdown() {
               gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), last_warning_time),
               gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
         if (g_root_object.next != &g_root_object) {
-          VLOG(2) << "Waiting for " << count_objects()
+          ABSL_VLOG(2) << "Waiting for " << count_objects()
                   << " iomgr objects to be destroyed";
         }
         last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
@@ -116,7 +116,7 @@ void grpc_iomgr_shutdown() {
       }
       if (g_root_object.next != &g_root_object) {
         if (grpc_iomgr_abort_on_leaks()) {
-          VLOG(2) << "Failed to free " << count_objects()
+          ABSL_VLOG(2) << "Failed to free " << count_objects()
                   << " iomgr objects before shutdown deadline: "
                   << "memory leaks are likely";
           dump_objects("LEAKED");
@@ -129,7 +129,7 @@ void grpc_iomgr_shutdown() {
           if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), shutdown_deadline) >
               0) {
             if (g_root_object.next != &g_root_object) {
-              VLOG(2) << "Failed to free " << count_objects()
+              ABSL_VLOG(2) << "Failed to free " << count_objects()
                       << " iomgr objects before shutdown deadline: "
                       << "memory leaks are likely";
               dump_objects("LEAKED");

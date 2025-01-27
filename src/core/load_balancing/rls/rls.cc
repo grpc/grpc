@@ -53,8 +53,8 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/hash/hash.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -878,7 +878,7 @@ void RlsLb::ChildPolicyWrapper::StartUpdate(
   auto child_policy_config = InsertOrUpdateChildPolicyField(
       lb_policy_->config_->child_policy_config_target_field_name(), target_,
       lb_policy_->config_->child_policy_config(), &errors);
-  CHECK(child_policy_config.has_value());
+  ABSL_CHECK(child_policy_config.has_value());
   GRPC_TRACE_LOG(rls_lb, INFO)
       << "[rlslb " << lb_policy_.get() << "] ChildPolicyWrapper=" << this
       << " [" << target_
@@ -955,7 +955,7 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
       return;
     }
     wrapper_->connectivity_state_ = state;
-    DCHECK(picker != nullptr);
+    ABSL_DCHECK(picker != nullptr);
     if (picker != nullptr) {
       // We want to unref the picker after we release the lock.
       wrapper_->picker_.swap(picker);
@@ -979,7 +979,7 @@ std::map<std::string, std::string> BuildKeyMap(
   if (it == key_builder_map.end()) {
     // Didn't find exact match, try method wildcard.
     last_slash_pos = path.rfind('/');
-    DCHECK(last_slash_pos != path.npos);
+    ABSL_DCHECK(last_slash_pos != path.npos);
     if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     std::string service(path.substr(0, last_slash_pos + 1));
     it = key_builder_map.find(service);
@@ -1011,7 +1011,7 @@ std::map<std::string, std::string> BuildKeyMap(
   if (!key_builder->service_key.empty()) {
     if (last_slash_pos == path.npos) {
       last_slash_pos = path.rfind('/');
-      DCHECK(last_slash_pos != path.npos);
+      ABSL_DCHECK(last_slash_pos != path.npos);
       if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     }
     key_map[key_builder->service_key] =
@@ -1021,7 +1021,7 @@ std::map<std::string, std::string> BuildKeyMap(
   if (!key_builder->method_key.empty()) {
     if (last_slash_pos == path.npos) {
       last_slash_pos = path.rfind('/');
-      DCHECK(last_slash_pos != path.npos);
+      ABSL_DCHECK(last_slash_pos != path.npos);
       if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     }
     key_map[key_builder->method_key] =
@@ -1208,7 +1208,7 @@ void RlsLb::Cache::Entry::Orphan() {
   is_shutdown_ = true;
   lb_policy_->cache_.lru_list_.erase(lru_iterator_);
   lru_iterator_ = lb_policy_->cache_.lru_list_.end();  // Just in case.
-  CHECK(child_policy_wrappers_.empty());
+  ABSL_CHECK(child_policy_wrappers_.empty());
   backoff_state_.reset();
   if (backoff_timer_ != nullptr) {
     backoff_timer_.reset();
@@ -1219,7 +1219,7 @@ void RlsLb::Cache::Entry::Orphan() {
 
 size_t RlsLb::Cache::Entry::Size() const {
   // lru_iterator_ is not valid once we're shut down.
-  CHECK(!is_shutdown_);
+  ABSL_CHECK(!is_shutdown_);
   return lb_policy_->cache_.EntrySizeForKey(*lru_iterator_);
 }
 
@@ -1512,7 +1512,7 @@ void RlsLb::Cache::MaybeShrinkSize(
     auto lru_it = lru_list_.begin();
     if (GPR_UNLIKELY(lru_it == lru_list_.end())) break;
     auto map_it = map_.find(*lru_it);
-    CHECK(map_it != map_.end());
+    ABSL_CHECK(map_it != map_.end());
     auto& entry = map_it->second;
     if (!entry->CanEvict()) break;
     GRPC_TRACE_LOG(rls_lb, INFO)
@@ -1660,7 +1660,7 @@ void RlsLb::RlsChannel::Orphan() {
     // Remove channelz linkage.
     if (parent_channelz_node_ != nullptr) {
       channelz::ChannelNode* child_channelz_node = channel_->channelz_node();
-      CHECK_NE(child_channelz_node, nullptr);
+      ABSL_CHECK_NE(child_channelz_node, nullptr);
       parent_channelz_node_->RemoveChildChannel(child_channelz_node->uuid());
     }
     // Stop connectivity watch.
@@ -1696,7 +1696,7 @@ void RlsLb::RlsChannel::ReportResponseLocked(bool response_succeeded) {
 }
 
 void RlsLb::RlsChannel::ResetBackoff() {
-  DCHECK(channel_ != nullptr);
+  ABSL_DCHECK(channel_ != nullptr);
   channel_->ResetConnectionBackoff();
 }
 
@@ -1729,7 +1729,7 @@ RlsLb::RlsRequest::RlsRequest(
       absl::OkStatus());
 }
 
-RlsLb::RlsRequest::~RlsRequest() { CHECK_EQ(call_, nullptr); }
+RlsLb::RlsRequest::~RlsRequest() { ABSL_CHECK_EQ(call_, nullptr); }
 
 void RlsLb::RlsRequest::Orphan() {
   if (call_ != nullptr) {
@@ -1791,7 +1791,7 @@ void RlsLb::RlsRequest::StartCallLocked() {
   Ref(DEBUG_LOCATION, "OnRlsCallComplete").release();
   auto call_error = grpc_call_start_batch_and_execute(
       call_, ops, static_cast<size_t>(op - ops), &call_complete_cb_);
-  CHECK_EQ(call_error, GRPC_CALL_OK);
+  ABSL_CHECK_EQ(call_error, GRPC_CALL_OK);
 }
 
 void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
@@ -1807,7 +1807,7 @@ void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
 void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
     std::string status_message(StringViewFromSlice(status_details_recv_));
-    LOG(INFO) << "[rlslb " << lb_policy_.get() << "] rls_request=" << this
+    ABSL_LOG(INFO) << "[rlslb " << lb_policy_.get() << "] rls_request=" << this
               << " " << key_.ToString() << ", error=" << StatusToString(error)
               << ", status={" << status_recv_ << ", " << status_message << "}"
               << " RLS call response received";
@@ -1984,7 +1984,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb) &&
       (old_config == nullptr ||
        old_config->child_policy_config() != config_->child_policy_config())) {
-    LOG(INFO) << "[rlslb " << this << "] updated child policy config: "
+    ABSL_LOG(INFO) << "[rlslb " << this << "] updated child policy config: "
               << JsonDump(config_->child_policy_config());
   }
   // Swap out addresses.

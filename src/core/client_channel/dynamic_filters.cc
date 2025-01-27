@@ -22,8 +22,8 @@
 #include <new>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -64,7 +64,7 @@ DynamicFilters::Call::Call(Args args, grpc_error_handle* error)
   *error = grpc_call_stack_init(channel_stack_->channel_stack_.get(), 1,
                                 Destroy, this, &call_args);
   if (GPR_UNLIKELY(!error->ok())) {
-    LOG(ERROR) << "error: " << StatusToString(*error);
+    ABSL_LOG(ERROR) << "error: " << StatusToString(*error);
     return;
   }
   grpc_call_stack_set_pollset_or_pollset_set(call_stack, args.pollent);
@@ -81,8 +81,8 @@ void DynamicFilters::Call::StartTransportStreamOpBatch(
 }
 
 void DynamicFilters::Call::SetAfterCallStackDestroy(grpc_closure* closure) {
-  CHECK_EQ(after_call_stack_destroy_, nullptr);
-  CHECK_NE(closure, nullptr);
+  ABSL_CHECK_EQ(after_call_stack_destroy_, nullptr);
+  ABSL_CHECK_NE(closure, nullptr);
   after_call_stack_destroy_ = closure;
 }
 

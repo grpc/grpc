@@ -30,7 +30,7 @@
 #include <grpc/grpc.h>
 #include <string.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -59,7 +59,7 @@ void grpc_prefork() {
   }
   grpc_core::ExecCtx exec_ctx;
   if (!grpc_core::Fork::Enabled()) {
-    LOG(ERROR) << "Fork support not enabled; try running with the "
+    ABSL_LOG(ERROR) << "Fork support not enabled; try running with the "
                   "environment variable GRPC_ENABLE_FORK_SUPPORT=1";
     return;
   }
@@ -67,12 +67,12 @@ void grpc_prefork() {
   if (poll_strategy_name == nullptr ||
       (strcmp(poll_strategy_name, "epoll1") != 0 &&
        strcmp(poll_strategy_name, "poll") != 0)) {
-    LOG(INFO) << "Fork support is only compatible with the epoll1 and poll "
+    ABSL_LOG(INFO) << "Fork support is only compatible with the epoll1 and poll "
                  "polling strategies";
     return;
   }
   if (!grpc_core::Fork::BlockExecCtx()) {
-    LOG(INFO) << "Other threads are currently calling into gRPC, skipping "
+    ABSL_LOG(INFO) << "Other threads are currently calling into gRPC, skipping "
                  "fork() handlers";
     return;
   }

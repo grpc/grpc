@@ -37,7 +37,7 @@
     if (prev == 0) prev = now;                                  \
     if (now - prev > (n) * 1000) {                              \
       prev = now;                                               \
-      VLOG(2) << absl::StrFormat(format, __VA_ARGS__);          \
+      ABSL_VLOG(2) << absl::StrFormat(format, __VA_ARGS__);          \
     }                                                           \
   } while (0)
 

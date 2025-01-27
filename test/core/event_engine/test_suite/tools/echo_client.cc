@@ -15,7 +15,7 @@
 #include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 
 // The echo client wraps an EventEngine::Connect and EventEngine::Endpoint
 // implementations, allowing third-party TCP listeners to interact with your
@@ -42,7 +42,7 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -78,7 +78,7 @@ void SendMessage(EventEngine::Endpoint* endpoint, int message_id) {
   grpc_core::Notification write_done;
   endpoint->Write(
       [&](absl::Status status) {
-        CHECK_OK(status);
+        ABSL_CHECK_OK(status);
         write_done.Notify();
       },
       &buf, nullptr);
@@ -91,11 +91,11 @@ void ReceiveAndEchoMessage(EventEngine::Endpoint* endpoint, int message_id) {
   endpoint->Read(
       [&](absl::Status status) {
         if (!status.ok()) {
-          LOG(ERROR) << "Error reading from endpoint: " << status;
+          ABSL_LOG(ERROR) << "Error reading from endpoint: " << status;
           exit(1);
         }
         Slice received = buf.TakeFirst();
-        LOG(ERROR) << "Received message " << message_id << ": "
+        ABSL_LOG(ERROR) << "Received message " << message_id << ": "
                    << received.as_string_view();
         read_done.Notify();
       },
@@ -116,11 +116,11 @@ void RunUntilInterrupted() {
           .resolver_registry()
           .AddDefaultPrefixIfNeeded(absl::GetFlag(FLAGS_target));
   auto addr = URIToResolvedAddress(canonical_target);
-  CHECK_OK(addr);
+  ABSL_CHECK_OK(addr);
   engine->Connect(
       [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         if (!ep.ok()) {
-          LOG(ERROR) << "Error connecting: " << ep.status().ToString();
+          ABSL_LOG(ERROR) << "Error connecting: " << ep.status().ToString();
           exit(1);
         }
         endpoint = std::move(*ep);
@@ -128,10 +128,10 @@ void RunUntilInterrupted() {
       },
       *addr, config, memory_quota->CreateMemoryAllocator("client"), 2h);
   connected.WaitForNotification();
-  CHECK_NE(endpoint.get(), nullptr);
-  VLOG(2) << "peer addr: "
+  ABSL_CHECK_NE(endpoint.get(), nullptr);
+  ABSL_VLOG(2) << "peer addr: "
           << ResolvedAddressToString(endpoint->GetPeerAddress());
-  VLOG(2) << "local addr: "
+  ABSL_VLOG(2) << "local addr: "
           << ResolvedAddressToString(endpoint->GetLocalAddress());
   int message_id = 0;
   while (true) {

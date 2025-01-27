@@ -54,7 +54,7 @@ void Log::TryPullEventsAndFlush(
   // This is relatively quick and ensures that we don't stall capture for
   // long.
   for (auto& fragment : fragments_) {
-    CHECK_EQ(fragment.flushing.size(), 0);
+    ABSL_CHECK_EQ(fragment.flushing.size(), 0);
     MutexLock lock(&fragment.mu_active);
     fragment.flushing.swap(fragment.active);
   }

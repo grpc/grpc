@@ -24,8 +24,8 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -64,7 +64,7 @@ size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
                                                sizeof(grpc_channel_element));
   size_t i;
 
-  CHECK((GPR_MAX_ALIGNMENT & (GPR_MAX_ALIGNMENT - 1)) == 0)
+  ABSL_CHECK((GPR_MAX_ALIGNMENT & (GPR_MAX_ALIGNMENT - 1)) == 0)
       << "GPR_MAX_ALIGNMENT must be a power of two";
 
   // add the size for each filter
@@ -117,9 +117,9 @@ grpc_error_handle grpc_channel_stack_init(
     grpc_channel_stack* stack, const grpc_core::Blackboard* old_blackboard,
     grpc_core::Blackboard* new_blackboard) {
   if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
-    LOG(INFO) << "CHANNEL_STACK: init " << name;
+    ABSL_LOG(INFO) << "CHANNEL_STACK: init " << name;
     for (size_t i = 0; i < filter_count; i++) {
-      LOG(INFO) << "CHANNEL_STACK:   filter " << filters[i]->name;
+      ABSL_LOG(INFO) << "CHANNEL_STACK:   filter " << filters[i]->name;
     }
   }
 
@@ -166,8 +166,8 @@ grpc_error_handle grpc_channel_stack_init(
     call_size += GPR_ROUND_UP_TO_ALIGNMENT_SIZE(filters[i]->sizeof_call_data);
   }
 
-  CHECK(user_data > (char*)stack);
-  CHECK((uintptr_t)(user_data - (char*)stack) ==
+  ABSL_CHECK(user_data > (char*)stack);
+  ABSL_CHECK((uintptr_t)(user_data - (char*)stack) ==
         grpc_channel_stack_size(filters, filter_count));
 
   stack->call_stack_size = call_size;

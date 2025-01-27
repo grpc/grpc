@@ -27,8 +27,8 @@
 #include <set>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -95,7 +95,7 @@ void MaybeLogClusterLoadAssignment(
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(cla), msg_type, nullptr,
                    0, buf, sizeof(buf));
-    VLOG(2) << "[xds_client " << context.client
+    ABSL_VLOG(2) << "[xds_client " << context.client
             << "] ClusterLoadAssignment: " << buf;
   }
 }
@@ -366,7 +366,7 @@ absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> EdsResourceParse(
       auto parsed_locality =
           LocalityParse(context, endpoints[i], &address_set, &errors);
       if (parsed_locality.has_value()) {
-        CHECK_NE(parsed_locality->locality.lb_weight, 0u);
+        ABSL_CHECK_NE(parsed_locality->locality.lb_weight, 0u);
         // Make sure prorities is big enough. Note that they might not
         // arrive in priority order.
         if (eds_resource->priorities.size() < parsed_locality->priority + 1) {
@@ -456,14 +456,14 @@ XdsResourceType::DecodeResult XdsEndpointResourceType::Decode(
   auto eds_resource = EdsResourceParse(context, resource);
   if (!eds_resource.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-      LOG(ERROR) << "[xds_client " << context.client
+      ABSL_LOG(ERROR) << "[xds_client " << context.client
                  << "] invalid ClusterLoadAssignment " << *result.name << ": "
                  << eds_resource.status();
     }
     result.resource = eds_resource.status();
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-      LOG(INFO) << "[xds_client " << context.client
+      ABSL_LOG(INFO) << "[xds_client " << context.client
                 << "] parsed ClusterLoadAssignment " << *result.name << ": "
                 << (*eds_resource)->ToString();
     }

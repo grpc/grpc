@@ -21,7 +21,7 @@
 
 #include <thread>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
@@ -109,7 +109,7 @@ Status EchoTestServiceImpl::Echo(ServerContext* context,
   absl::StrAppend(&s, kHostnameField, "=", this->hostname_, "\n");
   absl::StrAppend(&s, "Echo=", request->message(), "\n");
   response->set_message(s);
-  LOG(INFO) << "Echo response:\n" << s;
+  ABSL_LOG(INFO) << "Echo response:\n" << s;
   return Status::OK;
 }
 
@@ -129,7 +129,7 @@ Status EchoTestServiceImpl::ForwardEcho(ServerContext* context,
   if (scheme == "xds") {
     // We can optionally add support for TLS creds, but we are primarily
     // concerned with proxyless-grpc here.
-    LOG(INFO) << "Creating channel to " << raw_url << " using xDS Creds";
+    ABSL_LOG(INFO) << "Creating channel to " << raw_url << " using xDS Creds";
     channel =
         CreateChannel(raw_url, XdsCredentials(InsecureChannelCredentials()));
   } else if (scheme == "grpc") {
@@ -137,10 +137,10 @@ Status EchoTestServiceImpl::ForwardEcho(ServerContext* context,
     // this to be supported. If we ever decide to add support for this properly,
     // we would need to add support for TLS creds here.
     absl::string_view address = absl::StripPrefix(raw_url, "grpc://");
-    LOG(INFO) << "Creating channel to " << address;
+    ABSL_LOG(INFO) << "Creating channel to " << address;
     channel = CreateChannel(std::string(address), InsecureChannelCredentials());
   } else {
-    LOG(INFO) << "Protocol " << scheme << " not supported. Forwarding to "
+    ABSL_LOG(INFO) << "Protocol " << scheme << " not supported. Forwarding to "
               << forwarding_address_;
     ClientContext forwarding_ctx;
     forwarding_ctx.set_deadline(context->deadline());
@@ -196,9 +196,9 @@ Status EchoTestServiceImpl::ForwardEcho(ServerContext* context,
         absl::StrAppend(&body, absl::StrFormat("[%d body] %s\n", i, line));
       }
       response->add_output(body);
-      LOG(INFO) << "Forward Echo response:" << i << "\n" << body;
+      ABSL_LOG(INFO) << "Forward Echo response:" << i << "\n" << body;
     } else {
-      LOG(ERROR) << "RPC " << i << " failed " << calls[i].status.error_code()
+      ABSL_LOG(ERROR) << "RPC " << i << " failed " << calls[i].status.error_code()
                  << ": " << calls[i].status.error_message();
       response->clear_output();
       return calls[i].status;

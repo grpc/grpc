@@ -28,7 +28,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 
 #ifdef BAZEL_BUILD
@@ -85,20 +85,20 @@ void RunServer() {
         absl::StrCat("0.0.0.0:", port),
         grpc::XdsServerCredentials(grpc::InsecureServerCredentials()));
     xds_enabled_server = xds_builder.BuildAndStart();
-    LOG(INFO) << "Server starting on 0.0.0.0:" << port;
+    ABSL_LOG(INFO) << "Server starting on 0.0.0.0:" << port;
     grpc::AddAdminServices(&builder);
     // For the maintenance server, do not use any authentication mechanism.
     builder.AddListeningPort(absl::StrCat("0.0.0.0:", maintenance_port),
                              grpc::InsecureServerCredentials());
     server = builder.BuildAndStart();
-    LOG(INFO) << "Maintenance server listening on 0.0.0.0:" << maintenance_port;
+    ABSL_LOG(INFO) << "Maintenance server listening on 0.0.0.0:" << maintenance_port;
   } else {
     grpc::AddAdminServices(&xds_builder);
     // Listen on the given address without any authentication mechanism.
     builder.AddListeningPort(absl::StrCat("0.0.0.0:", port),
                              grpc::InsecureServerCredentials());
     server = xds_builder.BuildAndStart();
-    LOG(INFO) << "Server listening on 0.0.0.0:" << port;
+    ABSL_LOG(INFO) << "Server listening on 0.0.0.0:" << port;
   }
 
   // Wait for the server to shutdown. Note that some other thread must be

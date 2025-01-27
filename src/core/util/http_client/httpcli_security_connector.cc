@@ -28,7 +28,7 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -92,7 +92,7 @@ class grpc_httpcli_ssl_channel_security_connector final
           handshaker_factory_, secure_peer_name_, /*network_bio_buf_size=*/0,
           /*ssl_bio_buf_size=*/0, &handshaker);
       if (result != TSI_OK) {
-        LOG(ERROR) << "Handshaker creation failed with error "
+        ABSL_LOG(ERROR) << "Handshaker creation failed with error "
                    << tsi_result_to_string(result);
       }
     }
@@ -146,7 +146,7 @@ httpcli_ssl_channel_security_connector_create(
     const char* pem_root_certs, const tsi_ssl_root_certs_store* root_store,
     const char* secure_peer_name) {
   if (secure_peer_name != nullptr && pem_root_certs == nullptr) {
-    LOG(ERROR) << "Cannot assert a secure peer name without a trust root.";
+    ABSL_LOG(ERROR) << "Cannot assert a secure peer name without a trust root.";
     return nullptr;
   }
   RefCountedPtr<grpc_httpcli_ssl_channel_security_connector> c =
@@ -154,7 +154,7 @@ httpcli_ssl_channel_security_connector_create(
           secure_peer_name == nullptr ? nullptr : gpr_strdup(secure_peer_name));
   tsi_result result = c->InitHandshakerFactory(pem_root_certs, root_store);
   if (result != TSI_OK) {
-    LOG(ERROR) << "Handshaker factory creation failed with "
+    ABSL_LOG(ERROR) << "Handshaker factory creation failed with "
                << tsi_result_to_string(result);
     return nullptr;
   }
@@ -170,7 +170,7 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
     const tsi_ssl_root_certs_store* root_store =
         DefaultSslRootStore::GetRootStore();
     if (root_store == nullptr) {
-      LOG(ERROR) << "Could not get default pem root certs.";
+      ABSL_LOG(ERROR) << "Could not get default pem root certs.";
       return nullptr;
     }
     std::optional<std::string> target_string =

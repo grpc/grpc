@@ -22,14 +22,14 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 
 namespace grpc {
 
 std::shared_ptr<ServerCredentials> XdsServerCredentials(
     const std::shared_ptr<ServerCredentials>& fallback_credentials) {
-  CHECK_NE(fallback_credentials, nullptr);
-  CHECK_NE(fallback_credentials->c_creds_, nullptr);
+  ABSL_CHECK_NE(fallback_credentials, nullptr);
+  ABSL_CHECK_NE(fallback_credentials->c_creds_, nullptr);
   return std::shared_ptr<ServerCredentials>(new ServerCredentials(
       grpc_xds_server_credentials_create(fallback_credentials->c_creds_)));
 }

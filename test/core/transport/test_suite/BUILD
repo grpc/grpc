@@ -38,7 +38,7 @@ grpc_cc_library(
     srcs = ["chaotic_good_fixture_helpers.cc"],
     hdrs = ["chaotic_good_fixture_helpers.h"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -57,7 +57,7 @@ grpc_cc_library(
     testonly = 1,
     srcs = ["chaotic_good_fixture.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -71,7 +71,7 @@ grpc_cc_library(
     testonly = 1,
     srcs = ["chaotic_good_single_connection_fixture.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -85,7 +85,7 @@ grpc_cc_library(
     testonly = 1,
     srcs = ["chaotic_good_one_byte_chunk_fixture.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -100,7 +100,7 @@ grpc_cc_library(
     srcs = ["transport_test.cc"],
     hdrs = ["transport_test.h"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "absl/random",
         "absl/random:bit_gen_ref",
         "gtest",

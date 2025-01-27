@@ -25,7 +25,7 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/sync.h"
@@ -37,7 +37,7 @@ PromiseEndpoint::PromiseEndpoint(
         endpoint,
     SliceBuffer already_received)
     : endpoint_(std::move(endpoint)) {
-  CHECK_NE(endpoint_, nullptr);
+  ABSL_CHECK_NE(endpoint_, nullptr);
   read_state_->endpoint = endpoint_;
   // TODO(ladynana): Replace this with `SliceBufferCast<>` when it is
   // available.
@@ -71,7 +71,7 @@ void PromiseEndpoint::ReadState::Complete(absl::Status status,
     // Appends `pending_buffer` to `buffer`.
     pending_buffer.MoveFirstNBytesIntoSliceBuffer(pending_buffer.Length(),
                                                   buffer);
-    DCHECK(pending_buffer.Count() == 0u);
+    ABSL_DCHECK(pending_buffer.Count() == 0u);
     if (buffer.Length() < num_bytes_requested) {
       // A further read is needed.
       // Set read args with number of bytes needed as hint.

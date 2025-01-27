@@ -28,8 +28,8 @@
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/debug/trace.h"
@@ -241,7 +241,7 @@ class EnvironmentAutoDetectHelper
 
   void FetchMetadataServerAttributesAsynchronouslyLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    CHECK(!attributes_to_fetch_.empty());
+    ABSL_CHECK(!attributes_to_fetch_.empty());
     for (auto& element : attributes_to_fetch_) {
       queries_.push_back(grpc_core::MakeOrphanable<grpc_core::GcpMetadataQuery>(
           element.first, &pollent_,
@@ -273,7 +273,7 @@ class EnvironmentAutoDetectHelper
                 attributes_to_fetch_.erase(it);
               } else {
                 // This should not happen
-                LOG(ERROR) << "An unexpected attribute was seen from the "
+                ABSL_LOG(ERROR) << "An unexpected attribute was seen from the "
                               "MetadataServer: "
                            << attribute;
               }
@@ -319,8 +319,8 @@ EnvironmentAutoDetect* g_autodetect = nullptr;
 }  // namespace
 
 void EnvironmentAutoDetect::Create(std::string project_id) {
-  CHECK_EQ(g_autodetect, nullptr);
-  CHECK(!project_id.empty());
+  ABSL_CHECK_EQ(g_autodetect, nullptr);
+  ABSL_CHECK(!project_id.empty());
 
   g_autodetect = new EnvironmentAutoDetect(project_id);
 }
@@ -329,7 +329,7 @@ EnvironmentAutoDetect& EnvironmentAutoDetect::Get() { return *g_autodetect; }
 
 EnvironmentAutoDetect::EnvironmentAutoDetect(std::string project_id)
     : project_id_(std::move(project_id)) {
-  CHECK(!project_id_.empty());
+  ABSL_CHECK(!project_id_.empty());
 }
 
 void EnvironmentAutoDetect::NotifyOnDone(absl::AnyInvocable<void()> callback) {

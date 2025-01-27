@@ -27,7 +27,7 @@
 #include <new>
 #include <optional>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_service_config.h"
 #include "src/core/client_channel/retry_throttle.h"
@@ -84,8 +84,8 @@ class RetryFilter final {
 
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* args) {
-    CHECK(args->is_last);
-    CHECK(elem->filter == &kVtable);
+    ABSL_CHECK(args->is_last);
+    ABSL_CHECK(elem->filter == &kVtable);
     grpc_error_handle error;
     new (elem->channel_data) RetryFilter(args->channel_args, &error);
     return error;

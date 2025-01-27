@@ -42,7 +42,7 @@ class ConnectedSubchannelTest : public YodelTest {
 
   RefCountedPtr<ConnectedSubchannel> InitChannel(const ChannelArgs& args) {
     grpc_resolved_address addr;
-    CHECK(grpc_parse_uri(URI::Parse(kTestAddress).value(), &addr));
+    ABSL_CHECK(grpc_parse_uri(URI::Parse(kTestAddress).value(), &addr));
     auto subchannel = Subchannel::Create(MakeOrphanable<TestConnector>(this),
                                          addr, CompleteArgs(args));
     {
@@ -99,7 +99,7 @@ class ConnectedSubchannelTest : public YodelTest {
     void SetPollset(grpc_stream*, grpc_pollset*) override {}
     void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
     void PerformOp(grpc_transport_op* op) override {
-      LOG(INFO) << "PerformOp: " << grpc_transport_op_string(op);
+      ABSL_LOG(INFO) << "PerformOp: " << grpc_transport_op_string(op);
       if (op->start_connectivity_watch != nullptr) {
         state_tracker_.AddWatcher(op->start_connectivity_watch_state,
                                   std::move(op->start_connectivity_watch));

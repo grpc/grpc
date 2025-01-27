@@ -78,7 +78,7 @@ grpc_cc_test(
     external_deps = [
         "absl/debugging:stacktrace",
         "absl/debugging:symbolize",
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     # TODO(https://github.com/grpc/grpc/issues/24627): Disable this on Windows
@@ -214,7 +214,7 @@ grpc_cc_test(
     srcs = ["mpscq_test.cc"],
     exec_properties = LARGE_MACHINE,
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
@@ -254,7 +254,7 @@ grpc_cc_test(
     name = "dual_ref_counted_test",
     srcs = ["dual_ref_counted_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -268,7 +268,7 @@ grpc_cc_test(
     srcs = ["ref_counted_ptr_test.cc"],
     external_deps = [
         "absl/container:flat_hash_set",
-        "absl/log:check",
+        "absl/log:absl_check",
         "gtest",
     ],
     deps = [
@@ -365,7 +365,7 @@ grpc_proto_fuzzer(
     name = "chunked_vector_fuzzer",
     srcs = ["chunked_vector_fuzzer.cc"],
     corpus = "chunked_vector_corpora",
-    external_deps = ["absl/log:check"],
+    external_deps = ["absl/log:absl_check"],
     proto = "chunked_vector_fuzzer.proto",
     tags = ["no_windows"],
     uses_event_engine = False,
@@ -392,7 +392,7 @@ grpc_cc_test(
     name = "single_set_ptr_test",
     srcs = ["single_set_ptr_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,
@@ -614,7 +614,7 @@ grpc_cc_test(
     name = "env_test",
     srcs = ["env_test.cc"],
     external_deps = [
-        "absl/log:log",
+        "absl/log:absl_log",
         "gtest",
     ],
     uses_event_engine = False,

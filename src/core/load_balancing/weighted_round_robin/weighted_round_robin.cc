@@ -33,8 +33,8 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -574,7 +574,7 @@ void WeightedRoundRobin::Picker::Orphaned() {
 
 WeightedRoundRobin::PickResult WeightedRoundRobin::Picker::Pick(PickArgs args) {
   size_t index = PickIndex();
-  CHECK(index < endpoints_.size());
+  ABSL_CHECK(index < endpoints_.size());
   auto& endpoint_info = endpoints_[index];
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
       << "[WRR " << wrr_.get() << " picker " << this << "] returning index "
@@ -704,8 +704,8 @@ WeightedRoundRobin::WeightedRoundRobin(Args args)
 WeightedRoundRobin::~WeightedRoundRobin() {
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
       << "[WRR " << this << "] Destroying Round Robin policy";
-  CHECK(endpoint_list_ == nullptr);
-  CHECK(latest_pending_endpoint_list_ == nullptr);
+  ABSL_CHECK(endpoint_list_ == nullptr);
+  ABSL_CHECK(latest_pending_endpoint_list_ == nullptr);
 }
 
 void WeightedRoundRobin::ShutdownLocked() {
@@ -765,7 +765,7 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   // Create new endpoint list, replacing the previous pending list, if any.
   if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb) &&
       latest_pending_endpoint_list_ != nullptr) {
-    LOG(INFO) << "[WRR " << this
+    ABSL_LOG(INFO) << "[WRR " << this
               << "] replacing previous pending endpoint list "
               << latest_pending_endpoint_list_.get();
   }
@@ -778,7 +778,7 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   if (latest_pending_endpoint_list_->size() == 0) {
     if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb) &&
         endpoint_list_ != nullptr) {
-      LOG(INFO) << "[WRR " << this << "] replacing previous endpoint list "
+      ABSL_LOG(INFO) << "[WRR " << this << "] replacing previous endpoint list "
                 << endpoint_list_.get();
     }
     endpoint_list_ = std::move(latest_pending_endpoint_list_);
@@ -904,20 +904,20 @@ void WeightedRoundRobin::WrrEndpointList::UpdateStateCountersLocked(
   // We treat IDLE the same as CONNECTING, since it will immediately
   // transition into that state anyway.
   if (old_state.has_value()) {
-    CHECK(*old_state != GRPC_CHANNEL_SHUTDOWN);
+    ABSL_CHECK(*old_state != GRPC_CHANNEL_SHUTDOWN);
     if (*old_state == GRPC_CHANNEL_READY) {
-      CHECK_GT(num_ready_, 0u);
+      ABSL_CHECK_GT(num_ready_, 0u);
       --num_ready_;
     } else if (*old_state == GRPC_CHANNEL_CONNECTING ||
                *old_state == GRPC_CHANNEL_IDLE) {
-      CHECK_GT(num_connecting_, 0u);
+      ABSL_CHECK_GT(num_connecting_, 0u);
       --num_connecting_;
     } else if (*old_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      CHECK_GT(num_transient_failure_, 0u);
+      ABSL_CHECK_GT(num_transient_failure_, 0u);
       --num_transient_failure_;
     }
   }
-  CHECK(new_state != GRPC_CHANNEL_SHUTDOWN);
+  ABSL_CHECK(new_state != GRPC_CHANNEL_SHUTDOWN);
   if (new_state == GRPC_CHANNEL_READY) {
     ++num_ready_;
   } else if (new_state == GRPC_CHANNEL_CONNECTING ||
@@ -944,7 +944,7 @@ void WeightedRoundRobin::WrrEndpointList::
        (num_ready_ > 0 && AllEndpointsSeenInitialState()) ||
        num_transient_failure_ == size())) {
     if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      LOG(INFO) << "[WRR " << wrr << "] swapping out endpoint list "
+      ABSL_LOG(INFO) << "[WRR " << wrr << "] swapping out endpoint list "
                 << wrr->endpoint_list_.get() << " ("
                 << wrr->endpoint_list_->CountersString() << ") in favor of "
                 << this << " (" << CountersString() << ")";

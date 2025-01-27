@@ -103,7 +103,7 @@ class RetryInterceptor : public Interceptor {
       if (current_attempt_ == attempt) current_attempt_ = nullptr;
     }
     bool IsCurrentAttempt(Attempt* attempt) {
-      CHECK(attempt != nullptr);
+      ABSL_CHECK(attempt != nullptr);
       return current_attempt_ == attempt;
     }
 

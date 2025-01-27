@@ -35,8 +35,8 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "google/protobuf/duration.upb.h"
@@ -68,7 +68,7 @@ OrcaService::Reactor::Reactor(OrcaService* service, absl::string_view peer,
   Slice slice;
   grpc::Status status = request_buffer->DumpToSingleSlice(&slice);
   if (!status.ok()) {
-    LOG_EVERY_N_SEC(WARNING, 1)
+    ABSL_LOG_EVERY_N_SEC(WARNING, 1)
         << "OrcaService failed to extract request from peer: " << peer
         << " error:" << status.error_message();
     FinishRpc(Status(StatusCode::INTERNAL, status.error_message()));
@@ -81,7 +81,7 @@ OrcaService::Reactor::Reactor(OrcaService* service, absl::string_view peer,
           reinterpret_cast<const char*>(slice.begin()), slice.size(),
           arena.ptr());
   if (request == nullptr) {
-    LOG_EVERY_N_SEC(WARNING, 1)
+    ABSL_LOG_EVERY_N_SEC(WARNING, 1)
         << "OrcaService failed to parse request proto from peer: " << peer;
     FinishRpc(Status(StatusCode::INTERNAL, "could not parse request proto"));
     return;
@@ -175,7 +175,7 @@ OrcaService::OrcaService(ServerMetricRecorder* const server_metric_recorder,
                          Options options)
     : server_metric_recorder_(server_metric_recorder),
       min_report_duration_(options.min_report_duration) {
-  CHECK_NE(server_metric_recorder_, nullptr);
+  ABSL_CHECK_NE(server_metric_recorder_, nullptr);
   AddMethod(new internal::RpcServiceMethod(
       "/xds.service.orca.v3.OpenRcaService/StreamCoreMetrics",
       internal::RpcMethod::SERVER_STREAMING, /*handler=*/nullptr));

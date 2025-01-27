@@ -19,7 +19,7 @@
 
 #include <string>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -40,6 +40,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   absl::StatusOr<grpc_core::URI> parsed_uri =
       grpc_core::URI::Parse(uri.value());
 
-  CHECK_OK(parsed_uri);
+  ABSL_CHECK_OK(parsed_uri);
   return 0;
 }

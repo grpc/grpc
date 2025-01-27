@@ -26,8 +26,8 @@
 #include <set>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/memory/memory.h"
 #include "opencensus/stats/testing/test_utils.h"
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
@@ -59,7 +59,7 @@ class MockCensusViewProvider : public CensusViewProvider {
 
   const ViewDescriptor& FindViewDescriptor(const std::string& view_name) {
     auto it = view_descriptor_map().find(view_name);
-    CHECK(it != view_descriptor_map().end());
+    ABSL_CHECK(it != view_descriptor_map().end());
     return it->second;
   }
 };
@@ -173,7 +173,7 @@ class LbFeedbackTest : public LoadReporterTest {
                 DoubleNear(expected_qps, expected_qps * 0.3));
     ASSERT_THAT(static_cast<double>(lb_feedback.errors_per_second()),
                 DoubleNear(expected_eps, expected_eps * 0.3));
-    LOG(INFO) << "Verified LB feedback matches the samples of index [" << start
+    ABSL_LOG(INFO) << "Verified LB feedback matches the samples of index [" << start
               << ", " << start + count << ").";
   }
 
@@ -485,11 +485,11 @@ TEST_F(LoadReportTest, BasicReport) {
   // First fetch.
   load_reporter_->FetchAndSample();
   load_reporter_->GenerateLoads(kHostname1, kLbId1);
-  LOG(INFO) << "First load generated.";
+  ABSL_LOG(INFO) << "First load generated.";
   // Second fetch.
   load_reporter_->FetchAndSample();
   load_reporter_->GenerateLoads(kHostname2, kLbId2);
-  LOG(INFO) << "Second load generated.";
+  ABSL_LOG(INFO) << "Second load generated.";
   // TODO(juanlishen): Verify the data.
 }
 

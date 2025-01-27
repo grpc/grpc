@@ -2245,7 +2245,7 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/low_level_hash.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/absl_vlog_is_on.h" role="src" />
-    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/check.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/absl_check.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/globals.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/globals.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/append_truncated.h" role="src" />
@@ -2275,7 +2275,7 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/vlog_config.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/vlog_config.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/voidify.h" role="src" />
-    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/log.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/absl_log.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/log_entry.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/log_entry.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/log_sink.cc" role="src" />

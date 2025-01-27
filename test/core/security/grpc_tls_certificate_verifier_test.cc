@@ -24,7 +24,7 @@
 #include <deque>
 #include <list>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
@@ -106,7 +106,7 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
   EXPECT_FALSE(core_external_verifier.Verify(
       &request_,
       [&callback_completed_event](absl::Status async_status) {
-        LOG(INFO) << "Callback is invoked.";
+        ABSL_LOG(INFO) << "Callback is invoked.";
         EXPECT_EQ(async_status.code(), absl::StatusCode::kUnauthenticated);
         EXPECT_EQ(async_status.ToString(),
                   "UNAUTHENTICATED: AsyncExternalVerifier failed");

@@ -33,7 +33,7 @@
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
@@ -96,14 +96,14 @@ std::string GetCensusSafeClientIpString(
   // Find the client URI string.
   const Slice* client_uri_slice = initial_metadata.get_pointer(PeerString());
   if (client_uri_slice == nullptr) {
-    LOG(ERROR) << "Unable to extract client URI string (peer string) from gRPC "
+    ABSL_LOG(ERROR) << "Unable to extract client URI string (peer string) from gRPC "
                   "metadata.";
     return "";
   }
   absl::StatusOr<URI> client_uri =
       URI::Parse(client_uri_slice->as_string_view());
   if (!client_uri.ok()) {
-    LOG(ERROR) << "Unable to parse the client URI string (peer string) to a "
+    ABSL_LOG(ERROR) << "Unable to parse the client URI string (peer string) to a "
                   "client URI. Error: "
                << client_uri.status();
     return "";
@@ -112,7 +112,7 @@ std::string GetCensusSafeClientIpString(
   grpc_resolved_address resolved_address;
   bool success = grpc_parse_uri(*client_uri, &resolved_address);
   if (!success) {
-    LOG(ERROR) << "Unable to parse client URI into a grpc_resolved_address.";
+    ABSL_LOG(ERROR) << "Unable to parse client URI into a grpc_resolved_address.";
     return "";
   }
   // Convert the socket address in the grpc_resolved_address into a hex string

@@ -22,7 +22,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "src/core/client_channel/backup_poller.h"
@@ -150,7 +150,7 @@ TEST_P(XdsClientTest, XdsStreamErrorPropagation) {
   balancer_->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
   auto status = SendRpc();
-  LOG(INFO) << "XdsStreamErrorPropagation test: RPC got error: code="
+  ABSL_LOG(INFO) << "XdsStreamErrorPropagation test: RPC got error: code="
             << status.error_code()
             << " message=" << status.error_message().c_str();
   EXPECT_THAT(status.error_code(), StatusCode::UNAVAILABLE);
@@ -317,7 +317,7 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
               response->error_message == expected_message2) {
             return response;
           }
-          LOG(INFO) << "non-matching NACK message: "
+          ABSL_LOG(INFO) << "non-matching NACK message: "
                     << response->error_message.c_str();
         }
         return std::nullopt;

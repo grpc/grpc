@@ -21,8 +21,8 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
@@ -84,7 +84,7 @@ bool ExecCtx::Flush() {
       break;
     }
   }
-  CHECK_EQ(combiner_data_.active_combiner, nullptr);
+  ABSL_CHECK_EQ(combiner_data_.active_combiner, nullptr);
   return did_something;
 }
 
@@ -107,7 +107,7 @@ void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
   closure->file_initiated = location.file();
   closure->line_initiated = location.line();
   closure->run = false;
-  CHECK_NE(closure->cb, nullptr);
+  ABSL_CHECK_NE(closure->cb, nullptr);
 #endif
   closure->error_data.error = internal::StatusAllocHeapPtr(error);
   exec_ctx_sched(closure);
@@ -130,7 +130,7 @@ void ExecCtx::RunList(const DebugLocation& location, grpc_closure_list* list) {
     c->file_initiated = location.file();
     c->line_initiated = location.line();
     c->run = false;
-    CHECK_NE(c->cb, nullptr);
+    ABSL_CHECK_NE(c->cb, nullptr);
 #endif
     exec_ctx_sched(c);
     c = next;

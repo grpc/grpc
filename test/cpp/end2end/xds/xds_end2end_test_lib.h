@@ -33,8 +33,8 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -247,7 +247,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     virtual ~ServerThread() {
       // Shutdown should be called manually. Shutdown calls virtual methods and
       // can't be called from the base class destructor.
-      CHECK(!running_);
+      ABSL_CHECK(!running_);
     }
 
     void Start();
@@ -998,12 +998,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // use a uniform distribution instead. We need a better estimate of how many
   // RPCs are needed with what error tolerance.
   static size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
-    CHECK_GE(p, 0);
-    CHECK_LE(p, 1);
+    ABSL_CHECK_GE(p, 0);
+    ABSL_CHECK_LE(p, 1);
     size_t num_rpcs =
         ceil(p * (1 - p) * 5.00 * 5.00 / error_tolerance / error_tolerance);
     num_rpcs += 1000;  // Add 1K as a buffer to avoid flakiness.
-    LOG(INFO) << "Sending " << num_rpcs << " RPCs for percentage=" << p
+    ABSL_LOG(INFO) << "Sending " << num_rpcs << " RPCs for percentage=" << p
               << " error_tolerance=" << error_tolerance;
     return num_rpcs;
   }

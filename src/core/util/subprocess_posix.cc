@@ -29,8 +29,8 @@
 
 #include <iostream>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/substitute.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/strerror.h"
@@ -59,7 +59,7 @@ gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
     exec_args[argc] = nullptr;
     execv(exec_args[0], exec_args);
     // if we reach here, an error has occurred
-    LOG(ERROR) << "execv '" << exec_args[0]
+    ABSL_LOG(ERROR) << "execv '" << exec_args[0]
                << "' failed: " << grpc_core::StrError(errno);
     _exit(1);
   } else {
@@ -80,8 +80,8 @@ gpr_subprocess* gpr_subprocess_create_with_envp(int argc, const char** argv,
   int stdout_pipe[2];
   int p0 = pipe(stdin_pipe);
   int p1 = pipe(stdout_pipe);
-  CHECK_NE(p0, -1);
-  CHECK_NE(p1, -1);
+  ABSL_CHECK_NE(p0, -1);
+  ABSL_CHECK_NE(p1, -1);
   pid = fork();
   if (pid == -1) {
     return nullptr;
@@ -102,7 +102,7 @@ gpr_subprocess* gpr_subprocess_create_with_envp(int argc, const char** argv,
     envp_args[envc] = nullptr;
     execve(exec_args[0], exec_args, envp_args);
     // if we reach here, an error has occurred
-    LOG(ERROR) << "execvpe '" << exec_args[0]
+    ABSL_LOG(ERROR) << "execvpe '" << exec_args[0]
                << "' failed: " << grpc_core::StrError(errno);
     _exit(1);
   } else {
@@ -144,7 +144,7 @@ bool gpr_subprocess_communicate(gpr_subprocess* p, std::string& input_data,
         continue;
       } else {
         std::cerr << "select: " << strerror(errno) << std::endl;
-        CHECK(0);
+        ABSL_CHECK(0);
       }
     }
 
@@ -191,7 +191,7 @@ bool gpr_subprocess_communicate(gpr_subprocess* p, std::string& input_data,
   while (waitpid(p->pid, &status, 0) == -1) {
     if (errno != EINTR) {
       std::cerr << "waitpid: " << strerror(errno) << std::endl;
-      CHECK(0);
+      ABSL_CHECK(0);
     }
   }
 
@@ -232,7 +232,7 @@ retry:
     if (errno == EINTR) {
       goto retry;
     }
-    LOG(ERROR) << "waitpid failed for pid " << p->pid << ": "
+    ABSL_LOG(ERROR) << "waitpid failed for pid " << p->pid << ": "
                << grpc_core::StrError(errno);
     return -1;
   }

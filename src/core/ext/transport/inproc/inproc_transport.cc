@@ -20,8 +20,8 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
@@ -239,7 +239,7 @@ InprocServerTransport::MakeClientTransport() {
 
 RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
                                        absl::Status error) {
-  LOG(ERROR) << why << ": " << error.message();
+  ABSL_LOG(ERROR) << why << ": " << error.message();
   intptr_t integer;
   grpc_status_code status = GRPC_STATUS_INTERNAL;
   if (grpc_error_get_int(error, StatusIntProperty::kRpcStatus, &integer)) {

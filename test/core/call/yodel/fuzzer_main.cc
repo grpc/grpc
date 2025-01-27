@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 #include <stdio.h>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
@@ -36,7 +36,7 @@ DEFINE_PROTO_FUZZER(const transport_test_suite::Msg& msg) {
   static const grpc_core::NoDestruct<
       std::vector<grpc_core::yodel_detail::TestRegistry::Test>>
       tests{grpc_core::yodel_detail::TestRegistry::AllTests()};
-  CHECK(!tests->empty());
+  ABSL_CHECK(!tests->empty());
   const int test_id = msg.test_id() % tests->size();
 
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
@@ -48,11 +48,11 @@ DEFINE_PROTO_FUZZER(const transport_test_suite::Msg& msg) {
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   if (!squelch) {
-    LOG(INFO) << "RUN TEST '" << (*tests)[test_id].name << "'";
+    ABSL_LOG(INFO) << "RUN TEST '" << (*tests)[test_id].name << "'";
   }
   grpc_core::ProtoBitGen bitgen(msg.rng());
   auto test = (*tests)[test_id].make(msg.event_engine_actions(), bitgen);
   test->RunTest();
   delete test;
-  CHECK(!::testing::Test::HasFailure());
+  ABSL_CHECK(!::testing::Test::HasFailure());
 }

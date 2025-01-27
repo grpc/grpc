@@ -29,8 +29,8 @@
 #include <sstream>
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "src/core/util/crash.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.grpc.pb.h"
@@ -68,7 +68,7 @@ class FakeHandshakerService : public HandshakerService::Service {
     HandshakerContext context;
     HandshakerReq request;
     HandshakerResp response;
-    VLOG(2) << "Start a new handshake.";
+    ABSL_VLOG(2) << "Start a new handshake.";
     while (stream->Read(&request)) {
       status = ProcessRequest(&context, request, &response);
       if (!status.ok()) return WriteErrorResponse(stream, status);
@@ -96,17 +96,17 @@ class FakeHandshakerService : public HandshakerService::Service {
   Status ProcessRequest(HandshakerContext* context,
                         const HandshakerReq& request,
                         HandshakerResp* response) {
-    CHECK(context != nullptr);
-    CHECK_NE(response, nullptr);
+    ABSL_CHECK(context != nullptr);
+    ABSL_CHECK_NE(response, nullptr);
     response->Clear();
     if (request.has_client_start()) {
-      VLOG(2) << "Process client start request.";
+      ABSL_VLOG(2) << "Process client start request.";
       return ProcessClientStart(context, request.client_start(), response);
     } else if (request.has_server_start()) {
-      VLOG(2) << "Process server start request.";
+      ABSL_VLOG(2) << "Process server start request.";
       return ProcessServerStart(context, request.server_start(), response);
     } else if (request.has_next()) {
-      VLOG(2) << "Process next request.";
+      ABSL_VLOG(2) << "Process next request.";
       return ProcessNext(context, request.next(), response);
     }
     return Status(StatusCode::INVALID_ARGUMENT, "Request is empty.");
@@ -115,8 +115,8 @@ class FakeHandshakerService : public HandshakerService::Service {
   Status ProcessClientStart(HandshakerContext* context,
                             const StartClientHandshakeReq& request,
                             HandshakerResp* response) {
-    CHECK(context != nullptr);
-    CHECK_NE(response, nullptr);
+    ABSL_CHECK(context != nullptr);
+    ABSL_CHECK_NE(response, nullptr);
     // Checks request.
     if (context->state != INITIAL) {
       return Status(StatusCode::FAILED_PRECONDITION, kWrongStateError);
@@ -142,8 +142,8 @@ class FakeHandshakerService : public HandshakerService::Service {
   Status ProcessServerStart(HandshakerContext* context,
                             const StartServerHandshakeReq& request,
                             HandshakerResp* response) {
-    CHECK(context != nullptr);
-    CHECK_NE(response, nullptr);
+    ABSL_CHECK(context != nullptr);
+    ABSL_CHECK_NE(response, nullptr);
     // Checks request.
     if (context->state != INITIAL) {
       return Status(StatusCode::FAILED_PRECONDITION, kWrongStateError);
@@ -179,8 +179,8 @@ class FakeHandshakerService : public HandshakerService::Service {
   Status ProcessNext(HandshakerContext* context,
                      const NextHandshakeMessageReq& request,
                      HandshakerResp* response) {
-    CHECK(context != nullptr);
-    CHECK_NE(response, nullptr);
+    ABSL_CHECK(context != nullptr);
+    ABSL_CHECK_NE(response, nullptr);
     if (context->is_client) {
       // Processes next request on client side.
       if (context->state != SENT) {
@@ -226,7 +226,7 @@ class FakeHandshakerService : public HandshakerService::Service {
   Status WriteErrorResponse(
       ServerReaderWriter<HandshakerResp, HandshakerReq>* stream,
       const Status& status) {
-    CHECK(!status.ok());
+    ABSL_CHECK(!status.ok());
     HandshakerResp response;
     response.mutable_status()->set_code(status.error_code());
     response.mutable_status()->set_details(status.error_message());

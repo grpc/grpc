@@ -25,8 +25,8 @@
 #include <algorithm>
 #include <cstdint>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
@@ -61,7 +61,7 @@ static void FillHeader(uint8_t* p, uint8_t type, uint32_t id, size_t len,
   // max_frame_size is derived from GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
   // which has a max allowable value of 16777215 (see chttp_transport.cc).
   // Thus, the following assert can be a debug assert.
-  DCHECK_LE(len, 16777216u);
+  ABSL_DCHECK_LE(len, 16777216u);
   *p++ = static_cast<uint8_t>(len >> 16);
   *p++ = static_cast<uint8_t>(len >> 8);
   *p++ = static_cast<uint8_t>(len);
@@ -374,7 +374,7 @@ void Compressor<HttpSchemeMetadata, HttpSchemeCompressor>::EncodeWith(
       encoder->EmitIndexed(7);  // :scheme: https
       break;
     case HttpSchemeMetadata::ValueType::kInvalid:
-      LOG(ERROR) << "Not encoding bad http scheme";
+      ABSL_LOG(ERROR) << "Not encoding bad http scheme";
       encoder->NoteEncodingError();
       break;
   }
@@ -432,7 +432,7 @@ void Compressor<HttpMethodMetadata, HttpMethodCompressor>::EncodeWith(
           Slice::FromStaticString(":method"), Slice::FromStaticString("PUT"));
       break;
     case HttpMethodMetadata::ValueType::kInvalid:
-      LOG(ERROR) << "Not encoding bad http method";
+      ABSL_LOG(ERROR) << "Not encoding bad http method";
       encoder->NoteEncodingError();
       break;
   }

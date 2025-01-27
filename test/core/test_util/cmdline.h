@@ -23,7 +23,7 @@
 
 #include <string>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 
 /// Simple command line parser.
 
@@ -45,7 +45,7 @@
 ///  gpr_cmdline_destroy(cl);
 
 ///  if (verbose) {
-///    LOG(INFO) << "Goodbye cruel world!";
+///    ABSL_LOG(INFO) << "Goodbye cruel world!";
 ///  }
 
 ///  return 0;

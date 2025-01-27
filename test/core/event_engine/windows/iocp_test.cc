@@ -22,7 +22,7 @@
 #include <thread>
 #include <variant>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/time/time.h"
 #include "src/core/lib/event_engine/common_closures.h"
@@ -48,7 +48,7 @@ using ::grpc_event_engine::experimental::WinSocket;
 //   `ASSERT_OK(...) << GetErrorMessage(error, context);`
 void LogErrorMessage(int messageid, absl::string_view context) {
   char* utf8_message = gpr_format_message(messageid);
-  LOG(ERROR) << "Error in " << context << ": " << utf8_message;
+  ABSL_LOG(ERROR) << "Error in " << context << ": " << utf8_message;
   gpr_free(utf8_message);
 }
 }  // namespace
@@ -76,7 +76,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     // When the client gets some data, ensure it matches what we expect.
     on_read = new AnyInvocableClosure([win_socket = wrapped_client_socket.get(),
                                        &read_called, &read_wsabuf]() {
-      VLOG(2) << "Notified on read";
+      ABSL_VLOG(2) << "Notified on read";
       EXPECT_TRUE(win_socket->read_info()->result().error_status.ok())
           << "Error on read: "
           << win_socket->read_info()->result().error_status;
@@ -98,7 +98,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
   }
   {
     on_write = new AnyInvocableClosure([&write_called] {
-      VLOG(2) << "Notified on write";
+      ABSL_VLOG(2) << "Notified on write";
       write_called.Notify();
     });
     wrapped_server_socket->NotifyOnWrite(on_write);
@@ -159,7 +159,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
     wrapped_client_socket->NotifyOnRead(
         SelfDeletingClosure::Create([win_socket = wrapped_client_socket.get(),
                                      &read_called, &read_wsabuf]() {
-          VLOG(2) << "Notified on read";
+          ABSL_VLOG(2) << "Notified on read";
           EXPECT_TRUE(win_socket->read_info()->result().error_status.ok())
               << "Error on read: "
               << win_socket->read_info()->result().error_status;

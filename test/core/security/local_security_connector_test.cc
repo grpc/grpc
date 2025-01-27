@@ -52,7 +52,7 @@ std::string GetSecurityLevelForServer(grpc_local_connect_type connect_type,
   RefCountedPtr<grpc_server_security_connector> connector =
       server_creds->create_security_connector(args);
   tsi_peer peer;
-  CHECK(tsi_construct_peer(0, &peer) == TSI_OK);
+  ABSL_CHECK(tsi_construct_peer(0, &peer) == TSI_OK);
 
   RefCountedPtr<grpc_auth_context> auth_context;
   connector->check_peer(peer, &ep, args, &auth_context, nullptr);
@@ -79,7 +79,7 @@ std::string GetSecurityLevelForChannel(grpc_local_connect_type connect_type,
   RefCountedPtr<grpc_channel_security_connector> connector =
       channel_creds->create_security_connector(nullptr, "unix:", &args);
   tsi_peer peer;
-  CHECK(tsi_construct_peer(0, &peer) == TSI_OK);
+  ABSL_CHECK(tsi_construct_peer(0, &peer) == TSI_OK);
   RefCountedPtr<grpc_auth_context> auth_context;
   connector->check_peer(peer, &ep, args, &auth_context, nullptr);
   tsi_peer_destruct(&peer);

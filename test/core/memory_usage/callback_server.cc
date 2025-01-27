@@ -29,8 +29,8 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/cpp/ext/chaotic_good.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -60,7 +60,7 @@ class ServerCallbackImpl final
       grpc::CallbackServerContext* context,
       const grpc::testing::SimpleRequest* /* request */,
       grpc::testing::MemorySize* response) override {
-    LOG(INFO) << "BeforeSnapshot RPC CALL RECEIVED";
+    ABSL_LOG(INFO) << "BeforeSnapshot RPC CALL RECEIVED";
     response->set_rss(before_server_create);
     auto* reactor = context->DefaultReactor();
     reactor->Finish(grpc::Status::OK);
@@ -78,17 +78,17 @@ static void sigint_handler(int /*x*/) { _exit(0); }
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   char* fake_argv[1];
-  CHECK_GE(argc, 1);
+  ABSL_CHECK_GE(argc, 1);
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   signal(SIGINT, sigint_handler);
   std::string server_address = absl::GetFlag(FLAGS_bind);
   if (server_address.empty()) {
-    LOG(ERROR) << "Server: No port entered";
+    ABSL_LOG(ERROR) << "Server: No port entered";
     return 1;
   }
-  LOG(INFO) << "Server port: " << server_address;
+  ABSL_LOG(INFO) << "Server port: " << server_address;
 
   // Get initial process memory usage before creating server
   long before_server_create = GetMemUsage();
@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
   if (absl::GetFlag(FLAGS_chaotic_good)) {
     creds = grpc::ChaoticGoodInsecureServerCredentials();
   } else if (absl::GetFlag(FLAGS_secure)) {
-    LOG(INFO) << "Supposed to be secure, is not yet";
+    ABSL_LOG(INFO) << "Supposed to be secure, is not yet";
     // TODO (chennancy) Add in secure credentials
   }
   builder->AddListeningPort(server_address, creds);
@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
 
   // Set up the server to start accepting requests.
   std::shared_ptr<grpc::Server> server(builder->BuildAndStart());
-  LOG(INFO) << "Server listening on " << server_address;
+  ABSL_LOG(INFO) << "Server listening on " << server_address;
 
   // Keep the program running until the server shuts down.
   server->Wait();

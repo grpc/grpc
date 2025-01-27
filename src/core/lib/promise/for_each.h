@@ -21,8 +21,8 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
@@ -145,13 +145,13 @@ class ForEach {
       : reader_(std::move(other.reader_)),
         action_factory_(std::move(other.action_factory_)),
         whence_(other.whence_) {
-    DCHECK(reading_next_);
-    DCHECK(other.reading_next_);
+    ABSL_DCHECK(reading_next_);
+    ABSL_DCHECK(other.reading_next_);
     Construct(&reader_next_, std::move(other.reader_next_));
   }
   ForEach& operator=(ForEach&& other) noexcept {
-    DCHECK(reading_next_);
-    DCHECK(other.reading_next_);
+    ABSL_DCHECK(reading_next_);
+    ABSL_DCHECK(other.reading_next_);
     reader_ = std::move(other.reader_);
     action_factory_ = std::move(other.action_factory_);
     reader_next_ = std::move(other.reader_next_);

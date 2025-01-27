@@ -35,7 +35,7 @@ def grpc_yodel_test(name, deps):
         srcs = ["//test/core/call/yodel:fuzzer_main.cc"],
         tags = ["no_windows", "no_mac"],
         external_deps = [
-            "absl/log:check",
+            "absl/log:absl_check",
             "gtest",
         ],
         deps = [

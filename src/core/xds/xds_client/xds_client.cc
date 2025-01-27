@@ -30,8 +30,8 @@
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
@@ -387,7 +387,7 @@ XdsClient::XdsChannel::XdsChannel(WeakRefCountedPtr<XdsClient> xds_client,
       << " for server " << server.server_uri();
   absl::Status status;
   transport_ = xds_client_->transport_factory_->GetTransport(server, &status);
-  CHECK(transport_ != nullptr);
+  ABSL_CHECK(transport_ != nullptr);
   if (!status.ok()) {
     SetChannelStatusLocked(std::move(status));
   } else {
@@ -531,7 +531,7 @@ void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
   status = absl::Status(status.code(), absl::StrCat("xDS channel for server ",
                                                     server_.server_uri(), ": ",
                                                     status.message()));
-  LOG(INFO) << "[xds_client " << xds_client() << "] " << status;
+  ABSL_LOG(INFO) << "[xds_client " << xds_client() << "] " << status;
   // If status was previously OK, report that the channel has gone unhealthy.
   if (status_.ok() && xds_client_->metrics_reporter_ != nullptr) {
     xds_client_->metrics_reporter_->ReportServerFailure(server_.server_uri());
@@ -610,8 +610,8 @@ void XdsClient::XdsChannel::RetryableCall<T>::OnCallFinishedLocked() {
 template <typename T>
 void XdsClient::XdsChannel::RetryableCall<T>::StartNewCallLocked() {
   if (shutting_down_) return;
-  CHECK(xds_channel_->transport_ != nullptr);
-  CHECK(call_ == nullptr);
+  ABSL_CHECK(xds_channel_->transport_ != nullptr);
+  ABSL_CHECK(call_ == nullptr);
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[xds_client " << xds_channel()->xds_client() << "] xds server "
       << xds_channel()->server_.server_uri()
@@ -681,7 +681,7 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
     : InternallyRefCounted<AdsCall>(
           GRPC_TRACE_FLAG_ENABLED(xds_client_refcount) ? "AdsCall" : nullptr),
       retryable_call_(std::move(retryable_call)) {
-  CHECK_NE(xds_client(), nullptr);
+  ABSL_CHECK_NE(xds_client(), nullptr);
   // Init the ADS call.
   const char* method =
       "/envoy.service.discovery.v3.AggregatedDiscoveryService/"
@@ -691,7 +691,7 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
                   // Passing the initial ref here.  This ref will go away when
                   // the StreamEventHandler is destroyed.
                   RefCountedPtr<AdsCall>(this)));
-  CHECK(streaming_call_ != nullptr);
+  ABSL_CHECK(streaming_call_ != nullptr);
   // Start the call.
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[xds_client " << xds_client() << "] xds server "
@@ -777,7 +777,7 @@ void MaybeLogDiscoveryRequest(
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(request), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    VLOG(2) << "[xds_client " << client << "] constructed ADS request: " << buf;
+    ABSL_VLOG(2) << "[xds_client " << client << "] constructed ADS request: " << buf;
   }
 }
 
@@ -1056,7 +1056,7 @@ void MaybeLogDiscoveryResponse(
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(response), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    VLOG(2) << "[xds_client " << client << "] received response: " << buf;
+    ABSL_VLOG(2) << "[xds_client " << client << "] received response: " << buf;
   }
 }
 
@@ -1152,7 +1152,7 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
     absl::Status status = DecodeAdsResponse(payload, &context);
     if (!status.ok()) {
       // Ignore unparsable response.
-      LOG(ERROR) << "[xds_client " << xds_client() << "] xds server "
+      ABSL_LOG(ERROR) << "[xds_client " << xds_client() << "] xds server "
                  << xds_channel()->server_.server_uri()
                  << ": error parsing ADS response (" << status
                  << ") -- ignoring";
@@ -1167,7 +1167,7 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
         state.status = absl::UnavailableError(
             absl::StrCat("xDS response validation errors: [",
                          absl::StrJoin(context.errors, "; "), "]"));
-        LOG(ERROR) << "[xds_client " << xds_client() << "] xds server "
+        ABSL_LOG(ERROR) << "[xds_client " << xds_client() << "] xds server "
                    << xds_channel()->server_.server_uri()
                    << ": ADS response invalid for resource type "
                    << context.type_url << " version " << context.version
@@ -1427,7 +1427,7 @@ XdsClient::XdsClient(
       metrics_reporter_(std::move(metrics_reporter)) {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[xds_client " << this << "] creating xds client";
-  CHECK(bootstrap_ != nullptr);
+  ABSL_CHECK(bootstrap_ != nullptr);
   if (bootstrap_->node() != nullptr) {
     GRPC_TRACE_LOG(xds_client, INFO)
         << "[xds_client " << this
@@ -1621,7 +1621,7 @@ void XdsClient::MaybeRegisterResourceTypeLocked(
     const XdsResourceType* resource_type) {
   auto it = resource_types_.find(resource_type->type_url());
   if (it != resource_types_.end()) {
-    CHECK(it->second == resource_type);
+    ABSL_CHECK(it->second == resource_type);
     return;
   }
   resource_types_.emplace(resource_type->type_url(), resource_type);
@@ -1672,7 +1672,7 @@ std::string XdsClient::ConstructFullXdsResourceName(
     auto uri = URI::Create("xdstp", std::string(authority),
                            absl::StrCat("/", resource_type, "/", key.id),
                            key.query_params, /*fragment=*/"");
-    CHECK(uri.ok());
+    ABSL_CHECK(uri.ok());
     return uri->ToString();
   }
   // Old-style name.

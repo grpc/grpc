@@ -1272,22 +1272,11 @@
   - third_party/abseil-cpp/absl/log/absl_vlog_is_on.h
   name: absl/log:absl_vlog_is_on
   src: []
-- cmake_target: absl::check
-  deps:
-  - absl/log/internal:check_impl
-  - absl/log/internal:check_op
-  - absl/log/internal:conditions
-  - absl/log/internal:log_message
-  - absl/log/internal:strip
-  headers:
-  - third_party/abseil-cpp/absl/log/check.h
-  name: absl/log:check
-  src: []
 - cmake_target: absl::die_if_null
   deps:
   - absl/base:config
   - absl/base:core_headers
-  - absl/log:log
+  - absl/log:absl_log
   - absl/strings:strings
   headers:
   - third_party/abseil-cpp/absl/log/die_if_null.h
@@ -1337,14 +1326,6 @@
   name: absl/log:initialize
   src:
   - third_party/abseil-cpp/absl/log/initialize.cc
-- cmake_target: absl::log
-  deps:
-  - absl/log/internal:log_impl
-  - absl/log:vlog_is_on
-  headers:
-  - third_party/abseil-cpp/absl/log/log.h
-  name: absl/log:log
-  src: []
 - cmake_target: absl::log_entry
   deps:
   - absl/base:config

@@ -34,8 +34,8 @@
 
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/iomgr/block_annotate.h"
@@ -348,7 +348,7 @@ static void ref_by(grpc_fd* fd, int n, const char* reason, const char* file,
   } while (0)
 static void ref_by(grpc_fd* fd, int n) {
 #endif
-  CHECK_GT(gpr_atm_no_barrier_fetch_add(&fd->refst, n), 0);
+  ABSL_CHECK_GT(gpr_atm_no_barrier_fetch_add(&fd->refst, n), 0);
 }
 
 #ifndef NDEBUG
@@ -372,14 +372,14 @@ static void unref_by(grpc_fd* fd, int n) {
     fd->shutdown_error.~Status();
     gpr_free(fd);
   } else {
-    CHECK(old > n);
+    ABSL_CHECK(old > n);
   }
 }
 
 static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   // Avoid unused-parameter warning for debug-only parameter
   (void)track_err;
-  DCHECK(track_err == false);
+  ABSL_DCHECK(track_err == false);
   grpc_fd* r = static_cast<grpc_fd*>(gpr_malloc(sizeof(*r)));
   gpr_mu_init(&r->mu);
   gpr_atm_rel_store(&r->refst, 1);
@@ -409,7 +409,7 @@ static bool fd_is_orphaned(grpc_fd* fd) {
 
 static grpc_error_handle pollset_kick_locked(grpc_fd_watcher* watcher) {
   gpr_mu_lock(&watcher->pollset->mu);
-  CHECK(watcher->worker);
+  ABSL_CHECK(watcher->worker);
   grpc_error_handle err =
       pollset_kick_ext(watcher->pollset, watcher->worker,
                        GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP);
@@ -783,7 +783,7 @@ static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
   // pollset->mu already held
   if (specific_worker != nullptr) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
-      CHECK_EQ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP), 0u);
+      ABSL_CHECK_EQ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP), 0u);
       for (specific_worker = p->root_worker.next;
            specific_worker != &p->root_worker;
            specific_worker = specific_worker->next) {
@@ -807,7 +807,7 @@ static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
                         grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd->fd));
     }
   } else if (g_current_thread_poller != p) {
-    CHECK_EQ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP), 0u);
+    ABSL_CHECK_EQ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP), 0u);
     specific_worker = pop_front_worker(p);
     if (specific_worker != nullptr) {
       if (g_current_thread_worker == specific_worker) {
@@ -860,7 +860,7 @@ static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
 }
 
 static void pollset_destroy(grpc_pollset* pollset) {
-  CHECK(!pollset_has_workers(pollset));
+  ABSL_CHECK(!pollset_has_workers(pollset));
   while (pollset->local_wakeup_cache) {
     grpc_cached_wakeup_fd* next = pollset->local_wakeup_cache->next;
     fork_fd_list_remove_wakeup_fd(pollset->local_wakeup_cache);
@@ -1138,7 +1138,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
 }
 
 static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
-  CHECK(!pollset->shutting_down);
+  ABSL_CHECK(!pollset->shutting_down);
   pollset->shutting_down = 1;
   pollset->shutdown_done = closure;
   (void)pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
@@ -1397,7 +1397,7 @@ const grpc_event_engine_vtable grpc_ev_poll_posix = {
     // check_engine_available =
     [](bool) {
       if (!grpc_has_wakeup_fd()) {
-        LOG(ERROR) << "Skipping poll because of no wakeup fd.";
+        ABSL_LOG(ERROR) << "Skipping poll because of no wakeup fd.";
         return false;
       }
       if (!GRPC_LOG_IF_ERROR("pollset_global_init", pollset_global_init())) {

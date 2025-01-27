@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
   signal(SIGINT, sigint_handler);
 
   grpc::testing::RunServer();
-  LOG(ERROR) << "Global Stats:\n"
+  ABSL_LOG(ERROR) << "Global Stats:\n"
              << StatsAsJson(grpc_core::global_stats().Collect().get());
   return 0;
 }

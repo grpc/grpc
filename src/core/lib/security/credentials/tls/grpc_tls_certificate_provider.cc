@@ -27,8 +27,8 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
@@ -176,21 +176,21 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       refresh_interval_sec_(refresh_interval_sec),
       distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   if (refresh_interval_sec_ < kMinimumFileWatcherRefreshIntervalSeconds) {
-    VLOG(2) << "FileWatcherCertificateProvider refresh_interval_sec_ set to "
+    ABSL_VLOG(2) << "FileWatcherCertificateProvider refresh_interval_sec_ set to "
                "value less than minimum. Overriding configured value to "
                "minimum.";
     refresh_interval_sec_ = kMinimumFileWatcherRefreshIntervalSeconds;
   }
   // Private key and identity cert files must be both set or both unset.
-  CHECK(private_key_path_.empty() == identity_certificate_path_.empty());
+  ABSL_CHECK(private_key_path_.empty() == identity_certificate_path_.empty());
   // Must be watching either root or identity certs.
-  CHECK(!private_key_path_.empty() || !root_cert_path_.empty());
+  ABSL_CHECK(!private_key_path_.empty() || !root_cert_path_.empty());
   gpr_event_init(&shutdown_event_);
   ForceUpdate();
   auto thread_lambda = [](void* arg) {
     FileWatcherCertificateProvider* provider =
         static_cast<FileWatcherCertificateProvider*>(arg);
-    CHECK_NE(provider, nullptr);
+    ABSL_CHECK_NE(provider, nullptr);
     while (true) {
       void* value = gpr_event_wait(
           &provider->shutdown_event_,
@@ -353,7 +353,7 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
   auto root_slice =
       LoadFile(root_cert_full_path, /*add_null_terminator=*/false);
   if (!root_slice.ok()) {
-    LOG(ERROR) << "Reading file " << root_cert_full_path
+    ABSL_LOG(ERROR) << "Reading file " << root_cert_full_path
                << " failed: " << root_slice.status();
     return std::nullopt;
   }
@@ -384,28 +384,28 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     time_t identity_key_ts_before =
         GetModificationTime(private_key_path.c_str());
     if (identity_key_ts_before == 0) {
-      LOG(ERROR) << "Failed to get the file's modification time of "
+      ABSL_LOG(ERROR) << "Failed to get the file's modification time of "
                  << private_key_path << ". Start retrying...";
       continue;
     }
     time_t identity_cert_ts_before =
         GetModificationTime(identity_certificate_path.c_str());
     if (identity_cert_ts_before == 0) {
-      LOG(ERROR) << "Failed to get the file's modification time of "
+      ABSL_LOG(ERROR) << "Failed to get the file's modification time of "
                  << identity_certificate_path << ". Start retrying...";
       continue;
     }
     // Read the identity files.
     auto key_slice = LoadFile(private_key_path, /*add_null_terminator=*/false);
     if (!key_slice.ok()) {
-      LOG(ERROR) << "Reading file " << private_key_path
+      ABSL_LOG(ERROR) << "Reading file " << private_key_path
                  << " failed: " << key_slice.status() << ". Start retrying...";
       continue;
     }
     auto cert_slice =
         LoadFile(identity_certificate_path, /*add_null_terminator=*/false);
     if (!cert_slice.ok()) {
-      LOG(ERROR) << "Reading file " << identity_certificate_path
+      ABSL_LOG(ERROR) << "Reading file " << identity_certificate_path
                  << " failed: " << cert_slice.status() << ". Start retrying...";
       continue;
     }
@@ -417,21 +417,21 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     time_t identity_key_ts_after =
         GetModificationTime(private_key_path.c_str());
     if (identity_key_ts_before != identity_key_ts_after) {
-      LOG(ERROR) << "Last modified time before and after reading "
+      ABSL_LOG(ERROR) << "Last modified time before and after reading "
                  << private_key_path << " is not the same. Start retrying...";
       continue;
     }
     time_t identity_cert_ts_after =
         GetModificationTime(identity_certificate_path.c_str());
     if (identity_cert_ts_before != identity_cert_ts_after) {
-      LOG(ERROR) << "Last modified time before and after reading "
+      ABSL_LOG(ERROR) << "Last modified time before and after reading "
                  << identity_certificate_path
                  << " is not the same. Start retrying...";
       continue;
     }
     return identity_pairs;
   }
-  LOG(ERROR) << "All retry attempts failed. Will try again after the next "
+  ABSL_LOG(ERROR) << "All retry attempts failed. Will try again after the next "
                 "interval.";
   return std::nullopt;
 }
@@ -447,7 +447,7 @@ int64_t FileWatcherCertificateProvider::TestOnlyGetRefreshIntervalSecond()
 
 grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
-  CHECK(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
+  ABSL_CHECK(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
   grpc_core::ExecCtx exec_ctx;
   grpc_core::PemKeyCertPairList identity_pairs_core;
   if (pem_key_cert_pairs != nullptr) {

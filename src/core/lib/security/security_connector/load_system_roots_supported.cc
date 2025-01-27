@@ -33,7 +33,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
@@ -78,7 +78,7 @@ void GetAbsoluteFilePath(const char* valid_file_dir,
     int path_len = snprintf(path_buffer, MAXPATHLEN, "%s/%s", valid_file_dir,
                             file_entry_name);
     if (path_len == 0) {
-      LOG(ERROR) << "failed to get absolute path for file: " << file_entry_name;
+      ABSL_LOG(ERROR) << "failed to get absolute path for file: " << file_entry_name;
     }
   }
 }
@@ -108,7 +108,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
     if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
       // no subdirectories.
       if (stat_return == -1) {
-        LOG(ERROR) << "failed to get status for file: " << file_data.path;
+        ABSL_LOG(ERROR) << "failed to get status for file: " << file_data.path;
       }
       continue;
     }
@@ -129,7 +129,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
       if (read_ret != -1) {
         bytes_read += read_ret;
       } else {
-        LOG(ERROR) << "failed to read file: " << roots_filenames[i].path;
+        ABSL_LOG(ERROR) << "failed to read file: " << roots_filenames[i].path;
       }
     }
   }

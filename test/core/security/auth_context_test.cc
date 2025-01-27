@@ -19,7 +19,7 @@
 #include <gtest/gtest.h>
 #include <string.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -31,7 +31,7 @@ TEST(AuthContextTest, EmptyContext) {
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_property_iterator it;
 
-  LOG(INFO) << "test_empty_context";
+  ABSL_LOG(INFO) << "test_empty_context";
   ASSERT_NE(ctx, nullptr);
   ASSERT_EQ(grpc_auth_context_peer_identity_property_name(ctx.get()), nullptr);
   it = grpc_auth_context_peer_identity(ctx.get());
@@ -52,7 +52,7 @@ TEST(AuthContextTest, SimpleContext) {
   grpc_auth_property_iterator it;
   size_t i;
 
-  LOG(INFO) << "test_simple_context";
+  ABSL_LOG(INFO) << "test_simple_context";
   ASSERT_NE(ctx, nullptr);
   grpc_auth_context_add_cstring_property(ctx.get(), "name", "chapi");
   grpc_auth_context_add_cstring_property(ctx.get(), "name", "chapo");
@@ -92,7 +92,7 @@ TEST(AuthContextTest, ChainedContext) {
   grpc_auth_property_iterator it;
   size_t i;
 
-  LOG(INFO) << "test_chained_context";
+  ABSL_LOG(INFO) << "test_chained_context";
   grpc_auth_context_add_cstring_property(chained_ptr, "name", "padapo");
   grpc_auth_context_add_cstring_property(chained_ptr, "foo", "baz");
   grpc_auth_context_add_cstring_property(ctx.get(), "name", "chapi");

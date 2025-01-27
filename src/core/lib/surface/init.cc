@@ -28,7 +28,7 @@
 #include <grpc/support/time.h>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "src/core/client_channel/backup_poller.h"
@@ -128,7 +128,7 @@ void grpc_init(void) {
       address_sorting_init();
       auto status = AresInit();
       if (!status.ok()) {
-        VLOG(2) << "AresInit failed: " << status.message();
+        ABSL_VLOG(2) << "AresInit failed: " << status.message();
       } else {
         // TODO(yijiem): remove this once we remove the iomgr dns system.
         grpc_resolver_dns_ares_reset_dns_resolver();
@@ -169,7 +169,7 @@ void grpc_shutdown_from_cleanup_thread(void* /*ignored*/) {
     return;
   }
   grpc_shutdown_internal_locked();
-  VLOG(2) << "grpc_shutdown from cleanup thread done";
+  ABSL_VLOG(2) << "grpc_shutdown from cleanup thread done";
 }
 
 void grpc_shutdown(void) {
@@ -187,14 +187,14 @@ void grpc_shutdown(void) {
              0) &&
         grpc_core::ExecCtx::Get() == nullptr) {
       // just run clean-up when this is called on non-executor thread.
-      VLOG(2) << "grpc_shutdown starts clean-up now";
+      ABSL_VLOG(2) << "grpc_shutdown starts clean-up now";
       g_shutting_down = true;
       grpc_shutdown_internal_locked();
-      VLOG(2) << "grpc_shutdown done";
+      ABSL_VLOG(2) << "grpc_shutdown done";
     } else {
       // spawn a detached thread to do the actual clean up in case we are
       // currently in an executor thread.
-      VLOG(2) << "grpc_shutdown spawns clean-up thread";
+      ABSL_VLOG(2) << "grpc_shutdown spawns clean-up thread";
       g_initializations++;
       g_shutting_down = true;
       grpc_core::Thread cleanup_thread(
@@ -238,7 +238,7 @@ bool grpc_wait_for_shutdown_with_timeout(absl::Duration timeout) {
   grpc_core::MutexLock lock(g_init_mu);
   while (g_initializations != 0) {
     if (g_shutting_down_cv->WaitWithDeadline(g_init_mu, deadline)) {
-      LOG(ERROR) << "grpc_wait_for_shutdown_with_timeout() timed out.";
+      ABSL_LOG(ERROR) << "grpc_wait_for_shutdown_with_timeout() timed out.";
       return false;
     }
   }

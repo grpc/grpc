@@ -22,8 +22,8 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -67,7 +67,7 @@ class ChildPolicyHandler::Helper final
     // into place.
     if (CalledByPendingChild()) {
       if (GRPC_TRACE_FLAG_ENABLED_OBJ(*(parent()->tracer_))) {
-        LOG(INFO) << "[child_policy_handler " << parent() << "] helper " << this
+        ABSL_LOG(INFO) << "[child_policy_handler " << parent() << "] helper " << this
                   << ": pending child policy " << child_
                   << " reports state=" << ConnectivityStateName(state) << " ("
                   << status << ")";
@@ -96,7 +96,7 @@ class ChildPolicyHandler::Helper final
             : parent()->child_policy_.get();
     if (child_ != latest_child_policy) return;
     if (GRPC_TRACE_FLAG_ENABLED_OBJ(*(parent()->tracer_))) {
-      LOG(INFO) << "[child_policy_handler " << parent()
+      ABSL_LOG(INFO) << "[child_policy_handler " << parent()
                 << "] requesting re-resolution";
     }
     parent()->channel_control_helper()->RequestReresolution();
@@ -113,12 +113,12 @@ class ChildPolicyHandler::Helper final
 
  private:
   bool CalledByPendingChild() const {
-    CHECK_NE(child_, nullptr);
+    ABSL_CHECK_NE(child_, nullptr);
     return child_ == parent()->pending_child_policy_.get();
   }
 
   bool CalledByCurrentChild() const {
-    CHECK_NE(child_, nullptr);
+    ABSL_CHECK_NE(child_, nullptr);
     return child_ == parent()->child_policy_.get();
   };
 
@@ -131,12 +131,12 @@ class ChildPolicyHandler::Helper final
 
 void ChildPolicyHandler::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED_OBJ(*tracer_)) {
-    LOG(INFO) << "[child_policy_handler " << this << "] shutting down";
+    ABSL_LOG(INFO) << "[child_policy_handler " << this << "] shutting down";
   }
   shutting_down_ = true;
   if (child_policy_ != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED_OBJ(*tracer_)) {
-      LOG(INFO) << "[child_policy_handler " << this
+      ABSL_LOG(INFO) << "[child_policy_handler " << this
                 << "] shutting down lb_policy " << child_policy_.get();
     }
     grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
@@ -145,7 +145,7 @@ void ChildPolicyHandler::ShutdownLocked() {
   }
   if (pending_child_policy_ != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED_OBJ(*tracer_)) {
-      LOG(INFO) << "[child_policy_handler " << this
+      ABSL_LOG(INFO) << "[child_policy_handler " << this
                 << "] shutting down pending lb_policy "
                 << pending_child_policy_.get();
     }
@@ -222,7 +222,7 @@ absl::Status ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
     // switch to the new policy, even if the new policy stays in
     // CONNECTING for a very long period of time.
     if (GRPC_TRACE_FLAG_ENABLED_OBJ(*tracer_)) {
-      LOG(INFO) << "[child_policy_handler " << this << "] creating new "
+      ABSL_LOG(INFO) << "[child_policy_handler " << this << "] creating new "
                 << (child_policy_ == nullptr ? "" : "pending ")
                 << "child policy " << args.config->name();
     }
@@ -238,10 +238,10 @@ absl::Status ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
                            ? pending_child_policy_.get()
                            : child_policy_.get();
   }
-  CHECK_NE(policy_to_update, nullptr);
+  ABSL_CHECK_NE(policy_to_update, nullptr);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED_OBJ(*tracer_)) {
-    LOG(INFO) << "[child_policy_handler " << this << "] updating "
+    ABSL_LOG(INFO) << "[child_policy_handler " << this << "] updating "
               << (policy_to_update == pending_child_policy_.get() ? "pending "
                                                                   : "")
               << "child policy " << policy_to_update;
@@ -279,12 +279,12 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       CreateLoadBalancingPolicy(child_policy_name, std::move(lb_policy_args));
   if (GPR_UNLIKELY(lb_policy == nullptr)) {
-    LOG(ERROR) << "could not create LB policy \"" << child_policy_name << "\"";
+    ABSL_LOG(ERROR) << "could not create LB policy \"" << child_policy_name << "\"";
     return nullptr;
   }
   helper->set_child(lb_policy.get());
   if (GRPC_TRACE_FLAG_ENABLED_OBJ(*tracer_)) {
-    LOG(INFO) << "[child_policy_handler " << this
+    ABSL_LOG(INFO) << "[child_policy_handler " << this
               << "] created new LB policy \"" << child_policy_name << "\" ("
               << lb_policy.get() << ")";
   }

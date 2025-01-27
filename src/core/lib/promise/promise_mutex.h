@@ -19,7 +19,7 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 
@@ -35,7 +35,7 @@ class PromiseMutex {
     Lock() {}
     ~Lock() {
       if (mutex_ != nullptr) {
-        CHECK(mutex_->locked_);
+        ABSL_CHECK(mutex_->locked_);
         mutex_->locked_ = false;
         mutex_->waiter_.Wake();
       }
@@ -52,18 +52,18 @@ class PromiseMutex {
     Lock& operator=(const Lock&) noexcept = delete;
 
     T* operator->() {
-      DCHECK_NE(mutex_, nullptr);
+      ABSL_DCHECK_NE(mutex_, nullptr);
       return &mutex_->value_;
     }
     T& operator*() {
-      DCHECK_NE(mutex_, nullptr);
+      ABSL_DCHECK_NE(mutex_, nullptr);
       return mutex_->value_;
     }
 
    private:
     friend class PromiseMutex;
     explicit Lock(PromiseMutex* mutex) : mutex_(mutex) {
-      DCHECK(!mutex_->locked_);
+      ABSL_DCHECK(!mutex_->locked_);
       mutex_->locked_ = true;
     }
     PromiseMutex* mutex_ = nullptr;
@@ -71,7 +71,7 @@ class PromiseMutex {
 
   PromiseMutex() = default;
   explicit PromiseMutex(T value) : value_(std::move(value)) {}
-  ~PromiseMutex() { DCHECK(!locked_); }
+  ~PromiseMutex() { ABSL_DCHECK(!locked_); }
 
   auto Acquire() {
     return [this]() -> Poll<Lock> {

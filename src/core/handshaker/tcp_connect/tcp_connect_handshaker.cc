@@ -29,7 +29,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/config/core_configuration.h"
@@ -123,7 +123,7 @@ void TCPConnectHandshaker::DoHandshake(
     MutexLock lock(&mu_);
     on_handshake_done_ = std::move(on_handshake_done);
   }
-  CHECK_EQ(args->endpoint.get(), nullptr);
+  ABSL_CHECK_EQ(args->endpoint.get(), nullptr);
   args_ = args;
   absl::StatusOr<URI> uri = URI::Parse(
       args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value());
@@ -177,7 +177,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       }
       return;
     }
-    CHECK_NE(self->endpoint_to_destroy_, nullptr);
+    ABSL_CHECK_NE(self->endpoint_to_destroy_, nullptr);
     self->args_->endpoint.reset(self->endpoint_to_destroy_);
     self->endpoint_to_destroy_ = nullptr;
     if (self->bind_endpoint_to_pollset_) {

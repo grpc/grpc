@@ -24,8 +24,8 @@
 
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/debug/trace.h"
@@ -116,7 +116,7 @@ static bool is_in_ht(grpc_timer* t) {
 }
 
 static void add_to_ht(grpc_timer* t) {
-  CHECK(!t->hash_table_next);
+  ABSL_CHECK(!t->hash_table_next);
   size_t i = grpc_core::HashPointer(t, NUM_HASH_BUCKETS);
 
   gpr_mu_lock(&g_hash_mu[i]);
@@ -661,7 +661,7 @@ static grpc_timer_check_result timer_check(grpc_core::Timestamp* next) {
       next_str = absl::StrCat(next->milliseconds_after_process_epoch());
     }
 #if GPR_ARCH_64
-    VLOG(2) << "TIMER CHECK BEGIN: now="
+    ABSL_VLOG(2) << "TIMER CHECK BEGIN: now="
             << now.milliseconds_after_process_epoch() << " next=" << next_str
             << " tls_min=" << min_timer.milliseconds_after_process_epoch()
             << " glob_min="
@@ -670,7 +670,7 @@ static grpc_timer_check_result timer_check(grpc_core::Timestamp* next) {
                        (gpr_atm*)(&g_shared_mutables.min_timer)))
                    .milliseconds_after_process_epoch();
 #else
-    VLOG(2) << "TIMER CHECK BEGIN: now="
+    ABSL_VLOG(2) << "TIMER CHECK BEGIN: now="
             << now.milliseconds_after_process_epoch() << " next=" << next_str
             << " min=" << min_timer.milliseconds_after_process_epoch();
 #endif
@@ -686,7 +686,7 @@ static grpc_timer_check_result timer_check(grpc_core::Timestamp* next) {
     } else {
       next_str = absl::StrCat(next->milliseconds_after_process_epoch());
     }
-    VLOG(2) << "TIMER CHECK END: r=" << r << "; next=" << next_str.c_str();
+    ABSL_VLOG(2) << "TIMER CHECK END: r=" << r << "; next=" << next_str.c_str();
   }
   return r;
 }

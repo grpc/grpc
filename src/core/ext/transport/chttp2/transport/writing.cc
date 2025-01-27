@@ -31,8 +31,8 @@
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
@@ -135,7 +135,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
             GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
             GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
             GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
-          LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
+          ABSL_LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
                     << "]: Ping " << id << " sent ["
                     << std::string(t->peer_string.as_string_view())
                     << "]: " << t->ping_rate_policy.GetDebugString();
@@ -147,7 +147,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
             GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
             GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
             GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
-          LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
+          ABSL_LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
                     << "]: Ping delayed ["
                     << std::string(t->peer_string.as_string_view())
                     << "]: too many recent pings: "
@@ -160,7 +160,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
             GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
             GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
             GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
-          LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
+          ABSL_LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
                     << "]: Ping delayed ["
                     << std::string(t->peer_string.as_string_view())
                     << "]: not enough time elapsed since last "
@@ -261,7 +261,7 @@ class WriteContext {
       grpc_core::Http2Frame frame(std::move(*update));
       Serialize(absl::Span<grpc_core::Http2Frame>(&frame, 1), t_->outbuf);
       if (t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
-        CHECK(
+        ABSL_CHECK(
             t_->settings_ack_watchdog ==
             grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid);
         // We base settings timeout on keepalive timeout, but double it to allow
@@ -282,7 +282,7 @@ class WriteContext {
     // simple writes are queued to qbuf, and flushed here
     grpc_slice_buffer_move_into(&t_->qbuf, t_->outbuf.c_slice_buffer());
     t_->num_pending_induced_frames = 0;
-    CHECK_EQ(t_->qbuf.count, 0u);
+    ABSL_CHECK_EQ(t_->qbuf.count, 0u);
   }
 
   void FlushWindowUpdates() {
@@ -755,7 +755,7 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
           grpc_chttp2_ping_timeout(t);
         });
     if (GRPC_TRACE_FLAG_ENABLED(http2_ping) && id.has_value()) {
-      LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
+      ABSL_LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
                 << "]: Set ping timeout timer of " << timeout.ToString()
                 << " for ping id " << id.value();
     }
@@ -767,7 +767,7 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
                 kInvalid) {
       if (GRPC_TRACE_FLAG_ENABLED(http2_ping) ||
           GRPC_TRACE_FLAG_ENABLED(http_keepalive)) {
-        LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
+        ABSL_LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
                   << "]: Set keepalive ping timeout timer of "
                   << t->keepalive_timeout.ToString();
       }

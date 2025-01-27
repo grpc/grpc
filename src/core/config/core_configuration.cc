@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 
 namespace grpc_core {
 
@@ -50,7 +50,7 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
 
 void CoreConfiguration::RegisterBuilder(
     absl::AnyInvocable<void(Builder*)> builder) {
-  CHECK(config_.load(std::memory_order_relaxed) == nullptr)
+  ABSL_CHECK(config_.load(std::memory_order_relaxed) == nullptr)
       << "CoreConfiguration was already instantiated before builder "
          "registration was completed";
   RegisteredBuilder* n = new RegisteredBuilder();
@@ -59,7 +59,7 @@ void CoreConfiguration::RegisterBuilder(
   while (!builders_.compare_exchange_weak(n->next, n, std::memory_order_acq_rel,
                                           std::memory_order_relaxed)) {
   }
-  CHECK(config_.load(std::memory_order_relaxed) == nullptr)
+  ABSL_CHECK(config_.load(std::memory_order_relaxed) == nullptr)
       << "CoreConfiguration was already instantiated before builder "
          "registration was completed";
 }

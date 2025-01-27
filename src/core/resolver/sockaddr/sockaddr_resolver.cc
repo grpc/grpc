@@ -21,7 +21,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -75,7 +75,7 @@ bool ParseUri(const URI& uri,
               bool parse(const URI& uri, grpc_resolved_address* dst),
               EndpointAddressesList* addresses) {
   if (!uri.authority().empty()) {
-    LOG(ERROR) << "authority-based URIs not supported by the " << uri.scheme()
+    ABSL_LOG(ERROR) << "authority-based URIs not supported by the " << uri.scheme()
                << " scheme";
     return false;
   }

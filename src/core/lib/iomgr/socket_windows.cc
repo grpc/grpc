@@ -29,8 +29,8 @@
 #include <grpc/support/log_windows.h>
 #include <mswsock.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -130,7 +130,7 @@ void grpc_winsocket_shutdown(grpc_winsocket* winsocket) {
     DisconnectEx(winsocket->socket, NULL, 0, 0);
   } else {
     char* utf8_message = gpr_format_message(WSAGetLastError());
-    VLOG(2) << "Unable to retrieve DisconnectEx pointer : " << utf8_message;
+    ABSL_VLOG(2) << "Unable to retrieve DisconnectEx pointer : " << utf8_message;
     gpr_free(utf8_message);
   }
   // Calling closesocket triggers invocation of any pending I/O operations with
@@ -157,7 +157,7 @@ void grpc_winsocket_finish(grpc_winsocket* winsocket) {
 
 void grpc_winsocket_destroy(grpc_winsocket* winsocket) {
   gpr_mu_lock(&winsocket->state_mu);
-  CHECK(!winsocket->destroy_called);
+  ABSL_CHECK(!winsocket->destroy_called);
   winsocket->destroy_called = true;
   bool should_destroy = check_destroyable(winsocket);
   gpr_mu_unlock(&winsocket->state_mu);
@@ -172,7 +172,7 @@ void grpc_winsocket_destroy(grpc_winsocket* winsocket) {
 //-) The IOCP hasn't completed yet, and we're queuing it for later.
 static void socket_notify_on_iocp(grpc_winsocket* socket, grpc_closure* closure,
                                   grpc_winsocket_callback_info* info) {
-  CHECK(info->closure == NULL);
+  ABSL_CHECK(info->closure == NULL);
   gpr_mu_lock(&socket->state_mu);
   if (info->has_pending_iocp) {
     info->has_pending_iocp = 0;
@@ -194,7 +194,7 @@ void grpc_socket_notify_on_read(grpc_winsocket* socket, grpc_closure* closure) {
 
 bool grpc_socket_become_ready(grpc_winsocket* socket,
                               grpc_winsocket_callback_info* info) {
-  CHECK(!info->has_pending_iocp);
+  ABSL_CHECK(!info->has_pending_iocp);
   if (info->closure) {
     // Only run the closure once at shutdown.
     if (!info->closure_already_executed_at_shutdown) {
@@ -214,7 +214,7 @@ static void probe_ipv6_once(void) {
   SOCKET s = socket(AF_INET6, SOCK_STREAM, 0);
   g_ipv6_loopback_available = 0;
   if (s == INVALID_SOCKET) {
-    VLOG(2) << "Disabling AF_INET6 sockets because socket() failed.";
+    ABSL_VLOG(2) << "Disabling AF_INET6 sockets because socket() failed.";
   } else {
     grpc_sockaddr_in6 addr;
     memset(&addr, 0, sizeof(addr));
@@ -223,7 +223,7 @@ static void probe_ipv6_once(void) {
     if (bind(s, reinterpret_cast<grpc_sockaddr*>(&addr), sizeof(addr)) == 0) {
       g_ipv6_loopback_available = 1;
     } else {
-      VLOG(2) << "Disabling AF_INET6 sockets because ::1 is not available.";
+      ABSL_VLOG(2) << "Disabling AF_INET6 sockets because ::1 is not available.";
     }
     closesocket(s);
   }

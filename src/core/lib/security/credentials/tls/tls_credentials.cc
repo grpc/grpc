@@ -28,7 +28,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
@@ -41,27 +41,27 @@ namespace {
 bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
                                  bool is_client) {
   if (options == nullptr) {
-    LOG(ERROR) << "TLS credentials options is nullptr.";
+    ABSL_LOG(ERROR) << "TLS credentials options is nullptr.";
     return false;
   }
   // In this case, there will be non-retriable handshake errors.
   if (options->min_tls_version() > options->max_tls_version()) {
-    LOG(ERROR) << "TLS min version must not be higher than max version.";
+    ABSL_LOG(ERROR) << "TLS min version must not be higher than max version.";
     grpc_tls_credentials_options_destroy(options);
     return false;
   }
   if (options->max_tls_version() > grpc_tls_version::TLS1_3) {
-    LOG(ERROR) << "TLS max version must not be higher than v1.3.";
+    ABSL_LOG(ERROR) << "TLS max version must not be higher than v1.3.";
     grpc_tls_credentials_options_destroy(options);
     return false;
   }
   if (options->min_tls_version() < grpc_tls_version::TLS1_2) {
-    LOG(ERROR) << "TLS min version must not be lower than v1.2.";
+    ABSL_LOG(ERROR) << "TLS min version must not be lower than v1.2.";
     grpc_tls_credentials_options_destroy(options);
     return false;
   }
   if (!options->crl_directory().empty() && options->crl_provider() != nullptr) {
-    LOG(ERROR) << "Setting crl_directory and crl_provider not supported. Using "
+    ABSL_LOG(ERROR) << "Setting crl_directory and crl_provider not supported. Using "
                   "the crl_provider.";
     // TODO(gtcooke94) - Maybe return false here. Right now object lifetime of
     // this options struct is leaky if false is returned and represents a more
@@ -71,11 +71,11 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
   // indicate callers are doing something wrong with the API.
   if (is_client && options->cert_request_type() !=
                        GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {
-    LOG(ERROR)
+    ABSL_LOG(ERROR)
         << "Client's credentials options should not set cert_request_type.";
   }
   if (!is_client && !options->verify_server_cert()) {
-    LOG(ERROR)
+    ABSL_LOG(ERROR)
         << "Server's credentials options should not set verify_server_cert.";
   }
   // In the following conditions, there could be severe security issues.
@@ -83,7 +83,7 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
     // If no verifier is specified on the client side, use the hostname verifier
     // as default. Users who want to bypass all the verifier check should
     // implement an external verifier instead.
-    VLOG(2) << "No verifier specified on the client side. Using default "
+    ABSL_VLOG(2) << "No verifier specified on the client side. Using default "
                "hostname verifier";
     options->set_certificate_verifier(
         grpc_core::MakeRefCounted<grpc_core::HostNameCertificateVerifier>());

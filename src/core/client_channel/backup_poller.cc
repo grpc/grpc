@@ -23,7 +23,7 @@
 #include <grpc/support/sync.h>
 #include <inttypes.h>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/status/status.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -74,7 +74,7 @@ void grpc_client_channel_global_init_backup_polling() {
   int32_t poll_interval_ms =
       grpc_core::ConfigVars::Get().ClientChannelBackupPollIntervalMs();
   if (poll_interval_ms < 0) {
-    LOG(ERROR) << "Invalid GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS: "
+    ABSL_LOG(ERROR) << "Invalid GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS: "
                << poll_interval_ms << ", default value "
                << g_poll_interval.millis() << " will be used.";
   } else {

@@ -46,8 +46,8 @@
 
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -388,12 +388,12 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
             << " ms";
         if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
                             sizeof(timeout))) {
-          LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
+          ABSL_LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
                      << grpc_core::StrError(errno);
           return absl::OkStatus();
         }
         if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-          LOG(ERROR) << "getsockopt(TCP_USER_TIMEOUT) "
+          ABSL_LOG(ERROR) << "getsockopt(TCP_USER_TIMEOUT) "
                      << grpc_core::StrError(errno);
           return absl::OkStatus();
         }
@@ -415,7 +415,7 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
 // set a socket using a grpc_socket_mutator
 grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
                                                grpc_socket_mutator* mutator) {
-  CHECK(mutator);
+  ABSL_CHECK(mutator);
   if (!grpc_socket_mutator_mutate_fd(mutator, fd, usage)) {
     return GRPC_ERROR_CREATE("grpc_socket_mutator failed.");
   }
@@ -478,7 +478,7 @@ static int create_socket(grpc_socket_factory* factory, int domain, int type,
                 : socket(domain, type, protocol);
   if (res < 0 && errno == EMFILE) {
     int saved_errno = errno;
-    LOG_EVERY_N_SEC(ERROR, 10)
+    ABSL_LOG_EVERY_N_SEC(ERROR, 10)
         << "socket(" << domain << ", " << type << ", " << protocol
         << ") returned " << res << " with error: |"
         << grpc_core::StrError(errno)

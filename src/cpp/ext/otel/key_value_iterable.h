@@ -25,7 +25,7 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "opentelemetry/common/attribute_value.h"
@@ -100,7 +100,7 @@ class OpenTelemetryPluginImpl::KeyValueIterable
     }
     // Add per-call optional labels
     if (!optional_labels_.empty()) {
-      CHECK(optional_labels_.size() ==
+      ABSL_CHECK(optional_labels_.size() ==
             static_cast<size_t>(grpc_core::ClientCallTracer::CallAttemptTracer::
                                     OptionalLabelKey::kSize));
       for (size_t i = 0; i < optional_labels_.size(); ++i) {

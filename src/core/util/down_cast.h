@@ -20,7 +20,7 @@
 #include <type_traits>
 
 #include "absl/base/config.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 
 namespace grpc_core {
 
@@ -32,7 +32,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline To DownCast(From* f) {
 // If we have RTTI & we're in debug, assert that the cast is legal.
 #if ABSL_INTERNAL_HAS_RTTI
 #ifndef NDEBUG
-  if (f != nullptr) CHECK_NE(dynamic_cast<To>(f), nullptr);
+  if (f != nullptr) ABSL_CHECK_NE(dynamic_cast<To>(f), nullptr);
 #endif
 #endif
   return static_cast<To>(f);

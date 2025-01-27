@@ -31,8 +31,8 @@
 
 #include "absl/flags/declare.h"
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "test/core/security/oauth2_utils.h"
@@ -68,8 +68,8 @@ std::string GetServiceAccountJsonKey() {
 std::string GetOauth2AccessToken() {
   std::shared_ptr<CallCredentials> creds = GoogleComputeEngineCredentials();
   char* token = grpc_test_fetch_oauth2_token_with_credentials(creds->c_creds_);
-  CHECK_NE(token, nullptr);
-  LOG(INFO) << "Get raw oauth2 access token: " << token;
+  ABSL_CHECK_NE(token, nullptr);
+  ABSL_LOG(INFO) << "Get raw oauth2 access token: " << token;
   std::string access_token(token + sizeof("Bearer ") - 1);
   gpr_free(token);
   return access_token;
@@ -146,7 +146,7 @@ static void log_metadata_entry(const std::string& prefix,
   if (absl::EndsWith(key_str, "-bin")) {
     value_str = absl::Base64Escape(value_str);
   }
-  LOG(ERROR) << prefix << " " << key_str << ": " << value_str;
+  ABSL_LOG(ERROR) << prefix << " " << key_str << ": " << value_str;
 }
 
 void MetadataAndStatusLoggerInterceptor::Intercept(
@@ -168,8 +168,8 @@ void MetadataAndStatusLoggerInterceptor::Intercept(
     }
 
     auto status = methods->GetRecvStatus();
-    LOG(ERROR) << "GRPC_STATUS " << status->error_code();
-    LOG(ERROR) << "GRPC_ERROR_MESSAGE " << status->error_message();
+    ABSL_LOG(ERROR) << "GRPC_STATUS " << status->error_code();
+    ABSL_LOG(ERROR) << "GRPC_ERROR_MESSAGE " << status->error_message();
   }
 
   methods->Proceed();

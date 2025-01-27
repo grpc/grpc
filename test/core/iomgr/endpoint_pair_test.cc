@@ -26,8 +26,8 @@
 
 #include <chrono>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -58,7 +58,7 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  CHECK_OK(resolved_addr);
+  ABSL_CHECK_OK(resolved_addr);
   std::unique_ptr<EventEngine::Endpoint> client_endpoint;
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   grpc_core::Notification client_signal;
@@ -80,13 +80,13 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
       std::move(accept_cb), [](absl::Status /*status*/) {}, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
 
-  CHECK_OK(listener->Bind(*resolved_addr));
-  CHECK_OK(listener->Start());
+  ABSL_CHECK_OK(listener->Bind(*resolved_addr));
+  ABSL_CHECK_OK(listener->Start());
 
   ee->Connect(
       [&client_endpoint, &client_signal](
           absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
-        CHECK_OK(endpoint);
+        ABSL_CHECK_OK(endpoint);
         client_endpoint = std::move(*endpoint);
         client_signal.Notify();
       },
@@ -144,7 +144,7 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 TEST(EndpointPairTest, MainTest) {
 #ifdef GPR_WINDOWS
   if (grpc_event_engine::experimental::UseEventEngineClient()) {
-    LOG(INFO) << "Skipping pathological EventEngine test on Windows";
+    ABSL_LOG(INFO) << "Skipping pathological EventEngine test on Windows";
     return;
   }
 #endif

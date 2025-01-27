@@ -27,8 +27,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -74,7 +74,7 @@ static void CFStreamUnref(CFStreamEndpoint* ep, const char* reason,
                           const char* file, int line) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->refcount.count);
-    VLOG(2).AtLocation(file, line) << "CFStream endpoint unref " << ep << " : "
+    ABSL_VLOG(2).AtLocation(file, line) << "CFStream endpoint unref " << ep << " : "
                                    << reason << " " << val << " -> " << val - 1;
   }
   if (gpr_unref(&ep->refcount)) {
@@ -85,7 +85,7 @@ static void CFStreamRef(CFStreamEndpoint* ep, const char* reason,
                         const char* file, int line) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->refcount.count);
-    VLOG(2).AtLocation(file, line) << "CFStream endpoint ref " << ep << " : "
+    ABSL_VLOG(2).AtLocation(file, line) << "CFStream endpoint ref " << ep << " : "
                                    << reason << " " << val << " -> " << val + 1;
   }
   gpr_ref(&ep->refcount);
@@ -108,15 +108,15 @@ static grpc_error_handle CFStreamAnnotateError(grpc_error_handle src_error) {
 
 static void CallReadCb(CFStreamEndpoint* ep, grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp) && ABSL_VLOG_IS_ON(2)) {
-    VLOG(2) << "CFStream endpoint:" << ep << " call_read_cb " << ep->read_cb
+    ABSL_VLOG(2) << "CFStream endpoint:" << ep << " call_read_cb " << ep->read_cb
             << " " << ep->read_cb->cb << ":" << ep->read_cb->cb_arg;
     size_t i;
-    VLOG(2) << "read: error=" << grpc_core::StatusToString(error);
+    ABSL_VLOG(2) << "read: error=" << grpc_core::StatusToString(error);
 
     for (i = 0; i < ep->read_slices->count; i++) {
       char* dump = grpc_dump_slice(ep->read_slices->slices[i],
                                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      VLOG(2) << "READ " << ep << " (peer=" << ep->peer_string << "): " << dump;
+      ABSL_VLOG(2) << "READ " << ep << " (peer=" << ep->peer_string << "): " << dump;
       gpr_free(dump);
     }
   }
@@ -139,7 +139,7 @@ static void CallWriteCb(CFStreamEndpoint* ep, grpc_error_handle error) {
 
 static void ReadAction(void* arg, grpc_error_handle error) {
   CFStreamEndpoint* ep = static_cast<CFStreamEndpoint*>(arg);
-  CHECK_NE(ep->read_cb, nullptr);
+  ABSL_CHECK_NE(ep->read_cb, nullptr);
   if (!error.ok()) {
     grpc_slice_buffer_reset_and_unref(ep->read_slices);
     CallReadCb(ep, error);
@@ -147,7 +147,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
     return;
   }
 
-  CHECK_EQ(ep->read_slices->count, 1);
+  ABSL_CHECK_EQ(ep->read_slices->count, 1);
   grpc_slice slice = ep->read_slices->slices[0];
   size_t len = GRPC_SLICE_LENGTH(slice);
   CFIndex read_size =
@@ -179,7 +179,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
 
 static void WriteAction(void* arg, grpc_error_handle error) {
   CFStreamEndpoint* ep = static_cast<CFStreamEndpoint*>(arg);
-  CHECK_NE(ep->write_cb, nullptr);
+  ABSL_CHECK_NE(ep->write_cb, nullptr);
   if (!error.ok()) {
     grpc_slice_buffer_reset_and_unref(ep->write_slices);
     CallWriteCb(ep, error);
@@ -217,7 +217,7 @@ static void WriteAction(void* arg, grpc_error_handle error) {
     if (GRPC_TRACE_FLAG_ENABLED(tcp) && ABSL_VLOG_IS_ON(2)) {
       grpc_slice trace_slice = grpc_slice_sub(slice, 0, write_size);
       char* dump = grpc_dump_slice(trace_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      VLOG(2) << "WRITE " << ep << " (peer=" << ep->peer_string
+      ABSL_VLOG(2) << "WRITE " << ep << " (peer=" << ep->peer_string
               << "): " << dump;
       gpr_free(dump);
       grpc_core::CSliceUnref(trace_slice);
@@ -233,7 +233,7 @@ static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
   GRPC_TRACE_VLOG(tcp, 2) << "CFStream endpoint:" << ep_impl << " read ("
                           << slices << ", " << cb
                           << ") length:" << slices->length;
-  CHECK_EQ(ep_impl->read_cb, nullptr);
+  ABSL_CHECK_EQ(ep_impl->read_cb, nullptr);
   ep_impl->read_cb = cb;
   ep_impl->read_slices = slices;
   grpc_slice_buffer_reset_and_unref(slices);
@@ -250,7 +250,7 @@ static void CFStreamWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
   GRPC_TRACE_VLOG(tcp, 2) << "CFStream endpoint:" << ep_impl << " write ("
                           << slices << ", " << cb
                           << ") length:" << slices->length;
-  CHECK_EQ(ep_impl->write_cb, nullptr);
+  ABSL_CHECK_EQ(ep_impl->write_cb, nullptr);
   ep_impl->write_cb = cb;
   ep_impl->write_slices = slices;
   EP_REF(ep_impl, "write");

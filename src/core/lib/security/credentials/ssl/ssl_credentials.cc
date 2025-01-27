@@ -28,8 +28,8 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -51,7 +51,7 @@ grpc_ssl_credentials::grpc_ssl_credentials(
     const char* pem_root_certs =
         grpc_core::DefaultSslRootStore::GetPemRootCerts();
     if (pem_root_certs == nullptr) {
-      LOG(ERROR) << "Could not get default pem root certs.";
+      ABSL_LOG(ERROR) << "Could not get default pem root certs.";
     } else {
       char* default_roots = gpr_strdup(pem_root_certs);
       config_.pem_root_certs = default_roots;
@@ -82,7 +82,7 @@ grpc_ssl_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target, grpc_core::ChannelArgs* args) {
   if (config_.pem_root_certs == nullptr) {
-    LOG(ERROR) << "No root certs in config. Client-side security connector "
+    ABSL_LOG(ERROR) << "No root certs in config. Client-side security connector "
                   "must have root certs.";
     return nullptr;
   }
@@ -107,7 +107,7 @@ grpc_ssl_credentials::create_security_connector(
         &config_, config_.pem_root_certs, root_store_, session_cache,
         &factory_with_cache);
     if (status != GRPC_SECURITY_OK) {
-      LOG(ERROR) << "InitializeClientHandshakerFactory returned bad status.";
+      ABSL_LOG(ERROR) << "InitializeClientHandshakerFactory returned bad status.";
       return nullptr;
     }
     security_connector = grpc_ssl_channel_security_connector_create(
@@ -144,8 +144,8 @@ void grpc_ssl_credentials::build_config(
     const grpc_ssl_verify_peer_options* verify_options) {
   config_.pem_root_certs = gpr_strdup(pem_root_certs);
   if (pem_key_cert_pair != nullptr) {
-    CHECK_NE(pem_key_cert_pair->private_key, nullptr);
-    CHECK_NE(pem_key_cert_pair->cert_chain, nullptr);
+    ABSL_CHECK_NE(pem_key_cert_pair->private_key, nullptr);
+    ABSL_CHECK_NE(pem_key_cert_pair->cert_chain, nullptr);
     config_.pem_key_cert_pair = static_cast<tsi_ssl_pem_key_cert_pair*>(
         gpr_zalloc(sizeof(tsi_ssl_pem_key_cert_pair)));
     config_.pem_key_cert_pair->cert_chain =
@@ -190,7 +190,7 @@ grpc_security_status grpc_ssl_credentials::InitializeClientHandshakerFactory(
                            config->pem_key_cert_pair->cert_chain != nullptr;
   tsi_ssl_client_handshaker_options options;
   if (pem_root_certs == nullptr) {
-    LOG(ERROR) << "Handshaker factory creation failed. pem_root_certs cannot "
+    ABSL_LOG(ERROR) << "Handshaker factory creation failed. pem_root_certs cannot "
                   "be nullptr";
     return GRPC_SECURITY_ERROR;
   }
@@ -210,7 +210,7 @@ grpc_security_status grpc_ssl_credentials::InitializeClientHandshakerFactory(
                                                             handshaker_factory);
   gpr_free(options.alpn_protocols);
   if (result != TSI_OK) {
-    LOG(ERROR) << "Handshaker factory creation failed with "
+    ABSL_LOG(ERROR) << "Handshaker factory creation failed with "
                << tsi_result_to_string(result);
     return GRPC_SECURITY_ERROR;
   }
@@ -227,7 +227,7 @@ grpc_channel_credentials* grpc_ssl_credentials_create(
       << ", pem_key_cert_pair=" << pem_key_cert_pair
       << ", verify_options=" << verify_options << ", reserved=" << reserved
       << ")";
-  CHECK_EQ(reserved, nullptr);
+  ABSL_CHECK_EQ(reserved, nullptr);
 
   return new grpc_ssl_credentials(
       pem_root_certs, pem_key_cert_pair,
@@ -242,7 +242,7 @@ grpc_channel_credentials* grpc_ssl_credentials_create_ex(
       << ", pem_key_cert_pair=" << pem_key_cert_pair
       << ", verify_options=" << verify_options << ", reserved=" << reserved
       << ")";
-  CHECK_EQ(reserved, nullptr);
+  ABSL_CHECK_EQ(reserved, nullptr);
 
   return new grpc_ssl_credentials(pem_root_certs, pem_key_cert_pair,
                                   verify_options);
@@ -292,13 +292,13 @@ tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
     size_t num_key_cert_pairs) {
   tsi_ssl_pem_key_cert_pair* tsi_pairs = nullptr;
   if (num_key_cert_pairs > 0) {
-    CHECK_NE(pem_key_cert_pairs, nullptr);
+    ABSL_CHECK_NE(pem_key_cert_pairs, nullptr);
     tsi_pairs = static_cast<tsi_ssl_pem_key_cert_pair*>(
         gpr_zalloc(num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair)));
   }
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    CHECK_NE(pem_key_cert_pairs[i].private_key, nullptr);
-    CHECK_NE(pem_key_cert_pairs[i].cert_chain, nullptr);
+    ABSL_CHECK_NE(pem_key_cert_pairs[i].private_key, nullptr);
+    ABSL_CHECK_NE(pem_key_cert_pairs[i].cert_chain, nullptr);
     tsi_pairs[i].cert_chain = gpr_strdup(pem_key_cert_pairs[i].cert_chain);
     tsi_pairs[i].private_key = gpr_strdup(pem_key_cert_pairs[i].private_key);
   }
@@ -335,14 +335,14 @@ grpc_ssl_server_certificate_config* grpc_ssl_server_certificate_config_create(
           gpr_zalloc(sizeof(grpc_ssl_server_certificate_config)));
   config->pem_root_certs = gpr_strdup(pem_root_certs);
   if (num_key_cert_pairs > 0) {
-    CHECK_NE(pem_key_cert_pairs, nullptr);
+    ABSL_CHECK_NE(pem_key_cert_pairs, nullptr);
     config->pem_key_cert_pairs = static_cast<grpc_ssl_pem_key_cert_pair*>(
         gpr_zalloc(num_key_cert_pairs * sizeof(grpc_ssl_pem_key_cert_pair)));
   }
   config->num_key_cert_pairs = num_key_cert_pairs;
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    CHECK_NE(pem_key_cert_pairs[i].private_key, nullptr);
-    CHECK_NE(pem_key_cert_pairs[i].cert_chain, nullptr);
+    ABSL_CHECK_NE(pem_key_cert_pairs[i].private_key, nullptr);
+    ABSL_CHECK_NE(pem_key_cert_pairs[i].cert_chain, nullptr);
     config->pem_key_cert_pairs[i].cert_chain =
         gpr_strdup(pem_key_cert_pairs[i].cert_chain);
     config->pem_key_cert_pairs[i].private_key =
@@ -369,7 +369,7 @@ grpc_ssl_server_credentials_create_options_using_config(
     grpc_ssl_server_certificate_config* config) {
   grpc_ssl_server_credentials_options* options = nullptr;
   if (config == nullptr) {
-    LOG(ERROR) << "Certificate config must not be NULL.";
+    ABSL_LOG(ERROR) << "Certificate config must not be NULL.";
     goto done;
   }
   options = static_cast<grpc_ssl_server_credentials_options*>(
@@ -385,7 +385,7 @@ grpc_ssl_server_credentials_create_options_using_config_fetcher(
     grpc_ssl_client_certificate_request_type client_certificate_request,
     grpc_ssl_server_certificate_config_callback cb, void* user_data) {
   if (cb == nullptr) {
-    LOG(ERROR) << "Invalid certificate config callback parameter.";
+    ABSL_LOG(ERROR) << "Invalid certificate config callback parameter.";
     return nullptr;
   }
 
@@ -426,7 +426,7 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
       << ", num_key_cert_pairs=" << (unsigned long)num_key_cert_pairs
       << ", client_certificate_request=" << client_certificate_request
       << ", reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
+  ABSL_CHECK_EQ(reserved, nullptr);
 
   grpc_ssl_server_certificate_config* cert_config =
       grpc_ssl_server_certificate_config_create(
@@ -443,18 +443,18 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_with_options(
   grpc_server_credentials* retval = nullptr;
 
   if (options == nullptr) {
-    LOG(ERROR) << "Invalid options trying to create SSL server credentials.";
+    ABSL_LOG(ERROR) << "Invalid options trying to create SSL server credentials.";
     goto done;
   }
 
   if (options->certificate_config == nullptr &&
       options->certificate_config_fetcher == nullptr) {
-    LOG(ERROR) << "SSL server credentials options must specify either "
+    ABSL_LOG(ERROR) << "SSL server credentials options must specify either "
                   "certificate config or fetcher.";
     goto done;
   } else if (options->certificate_config_fetcher != nullptr &&
              options->certificate_config_fetcher->cb == nullptr) {
-    LOG(ERROR) << "Certificate config fetcher callback must not be NULL.";
+    ABSL_LOG(ERROR) << "Certificate config fetcher callback must not be NULL.";
     goto done;
   }
 

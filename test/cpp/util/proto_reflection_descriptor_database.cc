@@ -20,7 +20,7 @@
 
 #include <vector>
 
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "src/core/util/crash.h"
 
 using grpc::reflection::v1alpha::ErrorResponse;
@@ -85,15 +85,15 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
-      LOG(INFO) << "NOT_FOUND from server for FindFileByName(" << filename
+      ABSL_LOG(INFO) << "NOT_FOUND from server for FindFileByName(" << filename
                 << ")";
     } else {
-      LOG(INFO) << "Error on FindFileByName(" << filename
+      ABSL_LOG(INFO) << "Error on FindFileByName(" << filename
                 << ")\n\tError code: " << error.error_code()
                 << "\n\tError Message: " << error.error_message();
     }
   } else {
-    LOG(INFO) << "Error on FindFileByName(" << filename
+    ABSL_LOG(INFO) << "Error on FindFileByName(" << filename
               << ") response type\n\tExpecting: "
               << ServerReflectionResponse::MessageResponseCase::
                      kFileDescriptorResponse
@@ -129,15 +129,15 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
     const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       missing_symbols_.insert(symbol_name);
-      LOG(INFO) << "NOT_FOUND from server for FindFileContainingSymbol("
+      ABSL_LOG(INFO) << "NOT_FOUND from server for FindFileContainingSymbol("
                 << symbol_name << ")";
     } else {
-      LOG(INFO) << "Error on FindFileContainingSymbol(" << symbol_name
+      ABSL_LOG(INFO) << "Error on FindFileContainingSymbol(" << symbol_name
                 << ")\n\tError code: " << error.error_code()
                 << "\n\tError Message: " << error.error_message();
     }
   } else {
-    LOG(INFO) << "Error on FindFileContainingSymbol(" << symbol_name
+    ABSL_LOG(INFO) << "Error on FindFileContainingSymbol(" << symbol_name
               << ") response type\n\tExpecting: "
               << ServerReflectionResponse::MessageResponseCase::
                      kFileDescriptorResponse
@@ -157,7 +157,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
   if (missing_extensions_.find(containing_type) != missing_extensions_.end() &&
       missing_extensions_[containing_type].find(field_number) !=
           missing_extensions_[containing_type].end()) {
-    LOG(INFO) << "nested map.";
+    ABSL_LOG(INFO) << "nested map.";
     return false;
   }
 
@@ -184,16 +184,16 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
         missing_extensions_[containing_type] = {};
       }
       missing_extensions_[containing_type].insert(field_number);
-      LOG(INFO) << "NOT_FOUND from server for FindFileContainingExtension("
+      ABSL_LOG(INFO) << "NOT_FOUND from server for FindFileContainingExtension("
                 << containing_type << ", " << field_number << ")";
     } else {
-      LOG(INFO) << "Error on FindFileContainingExtension(" << containing_type
+      ABSL_LOG(INFO) << "Error on FindFileContainingExtension(" << containing_type
                 << ", " << field_number
                 << ")\n\tError code: " << error.error_code()
                 << "\n\tError Message: " << error.error_message();
     }
   } else {
-    LOG(INFO) << "Error on FindFileContainingExtension(" << containing_type
+    ABSL_LOG(INFO) << "Error on FindFileContainingExtension(" << containing_type
               << ", " << field_number << ") response type\n\tExpecting: "
               << ServerReflectionResponse::MessageResponseCase::
                      kFileDescriptorResponse
@@ -231,10 +231,10 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
-      LOG(INFO) << "NOT_FOUND from server for FindAllExtensionNumbers("
+      ABSL_LOG(INFO) << "NOT_FOUND from server for FindAllExtensionNumbers("
                 << extendee_type << ")";
     } else {
-      LOG(INFO) << "Error on FindAllExtensionNumbersExtension(" << extendee_type
+      ABSL_LOG(INFO) << "Error on FindAllExtensionNumbersExtension(" << extendee_type
                 << ")\n\tError code: " << error.error_code()
                 << "\n\tError Message: " << error.error_message();
     }
@@ -262,10 +262,10 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse& error = response.error_response();
-    LOG(INFO) << "Error on GetServices()\n\tError code: " << error.error_code()
+    ABSL_LOG(INFO) << "Error on GetServices()\n\tError code: " << error.error_code()
               << "\n\tError Message: " << error.error_message();
   } else {
-    LOG(INFO)
+    ABSL_LOG(INFO)
         << "Error on GetServices() response type\n\tExpecting: "
         << ServerReflectionResponse::MessageResponseCase::kListServicesResponse
         << "\n\tReceived: " << response.message_response_case();
