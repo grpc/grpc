@@ -13,12 +13,10 @@
 # limitations under the License.
 
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
 load(
     "//test/core/test_util:grpc_fuzzer.bzl",
     "grpc_fuzz_test",
-    "grpc_fuzzer",
-    "grpc_proto_fuzzer",
 )
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
@@ -362,16 +360,26 @@ grpc_cc_test(
     ],
 )
 
-grpc_proto_fuzzer(
+grpc_internal_proto_library(
+    name = "chunked_vector_fuzzer_proto",
+    srcs = ["chunked_vector_fuzzer.proto"],
+)
+
+grpc_cc_proto_library(
+    name = "chunked_vector_fuzzer_cc_proto",
+    deps = ["chunked_vector_fuzzer_proto"],
+)
+
+grpc_fuzz_test(
     name = "chunked_vector_fuzzer",
     srcs = ["chunked_vector_fuzzer.cc"],
-    corpus = "chunked_vector_corpora",
-    external_deps = ["absl/log:check"],
-    proto = "chunked_vector_fuzzer.proto",
-    tags = ["no_windows"],
-    uses_event_engine = False,
-    uses_polling = False,
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     deps = [
+        "chunked_vector_fuzzer_cc_proto",
         "//src/core:chunked_vector",
         "//src/core:resource_quota",
         "//test/core/test_util:grpc_test_util",
@@ -513,10 +521,14 @@ grpc_cc_test(
     ],
 )
 
-grpc_fuzzer(
+grpc_fuzz_test(
     name = "uri_fuzzer_test",
     srcs = ["uri_fuzzer_test.cc"],
-    corpus = "uri_corpus",
+    external_deps = [
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = [
         "no_windows",
         # Without "nofixdeps", "//:grpc" gets substituted with "//:event_engine_base_hdrs"
@@ -717,15 +729,25 @@ grpc_cc_test(
     ],
 )
 
-grpc_proto_fuzzer(
+grpc_internal_proto_library(
+    name = "avl_fuzzer_proto",
+    srcs = ["avl_fuzzer.proto"],
+)
+
+grpc_cc_proto_library(
+    name = "avl_fuzzer_cc_proto",
+    deps = ["avl_fuzzer_proto"],
+)
+
+grpc_fuzz_test(
     name = "avl_fuzzer",
     srcs = ["avl_fuzzer.cc"],
-    corpus = "avl_fuzzer_corpus",
-    proto = "avl_fuzzer.proto",
-    tags = ["no_windows"],
-    uses_event_engine = False,
-    uses_polling = False,
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+    ],
     deps = [
+        "avl_fuzzer_cc_proto",
         "//src/core:avl",
         "//test/core/test_util:grpc_test_util",
     ],
