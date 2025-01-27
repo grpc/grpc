@@ -67,6 +67,8 @@
 #include "fuzztest/fuzztest.h"
 #endif
 
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
+
 // Test feature flags.
 #define FEATURE_MASK_DOES_NOT_SUPPORT_RETRY (1 << 0)
 #define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION (1 << 1)

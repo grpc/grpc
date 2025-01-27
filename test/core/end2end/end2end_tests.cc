@@ -75,7 +75,7 @@ CoreEnd2endTest::CoreEnd2endTest(
   if (fuzzing_args != nullptr) {
     ConfigVars::Overrides overrides =
         OverridesFromFuzzConfigVars(fuzzing_args->config_vars());
-    overrides.default_ssl_roots_file_path = "src/core/tsi/test_creds/ca.pem";
+    overrides.default_ssl_roots_file_path = CA_CERT_PATH;
     ConfigVars::SetOverrides(overrides);
     TestOnlyReloadExperimentsFromConfigVariables();
     FuzzingEventEngine::Options options;
@@ -102,6 +102,10 @@ CoreEnd2endTest::CoreEnd2endTest(
       ExecCtx exec_ctx;
       Executor::SetThreadingAll(false);
     });
+  } else {
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.default_ssl_roots_file_path = CA_CERT_PATH;
+    grpc_core::ConfigVars::SetOverrides(overrides);
   }
   CoreConfiguration::Reset();
   initialized_ = false;
