@@ -36,6 +36,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "file_descriptors.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
@@ -330,14 +331,14 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     grpc_core::global_stats().IncrementTcpReadOffer(incoming_buffer_->Length());
     grpc_core::global_stats().IncrementTcpReadOfferIovSize(
         incoming_buffer_->Count());
-    Int64Result read_bytes;
+    Int64Result res;
     FileDescriptors& fds = poller_->GetFileDescriptors();
     do {
       grpc_core::global_stats().IncrementSyscallRead();
-      read_bytes = fds.RecvMsg(fd_, &msg, 0);
-    } while (read_bytes.IsPosixError(EINTR));
+      res = fds.RecvMsg(fd_, &msg, 0);
+    } while (res.IsPosixError(EINTR));
 
-    if (read_bytes.IsPosixError(EAGAIN)) {
+    if (res.IsPosixError(EAGAIN)) {
       // NB: After calling call_read_cb a parallel call of the read handler may
       // be running.
       if (total_read_bytes > 0) {
@@ -347,29 +348,28 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       inq_ = 0;
       return false;
     }
-    bool error_or_eof = !read_bytes.ok() || *read_bytes == 0;
+    ssize_t read_bytes = *res;
     // We have read something in previous reads. We need to deliver those bytes
     // to the upper layer.
-    if (error_or_eof && total_read_bytes >= 1) {
+    if (read_bytes <= 0 && total_read_bytes >= 1) {
       break;
     }
 
-    if (error_or_eof) {
+    if (read_bytes <= 0) {
       // 0 read size ==> end of stream
       incoming_buffer_->Clear();
-      if (*read_bytes == 0) {
+      if (read_bytes == 0) {
         status = TcpAnnotateError(absl::InternalError("Socket closed"));
       } else {
-        status = TcpAnnotateError(
-            absl::InternalError(absl::StrCat("recvmsg:", read_bytes.status())));
+        status = TcpAnnotateError(absl::InternalError(
+            absl::StrCat("recvmsg:", grpc_core::StrError(errno))));
       }
       return true;
     }
 
-    grpc_core::global_stats().IncrementTcpReadSize(*read_bytes);
-    AddToEstimate(*read_bytes);
-    DCHECK((size_t)*read_bytes <=
-           incoming_buffer_->Length() - total_read_bytes);
+    grpc_core::global_stats().IncrementTcpReadSize(read_bytes);
+    AddToEstimate(static_cast<size_t>(read_bytes));
+    DCHECK((size_t)read_bytes <= incoming_buffer_->Length() - total_read_bytes);
 
 #ifdef GRPC_HAVE_TCP_INQ
     if (inq_capable_) {
@@ -385,14 +385,14 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     }
 #endif  // GRPC_HAVE_TCP_INQ
 
-    total_read_bytes += *read_bytes;
+    total_read_bytes += read_bytes;
     if (inq_ == 0 || total_read_bytes == incoming_buffer_->Length()) {
       break;
     }
 
     // We had a partial read, and still have space to read more data. So, adjust
     // IOVs and try to read more.
-    size_t remaining = *read_bytes;
+    size_t remaining = read_bytes;
     size_t j = 0;
     for (size_t i = 0; i < iov_len; i++) {
       if (remaining >= iov[i].iov_len) {
@@ -1279,8 +1279,12 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      std::shared_ptr<EventEngine> engine,
                                      MemoryAllocator&& /*allocator*/,
                                      const PosixTcpOptions& options)
-    : on_done_(on_done), traced_buffers_(), handle_(handle), engine_(engine) {
-  poller_ = handle->Poller();
+    : on_done_(on_done),
+      traced_buffers_(),
+      handle_(handle),
+      poller_(handle->Poller()),
+      engine_(engine) {
+  PosixSocketWrapper sock(handle->WrappedFd().fd());
   fd_ = handle_->WrappedFd();
   CHECK(options.resource_quota != nullptr);
   auto& fds = poller_->GetFileDescriptors();
