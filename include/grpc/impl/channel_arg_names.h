@@ -402,12 +402,6 @@
 #define GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS "grpc.experimental.stats_plugins"
 /** If non-zero, allow security frames to be sent and received. */
 #define GRPC_ARG_SECURITY_FRAME_ALLOWED "grpc.security_frame_allowed"
-/** A comma separated list of supported transport protocols. If non-empty, allow
- client and server to attempt to negotiate transport protocols.
- NOTE: This is an experimental feature. It is not fully implemented and is not
- currently functional.
- TODO(gtcooke94) - update with specific details when implementing. */
-#define GRPC_ARG_TRANSPORT_PROTOCOLS "grpc.transport_protocols"
 /** \} */
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */
