@@ -111,9 +111,9 @@ grpc_cc_library(
 
 [
     grpc_cc_library(
-        name = "end2end_test_lib" + 
-            ("_fuzztest" if fuzz else "_no_fuzztest") + 
-            ("_gtest" if gtest else "_no_gtest"),
+        name = "end2end_test_lib" +
+               ("_fuzztest" if fuzz else "_no_fuzztest") +
+               ("_gtest" if gtest else "_no_gtest"),
         testonly = 1,
         srcs = [
             "end2end_test_suites.cc",
@@ -132,6 +132,9 @@ grpc_cc_library(
             "fixtures/sockpair_fixture.h",
             "tests/cancel_test_helpers.h",
         ],
+        defines =
+            ([] if fuzz else ["GRPC_END2END_TEST_NO_FUZZER"]) +
+            ([] if gtest else ["GRPC_END2END_TEST_NO_GTEST"]),
         external_deps = [
             "absl/functional:any_invocable",
             "absl/log:check",
@@ -142,9 +145,6 @@ grpc_cc_library(
             "absl/strings",
             "gtest",
         ] + (["fuzztest"] if fuzz else []),
-        defines = 
-            ([] if fuzz else ["GRPC_END2END_TEST_NO_FUZZER"]) +
-            ([] if gtest else ["GRPC_END2END_TEST_NO_GTEST"]),
         deps = [
             "cq_verifier",
             "end2end_test_fuzzer_cc_proto",
@@ -170,8 +170,14 @@ grpc_cc_library(
             "//test/core/test_util:grpc_test_util",
         ],
     )
-    for fuzz in [False, True]
-    for gtest in [False, True]
+    for fuzz in [
+        False,
+        True,
+    ]
+    for gtest in [
+        False,
+        True,
+    ]
 ]
 
 grpc_core_end2end_test(name = "bad_ping")
