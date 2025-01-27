@@ -946,12 +946,14 @@ grpc_cc_library(
     ],
     deps = [
         "construct_destruct",
+        "map",
         "poll",
         "promise_factory",
         "promise_like",
         "//:debug_location",
         "//:gpr",
         "//:grpc_trace",
+        "//:promise",
     ],
 )
 
