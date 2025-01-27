@@ -167,5 +167,6 @@ def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], external_deps = []):
             "bazel_only",
         ],
         deps = deps,
+        uses_polling = False,
         external_deps = external_deps,
     )
