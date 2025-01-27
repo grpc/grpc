@@ -306,7 +306,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
   }
 
   CHECK_NE(incoming_buffer_->Length(), 0u);
-  DCHECK_GT(min_progress_size_, 0u);
+  DCHECK_GT(min_progress_size_, 0);
 
   do {
     // Assume there is something on the queue. If we receive TCP_INQ from
@@ -485,12 +485,11 @@ void PosixEndpointImpl::UpdateRcvLowat() {
   // TODO(ctiller): Check if supported by OS.
   // TODO(ctiller): Allow some adjustments instead of hardcoding things.
 
-  static constexpr uint32_t kRcvLowatMax = 16 * 1024 * 1024;
+  static constexpr int kRcvLowatMax = 16 * 1024 * 1024;
   static constexpr int kRcvLowatThreshold = 16 * 1024;
 
-  uint32_t remaining =
-      std::min({static_cast<uint32_t>(incoming_buffer_->Length()), kRcvLowatMax,
-                min_progress_size_});
+  int remaining = std::min({static_cast<int>(incoming_buffer_->Length()),
+                            kRcvLowatMax, min_progress_size_});
 
   // Setting SO_RCVLOWAT for small quantities does not save on CPU.
   if (remaining < kRcvLowatThreshold) {
@@ -610,8 +609,7 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   incoming_buffer_->Clear();
   incoming_buffer_->Swap(last_read_buffer_);
   if (args != nullptr && grpc_core::IsTcpFrameSizeTuningEnabled()) {
-    min_progress_size_ = std::max(static_cast<uint32_t>(args->read_hint_bytes),
-                                  static_cast<uint32_t>(1));
+    min_progress_size_ = std::max(static_cast<int>(args->read_hint_bytes), 1);
   } else {
     min_progress_size_ = 1;
   }
