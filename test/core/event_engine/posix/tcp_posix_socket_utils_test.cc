@@ -30,7 +30,6 @@
 #include <netinet/ip.h>
 
 #include "src/core/lib/event_engine/posix_engine/file_descriptors.h"
-#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/util/useful.h"
 
@@ -115,7 +114,6 @@ TEST(TcpPosixSocketUtilsTest, SocketMutatorTest) {
     EXPECT_GT(sock, 0);
     FileDescriptors fds;
     FileDescriptor wrapped = fds.Adopt(sock);
-    PosixSocketWrapper posix_sock(sock);
     struct test_socket_mutator mutator;
     grpc_socket_mutator_init(&mutator.base, vtable);
 
@@ -156,7 +154,6 @@ TEST(TcpPosixSocketUtilsTest, SocketOptionsTest) {
   }
   EXPECT_GT(sock, 0);
   FileDescriptor fd = fds.Adopt(sock);
-  PosixSocketWrapper posix_sock(sock);
   EXPECT_TRUE(fds.SetSocketNonBlocking(fd, 1).ok());
   EXPECT_TRUE(fds.SetSocketNonBlocking(fd, 0).ok());
   EXPECT_TRUE(fds.SetSocketCloexec(fd, 1).ok());

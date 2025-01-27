@@ -86,7 +86,7 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
        requested_port == 0 && it != acceptors_.end(); it++) {
     EventEngine::ResolvedAddress sockname_temp;
     socklen_t len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-    if (0 == getsockname((*it)->Socket().sock.Fd(),
+    if (0 == getsockname((*it)->Fd().fd(),
                          const_cast<sockaddr*>(sockname_temp.address()),
                          &len)) {
       int used_port = ResolvedAddressGetPort(sockname_temp);
@@ -273,7 +273,6 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
   }
   auto& fds = poller_->GetFileDescriptors();
   FileDescriptor wrapped = fds.Adopt(fd);
-  PosixSocketWrapper sock(fd);
   (void)fds.SetSocketNoSigpipeIfPossible(wrapped);
   auto peer_name = poller_->GetFileDescriptors().PeerAddressString(wrapped);
   if (!peer_name.ok()) {

@@ -152,8 +152,16 @@ class Int64Result final : public PosixResult {
 
 class FileDescriptors {
  public:
+  struct PosixSocketCreateResult {
+    FileDescriptor sock;
+    EventEngine::ResolvedAddress mapped_target_addr;
+  };
+
   FileDescriptors() = default;
   FileDescriptors(const FileDescriptors&& other) = delete;
+
+  static void ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
+                                             bool is_client);
 
   FileDescriptorResult Accept(const FileDescriptor& sockfd,
                               struct sockaddr* addr, socklen_t* addrlen);
@@ -181,7 +189,7 @@ class FileDescriptors {
   // absl::Status
   //
   // The dsmode output indicates which address family was actually created.
-  absl::StatusOr<PosixSocketWrapper> CreateDualStackSocket(
+  absl::StatusOr<FileDescriptor> CreateDualStackSocket(
       std::function<int(int, int, int)> socket_factory,
       const experimental::EventEngine::ResolvedAddress& addr, int type,
       int protocol, PosixSocketWrapper::DSMode& dsmode);
@@ -242,8 +250,7 @@ class FileDescriptors {
   // created. For example, if target_addr is IPv4 and dual stack sockets are
   // available, mapped_target_addr will be an IPv4-mapped IPv6 address.
   //
-  absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
-  CreateAndPrepareTcpClientSocket(
+  absl::StatusOr<PosixSocketCreateResult> CreateAndPrepareTcpClientSocket(
       const PosixTcpOptions& options,
       const EventEngine::ResolvedAddress& target_addr);
 
@@ -271,11 +278,35 @@ class FileDescriptors {
   // Set socket to use zerocopy
   absl::Status SetSocketZeroCopy(const FileDescriptor& fd);
 
+  // Set SO_REUSEPORT
+  absl::Status SetSocketReusePort(const FileDescriptor& fd, int reuse);
+
+  // Set Differentiated Services Code Point (DSCP)
+  absl::Status SetSocketDscp(const FileDescriptor& fd, int dscp);
+
   int ConfigureSocket(const FileDescriptor& fd, int type);
 
+  // Tries to set IP_PKTINFO if available on this platform. If IP_PKTINFO is not
+  // available, returns not OK status.
+  absl::Status SetSocketIpPktInfoIfPossible(const FileDescriptor& fd);
+
+  // Tries to set IPV6_RECVPKTINFO if available on this platform. If
+  // IPV6_RECVPKTINFO is not available, returns not OK status.
+  absl::Status SetSocketIpv6RecvPktInfoIfPossible(const FileDescriptor& fd);
+
+  // Tries to set the socket's send buffer to given size.
+  absl::Status SetSocketSndBuf(const FileDescriptor& fd, int buffer_size_bytes);
+
+  // Tries to set the socket's receive buffer to given size.
+  absl::Status SetSocketRcvBuf(const FileDescriptor& fd, int buffer_size_bytes);
+
+  // Override default Tcp user timeout values if necessary.
+  void TrySetSocketTcpUserTimeout(const FileDescriptor& fd,
+                                  const PosixTcpOptions& options,
+                                  bool is_client);
+
  private:
-  absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
-                                      const FileDescriptor& fd,
+  absl::Status PrepareTcpClientSocket(const FileDescriptor& fd,
                                       const EventEngine::ResolvedAddress& addr,
                                       const PosixTcpOptions& options);
 

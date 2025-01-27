@@ -31,7 +31,7 @@ class ListenerSocketsContainer {
  public:
   struct ListenerSocket {
     // Listener socket fd
-    PosixSocketWrapper sock;
+    FileDescriptor sock;
     // Assigned/chosen listening port
     int port;
     // Socket configuration
