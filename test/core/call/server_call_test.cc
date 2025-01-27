@@ -37,7 +37,9 @@ class ServerCallTest : public YodelTest {
  protected:
   using YodelTest::YodelTest;
 
-  ~ServerCallTest() { grpc_metadata_array_destroy(&publish_initial_metadata_); }
+  ~ServerCallTest() override {
+    grpc_metadata_array_destroy(&publish_initial_metadata_);
+  }
 
   grpc_call* InitCall(ClientMetadataHandle client_initial_metadata) {
     CHECK_EQ(call_, nullptr);
