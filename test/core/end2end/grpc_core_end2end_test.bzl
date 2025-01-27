@@ -42,7 +42,7 @@ _DEPS = [
     "//:grpc_public_hdrs",
     "//:grpc_security_base",
     "//:grpc_trace",
-    "//:grpc_unsecure",
+    "//:grpc",
     "//:orphanable",
     "//:promise",
     "//:ref_counted_ptr",
