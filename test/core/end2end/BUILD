@@ -170,13 +170,10 @@ grpc_cc_library(
             "//test/core/test_util:grpc_test_util",
         ],
     )
-    for fuzz in [
-        False,
-        True,
-    ]
-    for gtest in [
-        False,
-        True,
+    for (fuzz, gtest) in [
+        (True, False),
+        (False, True),
+        (True, True)
     ]
 ]
 
@@ -566,7 +563,7 @@ grpc_cc_test(
     shard_count = 10,
     deps = [
         "cq_verifier",
-        "end2end_test_lib",
+        "end2end_test_lib_no_fuzztest_gtest",
         "ssl_test_data",
         "//:channel_arg_names",
         "//:config_vars",

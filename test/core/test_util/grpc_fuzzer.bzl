@@ -172,5 +172,4 @@ def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], data = [], external_de
         deps = deps,
         data = data,
         external_deps = external_deps,
-        data = data,
     )
